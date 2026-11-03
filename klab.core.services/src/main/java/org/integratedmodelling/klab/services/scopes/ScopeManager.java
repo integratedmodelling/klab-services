@@ -354,11 +354,53 @@ public class ScopeManager {
 
     var encodedCause = requestHeaders.get(ServicesAPI.CONSEQUENCE_HEADER);
     if (encodedCause != null) {
-      var cause = Utils.Json.parseObject(new String(java.util.Base64.getDecoder().decode(encodedCause),
-          java.nio.charset.StandardCharsets.UTF_8), org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause.class);
+      var cause =
+          Utils.Json.parseObject(
+              new String(
+                  java.util.Base64.getDecoder().decode(encodedCause),
+                  java.nio.charset.StandardCharsets.UTF_8),
+              org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause.class);
       // Authentication and context access have already been checked. This header grants no access;
-      // validate the context and isolate diagnostics before resolving the propagated focus/transaction.
+      // validate the context and isolate diagnostics before resolving the propagated
+      // focus/transaction.
       ret = rootScope.forConsequence(cause);
+    }
+
+    var encodedCycle = requestHeaders.get(ServicesAPI.RESOLUTION_CYCLE_HEADER);
+    if (encodedCycle != null) {
+      var binding =
+          Utils.Json.parseObject(
+              new String(
+                  java.util.Base64.getDecoder().decode(encodedCycle),
+                  java.nio.charset.StandardCharsets.UTF_8),
+              org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding
+                  .class);
+      ret = ret.withResolutionCycleBinding(binding);
+      // The authenticated Reasoner endpoint validates its retained actor directly. Other services
+      // must use the pinned facade, including calls whose API does not accept a Scope argument.
+      if (!(service instanceof org.integratedmodelling.klab.api.services.Reasoner)) {
+        if (binding.semanticBinding() == null) ret = ret.withCycleReasoner(null);
+        else {
+          var pinned = binding.semanticBinding();
+          var original =
+              ret.getServices(org.integratedmodelling.klab.api.services.Reasoner.class).stream()
+                  .filter(candidate -> pinned.reasonerServiceId().equals(candidate.serviceId()))
+                  .findFirst()
+                  .orElseThrow(
+                      () ->
+                          new KlabResourceAccessException("Frozen cycle Reasoner is unavailable"));
+          ret =
+              ret.withCycleReasoner(
+                  java.util.Objects.requireNonNull(
+                      original.bindSemanticCycle(
+                          pinned,
+                          binding.runtimeServiceId(),
+                          binding.contextId(),
+                          binding.cycleId(),
+                          ret),
+                      "Frozen cycle Reasoner is unavailable"));
+        }
+      }
     }
 
     if (contextualization.observationPath() != null) {
@@ -378,10 +420,12 @@ public class ScopeManager {
 
     if (contextualization.observerId() != Observation.UNASSIGNED_ID) {
       try {
-        ret = ret.withResolutionConstraints(
-            org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
-                org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type.Observer,
-                contextualization.observerId()));
+        ret =
+            ret.withResolutionConstraints(
+                org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(
+                    org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.Type
+                        .Observer,
+                    contextualization.observerId()));
       } catch (IllegalArgumentException e) {
         throw new KlabResourceAccessException(
             "Observer with ID "
@@ -458,6 +502,30 @@ public class ScopeManager {
                   + describeScope(ret)
                   + " for service "
                   + serviceId());
+        }
+      }
+
+      if (!(service instanceof RuntimeService)
+          && requestHeaders.get(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER) != null) {
+        long id = parseHeaderLong(requestHeaders, ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER, ret);
+        if (id == Observation.UNASSIGNED_ID || id == Observation.QUERY_ID)
+          throw new KlabResourceAccessException("A scope focus must name an owned observation");
+        if (id < Observation.UNASSIGNED_ID) {
+          // Prospective focus is intentionally absent from the persistent observation path.
+          // Ask its authenticated Runtime/TX owner; never accept a body-supplied scope or cache it.
+          if (ret.getTransactionId() == null
+              || ret.getTransactionId().isBlank()
+              || !(ret.getDigitalTwin().getKnowledgeGraph()
+                  instanceof
+                  org.integratedmodelling.common.services.client.digitaltwin.ClientKnowledgeGraph
+                      remote))
+            throw new KlabResourceAccessException(
+                "Prospective focus requires its Runtime transaction");
+          var focus = remote.getObservationForAdmission(id, ret.within(null));
+          if (focus == null)
+            throw new KlabResourceAccessException(
+                "Prospective focus is not accessible in its Runtime transaction");
+          ret = ret.within(focus);
         }
       }
 

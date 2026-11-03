@@ -1,0 +1,33 @@
+strategies observations
+  version 2.0;
+
+strategy 0 named substantial.direct
+  for pattern {
+    node {
+      kind = one_of(subject, agent, relationship);
+      collective = false;
+      abstract = false;
+    }
+  }
+  ensure request.fully_specified($this)
+  observe $this;
+
+strategy 0 named characterization.direct
+  for pattern { node { activity = CHARACTERIZATION; } }
+  ensure context.exists()
+  observe $this;
+
+// No-solution is handled by the semantic lifecycle after alternatives are exhausted.
+// It is not an empty successful graph. Review which individual kinds permit acknowledgement.
+
+strategy 0 named dependent.direct
+  for pattern {
+    node {
+      kind = one_of(quality, process);
+      abstract = false;
+    }
+  }
+  ensure
+    context.exists(),
+    request.fully_specified($this)
+  observe $this;

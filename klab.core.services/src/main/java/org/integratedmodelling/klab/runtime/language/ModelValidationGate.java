@@ -510,12 +510,21 @@ public final class ModelValidationGate {
 
   private static long validatedCatalogRevision(String name, String namespace, ResourcesService resources,
       Scope scope, Observable requested, boolean inspectInstalled) {
+    boolean frozen=scope instanceof org.integratedmodelling.klab.api.scope.ContextScope context
+        &&context.getResolutionCycleBinding()!=null;
     try {
       var source = source(name, namespace, resources, scope);
-      if (source == null || source.isInactive()
-          || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(source.getNotifications())
-          || Boolean.TRUE.equals(source.getMetadata().get(ResourcesService.VALIDATION_DEFERRED_METADATA))
-          || !inspectInstalled && (source.getSourceCode() == null || source.getSourceCode().isBlank())) return -1;
+      if(source==null) {
+        if(frozen)throw new AdmissionFailure(namespace,null,false);
+        return -1;
+      }
+      if (source.isInactive()
+          || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(source.getNotifications())) return -1;
+      if (Boolean.TRUE.equals(source.getMetadata().get(ResourcesService.VALIDATION_DEFERRED_METADATA))
+          || !inspectInstalled && (source.getSourceCode() == null || source.getSourceCode().isBlank())) {
+        if(frozen)throw new AdmissionFailure(namespace,null,false);
+        return -1;
+      }
       long timestamp = source.getLastUpdateTimestamp();
       String sourceCode = source.getSourceCode();
       var semantic=semanticSnapshot(scope);
@@ -556,7 +565,10 @@ public final class ModelValidationGate {
         return unchanged(source, timestamp, sourceCode) ? boundRevision : -1;
       }
       return unchanged(source, timestamp, sourceCode) ? revision : -1;
-    } catch (RuntimeException unavailable) { return -1; }
+    } catch (RuntimeException unavailable) {
+      if(frozen&&(!(unavailable instanceof AdmissionFailure failure)||failure.retryable()))throw unavailable;
+      return -1;
+    }
   }
 
   public static void require(String name, String namespace, ResourcesService resources, Scope scope) {

@@ -125,10 +125,10 @@ class AuditedSemanticFootprintsTest {
       var hashes=new HashMap<>(proof.implementationHashes());
       hashes.put("org.integratedmodelling.generators.utils.RandomShapes","0".repeat(64));
       assertTrue(AuditedSemanticFootprints.attest(new AuditedSemanticFootprints.Evidence(proof.componentId(),
-          Version.create(proof.componentVersion()),proof.archiveSha256(),proof.methodSignature(),hashes),proof.kind()).isEmpty());
+          Version.create(proof.componentVersion()),proof.archiveSha256(),proof.contentInventorySha256(),proof.methodSignature(),hashes),proof.kind()).isEmpty());
       hashes=new HashMap<>(proof.implementationHashes());hashes.remove("org.integratedmodelling.generators.utils.RandomShapes");
       assertTrue(AuditedSemanticFootprints.attest(new AuditedSemanticFootprints.Evidence(proof.componentId(),
-          Version.create(proof.componentVersion()),proof.archiveSha256(),proof.methodSignature(),hashes),proof.kind()).isEmpty());
+          Version.create(proof.componentVersion()),proof.archiveSha256(),proof.contentInventorySha256(),proof.methodSignature(),hashes),proof.kind()).isEmpty());
     }
   }
 }

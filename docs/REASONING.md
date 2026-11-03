@@ -26,6 +26,27 @@ axioms. Callers should use the `Reasoner` interface rather than the OWL layer di
 
 ## Implementation surfaces
 
+### ODO source capture and offline operation
+
+An ODO document URL declared by a worldview is authoritative. Before submitting a candidate,
+the Reasoner retrieves that document, validates its ODO identity and declared release version,
+and freezes its exact bytes and SHA-256 into the candidate's dependency manifest. The private
+compiler and authority bootstrap use those owned bytes; they do not fetch an ontology during
+compilation. A new publication does not require a source-code allowlist update, and admission
+does not require byte equality with the bundled ontology. Line-ending differences change the
+captured fingerprint but do not make a valid remote ontology inadmissible.
+
+Successful downloads are cached by their exact declared URL below
+`semantic-candidates/owl-imports`. When retrieval is unavailable, the Reasoner first uses that
+URL's last validated cached document, then the bundled ODO if its version is compatible with
+the declared release. A reachable document with invalid RDF/XML, the wrong ontology identity,
+or the wrong release version is rejected; it is never silently replaced by the bundled copy.
+Conflicting ODO document URLs in the same worldview also require correction.
+
+Capture logs identify `REMOTE`, `CACHED_REMOTE`, or `BUNDLED_OFFLINE` and the SHA-256 actually
+used. This source selection is independent of service discovery and anonymous authentication.
+The bundled structural core is still available when no external ODO document is declared.
+
 - **Local service:** `ReasonerService` contains the authoritative implementations.
 - **Remote client:** `ReasonerClient` invokes endpoints exposed by `ReasonerController` and caches
   frequent read operations locally.

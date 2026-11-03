@@ -6,7 +6,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-
 import org.integratedmodelling.common.knowledge.CohortImpl;
 import org.integratedmodelling.common.services.client.RuntimeClient;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
@@ -19,7 +18,6 @@ import org.integratedmodelling.klab.api.data.impl.LinkImpl;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -28,11 +26,10 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.jgrapht.Graph;
-import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DirectedPseudograph;
 
 /**
  * The ClientKnowledgeGraph represents a local client-specific implementation of the KnowledgeGraph
@@ -75,12 +72,18 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   private final ContextScope scope;
   private final RuntimeClient runtimeClient;
   private final Graph<Long, Relationship> graph = new DirectedPseudograph<>(Relationship.class);
-  /** Adjacencies that have been completely retrieved from the service. Guarded by {@link #graph}. */
+
+  /**
+   * Adjacencies that have been completely retrieved from the service. Guarded by {@link #graph}.
+   */
   private final Set<Adjacency> loadedAdjacencies = new HashSet<>();
+
   /** Assets whose cached representation must not be reused after a modifying commit. */
   private final Set<Long> invalidatedAssets = new HashSet<>();
+
   /** Commit IDs are the idempotency key for AMQP redelivery and local/remote duplicate events. */
   private final Map<Long, KnowledgeGraph.Commit> appliedCommits = new HashMap<>();
+
   private final Queue<KnowledgeGraph.Commit> commitQueue = new ConcurrentLinkedQueue<>();
   private Cache<Long, RuntimeAsset> assetCache =
       CacheBuilder.newBuilder()
@@ -119,7 +122,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     if (observer != null && observer.getId() > 0) assetCache.put(observer.getId(), observer);
   }
 
-  /** Apply consequence changes using the same deduplication as ordinary submission notifications. */
+  /**
+   * Apply consequence changes using the same deduplication as ordinary submission notifications.
+   */
   public synchronized boolean ingestConsequence(
       org.integratedmodelling.klab.api.digitaltwin.Consequence.Commit consequence) {
     if (!Objects.equals(scope.getId(), consequence.cause().contextId()))
@@ -134,18 +139,21 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     }
   }
 
-  /** Apply a durable transition without a cache-only commit lookup or stale observation snapshot. */
-  public synchronized boolean ingestTransition(org.integratedmodelling.klab.api.digitaltwin.TransitionCommit transition) {
-    if (!Objects.equals(scope.getId(),transition.contextId()))
+  /**
+   * Apply a durable transition without a cache-only commit lookup or stale observation snapshot.
+   */
+  public synchronized boolean ingestTransition(
+      org.integratedmodelling.klab.api.digitaltwin.TransitionCommit transition) {
+    if (!Objects.equals(scope.getId(), transition.contextId()))
       throw new IllegalArgumentException("Transition belongs to another digital twin");
-    var commit=transition.commit();
+    var commit = transition.commit();
     synchronized (graph) {
       if (appliedCommits.containsKey(commit.getId())) return false;
       if (transition.consequential()) {
-        applyCommit(commit,new HashSet<>());
+        applyCommit(commit, new HashSet<>());
         commitQueue.add(commit);
       }
-      appliedCommits.put(commit.getId(),commit);
+      appliedCommits.put(commit.getId(), commit);
       return true;
     }
   }
@@ -265,10 +273,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       graph.addVertex(link.getFirst());
       graph.addVertex(link.getSecond());
       if (addRelationship(
-          link.getFirst(),
-          link.getSecond(),
-          relationship,
-          Map.of("commit", commit.getId()))) {
+          link.getFirst(), link.getSecond(), relationship, Map.of("commit", commit.getId()))) {
         adjustChildCount(link.getFirst(), relationship, 1);
       }
       if (!commit.getAddedObservations().contains(link.getFirst())
@@ -357,15 +362,14 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   ///    the desired relationships to the desired depth.
   ///
   /// The relationship direction is taken into account. The only relationships that is followed at
-  /// depth is HAS_CHILD. Note that as most other relationships have a known type of asset as
-  /// a target or source, assets of all types will be returned. They can be removed from the
-  /// vertices, and the links will also disappear.
+  /// depth is HAS_CHILD. Note that as most other relationships have a known type of asset as a
+  /// target or source, assets of all types will be returned. They can be removed from the vertices,
+  /// and the links will also disappear.
   ///
   /// @param focus
   /// @param depth
   /// @param acceptedRelationships
   /// @return the graph with the desired options
-  ///
   public Graph<RuntimeAsset, Relationship> getSubgraph(
       List<RuntimeAsset> focus,
       int depth,
@@ -445,10 +449,13 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     return new KnowledgeGraphQuery<>(KnowledgeGraphQuery.AssetType.classify(resultClass)) {
       @Override
       public List<T> run(Scope scope) {
-          return runtimeClient.queryKnowledgeGraph(this, scope).stream()
-              .filter(asset -> !(asset instanceof Observation observation)
-                  || !org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation))
-              .toList();
+        return runtimeClient.queryKnowledgeGraph(this, scope).stream()
+            .filter(
+                asset ->
+                    !(asset instanceof Observation observation)
+                        || !org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(
+                            observation))
+            .toList();
       }
     };
   }
@@ -457,8 +464,11 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   public <T extends RuntimeAsset> List<T> query(
       Query<T> knowledgeGraphQuery, Class<T> resultClass, Scope scope) {
     return runtimeClient.queryKnowledgeGraph(knowledgeGraphQuery, scope).stream()
-        .filter(asset -> !(asset instanceof Observation observation)
-            || !org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation))
+        .filter(
+            asset ->
+                !(asset instanceof Observation observation)
+                    || !org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(
+                        observation))
         .toList();
   }
 
@@ -600,17 +610,24 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   @Override
   public void clear() {}
 
-  /** Authoritative focus at an authenticated HTTP request boundary, independent of event delivery.
-   * No graph monitor is held across the Runtime callback and no cached planning object is mutated. */
+  /**
+   * Authoritative focus at an authenticated HTTP request boundary, independent of event delivery.
+   * No graph monitor is held across the Runtime callback and no cached planning object is mutated.
+   */
   public Observation getObservationForAdmission(long id, ContextScope requestScope) {
-    if (id <= 0) return null;
+    if (id <= 0
+        && (id >= Observation.UNASSIGNED_ID
+            || requestScope.getTransactionId() == null
+            || requestScope.getTransactionId().isBlank())) return null;
     var asset = runtimeClient.getAsset(id, RuntimeAsset.class, requestScope);
     if (asset == null) return null;
     if (!(asset instanceof Observation observation) || observation.getId() != id)
       throw new IllegalStateException("Runtime returned a different scope observation");
     return org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation)
-        ? null : observation;
+        ? null
+        : observation;
   }
+
   private <T extends RuntimeAsset> T retrieveFromGraph(long id, Class<T> assetClass, Scope scope) {
     if (!isAddressableAssetId(id)) {
       return null;
@@ -631,7 +648,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     try {
       var asset = (T) assetCache.get(id, () -> retrieveFromGraph(id, resultClass, scope));
       return asset instanceof Observation observation
-          && org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation) ? null : asset;
+              && org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation)
+          ? null
+          : asset;
     } catch (Throwable e) {
       // fall back to other strategy
       scope.warn("Ignoring unexpected cache error in service-side knowledge graph", e);
@@ -647,7 +666,9 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     try {
       var asset = runtimeClient.getAsset(urn, resultClass, scope);
       return asset instanceof Observation observation
-          && org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation) ? null : asset;
+              && org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.pending(observation)
+          ? null
+          : asset;
     } catch (Throwable e) {
       scope.warn("Ignoring unexpected error retrieving a knowledge-graph URN", e);
       return null;
@@ -659,7 +680,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
       RuntimeAsset asset,
       GraphModel.Relationship.Direction direction,
       ContextScope scope,
-    GraphModel.Relationship... relationship) {
+      GraphModel.Relationship... relationship) {
 
     if (asset == null || !isAddressableAssetId(asset.getId())) {
       return List.of();
@@ -756,8 +777,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
     var retrievedAssets = new HashMap<Long, RuntimeAsset>();
     retrievedAssets.put(focalAsset.getId(), focalAsset);
     for (var link : remoteLinks) {
-      if (!isAddressableAssetId(link.getSourceId())
-          || !isAddressableAssetId(link.getTargetId())) {
+      if (!isAddressableAssetId(link.getSourceId()) || !isAddressableAssetId(link.getTargetId())) {
         requestScope.warn(
             "Ignoring knowledge graph link with invalid endpoint: "
                 + link.getSourceId()
@@ -808,8 +828,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
           link.getProperties() == null
               ? Map.<String, Object>of()
               : new HashMap<String, Object>(link.getProperties());
-      addRelationship(
-          link.getSourceId(), link.getTargetId(), link.getType(), properties);
+      addRelationship(link.getSourceId(), link.getTargetId(), link.getType(), properties);
     }
     requested.forEach(
         type -> loadedAdjacencies.add(new Adjacency(focalAsset.getId(), direction, type)));
@@ -824,9 +843,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
   }
 
   private static boolean isExpectedAsset(RuntimeAsset asset, long requestedId) {
-    return asset != null
-        && isAddressableAssetId(asset.getId())
-        && asset.getId() == requestedId;
+    return asset != null && isAddressableAssetId(asset.getId()) && asset.getId() == requestedId;
   }
 
   private static void requireAddressableAssetId(long id, KnowledgeGraph.Commit commit) {
@@ -876,11 +893,7 @@ public class ClientKnowledgeGraph implements KnowledgeGraph {
 
     if (i > 0) {
       for (var link :
-          getLinks(
-              contextAsset,
-              GraphModel.Relationship.Direction.OUTGOING,
-              scope,
-              relationship)) {
+          getLinks(contextAsset, GraphModel.Relationship.Direction.OUTGOING, scope, relationship)) {
         populate(link.target(), relationship, i - 1);
       }
     }

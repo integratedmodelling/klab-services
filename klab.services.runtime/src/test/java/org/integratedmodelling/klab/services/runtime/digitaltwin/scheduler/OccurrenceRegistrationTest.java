@@ -90,10 +90,13 @@ class OccurrenceRegistrationTest {
     List<String> durableJournal;
 
     Fixture() throws Exception {
+      org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.isolate(twin);
+      org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.transparentCycleOverlay(scope);
       var user = mock(UserIdentity.class); when(user.getUsername()).thenReturn("tester");
       when(scope.getUser()).thenReturn(user); when(scope.getId()).thenReturn("context");
       when(scope.getContextObservation()).thenReturn(bearer);
       when(scope.getDigitalTwin()).thenReturn(twin);
+      when(scope.of(any(Observation.class))).thenReturn(scope);
       when(twin.getKnowledgeGraph()).thenReturn(kg);
       when(twin.getStorageManager()).thenReturn(mock(StorageManager.class));
       when(kg.nextKey()).thenReturn(900L);
@@ -102,7 +105,7 @@ class OccurrenceRegistrationTest {
       field(twin, "knowledgeGraph", kg); field(twin, "commitCache", CacheBuilder.newBuilder().build());
       scheduler = spy(new SchedulerImpl(scope, twin));
       // These fixtures isolate registration/INIT; storage integration covers automatic dispatch.
-      doNothing().when(scheduler).advanceCommittedOccurrences();
+      doNothing().when(scheduler).advanceCommittedOccurrences(any(ServiceContextScope.class));
       field(twin, "scheduler", scheduler); when(twin.getScheduler()).thenReturn(scheduler);
       transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), scope,
           RuntimeAsset.PROVENANCE_ASSET, process);
@@ -199,6 +202,8 @@ class OccurrenceRegistrationTest {
 
   @Test void temporalDispatchUsesFreshTransactionsAndAtomicRetryableCursors() throws Exception {
     try (var f = new Fixture()) {
+      var dispatchFailure = new java.util.concurrent.atomic.AtomicReference<Throwable>();
+      doAnswer(call -> { dispatchFailure.set(call.getArgument(0)); return null; }).when(f.scope).error(any(Throwable.class));
       assertTrue(f.scheduler.submit(f.process, f.scope));
       assertEquals(900, f.transaction.commit());
       doAnswer(call -> {
@@ -239,9 +244,9 @@ class OccurrenceRegistrationTest {
       assertFalse(f.process.getMetadata().containsKey(DispatchProgress.KEY));
       assertTrue(completed.isEmpty());
       doNothing().when(f.storage).close();
-      assertTrue(scheduler.advanceTo(february));
+      assertTrue(scheduler.advanceTo(february), () -> "Dispatch failed: " + dispatchFailure.get());
       assertEquals(1, completed.size());
-      assertTrue(scheduler.advanceTo(february));
+      assertTrue(scheduler.advanceTo(february), () -> "Dispatch failed: " + dispatchFailure.get());
       assertEquals(2, attempts.size());
       assertNotEquals(attempts.getFirst(), attempts.getLast());
       assertEquals(1, f.qualityInit.get());
@@ -281,12 +286,12 @@ class OccurrenceRegistrationTest {
       doAnswer(call -> {
         assertEquals(2, f.scheduler.getOccurrenceRegistrations().size());
         return null;
-      }).when(f.scheduler).advanceCommittedOccurrences();
+      }).when(f.scheduler).advanceCommittedOccurrences(same(f.scope));
       assertTrue(f.scheduler.submit(f.process, f.scope));
       assertTrue(f.scheduler.submit(second, f.scope));
-      verify(f.scheduler, never()).advanceCommittedOccurrences();
+      verify(f.scheduler, never()).advanceCommittedOccurrences(same(f.scope));
       assertTrue(f.transaction.commit() > 0);
-      verify(f.scheduler).advanceCommittedOccurrences();
+      verify(f.scheduler).advanceCommittedOccurrences(same(f.scope));
     }
   }
 
@@ -298,7 +303,7 @@ class OccurrenceRegistrationTest {
       assertEquals(-1, f.transaction.commit());
       assertTrue(f.scheduler.getOccurrenceRegistrations().isEmpty());
       verify(f.storage, never()).store(any());
-      verify(f.scheduler, never()).advanceCommittedOccurrences();
+      verify(f.scheduler, never()).advanceCommittedOccurrences(same(f.scope));
     }
     try (var f = new Fixture()) {
       assertTrue(f.scheduler.submit(f.process, f.scope));
@@ -306,7 +311,7 @@ class OccurrenceRegistrationTest {
       assertFalse(f.process.getMetadata().containsKey(Scheduler.REGISTRATION_METADATA_KEY));
       assertTrue(f.quality.getEventTimestamps().isEmpty());
       assertTrue(f.scheduler.getOccurrenceRegistrations().isEmpty());
-      verify(f.scheduler, never()).advanceCommittedOccurrences();
+      verify(f.scheduler, never()).advanceCommittedOccurrences(same(f.scope));
     }
   }
 

@@ -63,6 +63,9 @@ public class KimNamespaceVisitor extends KimObservableVisitor {
                   context));
           continue;
         }
+        if(ConfigurationTerminationValidation.termination(contextualizable)
+            &&ConfigurationTerminationValidation.configuration(target))
+          diagnostics.add(error(ConfigurationTerminationValidation.UNSUPPORTED,contextualizable,context));
         validateMappingTarget(contextualizable, target, context, diagnostics);
       }
       return diagnostics;

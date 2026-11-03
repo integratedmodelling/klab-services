@@ -32,7 +32,8 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 public final class ConsequenceEngine implements AutoCloseable {
   @FunctionalInterface
   public interface Handler {
-    Result evaluate(Consequence.Cause cause, KnowledgeGraph.Commit changes, ServiceContextScope scope)
+    Result evaluate(
+        Consequence.Cause cause, KnowledgeGraph.Commit changes, ServiceContextScope scope)
         throws Exception;
   }
 
@@ -49,15 +50,23 @@ public final class ConsequenceEngine implements AutoCloseable {
   private final ExecutorService worker;
   private final Map<Consequence.Kind, Handler> handlers = new EnumMap<>(Consequence.Kind.class);
   private final java.util.Set<Long> pending = new java.util.HashSet<>();
-  private final Cache<Long, Boolean> completed = CacheBuilder.newBuilder().maximumSize(1024).build();
+  private final Cache<Long, Boolean> completed =
+      CacheBuilder.newBuilder().maximumSize(1024).build();
   private volatile boolean closed;
   private final long gracefulCloseMillis;
   private final long forcedCloseMillis;
+  private final Map<Long, AutoCloseable> cycleLeases = new java.util.HashMap<>();
   private long sequence;
 
-  private record Work(int priority, long sequence, Runnable action) implements Runnable, Comparable<Work> {
-    @Override public void run() { action.run(); }
-    @Override public int compareTo(Work other) {
+  private record Work(int priority, long sequence, Runnable action, Runnable cancel)
+      implements Runnable, Comparable<Work> {
+    @Override
+    public void run() {
+      action.run();
+    }
+
+    @Override
+    public int compareTo(Work other) {
       int order = Integer.compare(priority, other.priority);
       return order == 0 ? Long.compare(sequence, other.sequence) : order;
     }
@@ -67,8 +76,11 @@ public final class ConsequenceEngine implements AutoCloseable {
     this(rootScope, contextId, 5000, 5000);
   }
 
-  ConsequenceEngine(ServiceContextScope rootScope, String contextId,
-      long gracefulCloseMillis, long forcedCloseMillis) {
+  ConsequenceEngine(
+      ServiceContextScope rootScope,
+      String contextId,
+      long gracefulCloseMillis,
+      long forcedCloseMillis) {
     if (gracefulCloseMillis <= 0 || forcedCloseMillis <= 0)
       throw new IllegalArgumentException("Close deadlines must be positive");
     this.gracefulCloseMillis = gracefulCloseMillis;
@@ -77,12 +89,19 @@ public final class ConsequenceEngine implements AutoCloseable {
     this.contextId = Objects.requireNonNull(contextId);
     handlers.put(Consequence.Kind.CONFIGURATION_DETECTION, new ConfigurationDiscoveryHandler());
     handlers.put(Consequence.Kind.CHANGE_PROCESS, new ChangeProcessHandler());
-    worker = new ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<>(), task -> {
-      var thread = new Thread(task, "klab-consequences-" + contextId);
-      thread.setDaemon(true);
-      thread.setPriority(Thread.MIN_PRIORITY);
-      return thread;
-    });
+    worker =
+        new ThreadPoolExecutor(
+            1,
+            1,
+            0,
+            TimeUnit.MILLISECONDS,
+            new PriorityBlockingQueue<>(),
+            task -> {
+              var thread = new Thread(task, "klab-consequences-" + contextId);
+              thread.setDaemon(true);
+              thread.setPriority(Thread.MIN_PRIORITY);
+              return thread;
+            });
   }
 
   /** Install a handler for future passes. Missing handlers explicitly report DEFERRED. */
@@ -95,6 +114,8 @@ public final class ConsequenceEngine implements AutoCloseable {
   public synchronized void committed(
       KnowledgeGraph.Commit commit, ServiceContextScope source, long activityId, long observerId) {
     if (closed) return;
+    var binding = source.getResolutionCycleBinding();
+    if (binding != null && !binding.consequencesEnabled()) return;
     if (commit == null || commit.getId() <= 0 || activityId <= 0)
       throw new IllegalArgumentException("Consequences require a successful root commit");
     if (pending.contains(commit.getId()) || completed.getIfPresent(commit.getId()) != null) return;
@@ -106,40 +127,99 @@ public final class ConsequenceEngine implements AutoCloseable {
     // request cancellation. Do not use the neutral root scope for semantic evaluation.
     var evaluationScope = source.forConsequence(origin);
     var selected = new EnumMap<>(handlers);
+    if (source.getResolutionCycle() != null)
+      cycleLeases.put(commit.getId(), source.getResolutionCycle().retain());
     pending.add(commit.getId());
-    worker.execute(new Work(0, sequence++, () -> {
+    worker.execute(
+        new Work(
+            0,
+            sequence++,
+            () -> {
+              try {
+                if (origin != null)
+                  publish(
+                      Message.MessageType.ConsequenceCommitted,
+                      new Consequence.Commit(origin, CommitImpl.copyOf(snapshot)));
+                for (var kind : Consequence.Kind.values()) {
+                  if (kind == Consequence.Kind.UNCERTAINTY) continue;
+                  if (closed || Thread.currentThread().isInterrupted()) break;
+                  evaluate(
+                      kind,
+                      selected.get(kind),
+                      snapshot,
+                      evaluationScope,
+                      activityId,
+                      observerId,
+                      fingerprint,
+                      origin);
+                }
+              } finally {
+                boolean finishNow;
+                synchronized (this) {
+                  finishNow = closed || Thread.currentThread().isInterrupted();
+                  if (!finishNow)
+                    worker.execute(
+                        new Work(
+                            1,
+                            sequence++,
+                            () -> {
+                              try {
+                                evaluate(
+                                    Consequence.Kind.UNCERTAINTY,
+                                    selected.get(Consequence.Kind.UNCERTAINTY),
+                                    snapshot,
+                                    evaluationScope,
+                                    activityId,
+                                    observerId,
+                                    fingerprint,
+                                    origin);
+                              } finally {
+                                finish(snapshot.getId());
+                              }
+                            },
+                            () -> finish(snapshot.getId())));
+                }
+                if (finishNow) finish(snapshot.getId());
+              }
+            },
+            () -> finish(snapshot.getId())));
+  }
+
+  private void finish(long commitId) {
+    AutoCloseable lease;
+    synchronized (this) {
+      pending.remove(commitId);
+      completed.put(commitId, true);
+      lease = cycleLeases.remove(commitId);
+    }
+    if (lease != null)
       try {
-        if (origin != null) publish(Message.MessageType.ConsequenceCommitted,
-            new Consequence.Commit(origin, CommitImpl.copyOf(snapshot)));
-        for (var kind : Consequence.Kind.values()) {
-          if (kind == Consequence.Kind.UNCERTAINTY) continue;
-          if (closed || Thread.currentThread().isInterrupted()) break;
-          evaluate(kind, selected.get(kind), snapshot, evaluationScope, activityId, observerId, fingerprint, origin);
-        }
-      } finally {
-        synchronized (this) {
-          if (closed || Thread.currentThread().isInterrupted()) finish(snapshot.getId());
-          else worker.execute(new Work(1, sequence++, () -> {
-            try {
-              evaluate(Consequence.Kind.UNCERTAINTY, selected.get(Consequence.Kind.UNCERTAINTY),
-                  snapshot, evaluationScope, activityId, observerId, fingerprint, origin);
-            } finally { finish(snapshot.getId()); }
-          }));
-        }
+        lease.close();
+      } catch (Exception failure) {
+        rootScope.warn("Cannot release consequence cycle", failure);
       }
-    }));
   }
 
-  private synchronized void finish(long commitId) {
-    pending.remove(commitId);
-    completed.put(commitId, true);
-  }
-
-  private void evaluate(Consequence.Kind kind, Handler handler, KnowledgeGraph.Commit snapshot,
-      ServiceContextScope evaluationScope, long activityId, long observerId, String fingerprint,
+  private void evaluate(
+      Consequence.Kind kind,
+      Handler handler,
+      KnowledgeGraph.Commit snapshot,
+      ServiceContextScope evaluationScope,
+      long activityId,
+      long observerId,
+      String fingerprint,
       Consequence.Cause origin) {
-    var cause = new Consequence.Cause(1, contextId, snapshot.getId(), activityId, observerId,
-        fingerprint, origin == null ? null : origin.decisionId(), UUID.randomUUID().toString(), kind);
+    var cause =
+        new Consequence.Cause(
+            1,
+            contextId,
+            snapshot.getId(),
+            activityId,
+            observerId,
+            fingerprint,
+            origin == null ? null : origin.decisionId(),
+            UUID.randomUUID().toString(),
+            kind);
     final ServiceContextScope handlerScope;
     synchronized (this) {
       if (closed) return;
@@ -149,31 +229,64 @@ public final class ConsequenceEngine implements AutoCloseable {
     }
     Result result;
     try {
-      result = handler == null
-          ? new Result(Consequence.Outcome.DEFERRED,
-              "No consequence handler is installed for " + kind, List.of())
-          : Objects.requireNonNull(handler.evaluate(cause, CommitImpl.copyOf(snapshot), handlerScope),
-              "Handler returned no decision");
+      var binding = handlerScope.getResolutionCycleBinding();
+      result =
+          binding == null
+                  || binding.semanticBinding() == null
+                  || handlerScope.getResolutionCycle() == null
+              ? new Result(
+                  Consequence.Outcome.DEFERRED,
+                  "No frozen semantic view was available when this cycle started",
+                  List.of())
+              : handler == null
+                  ? new Result(
+                      Consequence.Outcome.DEFERRED,
+                      "No consequence handler is installed for " + kind,
+                      List.of())
+                  : Objects.requireNonNull(
+                      handler.evaluate(cause, CommitImpl.copyOf(snapshot), handlerScope),
+                      "Handler returned no decision");
       if (handlerScope.getConsequenceFailure() != null)
-        result = new Result(Consequence.Outcome.FAILED,
-            result.explanation() + "; " + handlerScope.getConsequenceFailure(), result.observationIds());
+        result =
+            new Result(
+                Consequence.Outcome.FAILED,
+                result.explanation() + "; " + handlerScope.getConsequenceFailure(),
+                result.observationIds());
       else if (handlerScope.getConsequenceWarning() != null)
-        result = new Result(result.outcome(),
-            result.explanation() + "; " + handlerScope.getConsequenceWarning(), result.observationIds());
+        result =
+            new Result(
+                result.outcome(),
+                result.explanation() + "; " + handlerScope.getConsequenceWarning(),
+                result.observationIds());
     } catch (InterruptedException interrupted) {
       Thread.currentThread().interrupt();
       return;
     } catch (Exception failure) {
-      result = new Result(Consequence.Outcome.FAILED,
-          "Optional consequence could not be resolved: " + failure.getMessage(), List.of());
+      result =
+          new Result(
+              Consequence.Outcome.FAILED,
+              "Optional consequence could not be resolved: " + failure.getMessage(),
+              List.of());
     }
     // This is the single scope notification for the outcome, including failed optional work.
-    publish(Message.MessageType.ConsequenceDecision,
-        new Consequence.Decision(cause, result.outcome(), result.explanation(), result.observationIds()));
+    publish(
+        Message.MessageType.ConsequenceDecision,
+        new Consequence.Decision(
+            cause, result.outcome(), result.explanation(), result.observationIds()));
   }
 
   private synchronized void publish(Message.MessageType type, Object payload) {
     if (closed) return;
+    if (type == Message.MessageType.ConsequenceDecision
+        && Boolean.getBoolean("klab.consequences.trace")) {
+      try {
+        org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+            "CONSEQUENCE_DECISION "
+                + org.integratedmodelling.common.utils.Utils.Json.asString(payload));
+      } catch (RuntimeException ignored) {
+        /* Diagnostics cannot suppress normal delivery. */
+      }
+    }
     try {
       rootScope.send(Message.MessageClass.DigitalTwin, type, payload);
     } catch (RuntimeException failure) {
@@ -184,16 +297,18 @@ public final class ConsequenceEngine implements AutoCloseable {
   /** Cancel queued work and stop the worker before the twin's graph/storage can be disposed. */
   @Override
   public void close() {
+    var queued = new java.util.ArrayList<Runnable>();
     synchronized (this) {
       closed = true;
       // Let an in-flight atomic operation/read finish before interrupting its driver.
       // In particular, interrupting synchronous Bolt I/O can strand its pending future.
-      ((ThreadPoolExecutor) worker).getQueue().clear();
+      ((ThreadPoolExecutor) worker).getQueue().drainTo(queued);
       worker.shutdown();
     }
+    for (var task : queued) ((Work) task).cancel().run();
     try {
       if (!worker.awaitTermination(gracefulCloseMillis, TimeUnit.MILLISECONDS)) {
-        worker.shutdownNow();
+        for (var task : worker.shutdownNow()) ((Work) task).cancel().run();
         if (!worker.awaitTermination(forcedCloseMillis, TimeUnit.MILLISECONDS))
           throw new IllegalStateException("Consequence handler did not stop for " + contextId);
       }
@@ -207,5 +322,3 @@ public final class ConsequenceEngine implements AutoCloseable {
     }
   }
 }
-
-

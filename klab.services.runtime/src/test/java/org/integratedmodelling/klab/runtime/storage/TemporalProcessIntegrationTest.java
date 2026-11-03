@@ -88,6 +88,7 @@ class TemporalProcessIntegrationTest {
       when(twin.getScheduler()).thenAnswer(call -> scheduler);
       var user=mock(UserIdentity.class); when(user.getUsername()).thenReturn("tester");
       configureScope(root,user);
+      org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.isolate(twin);
       for(var observation:observations.values())recordInitialSelection(observation);
       when(graph.query(eq(Activity.class),any())).thenAnswer(call ->
           new org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<Activity>(
@@ -105,7 +106,13 @@ class TemporalProcessIntegrationTest {
       });
       when(graph.query(any(KnowledgeGraph.Query.class),eq(Observation.class),any())).thenAnswer(call -> {
         var query=(org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<?>)call.getArgument(0);
-        if (query.getSource()==null && query.getTarget()==null) return List.copyOf(observations.values());
+        if (query.getSource()==null && query.getTarget()==null) {
+          for (var criterion : query.getCriteria())
+            if (!GraphModel.Fields.ID.equals(criterion.field()) || criterion.operator()!=KnowledgeGraph.Query.Operator.EQUALS
+                || !(criterion.argument() instanceof Number)) throw new IllegalArgumentException("Unsupported fixture observation criterion");
+          return observations.values().stream().filter(o -> query.getCriteria().stream()
+              .allMatch(c -> o.getId()==((Number)c.argument()).longValue())).toList();
+        }
         return query.getSource()!=null && query.getRelationship()==GraphModel.Relationship.HAS_OBSERVER
             ? activityObservers.getOrDefault(query.getSource().getId(),List.of()):List.of();
       });
@@ -240,6 +247,7 @@ class TemporalProcessIntegrationTest {
       link(input,output,ProcessPlan.PREREQUISITE);return output;
     }
     void configureScope(ServiceContextScope scope,UserIdentity user) {
+      org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.transparentCycleOverlay(scope);
       // No semantic service is provisioned by this numeric scheduler fixture. In particular,
       // Mockito's generic deep stub is not a Reasoner or a completeness certificate.
       doReturn(null).when(scope).getService(org.integratedmodelling.klab.api.services.Reasoner.class);

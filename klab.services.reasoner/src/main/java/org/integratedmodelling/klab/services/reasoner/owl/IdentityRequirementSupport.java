@@ -66,24 +66,17 @@ public final class IdentityRequirementSupport {
     // This is the canonical annotation, never the effective status of a cached projection.
     if (head.isAbstract()) return true;
     if (!head.is(SemanticType.OBSERVABLE)) return false;
-    var requirements = new LinkedHashSet<OWLClassExpression>();
-    var inheritedIdentities = new LinkedHashSet<OWLClassExpression>();
-    var visited = new HashSet<OWLClass>();
-    var headClass = owl.getOWLClass(head);
-    collect(headClass, requirements, inheritedIdentities, visited);
-    // An asserted walk cannot discover a necessary superclass inferred from, e.g.,
-    // two independently inherited conditions. Never certify absence without closure.
-    if (hasIdentityRequirements()) {
+    final StructuralClosure closure;
+    try {
       synchronized (owl) {
-        if (!owl.hasReasoner()) return true;
-        try {
-          var necessary = new LinkedHashSet<>(owl.getSuperClasses(headClass, false).getFlattened());
-          necessary.addAll(owl.getEquivalentClasses(headClass).getEntities());
-          for (var parent : necessary) if (!parent.isOWLThing() && !parent.isOWLNothing())
-            collect(parent, requirements, inheritedIdentities, visited);
-        } catch (RuntimeException unavailable) { return true; }
+        closure = owl.hasReasoner()
+            ? owl.identityRequirementCache().resolve(owl, owl.getOWLClass(head),
+                () -> structuralClosure(owl.getOWLClass(head)))
+            : structuralClosure(owl.getOWLClass(head));
       }
-    }
+    } catch (RuntimeException unavailable) { return true; }
+    var requirements = closure.requirements();
+    var inheritedIdentities = closure.identities();
     if (requirements.isEmpty()) return false;
     if (SemanticType.isDependent(head.getType()))
       return !bearerSatisfies(head, syntax, requirements);
@@ -97,6 +90,95 @@ public final class IdentityRequirementSupport {
     }
     return requirements.stream().anyMatch(required -> identities.stream()
         .noneMatch(identity -> concrete(identity) && satisfies(identity, required)));
+  }
+
+  /** Pure OWL structure: no concept status, provider answer or eligibility decision is retained. */
+  record StructuralClosure(Set<OWLClassExpression> requirements, Set<OWLClassExpression> identities) {
+    StructuralClosure { requirements = Set.copyOf(requirements); identities = Set.copyOf(identities); }
+  }
+
+  private StructuralClosure structuralClosure(OWLClass head) {
+    var required = new LinkedHashSet<OWLClassExpression>();
+    var identities = new LinkedHashSet<OWLClassExpression>();
+    var visited = new HashSet<OWLClass>();
+    collect(head, required, identities, visited);
+    if (hasIdentityRequirements()) {
+      if (!owl.hasReasoner()) throw new IllegalStateException("Identity hierarchy unavailable");
+      if (owl.isPrecomputed(org.semanticweb.owlapi.reasoner.InferenceType.CLASS_HIERARCHY)) {
+        var parents = new LinkedHashSet<>(owl.getSuperClasses(head, false).getFlattened());
+        parents.addAll(owl.getEquivalentClasses(head).getEntities());
+        for (var parent : parents) if (!parent.isOWLThing() && !parent.isOWLNothing())
+          collect(parent, required, identities, visited);
+      } else {
+        // A new generated class invalidates global classification. Prove only inheritance from
+        // owners capable of contributing a requirement or a concrete inherited identity.
+        for (var owner : owl.reasonerClassSignature()) {
+          if (owner.isOWLThing() || owner.isOWLNothing() || owner.equals(head) || visited.contains(owner)) continue;
+          var ownerRequirements = new LinkedHashSet<OWLClassExpression>();
+          var ownerIdentities = new LinkedHashSet<OWLClassExpression>();
+          collect(owner, ownerRequirements, ownerIdentities, new HashSet<>());
+          if ((!ownerRequirements.isEmpty() || !ownerIdentities.isEmpty())
+              && owl.isEntailed(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(head, owner))) {
+            // Keep the root walk's visited set: independently merging an owner's walk can turn
+            // a harmless cyclic union into a new branch-dependent requirement.
+            collect(owner, required, identities, visited);
+          }
+        }
+      }
+    }
+    return new StructuralClosure(required, identities);
+  }
+
+  /** Owned by one OWL actor, fenced by the same mutation/flush boundaries as structural proofs. */
+  static final class Cache {
+    static final int CAPACITY = 512;
+    private final java.util.concurrent.atomic.AtomicLong revision = new java.util.concurrent.atomic.AtomicLong();
+    private final OWLOntologyChangeListener listener = changes -> changed();
+    private OWLOntologyManager manager;
+    private Object reasoner;
+    private OWLOntology root;
+    private Set<OWLOntology> ontologies;
+    private long retained = -1, hits, computations;
+    private final Map<OWLClass, StructuralClosure> answers = new LinkedHashMap<>(32, .75f, true) {
+      @Override protected boolean removeEldestEntry(Map.Entry<OWLClass, StructuralClosure> entry) {
+        return size() > CAPACITY;
+      }
+    };
+    void changed() { revision.incrementAndGet(); }
+    void reset() {
+      if (manager != null) manager.removeOntologyChangeListener(listener);
+      manager = null; reasoner = null; root = null; ontologies = null;
+      answers.clear(); retained = -1; changed();
+    }
+    private long prepare(OWL owl) {
+      if (manager != owl.manager) { reset(); manager = owl.manager; manager.addOntologyChangeListener(listener); }
+      var current = manager.getOntologies();
+      var backend = owl.structuralReasonerIdentity();
+      var currentRoot = backend instanceof org.semanticweb.owlapi.reasoner.OWLReasoner dl ? dl.getRootOntology() : null;
+      if (ontologies == null || current.size() != ontologies.size()
+          || current.stream().anyMatch(ontology -> !ontologies.contains(ontology))
+          || reasoner != backend || root != currentRoot) {
+        var owned = Collections.newSetFromMap(new IdentityHashMap<OWLOntology, Boolean>());
+        owned.addAll(current); ontologies = owned; reasoner = backend; root = currentRoot; changed();
+      }
+      long now = revision.get();
+      if (retained != now) { answers.clear(); retained = now; }
+      return now;
+    }
+    StructuralClosure resolve(OWL owl, OWLClass head, java.util.function.Supplier<StructuralClosure> compute) {
+      if (!Thread.holdsLock(owl)) throw new IllegalStateException("Identity cache requires the OWL monitor");
+      owl.prepareIdentityHierarchy(); // Flush pending changes before capturing the cache generation.
+      long before = prepare(owl);
+      var cached = answers.get(head);
+      if (cached != null && before == prepare(owl)) { owl.requireAvailableClosure(); hits++; return cached; }
+      computations++;
+      var result = compute.get();
+      if (before != prepare(owl)) throw new ConcurrentModificationException("Identity hierarchy changed during projection");
+      owl.requireAvailableClosure();
+      if (result.requirements().size() + result.identities().size() <= 4096) answers.put(head, result);
+      return result;
+    }
+    Map<String, Long> metrics() { return Map.of("entries", (long) answers.size(), "hits", hits, "computations", computations); }
   }
 
   private boolean bearerSatisfies(Concept head, KimConcept syntax,

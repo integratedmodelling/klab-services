@@ -1,13 +1,5 @@
 package org.integratedmodelling.klab.services.reasoner;
 
-import org.integratedmodelling.common.diagnostics.DocumentValidationTrace;
-import org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime;
-
-import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
-import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
-
-import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
-
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Sets;
@@ -23,6 +15,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.integratedmodelling.common.diagnostics.DocumentValidationTrace;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
@@ -31,19 +24,19 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
 import org.integratedmodelling.common.services.client.ServiceClientCatalog;
-import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
-import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -55,6 +48,8 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -67,13 +62,14 @@ import org.integratedmodelling.klab.runtime.language.SemanticDocumentation;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.configuration.ReasonerConfiguration.ProjectConfiguration;
-import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
-import org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace;
-import org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator;
-import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
-import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
-import org.integratedmodelling.klab.services.reasoner.internal.IngestionNotifications;
+import org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime;
 import org.integratedmodelling.klab.services.reasoner.internal.BeanIngestionPreflight;
+import org.integratedmodelling.klab.services.reasoner.internal.CandidatePublicationCoordinator;
+import org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace;
+import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
+import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
+import org.integratedmodelling.klab.services.reasoner.internal.IngestionNotifications;
+import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.OwlDocumentation;
@@ -89,10 +85,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public <T> T info(
       String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
-    if (candidateRuntime != null && !semanticOnly && infoClass == String.class
-        && (objectClass == KlabAsset.KnowledgeClass.CONCEPT || objectClass == KlabAsset.KnowledgeClass.OBSERVABLE))
-      return candidateRuntime.invoke("info", new Class<?>[]{String.class, KlabAsset.KnowledgeClass.class, Class.class, UserScope.class},
-          new Object[]{urn, objectClass, infoClass, scope});
+    if (candidateRuntime != null
+        && !semanticOnly
+        && infoClass == String.class
+        && (objectClass == KlabAsset.KnowledgeClass.CONCEPT
+            || objectClass == KlabAsset.KnowledgeClass.OBSERVABLE))
+      return candidateRuntime.invoke(
+          "info",
+          new Class<?>[] {
+            String.class, KlabAsset.KnowledgeClass.class, Class.class, UserScope.class
+          },
+          new Object[] {urn, objectClass, infoClass, scope});
     if (infoClass == String.class
         && (objectClass == KlabAsset.KnowledgeClass.CONCEPT
             || objectClass == KlabAsset.KnowledgeClass.OBSERVABLE)) {
@@ -154,9 +157,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   // Changed only under the existing mutation monitor. A generation mismatch hides an old
   // publication during the interval between status settlement and publishing discovery data.
   private volatile long capabilitiesGeneration;
-  private volatile org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot
+  private volatile org.integratedmodelling.klab.services.reasoner.internal
+          .SemanticCapabilitiesSnapshot
       publishedSemanticCapabilities =
-          org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot.initial();
+          org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot
+              .initial();
 
   private record SubsumptionKey(long revision, Concept concept, Concept other) {}
 
@@ -166,40 +171,78 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private final IntelligentMap<Set<Emergence>> emergence;
   private ObservationReasoner observationReasoner;
   private volatile Worldview worldview;
-  private volatile org.integratedmodelling.klab.services.reasoner.internal.AuthoredVocabulary authoredVocabulary;
+  private volatile org.integratedmodelling.klab.services.reasoner.internal.AuthoredVocabulary
+      authoredVocabulary;
+  private volatile org.integratedmodelling.klab.services.reasoner.owl.ConsequenceRuleIndex
+      consequenceRuleIndex;
+  private volatile String consequenceRuleIndexFailure;
   private final org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
       authorityBindings;
 
   @Override
-  public synchronized org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse authorityCodelists(
-      org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest request, Scope scope) {
-      if (candidateRuntime != null && !semanticOnly) {
-          if (request.operation() != org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.LIST)
-            throw new UnsupportedOperationException("Authority ledger changes require authoritative persistence and candidate dependency publication");
-          return candidateRuntime.invoke("authorityCodelists", new Class<?>[] { org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.class, Scope.class }, new Object[] { request, scope });
-      }
-      authorizedAuthority(request.authority(), scope);
+  public synchronized org.integratedmodelling.klab.api.services.reasoner.objects
+          .AuthorityCodelistResponse
+      authorityCodelists(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
+              request,
+          Scope scope) {
+    if (candidateRuntime != null && !semanticOnly) {
+      if (request.operation()
+          != org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
+              .Operation.LIST)
+        throw new UnsupportedOperationException(
+            "Authority ledger changes require authoritative persistence and candidate dependency publication");
+      return candidateRuntime.invoke(
+          "authorityCodelists",
+          new Class<?>[] {
+            org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
+                .class,
+            Scope.class
+          },
+          new Object[] {request, scope});
+    }
+    authorizedAuthority(request.authority(), scope);
     var operation = request.operation();
-    if (operation == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.REVIEW
-        || operation == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.DELETE
-        || operation == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.CREATE
-        || operation == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.UPDATE) {
+    if (operation
+            == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
+                .Operation.REVIEW
+        || operation
+            == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
+                .Operation.DELETE
+        || operation
+            == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
+                .Operation.CREATE
+        || operation
+            == org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
+                .Operation.UPDATE) {
       if (!(scope instanceof org.integratedmodelling.klab.services.scopes.ServiceUserScope user)
-          || !user.getRoles().contains(org.integratedmodelling.klab.services.application.security.Role.ROLE_ADMINISTRATOR))
+          || !user.getRoles()
+              .contains(
+                  org.integratedmodelling.klab.services.application.security.Role
+                      .ROLE_ADMINISTRATOR))
         throw new SecurityException("Codelist review requires an administrator");
     }
-    var result = authorityBindings.codelists(request.authority()).execute(request, scope.getIdentity().getId());
-    if (operation != org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest.Operation.LIST) {
+    var result =
+        authorityBindings
+            .codelists(request.authority())
+            .execute(request, scope.getIdentity().getId());
+    if (operation
+        != org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
+            .Operation.LIST) {
       semanticContentFingerprint = null;
-      concepts.invalidateAll(); observables.invalidateAll(); conceptSyntax.clear();
+      concepts.invalidateAll();
+      observables.invalidateAll();
+      conceptSyntax.clear();
     }
     return result;
   }
 
   @Override
-  public synchronized String configureAuthority(Authority.ConfigurationRequest request, Scope scope) {
+  public synchronized String configureAuthority(
+      Authority.ConfigurationRequest request, Scope scope) {
     if (candidateRuntime != null && !semanticOnly)
-      throw new UnsupportedOperationException("Authority configuration requires a captured, independently owned candidate provider");
+      throw new UnsupportedOperationException(
+          "Authority configuration requires a captured, independently owned candidate provider");
     semanticContentFingerprint = null;
     var result = configureAuthorityBinding(request, scope);
     if (semanticValidationState.ready()) publishSemanticCapabilities();
@@ -209,42 +252,71 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public synchronized Map<String, java.net.URL> getAuthorityDocumentation(
       String authority, String identity, Scope scope) {
-      if (candidateRuntime != null && !semanticOnly)
-          return candidateRuntime.invoke("getAuthorityDocumentation", new Class<?>[] { String.class, String.class, Scope.class }, new Object[] { authority, identity, scope });
-      if (scope == null) throw new KlabValidationException("Authority documentation requires a scope");
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "getAuthorityDocumentation",
+          new Class<?>[] {String.class, String.class, Scope.class},
+          new Object[] {authority, identity, scope});
+    if (scope == null)
+      throw new KlabValidationException("Authority documentation requires a scope");
     return authorityBindings.documentation(authority, identity);
   }
 
   private Worldview.AuthorityBinding authorizedAuthority(String name, Scope scope) {
-    if (scope == null) throw new SecurityException("Authority operations require an authorized scope");
-    var definition = worldview == null ? null : worldview.getAuthorityBindings().stream()
-        .filter(binding -> binding.localId().equals(name)).findFirst().orElse(null);
-    if (definition == null) throw new java.util.NoSuchElementException("Authority is not configured");
+    if (scope == null)
+      throw new SecurityException("Authority operations require an authorized scope");
+    var definition =
+        worldview == null
+            ? null
+            : worldview.getAuthorityBindings().stream()
+                .filter(binding -> binding.localId().equals(name))
+                .findFirst()
+                .orElse(null);
+    if (definition == null)
+      throw new java.util.NoSuchElementException("Authority is not configured");
     if (semanticOnly && !authorityBootstrapActor) {
-      if (!capturedAuthorities.authorized(definition, scope)) throw new SecurityException("Authority component access is not captured");
+      if (!capturedAuthorities.authorized(definition, scope))
+        throw new SecurityException("Authority component access is not captured");
       return definition;
     }
-    var component = getComponentRegistry().getComponents(scope).stream()
-        .filter(candidate -> candidate.id().equals(definition.componentUrn())
-            && candidate.version().equals(definition.componentVersion())).findFirst().orElse(null);
-    if (component == null) throw new java.util.NoSuchElementException("Authority component is unavailable");
+    var component =
+        getComponentRegistry().getComponents(scope).stream()
+            .filter(
+                candidate ->
+                    candidate.id().equals(definition.componentUrn())
+                        && candidate.version().equals(definition.componentVersion()))
+            .findFirst()
+            .orElse(null);
+    if (component == null)
+      throw new java.util.NoSuchElementException("Authority component is unavailable");
     if (component.usageRights() != null && !component.usageRights().checkAuthorization(scope))
       throw new SecurityException("Authority component access denied");
     return definition;
   }
 
   @Override
-  public synchronized org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse searchAuthority(
-      org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request, Scope scope) {
-      if (candidateRuntime != null && !semanticOnly)
-          return candidateRuntime.invoke("searchAuthority", new Class<?>[] { org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest.class, Scope.class }, new Object[] { request, scope });
-      try {
+  public synchronized org.integratedmodelling.klab.api.services.reasoner.objects
+          .AuthoritySearchResponse
+      searchAuthority(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request,
+          Scope scope) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "searchAuthority",
+          new Class<?>[] {
+            org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest.class,
+            Scope.class
+          },
+          new Object[] {request, scope});
+    try {
       var definition = authorizedAuthority(request.authority(), scope);
       return authorityBindings.search(request);
     } catch (java.util.NoSuchElementException e) {
-      return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.failure(
-          org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.Status.UNAVAILABLE,
-          "Authority is not configured");
+      return org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse
+          .failure(
+              org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse
+                  .Status.UNAVAILABLE,
+              "Authority is not configured");
     }
   }
 
@@ -254,17 +326,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var binding = authorityBindings.get(name);
     if (binding == null) throw new KlabValidationException("Authority is not configured");
     final Authority.Identity identity;
-    try { identity = binding.provider().resolveIdentity(binding.id(), code); }
-    catch (RuntimeException e) { throw new KlabValidationException("Authority identity lookup failed"); }
-    if (identity == null || !code.equals(identity.getId()) || (identity.getNotifications() != null
-        && identity.getNotifications().stream().anyMatch(n -> n.getLevel() == Notification.Level.Error)))
-      throw new KlabValidationException("Authority did not resolve the selected canonical identity");
-    String token = org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode(name, code);
+    try {
+      identity = binding.provider().resolveIdentity(binding.id(), code);
+    } catch (RuntimeException e) {
+      throw new KlabValidationException("Authority identity lookup failed");
+    }
+    if (identity == null
+        || !code.equals(identity.getId())
+        || (identity.getNotifications() != null
+            && identity.getNotifications().stream()
+                .anyMatch(n -> n.getLevel() == Notification.Level.Error)))
+      throw new KlabValidationException(
+          "Authority did not resolve the selected canonical identity");
+    String token =
+        org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode(
+            name, code);
     var concept = owl.getConcept(token);
     if (concept == null || !concept.is(SemanticType.IDENTITY) || concept.is(SemanticType.NOTHING))
       throw new KlabValidationException("Authority identity is unavailable");
-    return new SemanticSearchSession.AuthoritySelection(concept, token,
-        authorityBindings.codelists(name).aliases(code));
+    return new SemanticSearchSession.AuthoritySelection(
+        concept, token, authorityBindings.codelists(name).aliases(code));
   }
 
   private static String requestRoot(KimConceptStatement statement) {
@@ -272,35 +353,62 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private String configureAuthorityBinding(Authority.ConfigurationRequest request, Scope scope) {
-    request = org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
-        .forWorldview(request, worldview);
+    request =
+        org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings.forWorldview(
+            request, worldview);
     var root = owl.getConcept(request.rootIdentity());
     if (root == null || !root.is(SemanticType.IDENTITY) || root.is(SemanticType.NOTHING))
       throw new KlabValidationException("Authority bridge root must be a loaded identity concept");
     String urn = (String) request.parameters().get("urn");
     String localName = request.name();
-    var selected = worldview.getAuthorityBindings().stream()
-        .filter(binding -> binding.localId().equals(localName)).findFirst().orElse(null);
-    if (selected == null || !selected.rootIdentity().equals(request.rootIdentity())
-        || !org.integratedmodelling.klab.api.data.Version.splitVersion(urn).getFirst()
+    var selected =
+        worldview.getAuthorityBindings().stream()
+            .filter(binding -> binding.localId().equals(localName))
+            .findFirst()
+            .orElse(null);
+    if (selected == null
+        || !selected.rootIdentity().equals(request.rootIdentity())
+        || !org.integratedmodelling.klab.api.data.Version.splitVersion(urn)
+            .getFirst()
             .equals(selected.provider().urn()))
       throw new KlabValidationException("Authority is not a validated worldview binding");
-    var declared = worldview.allConceptStatements().stream()
-        .filter(statement -> localName.equals(statement.getAuthorityRequired())
-            && requestRoot(statement).equals(selected.rootIdentity())).findFirst().orElseThrow();
-    if (!Objects.equals(declared.getAuthorityParameters().get("codelists"), request.parameters().get("codelists")))
+    var declared =
+        worldview.allConceptStatements().stream()
+            .filter(
+                statement ->
+                    localName.equals(statement.getAuthorityRequired())
+                        && requestRoot(statement).equals(selected.rootIdentity()))
+            .findFirst()
+            .orElseThrow();
+    if (!Objects.equals(
+        declared.getAuthorityParameters().get("codelists"), request.parameters().get("codelists")))
       throw new KlabValidationException("Codelists must match the worldview configuration");
-    if (!Objects.equals(declared.getAuthorityParameters().get("semanticBoundaries"), request.parameters().get("semanticBoundaries")))
-      throw new KlabValidationException("Semantic boundaries must match the worldview configuration");
-    var provider = authorityBootstrapActor ? getComponentRegistry().getAuthority(selected,scope)
-        : semanticOnly ? capturedAuthorities.provider(selected, request, semanticAssets, () -> interactiveAuthoritiesEnabled && semanticProofRestoration.interactiveAllowed())
-        : Utils.Resources.resolveAuthority(selected, scope, this, worldview);
+    if (!Objects.equals(
+        declared.getAuthorityParameters().get("semanticBoundaries"),
+        request.parameters().get("semanticBoundaries")))
+      throw new KlabValidationException(
+          "Semantic boundaries must match the worldview configuration");
+    var provider =
+        authorityBootstrapActor
+            ? capturedAuthorities.supports(selected)
+                ? capturedAuthorities.provider(selected, request, semanticAssets, () -> true)
+                : getComponentRegistry().getAuthority(selected, scope)
+            : semanticOnly
+                ? capturedAuthorities.provider(
+                    selected,
+                    request,
+                    semanticAssets,
+                    () ->
+                        interactiveAuthoritiesEnabled
+                            && semanticProofRestoration.interactiveAllowed())
+                : Utils.Resources.resolveAuthority(selected, scope, this, worldview);
     if (provider == null)
       throw new KlabValidationException("Authority provider is unavailable: " + urn);
     if (request.parameters().get("codelists") instanceof Map<?, ?> names) {
       for (var namespace : names.values())
         if (worldview.getOntologies().stream().anyMatch(o -> o.getUrn().equals(namespace)))
-          throw new KlabValidationException("Codelist namespace collides with an ontology: " + namespace);
+          throw new KlabValidationException(
+              "Codelist namespace collides with an ontology: " + namespace);
     }
     try {
       var configured = authorityBindings.configure(request, provider);
@@ -312,48 +420,72 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       rootOntology.define();
       return configured;
     } catch (RuntimeException failure) {
-      if (authorityBootstrapActor) org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.report(
-          org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.Phase.AUTHORITY_CONFIGURATION,
-          selected.componentUrn()+"@"+selected.componentVersion(),
-          org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.Reason.EXCEPTION,failure);
+      if (authorityBootstrapActor)
+        org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.report(
+            org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.Phase
+                .AUTHORITY_CONFIGURATION,
+            selected.componentUrn() + "@" + selected.componentVersion(),
+            org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics.Reason.EXCEPTION,
+            failure);
       throw failure;
     }
   }
-  private org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog capturedAuthorities =
-      org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.empty();
 
-  public List<org.integratedmodelling.klab.api.services.runtime.extension.Extensions.ComponentDescriptor> capturedAuthorityComponents() {
+  private org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog
+      capturedAuthorities =
+          org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.empty();
+
+  public List<
+          org.integratedmodelling.klab.api.services.runtime.extension.Extensions
+              .ComponentDescriptor>
+      capturedAuthorityComponents() {
     return capturedAuthorities.components();
   }
+
   private java.nio.file.Path semanticAssets;
   private volatile boolean interactiveAuthoritiesEnabled;
-  private final org.integratedmodelling.klab.services.reasoner.internal.SemanticProofRestoration semanticProofRestoration =
-      new org.integratedmodelling.klab.services.reasoner.internal.SemanticProofRestoration();
+  private final org.integratedmodelling.klab.services.reasoner.internal.SemanticProofRestoration
+      semanticProofRestoration =
+          new org.integratedmodelling.klab.services.reasoner.internal.SemanticProofRestoration();
 
   /** Called under an accepted environment lease, never during candidate compilation. */
   public void enableInteractiveAuthorities() {
-    if (!semanticOnly || authorityBootstrapActor) throw new IllegalStateException("Not an accepted semantic actor");
+    if (!semanticOnly || authorityBootstrapActor)
+      throw new IllegalStateException("Not an accepted semantic actor");
     interactiveAuthoritiesEnabled = true;
   }
+
   private volatile boolean knowledgeReady;
   private final org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState
-      semanticValidationState = new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
-  private org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver authorityIdentityResolver;
+      semanticValidationState =
+          new org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState();
+  private org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver
+      authorityIdentityResolver;
 
-  @Override public synchronized Concept resolveAuthorityHierarchy(String authority, String code, Scope scope) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("resolveAuthorityHierarchy", new Class<?>[] { String.class, String.class, Scope.class }, new Object[] { authority, code, scope });
-  authorizedAuthority(authority, scope);
-    org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode(authority, code);
+  @Override
+  public synchronized Concept resolveAuthorityHierarchy(
+      String authority, String code, Scope scope) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "resolveAuthorityHierarchy",
+          new Class<?>[] {String.class, String.class, Scope.class},
+          new Object[] {authority, code, scope});
+    authorizedAuthority(authority, scope);
+    org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityIdentitySyntax.encode(
+        authority, code);
     return authorityIdentityResolver.resolve(authority, code, true);
   }
+
   /** Internal matching hook; public semanticDistance routes retain contextual and head checks. */
   public Authority.SemanticDistance authoritySemanticDistance(Concept target, Concept candidate) {
-    return authorityIdentityResolver == null ? Authority.SemanticDistance.unsupported()
+    return authorityIdentityResolver == null
+        ? Authority.SemanticDistance.unsupported()
         : authorityIdentityResolver.semanticDistance(target, candidate);
   }
 
-  public boolean hasConfiguredAuthorities() { return !authorityBindings.snapshot().isEmpty(); }
+  public boolean hasConfiguredAuthorities() {
+    return !authorityBindings.snapshot().isEmpty();
+  }
 
   private volatile List<Notification> worldviewLoadDiagnostics = List.of();
   private SyntacticMatcher syntacticMatcher;
@@ -367,11 +499,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private final Cache<String, Observable> observables =
       Caffeine.newBuilder().maximumSize(5_000).recordStats().build();
 
-  private final org.integratedmodelling.klab.services.reasoner.internal.ConceptSyntaxCache conceptSyntax =
-      new org.integratedmodelling.klab.services.reasoner.internal.ConceptSyntaxCache();
+  private final org.integratedmodelling.klab.services.reasoner.internal.ConceptSyntaxCache
+      conceptSyntax =
+          new org.integratedmodelling.klab.services.reasoner.internal.ConceptSyntaxCache();
 
-  public org.integratedmodelling.klab.services.reasoner.internal.ConceptSyntaxCache conceptSyntaxCache() {
-    if (candidateRuntime != null && !semanticOnly) throw new IllegalStateException("Compiler state requires a private semantic actor");
+  public org.integratedmodelling.klab.services.reasoner.internal.ConceptSyntaxCache
+      conceptSyntaxCache() {
+    if (candidateRuntime != null && !semanticOnly)
+      throw new IllegalStateException("Compiler state requires a private semantic actor");
     return conceptSyntax;
   }
 
@@ -385,41 +520,68 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * configurable.
    */
   private record OwnedSemanticSession(Object owner, SemanticSearchSession session) {}
+
   private Cache<Integer, OwnedSemanticSession> semanticExpressions =
       Caffeine.newBuilder().maximumSize(1000).expireAfterAccess(Duration.ofMinutes(10)).build();
 
   private final OWL owl;
   private final boolean semanticOnly;
   private volatile String semanticContentFingerprint;
+
   /** Factory seal of the accepted input; editor/private mutations must never stamp receipts. */
   public void sealSemanticContent(String fingerprint) {
-    if (!semanticOnly) throw new IllegalStateException("Only private captured actors have content identity");
+    if (!semanticOnly)
+      throw new IllegalStateException("Only private captured actors have content identity");
     semanticContentFingerprint = fingerprint;
   }
-  public String semanticContentFingerprint() { return semanticContentFingerprint; }
-  public Object semanticCodelists() { return authorityBindings.semanticCodelists(); }
 
-  private final String semanticSessionId=java.util.UUID.randomUUID().toString();
-  private record PortableCapabilityIdentity(ReasonerService actor, String serviceId, long generation,String sessionId,
+  public String semanticContentFingerprint() {
+    return semanticContentFingerprint;
+  }
+
+  public Object semanticCodelists() {
+    return authorityBindings.semanticCodelists();
+  }
+
+  private final String semanticSessionId = java.util.UUID.randomUUID().toString();
+
+  private record PortableCapabilityIdentity(
+      ReasonerService actor,
+      String serviceId,
+      long generation,
+      String sessionId,
       PortableCapabilityIdentity previous) {}
-  private static final ThreadLocal<PortableCapabilityIdentity> portableCapabilityIdentity = new ThreadLocal<>();
 
-  /** Internal accepted-boundary scope; private mutation revisions continue to own semantic caches. */
-  public interface PortableCapabilityLease extends AutoCloseable { @Override void close(); }
+  private static final ThreadLocal<PortableCapabilityIdentity> portableCapabilityIdentity =
+      new ThreadLocal<>();
+
+  /**
+   * Internal accepted-boundary scope; private mutation revisions continue to own semantic caches.
+   */
+  public interface PortableCapabilityLease extends AutoCloseable {
+    @Override
+    void close();
+  }
 
   public PortableCapabilityLease portableCapabilities(String serviceId, long generation) {
-    return portableCapabilities(serviceId,generation,semanticSessionId);
+    return portableCapabilities(serviceId, generation, semanticSessionId);
   }
-  public PortableCapabilityLease portableCapabilities(String serviceId,long generation,String sessionId) {
-    if(sessionId==null||sessionId.isBlank())throw new IllegalArgumentException("Semantic owner session required");
+
+  public PortableCapabilityLease portableCapabilities(
+      String serviceId, long generation, String sessionId) {
+    if (sessionId == null || sessionId.isBlank())
+      throw new IllegalArgumentException("Semantic owner session required");
     if (!semanticOnly || serviceId == null || serviceId.isBlank() || generation <= 0)
-      throw new IllegalArgumentException("Portable capabilities require a private actor and an accepted deployment generation");
+      throw new IllegalArgumentException(
+          "Portable capabilities require a private actor and an accepted deployment generation");
     var previous = portableCapabilityIdentity.get();
-    var identity = new PortableCapabilityIdentity(this, serviceId, generation,sessionId, previous);
+    var identity = new PortableCapabilityIdentity(this, serviceId, generation, sessionId, previous);
     portableCapabilityIdentity.set(identity);
     return new PortableCapabilityLease() {
       private boolean closed;
-      @Override public void close() {
+
+      @Override
+      public void close() {
         if (closed) return;
         if (portableCapabilityIdentity.get() != identity)
           throw new IllegalStateException("Portable capability scopes must close in lexical order");
@@ -431,45 +593,126 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private PortableCapabilityIdentity portableCapabilities() {
-    for (var current = portableCapabilityIdentity.get(); current != null; current = current.previous())
-      if (current.actor() == this) return current;
+    for (var current = portableCapabilityIdentity.get();
+        current != null;
+        current = current.previous()) if (current.actor() == this) return current;
     return null;
   }
+
   private boolean authorityBootstrapActor;
-  private List<Worldview.AuthorityBinding> bootstrapDisposalBindings=List.of();
+  private List<Worldview.AuthorityBinding> bootstrapDisposalBindings = List.of();
+
   public void bootstrapDisposalBindings(Worldview source) {
     if (!authorityBootstrapActor) throw new IllegalStateException("Not a bootstrap actor");
-    bootstrapDisposalBindings=List.copyOf(source.getAuthorityBindings());
+    bootstrapDisposalBindings = List.copyOf(source.getAuthorityBindings());
   }
-  private volatile org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime candidateRuntime;
 
-  public org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime candidateRuntime() { return candidateRuntime; }
+  private volatile org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime
+      candidateRuntime;
+
+  public org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime
+      candidateRuntime() {
+    return candidateRuntime;
+  }
+
+  private org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime
+      cycleRuntime() {
+    if (candidateRuntime == null || semanticOnly)
+      throw new IllegalStateException(
+          "Retained semantic cycles require the deployed publication owner");
+    return candidateRuntime;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding
+      beginSemanticCycle(String runtimeServiceId, String contextId, String cycleId, Scope scope) {
+    return beginSemanticCycleResult(runtimeServiceId, contextId, cycleId, scope).requireBinding();
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult
+      beginSemanticCycleResult(
+          String runtimeServiceId, String contextId, String cycleId, Scope scope) {
+    return cycleRuntime()
+        .beginCycleResult(
+            new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+                runtimeServiceId, contextId, cycleId, null),
+            scope);
+  }
+
+  @Override
+  public void releaseSemanticCycle(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,
+      String contextId,
+      String cycleId,
+      Scope scope) {
+    cycleRuntime()
+        .releaseCycle(
+            new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+                runtimeServiceId, contextId, cycleId, binding),
+            scope);
+  }
+
+  @Override
+  public Reasoner bindSemanticCycle(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,
+      String contextId,
+      String cycleId,
+      Scope scope) {
+    var runtime = cycleRuntime();
+    var request =
+        new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+            runtimeServiceId, contextId, cycleId, binding);
+    return org.integratedmodelling.common.services.client.SemanticCycleFacade.create(
+        this, request, scope, runtime::invokeCycle);
+  }
+
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleResult
+      invokeSemanticCycle(
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleInvocation
+              request,
+          Scope scope) {
+    return cycleRuntime().invokeCycle(request, scope);
+  }
+
   public synchronized void enableCandidatePublication(
       org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory factory) {
-    if (candidateRuntime != null) throw new IllegalStateException("Candidate publication is already configured");
-    candidateRuntime = new org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime(factory, serviceId());
+    if (candidateRuntime != null)
+      throw new IllegalStateException("Candidate publication is already configured");
+    candidateRuntime =
+        new org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime(
+            factory, serviceId());
   }
-  public org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot semanticCapabilitiesSnapshot() {
+
+  public org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot
+      semanticCapabilitiesSnapshot() {
     return publishedSemanticCapabilities;
   }
+
   private final String hardwareSignature = Utils.Names.getHardwareId();
   static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
 
   public boolean derived(Semantics c) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("derived", new Class<?>[] { Semantics.class }, new Object[] { c });
-  return internalConceptPattern.matcher(c.getName()).matches();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke("derived", new Class<?>[] {Semantics.class}, new Object[] {c});
+    return internalConceptPattern.matcher(c.getName()).matches();
   }
 
   public OWL owl() {
-    if (candidateRuntime != null && !semanticOnly) throw new IllegalStateException("OWL access requires an accepted semantic lease");
+    if (candidateRuntime != null && !semanticOnly)
+      throw new IllegalStateException("OWL access requires an accepted semantic lease");
     return owl;
   }
 
-  public boolean isSemanticExecution() { return semanticOnly; }
+  public boolean isSemanticExecution() {
+    return semanticOnly;
+  }
 
   public long knowledgeRevision() {
-    if (candidateRuntime != null && !semanticOnly) return candidateRuntime.status().acceptedGeneration();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.status().acceptedGeneration();
     return knowledgeRevision.get();
   }
 
@@ -479,61 +722,102 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   @Override
-  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
-      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request, Scope scope) {
-    if(request==null) throw new IllegalArgumentException("Semantic dependency request required");
-    if(candidateRuntime!=null && !semanticOnly) {
-      try { return candidateRuntime.invoke("semanticDependencies",new Class<?>[]{
-          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest.class,Scope.class},
-          new Object[]{request,scope}); }
-      catch(IllegalStateException unavailable) {
-        return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(request,
-            "Accepted semantic closure changed or is unavailable");
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+      semanticDependencies(
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest
+              request,
+          Scope scope) {
+    if (request == null) throw new IllegalArgumentException("Semantic dependency request required");
+    if (candidateRuntime != null && !semanticOnly) {
+      try {
+        return candidateRuntime.invoke(
+            "semanticDependencies",
+            new Class<?>[] {
+              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest
+                  .class,
+              Scope.class
+            },
+            new Object[] {request, scope});
+      } catch (IllegalStateException unavailable) {
+        return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+            .unknown(request, "Accepted semantic closure changed or is unavailable");
       }
     }
-    var capability=capabilities(scope);
-    var id=capability.getServiceId(); var generation=capability.getKnowledgeRevision();
-    var base=capability.getSemanticContentFingerprint();
-    var status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.COMPLETE;
-    String reason=null;
-    var uses=new ArrayList<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.AuthorityUse>();
-    if(!org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(base)
-        || request.expectedServiceId()==null || request.expectedKnowledgeRevision()<0
-        || !org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(request.expectedBaseFingerprint())) {
-      status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN;
-      reason="Scoped accepted recipe and expected semantic identity are required";
-    } else if(!Objects.equals(id,request.expectedServiceId()) || generation!=request.expectedKnowledgeRevision()
-        || !Objects.equals(base,request.expectedBaseFingerprint())) {
-      status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.STALE;
-      reason="Semantic dependency request targets a different accepted generation or recipe";
+    var capability = capabilities(scope);
+    var id = capability.getServiceId();
+    var generation = capability.getKnowledgeRevision();
+    var base = capability.getSemanticContentFingerprint();
+    var status =
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status
+            .COMPLETE;
+    String reason = null;
+    var uses =
+        new ArrayList<
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+                .AuthorityUse>();
+    if (!org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(base)
+        || request.expectedServiceId() == null
+        || request.expectedKnowledgeRevision() < 0
+        || !org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(
+            request.expectedBaseFingerprint())) {
+      status =
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+              .Status.UNKNOWN;
+      reason = "Scoped accepted recipe and expected semantic identity are required";
+    } else if (!Objects.equals(id, request.expectedServiceId())
+        || generation != request.expectedKnowledgeRevision()
+        || !Objects.equals(base, request.expectedBaseFingerprint())) {
+      status =
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+              .Status.STALE;
+      reason = "Semantic dependency request targets a different accepted generation or recipe";
     } else {
       // Derived expression registry entries are process-local. Recompile canonical meanings
       // under this accepted lease before proving closure; do not fetch unseen mutable answers.
-      var restorationFailure=semanticProofRestoration.restore(request.obligations(),this::resolveConcept);
-      if(restorationFailure!=null) {
-        status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN;
-        reason=restorationFailure;
+      var restorationFailure =
+          semanticProofRestoration.restore(request.obligations(), this::resolveConcept);
+      if (restorationFailure != null) {
+        status =
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+                .Status.UNKNOWN;
+        reason = restorationFailure;
       } else {
-      var closure=new org.integratedmodelling.klab.services.reasoner.owl.AuthorityDependencySupport(owl)
-          .closure(request.obligations(),authorityBindings.snapshot(),base);
-      if(!closure.known()) {
-        status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN;
-        reason=closure.reason();
-      } else {
-        for(var authority:closure.authorities()) {
-          var binding=authorizedAuthority(authority,scope);
-          var proof=capturedAuthorities.dependencyProof(binding); uses.add(proof);
-          if(proof.kind()==org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Kind.UNVERSIONED) {
-            status=org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.REVALIDATION_REQUIRED;
-            reason="Affected mutable authority requires independently captured current semantic revalidation; known identity cache is not refresh evidence";
+        var closure =
+            new org.integratedmodelling.klab.services.reasoner.owl.AuthorityDependencySupport(owl)
+                .closure(request.obligations(), authorityBindings.snapshot(), base);
+        if (!closure.known()) {
+          status =
+              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+                  .Status.UNKNOWN;
+          reason = closure.reason();
+        } else {
+          for (var authority : closure.authorities()) {
+            var binding = authorizedAuthority(authority, scope);
+            var proof = capturedAuthorities.dependencyProof(binding);
+            uses.add(proof);
+            if (proof.kind()
+                == org.integratedmodelling.klab.api.services.reasoner.objects
+                    .SemanticDependencyWitness.Kind.UNVERSIONED) {
+              status =
+                  org.integratedmodelling.klab.api.services.reasoner.objects
+                      .SemanticDependencyWitness.Status.REVALIDATION_REQUIRED;
+              reason =
+                  "Affected mutable authority requires independently captured current semantic revalidation; known identity cache is not refresh evidence";
+            }
           }
         }
       }
     }
-    }
     return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness(
-        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.VERSION,status,id,generation,
-        base,request.inputHash(),uses,reason);
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+            .VERSION,
+        status,
+        id,
+        generation,
+        base,
+        request.inputHash(),
+        uses,
+        reason);
   }
 
   @Override
@@ -552,7 +836,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return validateDocumentPreflight(request, scope, response);
     } catch (org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException e) {
       response.setStatus(SemanticValidationResponse.Status.UNAVAILABLE);
-      response.setReason("Semantic validation requires an available Resources service: " + e.getMessage());
+      response.setReason(
+          "Semantic validation requires an available Resources service: " + e.getMessage());
       response.addDocumentDiagnostic(request, Notification.Level.Warning);
     } catch (RuntimeException e) {
       response.setStatus(SemanticValidationResponse.Status.FAILED);
@@ -578,20 +863,31 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var document = request.document();
     // Project type is authoritative Resources metadata. Reject unsupported .kwv documents before
     // attempting a worldview repair: an unchanged adopted worldview cannot ever admit them.
-    if (document instanceof KimOntology ontology && scope instanceof UserScope userScope
-        && document.getProjectName() != null && !document.getProjectName().isBlank()) {
+    if (document instanceof KimOntology ontology
+        && scope instanceof UserScope userScope
+        && document.getProjectName() != null
+        && !document.getProjectName().isBlank()) {
       var resources = scope.getService(ResourcesService.class);
-      var project = resources == null ? null : resources.retrieve(document.getProjectName(),
-          org.integratedmodelling.klab.api.knowledge.organization.Project.class, userScope);
-      if (project != null && Objects.equals(project.getUrn(), document.getProjectName())
+      var project =
+          resources == null
+              ? null
+              : resources.retrieve(
+                  document.getProjectName(),
+                  org.integratedmodelling.klab.api.knowledge.organization.Project.class,
+                  userScope);
+      if (project != null
+          && Objects.equals(project.getUrn(), document.getProjectName())
           && project.getManifest() != null
           && !org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy
               .definesWorldview(project.getManifest())) {
         response.setStatus(SemanticValidationResponse.Status.COMPLETE);
         response.setReason("Ontology validation is blocked by the document's project type");
         response.getNotifications().addAll(document.getNotifications());
-        response.getNotifications().add(
-            org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy.diagnostic(ontology));
+        response
+            .getNotifications()
+            .add(
+                org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy
+                    .diagnostic(ontology));
         return response;
       }
     }
@@ -603,10 +899,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return response;
     }
     if (document instanceof KimOntology ontology
-        && org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValues(ontology)) {
+        && org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport
+            .hasDeferredValues(ontology)) {
       response.setStatus(SemanticValidationResponse.Status.UNAVAILABLE);
-      response.setReason("DESCRIPTION_VALUE_UNRESOLVED: describes-as source is retained for authoring; "
-          + "typed characterization validity and value matching cannot yet be certified");
+      response.setReason(
+          "DESCRIPTION_VALUE_UNRESOLVED: describes-as source is retained for authoring; "
+              + "typed characterization validity and value matching cannot yet be certified");
       response.addDocumentDiagnostic(request, Notification.Level.Warning);
       return response;
     }
@@ -638,20 +936,37 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
     }
     if (candidateRuntime != null && !semanticOnly) {
-      if (document instanceof KimOntology && scope instanceof UserScope userScope
+      if (document instanceof KimOntology
+          && scope instanceof UserScope userScope
           && response.getSourceHash() != null
-          && !response.getSourceHash().equals(candidateRuntime.submittedSources().get(
-              org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.sourceKey(document)))) {
+          && !response
+              .getSourceHash()
+              .equals(
+                  candidateRuntime
+                      .submittedSources()
+                      .get(
+                          org.integratedmodelling.klab.services.reasoner.internal
+                              .SemanticEnvironmentFactory.sourceKey(document)))) {
         var resources = userScope.getService(ResourcesService.class);
         var saved = resources.retrieve(document.getUrn(), KimOntology.class, userScope);
-        if (saved != null && Objects.equals(response.getSourceHash(), SemanticValidationRequest.sourceHash(saved.getSourceCode()))
+        if (saved != null
+            && Objects.equals(
+                response.getSourceHash(),
+                SemanticValidationRequest.sourceHash(saved.getSourceCode()))
             && worldview != null) {
           var complete = resources.retrieve(worldview.getUrn(), Worldview.class, userScope);
           if (complete != null) {
-            if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
-                org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.SAVED_SOURCE_REPAIR,
-                candidateRuntime.status().inputGeneration(), -1, -1, response.getSourceHash(), null,
-                org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER);
+            if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled())
+              org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+                  org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event
+                      .SAVED_SOURCE_REPAIR,
+                  candidateRuntime.status().inputGeneration(),
+                  -1,
+                  -1,
+                  response.getSourceHash(),
+                  null,
+                  org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason
+                      .USER);
             var admission = loadKnowledge(complete, scope);
             if (Utils.Resources.hasErrors(admission)) {
               response.getNotifications().addAll(admission.getNotifications());
@@ -663,7 +978,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           }
         }
       }
-      return candidateRuntime.validate(request, response,scope);
+      return candidateRuntime.validate(request, response, scope);
     }
     if ((semanticValidationState != null && semanticValidationState.loading())
         || !knowledgeReady
@@ -718,8 +1033,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 loadedOntologyDiagnostics.getOrDefault(document.getUrn(), List.of()).stream()
                     .filter(
                         notification ->
-                            notification.getLevel().severity
-                                >= Notification.Level.Error.severity)
+                            notification.getLevel().severity >= Notification.Level.Error.severity)
                     .toList());
         if (Utils.Notifications.hasErrors(response.getNotifications())) {
           response.setStatus(SemanticValidationResponse.Status.COMPLETE);
@@ -732,28 +1046,49 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         response.setReason("Semantic validation requires a completed knowledge update");
         return response;
       }
-      var validator=new org.integratedmodelling.klab.services.reasoner.internal.DocumentSemanticValidator(
-          this,request.isExecutableModels(),request.isClassifierPreparableDependencies(), request.getExecutionContext(),request.getPreparableMemberQualityDependencies());
+      var validator =
+          new org.integratedmodelling.klab.services.reasoner.internal.DocumentSemanticValidator(
+              this,
+              request.isExecutableModels(),
+              request.isClassifierPreparableDependencies(),
+              request.getExecutionContext(),
+              request.getPreparableMemberQualityDependencies());
       response.getNotifications().addAll(validator.validate(document));
-      response.getPendingClassifierDependencies().addAll(validator.getPendingClassifierDependencies());
-      response.getPendingMemberQualityDependencies().addAll(validator.getPendingMemberQualityDependencies());
+      response
+          .getPendingClassifierDependencies()
+          .addAll(validator.getPendingClassifierDependencies());
+      response
+          .getPendingMemberQualityDependencies()
+          .addAll(validator.getPendingMemberQualityDependencies());
       response.getConditionalModelContexts().addAll(validator.getConditionalModelContexts());
       response.getPendingModelContexts().addAll(validator.getPendingModelContexts());
       response.setSemanticObligations(validator.getSemanticObligations());
       response.setSemanticObligationsComplete(validator.isSemanticObligationsComplete());
       response.setSourceSemanticsComplete(validator.isSourceSemanticsComplete());
-      var capabilities=capabilities(scope);
-      var dependencyRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
-          capabilities.getServiceId(),capabilities.getKnowledgeRevision(),capabilities.getSemanticContentFingerprint(),
-          validator.getSemanticObligations());
+      var capabilities = capabilities(scope);
+      var dependencyRequest =
+          new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+              capabilities.getServiceId(),
+              capabilities.getKnowledgeRevision(),
+              capabilities.getSemanticContentFingerprint(),
+              validator.getSemanticObligations());
       response.setSemanticContentFingerprint(capabilities.getSemanticContentFingerprint());
       response.setSemanticSessionId(capabilities.getSemanticSessionId());
-      try {response.setSemanticWitness(validator.isSemanticObligationsComplete()?semanticDependencies(dependencyRequest,scope)
-          :org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(dependencyRequest,
-              "Source contains unaccounted or invalid semantic expressions"));}
-      catch(SecurityException denied) {response.setSemanticWitness(
-          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(dependencyRequest,
-              "Authority dependency access is not authorized for this validation scope"));}
+      try {
+        response.setSemanticWitness(
+            validator.isSemanticObligationsComplete()
+                ? semanticDependencies(dependencyRequest, scope)
+                : org.integratedmodelling.klab.api.services.reasoner.objects
+                    .SemanticDependencyWitness.unknown(
+                    dependencyRequest,
+                    "Source contains unaccounted or invalid semantic expressions"));
+      } catch (SecurityException denied) {
+        response.setSemanticWitness(
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+                .unknown(
+                    dependencyRequest,
+                    "Authority dependency access is not authorized for this validation scope"));
+      }
       response.setStatus(SemanticValidationResponse.Status.COMPLETE);
     } catch (RuntimeException e) {
       response.setStatus(SemanticValidationResponse.Status.FAILED);
@@ -825,7 +1160,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return true;
   }
 
-  /** Derived closure changes invalidate queries without changing the accepted knowledge revision. */
+  /**
+   * Derived closure changes invalidate queries without changing the accepted knowledge revision.
+   */
   public void derivedRefinementsChanged() {
     if (semanticExpressions != null) semanticExpressions.invalidateAll();
     if (concepts != null) concepts.invalidateAll();
@@ -836,23 +1173,28 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private void invalidateSemanticCaches() {
-    try { if (owl != null) owl.monotoneRefinements().reset(true); }
-    finally {
-      knowledgeRevision.incrementAndGet();derivedRefinementsChanged();conceptSyntax.clear();
+    try {
+      if (owl != null) owl.monotoneRefinements().reset(true);
+    } finally {
+      knowledgeRevision.incrementAndGet();
+      derivedRefinementsChanged();
+      conceptSyntax.clear();
     }
   }
 
   private void authorityKnowledgeChanged() {
-    boolean retracted=false;
+    boolean retracted = false;
     try {
       if (owl != null) owl.monotoneRefinements().reset(false);
-      retracted=true;
+      retracted = true;
     } finally {
-      knowledgeRevision.incrementAndGet();derivedRefinementsChanged();conceptSyntax.clear();
-      if(retracted) semanticValidationState.enriched(knowledgeRevision());
+      knowledgeRevision.incrementAndGet();
+      derivedRefinementsChanged();
+      conceptSyntax.clear();
+      if (retracted) semanticValidationState.enriched(knowledgeRevision());
       else {
-        knowledgeReady=false;
-        semanticValidationState.settle(knowledgeRevision(),false);
+        knowledgeReady = false;
+        semanticValidationState.settle(knowledgeRevision(), false);
       }
     }
   }
@@ -962,8 +1304,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public ReasonerService(ServiceScope scope, ServiceStartupOptions options) {
     super(scope, Type.REASONER, options);
     this.semanticOnly = false;
-    this.authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
-        BaseService.getConfigurationDirectory(options).toPath().resolve("authority-cache"));
+    this.authorityBindings =
+        new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
+            BaseService.getConfigurationDirectory(options).toPath().resolve("authority-cache"));
     this.owl = new OWL(scope);
     initializeAuthorityIdentityResolver();
     this.indexer = new Indexer(scope);
@@ -973,84 +1316,133 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     getComponentRegistry()
         .initializeComponents(getConfigurationSubdirectory(options, "components"));
     ServiceConfiguration.INSTANCE.setMainService(this);
+    ((SettingsImpl) settings())
+        .setExecutionHandler(Setting.RELOAD_WORLDVIEW, request -> reloadWorldview());
   }
 
   void initializeAuthorityIdentityResolver() {
-    this.authorityIdentityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
-        this.owl, authorityBindings, this::authorityKnowledgeChanged);
+    this.authorityIdentityResolver =
+        new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
+            this.owl, authorityBindings, this::authorityKnowledgeChanged);
     this.owl.setAuthorityResolver(authorityIdentityResolver::resolve);
   }
 
   /** Private compiler actor: owns semantic state, never a deployment or registered main service. */
   public ReasonerService(
       org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
-      java.nio.file.Path privateKnowledge, java.nio.file.Path privateState) {
-    this(scope, privateKnowledge, privateState,
+      java.nio.file.Path privateKnowledge,
+      java.nio.file.Path privateState) {
+    this(
+        scope,
+        privateKnowledge,
+        privateState,
         org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.empty());
   }
+
   public ReasonerService(
       org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
-      java.nio.file.Path privateKnowledge, java.nio.file.Path privateState,
-      org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog authorities) {
+      java.nio.file.Path privateKnowledge,
+      java.nio.file.Path privateState,
+      org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog
+          authorities) {
     this(scope, privateKnowledge, privateState, authorities, false);
   }
+
   public ReasonerService(
       org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
-      java.nio.file.Path privateKnowledge, java.nio.file.Path privateState,
+      java.nio.file.Path privateKnowledge,
+      java.nio.file.Path privateState,
       org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog authorities,
       boolean authorityBootstrapActor) {
-    super(scope, Type.REASONER,
+    super(
+        scope,
+        Type.REASONER,
         new org.integratedmodelling.klab.services.reasoner.internal.SemanticExecutionSettings(),
         semanticDisplayUrl());
     this.semanticOnly = true;
     this.authorityBootstrapActor = authorityBootstrapActor;
-    this.capturedAuthorities = Objects.requireNonNull(authorities); this.semanticAssets = privateState;
+    this.capturedAuthorities = Objects.requireNonNull(authorities);
+    this.semanticAssets = privateState;
     OWL ownedOwl = null;
     try {
-    this.authorityBindings = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
-        privateState.resolve("authority-cache"));
-    this.owl = ownedOwl = new OWL(scope, privateKnowledge.toFile());
-    this.authorityIdentityResolver = new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
-        this.owl, authorityBindings, this::invalidateSemanticCaches);
-    this.owl.setAuthorityResolver((authority, code) -> {
-      // OWL consults this callback for ordinary namespaces too. Their absence is local,
-      // while an authority lookup must never fall back to a deployment provider.
-      if (!Character.isUpperCase(authority.charAt(0)) && authorityBindings.find(authority) == null
-          && authorityBindings.alias(authority, code) == null) return null;
-      if (authorityBindings.find(authority) == null && authorityBindings.alias(authority, code) == null)
-        throw new UnsupportedOperationException("CANDIDATE_ISOLATION_UNSUPPORTED: authority binding is not captured: " + authority);
-      return authorityIdentityResolver.resolve(authority, code);
-    });
-    this.indexer = new Indexer(scope);
-    this.emergence = new IntelligentMap<>(scope);
-    this.configuration.setServiceId(UUID.randomUUID().toString());
+      this.authorityBindings =
+          new org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings(
+              privateState.resolve("authority-cache"));
+      this.owl = ownedOwl = new OWL(scope, privateKnowledge.toFile());
+      this.authorityIdentityResolver =
+          new org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver(
+              this.owl, authorityBindings, this::invalidateSemanticCaches);
+      this.owl.setAuthorityResolver(
+          (authority, code) -> {
+            // OWL consults this callback for ordinary namespaces too. Their absence is local,
+            // while an authority lookup must never fall back to a deployment provider.
+            if (!Character.isUpperCase(authority.charAt(0))
+                && authorityBindings.find(authority) == null
+                && authorityBindings.alias(authority, code) == null) return null;
+            if (authorityBindings.find(authority) == null
+                && authorityBindings.alias(authority, code) == null)
+              throw new UnsupportedOperationException(
+                  "CANDIDATE_ISOLATION_UNSUPPORTED: authority binding is not captured: "
+                      + authority);
+            return authorityIdentityResolver.resolve(authority, code);
+          });
+      this.indexer = new Indexer(scope);
+      this.emergence = new IntelligentMap<>(scope);
+      this.configuration.setServiceId(UUID.randomUUID().toString());
       if (authorityBootstrapActor) {
-        startupOptions.setUpdateComponents(false); startupOptions.setAutoUpdateComponents(false);
-        try { setOwnedBootstrapRegistry(privateState.resolve("components")); }
-        catch (java.io.IOException failure) { throw new IllegalStateException("Cannot create owned provider registry", failure); }
+        startupOptions.setUpdateComponents(false);
+        startupOptions.setAutoUpdateComponents(false);
+        try {
+          setOwnedBootstrapRegistry(privateState.resolve("components"));
+        } catch (java.io.IOException failure) {
+          throw new IllegalStateException("Cannot create owned provider registry", failure);
+        }
       }
       scope.bind(this);
       // This overload owns its matcher/strategies without loading deployment extensions.
-      this.observationReasoner = new ObservationReasoner((Reasoner)this, this::declareObservable);
+      this.observationReasoner = new ObservationReasoner((Reasoner) this, this::declareObservable);
       this.syntacticMatcher = new SyntacticMatcher(this);
       this.semanticMatcher = new SemanticMatcher(this);
     } catch (RuntimeException | Error failure) {
-      try { if (indexer != null) indexer.ensureClosed(); }
-      catch (RuntimeException cleanup) { failure.addSuppressed(cleanup); }
-      try { if (ownedOwl != null) ownedOwl.reset(); }
-      catch (RuntimeException cleanup) { failure.addSuppressed(cleanup); }
-      finally { scope.close(); closeSemanticExecutor(); }
+      try {
+        if (indexer != null) indexer.ensureClosed();
+      } catch (RuntimeException cleanup) {
+        failure.addSuppressed(cleanup);
+      }
+      try {
+        if (ownedOwl != null) ownedOwl.reset();
+      } catch (RuntimeException cleanup) {
+        failure.addSuppressed(cleanup);
+      } finally {
+        scope.close();
+        closeSemanticExecutor();
+      }
       throw failure;
     }
   }
 
   private static java.net.URL semanticDisplayUrl() {
-    try { return java.net.URI.create("http://127.0.0.1/candidate").toURL(); }
-    catch (java.net.MalformedURLException e) { throw new IllegalStateException(e); }
+    try {
+      return java.net.URI.create("http://127.0.0.1/candidate").toURL();
+    } catch (java.net.MalformedURLException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
-  public Map<String, Long> successfulAuthorityConfigurations() { return authorityBindings.codelistRevisions(); }
-  public Map<String, org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot> configuredAuthoritySnapshots() { return authorityBindings.configuredSnapshots(); }
+  public Map<String, Long> successfulAuthorityConfigurations() {
+    return authorityBindings.codelistRevisions();
+  }
+
+  public Set<String> activeAuthorityCacheFingerprints() {
+    if (!authorityBootstrapActor) throw new IllegalStateException("Not a bootstrap actor");
+    return authorityBindings.snapshot().stream().map(binding -> binding.id().substring(binding.id().lastIndexOf(':') + 1))
+        .filter(value -> value.matches("[a-f0-9]{64}")).collect(java.util.stream.Collectors.toUnmodifiableSet());
+  }
+
+  public Map<String, org.integratedmodelling.klab.api.services.ConfiguredAuthoritySnapshot>
+      configuredAuthoritySnapshots() {
+    return authorityBindings.configuredSnapshots();
+  }
 
   public void disposeSemanticEnvironment() {
     if (!semanticOnly) throw new IllegalStateException("Not a private semantic environment");
@@ -1059,18 +1451,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         try {
           for (var binding : bootstrapDisposalBindings) {
             var provider = getComponentRegistry().getAuthority(binding, serviceScope());
-            if (provider != null) org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.closeOwnedProvider(provider);
+            if (provider != null)
+              org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog
+                  .closeOwnedProvider(provider);
           }
-        } finally { getComponentRegistry().closeOwnedBootstrap(); }
+        } finally {
+          getComponentRegistry().closeOwnedBootstrap();
+        }
       }
       authorityBindings.clear();
-    }
-    finally {
-    try { owl.reset(); }
-    finally {
-      try { indexer.ensureClosed(); }
-      finally { serviceScope().close(); closeSemanticExecutor(); }
-    }
+    } finally {
+      try {
+        owl.reset();
+      } finally {
+        try {
+          indexer.ensureClosed();
+        } finally {
+          serviceScope().close();
+          closeSemanticExecutor();
+        }
+      }
     }
   }
 
@@ -1124,15 +1524,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         switch (status.logicalStatus()) {
           case FAILED, UNAVAILABLE, INVALID, UNRESOLVED, NOT_RUN -> {
             if (status.diagnostics().isEmpty()) break;
-            var diagnostic = "Worldview semantic validation " + status.logicalStatus() + ": "
-                + String.join("; ", status.diagnostics());
+            var diagnostic =
+                "Worldview semantic validation "
+                    + status.logicalStatus()
+                    + ": "
+                    + String.join("; ", status.diagnostics());
             if (!diagnostic.equals(lastCandidateDiagnostic)) {
               lastCandidateDiagnostic = diagnostic;
               Logging.INSTANCE.warn(diagnostic);
             }
           }
           case VALID -> lastCandidateDiagnostic = null;
-          default -> { }
+          default -> {}
         }
       }
     } catch (Throwable t) {
@@ -1148,7 +1551,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    *
    * @return
    */
-  boolean checkWorldview() {
+  synchronized boolean checkWorldview() {
 
     boolean candidatePublication = candidateRuntime != null && !semanticOnly;
     if (knowledgeReady && !candidatePublication) {
@@ -1159,9 +1562,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (candidatePublication) setOperational(ret);
     // Prefer local authoring sources, while allowing certificate-advertised remote sources
     // when no local worldview is available. Never replace an unchanged local selection remotely.
-    var sources = serviceScope().getServices(ResourcesService.class).stream()
-        .sorted(Comparator.comparing(resources -> !Utils.URLs.isLocalHost(resources.getUrl())))
-        .toList();
+    var sources = worldviewSources();
     for (var resources : sources) {
 
       if (resources.status().isAvailable()
@@ -1175,18 +1576,33 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         // status and initialization work without making an unavailable worldview arrive sooner.
         // Discovery is public during startup, before a user scope exists.
         long discoveryStarted = System.nanoTime();
-        Worldview discovered = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
+        Worldview discovered =
+            resources.list(Worldview.class, null).stream().findFirst().orElse(null);
         if (discovered == null) continue;
-        if (candidateRuntime != null && !semanticOnly
+        if (candidateRuntime != null
+            && !semanticOnly
             && !candidateRuntime.shouldRetryPreflight(discovered, serviceScope())) return ret;
-        serviceScope().info("Worldview discovered from " + resources.getUrl() + " in "
-            + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - discoveryStarted) + " ms");
-        if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
-            org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.DISCOVERY,
-            candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(), -1, -1,
-            org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()
-                ? org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.digest(resources.serviceId()) : null,
-            null, org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.SERVICE);
+        serviceScope()
+            .info(
+                "Worldview discovered from "
+                    + resources.getUrl()
+                    + " in "
+                    + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - discoveryStarted)
+                    + " ms");
+        if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled())
+          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+              org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event
+                  .DISCOVERY,
+              candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(),
+              -1,
+              -1,
+              org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()
+                  ? org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.digest(
+                      resources.serviceId())
+                  : null,
+              null,
+              org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason
+                  .SERVICE);
         var notifications = loadKnowledge(discovered, serviceScope());
         if (candidatePublication) {
           // A submitted candidate compiles asynchronously. Keep this source selected while
@@ -1217,6 +1633,78 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
     }
     return ret;
+  }
+
+  private List<ResourcesService> worldviewSources() {
+    return serviceScope().getServices(ResourcesService.class).stream()
+        .sorted(Comparator.comparing(resources -> !Utils.URLs.isLocalHost(resources.getUrl())))
+        .toList();
+  }
+
+  /** Rediscover using the service's authority, then report the outcome of this exact reload. */
+  public Map<String, Object> reloadWorldview() {
+    List<Notification> notifications = new ArrayList<>();
+    boolean success = false;
+    try {
+      long generation;
+      long[] submittedGeneration = {-1};
+      AcceptedSemanticRuntime runtime;
+      // Serialize discovery/preflight with scheduler ingestion, but never hold the service monitor
+      // while a private candidate compiles or synchronizes authorities.
+      synchronized (this) {
+        runtime = candidateRuntime != null && !semanticOnly ? candidateRuntime : null;
+        try (var collector = new IngestionNotifications(serviceScope(), notifications)) {
+          Worldview discovered = null;
+          for (var resources : worldviewSources()) {
+            if (resources.status().isAvailable()
+                && resources.capabilities(serviceScope()).isWorldviewProvider()) {
+              discovered = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
+              if (discovered != null) break;
+            }
+          }
+          if (discovered == null) {
+            notifications.add(Notification.error("No worldview is available from Resources services"));
+            return Map.of("result", false, "notifications", List.copyOf(notifications));
+          }
+          var loaded = loadKnowledgeEntry(discovered, serviceScope(), NO_COMPILATION_CANCELLATION,
+              true, receipt -> submittedGeneration[0] = receipt);
+          notifications.addAll(loaded.getNotifications());
+          for (var resource : Utils.Collections.join(
+              loaded.getNamespaces(), loaded.getBehaviors(), loaded.getResources(),
+              loaded.getResults(), loaded.getOntologies(), loaded.getObservationStrategies()))
+            notifications.addAll(resource.getNotifications());
+          success = !Utils.Resources.hasErrors(loaded);
+        }
+        generation = submittedGeneration[0];
+      }
+      if (runtime != null && generation < 0) {
+        success = false;
+        if (!Utils.Notifications.hasErrors(notifications))
+          notifications.add(Notification.error("Worldview reload was not submitted or was superseded"));
+      } else if (runtime != null) {
+        var status = runtime.awaitGeneration(generation, Duration.ofMinutes(5));
+        success &= status.inputGeneration() == generation
+            && status.logicalStatus() == CandidatePublicationCoordinator.LogicalStatus.VALID;
+        if (status.inputGeneration() != generation)
+          notifications.add(Notification.error("Worldview reload was superseded by a newer input"));
+        else if (status.logicalStatus() == CandidatePublicationCoordinator.LogicalStatus.PENDING)
+          notifications.add(Notification.error("Worldview reload timed out waiting for validation and authority synchronization"));
+        else if (status.logicalStatus() != CandidatePublicationCoordinator.LogicalStatus.VALID)
+          notifications.add(Notification.error(AcceptedSemanticRuntime.validationReason(status)));
+        else
+          notifications.add(Notification.info(AcceptedSemanticRuntime.validationReason(status)));
+        setOperational(status.acceptedGeneration() > 0);
+      }
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      success = false;
+      notifications.add(Notification.error("Interrupted while waiting for worldview reload"));
+    } catch (RuntimeException failure) {
+      success = false;
+      notifications.add(Notification.error("Worldview reload failed: " + failure.getMessage()));
+    }
+    success &= !Utils.Notifications.hasErrors(notifications);
+    return Map.of("result", success, "notifications", List.copyOf(notifications));
   }
 
   @Override
@@ -1256,7 +1744,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public Concept defineConcept(KimConceptStatement statement, Scope scope) {
     if (candidateRuntime != null && !semanticOnly)
-      throw new IllegalStateException("Source declarations must enter through whole-worldview bean preflight and candidate publication");
+      throw new IllegalStateException(
+          "Source declarations must enter through whole-worldview bean preflight and candidate publication");
     return build(
         statement,
         this.owl.requireOntology(statement.getNamespace(), OWL.DEFAULT_ONTOLOGY_PREFIX),
@@ -1269,19 +1758,30 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var ret = super.status();
     if (candidateRuntime != null && !semanticOnly) {
       var status = candidateRuntime.status();
-      ret.getMetadata().put(org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState.METADATA_KEY,
-          "accepted:" + status.acceptedGeneration() + (status.acceptedGeneration() > 0 ? ":ready" : ":unavailable"));
+      ret.getMetadata()
+          .put(
+              org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState
+                  .METADATA_KEY,
+              "accepted:"
+                  + status.acceptedGeneration()
+                  + (status.acceptedGeneration() > 0 ? ":ready" : ":unavailable"));
       ret.getMetadata().put("semantic.candidate", status);
       ((org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl) ret)
           .setOperational(status.acceptedGeneration() > 0);
-      ret.getMetadata().put("semantic.validation.reason", AcceptedSemanticRuntime.validationReason(status));
-      ret.getMetadata().put("semantic.validation.blocked", AcceptedSemanticRuntime.validationBlocked(status));
-      status.diagnostics().forEach(message -> ret.getAdvisories().add(Notification.warning(message)));
+      ret.getMetadata()
+          .put("semantic.validation.reason", AcceptedSemanticRuntime.validationReason(status));
+      ret.getMetadata()
+          .put("semantic.validation.blocked", AcceptedSemanticRuntime.validationBlocked(status));
+      status
+          .diagnostics()
+          .forEach(message -> ret.getAdvisories().add(Notification.warning(message)));
       return ret;
     }
-    ret.getMetadata().put(
-        org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState.METADATA_KEY,
-        semanticValidationState.signal());
+    ret.getMetadata()
+        .put(
+            org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState
+                .METADATA_KEY,
+            semanticValidationState.signal());
     ret.getMetadata().put("authority.codelist.revisions", authorityBindings.codelistRevisions());
     ret.getAdvisories().addAll(this.advisories);
     ret.getAdvisories().addAll(this.worldviewLoadDiagnostics);
@@ -1293,35 +1793,48 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept resolveConcept(String definition) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("resolveConcept", new Class<?>[] { String.class }, new Object[] { definition });
-  Objects.requireNonNull(definition, "definition");
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "resolveConcept", new Class<?>[] {String.class}, new Object[] {definition});
+    Objects.requireNonNull(definition, "definition");
     var result = concepts.get(definition, this::resolveConceptInternal);
     if (result != null && result.is(SemanticType.NOTHING)) concepts.invalidate(definition);
     return result;
   }
+
   /** The alternative HTTP builder path must parse under the same accepted lease as its build. */
   public Concept resolveConceptWithBuilder(String definition, Scope scope) {
     if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("resolveConceptWithBuilder", new Class<?>[]{String.class, Scope.class}, new Object[]{definition, scope});
-    var syntax = (semanticOnly ? serviceScope() : scope).getService(ResourcesService.class).declareConcept(definition);
-    return syntax == null ? resolveConcept(definition)
+      return candidateRuntime.invoke(
+          "resolveConceptWithBuilder",
+          new Class<?>[] {String.class, Scope.class},
+          new Object[] {definition, scope});
+    var syntax =
+        (semanticOnly ? serviceScope() : scope)
+            .getService(ResourcesService.class)
+            .declareConcept(definition);
+    return syntax == null
+        ? resolveConcept(definition)
         : org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder.create(
-            syntax, this, semanticOnly ? serviceScope() : scope).buildConcept();
+                syntax, this, semanticOnly ? serviceScope() : scope)
+            .buildConcept();
   }
 
   @Override
   public Observable resolveObservable(String definition) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("resolveObservable", new Class<?>[] { String.class }, new Object[] { definition });
-  Objects.requireNonNull(definition, "definition");
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "resolveObservable", new Class<?>[] {String.class}, new Object[] {definition});
+    Objects.requireNonNull(definition, "definition");
     var result = observables.get(definition, this::resolveObservableInternal);
     if (result != null && result.is(SemanticType.NOTHING)) observables.invalidate(definition);
     return result;
   }
 
   public Concept resolveConceptInternal(String definition) {
-    if (candidateRuntime != null && !semanticOnly) return candidateRuntime.invoke("resolveConceptInternal", new Class<?>[]{String.class}, new Object[]{definition});
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "resolveConceptInternal", new Class<?>[] {String.class}, new Object[] {definition});
     Concept ret = null;
     if (Urn.isAtomicConcept(definition)) {
       ret = owl.getConcept(definition);
@@ -1333,7 +1846,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ret = declareConcept(parsed);
       }
     }
-    return ret == null ? owl.nothing(definition)
+    return ret == null
+        ? owl.nothing(definition)
         : Urn.isAtomicConcept(definition) ? identityRequirements().project((ConceptImpl) ret) : ret;
   }
 
@@ -1342,32 +1856,42 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return identityRequirements().project(concept, syntax);
   }
 
-  private org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport identityRequirements() {
-    return new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(owl, this::identityEligible);
+  private org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport
+      identityRequirements() {
+    return new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(
+        owl, this::identityEligible);
   }
 
   /** Retain existing captured bridge restrictions without triggering provider lookup. */
   public boolean identityEligible(Concept root, Concept identity) {
-    var hierarchy = new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(owl);
-    if (worldview != null) for (var declared : worldview.getAuthorityBindings()) {
-      var bridgeRoot = owl.getConcept(declared.rootIdentity());
-      if (bridgeRoot != null && hierarchy.proves(root, bridgeRoot)
-          && !authorityIdentityResolver.acceptedFor(identity, authorityBindings.get(declared.localId())))
-        return false;
-    }
+    var hierarchy =
+        new org.integratedmodelling.klab.services.reasoner.owl.IdentityRequirementSupport(owl);
+    if (worldview != null)
+      for (var declared : worldview.getAuthorityBindings()) {
+        var bridgeRoot = owl.getConcept(declared.rootIdentity());
+        if (bridgeRoot != null
+            && hierarchy.proves(root, bridgeRoot)
+            && !authorityIdentityResolver.acceptedFor(
+                identity, authorityBindings.get(declared.localId()))) return false;
+      }
     return !identity.is(SemanticType.AUTHORITY_IDENTITY)
         || authorityBindings.snapshot().stream()
             .anyMatch(binding -> authorityIdentityResolver.acceptedFor(identity, binding));
   }
 
   public Observable resolveObservableInternal(String definition) {
-    if (candidateRuntime != null && !semanticOnly) return candidateRuntime.invoke("resolveObservableInternal", new Class<?>[]{String.class}, new Object[]{definition});
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "resolveObservableInternal", new Class<?>[] {String.class}, new Object[] {definition});
     Observable ret = null;
-    if(definition.contains(" observed as ")) {
-      var restored=org.integratedmodelling.klab.services.reasoner.owl.ObserverOntologySupport.restore(
-          definition,owl.getOntologies(true).stream().map(Ontology::getOWLOntology).toList(),
-          this::resolveObservableInternal,this::resolveConcept);
-      if(restored!=null)return restored;
+    if (definition.contains(" observed as ")) {
+      var restored =
+          org.integratedmodelling.klab.services.reasoner.owl.ObserverOntologySupport.restore(
+              definition,
+              owl.getOntologies(true).stream().map(Ontology::getOWLOntology).toList(),
+              this::resolveObservableInternal,
+              this::resolveConcept);
+      if (restored != null) return restored;
     }
     // FIXME the service should be passed
     KimObservable parsed =
@@ -1380,9 +1904,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> operands(Semantics target) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("operands", new Class<?>[] { Semantics.class }, new Object[] { target });
-  List<Concept> ret = new ArrayList<>();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "operands", new Class<?>[] {Semantics.class}, new Object[] {target});
+    List<Concept> ret = new ArrayList<>();
     if (target.is(SemanticType.UNION) || target.is(SemanticType.INTERSECTION)) {
       ret.addAll(this.owl.getOperands(target.asConcept()));
     } else {
@@ -1394,14 +1919,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> children(Semantics target) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("children", new Class<?>[] { Semantics.class }, new Object[] { target });
-  return projectHierarchy(this.owl.getChildren(target.asConcept()));
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "children", new Class<?>[] {Semantics.class}, new Object[] {target});
+    return projectHierarchy(this.owl.getChildren(target.asConcept()));
   }
 
   public Map<Concept, Collection<Observation>> emergentResolvables(
       Observation trigger, ContextScope scope) {
-    if (candidateRuntime != null && !semanticOnly) return candidateRuntime.invoke("emergentResolvables", new Class<?>[]{Observation.class, ContextScope.class}, new Object[]{trigger, scope});
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "emergentResolvables",
+          new Class<?>[] {Observation.class, ContextScope.class},
+          new Object[] {trigger, scope});
 
     Map<Concept, Collection<Observation>> ret = new HashMap<>();
     Collection<Emergence> emergents = this.emergence.get(trigger.getObservable().getSemantics());
@@ -1460,17 +1990,20 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> parents(Semantics target) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("parents", new Class<?>[] { Semantics.class }, new Object[] { target });
-  if (authorityIdentityResolver != null) authorityIdentityResolver.ensureHierarchy(target.asConcept());
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "parents", new Class<?>[] {Semantics.class}, new Object[] {target});
+    if (authorityIdentityResolver != null)
+      authorityIdentityResolver.ensureHierarchy(target.asConcept());
     return projectHierarchy(this.owl.getParents(target.asConcept()));
   }
 
   @Override
   public Collection<Concept> allChildren(Semantics target) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("allChildren", new Class<?>[] { Semantics.class }, new Object[] { target });
-  Set<Concept> ret = collectChildren(target, new HashSet<>());
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "allChildren", new Class<?>[] {Semantics.class}, new Object[] {target});
+    Set<Concept> ret = collectChildren(target, new HashSet<>());
     ret.remove(target.asConcept());
     return ret;
   }
@@ -1487,9 +2020,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> allParents(Semantics target) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("allParents", new Class<?>[] { Semantics.class }, new Object[] { target });
-  return allParentsInternal(target, new HashSet<Concept>());
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "allParents", new Class<?>[] {Semantics.class}, new Object[] {target});
+    return allParentsInternal(target, new HashSet<Concept>());
   }
 
   private Collection<Concept> allParentsInternal(Semantics target, Set<Concept> seen) {
@@ -1512,27 +2046,190 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> closure(Semantics target) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("closure", new Class<?>[] { Semantics.class }, new Object[] { target });
-  return projectHierarchy(this.owl.getSemanticClosure(target.asConcept()));
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "closure", new Class<?>[] {Semantics.class}, new Object[] {target});
+    return projectHierarchy(this.owl.getSemanticClosure(target.asConcept()));
   }
 
   @Override
   public Collection<Concept> authoredClosure(Semantics target) {
     if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("authoredClosure", new Class<?>[] { Semantics.class }, new Object[] { target });
+      return candidateRuntime.invoke(
+          "authoredClosure", new Class<?>[] {Semantics.class}, new Object[] {target});
     var source = worldview;
     long revision = knowledgeRevision();
     var vocabulary = authoredVocabulary;
     if (vocabulary == null || !vocabulary.belongsTo(source, revision)) {
-      vocabulary = org.integratedmodelling.klab.services.reasoner.internal.AuthoredVocabulary.capture(
-          source, revision, owl::getConcept);
+      vocabulary =
+          org.integratedmodelling.klab.services.reasoner.internal.AuthoredVocabulary.capture(
+              source, revision, owl::getConcept);
       authoredVocabulary = vocabulary;
     }
     var membership = vocabulary;
-    return projectHierarchy(owl.getSemanticClosure(target.asConcept()).stream()
-        .filter(membership::contains)
-        .sorted(java.util.Comparator.comparing(Concept::getUrn)).toList());
+    return projectHierarchy(
+        owl.getSemanticClosure(target.asConcept()).stream()
+            .filter(membership::contains)
+            .sorted(java.util.Comparator.comparing(Concept::getUrn))
+            .toList());
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse
+      consequenceRules(
+          org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery query) {
+    Objects.requireNonNull(query, "Consequence query");
+    if (candidateRuntime != null && !semanticOnly) {
+      try {
+        return candidateRuntime.invoke(
+            "consequenceRules",
+            new Class<?>[] {
+              org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery.class
+            },
+            new Object[] {query});
+      } catch (IllegalStateException unavailable) {
+        return new org.integratedmodelling.klab.api.services.reasoner.objects
+            .ConsequenceRuleResponse(
+            org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse
+                .Status.UNAVAILABLE,
+            null,
+            List.of(),
+            null,
+            "Accepted consequence generation is unavailable or changed");
+      }
+    }
+    var capability = capabilities(serviceScope());
+    var epoch =
+        new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse
+            .Epoch(
+            capability.getServiceId(),
+            capability.getKnowledgeRevision(),
+            capability.getSemanticContentFingerprint(),
+            capability.getSemanticSessionId());
+    var unavailable =
+        org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status
+            .UNAVAILABLE;
+    if (!epoch.valid())
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+          unavailable, null, List.of(), null, "Accepted semantic identity is unavailable");
+    if (query.expectedEpoch() != null && !query.expectedEpoch().equals(epoch))
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+          org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status
+              .STALE,
+          epoch,
+          List.of(),
+          null,
+          "Consequence request targets another semantic epoch");
+    var source = worldview;
+    var index = consequenceRuleIndex;
+    if (index == null || !index.belongsTo(source))
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+          unavailable,
+          epoch,
+          List.of(),
+          null,
+          consequenceRuleIndexFailure == null
+              ? "Captured consequence declarations are unavailable"
+              : consequenceRuleIndexFailure);
+    try {
+      // Canonical identities are looked up only in this leased actor. Never call Resources to
+      // restore an unseen expression while holding an accepted semantic monitor.
+      var selection =
+          index.select(
+              query,
+              trigger ->
+                  org.integratedmodelling.klab.services.reasoner.owl.ConsequenceRuleIndex
+                      .semanticKeys(owl, trigger));
+      var obligations = new LinkedHashSet<>(selection.obligations());
+      query.ownerTriggers().forEach(c -> obligations.add(c.getUrn()));
+      query.ingredientTriggers().forEach(c -> obligations.add(c.getUrn()));
+      var witness = consequenceEnumerationWitness(epoch, List.copyOf(obligations));
+      var after = capabilities(serviceScope());
+      if (source != worldview
+          || index != consequenceRuleIndex
+          || !epoch.equals(
+              new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse
+                  .Epoch(
+                  after.getServiceId(),
+                  after.getKnowledgeRevision(),
+                  after.getSemanticContentFingerprint(),
+                  after.getSemanticSessionId())))
+        return new org.integratedmodelling.klab.api.services.reasoner.objects
+            .ConsequenceRuleResponse(
+            org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse
+                .Status.STALE,
+            epoch,
+            List.of(),
+            null,
+            "Semantic source changed during consequence discovery");
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+          org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Status
+              .COMPLETE,
+          epoch,
+          selection.rules(),
+          witness,
+          null);
+    } catch (RuntimeException unsupported) {
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+          unavailable, epoch, List.of(), null, unsupported.getMessage());
+    }
+  }
+
+  /**
+   * Candidate semantic closure only; it does not certify graph applicability or target coverage.
+   */
+  private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+      consequenceEnumerationWitness(
+          org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse.Epoch
+              epoch,
+          List<String> obligations) {
+    var request =
+        new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+            epoch.serviceId(), epoch.knowledgeRevision(), epoch.semanticFingerprint(), obligations);
+    var closure =
+        new org.integratedmodelling.klab.services.reasoner.owl.AuthorityDependencySupport(owl)
+            .closure(obligations, authorityBindings.snapshot(), epoch.semanticFingerprint());
+    if (!closure.known())
+      return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+          .unknown(request, closure.reason());
+    var uses =
+        new ArrayList<
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+                .AuthorityUse>();
+    var status =
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status
+            .COMPLETE;
+    String reason = null;
+    for (var authority : closure.authorities()) {
+      var binding =
+          worldview.getAuthorityBindings().stream()
+              .filter(b -> b.localId().equals(authority))
+              .findFirst()
+              .orElse(null);
+      if (binding == null || capturedAuthorities == null)
+        return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+            .unknown(request, "Captured authority evidence unavailable");
+      var proof = capturedAuthorities.dependencyProof(binding);
+      uses.add(proof);
+      if (proof.kind()
+          == org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+              .Kind.UNVERSIONED) {
+        status =
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+                .Status.REVALIDATION_REQUIRED;
+        reason = "Mutable authority conditions require fresh scoped revalidation";
+      }
+    }
+    return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness(
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+            .VERSION,
+        status,
+        epoch.serviceId(),
+        epoch.knowledgeRevision(),
+        epoch.semanticFingerprint(),
+        request.inputHash(),
+        uses,
+        reason);
   }
 
   private Collection<Concept> projectHierarchy(Collection<Concept> concepts) {
@@ -1541,13 +2238,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   /** Public semantic traversals expose effective eligibility, not raw declaration flags. */
   private Concept effectiveConcept(Concept concept) {
-    if (concept == null || !(concept.is(SemanticType.OBSERVABLE)
-        || concept.is(SemanticType.PREDICATE))) return concept;
+    if (concept == null
+        || !(concept.is(SemanticType.OBSERVABLE) || concept.is(SemanticType.PREDICATE)))
+      return concept;
     if (!Urn.isAtomicConcept(concept.getUrn())) {
       // Preserve the separately supplied identity witnesses in qualified expressions;
       // the OWL hasIdentity union alone cannot reconstruct their authored scope.
       try {
-        var syntax = serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
+        var syntax =
+            serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
         if (syntax != null) return projectExpressionStatus((ConceptImpl) concept, syntax);
       } catch (RuntimeException unavailable) {
         // Without captured syntax, use conservative evidence from the semantic graph.
@@ -1565,9 +2264,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept baseSubstantialType(Semantics concept, Scope scope) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("baseSubstantialType", new Class<?>[] { Semantics.class, Scope.class }, new Object[] { concept, scope });
-  Concept original = concept == null ? null : concept.asConcept();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "baseSubstantialType",
+          new Class<?>[] {Semantics.class, Scope.class},
+          new Object[] {concept, scope});
+    Concept original = concept == null ? null : concept.asConcept();
     if (original == null) {
       return nothingConcept("null substantial concept");
     }
@@ -1607,8 +2309,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean resolves(Semantics toResolve, Semantics other, Semantics context) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("resolves", new Class<?>[] { Semantics.class, Semantics.class, Semantics.class }, new Object[] { toResolve, other, context });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "resolves",
+          new Class<?>[] {Semantics.class, Semantics.class, Semantics.class},
+          new Object[] {toResolve, other, context});
 
     /*
     TODO if these are observables, the observer also must be considered and matched by semantic distance.
@@ -1645,8 +2350,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    */
   @Override
   public Collection<Concept> resolving(Semantics semantics) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("resolving", new Class<?>[] { Semantics.class }, new Object[] { semantics });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "resolving", new Class<?>[] {Semantics.class}, new Object[] {semantics});
 
     var concept = semantics.asConcept();
     Set<Concept> ret = new LinkedHashSet<>();
@@ -1713,35 +2419,44 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public int semanticDistance(Semantics target, Semantics other) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("semanticDistance", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { target, other });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "semanticDistance",
+          new Class<?>[] {Semantics.class, Semantics.class},
+          new Object[] {target, other});
     if (owl != null) owl.requireAvailableClosure();
-  return semanticDistance(target, other, null);
+    return semanticDistance(target, other, null);
   }
 
   @Override
   public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("semanticDistance", new Class<?>[] { Semantics.class, Semantics.class, Semantics.class }, new Object[] { target, other, context });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "semanticDistance",
+          new Class<?>[] {Semantics.class, Semantics.class, Semantics.class},
+          new Object[] {target, other, context});
     if (owl != null) owl.requireAvailableClosure();
-  if (!eligibleDistanceRequest(other)) return -10000;
-    int perspectiveDistance=observerDistance(target,other);
-    if(perspectiveDistance<0)return perspectiveDistance;
-  int distance = semanticMatcher.semanticDistance(target, other, context);
+    if (!eligibleDistanceRequest(other)) return -10000;
+    int perspectiveDistance = observerDistance(target, other);
+    if (perspectiveDistance < 0) return perspectiveDistance;
+    int distance = semanticMatcher.semanticDistance(target, other, context);
     if (distance < 0) {
       return distance;
     }
     int observableDistance = observableDistance(target, other);
-    return observableDistance < 0 ? observableDistance : distance + perspectiveDistance + observableDistance;
+    return observableDistance < 0
+        ? observableDistance
+        : distance + perspectiveDistance + observableDistance;
   }
 
   /** Matching must use the same accepted generation that validated model dependencies. */
   @Override
-  public int semanticDistance(Semantics target, Semantics other, Semantics context,
-      long expectedKnowledgeRevision) {
+  public int semanticDistance(
+      Semantics target, Semantics other, Semantics context, long expectedKnowledgeRevision) {
     if (expectedKnowledgeRevision < 0) return -10000;
     if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.semanticDistanceAtRevision(target, other, context, expectedKnowledgeRevision);
+      return candidateRuntime.semanticDistanceAtRevision(
+          target, other, context, expectedKnowledgeRevision);
     if (owl != null) owl.requireAvailableClosure();
     synchronized (this) {
       if (!knowledgeReady || expectedKnowledgeRevision != knowledgeRevision()) return -10000;
@@ -1750,48 +2465,69 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   /** Observer hierarchy comparisons obey the same validation receipt as model matching. */
-  public int assertedDistanceAtRevision(Concept target, Concept requested, long expectedKnowledgeRevision) {
+  public int assertedDistanceAtRevision(
+      Concept target, Concept requested, long expectedKnowledgeRevision) {
     if (expectedKnowledgeRevision < 0) return -10000;
     if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.assertedDistanceAtRevision(target, requested, expectedKnowledgeRevision);
+      return candidateRuntime.assertedDistanceAtRevision(
+          target, requested, expectedKnowledgeRevision);
     if (owl != null) owl.requireAvailableClosure();
     synchronized (this) {
       return knowledgeReady && expectedKnowledgeRevision == knowledgeRevision()
-          ? assertedDistance(target, requested) : -10000;
+          ? assertedDistance(target, requested)
+          : -10000;
     }
   }
 
-  /** Category comparisons are structural; concrete observation requests need completed eligibility. */
+  /**
+   * Category comparisons are structural; concrete observation requests need completed eligibility.
+   */
   private boolean eligibleDistanceRequest(Semantics request) {
     if (request == null) return false;
     try {
       // Recheck canonical concept status; full Observable wrappers additionally retain
       // observer clauses and unresolved generic components. Never trust caller type flags.
       var canonical = resolveConcept(request.asConcept().getUrn());
-      if (canonical == null || canonical.is(SemanticType.NOTHING) || !satisfiable(canonical)) return false;
-      if (canonical.isGeneric() || canonical.is(SemanticType.ANY)
-          || canonical.is(SemanticType.ALL) || canonical.is(SemanticType.NONE)) return false;
+      if (canonical == null || canonical.is(SemanticType.NOTHING) || !satisfiable(canonical))
+        return false;
+      if (canonical.isGeneric()
+          || canonical.is(SemanticType.ANY)
+          || canonical.is(SemanticType.ALL)
+          || canonical.is(SemanticType.NONE)) return false;
       if (canonical.is(SemanticType.PREDICATE)) return true;
       if (!SemanticType.isDependent(canonical.getType())
           && !SemanticType.isEnumerableSubstantial(canonical.getType())) return true;
-      return !canonical.isAbstract() && !canonical.isGeneric()
-          && (!(request instanceof Observable observable) || observable.getGenericComponents().isEmpty());
-    } catch (RuntimeException unavailable) { return false; }
+      return !canonical.isAbstract()
+          && !canonical.isGeneric()
+          && (!(request instanceof Observable observable)
+              || observable.getGenericComponents().isEmpty());
+    } catch (RuntimeException unavailable) {
+      return false;
+    }
   }
 
-  private int observerDistance(Semantics candidate,Semantics requested) {
-    Concept statedCandidate=candidate instanceof Observable o?o.getObserverSemantics():null;
-    Concept statedQuery=requested instanceof Observable o?o.getObserverSemantics():null;
-    Concept candidateObserver=canonicalObserver(statedCandidate),queryObserver=canonicalObserver(statedQuery);
-    if(statedCandidate!=null&&candidateObserver==null || statedQuery!=null&&queryObserver==null)return -50;
-    if(statedQuery==null)return 0; // Context-selected perspective is a ranking preference elsewhere.
-    if(candidateObserver==null)return -50; // Explicit query cannot fall back to absolute semantics.
-    return semanticMatcher.observerClauseDistance(candidateObserver,queryObserver);
+  private int observerDistance(Semantics candidate, Semantics requested) {
+    Concept statedCandidate = candidate instanceof Observable o ? o.getObserverSemantics() : null;
+    Concept statedQuery = requested instanceof Observable o ? o.getObserverSemantics() : null;
+    Concept candidateObserver = canonicalObserver(statedCandidate),
+        queryObserver = canonicalObserver(statedQuery);
+    if (statedCandidate != null && candidateObserver == null
+        || statedQuery != null && queryObserver == null) return -50;
+    if (statedQuery == null)
+      return 0; // Context-selected perspective is a ranking preference elsewhere.
+    if (candidateObserver == null)
+      return -50; // Explicit query cannot fall back to absolute semantics.
+    return semanticMatcher.observerClauseDistance(candidateObserver, queryObserver);
   }
+
   private Concept canonicalObserver(Concept stated) {
-    if(stated==null)return null;
-    var canonical=resolveConcept(stated.getUrn());
-    return canonical!=null&&canonical.is(SemanticType.AGENT)&&!canonical.is(SemanticType.NOTHING)?canonical:null;
+    if (stated == null) return null;
+    var canonical = resolveConcept(stated.getUrn());
+    return canonical != null
+            && canonical.is(SemanticType.AGENT)
+            && !canonical.is(SemanticType.NOTHING)
+        ? canonical
+        : null;
   }
 
   private int observableDistance(Semantics target, Semantics other) {
@@ -1826,9 +2562,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept coreObservable(Semantics first) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("coreObservable", new Class<?>[] { Semantics.class }, new Object[] { first });
-  Concept ret = first.asConcept();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "coreObservable", new Class<?>[] {Semantics.class}, new Object[] {first});
+    Concept ret = first.asConcept();
     Set<String> visited = new HashSet<>();
     while (ret != null && visited.add(ret.getUrn())) {
       String next = ret.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
@@ -1842,8 +2579,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Pair<Concept, List<SemanticType>> splitOperators(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("splitOperators", new Class<?>[] { Semantics.class }, new Object[] { concept });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "splitOperators", new Class<?>[] {Semantics.class}, new Object[] {concept});
 
     Concept cret = concept.asConcept();
     List<SemanticType> types = new ArrayList<>();
@@ -1865,9 +2603,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept describedType(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("describedType", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "describedType", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.DESCRIBES_OBSERVABLE_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -1875,9 +2614,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> traits(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("traits", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Set<Concept> ret = new HashSet<>();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "traits", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Set<Concept> ret = new HashSet<>();
     ret.addAll(
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_REALM_PROPERTY)));
@@ -1892,17 +2632,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public int assertedDistance(Semantics from, Semantics to) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("assertedDistance", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { from, to });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "assertedDistance",
+          new Class<?>[] {Semantics.class, Semantics.class},
+          new Object[] {from, to});
     if (owl != null) owl.requireAvailableClosure();
-  return semanticMatcher.assertedDistance(from, to);
+    return semanticMatcher.assertedDistance(from, to);
   }
 
   @Override
   public boolean hasTrait(Semantics concept, Concept trait) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("hasTrait", new Class<?>[] { Semantics.class, Concept.class }, new Object[] { concept, trait });
-  for (Concept c : traits(concept)) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "hasTrait",
+          new Class<?>[] {Semantics.class, Concept.class},
+          new Object[] {concept, trait});
+    for (Concept c : traits(concept)) {
       if (is(c, trait)) {
         return true;
       }
@@ -1912,17 +2658,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> roles(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("roles", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  return this.owl.getRestrictedClasses(
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "roles", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    return this.owl.getRestrictedClasses(
         concept.asConcept(), this.owl.getProperty(NS.HAS_ROLE_PROPERTY));
   }
 
   @Override
   public boolean hasRole(Semantics concept, Concept role) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("hasRole", new Class<?>[] { Semantics.class, Concept.class }, new Object[] { concept, role });
-  for (Concept c : roles(concept)) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "hasRole", new Class<?>[] {Semantics.class, Concept.class}, new Object[] {concept, role});
+    for (Concept c : roles(concept)) {
       if (is(c, role)) {
         return true;
       }
@@ -1932,9 +2680,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept directInherent(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directInherent", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  var explicit = explicitInherent(concept);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directInherent", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    var explicit = explicitInherent(concept);
     if (explicit != null) return explicit;
     Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
@@ -1944,9 +2693,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept inherent(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("inherent", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  var explicit = explicitInherent(concept);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "inherent", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    var explicit = explicitInherent(concept);
     if (explicit != null) return explicit;
     Collection<Concept> cls =
         this.owl.getRestrictedClasses(
@@ -1967,9 +2717,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept directGoal(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directGoal", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directGoal", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_PURPOSE_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -1977,9 +2728,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept goal(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("goal", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "goal", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_PURPOSE_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -1987,9 +2739,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept directCooccurrent(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directCooccurrent", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directCooccurrent", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.OCCURS_DURING_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -1997,9 +2750,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept directCausant(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directCausant", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directCausant", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_CAUSANT_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2007,9 +2761,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept directCaused(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directCaused", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directCaused", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_CAUSED_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2017,9 +2772,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept directAdjacent(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directAdjacent", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directAdjacent", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_ADJACENT_TO_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2027,9 +2783,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept directCompresent(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directCompresent", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directCompresent", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_COMPRESENT_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2037,9 +2794,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept directRelativeTo(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directRelativeTo", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directRelativeTo", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_COMPARED_TO_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2047,9 +2805,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept cooccurrent(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("cooccurrent", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "cooccurrent", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.OCCURS_DURING_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2057,9 +2816,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept causant(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("causant", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "causant", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_CAUSANT_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2067,9 +2827,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept caused(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("caused", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "caused", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_CAUSED_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2077,9 +2838,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept adjacent(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("adjacent", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "adjacent", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_ADJACENT_TO_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2087,9 +2849,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept compresent(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("compresent", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "compresent", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_COMPRESENT_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2097,9 +2860,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept relativeTo(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("relativeTo", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Collection<Concept> cls =
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "relativeTo", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Collection<Concept> cls =
         this.owl.getRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.IS_COMPARED_TO_PROPERTY));
     return cls.isEmpty() ? null : effectiveConcept(cls.iterator().next());
@@ -2107,9 +2871,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public String displayLabel(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("displayLabel", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  String ret = displayName(concept);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "displayLabel", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    String ret = displayName(concept);
     if (!ret.contains(" ")) {
       ret = StringUtils.capitalize(CamelCase.toLowerCase(ret, ' '));
     }
@@ -2118,9 +2883,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public String displayName(Semantics semantics) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("displayName", new Class<?>[] { Semantics.class }, new Object[] { semantics });
-  return semantics instanceof Observable
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "displayName", new Class<?>[] {Semantics.class}, new Object[] {semantics});
+    return semantics instanceof Observable
         ? observableDisplayName((Observable) semantics)
         : conceptDisplayName(semantics.asConcept());
   }
@@ -2162,9 +2928,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public String style(Concept concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("style", new Class<?>[] { Concept.class }, new Object[] { concept });
-  throw new KlabUnimplementedException("Reasoner concept styling is not supported");
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "style", new Class<?>[] {Concept.class}, new Object[] {concept});
+    throw new KlabUnimplementedException("Reasoner concept styling is not supported");
   }
 
   @Override
@@ -2173,9 +2940,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var ret = new ReasonerCapabilitiesImpl();
     long revision = knowledgeRevision();
     long generation = capabilitiesGeneration;
-    String validation = candidateRuntime != null && !semanticOnly ? null : semanticValidationState.signal();
-    var acceptedMetadata = candidateRuntime != null && !semanticOnly ? candidateRuntime.metadata() : null;
-    var published = acceptedMetadata == null ? publishedSemanticCapabilities : acceptedMetadata.publication();
+    String validation =
+        candidateRuntime != null && !semanticOnly ? null : semanticValidationState.signal();
+    var acceptedMetadata =
+        candidateRuntime != null && !semanticOnly ? candidateRuntime.metadata() : null;
+    var published =
+        acceptedMetadata == null ? publishedSemanticCapabilities : acceptedMetadata.publication();
     if (acceptedMetadata != null) revision = acceptedMetadata.generation();
 
     ret.setPermissions(permissions(scope));
@@ -2190,31 +2960,53 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ret.setServiceId(portable == null ? configuration.getServiceId() : portable.serviceId());
     ret.getExportSchemata().putAll(ResourceTransport.INSTANCE.getExportSchemata());
     ret.getImportSchemata().putAll(ResourceTransport.INSTANCE.getImportSchemata());
-    if (getComponentRegistry() != null) ret.getComponents().addAll(getComponentRegistry().getInstalledComponents(scope));
+    if (getComponentRegistry() != null)
+      ret.getComponents().addAll(getComponentRegistry().getInstalledComponents(scope));
     if (acceptedMetadata != null) {
       var owned = acceptedMetadata.components();
-      ret.getComponents().removeIf(component -> owned.stream().anyMatch(c -> c.id().equals(component.id())));
+      ret.getComponents()
+          .removeIf(component -> owned.stream().anyMatch(c -> c.id().equals(component.id())));
       ret.getComponents().addAll(owned);
     }
     // A request may straddle a complete mutation. Never label a newer publication with an
     // older revision, or certify metadata captured while readiness/generation changed.
-    boolean readable = acceptedMetadata != null ? acceptedMetadata.generation() > 0
-        : published.generation() == generation
-          && generation == capabilitiesGeneration
-          && validation.equals(semanticValidationState.signal())
-          && validation.endsWith(":ready")
-          && revision == knowledgeRevision();
-    if (readable) ret.setAuthorityBindings(published.authorityBindings().stream()
-        .map(binding -> new Worldview.AuthorityBinding(binding.localId(), binding.rootIdentity(),
-            binding.sourceOntology(), binding.sourceOffset(), binding.sourceLength(), binding.sourceHash(),
-            binding.provider(), binding.componentUrn(), binding.componentVersion(), getUrl())).toList());
+    boolean readable =
+        acceptedMetadata != null
+            ? acceptedMetadata.generation() > 0
+            : published.generation() == generation
+                && generation == capabilitiesGeneration
+                && validation.equals(semanticValidationState.signal())
+                && validation.endsWith(":ready")
+                && revision == knowledgeRevision();
+    if (readable)
+      ret.setAuthorityBindings(
+          published.authorityBindings().stream()
+              .map(
+                  binding ->
+                      new Worldview.AuthorityBinding(
+                          binding.localId(),
+                          binding.rootIdentity(),
+                          binding.sourceOntology(),
+                          binding.sourceOffset(),
+                          binding.sourceLength(),
+                          binding.sourceHash(),
+                          binding.provider(),
+                          binding.componentUrn(),
+                          binding.componentVersion(),
+                          getUrl()))
+              .toList());
     ret.setConsistent(readable && published.consistent());
     ret.setKnowledgeRevision(portable == null ? revision : portable.generation());
-    ret.setSemanticSessionId(acceptedMetadata!=null?candidateRuntime.semanticSessionId()
-        :portable==null?semanticSessionId:portable.sessionId());
+    ret.setSemanticSessionId(
+        acceptedMetadata != null
+            ? candidateRuntime.semanticSessionId()
+            : portable == null ? semanticSessionId : portable.sessionId());
     if (readable) ret.setWorldviewCommitment(published.commitment());
-    if (readable) ret.setSemanticContentFingerprint(acceptedMetadata == null
-        ? semanticContentFingerprint : acceptedMetadata.semanticContentFingerprint());
+    if (readable)
+      ret.setSemanticContentFingerprint(
+          acceptedMetadata == null
+              ? semanticContentFingerprint
+              : acceptedMetadata.semanticContentFingerprint());
     return ret;
   }
 
@@ -2222,20 +3014,45 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private void publishSemanticCapabilities() {
     var loaded = worldview;
     boolean usable = loaded != null && knowledgeReady && consistent.get();
-    var bindings = usable ? loaded.getAuthorityBindings().stream()
-        .filter(binding -> authorityBindings.get(binding.localId()) != null
-            && binding.sourceHash() != null
-            && binding.sourceHash().equals(loadedOntologySources.get(binding.sourceOntology())))
-        .map(binding -> new Worldview.AuthorityBinding(binding.localId(), binding.rootIdentity(),
-            binding.sourceOntology(), binding.sourceOffset(), binding.sourceLength(), binding.sourceHash(),
-            binding.provider(), binding.componentUrn(), binding.componentVersion(), getUrl())).toList()
-        : List.<Worldview.AuthorityBinding>of();
+    var bindings =
+        usable
+            ? loaded.getAuthorityBindings().stream()
+                .filter(
+                    binding ->
+                        authorityBindings.get(binding.localId()) != null
+                            && binding.sourceHash() != null
+                            && binding
+                                .sourceHash()
+                                .equals(loadedOntologySources.get(binding.sourceOntology())))
+                .map(
+                    binding ->
+                        new Worldview.AuthorityBinding(
+                            binding.localId(),
+                            binding.rootIdentity(),
+                            binding.sourceOntology(),
+                            binding.sourceOffset(),
+                            binding.sourceLength(),
+                            binding.sourceHash(),
+                            binding.provider(),
+                            binding.componentUrn(),
+                            binding.componentVersion(),
+                            getUrl()))
+                .toList()
+            : List.<Worldview.AuthorityBinding>of();
     var id = loaded == null ? null : loaded.getWorldviewId();
-    var commitment = usable && id != null && !id.isBlank() && !loadedOntologySources.isEmpty()
-        ? new WorldviewCommitment(1, id, loadedOntologySources) : null;
+    var commitment =
+        usable && id != null && !id.isBlank() && !loadedOntologySources.isEmpty()
+            ? new WorldviewCommitment(1, id, loadedOntologySources)
+            : null;
     publishedSemanticCapabilities =
-        org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot.capture(
-            capabilitiesGeneration, id, loaded == null ? null : loaded.getUrn(), usable, bindings, commitment);
+        org.integratedmodelling.klab.services.reasoner.internal.SemanticCapabilitiesSnapshot
+            .capture(
+                capabilitiesGeneration,
+                id,
+                loaded == null ? null : loaded.getUrn(),
+                usable,
+                bindings,
+                commitment);
   }
 
   @Override
@@ -2245,33 +3062,37 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> identities(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("identities", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  return this.owl.getRestrictedClasses(
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "identities", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    return this.owl.getRestrictedClasses(
         concept.asConcept(), this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY));
   }
 
   @Override
   public Collection<Concept> attributes(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("attributes", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  return this.owl.getRestrictedClasses(
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "attributes", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    return this.owl.getRestrictedClasses(
         concept.asConcept(), this.owl.getProperty(NS.HAS_ATTRIBUTE_PROPERTY));
   }
 
   @Override
   public Collection<Concept> realms(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("realms", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  return this.owl.getRestrictedClasses(
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "realms", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    return this.owl.getRestrictedClasses(
         concept.asConcept(), this.owl.getProperty(NS.HAS_REALM_PROPERTY));
   }
 
   @Override
   public Concept lexicalRoot(Semantics trait) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("lexicalRoot", new Class<?>[] { Semantics.class }, new Object[] { trait });
-  return lexicalRoot(trait, new HashSet<>());
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "lexicalRoot", new Class<?>[] {Semantics.class}, new Object[] {trait});
+    return lexicalRoot(trait, new HashSet<>());
   }
 
   private Concept lexicalRoot(Semantics trait, Set<Concept> visited) {
@@ -2288,8 +3109,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // A transported provider concept cannot supply its own lexical boundary or erase its
     // authority flag. Only this generation's loaded class and configured bridge can do so.
     var owningOntology = owl().getOntology(trait.asConcept().getNamespace());
-    var loaded = owningOntology == null ? null : owningOntology.getConcept(trait.asConcept().getName());
-    if (owningOntology != null && owningOntology.isInternal()
+    var loaded =
+        owningOntology == null ? null : owningOntology.getConcept(trait.asConcept().getName());
+    if (owningOntology != null
+        && owningOntology.isInternal()
         && (trait.is(SemanticType.AUTHORITY_IDENTITY)
             || loaded != null && loaded.is(SemanticType.AUTHORITY_IDENTITY))) return null;
     if (loaded != null && loaded.is(SemanticType.AUTHORITY_IDENTITY)) {
@@ -2314,8 +3137,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean hasDirectTrait(Semantics type, Concept trait) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("hasDirectTrait", new Class<?>[] { Semantics.class, Concept.class }, new Object[] { type, trait });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "hasDirectTrait",
+          new Class<?>[] {Semantics.class, Concept.class},
+          new Object[] {type, trait});
 
     for (Concept c : directTraits(type)) {
       if (is(trait, c)) {
@@ -2328,9 +3154,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean hasDirectRole(Semantics type, Concept trait) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("hasDirectRole", new Class<?>[] { Semantics.class, Concept.class }, new Object[] { type, trait });
-  for (Concept c : directRoles(type)) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "hasDirectRole",
+          new Class<?>[] {Semantics.class, Concept.class},
+          new Object[] {type, trait});
+    for (Concept c : directRoles(type)) {
       if (is(trait, c)) {
         return true;
       }
@@ -2340,9 +3169,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> directTraits(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directTraits", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  Set<Concept> ret = new HashSet<>();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directTraits", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    Set<Concept> ret = new HashSet<>();
     ret.addAll(
         this.owl.getDirectRestrictedClasses(
             concept.asConcept(), this.owl.getProperty(NS.HAS_REALM_PROPERTY)));
@@ -2357,40 +3187,47 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> directAttributes(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directAttributes", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  return this.owl.getDirectRestrictedClasses(
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directAttributes", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    return this.owl.getDirectRestrictedClasses(
         concept.asConcept(), this.owl.getProperty(NS.HAS_ATTRIBUTE_PROPERTY));
   }
 
   @Override
   public Collection<Concept> directIdentities(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directIdentities", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  return this.owl.getDirectRestrictedClasses(
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directIdentities", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    return this.owl.getDirectRestrictedClasses(
         concept.asConcept(), this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY));
   }
 
   @Override
   public Collection<Concept> directRealms(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directRealms", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  return this.owl.getDirectRestrictedClasses(
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directRealms", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    return this.owl.getDirectRestrictedClasses(
         concept.asConcept(), this.owl.getProperty(NS.HAS_REALM_PROPERTY));
   }
 
   @Override
   public Concept negated(Concept concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("negated", new Class<?>[] { Concept.class }, new Object[] { concept });
-  return this.owl.makeNegation(concept.asConcept());
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "negated", new Class<?>[] {Concept.class}, new Object[] {concept});
+    return this.owl.makeNegation(concept.asConcept());
   }
 
   @Override
   public SemanticType observableType(Semantics observable, boolean acceptTraits) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("observableType", new Class<?>[] { Semantics.class, boolean.class }, new Object[] { observable, acceptTraits });
-  if (observable instanceof Observable
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "observableType",
+          new Class<?>[] {Semantics.class, boolean.class},
+          new Object[] {observable, acceptTraits});
+    if (observable instanceof Observable
         && ((Observable) observable).getArtifactType().equals(Artifact.Type.VOID)) {
       return SemanticType.NOTHING;
     }
@@ -2405,65 +3242,89 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept relationshipSource(Semantics relationship) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("relationshipSource", new Class<?>[] { Semantics.class }, new Object[] { relationship });
-  Collection<Concept> ret = relationshipSources(relationship);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "relationshipSource", new Class<?>[] {Semantics.class}, new Object[] {relationship});
+    Collection<Concept> ret = relationshipSources(relationship);
     return ret.isEmpty() ? null : ret.iterator().next();
   }
 
   @Override
   public Collection<Concept> relationshipSources(Semantics relationship) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("relationshipSources", new Class<?>[] { Semantics.class }, new Object[] { relationship });
-  return projectHierarchy(org.integratedmodelling.common.utils.Utils.Collections.join(
-        this.owl.getDirectRestrictedClasses(
-            relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY)),
-        this.owl.getRestrictedClasses(
-            relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY))));
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "relationshipSources", new Class<?>[] {Semantics.class}, new Object[] {relationship});
+    return projectHierarchy(
+        org.integratedmodelling.common.utils.Utils.Collections.join(
+            this.owl.getDirectRestrictedClasses(
+                relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY)),
+            this.owl.getRestrictedClasses(
+                relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY))));
   }
 
   @Override
   public Concept relationshipTarget(Semantics relationship) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("relationshipTarget", new Class<?>[] { Semantics.class }, new Object[] { relationship });
-  Collection<Concept> ret = relationshipTargets(relationship);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "relationshipTarget", new Class<?>[] {Semantics.class}, new Object[] {relationship});
+    Collection<Concept> ret = relationshipTargets(relationship);
     return ret.isEmpty() ? null : ret.iterator().next();
   }
 
   @Override
   public Collection<Concept> relationshipTargets(Semantics relationship) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("relationshipTargets", new Class<?>[] { Semantics.class }, new Object[] { relationship });
-  return projectHierarchy(org.integratedmodelling.common.utils.Utils.Collections.join(
-        this.owl.getDirectRestrictedClasses(
-            relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)),
-        this.owl.getRestrictedClasses(
-            relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY))));
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "relationshipTargets", new Class<?>[] {Semantics.class}, new Object[] {relationship});
+    return projectHierarchy(
+        org.integratedmodelling.common.utils.Utils.Collections.join(
+            this.owl.getDirectRestrictedClasses(
+                relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)),
+            this.owl.getRestrictedClasses(
+                relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY))));
   }
 
   @Override
   public boolean satisfiable(Semantics ret) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("satisfiable", new Class<?>[] { Semantics.class }, new Object[] { ret });
-  return this.owl.isSatisfiable(ret);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "satisfiable", new Class<?>[] {Semantics.class}, new Object[] {ret});
+    return this.owl.isSatisfiable(ret);
   }
 
   @Override
   public Collection<Concept> applicableObservables(Concept main) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("applicableObservables", new Class<?>[] { Concept.class }, new Object[] { main });
-  return projectHierarchy(this.owl.getRestrictedClasses(main, this.owl.getProperty(NS.APPLIES_TO_PROPERTY)));
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "applicableObservables", new Class<?>[] {Concept.class}, new Object[] {main});
+    return projectHierarchy(
+        this.owl.getRestrictedClasses(main, this.owl.getProperty(NS.APPLIES_TO_PROPERTY)));
+  }
+
+  @Override
+  public boolean consequenceApplicable(Concept configuration, Concept context) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "consequenceApplicable",
+          new Class<?>[] {Concept.class, Concept.class},
+          new Object[] {configuration, context});
+    return new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(owl)
+        .configurationApplicableTo(
+            configuration == null ? null : configuration.getUrn(),
+            context == null ? null : context.getUrn());
   }
 
   @Override
   public Collection<Concept> directRoles(Semantics concept) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("directRoles", new Class<?>[] { Semantics.class }, new Object[] { concept });
-  return this.owl.getDirectRestrictedClasses(
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "directRoles", new Class<?>[] {Semantics.class}, new Object[] {concept});
+    return this.owl.getDirectRestrictedClasses(
         concept.asConcept(), this.owl.getProperty(NS.HAS_ROLE_PROPERTY));
   }
 
-  private static final CandidatePublicationCoordinator.Cancellation NO_COMPILATION_CANCELLATION = () -> false;
+  private static final CandidatePublicationCoordinator.Cancellation NO_COMPILATION_CANCELLATION =
+      () -> false;
   private boolean initialPrivateCompilationStarted;
 
   @Override
@@ -2472,87 +3333,139 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return loadKnowledgeEntry(worldview, scope, NO_COMPILATION_CANCELLATION);
   }
 
-  /** Internal one-shot entry. Its generation predicate must never be retained by an accepted actor. */
-  public synchronized ResourceSet compilePrivateKnowledge(Worldview worldview,
+  /**
+   * Internal one-shot entry. Its generation predicate must never be retained by an accepted actor.
+   */
+  public synchronized ResourceSet compilePrivateKnowledge(
+      Worldview worldview,
       org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentScope scope,
       CandidatePublicationCoordinator.Cancellation cancellation) {
-    if (!semanticOnly || knowledgeReady || initialPrivateCompilationStarted || scope != serviceScope())
-      throw new IllegalStateException("Compilation cancellation requires a fresh private actor and its owned scope");
+    if (!semanticOnly
+        || knowledgeReady
+        || initialPrivateCompilationStarted
+        || scope != serviceScope())
+      throw new IllegalStateException(
+          "Compilation cancellation requires a fresh private actor and its owned scope");
     Objects.requireNonNull(cancellation);
     initialPrivateCompilationStarted = true;
     return loadKnowledgeEntry(worldview, scope, cancellation);
   }
 
-  private static void compilationCheckpoint(CandidatePublicationCoordinator.Cancellation cancellation, CandidateTrace.Phase phase) {
+  private static void compilationCheckpoint(
+      CandidatePublicationCoordinator.Cancellation cancellation, CandidateTrace.Phase phase) {
     CandidateTrace.checkpoint(cancellation, phase);
   }
 
-  private ResourceSet loadKnowledgeEntry(Worldview worldview, Scope scope, CandidatePublicationCoordinator.Cancellation cancellation) {
-    if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
-        org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.LOAD_REQUEST,
-        candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(), -1, -1,
-        null, null, scope instanceof UserScope
-            ? org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER
-            : org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.SERVICE);
+  private ResourceSet loadKnowledgeEntry(
+      Worldview worldview, Scope scope, CandidatePublicationCoordinator.Cancellation cancellation) {
+    return loadKnowledgeEntry(worldview, scope, cancellation, false, receipt -> {});
+  }
+
+  ResourceSet loadKnowledgeEntry(
+      Worldview worldview, Scope scope, CandidatePublicationCoordinator.Cancellation cancellation,
+      boolean force, java.util.function.LongConsumer submittedGeneration) {
+    if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled())
+      org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.LOAD_REQUEST,
+          candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(),
+          -1,
+          -1,
+          null,
+          null,
+          scope instanceof UserScope
+              ? org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER
+              : org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason
+                  .SERVICE);
     if (candidateRuntime != null && !semanticOnly && scope instanceof UserScope) {
       // User retrieval/validation stays authorized by the request. The one global runtime
       // must use the same independently discovered sources and owner as startup polling.
       // Reject a private, stale or unavailable request without invalidating global state.
       try {
-        if (worldview == null) return ResourceSet.empty(Notification.error("Requested worldview is unavailable"));
+        if (worldview == null)
+          return ResourceSet.empty(Notification.error("Requested worldview is unavailable"));
         var errors = BeanIngestionPreflight.errors(worldview);
         if (!errors.isEmpty()) {
           var rejected = ResourceSet.empty();
           rejected.getNotifications().addAll(errors);
           return rejected;
         }
-        worldview = org.integratedmodelling.klab.services.reasoner.internal.ServiceWorldviewAdmission.resolve(
-            worldview, serviceScope());
+        worldview =
+            org.integratedmodelling.klab.services.reasoner.internal.ServiceWorldviewAdmission
+                .resolve(worldview, serviceScope());
         scope = serviceScope();
       } catch (RuntimeException failure) {
-        return ResourceSet.empty(Notification.error("Service worldview admission unavailable: " + failure.getMessage()));
+        return ResourceSet.empty(
+            Notification.error("Service worldview admission unavailable: " + failure.getMessage()));
       }
     }
-    org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt attempt = null;
-    if (candidateRuntime != null && !semanticOnly && worldview != null && !worldview.getOntologies().isEmpty()) {
-      try { attempt = candidateRuntime.beginPreflight(worldview, scope); }
-      catch (RuntimeException failure) {
-        candidateRuntime.invalidate(org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.PREFLIGHT_EXCEPTION);
-        return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable"));
+    org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt
+        attempt = null;
+    if (candidateRuntime != null
+        && !semanticOnly
+        && worldview != null
+        && !worldview.getOntologies().isEmpty()) {
+      try {
+        attempt = force
+            ? candidateRuntime.beginPreflight(worldview, scope, true)
+            : candidateRuntime.beginPreflight(worldview, scope);
+      } catch (RuntimeException failure) {
+        candidateRuntime.invalidate(
+            org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason
+                .PREFLIGHT_EXCEPTION);
+        return ResourceSet.empty(Notification.error(
+            "Authoritative bean preflight unavailable: " + failure.getMessage()));
       }
       if (!attempt.retry()) return ResourceSet.empty();
       worldview = attempt.snapshot();
     } else if (candidateRuntime != null && !semanticOnly) {
-      candidateRuntime.invalidate(org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.EMPTY_INPUT);
+      candidateRuntime.invalidate(
+          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason
+              .EMPTY_INPUT);
     }
     List<Notification> notifications = new ArrayList<>();
     // Ingestion also runs before user scopes exist. Collect on the supplied channel and always
     // detach the listener, so startup errors survive in the ontology validation diagnostics.
     try (var collector = new IngestionNotifications(scope, notifications)) {
-      return loadKnowledge(worldview, scope, notifications, attempt, cancellation);
+      var result = loadKnowledge(worldview, scope, notifications, attempt, cancellation,
+          submittedGeneration);
+      if (force) {
+        // Lexical grouping omits global diagnostics (for example OWL inconsistency).
+        notifications.stream().filter(n -> n.getLexicalContext() == null)
+            .filter(n -> !result.getNotifications().contains(n))
+            .forEach(result.getNotifications()::add);
+      }
+      return result;
     } finally {
       if (candidateRuntime == null || semanticOnly) {
-      if (semanticValidationState.loading())
-        semanticValidationState.settle(knowledgeRevision(), false);
-      publishSemanticCapabilities();
+        if (semanticValidationState.loading())
+          semanticValidationState.settle(knowledgeRevision(), false);
+        publishSemanticCapabilities();
       }
     }
   }
 
-  private ResourceSet loadKnowledge(Worldview worldview, Scope scope, List<Notification> ret,
-      org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime.PreflightAttempt attempt,
-      CandidatePublicationCoordinator.Cancellation cancellation) {
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.INPUT_PREFLIGHT);
-    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.INPUT_PREFLIGHT,null)) {
+  private ResourceSet loadKnowledge(
+      Worldview worldview,
+      Scope scope,
+      List<Notification> ret,
+      org.integratedmodelling.klab.services.reasoner.internal.AcceptedSemanticRuntime
+              .PreflightAttempt
+          attempt,
+      CandidatePublicationCoordinator.Cancellation cancellation,
+      java.util.function.LongConsumer submittedGeneration) {
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.INPUT_PREFLIGHT);
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.INPUT_PREFLIGHT, null)) {
       // Freeze and validate authoritative semantic beans before initialization or any OWL write.
       // Aggregate isEmpty flags may be stale; current structured diagnostics own this gate.
       if (worldview == null || worldview.getOntologies().isEmpty())
-        return ResourceSet.empty(Notification.error("Authoritative worldview is unavailable or contains no ontologies"));
+        return ResourceSet.empty(
+            Notification.error("Authoritative worldview is unavailable or contains no ontologies"));
       try {
         worldview = BeanIngestionPreflight.snapshot(worldview);
         var beanErrors = BeanIngestionPreflight.errors(worldview);
         if (!beanErrors.isEmpty()) {
-          if (candidateRuntime != null && !semanticOnly
+          if (candidateRuntime != null
+              && !semanticOnly
               && !candidateRuntime.rejectPreflight(attempt, beanErrors, scope))
             return ResourceSet.empty(Notification.info("Stale bean preflight discarded"));
           worldviewLoadDiagnostics = List.copyOf(beanErrors);
@@ -2561,12 +3474,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           return rejected;
         }
       } catch (RuntimeException e) {
-        return ResourceSet.empty(Notification.error("Authoritative bean preflight unavailable: " + e.getMessage()));
+        return ResourceSet.empty(
+            Notification.error("Authoritative bean preflight unavailable: " + e.getMessage()));
       }
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.INPUT_PREFLIGHT);
-      if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(worldview, false)) {
-        List<Notification> failures = List.of(Notification.error("Authoritative worldview has no valid root ontology"));
-        if (candidateRuntime != null && !semanticOnly
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.INPUT_PREFLIGHT);
+      if (!org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.loadable(
+          worldview, false)) {
+        List<Notification> failures =
+            List.of(Notification.error("Authoritative worldview has no valid root ontology"));
+        if (candidateRuntime != null
+            && !semanticOnly
             && !candidateRuntime.rejectPreflight(attempt, failures, scope))
           return ResourceSet.empty(Notification.info("Stale bean preflight discarded"));
         worldviewLoadDiagnostics = failures;
@@ -2574,8 +3491,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
     }
     if (candidateRuntime != null && !semanticOnly) {
-      if (!candidateRuntime.submit(worldview, attempt, scope))
+      long generation = candidateRuntime.submitGeneration(worldview, attempt, scope);
+      if (generation < 0)
         return ResourceSet.empty(Notification.info("Stale worldview submission discarded"));
+      submittedGeneration.accept(generation);
       this.worldview = BeanIngestionPreflight.snapshot(worldview);
       var status = candidateRuntime.status();
       setOperational(status.acceptedGeneration() > 0);
@@ -2607,26 +3526,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     this.observationReasoner = new ObservationReasoner(this);
 
     long ingestionStarted = System.nanoTime();
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.OWL_INITIALIZE);
-    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.OWL_INITIALIZE,null)) {
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.OWL_INITIALIZE);
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.OWL_INITIALIZE, null)) {
       this.owl.initialize(worldview.getOntologies().getFirst());
-      serviceScope().info("Worldview OWL initialization completed in "
-          + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - ingestionStarted) + " ms");
+      serviceScope()
+          .info(
+              "Worldview OWL initialization completed in "
+                  + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - ingestionStarted)
+                  + " ms");
     }
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.OWL_INITIALIZE);
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.OWL_INITIALIZE);
     authorityBindings.clear();
     loadedOntologySources.clear();
     declarationDomains.clear();
     loadedOntologyDiagnostics.clear();
-    compileStagedOntologies(worldview.getOntologies(),scope,cancellation);
+    compileStagedOntologies(worldview.getOntologies(), scope, cancellation);
     long flushStarted = System.nanoTime();
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_FLUSH);
-    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.LOAD_FLUSH,null)) {
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.LOAD_FLUSH);
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.LOAD_FLUSH, null)) {
       this.owl.flushReasoner();
-      serviceScope().info("Worldview OWL flush completed in "
-          + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - flushStarted) + " ms");
+      serviceScope()
+          .info(
+              "Worldview OWL flush completed in "
+                  + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - flushStarted)
+                  + " ms");
     }
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_FLUSH);
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.LOAD_FLUSH);
     for (var ontology : worldview.getOntologies()) {
       loadedOntologyDiagnostics.put(
           ontology.getUrn(),
@@ -2638,35 +3563,43 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
               .toList());
     }
     long strategiesStarted = System.nanoTime();
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.STRATEGIES);
-    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.STRATEGIES,null)) {
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.STRATEGIES);
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.STRATEGIES, null)) {
       for (var strategyDocument : worldview.getObservationStrategies()) {
         for (var strategy : strategyDocument.getStatements()) {
           observationReasoner.registerStrategy(strategy);
         }
       }
       observationReasoner.initializeStrategies();
-      serviceScope().info("Worldview strategy initialization completed in "
-          + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - strategiesStarted) + " ms");
+      serviceScope()
+          .info(
+              "Worldview strategy initialization completed in "
+                  + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - strategiesStarted)
+                  + " ms");
     }
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.STRATEGIES);
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.STRATEGIES);
 
     // assess consistent status and if consistent, set operational
     long consistencyStarted = System.nanoTime();
     boolean logicallyConsistent;
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_CONSISTENCY);
-    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.LOAD_CONSISTENCY,null)) {
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.LOAD_CONSISTENCY);
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.LOAD_CONSISTENCY, null)) {
       this.owl.monotoneRefinements().refresh(this);
       logicallyConsistent = !this.owl.isOn() || this.owl.isConsistent();
     }
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.LOAD_CONSISTENCY);
-    serviceScope().info("Worldview consistency check completed in "
-        + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - consistencyStarted) + " ms");
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.LOAD_CONSISTENCY);
+    serviceScope()
+        .info(
+            "Worldview consistency check completed in "
+                + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - consistencyStarted)
+                + " ms");
     this.consistent.set(!Utils.Notifications.hasErrors(ret) && logicallyConsistent);
     if (!logicallyConsistent) {
-      ret.add(Notification.error(Utils.Notifications.hasErrors(ret)
-          ? "Rejected worldview produced inconsistent OWL"
-          : "VALIDATION_TRANSLATION_BUG: accepted worldview produced inconsistent OWL"));
+      ret.add(
+          Notification.error(
+              Utils.Notifications.hasErrors(ret)
+                  ? "Rejected worldview produced inconsistent OWL"
+                  : "VALIDATION_TRANSLATION_BUG: accepted worldview produced inconsistent OWL"));
     }
     this.advisories.addAll(ret);
 
@@ -2684,7 +3617,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     var affectedKnowledge = new HashSet<String>();
     changes.getOntologies().forEach(r -> affectedKnowledge.add("ontology:" + r.getResourceUrn()));
-    changes.getObservationStrategies().forEach(r -> affectedKnowledge.add("strategy:" + r.getResourceUrn()));
+    changes
+        .getObservationStrategies()
+        .forEach(r -> affectedKnowledge.add("strategy:" + r.getResourceUrn()));
     var ontologies = new LinkedHashMap<ResourceSet.Resource, PreparedOntology>();
     var strategies = new LinkedHashMap<ResourceSet.Resource, PreparedStrategy>();
     var sourceWorldviews = new ArrayList<Worldview>();
@@ -2695,67 +3630,117 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       for (var resource : changes.getOntologies()) {
         var resources = resourcesForChange(resource, changes, ownResources, services, scope);
         var notifications = new ArrayList<Notification>();
-        var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
-        var retrieved = resources.retrieve(resource.getResourceUrn(), KimOntology.class, parsingScope);
-        if (retrieved == null) throw new KlabValidationException("Authoritative ontology unavailable: " + resource.getResourceUrn());
+        var parsingScope =
+            getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
+        var retrieved =
+            resources.retrieve(resource.getResourceUrn(), KimOntology.class, parsingScope);
+        if (retrieved == null)
+          throw new KlabValidationException(
+              "Authoritative ontology unavailable: " + resource.getResourceUrn());
         var ontology = BeanIngestionPreflight.snapshot(retrieved);
         notifications.addAll(ontology.getNotifications());
         // The worldview may report aggregate errors from unrelated or superseded sources.
         // Resolve from its structured beans; do not attribute its channel messages to this bean.
         var authoritySnapshot = resources.retrieve(worldview.getUrn(), Worldview.class, scope);
-        if (authoritySnapshot == null) throw new KlabValidationException("Cannot synchronize worldview authority definitions");
+        if (authoritySnapshot == null)
+          throw new KlabValidationException("Cannot synchronize worldview authority definitions");
         authoritySnapshot = BeanIngestionPreflight.snapshot(authoritySnapshot);
         sourceWorldviews.add(authoritySnapshot);
         documents.add(ontology);
-        ontologies.put(resource, new PreparedOntology(ontology, authoritySnapshot, parsingScope, notifications));
+        ontologies.put(
+            resource,
+            new PreparedOntology(ontology, authoritySnapshot, parsingScope, notifications));
       }
       for (var resource : changes.getObservationStrategies()) {
         var resources = resourcesForChange(resource, changes, ownResources, services, scope);
         var notifications = new ArrayList<Notification>();
-        var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
-        var retrieved = resources.retrieve(resource.getResourceUrn(), KimObservationStrategyDocument.class, parsingScope);
-        if (retrieved == null) throw new KlabValidationException("Authoritative strategy unavailable: " + resource.getResourceUrn());
+        var parsingScope =
+            getScopeManager().collectMessagePayload(scope, Notification.class, notifications);
+        var retrieved =
+            resources.retrieve(
+                resource.getResourceUrn(), KimObservationStrategyDocument.class, parsingScope);
+        if (retrieved == null)
+          throw new KlabValidationException(
+              "Authoritative strategy unavailable: " + resource.getResourceUrn());
         var strategy = BeanIngestionPreflight.snapshot(retrieved);
         notifications.addAll(strategy.getNotifications());
         var sourceSnapshot = resources.retrieve(worldview.getUrn(), Worldview.class, scope);
-        if (sourceSnapshot == null) throw new KlabValidationException("Authoritative strategy dependencies unavailable");
+        if (sourceSnapshot == null)
+          throw new KlabValidationException("Authoritative strategy dependencies unavailable");
         sourceWorldviews.add(BeanIngestionPreflight.snapshot(sourceSnapshot));
         documents.add(strategy);
         strategies.put(resource, new PreparedStrategy(strategy, notifications));
       }
       var errors = new LinkedHashSet<>(BeanIngestionPreflight.errors(documents, sourceWorldviews));
-      ontologies.values().forEach(p -> errors.addAll(BeanIngestionPreflight.errors(p.notifications())));
-      strategies.values().forEach(p -> errors.addAll(BeanIngestionPreflight.errors(p.notifications())));
-      if (!errors.isEmpty()) return rejectBeanUpdate(changes, affectedKnowledge, List.copyOf(errors));
+      ontologies
+          .values()
+          .forEach(p -> errors.addAll(BeanIngestionPreflight.errors(p.notifications())));
+      strategies
+          .values()
+          .forEach(p -> errors.addAll(BeanIngestionPreflight.errors(p.notifications())));
+      if (!errors.isEmpty())
+        return rejectBeanUpdate(changes, affectedKnowledge, List.copyOf(errors));
     } catch (Exception e) {
-      return rejectBeanUpdate(changes, affectedKnowledge,
-          List.of(Notification.error("Authoritative bean preflight unavailable: " + e.getMessage())));
+      return rejectBeanUpdate(
+          changes,
+          affectedKnowledge,
+          List.of(
+              Notification.error("Authoritative bean preflight unavailable: " + e.getMessage())));
     }
 
     if (candidateRuntime != null && !semanticOnly) {
       if (sourceWorldviews.isEmpty() && worldview == null)
-        return rejectBeanUpdate(changes, affectedKnowledge, List.of(Notification.error("Authoritative worldview snapshot is unavailable")));
-      var complete = BeanIngestionPreflight.snapshot(sourceWorldviews.isEmpty() ? worldview : sourceWorldviews.getFirst());
-      if (!(complete instanceof org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl mutable))
-        return rejectBeanUpdate(changes, affectedKnowledge, List.of(Notification.error("Authoritative worldview snapshot cannot be prepared")));
+        return rejectBeanUpdate(
+            changes,
+            affectedKnowledge,
+            List.of(Notification.error("Authoritative worldview snapshot is unavailable")));
+      var complete =
+          BeanIngestionPreflight.snapshot(
+              sourceWorldviews.isEmpty() ? worldview : sourceWorldviews.getFirst());
+      if (!(complete
+          instanceof org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl mutable))
+        return rejectBeanUpdate(
+            changes,
+            affectedKnowledge,
+            List.of(Notification.error("Authoritative worldview snapshot cannot be prepared")));
       var changing = new HashSet<String>();
-      documents.forEach(document -> changing.add(org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.sourceKey(document)));
-      var manifest = org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.sources(complete);
+      documents.forEach(
+          document ->
+              changing.add(
+                  org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory
+                      .sourceKey(document)));
+      var manifest =
+          org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory
+              .sources(complete);
       for (var sourceSnapshot : sourceWorldviews) {
-        var sourceManifest = org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory.sources(sourceSnapshot);
+        var sourceManifest =
+            org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactory
+                .sources(sourceSnapshot);
         if (!Objects.equals(complete.getWorldviewId(), sourceSnapshot.getWorldviewId())
             || !manifest.keySet().equals(sourceManifest.keySet())
-            || manifest.entrySet().stream().anyMatch(entry -> !changing.contains(entry.getKey())
-                && !Objects.equals(entry.getValue(), sourceManifest.get(entry.getKey()))))
-          return rejectBeanUpdate(changes, affectedKnowledge,
-              List.of(Notification.error("Authoritative dependency snapshot changed during bean prefetch; retry the complete batch")));
+            || manifest.entrySet().stream()
+                .anyMatch(
+                    entry ->
+                        !changing.contains(entry.getKey())
+                            && !Objects.equals(
+                                entry.getValue(), sourceManifest.get(entry.getKey()))))
+          return rejectBeanUpdate(
+              changes,
+              affectedKnowledge,
+              List.of(
+                  Notification.error(
+                      "Authoritative dependency snapshot changed during bean prefetch; retry the complete batch")));
       }
       var preparedBindings = new ArrayList<>(mutable.getAuthorityBindings());
       for (var prepared : ontologies.values()) {
-        org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport.replaceOntology(mutable, prepared.ontology());
-        preparedBindings.removeIf(binding -> binding.sourceOntology().equals(prepared.ontology().getUrn()));
-        preparedBindings.addAll(prepared.worldview().getAuthorityBindings().stream()
-            .filter(binding -> binding.sourceOntology().equals(prepared.ontology().getUrn())).toList());
+        org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport
+            .replaceOntology(mutable, prepared.ontology());
+        preparedBindings.removeIf(
+            binding -> binding.sourceOntology().equals(prepared.ontology().getUrn()));
+        preparedBindings.addAll(
+            prepared.worldview().getAuthorityBindings().stream()
+                .filter(binding -> binding.sourceOntology().equals(prepared.ontology().getUrn()))
+                .toList());
       }
       mutable.setAuthorityBindings(preparedBindings);
       var completeStrategies = new ArrayList<>(mutable.getObservationStrategies());
@@ -2767,8 +3752,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             break;
           }
         }
-        if (position < 0) return rejectBeanUpdate(changes, affectedKnowledge,
-            List.of(Notification.error("Authoritative strategy dependency order is unavailable; retry the complete batch")));
+        if (position < 0)
+          return rejectBeanUpdate(
+              changes,
+              affectedKnowledge,
+              List.of(
+                  Notification.error(
+                      "Authoritative strategy dependency order is unavailable; retry the complete batch")));
         completeStrategies.set(position, prepared.document());
       }
       mutable.setObservationStrategies(completeStrategies);
@@ -2776,10 +3766,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (!errors.isEmpty()) return rejectBeanUpdate(changes, affectedKnowledge, errors);
       // Use the same fingerprint/preflight gate as startup polling. Duplicate change events
       // must not cancel a pending candidate, reconfigure providers, or notify editors again.
-      if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
-          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.UPDATE_BATCH,
-          candidateRuntime.status().inputGeneration(), -1, -1, null, null,
-          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER);
+      if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled())
+        org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+            org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event
+                .UPDATE_BATCH,
+            candidateRuntime.status().inputGeneration(),
+            -1,
+            -1,
+            null,
+            null,
+            org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.USER);
       changes.getNotifications().addAll(loadKnowledge(complete, scope).getNotifications());
       return changes;
     }
@@ -2800,8 +3796,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       for (var resource : changes.getOntologies()) {
         for (var binding : authorityBindings.snapshot()) {
           if (binding.request().rootIdentity().startsWith(resource.getResourceUrn() + ":")) {
-            var authorityOntology = owl.getOntology(
-                org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings.ontologyId(binding));
+            var authorityOntology =
+                owl.getOntology(
+                    org.integratedmodelling.klab.services.reasoner.internal.AuthorityBindings
+                        .ontologyId(binding));
             if (authorityOntology != null) owl.releaseOntology(authorityOntology);
           }
         }
@@ -2815,23 +3813,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
       }
 
-      var stagedScopes = new LinkedHashMap<KimOntology,Scope>();
+      var stagedScopes = new LinkedHashMap<KimOntology, Scope>();
       for (var resource : changes.getOntologies()) {
         var prepared = ontologies.get(resource);
         var notifications = prepared.notifications();
         var parsingScope = prepared.scope();
         var ontology = prepared.ontology();
         var authoritySnapshot = prepared.worldview();
-        if (worldview instanceof org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl mutable) {
+        if (worldview
+            instanceof org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl mutable) {
           var reconciled = new ArrayList<>(mutable.getAuthorityBindings());
           reconciled.removeIf(binding -> binding.sourceOntology().equals(ontology.getUrn()));
-          reconciled.addAll(authoritySnapshot.getAuthorityBindings().stream()
-              .filter(binding -> binding.sourceOntology().equals(ontology.getUrn())).toList());
+          reconciled.addAll(
+              authoritySnapshot.getAuthorityBindings().stream()
+                  .filter(binding -> binding.sourceOntology().equals(ontology.getUrn()))
+                  .toList());
           mutable.setAuthorityBindings(reconciled);
           org.integratedmodelling.klab.services.reasoner.internal.WorldviewLoadingSupport
               .replaceOntology(mutable, ontology);
         }
-        stagedScopes.put(ontology,parsingScope);
+        stagedScopes.put(ontology, parsingScope);
         this.advisories.removeAll(
             loadedOntologyDiagnostics.getOrDefault(ontology.getUrn(), List.of()));
         loadedOntologyDiagnostics.put(ontology.getUrn(), List.copyOf(notifications));
@@ -2862,7 +3863,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (this.owl.isOn() && !this.owl.isConsistent()) {
         inconsistent = true;
         this.advisories.add(
-            Notification.error("VALIDATION_TRANSLATION_BUG: worldview validation or translation allowed inconsistent OWL"));
+            Notification.error(
+                "VALIDATION_TRANSLATION_BUG: worldview validation or translation allowed inconsistent OWL"));
       }
     } catch (Throwable t) {
       inconsistent = true;
@@ -2889,34 +3891,53 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return changes;
   }
 
-  private record PreparedOntology(KimOntology ontology, Worldview worldview, Scope scope,
-      List<Notification> notifications) {}
-  private record PreparedStrategy(KimObservationStrategyDocument document,
-      List<Notification> notifications) {}
+  private record PreparedOntology(
+      KimOntology ontology, Worldview worldview, Scope scope, List<Notification> notifications) {}
 
-  private ResourcesService resourcesForChange(ResourceSet.Resource resource, ResourceSet changes,
-      ResourcesService ownResources, Map<URL, ResourcesService> services, UserScope scope) {
-    if (ownResources.capabilities(scope).getServiceId().equals(resource.getServiceId())) return ownResources;
+  private record PreparedStrategy(
+      KimObservationStrategyDocument document, List<Notification> notifications) {}
+
+  private ResourcesService resourcesForChange(
+      ResourceSet.Resource resource,
+      ResourceSet changes,
+      ResourcesService ownResources,
+      Map<URL, ResourcesService> services,
+      UserScope scope) {
+    if (ownResources.capabilities(scope).getServiceId().equals(resource.getServiceId()))
+      return ownResources;
     var url = changes.getServices().get(resource.getServiceId());
-    if (url == null) throw new KlabValidationException("Authoritative Resources service unavailable: " + resource.getServiceId());
-    return services.computeIfAbsent(url, target -> ServiceClientCatalog.INSTANCE.getService(
-        target, settingsForSlaveServices, scope, ResourcesService.class));
+    if (url == null)
+      throw new KlabValidationException(
+          "Authoritative Resources service unavailable: " + resource.getServiceId());
+    return services.computeIfAbsent(
+        url,
+        target ->
+            ServiceClientCatalog.INSTANCE.getService(
+                target, settingsForSlaveServices, scope, ResourcesService.class));
   }
 
-  private ResourceSet rejectBeanUpdate(ResourceSet changes, Set<String> affected,
-      List<Notification> errors) {
+  private ResourceSet rejectBeanUpdate(
+      ResourceSet changes, Set<String> affected, List<Notification> errors) {
     changes.getNotifications().addAll(errors);
     if (candidateRuntime != null && !semanticOnly) {
       // A failed user batch may be private or stale. Keep its diagnostics on the request;
       // only independently discovered service beans may invalidate/reject global state.
       try {
-        var discovered = org.integratedmodelling.klab.services.reasoner.internal.ServiceWorldviewAdmission.discover(serviceScope());
+        var discovered =
+            org.integratedmodelling.klab.services.reasoner.internal.ServiceWorldviewAdmission
+                .discover(serviceScope());
         if (candidateRuntime.shouldRetryPreflight(discovered, serviceScope())) {
-          changes.getNotifications().addAll(loadKnowledge(discovered, serviceScope()).getNotifications());
+          changes
+              .getNotifications()
+              .addAll(loadKnowledge(discovered, serviceScope()).getNotifications());
         }
       } catch (RuntimeException unavailable) {
-        changes.getNotifications().add(Notification.warning(
-            "Service worldview refresh unavailable after rejected request: " + unavailable.getMessage()));
+        changes
+            .getNotifications()
+            .add(
+                Notification.warning(
+                    "Service worldview refresh unavailable after rejected request: "
+                        + unavailable.getMessage()));
       }
       return changes;
     }
@@ -2928,7 +3949,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return changes;
   }
 
-  /** Retain the originating Resources service on declared concepts for later namespace-bound retrieval. */
+  /**
+   * Retain the originating Resources service on declared concepts for later namespace-bound
+   * retrieval.
+   */
   private void tagConceptService(KimConceptStatement statement, String serviceId) {
     if (serviceId == null) return;
     var concept = owl.getConcept(statement.getNamespace() + ":" + statement.getUrn());
@@ -2938,8 +3962,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean is(Semantics concept, Semantics other) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("is", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { concept, other });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "is", new Class<?>[] {Semantics.class, Semantics.class}, new Object[] {concept, other});
 
     if (owl != null) owl.requireAvailableClosure();
     Objects.requireNonNull(concept, "concept");
@@ -2952,8 +3977,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (concept.asConcept().isCollective() != other.asConcept().isCollective()) return false;
     // Admitted authority terms use the provider's directional contract, including UNKNOWN.
     // Exported OWL parents never override a provider decision or supply a missing mapping.
-    var delegated = authorityIdentityResolver == null ? Authority.Subsumption.UNSUPPORTED
-        : authorityIdentityResolver.subsumption(other.asConcept(), concept.asConcept());
+    var delegated =
+        authorityIdentityResolver == null
+            ? Authority.Subsumption.UNSUPPORTED
+            : authorityIdentityResolver.subsumption(other.asConcept(), concept.asConcept());
     if (delegated != Authority.Subsumption.UNSUPPORTED)
       return delegated == Authority.Subsumption.SUBSUMES;
     if (authorityIdentityResolver != null && other.asConcept().is(SemanticType.AUTHORITY_IDENTITY))
@@ -3028,13 +4055,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Semantics domain(Semantics conceptImpl) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("domain", new Class<?>[] { Semantics.class }, new Object[] { conceptImpl });
-  if (conceptImpl == null) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "domain", new Class<?>[] {Semantics.class}, new Object[] {conceptImpl});
+    if (conceptImpl == null) {
       return null;
     }
-    var definingDomain = org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport
-        .domain(owl, conceptImpl.asConcept());
+    var definingDomain =
+        org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.domain(
+            owl, conceptImpl.asConcept());
     if (definingDomain != null) return definingDomain;
     ArrayDeque<Concept> queue = new ArrayDeque<>();
     Set<Concept> visited = new HashSet<>();
@@ -3061,9 +4090,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   public Concept declareConcept(KimConcept conceptDeclaration) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("declareConcept", new Class<?>[] { KimConcept.class }, new Object[] { conceptDeclaration });
-  requireInitializedKnowledge();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "declareConcept", new Class<?>[] {KimConcept.class}, new Object[] {conceptDeclaration});
+    requireInitializedKnowledge();
     // Syntax substitution invalidates cached definitions. Normalize a detached tree before
     // canonical lookup; never finalize the caller's frozen preparation payload in place.
     if (conceptDeclaration.getUrn() == null && conceptDeclaration instanceof KimConceptImpl syntax)
@@ -3075,13 +4105,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   public Observable declareObservable(KimObservable observableDeclaration) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("declareObservable", new Class<?>[] { KimObservable.class }, new Object[] { observableDeclaration });
-  requireInitializedKnowledge();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "declareObservable",
+          new Class<?>[] {KimObservable.class},
+          new Object[] {observableDeclaration});
+    requireInitializedKnowledge();
     if (observableDeclaration.getSemantics() != null
         && observableDeclaration.getSemantics().getUrn() == null
         && observableDeclaration instanceof KimObservableImpl syntax)
-      observableDeclaration = new KimObservableImpl(syntax, (path, node) -> node.finalizeDefinition());
+      observableDeclaration =
+          new KimObservableImpl(syntax, (path, node) -> node.finalizeDefinition());
     return declare(
         observableDeclaration,
         this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()),
@@ -3090,8 +4124,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   public Observable declareObservable(
       KimObservable observableDeclaration, Map<String, Object> patternVariables) {
-      if (candidateRuntime != null && !semanticOnly)
-          return candidateRuntime.invoke("declareObservable", new Class<?>[] { KimObservable.class, Map.class }, new Object[] { observableDeclaration, patternVariables });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "declareObservable",
+          new Class<?>[] {KimObservable.class, Map.class},
+          new Object[] {observableDeclaration, patternVariables});
 
     if (observableDeclaration.getPattern() == null) {
       return declareObservable(observableDeclaration);
@@ -3119,8 +4156,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   //  @Override
   public Concept declareConcept(
       KimConcept observableDeclaration, Map<String, Object> patternVariables) {
-      if (candidateRuntime != null && !semanticOnly)
-          return candidateRuntime.invoke("declareConcept", new Class<?>[] { KimConcept.class, Map.class }, new Object[] { observableDeclaration, patternVariables });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "declareConcept",
+          new Class<?>[] {KimConcept.class, Map.class},
+          new Object[] {observableDeclaration, patternVariables});
 
     if (!observableDeclaration.isPattern()) {
       return declareConcept(observableDeclaration);
@@ -3147,19 +4187,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean compatible(Semantics o1, Semantics o2) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("compatible", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { o1, o2 });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "compatible", new Class<?>[] {Semantics.class, Semantics.class}, new Object[] {o1, o2});
     if (owl != null) owl.requireAvailableClosure();
-  return compatible(o1, o2, 0);
+    return compatible(o1, o2, 0);
   }
 
   // @Override
   public boolean compatible(Semantics o1, Semantics o2, int flags) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("compatible", new Class<?>[] { Semantics.class, Semantics.class, int.class }, new Object[] { o1, o2, flags });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "compatible",
+          new Class<?>[] {Semantics.class, Semantics.class, int.class},
+          new Object[] {o1, o2, flags});
     if (owl != null) owl.requireAvailableClosure();
 
-    if (observerDistance(o1,o2)<0) return false;
+    if (observerDistance(o1, o2) < 0) return false;
     if (o1 == o2 || o1.equals(o2)) {
       return true;
     }
@@ -3263,9 +4307,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean hasParentRole(Semantics o1, Concept t) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("hasParentRole", new Class<?>[] { Semantics.class, Concept.class }, new Object[] { o1, t });
-  for (Concept role : roles(o1)) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "hasParentRole", new Class<?>[] {Semantics.class, Concept.class}, new Object[] {o1, t});
+    for (Concept role : roles(o1)) {
       if (is(t, role)) {
         return true;
       }
@@ -3275,9 +4320,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean contextuallyCompatible(Semantics focus, Semantics context1, Semantics context2) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("contextuallyCompatible", new Class<?>[] { Semantics.class, Semantics.class, Semantics.class }, new Object[] { focus, context1, context2 });
-  boolean ret = compatible(context1, context2, 0);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "contextuallyCompatible",
+          new Class<?>[] {Semantics.class, Semantics.class, Semantics.class},
+          new Object[] {focus, context1, context2});
+    boolean ret = compatible(context1, context2, 0);
     if (!ret && occurrent(context1)) {
       ret = affectedBy(focus, context1);
       Concept itsContext = inherent(context1);
@@ -3292,17 +4340,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean occurrent(Semantics context1) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("occurrent", new Class<?>[] { Semantics.class }, new Object[] { context1 });
-  return context1 != null
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "occurrent", new Class<?>[] {Semantics.class}, new Object[] {context1});
+    return context1 != null
         && (context1.is(SemanticType.PROCESS) || context1.is(SemanticType.EVENT));
   }
 
   @Override
   public Collection<Concept> affectedOrCreated(Semantics semantics) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("affectedOrCreated", new Class<?>[] { Semantics.class }, new Object[] { semantics });
-  Set<Concept> ret = new HashSet<>(affected(semantics));
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "affectedOrCreated", new Class<?>[] {Semantics.class}, new Object[] {semantics});
+    Set<Concept> ret = new HashSet<>(affected(semantics));
     ret.addAll(created(semantics));
     return ret;
   }
@@ -3310,9 +4360,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public Collection<org.integratedmodelling.klab.api.knowledge.SemanticInfluence> influences(
       Semantics semantics) {
-      if (candidateRuntime != null && !semanticOnly)
-          return candidateRuntime.invoke("influences", new Class<?>[] { Semantics.class }, new Object[] { semantics });
-      var result = new java.util.LinkedHashSet<org.integratedmodelling.klab.api.knowledge.SemanticInfluence>();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "influences", new Class<?>[] {Semantics.class}, new Object[] {semantics});
+    var result =
+        new java.util.LinkedHashSet<org.integratedmodelling.klab.api.knowledge.SemanticInfluence>();
     var query = semantics.asConcept();
     boolean occurrence = query.is(SemanticType.PROCESS) || query.is(SemanticType.EVENT);
     // Query both ends of descriptive restrictions. Keep the declaration direction in the result.
@@ -3320,27 +4372,39 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     for (var source : sources) {
       for (var kind : org.integratedmodelling.klab.api.knowledge.SemanticInfluence.Kind.values()) {
         if (kind.descriptive() == occurrence) continue;
-        if (kind.descriptive() && !(source.is(SemanticType.QUALITY) || source.is(SemanticType.PREDICATE))) continue;
+        if (kind.descriptive()
+            && !(source.is(SemanticType.QUALITY) || source.is(SemanticType.PREDICATE))) continue;
         var property = owl.getProperty(kind.property());
         if (property == null) continue;
         for (var target : owl.getRestrictedClasses(source, property)) {
           if (owl.getOntology(target.getNamespace()).isInternal()) continue;
-          if (!occurrence && !source.equals(query) && !target.equals(query)
-              && !is(query, target)) continue;
-          result.add(new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(
-              effectiveConcept(source), effectiveConcept(target), kind, owl.restrictionProvenance(source, property, target)));
+          if (!occurrence && !source.equals(query) && !target.equals(query) && !is(query, target))
+            continue;
+          result.add(
+              new org.integratedmodelling.klab.api.knowledge.SemanticInfluence(
+                  effectiveConcept(source),
+                  effectiveConcept(target),
+                  kind,
+                  owl.restrictionProvenance(source, property, target)));
         }
       }
     }
-    return result.stream().sorted(java.util.Comparator.comparing(
-        (org.integratedmodelling.klab.api.knowledge.SemanticInfluence i) -> i.source().getUrn())
-        .thenComparing(i -> i.kind().name()).thenComparing(i -> i.target().getUrn())).toList();
+    return result.stream()
+        .sorted(
+            java.util.Comparator.comparing(
+                    (org.integratedmodelling.klab.api.knowledge.SemanticInfluence i) ->
+                        i.source().getUrn())
+                .thenComparing(i -> i.kind().name())
+                .thenComparing(i -> i.target().getUrn()))
+        .toList();
   }
+
   @Override
   public Collection<Concept> affected(Semantics semantics) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("affected", new Class<?>[] { Semantics.class }, new Object[] { semantics });
-  Set<Concept> ret = new HashSet<>();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "affected", new Class<?>[] {Semantics.class}, new Object[] {semantics});
+    Set<Concept> ret = new HashSet<>();
     if (!semantics.is(SemanticType.PROCESS) && !semantics.is(SemanticType.EVENT)) return ret;
     for (Concept c :
         this.owl.getRestrictedClasses(
@@ -3354,9 +4418,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> created(Semantics semantics) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("created", new Class<?>[] { Semantics.class }, new Object[] { semantics });
-  Set<Concept> ret = new HashSet<>();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "created", new Class<?>[] {Semantics.class}, new Object[] {semantics});
+    Set<Concept> ret = new HashSet<>();
     for (Concept c :
         this.owl.getRestrictedClasses(
             semantics.asConcept(), this.owl.getProperty(NS.CREATES_PROPERTY))) {
@@ -3369,18 +4434,24 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean match(Semantics candidate, Semantics pattern) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("match", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { candidate, pattern });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "match",
+          new Class<?>[] {Semantics.class, Semantics.class},
+          new Object[] {candidate, pattern});
     if (owl != null) owl.requireAvailableClosure();
-  return observerDistance(candidate,pattern)>=0 && syntacticMatcher.match(candidate, pattern);
+    return observerDistance(candidate, pattern) >= 0 && syntacticMatcher.match(candidate, pattern);
   }
 
   @Override
   public boolean match(Semantics candidate, Semantics pattern, Map<Concept, Concept> matches) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("match", new Class<?>[] { Semantics.class, Semantics.class, Map.class }, new Object[] { candidate, pattern, matches });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "match",
+          new Class<?>[] {Semantics.class, Semantics.class, Map.class},
+          new Object[] {candidate, pattern, matches});
     if (owl != null) owl.requireAvailableClosure();
-  if (matches == null) {
+    if (matches == null) {
       throw new KlabIllegalArgumentException("The generic match result map cannot be null");
     }
     if (match(candidate, pattern) && !pattern.isAbstract()) {
@@ -3392,9 +4463,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public <T extends Semantics> T concretize(T pattern, Map<Concept, Concept> concreteConcepts) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("concretize", new Class<?>[] { Semantics.class, Map.class }, new Object[] { pattern, concreteConcepts });
-  Objects.requireNonNull(pattern, "pattern");
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "concretize",
+          new Class<?>[] {Semantics.class, Map.class},
+          new Object[] {pattern, concreteConcepts});
+    Objects.requireNonNull(pattern, "pattern");
     Objects.requireNonNull(concreteConcepts, "concreteConcepts");
     String declaration = pattern.getUrn();
     for (var replacement : concreteConcepts.entrySet()) {
@@ -3412,17 +4486,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("concretize", new Class<?>[] { Semantics.class, List.class }, new Object[] { pattern, concreteConcepts });
-  throw new KlabUnimplementedException(
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "concretize",
+          new Class<?>[] {Semantics.class, List.class},
+          new Object[] {pattern, concreteConcepts});
+    throw new KlabUnimplementedException(
         "Inference-based generic concretization is not implemented");
   }
 
   @Override
   public boolean affectedBy(Semantics affected, Semantics affecting) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("affectedBy", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { affected, affecting });
-  for (Concept c : affected(affecting)) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "affectedBy",
+          new Class<?>[] {Semantics.class, Semantics.class},
+          new Object[] {affected, affecting});
+    for (Concept c : affected(affecting)) {
       if (is(affected, c)) {
         return true;
       }
@@ -3432,9 +4512,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public boolean createdBy(Semantics affected, Semantics affecting) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("createdBy", new Class<?>[] { Semantics.class, Semantics.class }, new Object[] { affected, affecting });
-  for (Concept c : created(affecting)) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "createdBy",
+          new Class<?>[] {Semantics.class, Semantics.class},
+          new Object[] {affected, affecting});
+    for (Concept c : created(affecting)) {
       if (is(affected, c)) {
         return true;
       }
@@ -3444,8 +4527,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept baseObservable(Semantics c) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("baseObservable", new Class<?>[] { Semantics.class }, new Object[] { c });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "baseObservable", new Class<?>[] {Semantics.class}, new Object[] {c});
 
     if (c instanceof Concept concept) {
       return effectiveConcept(concept);
@@ -3462,16 +4546,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept parent(Semantics c) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("parent", new Class<?>[] { Semantics.class }, new Object[] { c });
-  Collection<Concept> parents = this.owl.getParents(c.asConcept());
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke("parent", new Class<?>[] {Semantics.class}, new Object[] {c});
+    Collection<Concept> parents = this.owl.getParents(c.asConcept());
     return parents.isEmpty() ? null : effectiveConcept(parents.iterator().next());
   }
 
   @Override
   public Concept compose(Collection<Concept> concepts, LogicalConnector connector) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("compose", new Class<?>[] { Collection.class, LogicalConnector.class }, new Object[] { concepts, connector });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "compose",
+          new Class<?>[] {Collection.class, LogicalConnector.class},
+          new Object[] {concepts, connector});
 
     if (connector == LogicalConnector.EXCLUSION || connector == LogicalConnector.DISJOINT_UNION) {
       throw new KlabIllegalArgumentException(
@@ -3496,9 +4583,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept rawObservable(Semantics observable) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("rawObservable", new Class<?>[] { Semantics.class }, new Object[] { observable });
-  String def = observable.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "rawObservable", new Class<?>[] {Semantics.class}, new Object[] {observable});
+    String def = observable.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
     Concept ret = observable.asConcept();
     if (def != null) {
       ret = resolveConcept(def);
@@ -3515,7 +4603,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * KimValidator for later use at namespace construction.
    */
   public void setWorldviewPeer(String coreConcept, String worldviewConcept) {
-    if (candidateRuntime != null && !semanticOnly) throw new IllegalStateException("Compiler state requires a private semantic actor");
+    if (candidateRuntime != null && !semanticOnly)
+      throw new IllegalStateException("Compiler state requires a private semantic actor");
     coreConceptPeers.put(worldviewConcept, coreConcept);
   }
 
@@ -3524,12 +4613,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       Ontology ontology,
       KimConceptStatement kimObject,
       Scope monitor) {
-    if (candidateRuntime != null && !semanticOnly) throw new IllegalStateException("Compiler state requires a private semantic actor");
+    if (candidateRuntime != null && !semanticOnly)
+      throw new IllegalStateException("Compiler state requires a private semantic actor");
 
     try {
 
       var authorityErrors =
-          org.integratedmodelling.klab.runtime.language.KimWorldviewValidator.authorityErrors(concept);
+          org.integratedmodelling.klab.runtime.language.KimWorldviewValidator.authorityErrors(
+              concept);
       if (!authorityErrors.isEmpty())
         throw new KlabValidationException(String.join("; ", authorityErrors));
 
@@ -3578,9 +4669,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       }
 
       if (!stagingDeclarationStructure && ret != null && concept.getAuthorityRequired() != null) {
-        configureAuthorityBinding(new Authority.ConfigurationRequest(
-            worldview.getUrn(), concept.getAuthorityRequired(), ret.getUrn(),
-            concept.getAuthorityParameters()), monitor);
+        configureAuthorityBinding(
+            new Authority.ConfigurationRequest(
+                worldview.getUrn(),
+                concept.getAuthorityRequired(),
+                ret.getUrn(),
+                concept.getAuthorityParameters()),
+            monitor);
       }
       return ret;
 
@@ -3591,6 +4686,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   private void installAlias(KimConceptStatement concept, Ontology ontology, Scope monitor) {
+    try {
+      installAliasInternal(concept, ontology, monitor);
+    } catch (org.integratedmodelling.klab.services.reasoner.internal.AuthorityIdentityResolver.LookupFailure failure) {
+      failure.atDeclaration(concept.getNamespace() + ":" + concept.getUrn());
+      var document = worldview == null ? null : worldview.getOntologies().stream()
+          .filter(candidate -> candidate.getUrn().equals(concept.getNamespace())).findFirst().orElse(null);
+      monitor.error(document == null ? Notification.error(failure.diagnostic())
+          : Notification.error(failure.diagnostic(), Notification.LexicalContext.of(concept, document)));
+      throw failure;
+    }
+  }
+
+  private void installAliasInternal(KimConceptStatement concept, Ontology ontology, Scope monitor) {
     /*
      * can only have 'is' or 'equals' X; for core concepts 'is' means 'equals', and we use the
      * statement to establish the semantic type.
@@ -3601,182 +4709,283 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (parent == null) {
         monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown", concept);
       } else {
-        if(parent.is(SemanticType.RELATIONSHIP)) {
-          var inherited=org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(parent.getType());
-          var own=org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.authored(concept);
+        if (parent.is(SemanticType.RELATIONSHIP)) {
+          var inherited =
+              org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(parent.getType());
+          var own =
+              org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.authored(
+                  concept);
           inherited.merge(own); // Opposite choices fail before canonical type mutation.
-          if(own.nature()!=org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.UNSPECIFIED && own.nature()!=inherited.nature()
-              || own.orientation()!=org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.UNSPECIFIED && own.orientation()!=inherited.orientation())
-            throw new KlabValidationException("RELATIONSHIP_ALIAS_AXIS_CONFLICT: core alias cannot specialize the canonical target");
+          if (own.nature()
+                      != org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature
+                          .UNSPECIFIED
+                  && own.nature() != inherited.nature()
+              || own.orientation()
+                      != org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation
+                          .UNSPECIFIED
+                  && own.orientation() != inherited.orientation())
+            throw new KlabValidationException(
+                "RELATIONSHIP_ALIAS_AXIS_CONFLICT: core alias cannot specialize the canonical target");
         }
-        var canonicalTypes=org.integratedmodelling.klab.runtime.language.CoreAliasTypeSupport.types(parent.getUrn(),parent.getType());
-        var declarationTypes=org.integratedmodelling.klab.runtime.language.CoreAliasTypeSupport.types(parent.getUrn(),concept.getType());
-        parent.getType().clear();parent.getType().addAll(canonicalTypes);parent.getType().addAll(declarationTypes);
+        var canonicalTypes =
+            org.integratedmodelling.klab.runtime.language.CoreAliasTypeSupport.types(
+                parent.getUrn(), parent.getType());
+        var declarationTypes =
+            org.integratedmodelling.klab.runtime.language.CoreAliasTypeSupport.types(
+                parent.getUrn(), concept.getType());
+        parent.getType().clear();
+        parent.getType().addAll(canonicalTypes);
+        parent.getType().addAll(declarationTypes);
       }
     } else if (concept.getDeclaredParent() != null) {
       parent = declareConcept(concept.getDeclaredParent());
     }
 
     if (parent != null) {
-      if(parent.is(SemanticType.RELATIONSHIP) && concept.getUpperConceptDefined()==null)
-        org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.resolve(concept,
-            org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(parent.getType()),false);
+      if (parent.is(SemanticType.RELATIONSHIP) && concept.getUpperConceptDefined() == null)
+        org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.resolve(
+            concept,
+            org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(parent.getType()),
+            false);
       var annotated = new ConceptImpl((ConceptImpl) parent);
       annotated.setAnnotations(
           AnnotationCollector.merge(parent.getAnnotations(), concept.getAnnotations()));
       ontology.addDelegateConcept(concept.getUrn(), ontology.getName(), annotated);
       if (concept.getUpperConceptDefined() != null
           || CoreOntology.CORE_ONTOLOGY_NAME.equals(parent.getNamespace())) {
-        var source = worldview == null ? null : worldview.getOntologies().stream()
-            .filter(o -> o.getUrn().equals(ontology.getName())).findFirst().orElse(null);
-        owl.coreAliasDocumentation().replace(ontology, parent, annotated, concept, source,
-            worldview == null ? concept.getProjectName() : worldview.getWorldviewId());
+        var source =
+            worldview == null
+                ? null
+                : worldview.getOntologies().stream()
+                    .filter(o -> o.getUrn().equals(ontology.getName()))
+                    .findFirst()
+                    .orElse(null);
+        owl.coreAliasDocumentation()
+            .replace(
+                ontology,
+                parent,
+                annotated,
+                concept,
+                source,
+                worldview == null ? concept.getProjectName() : worldview.getWorldviewId());
       }
     }
   }
 
   private boolean stagingDeclarationStructure;
-  private Map<String,Long> declarationStagingMetrics = Map.of();
-  public Map<String,Long> declarationStagingMetrics() { return declarationStagingMetrics; }
+  private Map<String, Long> declarationStagingMetrics = Map.of();
+
+  public Map<String, Long> declarationStagingMetrics() {
+    return declarationStagingMetrics;
+  }
 
   private void compileStagedOntologies(List<KimOntology> ontologies, Scope scope) {
-    var scopes = new LinkedHashMap<KimOntology,Scope>();
-    ontologies.forEach(ontology -> scopes.put(ontology,scope));
+    var scopes = new LinkedHashMap<KimOntology, Scope>();
+    ontologies.forEach(ontology -> scopes.put(ontology, scope));
     compileStagedOntologies(scopes);
   }
-  private void compileStagedOntologies(List<KimOntology> ontologies, Scope scope,
+
+  private void compileStagedOntologies(
+      List<KimOntology> ontologies,
+      Scope scope,
       CandidatePublicationCoordinator.Cancellation cancellation) {
-    var scopes = new LinkedHashMap<KimOntology,Scope>();
-    ontologies.forEach(ontology -> scopes.put(ontology,scope));
-    compileStagedOntologies(scopes,cancellation);
+    var scopes = new LinkedHashMap<KimOntology, Scope>();
+    ontologies.forEach(ontology -> scopes.put(ontology, scope));
+    compileStagedOntologies(scopes, cancellation);
   }
-  private void compileStagedOntologies(Map<KimOntology,Scope> scopes) {
-    compileStagedOntologies(scopes,NO_COMPILATION_CANCELLATION);
+
+  private void compileStagedOntologies(Map<KimOntology, Scope> scopes) {
+    compileStagedOntologies(scopes, NO_COMPILATION_CANCELLATION);
   }
 
   /** Only private compilation reaches this shared full/incremental staging primitive. */
-  private void compileStagedOntologies(Map<KimOntology,Scope> scopes, CandidatePublicationCoordinator.Cancellation cancellation) {
+  private void compileStagedOntologies(
+      Map<KimOntology, Scope> scopes, CandidatePublicationCoordinator.Cancellation cancellation) {
     org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry registry;
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_REGISTRY);
-    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DECLARATION_REGISTRY,null)) {
-      registry = new org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry(scopes.keySet());
-      if (!registry.errors().isEmpty()) throw new KlabValidationException(registry.errors().toString());
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.DECLARATION_REGISTRY);
+    try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DECLARATION_REGISTRY, null)) {
+      registry =
+          new org.integratedmodelling.klab.runtime.language.WorldviewDeclarationRegistry(
+              scopes.keySet());
+      if (!registry.errors().isEmpty())
+        throw new KlabValidationException(registry.errors().toString());
     }
-    compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_REGISTRY);
-    var metricsBeforeStaging=owl.compilationMetrics();
+    compilationCheckpoint(cancellation, CandidateTrace.Phase.DECLARATION_REGISTRY);
+    var metricsBeforeStaging = owl.compilationMetrics();
     try (var deferred = owl.stageDeclarations()) {
       // Typed names are actual source declarations, private to this candidate actor.
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.NAMED_DECLARATIONS);
-      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.NAMED_DECLARATIONS,null)) {
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.NAMED_DECLARATIONS);
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.NAMED_DECLARATIONS, null)) {
         for (var entry : registry.ordered()) {
-          compilationCheckpoint(cancellation,CandidateTrace.Phase.NAMED_DECLARATIONS);
-          var statement=entry.statement(); var ontology=owl.requireOntology(entry.ontology().getUrn());
-          if (statement.getUpperConceptDefined()!=null) {
-            installAlias(statement,ontology,scopes.get(entry.ontology()));
+          compilationCheckpoint(cancellation, CandidateTrace.Phase.NAMED_DECLARATIONS);
+          var statement = entry.statement();
+          var ontology = owl.requireOntology(entry.ontology().getUrn());
+          if (statement.getUpperConceptDefined() != null) {
+            installAlias(statement, ontology, scopes.get(entry.ontology()));
           } else if (!statement.isAlias()) {
-            ontology.add(Axiom.ClassAssertion(statement.getUrn(),new HashSet<>(statement.getType())));
+            ontology.add(
+                Axiom.ClassAssertion(statement.getUrn(), new HashSet<>(statement.getType())));
             ontology.define();
           }
         }
       }
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.NAMED_DECLARATIONS);
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.NAMED_DECLARATIONS);
       // Authority roots must exist before parent expressions can resolve authority identities.
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORITY_CONFIGURATION);
-      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.AUTHORITY_CONFIGURATION,null)) {
-        for (var entry : registry.ordered()) if (entry.statement().getAuthorityRequired()!=null) {
-          compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORITY_CONFIGURATION);
-          var statement=entry.statement();var owner=owl.getConcept(entry.urn());
-          configureAuthorityBinding(new Authority.ConfigurationRequest(worldview.getUrn(),
-              statement.getAuthorityRequired(),owner.getUrn(),statement.getAuthorityParameters()),scopes.get(entry.ontology()));
-        }
-      }
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORITY_CONFIGURATION);
-      stagingDeclarationStructure=true;
-      try {
-        compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_STRUCTURE);
-        try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DECLARATION_STRUCTURE,null)) {
-          for (var entry : registry.ordered()) if (entry.statement().getUpperConceptDefined()==null) {
-          compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_STRUCTURE);
-            var ontology=owl.getOntology(entry.ontology().getUrn());var scope=scopes.get(entry.ontology());
-            if (entry.statement().isAlias()) installAlias(entry.statement(),ontology,scope);
-            else if (entry.enclosing()==null) build(entry.statement(),ontology,null,scope);
-            else buildInternal(entry.statement(),ontology,entry.enclosing(),scope);
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.AUTHORITY_CONFIGURATION);
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.AUTHORITY_CONFIGURATION, null)) {
+        for (var entry : registry.ordered())
+          if (entry.statement().getAuthorityRequired() != null) {
+            compilationCheckpoint(cancellation, CandidateTrace.Phase.AUTHORITY_CONFIGURATION);
+            var statement = entry.statement();
+            var owner = owl.getConcept(entry.urn());
+            configureAuthorityBinding(
+                new Authority.ConfigurationRequest(
+                    worldview.getUrn(),
+                    statement.getAuthorityRequired(),
+                    owner.getUrn(),
+                    statement.getAuthorityParameters()),
+                scopes.get(entry.ontology()));
           }
+      }
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.AUTHORITY_CONFIGURATION);
+      stagingDeclarationStructure = true;
+      try {
+        compilationCheckpoint(cancellation, CandidateTrace.Phase.DECLARATION_STRUCTURE);
+        try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DECLARATION_STRUCTURE, null)) {
+          for (var entry : registry.ordered())
+            if (entry.statement().getUpperConceptDefined() == null) {
+              compilationCheckpoint(cancellation, CandidateTrace.Phase.DECLARATION_STRUCTURE);
+              var ontology = owl.getOntology(entry.ontology().getUrn());
+              var scope = scopes.get(entry.ontology());
+              if (entry.statement().isAlias()) installAlias(entry.statement(), ontology, scope);
+              else if (entry.enclosing() == null) build(entry.statement(), ontology, null, scope);
+              else buildInternal(entry.statement(), ontology, entry.enclosing(), scope);
+            }
         }
-        compilationCheckpoint(cancellation,CandidateTrace.Phase.DECLARATION_STRUCTURE);
-      } finally { stagingDeclarationStructure=false; }
+        compilationCheckpoint(cancellation, CandidateTrace.Phase.DECLARATION_STRUCTURE);
+      } finally {
+        stagingDeclarationStructure = false;
+      }
       // ABOUT in a preamble needs the complete named domain hierarchy, not just
       // typed signatures. Its endpoint and grounding contracts remain unchanged.
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.DOMAIN_BINDING);
-      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOMAIN_BINDING,null)) {
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.DOMAIN_BINDING);
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DOMAIN_BINDING, null)) {
         for (var entry : scopes.entrySet()) {
-          compilationCheckpoint(cancellation,CandidateTrace.Phase.DOMAIN_BINDING);
+          compilationCheckpoint(cancellation, CandidateTrace.Phase.DOMAIN_BINDING);
           var source = entry.getKey();
-          declarationDomains.put(source.getUrn(),
-              org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.validate(source,this::declareConcept));
+          declarationDomains.put(
+              source.getUrn(),
+              org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.validate(
+                  source, this::declareConcept));
         }
         for (var entry : scopes.entrySet()) {
-          compilationCheckpoint(cancellation,CandidateTrace.Phase.DOMAIN_BINDING);
+          compilationCheckpoint(cancellation, CandidateTrace.Phase.DOMAIN_BINDING);
           var source = entry.getKey();
           org.integratedmodelling.klab.services.reasoner.owl.WorldviewDomainSupport.bind(
-              owl,source,declarationDomains.get(source.getUrn()));
+              owl, source, declarationDomains.get(source.getUrn()));
         }
       }
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.DOMAIN_BINDING);
-      var clauses=new ArrayList<org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.Entry>();
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORED_CLAUSES);
-      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.AUTHORED_CLAUSES,null)) {
-        for (var entry : registry.ordered()) if (!entry.statement().isAlias()
-            && entry.statement().getUpperConceptDefined()==null) {
-          compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORED_CLAUSES);
-          var ontology=owl.getOntology(entry.ontology().getUrn());var owner=owl.getConcept(entry.urn());
-          var scope=scopes.get(entry.ontology());
-          java.util.function.Function<KimConcept,Concept> resolve=operand->declare(operand,ontology,scope);
-          try {
-            org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compileAuthored(
-                owl,ontology,owner,entry.statement(),resolve);
-            clauses.add(new org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.Entry(
-                ontology,entry.ontology(),owner,entry.statement(),resolve,scope));
-            if (!entry.statement().getEmergenceTriggers().isEmpty())
-              registerEmergent(owner,entry.statement().getEmergenceTriggers().stream().map(resolve).toList());
-            if (org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValue(entry.statement()))
-              scope.warn("DESCRIPTION_VALUE_UNRESOLVED: typed value semantics remain unresolved",entry.statement());
-          } catch (RuntimeException error) { scope.error(error,entry.statement()); }
-        }
-      }
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.AUTHORED_CLAUSES);
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.DESCRIPTION_RECONCILE);
-      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DESCRIPTION_RECONCILE,null)) {
-        declarationStagingMetrics=org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging.reconcile(owl,clauses,
-            () -> compilationCheckpoint(cancellation,CandidateTrace.Phase.DESCRIPTION_RECONCILE));
-      }
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.DESCRIPTION_RECONCILE);
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.ONTOLOGY_REGISTER);
-      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.ONTOLOGY_REGISTER,null)) {
-        for (var entry : scopes.entrySet()) {
-          compilationCheckpoint(cancellation,CandidateTrace.Phase.ONTOLOGY_REGISTER);
-          var source = entry.getKey(); var scope = entry.getValue();
-          try { org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport.requireEffectiveGrounding(
-              owl,declarationDomains.get(source.getUrn())); }
-          catch (RuntimeException error) {scope.error(error,source);}
-          for(var statement:source.getStatements()) {
-            compilationCheckpoint(cancellation,CandidateTrace.Phase.ONTOLOGY_REGISTER);
-            tagConceptService(statement,source.getServiceId());
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.DOMAIN_BINDING);
+      var clauses =
+          new ArrayList<
+              org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging
+                  .Entry>();
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.AUTHORED_CLAUSES);
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.AUTHORED_CLAUSES, null)) {
+        for (var entry : registry.ordered())
+          if (!entry.statement().isAlias() && entry.statement().getUpperConceptDefined() == null) {
+            compilationCheckpoint(cancellation, CandidateTrace.Phase.AUTHORED_CLAUSES);
+            var ontology = owl.getOntology(entry.ontology().getUrn());
+            var owner = owl.getConcept(entry.urn());
+            var scope = scopes.get(entry.ontology());
+            java.util.function.Function<KimConcept, Concept> resolve =
+                operand -> declare(operand, ontology, scope);
+            try {
+              org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport
+                  .compileAuthored(owl, ontology, owner, entry.statement(), resolve);
+              clauses.add(
+                  new org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging
+                      .Entry(ontology, entry.ontology(), owner, entry.statement(), resolve, scope));
+              if (!entry.statement().getEmergenceTriggers().isEmpty())
+                registerEmergent(
+                    owner, entry.statement().getEmergenceTriggers().stream().map(resolve).toList());
+              if (org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport
+                  .hasDeferredValue(entry.statement()))
+                scope.warn(
+                    "DESCRIPTION_VALUE_UNRESOLVED: typed value semantics remain unresolved",
+                    entry.statement());
+            } catch (RuntimeException error) {
+              scope.error(error, entry.statement());
+            }
           }
-          owl.registerWithReasoner(source);rememberOntologySource(source);
+      }
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.AUTHORED_CLAUSES);
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.DESCRIPTION_RECONCILE);
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.DESCRIPTION_RECONCILE, null)) {
+        declarationStagingMetrics =
+            org.integratedmodelling.klab.services.reasoner.owl.WorldviewDescriptionStaging
+                .reconcile(
+                    owl,
+                    clauses,
+                    () ->
+                        compilationCheckpoint(
+                            cancellation, CandidateTrace.Phase.DESCRIPTION_RECONCILE));
+      }
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.DESCRIPTION_RECONCILE);
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.ONTOLOGY_REGISTER);
+      try (var phase = CandidateTrace.phase(CandidateTrace.Phase.ONTOLOGY_REGISTER, null)) {
+        for (var entry : scopes.entrySet()) {
+          compilationCheckpoint(cancellation, CandidateTrace.Phase.ONTOLOGY_REGISTER);
+          var source = entry.getKey();
+          var scope = entry.getValue();
+          try {
+            org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport
+                .requireEffectiveGrounding(owl, declarationDomains.get(source.getUrn()));
+          } catch (RuntimeException error) {
+            scope.error(error, source);
+          }
+          for (var statement : source.getStatements()) {
+            compilationCheckpoint(cancellation, CandidateTrace.Phase.ONTOLOGY_REGISTER);
+            tagConceptService(statement, source.getServiceId());
+          }
+          owl.registerWithReasoner(source);
+          rememberOntologySource(source);
         }
       }
-      compilationCheckpoint(cancellation,CandidateTrace.Phase.ONTOLOGY_REGISTER);
-      var measured=new LinkedHashMap<String,Long>(declarationStagingMetrics);
-      var metricsAfterStaging=owl.compilationMetrics();
-      for(var name:List.of("reasonerCreations","actualFlushes","satisfiabilityQueries","entailmentQueries"))
-        measured.put("staged_"+name,metricsAfterStaging.get(name)-metricsBeforeStaging.get(name));
-      declarationStagingMetrics=Map.copyOf(measured);
-    } catch (RuntimeException error) { throw error; }
-    catch (Exception error) { throw new KlabValidationException(error); }
+      compilationCheckpoint(cancellation, CandidateTrace.Phase.ONTOLOGY_REGISTER);
+      var measured = new LinkedHashMap<String, Long>(declarationStagingMetrics);
+      var metricsAfterStaging = owl.compilationMetrics();
+      for (var name :
+          List.of(
+              "reasonerCreations", "actualFlushes", "satisfiabilityQueries", "entailmentQueries"))
+        measured.put(
+            "staged_" + name, metricsAfterStaging.get(name) - metricsBeforeStaging.get(name));
+      declarationStagingMetrics = Map.copyOf(measured);
+    } catch (RuntimeException error) {
+      throw error;
+    } catch (Exception error) {
+      throw new KlabValidationException(error);
+    }
     // Compilation may resolve names before description-derived bearer closure is
     // complete. Do not publish those provisional eligibility/subsumption views.
     invalidateSemanticCaches();
+    // Capture once from source while compiling the private actor, not by rescanning declarations
+    // or restoring syntax through Resources during each post-commit candidate query.
+    consequenceRuleIndex = null;
+    consequenceRuleIndexFailure = null;
+    try {
+      var source = worldview;
+      if (source != null && !source.getOntologies().isEmpty()) {
+        var target = owl.getOntology(source.getOntologies().getFirst().getUrn());
+        var scope = scopes.values().stream().findFirst().orElseGet(this::serviceScope);
+        consequenceRuleIndex =
+            org.integratedmodelling.klab.services.reasoner.owl.ConsequenceRuleIndex.capture(
+                source, owl::getConcept, syntax -> declare(syntax, target, scope));
+      }
+    } catch (RuntimeException unsupported) {
+      consequenceRuleIndexFailure =
+          "Consequence declarations unavailable: " + unsupported.getMessage();
+    }
   }
 
   private Concept buildInternal(
@@ -3800,41 +5009,57 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         monitor.error("Unresolved parent expression", concept.getDeclaredParent());
         return null;
       }
-      var flags = java.util.EnumSet.of(SemanticType.ABSTRACT, SemanticType.SEALED,
-          SemanticType.SUBJECTIVE, SemanticType.DENIABLE);
+      var flags =
+          java.util.EnumSet.of(
+              SemanticType.ABSTRACT,
+              SemanticType.SEALED,
+              SemanticType.SUBJECTIVE,
+              SemanticType.DENIABLE);
       declarationType.retainAll(flags);
       var inherited = new java.util.HashSet<>(resolvedParent.getType());
       inherited.removeAll(flags);
       declarationType.addAll(inherited);
       // Staged signatures may still carry a legacy coarse kind. This declaration's resolved
       // parent determines its final kind; merging would retain competing QUANTITY/RATIO flags.
-      var predeclared=ontology.getConcept(mainId);
-      if(predeclared!=null) {
-        predeclared.getType().clear();predeclared.getType().addAll(declarationType);
+      var predeclared = ontology.getConcept(mainId);
+      if (predeclared != null) {
+        predeclared.getType().clear();
+        predeclared.getType().addAll(declarationType);
       }
     }
 
-    if(declarationType.contains(SemanticType.RELATIONSHIP)) {
-      var parents=org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.inherited(
-          concept.getDeclaredParent(),x->{var c=declare(x,ontology,monitor);return c==null?Set.of():c.getType();});
-      var axisAncestry=new ArrayList<Concept>();
-      if(kimObject!=null) {
-        var enclosing=ontology.getConcept(kimObject.getUrn());
-        if(enclosing!=null) {
-          parents=parents.merge(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(enclosing.getType()));
+    if (declarationType.contains(SemanticType.RELATIONSHIP)) {
+      var parents =
+          org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.inherited(
+              concept.getDeclaredParent(),
+              x -> {
+                var c = declare(x, ontology, monitor);
+                return c == null ? Set.of() : c.getType();
+              });
+      var axisAncestry = new ArrayList<Concept>();
+      if (kimObject != null) {
+        var enclosing = ontology.getConcept(kimObject.getUrn());
+        if (enclosing != null) {
+          parents =
+              parents.merge(
+                  org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(
+                      enclosing.getType()));
           axisAncestry.add(enclosing);
         }
       }
-      var axes=org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.resolve(concept,parents,true);
-      if(concept.getDeclaredParent()!=null) {
-        var parentConcept=declare(concept.getDeclaredParent(),ontology,monitor);
-        if(parentConcept!=null)axisAncestry.add(parentConcept);
+      var axes =
+          org.integratedmodelling.klab.runtime.language.RelationshipDeclarationSupport.resolve(
+              concept, parents, true);
+      if (concept.getDeclaredParent() != null) {
+        var parentConcept = declare(concept.getDeclaredParent(), ontology, monitor);
+        if (parentConcept != null) axisAncestry.add(parentConcept);
       }
-      if(!owl.permitsRelationshipAxes(axisAncestry,axes))
-        throw new IllegalArgumentException("RELATIONSHIP_AXIS_CONFLICT: no shared compatible inherited boolean branch");
+      if (!owl.permitsRelationshipAxes(axisAncestry, axes))
+        throw new IllegalArgumentException(
+            "RELATIONSHIP_AXIS_CONFLICT: no shared compatible inherited boolean branch");
       axes.apply(declarationType);
-      var predeclared=ontology.getConcept(mainId);
-      if(predeclared!=null)axes.apply(predeclared.getType());
+      var predeclared = ontology.getConcept(mainId);
+      if (predeclared != null) axes.apply(predeclared.getType());
     }
 
     ontology.add(
@@ -3886,11 +5111,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     ontology.define();
     main = ontology.getConcept(mainId);
     main.getMetadata().putAll(concept.getMetadata());
-    org.integratedmodelling.klab.services.reasoner.owl.RelationshipOntologySupport.compile(owl,ontology,main,concept);
+    org.integratedmodelling.klab.services.reasoner.owl.RelationshipOntologySupport.compile(
+        owl, ontology, main, concept);
     ((ConceptImpl) main).setAnnotations(AnnotationCollector.merge(concept.getAnnotations()));
 
-    org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compileDeniability(
-        owl, ontology, main, concept);
+    org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport
+        .compileDeniability(owl, ontology, main, concept);
 
     indexer.index(concept);
 
@@ -3898,8 +5124,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
       //            List<Concept> concepts = new ArrayList<>();
       //            for (KimConcept pdecl : parent.getConcepts()) {
-      Concept declared = resolvedParent == null
-          ? declare(concept.getDeclaredParent(), ontology, monitor) : resolvedParent;
+      Concept declared =
+          resolvedParent == null
+              ? declare(concept.getDeclaredParent(), ontology, monitor)
+              : resolvedParent;
       if (declared == null || declared.is(SemanticType.NOTHING)) {
         monitor.error(
             "parent declaration "
@@ -3960,28 +5188,33 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     if (!stagingDeclarationStructure)
       org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.compile(
           owl, ontology, main, concept, operand -> declare(operand, ontology, monitor));
-    if (!stagingDeclarationStructure && org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport.hasDeferredValue(concept))
-      monitor.warn("DESCRIPTION_VALUE_UNRESOLVED: describes-as source is retained, but typed "
-          + "value/unit/category/modality validation and enforcement are not yet implemented", concept);
+    if (!stagingDeclarationStructure
+        && org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport
+            .hasDeferredValue(concept))
+      monitor.warn(
+          "DESCRIPTION_VALUE_UNRESOLVED: describes-as source is retained, but typed "
+              + "value/unit/category/modality validation and enforcement are not yet implemented",
+          concept);
 
-    if (!stagingDeclarationStructure) for (var child : concept.getChildren()) {
-      try {
-        // KimConceptStatement chobj = kimObject == null ? null : new
-        // KimConceptStatement((IKimConceptStatement) child);
-        Concept childConcept =
-            buildInternal((KimConceptStatement) child, ontology, concept, /*
+    if (!stagingDeclarationStructure)
+      for (var child : concept.getChildren()) {
+        try {
+          // KimConceptStatement chobj = kimObject == null ? null : new
+          // KimConceptStatement((IKimConceptStatement) child);
+          Concept childConcept =
+              buildInternal((KimConceptStatement) child, ontology, concept, /*
                          * monitor instanceof ErrorNotifyingMonitor ? ((ErrorNotifyingMonitor)
                          * monitor).contextualize(child) :
                          */ monitor);
-        if (childConcept != null) {
-          ontology.add(Axiom.SubClass(mainId, childConcept.getName()));
-          ontology.define();
+          if (childConcept != null) {
+            ontology.add(Axiom.SubClass(mainId, childConcept.getName()));
+            ontology.define();
+          }
+          // kimObject.getChildren().add(chobj);
+        } catch (Throwable e) {
+          monitor.error(e, child);
         }
-        // kimObject.getChildren().add(chobj);
-      } catch (Throwable e) {
-        monitor.error(e, child);
       }
-    }
 
     if (concept.isChildrenDisjoint() && concept.getChildren().size() > 1) {
       ontology.define(
@@ -4017,7 +5250,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * @return least general
    */
   public Collection<Concept> leastGeneral(Collection<Concept> cc) {
-    if (candidateRuntime != null && !semanticOnly) return candidateRuntime.invoke("leastGeneral", new Class<?>[]{Collection.class}, new Object[]{cc});
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "leastGeneral", new Class<?>[] {Collection.class}, new Object[] {cc});
 
     Set<Concept> ret = new HashSet<>();
     for (Concept c : cc) {
@@ -4048,8 +5283,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    */
   @Override
   public Concept leastGeneralCommon(Collection<Concept> cc) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("leastGeneralCommon", new Class<?>[] { Collection.class }, new Object[] { cc });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "leastGeneralCommon", new Class<?>[] {Collection.class}, new Object[] {cc});
 
     Concept ret = null;
     Iterator<Concept> ii = cc.iterator();
@@ -4072,7 +5308,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * Register the triggers and each triggering concept in the emergence map.
    */
   public boolean registerEmergent(Concept configuration, Collection<Concept> triggers) {
-    if (candidateRuntime != null && !semanticOnly) return candidateRuntime.invoke("registerEmergent", new Class<?>[]{Concept.class, Collection.class}, new Object[]{configuration, triggers});
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "registerEmergent",
+          new Class<?>[] {Concept.class, Collection.class},
+          new Object[] {configuration, triggers});
 
     if (!configuration.isAbstract()) {
 
@@ -4139,9 +5379,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   private Concept declareInternal(KimConcept concept, Ontology ontology, Scope monitor) {
     var resolved = compileInternal(concept, ontology, monitor);
-    return resolved == null
-        ? null
-        : projectExpressionStatus((ConceptImpl) resolved, concept);
+    return resolved == null ? null : projectExpressionStatus((ConceptImpl) resolved, concept);
   }
 
   private Concept compileInternal(KimConcept concept, Ontology ontology, Scope monitor) {
@@ -4302,8 +5540,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
       // Subject matter restricts the complete domain expression, including a union.
       if (!concept.getAbout().isEmpty()) {
-        ret = org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport.compose(
-            owl, ret, concept, target -> declareInternal(target, ontology, monitor));
+        ret =
+            org.integratedmodelling.klab.services.reasoner.owl.DomainInterpretationSupport.compose(
+                owl, ret, concept, target -> declareInternal(target, ontology, monitor));
       }
 
       //      // set the k.IM definition in the concept.This must only happen if the
@@ -4333,8 +5572,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       throw e;
     } catch (RuntimeException e) {
       // The caller binds the diagnostic to this source occurrence. Do not publish it twice.
-      var failure = new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
-          Notification.conciseMessage(e));
+      var failure =
+          new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+              Notification.conciseMessage(e));
       failure.initCause(e);
       throw failure;
     }
@@ -4347,7 +5587,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   public Observable declare(KimObservable concept, Ontology declarationOntology, Scope monitor) {
-    if (candidateRuntime != null && !semanticOnly) throw new IllegalStateException("Compiler state requires a private semantic actor");
+    if (candidateRuntime != null && !semanticOnly)
+      throw new IllegalStateException("Compiler state requires a private semantic actor");
 
     if (concept.getNonSemanticType() != null) {
       Concept nsmain =
@@ -4359,12 +5600,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       observable.setReferenceName(concept.getFormalName());
       observable.setArtifactType(Artifact.Type.forSemantics(nsmain.getType()));
       observable.setAnnotations(AnnotationCollector.merge(concept.getAnnotations()));
-      if(concept.getObserverSemantics()!=null) {
-        var observer=declare(concept.getObserverSemantics(),declarationOntology,monitor);
-        if(observer==null||!observer.is(SemanticType.AGENT))throw new KlabValidationException("OBSERVER_AGENT_REQUIRED: observed as requires a resolved Agent class");
+      if (concept.getObserverSemantics() != null) {
+        var observer = declare(concept.getObserverSemantics(), declarationOntology, monitor);
+        if (observer == null || !observer.is(SemanticType.AGENT))
+          throw new KlabValidationException(
+              "OBSERVER_AGENT_REQUIRED: observed as requires a resolved Agent class");
         observable.setObserverSemantics(observer);
-        observable.setUrn(observable.getUrn()+" observed as "+observer.getUrn());
-        observable.setReferenceName(observable.getReferenceName()+"_observed_as_"+observer.getReferenceName());
+        observable.setUrn(observable.getUrn() + " observed as " + observer.getUrn());
+        observable.setReferenceName(
+            observable.getReferenceName() + "_observed_as_" + observer.getReferenceName());
       }
       return observable;
     }
@@ -4378,10 +5622,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     Observable.Builder builder = SemanticsBuilder.create(observable, this, monitor);
 
-    if(concept.getObserverSemantics()!=null) {
-      var observer=declare(concept.getObserverSemantics(),declarationOntology,monitor);
-      if(observer==null||!observer.is(SemanticType.AGENT))
-        throw new KlabValidationException("OBSERVER_AGENT_REQUIRED: observed as requires a resolved Agent class");
+    if (concept.getObserverSemantics() != null) {
+      var observer = declare(concept.getObserverSemantics(), declarationOntology, monitor);
+      if (observer == null || !observer.is(SemanticType.AGENT))
+        throw new KlabValidationException(
+            "OBSERVER_AGENT_REQUIRED: observed as requires a resolved Agent class");
       builder.withObserverSemantics(observer);
     }
 
@@ -4445,12 +5690,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // CHECK: fluidUnits = needsUnits() && !unitsSet;
 
     var result = (ObservableImpl) builder.buildObservable();
-    var semantics = ((ConceptImpl) result.getSemantics()).withObservableStatus(concept, owl::getConcept);
+    var semantics =
+        ((ConceptImpl) result.getSemantics()).withObservableStatus(concept, owl::getConcept);
     semantics.setAnnotations(main.getAnnotations());
     result.setSemantics(semantics);
     return result;
   }
-
 
   //  public void registerConcept(Concept thing) {
   //    this.concepts.put(thing.getUrn(), thing);
@@ -4458,23 +5703,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Collection<Concept> rolesFor(Concept observable, Concept context) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("rolesFor", new Class<?>[] { Concept.class, Concept.class }, new Object[] { observable, context });
-  throw new KlabUnimplementedException("Context-implied role computation is not implemented");
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "rolesFor",
+          new Class<?>[] {Concept.class, Concept.class},
+          new Object[] {observable, context});
+    throw new KlabUnimplementedException("Context-implied role computation is not implemented");
   }
 
   @Override
   public Concept impliedRole(Concept baseRole, Concept contextObservable) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("impliedRole", new Class<?>[] { Concept.class, Concept.class }, new Object[] { baseRole, contextObservable });
-  throw new KlabUnimplementedException("Context-implied role computation is not implemented");
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "impliedRole",
+          new Class<?>[] {Concept.class, Concept.class},
+          new Object[] {baseRole, contextObservable});
+    throw new KlabUnimplementedException("Context-implied role computation is not implemented");
   }
 
   @Override
   public Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("impliedRoles", new Class<?>[] { Concept.class, boolean.class }, new Object[] { role, includeRelationshipEndpoints });
-  throw new KlabUnimplementedException("Implied role closure is not implemented");
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "impliedRoles",
+          new Class<?>[] {Concept.class, boolean.class},
+          new Object[] {role, includeRelationshipEndpoints});
+    throw new KlabUnimplementedException("Implied role closure is not implemented");
   }
 
   /**
@@ -4522,10 +5776,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 indexer::query,
                 request,
                 new org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport(
-                    owl), (authority, code) -> resolveAuthoritySelection(authority, code, scope));
+                    owl),
+                (authority, code) -> resolveAuthoritySelection(authority, code, scope));
         do {
           id = java.util.concurrent.ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE);
-        } while (semanticExpressions.asMap().putIfAbsent(id, new OwnedSemanticSession(owner, session)) != null);
+        } while (semanticExpressions
+                .asMap()
+                .putIfAbsent(id, new OwnedSemanticSession(owner, session))
+            != null);
       }
       response = session.handle(request, id);
     }
@@ -4535,10 +5793,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public synchronized boolean shutdown() {
-    if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()) org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
-        org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.INVALIDATED,
-        candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(), -1, -1,
-        null, null, org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.SHUTDOWN);
+    if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled())
+      org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
+          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event.INVALIDATED,
+          candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(),
+          -1,
+          -1,
+          null,
+          null,
+          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason.SHUTDOWN);
     if (candidateRuntime != null && !semanticOnly) candidateRuntime.close();
 
     //    serviceScope()
@@ -4565,31 +5828,42 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public List<ObservationStrategy> computeObservationStrategies(
       Observation observation, ContextScope scope) {
-      if (candidateRuntime != null && !semanticOnly)
-          return candidateRuntime.invoke("computeObservationStrategies", new Class<?>[] { Observation.class, ContextScope.class }, new Object[] { observation, scope });
-      var context = scope.getContextObservation();
-      if (!org.integratedmodelling.klab.services.reasoner.owl.ContextualRequestAdmission.admits(
-          owl(), observation.getObservable().getSemantics(),
-          context == null ? null : context.getObservable().getSemantics())) {
-        scope.warn("CONTEXTUAL_REQUEST_INCOMPATIBLE: no native bearer or authored containment proof for "
-            + observation.getObservable().getUrn());
-        return List.of();
-      }
-      return observationReasoner.computeMatchingStrategies(observation, scope, true);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "computeObservationStrategies",
+          new Class<?>[] {Observation.class, ContextScope.class},
+          new Object[] {observation, scope});
+    var context = scope.getContextObservation();
+    if (!org.integratedmodelling.klab.services.reasoner.owl.ContextualRequestAdmission.admits(
+        owl(),
+        observation.getObservable().getSemantics(),
+        context == null ? null : context.getObservable().getSemantics())) {
+      scope.warn(
+          "CONTEXTUAL_REQUEST_INCOMPATIBLE: no native bearer or authored containment proof for "
+              + observation.getObservable().getUrn());
+      return List.of();
+    }
+    return observationReasoner.computeMatchingStrategies(observation, scope, true);
   }
 
   @Override
   public IdentificationStrategy computeIdentificationStrategies(
       Observable observable, ContextScope scope) {
-      if (candidateRuntime != null && !semanticOnly)
-          return candidateRuntime.invoke("computeIdentificationStrategies", new Class<?>[] { Observable.class, ContextScope.class }, new Object[] { observable, scope });
-      return observationReasoner.computeIdentificationStrategy(observable, scope);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "computeIdentificationStrategies",
+          new Class<?>[] {Observable.class, ContextScope.class},
+          new Object[] {observable, scope});
+    return observationReasoner.computeIdentificationStrategy(observable, scope);
   }
 
   public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("collectComponents", new Class<?>[] { Concept.class, Collection.class }, new Object[] { concept, types });
-  Set<Concept> ret = new HashSet<>();
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "collectComponents",
+          new Class<?>[] {Concept.class, Collection.class},
+          new Object[] {concept, types});
+    Set<Concept> ret = new HashSet<>();
     KimConcept peer =
         serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
     var visitor = new KimObservableVisitor();
@@ -4607,8 +5881,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   public Concept replaceComponent(Concept original, Map<Concept, Concept> replacements) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("replaceComponent", new Class<?>[] { Concept.class, Map.class }, new Object[] { original, replacements });
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "replaceComponent",
+          new Class<?>[] {Concept.class, Map.class},
+          new Object[] {original, replacements});
 
     /*
      * TODO this is the original lexical replacement, which is risky and incomplete.
@@ -4635,18 +5912,24 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   @Override
   public Concept buildConcept(ObservableBuildStrategy builder, Scope scope) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("buildConcept", new Class<?>[] { ObservableBuildStrategy.class, Scope.class }, new Object[] { builder, scope });
-  Observable.Builder ret = createSemanticBuilder(builder, scope);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "buildConcept",
+          new Class<?>[] {ObservableBuildStrategy.class, Scope.class},
+          new Object[] {builder, scope});
+    Observable.Builder ret = createSemanticBuilder(builder, scope);
     ret = defineBuilder(builder, ret);
     return ret.buildConcept();
   }
 
   @Override
   public Observable buildObservable(ObservableBuildStrategy builder, Scope scope) {
-  if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("buildObservable", new Class<?>[] { ObservableBuildStrategy.class, Scope.class }, new Object[] { builder, scope });
-  Observable.Builder ret = createSemanticBuilder(builder, scope);
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke(
+          "buildObservable",
+          new Class<?>[] {ObservableBuildStrategy.class, Scope.class},
+          new Object[] {builder, scope});
+    Observable.Builder ret = createSemanticBuilder(builder, scope);
     ret = defineBuilder(builder, ret);
     return ret.buildObservable();
   }
@@ -4762,7 +6045,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public boolean exportNamespace(String namespace, File directory) {
     if (candidateRuntime != null && !semanticOnly)
-      return candidateRuntime.invoke("exportNamespace", new Class<?>[]{String.class, File.class}, new Object[]{namespace, directory});
+      return candidateRuntime.invoke(
+          "exportNamespace",
+          new Class<?>[] {String.class, File.class},
+          new Object[] {namespace, directory});
     return this.owl.exportOntology(namespace, directory);
   }
 

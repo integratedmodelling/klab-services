@@ -26,6 +26,60 @@ class GitProjectWorkflowsTest {
   }
 
   @Test
+  void resetToOriginDiscardsDivergenceAndUpdatesCurrentBranch() throws Exception {
+    try (var origin = repository()) {
+      origin.checkout().setCreateBranch(true).setName("feature/current").call();
+      // Keep every repository inside the JUnit temporary directory.
+      Path clone = root.resolve("clone");
+      try (var local = Git.cloneRepository().setURI(root.toUri().toString())
+          .setDirectory(clone.toFile()).setBranch("feature/current").call()) {
+        var config = local.getRepository().getConfig();
+        config.setBoolean("core", null, "autocrlf", false);
+        config.save();
+        Files.writeString(clone.resolve("file"), "local commit\n");
+        Files.writeString(clone.resolve("local-only"), "local\n");
+        local.add().addFilepattern(".").call();
+        local.commit().setMessage("Local divergence").setAuthor("Test", "test@example.org").call();
+        Files.writeString(clone.resolve("file"), "uncommitted\n");
+        Files.writeString(clone.resolve("untracked"), "untracked\n");
+        Files.writeString(root.resolve("file"), "latest public\n");
+        Files.writeString(root.resolve("remote-only"), "remote\n");
+        origin.add().addFilepattern("file").call();
+        origin.add().addFilepattern("remote-only").call();
+        var latest = origin.commit().setMessage("Public update").call();
+        var service = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.base.BaseService.class);
+        var caller = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.Scope.class);
+        org.mockito.Mockito.when(service.credentialVault()).thenReturn(
+            org.mockito.Mockito.mock(org.integratedmodelling.common.authentication.CredentialVault.class));
+        var result = Utils.Git.withCredentials(service, caller, null,
+            () -> Utils.Git.resetToOriginAndFetch(clone.toFile(), caller));
+        assertFalse(Utils.Notifications.hasErrors(result.getNotifications()), result.getNotifications().toString());
+        assertEquals(latest.getId(), local.getRepository().resolve("HEAD"));
+        assertEquals("feature/current", local.getRepository().getBranch());
+        assertTrue(local.status().call().isClean());
+        assertEquals("latest public\n", Files.readString(clone.resolve("file")));
+        assertFalse(Files.exists(clone.resolve("local-only")));
+        assertFalse(Files.exists(clone.resolve("untracked")));
+        assertTrue(result.getRemovedPaths().containsAll(java.util.List.of("local-only", "untracked")));
+        assertTrue(result.getAddedPaths().contains("remote-only"));
+        assertTrue(result.getModifiedPaths().contains("file"));
+      }
+    }
+  }
+
+  @Test
+  void missingOriginLeavesLocalChangesIntact() throws Exception {
+    try (var git = repository()) {
+      var head = git.getRepository().resolve("HEAD");
+      Files.writeString(root.resolve("file"), "keep my changes");
+      var result = Utils.Git.resetToOriginAndFetch(root.toFile(), null);
+      assertTrue(Utils.Notifications.hasErrors(result.getNotifications()));
+      assertEquals(head, git.getRepository().resolve("HEAD"));
+      assertEquals("keep my changes", Files.readString(root.resolve("file")));
+    }
+  }
+
+  @Test
   void commitsCreatesSwitchesAndMergesBranches() throws Exception {
     try (var git = repository()) {
       String original = git.getRepository().getBranch();

@@ -1,8 +1,5 @@
 package org.integratedmodelling.common.services.client;
 
-import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
-import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
-
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.Lists;
@@ -10,6 +7,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -25,7 +23,8 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
@@ -38,6 +37,71 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
  */
 public class ReasonerClient extends BaseServiceClient implements Reasoner, Reasoner.Admin {
 
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding
+      beginSemanticCycle(String runtimeServiceId, String contextId, String cycleId, Scope scope) {
+    return beginSemanticCycleResult(runtimeServiceId, contextId, cycleId, scope).requireBinding();
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult
+      beginSemanticCycleResult(
+          String runtimeServiceId, String contextId, String cycleId, Scope scope) {
+    return client
+        .withScope(scope)
+        .postRequired(
+            ServicesAPI.REASONER.SEMANTIC_CYCLE_BEGIN,
+            new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+                runtimeServiceId, contextId, cycleId, null),
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult
+                .class);
+  }
+
+  @Override
+  public void releaseSemanticCycle(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,
+      String contextId,
+      String cycleId,
+      Scope scope) {
+    var accepted =
+        client
+            .withScope(scope)
+            .postRequired(
+                ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE,
+                new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+                    runtimeServiceId, contextId, cycleId, binding),
+                Boolean.class);
+    if (!Boolean.TRUE.equals(accepted))
+      throw new IllegalStateException("Semantic cycle release was not acknowledged");
+  }
+
+  @Override
+  public Reasoner bindSemanticCycle(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding binding,
+      String runtimeServiceId,
+      String contextId,
+      String cycleId,
+      Scope scope) {
+    if (binding == null || !Objects.equals(serviceId(), binding.reasonerServiceId()))
+      throw new SecurityException("Semantic cycle belongs to another Reasoner");
+    var request =
+        new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+            runtimeServiceId, contextId, cycleId, binding);
+    return SemanticCycleFacade.create(
+        this,
+        request,
+        scope,
+        (call, authorized) ->
+            client
+                .withScope(authorized)
+                .postRequired(
+                    ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE,
+                    call,
+                    org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleResult
+                        .class));
+  }
+
   // TODO link to configuration for debugging
   private boolean useCaches = true;
   private volatile Capabilities capabilities;
@@ -47,11 +111,22 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   private record DistanceKey(long revision, String target, String other, String context) {}
 
   private static String semanticKey(Semantics value) {
-    if(value==null)return "<null>";
-    if(!(value instanceof Observable o))return "concept:"+value.getUrn();
-    return "observable:"+o.getUrn()+"|observer="+(o.getObserverSemantics()==null?"<absolute>":o.getObserverSemantics().getUrn())
-        +"|method="+o.getContextualization()+"|unit="+o.getUnit()+"|currency="+o.getCurrency()+"|range="+o.getRange()
-        +"|genericComponents="+o.getGenericComponents().stream().map(c->c.getUrn()).sorted().toList();
+    if (value == null) return "<null>";
+    if (!(value instanceof Observable o)) return "concept:" + value.getUrn();
+    return "observable:"
+        + o.getUrn()
+        + "|observer="
+        + (o.getObserverSemantics() == null ? "<absolute>" : o.getObserverSemantics().getUrn())
+        + "|method="
+        + o.getContextualization()
+        + "|unit="
+        + o.getUnit()
+        + "|currency="
+        + o.getCurrency()
+        + "|range="
+        + o.getRange()
+        + "|genericComponents="
+        + o.getGenericComponents().stream().map(c -> c.getUrn()).sorted().toList();
   }
 
   /** Caches for concepts and observables. */
@@ -126,41 +201,74 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
-  public org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse authorityCodelists(
-      org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest request, Scope scope) {
-    return client.withScope(scope).postRequired(ServicesAPI.REASONER.AUTHORITY_CODELISTS, request,
-        org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse.class);
+  public org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse
+      authorityCodelists(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
+              request,
+          Scope scope) {
+    return client
+        .withScope(scope)
+        .postRequired(
+            ServicesAPI.REASONER.AUTHORITY_CODELISTS,
+            request,
+            org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistResponse
+                .class);
   }
 
   @Override
   public String configureAuthority(
       org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest request,
       Scope scope) {
-    return client.withScope(scope).postRequired(ServicesAPI.REASONER.CONFIGURE_AUTHORITY, request, String.class);
-  }
-
-  @Override public Concept resolveAuthorityHierarchy(String authority, String identity, Scope scope) {
-    return client.withScope(scope).postRequired(ServicesAPI.REASONER.AUTHORITY_HIERARCHY,
-        new org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityHierarchyRequest(authority, identity), Concept.class);
+    return client
+        .withScope(scope)
+        .postRequired(ServicesAPI.REASONER.CONFIGURE_AUTHORITY, request, String.class);
   }
 
   @Override
-  public org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse searchAuthority(
-      org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request, Scope scope) {
-    return client.withScope(scope).postRequired(ServicesAPI.REASONER.AUTHORITY_SEARCH, request,
-        org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse.class);
+  public Concept resolveAuthorityHierarchy(String authority, String identity, Scope scope) {
+    return client
+        .withScope(scope)
+        .postRequired(
+            ServicesAPI.REASONER.AUTHORITY_HIERARCHY,
+            new org.integratedmodelling.klab.api.services.reasoner.objects
+                .AuthorityHierarchyRequest(authority, identity),
+            Concept.class);
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse
+      searchAuthority(
+          org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchRequest request,
+          Scope scope) {
+    return client
+        .withScope(scope)
+        .postRequired(
+            ServicesAPI.REASONER.AUTHORITY_SEARCH,
+            request,
+            org.integratedmodelling.klab.api.services.reasoner.objects.AuthoritySearchResponse
+                .class);
   }
 
   @Override
   public SemanticSearchResponse semanticSearch(SemanticSearchRequest request, Scope scope) {
-    return client.withScope(scope).postRequired(ServicesAPI.REASONER.SEMANTIC_SEARCH, request, SemanticSearchResponse.class);
+    return client
+        .withScope(scope)
+        .postRequired(ServicesAPI.REASONER.SEMANTIC_SEARCH, request, SemanticSearchResponse.class);
   }
 
   @Override
   public Map<String, java.net.URL> getAuthorityDocumentation(
       String authority, String identity, Scope scope) {
-    var response = client.withScope(scope).get(ServicesAPI.REASONER.AUTHORITY_DOCUMENTATION,
-        Map.class, "authority", authority, "identity", identity);
+    var response =
+        client
+            .withScope(scope)
+            .get(
+                ServicesAPI.REASONER.AUTHORITY_DOCUMENTATION,
+                Map.class,
+                "authority",
+                authority,
+                "identity",
+                identity);
     if (response == null)
       throw new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException(
           "Authority documentation lookup failed");
@@ -179,7 +287,8 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
-  public Observable declareObservable(org.integratedmodelling.klab.api.lang.kim.KimObservable syntax) {
+  public Observable declareObservable(
+      org.integratedmodelling.klab.api.lang.kim.KimObservable syntax) {
     return client.postRequired(ServicesAPI.REASONER.DECLARE_OBSERVABLE, syntax, Observable.class);
   }
 
@@ -194,10 +303,11 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
     return subsumption.get(
         key,
         ignored -> {
-          Boolean result = client.postRequired(
-              ServicesAPI.REASONER.SUBSUMES,
-              List.of(conceptImpl.asConcept(), other.asConcept()),
-              Boolean.class);
+          Boolean result =
+              client.postRequired(
+                  ServicesAPI.REASONER.SUBSUMES,
+                  List.of(conceptImpl.asConcept(), other.asConcept()),
+                  Boolean.class);
           if (result == null) {
             throw new org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException(
                 "Subsumption check returned an empty response");
@@ -266,11 +376,33 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Collection<Concept> authoredClosure(Semantics target) {
-    var result = client.postCollectionOrThrow(
-        ServicesAPI.REASONER.AUTHORED_CLOSURE, target.asConcept(), Concept.class);
+    var result =
+        client.postCollectionOrThrow(
+            ServicesAPI.REASONER.AUTHORED_CLOSURE, target.asConcept(), Concept.class);
     if (result == null)
       throw new IllegalStateException("Reasoner did not return an authored vocabulary closure");
     return result;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse
+      consequenceRules(
+          org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery query) {
+    var result =
+        client.post(
+            ServicesAPI.REASONER.CONSEQUENCE_RULES,
+            query,
+            org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse
+                .class);
+    return result == null
+        ? new org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse(
+            org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleResponse
+                .Status.UNAVAILABLE,
+            null,
+            java.util.List.of(),
+            null,
+            "Authored consequence query is unavailable from the selected Reasoner")
+        : result;
   }
 
   @Override
@@ -280,22 +412,33 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-    var key=new DistanceKey(currentRevision(),semanticKey(target),semanticKey(other),semanticKey(context));
-    return semanticDistances.get(key,ignored -> client.post(
-        ServicesAPI.REASONER.DISTANCE,Lists.newArrayList(target,other,context),Integer.class));
+    var key =
+        new DistanceKey(
+            currentRevision(), semanticKey(target), semanticKey(other), semanticKey(context));
+    return semanticDistances.get(
+        key,
+        ignored ->
+            client.post(
+                ServicesAPI.REASONER.DISTANCE,
+                Lists.newArrayList(target, other, context),
+                Integer.class));
   }
 
   @Override
-  public int semanticDistance(Semantics target, Semantics requested, Semantics context,
-      long expectedKnowledgeRevision) {
-    if(expectedKnowledgeRevision<0)return -50;
+  public int semanticDistance(
+      Semantics target, Semantics requested, Semantics context, long expectedKnowledgeRevision) {
+    if (expectedKnowledgeRevision < 0) return -50;
     // Preserve complete wrappers; server compatibility/representation checks use the same receipt.
-    return validatedDistanceScore(Lists.newArrayList(target,requested,context),
-        "knowledgeRevision",Long.toString(expectedKnowledgeRevision));
+    return validatedDistanceScore(
+        Lists.newArrayList(target, requested, context),
+        "knowledgeRevision",
+        Long.toString(expectedKnowledgeRevision));
   }
 
   private int validatedDistanceScore(Object payload, Object... parameters) {
-    Integer score = client.postRequired(ServicesAPI.REASONER.VALIDATED_DISTANCE, payload, Integer.class, parameters);
+    Integer score =
+        client.postRequired(
+            ServicesAPI.REASONER.VALIDATED_DISTANCE, payload, Integer.class, parameters);
     if (score == null)
       throw new org.integratedmodelling.common.utils.Utils.Http.Client.RequestFailure(
           0, "Validated semantic distance returned no score", null);
@@ -682,10 +825,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public boolean match(Semantics candidate, Semantics pattern) {
-    return client.post(
-        ServicesAPI.REASONER.MATCHES,
-        List.of(candidate, pattern),
-        Boolean.class);
+    return client.post(ServicesAPI.REASONER.MATCHES, List.of(candidate, pattern), Boolean.class);
   }
 
   @Override
@@ -751,12 +891,23 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   }
 
   @Override
-  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness semanticDependencies(
-      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request, Scope scope) {
-    var result=client.withScope(scope).post(ServicesAPI.REASONER.SEMANTIC_DEPENDENCIES,request,
-        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.class);
-    return result==null?org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(
-        request,"Semantic closure certification is unavailable"):result;
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+      semanticDependencies(
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest
+              request,
+          Scope scope) {
+    var result =
+        client
+            .withScope(scope)
+            .post(
+                ServicesAPI.REASONER.SEMANTIC_DEPENDENCIES,
+                request,
+                org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+                    .class);
+    return result == null
+        ? org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+            .unknown(request, "Semantic closure certification is unavailable")
+        : result;
   }
 
   @Override

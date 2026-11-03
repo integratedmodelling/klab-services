@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.scopes;
 
-import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -17,10 +17,9 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
-import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
 import org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -93,6 +92,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private DigitalTwin.Transaction currentTransaction;
   private java.util.function.BooleanSupplier requestCancelled = () -> false;
   private org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause consequenceCause;
+  private org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding
+      resolutionCycleBinding;
+  private org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<?> resolutionCycle;
+  private ConsequenceSubmissionAdmission consequenceSubmissionAdmission;
+  private java.util.concurrent.atomic.AtomicBoolean cycleSubscriberDetached;
   private java.util.concurrent.atomic.AtomicReference<String> consequenceFailure =
       new java.util.concurrent.atomic.AtomicReference<>();
   private volatile boolean consequenceErrors;
@@ -133,6 +137,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.remoteTransactionId = parent.remoteTransactionId;
     this.requestCancelled = parent.requestCancelled;
     this.consequenceCause = parent.consequenceCause;
+    this.resolutionCycleBinding = parent.resolutionCycleBinding;
+    this.resolutionCycle = parent.resolutionCycle;
+    this.consequenceSubmissionAdmission = parent.consequenceSubmissionAdmission;
+    this.cycleSubscriberDetached = parent.cycleSubscriberDetached;
     this.consequenceFailure = parent.consequenceFailure;
     this.consequenceErrors = parent.consequenceErrors;
     this.consequenceWarning = parent.consequenceWarning;
@@ -140,7 +148,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     copyMessagingSetup(parent);
   }
 
-  /** A background consequence keeps connection semantics, but owns a fresh transaction/cancellation. */
+  /**
+   * A background consequence keeps connection semantics, but owns a fresh transaction/cancellation.
+   */
   public ServiceContextScope forConsequence(
       org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause cause) {
     if (cause != null && !Objects.equals(getId(), cause.contextId()))
@@ -150,6 +160,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     ret.remoteTransactionId = null;
     ret.requestCancelled = () -> false;
     ret.consequenceCause = cause;
+    ret.consequenceSubmissionAdmission = null;
+    ret.cycleSubscriberDetached = null;
     ret.consequenceFailure = new java.util.concurrent.atomic.AtomicReference<>();
     ret.consequenceErrors = false;
     ret.consequenceWarning = new java.util.concurrent.atomic.AtomicReference<>();
@@ -161,19 +173,154 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return consequenceCause;
   }
 
-  /** Failure details are reported once by the engine's decision notification, not as scope errors. */
-  public String getConsequenceFailure() { return consequenceFailure.get(); }
-  public String getConsequenceWarning() { return consequenceWarning.get(); }
+  @Override
+  public org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding
+      getResolutionCycleBinding() {
+    return resolutionCycleBinding;
+  }
+
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  public org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<?> getResolutionCycle() {
+    return resolutionCycle;
+  }
+
+  /** A scope copy carries identity; actual asynchronous work retains ownership separately. */
+  public ServiceContextScope withResolutionCycle(
+      org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<?> cycle,
+      org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding binding) {
+    Objects.requireNonNull(cycle);
+    Objects.requireNonNull(binding);
+    if (!Objects.equals(getId(), binding.contextId())
+        || !Objects.equals(cycle.id(), binding.cycleId())
+        || !Objects.equals(cycle.contextId(), binding.contextId())
+        || cycle.consequencesEnabled() != binding.consequencesEnabled()
+        || !Objects.equals(cycle.semantics(), binding))
+      throw new IllegalArgumentException("Resolution cycle does not match this context");
+    var ret = new ServiceContextScope(this);
+    ret.resolutionCycle = cycle;
+    ret.resolutionCycleBinding = binding;
+    return ret;
+  }
+
+  /** Transport metadata only: receiving services must validate the retained registry separately. */
+  public ServiceContextScope withResolutionCycleBinding(
+      org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding binding) {
+    if (binding != null && !Objects.equals(getId(), binding.contextId()))
+      throw new IllegalArgumentException("Resolution cycle belongs to another context");
+    var ret = new ServiceContextScope(this);
+    ret.resolutionCycleBinding = binding;
+    ret.resolutionCycle = null;
+    return ret;
+  }
+
+  /** Per-submit cooperative signal. A coalesced subscriber may detach only its own signal. */
+  public ServiceContextScope withCycleSubscriberCancellation(
+      java.util.function.BooleanSupplier cancelled) {
+    var detached = new java.util.concurrent.atomic.AtomicBoolean();
+    var ret = withCancellation(() -> !detached.get() && cancelled.getAsBoolean());
+    ret.cycleSubscriberDetached = detached;
+    return ret;
+  }
+
+  /** Parent and shutdown cancellation remain in the inherited cancellation chain. */
+  public void detachCycleSubscriberCancellation() {
+    if (cycleSubscriberDetached != null) cycleSubscriberDetached.set(true);
+  }
+
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  public ConsequenceSubmissionAdmission getConsequenceSubmissionAdmission() {
+    return consequenceSubmissionAdmission;
+  }
+
+  public ServiceContextScope withoutConsequenceSubmissionAdmission() {
+    var ret = new ServiceContextScope(this);
+    ret.consequenceSubmissionAdmission = null;
+    return ret;
+  }
+
+  public ServiceContextScope withConsequenceSubmissionAdmission(
+      ConsequenceSubmissionAdmission admission) {
+    var ret = new ServiceContextScope(this);
+    ret.consequenceSubmissionAdmission = java.util.Objects.requireNonNull(admission);
+    return ret;
+  }
+
+  /** Only the cycle-selected semantic view is available on this detached scope and its copies. */
+  public ServiceContextScope withCycleReasoner(
+      org.integratedmodelling.klab.api.services.Reasoner reasoner) {
+    var ret = new ServiceContextScope(this);
+    ret.serviceMap.put(
+        org.integratedmodelling.klab.api.services.KlabService.Type.REASONER,
+        reasoner == null ? List.of() : List.of(reasoner));
+    return ret;
+  }
+
+  /**
+   * Failure details are reported once by the engine's decision notification, not as scope errors.
+   */
+  public String getConsequenceFailure() {
+    return consequenceFailure.get();
+  }
+
+  public String getConsequenceWarning() {
+    return consequenceWarning.get();
+  }
 
   @Override
   public void warn(Object... details) {
-    if (consequenceCause == null) { super.warn(details); return; }
+    if (consequenceCause == null) {
+      super.warn(details);
+      return;
+    }
     consequenceWarning.compareAndSet(null, Notification.warning(details).getMessage());
+  }
+
+  private void diagnoseErrorCall(Object[] details) {
+    if (!Boolean.getBoolean("klab.diagnostics.configurationRecompute")) return;
+    try {
+      var data = new java.util.LinkedHashMap<String, Object>();
+      data.put("stage", "scope-error-call");
+      data.put("context", getId());
+      data.put("thread", Thread.currentThread().threadId());
+      data.put("nanoTime", System.nanoTime());
+      var tx = currentTransaction;
+      data.put("transaction", tx == null ? null : System.identityHashCode(tx));
+      var root = tx;
+      while (root != null && root.getParent() != null) root = root.getParent();
+      data.put("rootTransaction", root == null ? null : System.identityHashCode(root));
+      data.put("transactionFailed", tx == null ? null : tx.isFailed());
+      var values = details == null ? new Object[0] : details;
+      data.put(
+          "detailTypes",
+          java.util.Arrays.stream(values)
+              .limit(8)
+              .map(value -> value == null ? "null" : value.getClass().getName())
+              .toList());
+      data.put(
+          "callers",
+          java.util.Arrays.stream(Thread.currentThread().getStackTrace())
+              .skip(2)
+              .limit(16)
+              .map(Object::toString)
+              .toList());
+      org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+          "SCOPE_ERROR_CALL_DIAGNOSTIC " + Utils.Json.asString(data));
+      for (var value : values)
+        if (value instanceof Throwable cause)
+          org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy.diagnoseFailure(
+              cause, null, null, this);
+    } catch (RuntimeException ignored) {
+      /* No message/payload logging or change to error delivery. */
+    }
   }
 
   @Override
   public void error(Object... details) {
-    if (consequenceCause == null) { super.error(details); return; }
+    diagnoseErrorCall(details);
+    if (consequenceCause == null) {
+      super.error(details);
+      return;
+    }
     consequenceErrors = true;
     consequenceFailure.compareAndSet(null, Notification.error(details).getMessage());
   }
@@ -262,6 +409,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   @Override
+  public Long getObserverId() {
+    return observer == null ? null : observer.getId();
+  }
+
+  @Override
   public Observation getObserver() {
     if (observer != null
         && observer.getId() > 0
@@ -270,7 +422,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       long revision = digitalTwin.getKnowledgeGraph().getSemanticRevision();
       if (revision != observerRevision) {
         var current = selectedObserver(GraphModel.Fields.ID, observer.getId());
-        if (current == null || current.getObservable() == null
+        if (current == null
+            || current.getObservable() == null
             || !current.getObservable().is(SemanticType.AGENT))
           throw new IllegalStateException("Selected observer is no longer an accessible Agent");
         observer = current;
@@ -316,12 +469,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       for (var obs :
           currentTransaction.assets().stream().filter(o -> o instanceof Observation).toList()) {
         if (obs.getId() == id) {
-          return (Observation) obs;
+          return currentObservation((Observation) obs);
         }
       }
       var provisional = provisionalObservations.get(rootTransactionId(currentTransaction));
       if (provisional != null && provisional.containsKey(id)) {
-        return provisional.get(id);
+        return currentObservation(provisional.get(id));
       }
     }
 
@@ -330,26 +483,42 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       return null;
     }
 
+    var reference =
+        new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+    reference.setId(id);
+    if (!digitalTwin.getKnowledgeGraph().isObservationCurrent(reference, this)) return null;
     try {
       var revision = digitalTwin.getKnowledgeGraph().getSemanticRevision();
       if (revision != observationCacheRevision) {
         observationCache.invalidateAll();
         observationCacheRevision = revision;
       }
-      return observationCache.get(id, () -> loadObservation(id));
+      return currentObservation(observationCache.get(id, () -> loadObservation(id)));
     } catch (ExecutionException e) {
       throw new KlabInternalErrorException(e);
     }
   }
 
+  /** Only native lifecycle status, including this root's owned overlay, defines currentness. */
+  private Observation currentObservation(Observation observation) {
+    return observation != null
+            && digitalTwin != null
+            && digitalTwin.getKnowledgeGraph().isObservationCurrent(observation, this)
+        ? observation
+        : null;
+  }
+
   /** Capture a new request's persisted focus; later reads retain that captured scope snapshot. */
   Observation getObservationForAdmission(long id) {
-    if (currentTransaction == null && digitalTwin != null
-        && digitalTwin.getKnowledgeGraph() instanceof
+    if (currentTransaction == null
+        && digitalTwin != null
+        && digitalTwin.getKnowledgeGraph()
+            instanceof
             org.integratedmodelling.common.services.client.digitaltwin.ClientKnowledgeGraph remote)
       return remote.getObservationForAdmission(id, this);
     return getObservation(id);
   }
+
   /** Drop the shared cached representation only after a successful durable update. */
   public void invalidateObservation(long id) {
     observationCache.invalidate(id);
@@ -373,7 +542,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
   @Override
   public Observation getObserverOf(Observation observation) {
-    return org.integratedmodelling.common.runtime.ObserverProvenance.recover(this,observation).observer();
+    return org.integratedmodelling.common.runtime.ObserverProvenance.recover(this, observation)
+        .observer();
   }
 
   //  @Override
@@ -404,16 +574,22 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   private Observation selectedObserver(String field, Object value) {
     if (digitalTwin == null)
       throw new IllegalArgumentException("Observer selection requires a knowledge graph");
-    // Selecting or refreshing an observer must not depend on that observer. Remote graph
-    // queries encode their scope through getObserver(), which would re-enter this lookup.
+    // Selecting or refreshing an observer must not depend on that observer's visibility.
     // Keep the caller's identity and context focus, but remove the observer selection.
     var lookupScope = withObserver(null);
-    var matches = digitalTwin.getKnowledgeGraph().query(Observation.class, lookupScope)
-        .where(field, KnowledgeGraph.Query.Operator.EQUALS, value).run(lookupScope);
+    var matches =
+        digitalTwin
+            .getKnowledgeGraph()
+            .query(Observation.class, lookupScope)
+            .where(field, KnowledgeGraph.Query.Operator.EQUALS, value)
+            .run(lookupScope);
     if (matches.size() != 1) return null;
     var selected = matches.getFirst();
-    return selected.getId() > 0 && selected.getObservable() != null
-        && selected.getObservable().is(SemanticType.AGENT) ? selected : null;
+    return selected.getId() > 0
+            && selected.getObservable() != null
+            && selected.getObservable().is(SemanticType.AGENT)
+        ? selected
+        : null;
   }
 
   public ServiceContextScope withIdentity(Identity identity) {
@@ -486,8 +662,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   @Override
   public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset observation) {
 
-    if (observation instanceof Observation view && view.getId() == Observation.QUERY_ID
-        && view.getObservable() != null && view.getObservable().getSemantics().isCollective()) {
+    if (observation instanceof Observation view
+        && view.getId() == Observation.QUERY_ID
+        && view.getObservable() != null
+        && view.getObservable().getSemantics().isCollective()) {
       return new ArrayList<>(getService(RuntimeService.class).getMembers(view, this));
     }
 
@@ -539,7 +717,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public List<Observation> getRelationshipParticipants(Observation relationship) {
     if (!relationship.getObservable().is(SemanticType.RELATIONSHIP)
         || relationship.getObservable().getSemantics().isCollective()) return List.of();
-    org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(relationship.getObservable().getSemantics().getType())
+    org.integratedmodelling.klab.api.knowledge.RelationshipAxes.of(
+            relationship.getObservable().getSemantics().getType())
         .requireComplete(relationship.getObservable().getSemantics().getUrn());
     return relationship.getObservable().is(SemanticType.BIDIRECTIONAL)
         ? participantLinks(relationship, true, GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT)
@@ -651,80 +830,172 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   }
 
   private Observation canonicalDependencyTarget(Observation requested) {
-    if(requested==null || requested.getId()==Observation.UNASSIGNED_ID || requested.getId()==Observation.QUERY_ID)
+    if (requested == null
+        || requested.getId() == Observation.UNASSIGNED_ID
+        || requested.getId() == Observation.QUERY_ID)
       throw new IllegalArgumentException("A bound modeled observation is required");
-    var transaction=getCurrentTransaction();Observation canonical;
-    if(transaction!=null) {
-      var matches=transaction.assets().stream().filter(Observation.class::isInstance).map(Observation.class::cast)
-          .filter(observation->observation.getId()==requested.getId()).toList();
-      if(matches.size()!=1)throw new IllegalStateException("Modeled target is not uniquely owned by the live attempt");
-      canonical=matches.getFirst();
-    } else canonical=getObservation(requested.getId());
-    if(canonical==null || !java.util.Objects.equals(canonical.getObservable().getUrn(),requested.getObservable().getUrn())
-        || canonical.getParentId()!=requested.getParentId()
-        || !org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.sanitize(canonical.getGeometry()).encode().equals(
-            org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.sanitize(requested.getGeometry()).encode())
-        || !java.util.Objects.equals(canonical.getMetadata().get(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.METADATA_KEY),
-            requested.getMetadata().get(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.METADATA_KEY)))
+    var transaction = getCurrentTransaction();
+    Observation canonical;
+    if (transaction != null) {
+      var matches =
+          transaction.assets().stream()
+              .filter(Observation.class::isInstance)
+              .map(Observation.class::cast)
+              .filter(observation -> observation.getId() == requested.getId())
+              .toList();
+      if (matches.size() != 1)
+        throw new IllegalStateException("Modeled target is not uniquely owned by the live attempt");
+      canonical = matches.getFirst();
+    } else canonical = getObservation(requested.getId());
+    if (canonical == null
+        || !java.util.Objects.equals(
+            canonical.getObservable().getUrn(), requested.getObservable().getUrn())
+        || canonical.getParentId() != requested.getParentId()
+        || !org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE
+            .sanitize(canonical.getGeometry())
+            .encode()
+            .equals(
+                org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE
+                    .sanitize(requested.getGeometry())
+                    .encode())
+        || !java.util.Objects.equals(
+            canonical
+                .getMetadata()
+                .get(
+                    org.integratedmodelling.klab.api.services.runtime.DependencyFamily
+                        .METADATA_KEY),
+            requested
+                .getMetadata()
+                .get(
+                    org.integratedmodelling.klab.api.services.runtime.DependencyFamily
+                        .METADATA_KEY)))
       throw new IllegalStateException("Modeled target binding changed");
     return canonical;
   }
 
-  private static boolean sameDependencyMeaning(org.integratedmodelling.klab.api.data.StorageScan.Semantics left,
+  private static boolean sameDependencyMeaning(
+      org.integratedmodelling.klab.api.data.StorageScan.Semantics left,
       org.integratedmodelling.klab.api.data.StorageScan.Semantics right) {
-    return left.meaning().equals(right.meaning()) && left.unit().equals(right.unit()) && left.currency().equals(right.currency())
-        && left.range().equals(right.range()) && left.contextualDimensions().equals(right.contextualDimensions());
+    return left.meaning().equals(right.meaning())
+        && left.unit().equals(right.unit())
+        && left.currency().equals(right.currency())
+        && left.range().equals(right.range())
+        && left.contextualDimensions().equals(right.contextualDimensions());
   }
 
   @Override
-  public java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> getDependencyFamilies(Observation modeledObservation) {
-    var target=canonicalDependencyTarget(modeledObservation);
-    var encoded=target.getMetadata().get(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.METADATA_KEY);
-    if(encoded==null)return java.util.List.of();
-    return java.util.List.of(Utils.Json.parseObject(encoded.toString(),org.integratedmodelling.klab.api.services.runtime.DependencyFamily[].class));
+  public java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily>
+      getDependencyFamilies(Observation modeledObservation) {
+    var target = canonicalDependencyTarget(modeledObservation);
+    var encoded =
+        target
+            .getMetadata()
+            .get(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.METADATA_KEY);
+    if (encoded == null) return java.util.List.of();
+    return java.util.List.of(
+        Utils.Json.parseObject(
+            encoded.toString(),
+            org.integratedmodelling.klab.api.services.runtime.DependencyFamily[].class));
   }
 
   @Override
-  public java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input> getDependencyInputs(Observation modeledObservation, String familyId) {
-    var family=getDependencyFamilies(modeledObservation).stream().filter(f->f.id().equals(familyId)).findFirst()
-        .orElseThrow(()->new IllegalArgumentException("Unknown dependency family"));
-    var target=canonicalDependencyTarget(modeledObservation);var transaction=getCurrentTransaction();
-    if(isInterrupted())throw new java.util.concurrent.CancellationException("Dependency input access cancelled");
+  public java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input>
+      getDependencyInputs(Observation modeledObservation, String familyId) {
+    var family =
+        getDependencyFamilies(modeledObservation).stream()
+            .filter(f -> f.id().equals(familyId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Unknown dependency family"));
+    var target = canonicalDependencyTarget(modeledObservation);
+    var transaction = getCurrentTransaction();
+    if (isInterrupted())
+      throw new java.util.concurrent.CancellationException("Dependency input access cancelled");
     java.util.Collection<KnowledgeGraph.Link> links;
-    if(transaction!=null) {
-      if(transaction.isFailed())throw new IllegalStateException("Dependency input attempt failed");
-      var root=transaction;while(root.getParent()!=null)root=root.getParent();
-      if(!root.getId().equals(family.rootAttempt()))throw new IllegalStateException("Dependency family belongs to another attempt");
-      links=transaction.incoming(target);
-    } else links=getDigitalTwin().getKnowledgeGraph().getLinks(target,GraphModel.Relationship.Direction.INCOMING,this,GraphModel.Relationship.AFFECTS);
-    var inputs=new java.util.HashMap<String,org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input>();
-    for(var link:links) {
-      if(link.type()!=GraphModel.Relationship.AFFECTS || !(link.source() instanceof Observation source)
-          || !(link.target() instanceof Observation destination) || destination.getId()!=target.getId())continue;
-      var encoded=link.properties().get(org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding.PROPERTY);
-      if(encoded==null || encoded.toString().isBlank())continue;
-      var binding=Utils.Json.parseObject(encoded.toString(),org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding.class);
-      if(!binding.familyId().equals(family.id()))continue;
-      var branch=family.branches().stream().filter(b->b.id().equals(binding.branchId())).findFirst()
-          .orElseThrow(()->new IllegalStateException("Unknown concrete dependency branch"));
-      if(!binding.rootAttempt().equals(family.rootAttempt()) || !binding.observable().equals(branch.observable())
-          || branch.outcome()!=org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Outcome.RESOLVED)
-        throw new IllegalStateException("Concrete dependency binding changed");
-      var mediation=link.properties().get(org.integratedmodelling.klab.api.data.StorageScan.Binding.PROPERTY);
-      if(mediation==null)throw new IllegalStateException("Concrete dependency has no storage binding");
-      var storageBinding=Utils.Json.parseObject(mediation.toString(),org.integratedmodelling.klab.api.data.StorageScan.Binding.class);
-      if(!storageBinding.source().equals(org.integratedmodelling.klab.api.data.StorageScan.semantics(source.getObservable()))
-          || !sameDependencyMeaning(storageBinding.target(),branch.requested())
-          || !"PREREQUISITE".equalsIgnoreCase(java.util.Objects.toString(link.properties().get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE),""))
+    if (transaction != null) {
+      if (transaction.isFailed())
+        throw new IllegalStateException("Dependency input attempt failed");
+      var root = transaction;
+      while (root.getParent() != null) root = root.getParent();
+      if (!root.getId().equals(family.rootAttempt()))
+        throw new IllegalStateException("Dependency family belongs to another attempt");
+      links = transaction.incoming(target);
+    } else
+      links =
+          getDigitalTwin()
+              .getKnowledgeGraph()
+              .getLinks(
+                  target,
+                  GraphModel.Relationship.Direction.INCOMING,
+                  this,
+                  GraphModel.Relationship.AFFECTS);
+    var inputs =
+        new java.util.HashMap<
+            String, org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input>();
+    for (var link : links) {
+      if (link.type() != GraphModel.Relationship.AFFECTS
+          || !(link.source() instanceof Observation source)
+          || !(link.target() instanceof Observation destination)
+          || destination.getId() != target.getId()) continue;
+      var encoded =
+          link.properties()
+              .get(
+                  org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding
+                      .PROPERTY);
+      if (encoded == null || encoded.toString().isBlank()) continue;
+      var binding =
+          Utils.Json.parseObject(
+              encoded.toString(),
+              org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Binding.class);
+      if (!binding.familyId().equals(family.id())) continue;
+      var branch =
+          family.branches().stream()
+              .filter(b -> b.id().equals(binding.branchId()))
+              .findFirst()
+              .orElseThrow(() -> new IllegalStateException("Unknown concrete dependency branch"));
+      if (!binding.rootAttempt().equals(family.rootAttempt())
+          || !binding.observable().equals(branch.observable())
+          || branch.outcome()
+              != org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Outcome
+                  .RESOLVED) throw new IllegalStateException("Concrete dependency binding changed");
+      var mediation =
+          link.properties().get(org.integratedmodelling.klab.api.data.StorageScan.Binding.PROPERTY);
+      if (mediation == null)
+        throw new IllegalStateException("Concrete dependency has no storage binding");
+      var storageBinding =
+          Utils.Json.parseObject(
+              mediation.toString(),
+              org.integratedmodelling.klab.api.data.StorageScan.Binding.class);
+      if (!storageBinding
+              .source()
+              .equals(
+                  org.integratedmodelling.klab.api.data.StorageScan.semantics(
+                      source.getObservable()))
+          || !sameDependencyMeaning(storageBinding.target(), branch.requested())
+          || !"PREREQUISITE"
+              .equalsIgnoreCase(
+                  java.util.Objects.toString(
+                      link.properties()
+                          .get(org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE),
+                      ""))
           || !"CURRENT".equals(link.properties().get("readState")))
-        throw new IllegalStateException("Concrete dependency mediation or prerequisite role changed");
-      var input=new org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input(family,branch,source,storageBinding);
-      if(inputs.putIfAbsent(branch.id(),input)!=null)throw new IllegalStateException("Duplicate concrete dependency binding");
+        throw new IllegalStateException(
+            "Concrete dependency mediation or prerequisite role changed");
+      var input =
+          new org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input(
+              family, branch, source, storageBinding);
+      if (inputs.putIfAbsent(branch.id(), input) != null)
+        throw new IllegalStateException("Duplicate concrete dependency binding");
     }
-    var result=new java.util.ArrayList<org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input>();
-    for(var branch:family.branches())if(branch.outcome()==org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Outcome.RESOLVED) {
-      var input=inputs.get(branch.id());if(input==null)throw new IllegalStateException("Missing resolved dependency edge");result.add(input);
-    }
+    var result =
+        new java.util.ArrayList<
+            org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input>();
+    for (var branch : family.branches())
+      if (branch.outcome()
+          == org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Outcome.RESOLVED) {
+        var input = inputs.get(branch.id());
+        if (input == null) throw new IllegalStateException("Missing resolved dependency edge");
+        result.add(input);
+      }
     return java.util.List.copyOf(result);
   }
 
@@ -768,10 +1039,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (runtimeAssets != null) {
       assets.addAll(Arrays.asList(runtimeAssets));
     }
-    ret.currentTransaction =
-        currentTransaction == null
-            ? getDigitalTwin().transaction(currentActivity, this, assets.toArray())
-            : currentTransaction.getChild(currentActivity, ret, assets.toArray());
+    if (currentTransaction == null) {
+      var transaction = getDigitalTwin().transaction(currentActivity, this, assets.toArray());
+      if (transaction
+          instanceof org.integratedmodelling.klab.runtime.lifecycle.CycleScopedTransaction scoped)
+        ret = new ServiceContextScope(scoped.executionScope());
+      ret.currentTransaction = transaction;
+    } else {
+      ret.currentTransaction = currentTransaction.getChild(currentActivity, ret, assets.toArray());
+    }
 
     send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityStarted, currentActivity);
 
@@ -796,7 +1072,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
       return -1;
     }
 
-    var ret = this.currentTransaction.commit();
+    var completing = this.currentTransaction;
+    var rootCommit = completing.getParent() == null;
+    var ret = completing.commit();
+    if (rootCommit && ret > 0 && consequenceSubmissionAdmission != null) {
+      try {
+        consequenceSubmissionAdmission.committed(ret);
+      } catch (RuntimeException receiptFailure) {
+        warn("Cannot record optional submission commit receipt", receiptFailure);
+      }
+    }
     try {
       send(Message.MessageClass.DigitalTwin, Message.MessageType.ActivityFinished, getActivity());
     } catch (RuntimeException deliveryFailure) {
@@ -866,10 +1151,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     } else {
       // A named per-submission selection wins over an inherited numeric default,
       // regardless of transport/list ordering. It remains a scope choice, not a query clause.
-      var namedObservers = java.util.Arrays.stream(resolutionConstraints)
-          .filter(java.util.Objects::nonNull)
-          .filter(c -> c.getType() == ResolutionConstraint.Type.ObserverUrn && !c.empty())
-          .flatMap(c -> c.payload(String.class).stream()).distinct().toList();
+      var namedObservers =
+          java.util.Arrays.stream(resolutionConstraints)
+              .filter(java.util.Objects::nonNull)
+              .filter(c -> c.getType() == ResolutionConstraint.Type.ObserverUrn && !c.empty())
+              .flatMap(c -> c.payload(String.class).stream())
+              .distinct()
+              .toList();
       if (namedObservers.size() > 1 || namedObservers.stream().anyMatch(String::isBlank))
         throw new IllegalArgumentException("A submission must select one nonblank observer URN");
       for (var constraint : resolutionConstraints) {
@@ -886,8 +1174,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
           ret = ret.withObserver(selected);
         } else if (constraint.getType() == ResolutionConstraint.Type.Observer) {
           if (!namedObservers.isEmpty()) continue;
-          var selected = ret.selectedObserver(GraphModel.Fields.ID,
-              constraint.payload(Long.class).getFirst());
+          var selected =
+              ret.selectedObserver(GraphModel.Fields.ID, constraint.payload(Long.class).getFirst());
           if (selected == null) throw new IllegalArgumentException("Unknown observer");
           ret = ret.withObserver(selected);
         } else if (constraint.getType().incremental
@@ -1083,7 +1371,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public Observation getObservation(Observation observation) {
 
     if (observation.getId() == Observation.QUERY_ID
-        && observation.getMetadata().get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY) != null) {
+        && observation
+                .getMetadata()
+                .get(org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY)
+            != null) {
       // A selection's source IDs are discovery witnesses, not substitutes for its filtered view.
       // QUERY_ID submission is the Runtime's existing read-only validation path.
       var checked = getService(RuntimeService.class).submit(observation, this).join();
@@ -1159,29 +1450,40 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     visibleMatches.addAll(query.run(this));
     if (!SemanticType.isDependent(observation.getObservable().getSemantics().getType()))
       return visibleMatches.isEmpty() ? null : visibleMatches.getFirst();
-    Observation complete=null,partial=null;
-    int completePreference=Integer.MAX_VALUE,partialPreference=Integer.MAX_VALUE;
-    double partialCoverage=-1;
-    for(var candidate:visibleMatches) {
-      int preference=org.integratedmodelling.klab.runtime.ObserverResolution.preference(
-          candidate.getObservable(),observation.getObservable(),this);
-      if(preference<0)continue;
-      var requestedGeometry=observation.getGeometry();
-      if(requestedGeometry==null && contextObservation!=null)requestedGeometry=contextObservation.getGeometry();
+    Observation complete = null, partial = null;
+    int completePreference = Integer.MAX_VALUE, partialPreference = Integer.MAX_VALUE;
+    double partialCoverage = -1;
+    for (var candidate : visibleMatches) {
+      int preference =
+          org.integratedmodelling.klab.runtime.ObserverResolution.preference(
+              candidate.getObservable(), observation.getObservable(), this);
+      if (preference < 0) continue;
+      var requestedGeometry = observation.getGeometry();
+      if (requestedGeometry == null && contextObservation != null)
+        requestedGeometry = contextObservation.getGeometry();
       // An ID-zero query may intentionally ask for the known value without a support constraint.
       // Its source extent is the answer's domain, never proof of covering an explicit request.
-      if(requestedGeometry==null && observation.getId()==Observation.QUERY_ID)requestedGeometry=candidate.getGeometry();
-      var coverage=org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(candidate,requestedGeometry);
-      if(coverage==null || coverage.getCoverage()<=0)continue;
-      if(coverage.isComplete()) {
-        if(preference<completePreference) {complete=candidate;completePreference=preference;}
-      } else if(preference<partialPreference || preference==partialPreference && coverage.getCoverage()>partialCoverage) {
-        partial=candidate;partialPreference=preference;partialCoverage=coverage.getCoverage();
+      if (requestedGeometry == null && observation.getId() == Observation.QUERY_ID)
+        requestedGeometry = candidate.getGeometry();
+      var coverage =
+          org.integratedmodelling.klab.runtime.ObserverReuseSupport.coverage(
+              candidate, requestedGeometry);
+      if (coverage == null || coverage.getCoverage() <= 0) continue;
+      if (coverage.isComplete()) {
+        if (preference < completePreference) {
+          complete = candidate;
+          completePreference = preference;
+        }
+      } else if (preference < partialPreference
+          || preference == partialPreference && coverage.getCoverage() > partialCoverage) {
+        partial = candidate;
+        partialPreference = preference;
+        partialCoverage = coverage.getCoverage();
       }
     }
     // One-result lookup cannot compose multiple existing perspectives. A partial specific cannot
     // hide a complete fallback; if none is complete the caller receives measured partial support.
-    return complete!=null?complete:partial;
+    return complete != null ? complete : partial;
   }
 
   private boolean isSameInstance(Observation observation, Observation o) {
@@ -1214,8 +1516,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
    */
   public ServiceContextScope of(Observation observation) {
 
-    var observer = org.integratedmodelling.common.runtime.ObserverProvenance
-        .recover(this,observation).requireKnown();
+    var observer =
+        org.integratedmodelling.common.runtime.ObserverProvenance.recover(this, observation)
+            .requireKnown();
     Observation contextObs = null;
     if (observation.getObservable().is(SemanticType.QUALITY)
         || (observation.getObservable().is(SemanticType.COUNTABLE)
@@ -1255,9 +1558,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
   public Observation.Builder observation(Observable observable) {
     // Only the root consequence request is optional. Required model dependencies must retain
     // their normal failure semantics inside the transaction.
-    var requested = consequenceCause != null && getTransactionId() == null && observable != null
-            && !observable.isOptional()
-        ? observable.builder(this).optional(true).buildObservable() : observable;
+    var requested =
+        consequenceCause != null
+                && getTransactionId() == null
+                && observable != null
+                && !observable.isOptional()
+            ? observable.builder(this).optional(true).buildObservable()
+            : observable;
     return new ObservationBuilderImpl(requested, this) {
       @Override
       public CompletableFuture<Observation> submit() {

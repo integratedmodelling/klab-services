@@ -1,0 +1,32 @@
+strategies observations
+  version 2.0;
+
+strategy 0 named substantial.direct
+  for pattern {
+    node {
+      kind = one_of(subject, agent, relationship);
+      collective = false;
+      abstract = false;
+    }
+  }
+  ensure request.fully_specified($this)
+  observe $this;
+
+strategy 0 named characterization.direct
+  for pattern { node { activity = CHARACTERIZATION; } }
+  ensure context.exists()
+  observe $this;
+
+strategy 0 named configuration.direct
+  for pattern { node { kind = configuration; activity = DETECTION; abstract = false; } }
+  ensure
+    context.exists(),
+    request.fully_specified($this)
+  observe $this;
+
+strategy 0 named dependent.direct
+  for pattern { node { kind = one_of(quality, process); abstract = false; } }
+  ensure
+    context.exists(),
+    request.fully_specified($this)
+  observe $this;

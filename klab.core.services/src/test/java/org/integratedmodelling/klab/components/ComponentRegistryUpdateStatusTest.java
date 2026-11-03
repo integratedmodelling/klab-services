@@ -318,13 +318,14 @@ class ComponentRegistryUpdateStatusTest {
 
   @Test
   void scopedLibraryLookupsUseServiceAndActorContributionIndexes() throws Exception {
-    var registry = mock(ComponentRegistry.class, CALLS_REAL_METHODS);
+    var owner = mock(BaseService.class);
     var scope = mock(Scope.class);
     var call = mock(ServiceCall.class);
     var function = mock(Extensions.FunctionDescriptor.class);
     var actor = mock(Extensions.ActorDescriptor.class);
     var component = mock(Extensions.ComponentDescriptor.class);
     var version = Version.create("1.0.0");
+    when(component.id()).thenReturn("test.component");
     when(call.getUrn()).thenReturn("test.library.function");
     when(call.getRequiredVersion()).thenReturn(version);
     when(component.version()).thenReturn(version);
@@ -334,6 +335,7 @@ class ComponentRegistryUpdateStatusTest {
     when(component.exporters()).thenReturn(Map.of());
     when(component.importers()).thenReturn(Map.of());
     when(component.actors()).thenReturn(Map.of("test.library.actor", List.of(actor)));
+    var registry = new ComponentRegistry(owner, null, null, List.of(component));
     var serviceFinder = new org.apache.commons.collections4.multimap.HashSetValuedHashMap<
         String, Extensions.ComponentDescriptor>();
     serviceFinder.put("test.library.function", component);
@@ -346,6 +348,10 @@ class ComponentRegistryUpdateStatusTest {
     var actorField = ComponentRegistry.class.getDeclaredField("actorFinder");
     actorField.setAccessible(true);
     actorField.set(registry, actorFinder);
+    // This fixture injects writer indexes directly; publish them as production registration does.
+    var publish = ComponentRegistry.class.getDeclaredMethod("publishRegistryView");
+    publish.setAccessible(true);
+    publish.invoke(registry);
 
     assertSame(function, registry.getFunctionDescriptor(call, scope).getFirst());
     assertSame(actor, registry.getActorDescriptors("test.library.actor", version, scope).getFirst());
