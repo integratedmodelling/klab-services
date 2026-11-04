@@ -64,7 +64,7 @@ rows do not revoke their separately accepted subcapabilities.
 | RC-P2.4 | A representative bounded stream/interrupt | IMPLEMENTED_UNVERIFIED | #198 actual-socket64MiB synthetic body: exact bytes,664481-byte Python peak,819200-byte observed RSS growth; eager control and six failures/cleanup pass | Real Java/provider workload and sustained memory/soak remain unverified; controlled HTTP evidence is not a deployed scientific capacity claim; P1 |
 | RC-P2.5 | A faithful raster/xarray and categorical views | PARTIAL | analysis/tables; adapter tests and historical controlled raster evidence | Broader served categorical dictionary/worldview and vector adapters; #123/#130; P1 |
 | RC-P3.1 | A committed two-client race convergence | PARTIAL | graph_projection/notifications; #136 hint invalidation and dedup tests | Authoritative commit/version contract #126 plus reconciliation/race fixture; P2 |
-| RC-P3.2 | A disconnect and honest partial refresh | PARTIAL | graph browser/projection explicit refresh; #136 tests | Portable genuine disconnect/refresh verification; no durable replay prerequisite for this bounded test; P1 |
+| RC-P3.2 | A disconnect and honest partial refresh | ACCEPTED | #199 installed actual-Java owned outage/restart: two retained selections invalidated, owner reattaches/refetches one, other stays stale; metadata/UNKNOWN preserved; real private attach/release denials pass | Bounded explicit refresh only; no durable replay/convergence or whole RC-P3.1 claim |
 | RC-P3.3 | A cancel/expiry/restart/no replay | PARTIAL | client/async/_job_binding; #139; cancellation and drift tests | Retained history/incarnation contract and deployed expiry/restart chain #89; P1 |
 | RC-P3.4 | A explain actual dependencies and semantic effects | PARTIAL | evidence/provenance; recorded neighborhoods/tests; S | Full lineage and semantic-update execution fixture; Java extraction gaps, not portable replay; P2 |
 | RC-P3.5 | A bounded notebook concurrency and own-wait cancellation | IMPLEMENTED_UNVERIFIED | async/experiments; #105, runner tests and controlled results | Exact supported integrated multi-principal notebook/race acceptance; no new backend defect established; P1 |
@@ -168,7 +168,9 @@ including earlier failures, corrected source/package identities, hosted checks a
 code. No second feature was started.
 
 **MILESTONE_COMPLETE for this one increment, not for A/B or the full roadmap.**
-CAP-12 is accepted; RC-P3.2 still requires actual disconnect/partial-refresh
+CAP-12 is accepted; RC-P3.2's actual disconnect/partial-refresh evidence is now
+accepted by #199 below; broader durable-convergence requirements remain separate.
+The historical snapshot increment did not itself provide disconnect/partial-refresh
 verification, and durable graph recovery is not implied. Next recommended milestone:
 RC-P2.1's portable nonuniform served-export oracle, with explicit zero/missingness
 and independently specified coordinates, after pinning the actual exporter.
@@ -189,7 +191,7 @@ single queue progress ledger; detailed evidence belongs in existing review paths
 |---|---|---|---|
 | F1 nonuniform export | MERGED_BOUNDED | Base10bf4b616; head dabe5d700; [PR197](https://github.com/integratedmodelling/klab-services/pull/197); merge c9bf30abc7a726db9d290b89b448fd9a77a63e9f | Installed named actual-Java fixture passes20 cells/two missing/one zero, float64/units/axes/masks and owned cleanup using separately pinned corrected exporter98441476.. (HM0.11.3, not #11); published archive fails strict oracle; full multi-shard/time/revision gate unproven. All final-head hosted checks pass; postmerge19 tests and installed native-file demo pass; feature branch retired locally/remotely; [review](../python-client/docs/reviews/nonuniform-export-oracle.md) |
 | F2 stream reliability | MERGED_BOUNDED | Base4a54145de; head728f7a998; [PR198](https://github.com/integratedmodelling/klab-services/pull/198); merge597c47c309044af672831833783d4449484815e9 | Actual-socket64MiB bytes and buffered control, six failure/cleanup paths and one export attempt pass;2839 installed tests/16 gates and all hosted checks pass; postmerge70 tests pass; branch retired locally/remotely; [review](../python-client/docs/reviews/export-stream-reliability.md). No Java/provider capacity claim |
-| F3 partial refresh | ACTIVE | Base3746edd97; feature/python-partial-refresh-acceptance; no PR yet | Existing projection plus owned Runtime outage/restart/one-page refetch; separate actual signed-identity ACL checks; status-specific contract tests. No durable convergence claim |
+| F3 partial refresh | MERGED_BOUNDED | Base3746edd97; head5ce00c842; [PR199](https://github.com/integratedmodelling/klab-services/pull/199); merge564d27f166b5a908240b0533bfa7c4b4b55dbd4d | Installed genuine Runtime outage/restart/one-page refresh and separate signed-actor attach/release denials pass;2847 tests/16 gates/all hosted checks; postmerge40 tests pass; branch retired locally/remotely. RC-P3.2 bounded criterion accepted; CAP-10/11 and #126 broader limits remain; [review](../python-client/docs/reviews/partial-refresh-acceptance.md) |
 | F4 served request plan | NOT_STARTED | — | Actual supported typed-option-to-Java-plan subset, no algorithm change |
 | F5 concurrent notebook (optional) | NOT_STARTED | — | Evaluate only after F1–F4 dispositions; no active dependency stacking |
 
