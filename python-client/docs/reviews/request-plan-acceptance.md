@@ -2,10 +2,13 @@
 
 ## Recommendation and reviewed state
 
-**Needs final exact-candidate acceptance evidence before publication.** This
+**Ready for maintainer review of the bounded independently exercised subset.** This
 author-performed review is not independent approval. Integration target is
 `feature/python-experiment-runner`, base `a40da56be` after verified PR199. No active
 overlapping services PR was present. No contributor was assigned or contacted.
+Reviewed implementation candidate `700c12595de91b71b517713092d17e9564fdd79a`;
+subsequent review-only text does not alter tested behavior. No remaining blocking
+defect was found within this bounded scope; this is not exhaustive correctness.
 
 ## Capability and boundaries
 
@@ -52,6 +55,18 @@ new chart vectors reject empty/failed/UNKNOWN/wrong-phase selection evidence and
 deduplicate correct models. Local unsupported/conflicting options must make no
 HTTP request. Genuine Java results and final package/coverage/hosted results are
 required separately; this initial review does not predeclare them.
+
+Final exact-candidate `f4-final-live-v2` passes: unconstrained nonuniform baseline
+and distinct namespace/scenario model URNs in successful resolution charts,
+independently expected66.5 and234.5 at20 cells each, original10 ordered offsets
+including zero/missing/precision, actual geometry and focus preservation, served
+grid normalization/warning, three zero-HTTP rejection cases and all owned cleanup.
+The final named suite runs against the installed noneditable client; all43 SDK
+modules match source. **2850 offline tests**, all16 existing coverage gates, Ruff,
+wheel and sdist pass, with one retained Rasterio warning. Wheel SHA256
+`f6df266318aed7d5f113abc74f90bcf0d49dbd271b28191bbb57475b4828ccd6`;
+sdist `4e8f6595485bf70c809081939497e88716e5c18ea82021bf281db34f811c832c`.
+Hosted checks/normal merge remain a distinct gate, not inferred from local success.
 
 Exact candidate/source/artifact identities, commands, failed and final results
 belong under the existing private queue evidence root, with public usage/matrix in
