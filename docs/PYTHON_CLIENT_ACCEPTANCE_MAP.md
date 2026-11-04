@@ -175,6 +175,36 @@ and independently specified coordinates, after pinning the actual exporter.
 HortonMachine component #11 remains a separate unmerged dependency, not a blocker
 or an adoption claim for this completed local feature.
 
+## Scientific Data Reliability queue — 4 November 2026
+
+Authority: user-supplied `KLAB_Scientific_Data_Reliability_Multi_Feature_CLI_SPEC.md`.
+This supersedes the previous one-increment stopping rule for this queue only.
+Initial base `10bf4b6161350ac4b17d5836adfea09afae13209`; verified #196 merge
+ancestry, unchanged Java source/dependency tuple above, component#11 still open,
+services open PRs empty. Baseline installed-client smoke:143 tests pass, one retained
+Rasterio warning. Existing checkout reused; no new worktree. This table is the
+single queue progress ledger; detailed evidence belongs in existing review paths.
+
+| Feature | Disposition | Base / head / PR / merge | Scope, evidence and remaining proof |
+|---|---|---|---|
+| F1 nonuniform export | ACTIVE | Base10bf4b616; branch feature/python-nonuniform-export-oracle; no PR yet | Separate synthetic single-shard Java field, independent JSON oracle, installed native export and reader validation; no full multi-shard acceptance claim |
+| F2 stream reliability | NOT_STARTED | — | Atomic transport interruption/cancellation and measured bounded workload |
+| F3 partial refresh | NOT_STARTED | — | Honest disconnect/unavailable/auth/refetch states, not durable convergence |
+| F4 served request plan | NOT_STARTED | — | Actual supported typed-option-to-Java-plan subset, no algorithm change |
+| F5 concurrent notebook (optional) | NOT_STARTED | — | Evaluate only after F1–F4 dispositions; no active dependency stacking |
+
+F1 contract: an asymmetric5×4 EPSG:3857 field with positive/negative values,
+valid zero, two missing cells and float64 precision. A separate hand-authored
+north-first table and coordinate/ordered-offset expectations validate native TIFF
+bytes and the optional installed reader. The Java producer is test-classpath-only,
+single-use, one-shard and explicitly enabled. A portable owned-stack runner uses
+explicit compiled-server/JDK/component hashes and private generated TEST identity;
+fixed loopback ports fail closed if occupied. No existing scientific worldview,
+ontology, model or oracle is edited; new minimal test assets are separately labelled.
+Success needs actual native exported field checks, negative/malformed/representation
+tests, package/regression gates, contributor review and a normal merged PR.
+Unproven multi-shard/time/revision guarantees remain RC-P2.1/P2.2 PARTIAL.
+
 ## Historical inventory — retained verbatim below
 
 **The roadmap is not complete, and remaining work is not external-only.** This

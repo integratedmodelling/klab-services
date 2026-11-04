@@ -1,0 +1,18 @@
+ontology consolidation version 1.0 in domain root
+  with core "http://integratedmodelling.org/odo/0.2.0" as odo;
+abstract configuration Configuration is core odo:Configuration;
+abstract thing Subject is core odo:Subject;
+abstract agent Agent is core odo:Agent;
+abstract process Process is core odo:Process;
+abstract event Event is core odo:Event;
+abstract relationship Relationship is core odo:Relationship;
+abstract quality Quality is core odo:Quality;
+abstract quantity Quantity is core odo:QuantifiableQuality;
+abstract length Length is core odo:Length;
+abstract identity Identity is core odo:Identity;
+abstract attribute Attribute is core odo:Attribute;
+abstract realm Realm is core odo:Realm;
+abstract role Role is core odo:Role;
+thing Region is consolidation:Subject;
+agent Scientist is consolidation:Agent;
+length Elevation is consolidation:Length of consolidation:Region;
