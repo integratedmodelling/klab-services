@@ -61,16 +61,20 @@ public interface ContextScope extends SessionScope {
    */
   DigitalTwin.Transaction getCurrentTransaction();
 
-  /** Completed expansion inventories for the current target; empty closure differs from optional absence. */
-  default java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily> getDependencyFamilies(Observation modeledObservation) {
+  /**
+   * Completed expansion inventories for the current target; empty closure differs from optional
+   * absence.
+   */
+  default java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily>
+      getDependencyFamilies(Observation modeledObservation) {
     throw new UnsupportedOperationException("Dependency family views require an execution context");
   }
 
   /** Transaction-aware prerequisite inputs, in concrete branch order, for one exact family. */
-  default java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input> getDependencyInputs(Observation modeledObservation, String familyId) {
+  default java.util.List<org.integratedmodelling.klab.api.services.runtime.DependencyFamily.Input>
+      getDependencyInputs(Observation modeledObservation, String familyId) {
     throw new UnsupportedOperationException("Dependency family views require an execution context");
   }
-
 
   /**
    * Return the observer for this context. This should normally not be null even if the context is
@@ -81,6 +85,16 @@ public interface ContextScope extends SessionScope {
    * @return
    */
   Observation getObserver();
+
+  /**
+   * Stable identity of the selected observer for scope transport, or null if none is selected. This
+   * does not validate access to the observer. Implementations whose {@link #getObserver()}
+   * refreshes an observation must override this method without performing graph or network reads.
+   */
+  default Long getObserverId() {
+    var observer = getObserver();
+    return observer == null ? null : observer.getId();
+  }
 
   /**
    * Return all the observations visible in this context, ordered by submission timestamp.
@@ -120,16 +134,19 @@ public interface ContextScope extends SessionScope {
     if (id == Observation.UNASSIGNED_ID || id == Observation.QUERY_ID) return null;
     if (getCurrentTransaction() != null) {
       for (var asset : getCurrentTransaction().assets())
-        if (asset instanceof Observation observation && observation.getId() == id) return observation;
+        if (asset instanceof Observation observation && observation.getId() == id)
+          return observation;
     }
-    return id > 0 ? getDigitalTwin().getKnowledgeGraph().getAsset(id, this, Observation.class) : null;
+    return id > 0
+        ? getDigitalTwin().getKnowledgeGraph().getAsset(id, this, Observation.class)
+        : null;
   }
 
   /**
    * Enumerate existing observations visible as direct children at this scope's knowledge-graph
    * insertion point (the focused observation, or the digital-twin root). Their canonical observable
-   * semantics must be identical to the query except for the {@code observed as} restriction.
-   * Every other clause and observable representation constraint remains significant; subtype
+   * semantics must be identical to the query except for the {@code observed as} restriction. Every
+   * other clause and observable representation constraint remains significant; subtype
    * compatibility is insufficient. Absolute observations are included. Scope/session observer
    * selection does not filter or rank this enumeration.
    *
@@ -448,6 +465,12 @@ public interface ContextScope extends SessionScope {
     return null;
   }
 
+  /** Frozen cycle identity, not an access grant or a lease retained by a scope copy. */
+  default org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding
+      getResolutionCycleBinding() {
+    return null;
+  }
+
   /**
    * Obtain the properly formatted scope token for the {@link
    * org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} to use in a request. The root
@@ -488,8 +511,9 @@ public interface ContextScope extends SessionScope {
     }
 
     // observers are necessarily resolved
-    if (scope.getObserver() != null) {
-      ret.append("#").append(scope.getObserver().getId());
+    var observerId = scope.getObserverId();
+    if (observerId != null) {
+      ret.append("#").append(observerId);
     }
 
     return ret.toString();
@@ -506,7 +530,8 @@ public interface ContextScope extends SessionScope {
       }
       if ((resolutionGeometry == null || resolutionGeometry.isEmpty())
           && scope.getObserver() != null) {
-        resolutionGeometry = scope.getObserver().geometry(Observation.GeometryRelationship.PERCEIVES);
+        resolutionGeometry =
+            scope.getObserver().geometry(Observation.GeometryRelationship.PERCEIVES);
       }
     }
     return resolutionGeometry;

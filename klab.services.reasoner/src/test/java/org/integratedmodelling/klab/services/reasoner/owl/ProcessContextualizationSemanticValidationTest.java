@@ -25,6 +25,7 @@ class ProcessContextualizationSemanticValidationTest {
   @Test
   void processAssignmentsUseTheCanonicalOwlAffectsEdge() {
     var reasoner = mock(ReasonerService.class);
+    when(reasoner.serviceScope()).thenReturn(mock(org.integratedmodelling.klab.api.scope.ServiceScope.class));
     when(reasoner.owl()).thenReturn(mock(OWL.class));
     var resolvedProcess = mock(Concept.class);
     var resolvedElevation = mock(Concept.class);
@@ -61,7 +62,8 @@ class ProcessContextualizationSemanticValidationTest {
     document.getStatements().add(model);
 
     when(reasoner.affectedBy(resolvedElevation, resolvedProcess)).thenReturn(true);
-    assertTrue(new DocumentSemanticValidator(reasoner).validate(document).isEmpty());
+    var accepted = new DocumentSemanticValidator(reasoner).validate(document);
+    assertTrue(accepted.isEmpty(), accepted.toString());
 
     when(reasoner.affectedBy(resolvedElevation, resolvedProcess)).thenReturn(false);
     var notifications = new DocumentSemanticValidator(reasoner).validate(document);

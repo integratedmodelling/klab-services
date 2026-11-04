@@ -330,4 +330,12 @@ class NativeTestFixturesTest {
       assertThrows(IllegalArgumentException.class, f::prepare);
     } finally { release.countDown(); }
   }
+  @Test void cessationEmitterNeedsLivePermitAndOnlyForwardsItsDeclaredInput() {
+    var f=new Fixture();var builder=mock(Data.Builder.class);var target=mock(Observation.class);
+    assertThrows(IllegalArgumentException.class,()->NativeTestFixtures.cease(builder,target,f.context));verifyNoInteractions(builder);
+    f.grant();NativeTestFixtures.cease(builder,target,f.context);verify(builder).cease(same(target));
+    assertEquals(1,NativeTestFixtures.count(f.owner,f.context,"cessation"));verify(f.twin,never()).getKnowledgeGraph();verify(f.context,never()).getObservation(anyLong());verify(f.context,never()).getService(Reasoner.class);
+    assertThrows(IllegalArgumentException.class,()->NativeTestFixtures.cease(builder,null,f.context));
+    f.owner.done();assertThrows(IllegalArgumentException.class,()->NativeTestFixtures.cease(builder,target,f.context));
+  }
 }

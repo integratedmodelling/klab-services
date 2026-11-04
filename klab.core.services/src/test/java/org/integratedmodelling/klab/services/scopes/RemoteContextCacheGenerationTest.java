@@ -45,7 +45,8 @@ class RemoteContextCacheGenerationTest {
   assertThrows(IllegalStateException.class,()->binding.require(second,requested,after.getGeometry()));
   current.set(observation(99,"test:Region"));assertThrows(IllegalStateException.class,()->manager.contextualizeScope(root,path,Map.of()),"Wrong authoritative ID cannot be admitted");
   current.set(null);assertThrows(RuntimeException.class,()->manager.contextualizeScope(root,path,Map.of()),"Unavailable authoritative focus cannot fall back to cached meaning");
-  verify(remote,times(4)).getAsset(eq(42L),eq(RuntimeAsset.class),any(Scope.class));
+   // Four focus admissions plus lifecycle checks before and after each cached scope read.
+   verify(remote,times(8)).getAsset(eq(42L),eq(RuntimeAsset.class),any(Scope.class));
   verifyNoMoreInteractions(remote);
  } @Test void nextScopedRequestSeesClassifiedMeaningButCapturedOldBindingStillRejectsIt() throws Exception {
   var user=mock(UserIdentity.class);when(user.getUsername()).thenReturn("user");var owner=mock(KlabService.class);

@@ -49,6 +49,7 @@ class ClassificationExecutionTest {
     var after = new ObservationImpl();
     after.setId(42);
     when(graph.getAsset(42L, scope, Observation.class)).thenReturn(before, after);
+    when(graph.isObservationCurrent(argThat(observation -> observation != null && observation.getId() == 42L), same(scope))).thenReturn(true);
     assertSame(before, scope.getObservation(42L));
     assertSame(before, scope.getObservation(42L));
     when(graph.getSemanticRevision()).thenReturn(1L);

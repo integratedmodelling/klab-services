@@ -198,10 +198,11 @@ configuration route for a snapshot provider. Accepted operations restore and ret
 that same owned state. Legacy accepted providers retain their existing interactive
 route; a failed candidate leaves the prior accepted environment intact.
 
-This capture contract is separate from `CachePolicy`: a zero response lifetime
-still writes no persistent identity/search/reconciliation cache entries. UN uses
-the snapshot contract to freeze its selected Caliper scheme and vocabulary while
-retaining all-zero response-cache lifetimes. Explicit source pins, when supplied,
+This capture contract is separate from query cache policy. Reasoner production bindings retain
+successful official identities without time expiry within their exact configuration/implementation
+partition, including providers whose ordinary response lifetime is zero. Search and reconciliation
+still honor provider lifetimes. UN also uses the snapshot contract to freeze its selected Caliper
+scheme and vocabulary. Explicit source pins, when supplied,
 must include every selected component with exact versions and MD5/SHA256; up to
 32 explicitly named component identities are supported. Missing pins fail closed.
 
@@ -280,10 +281,28 @@ this contract. The IDE authority chooser and identity table remain a separate UI
 
 ### Persistent Reasoner cache
 
-Production bindings use a shared Reasoner-side wrapper for every authority. Identical declarations
-already reuse the live bridge; after reload/restart the provider is configured again to restore its
-live state, while successful results are reused from disk. Provider configuration handles need not
-be serializable or stable across processes.
+Production bindings use a shared Reasoner-side wrapper for every authority. Successful official
+identity answers are read from the cache before contacting a provider. Each resolved ancestor is
+retained too; complete answers can satisfy both configured and full-hierarchy lookups. Deferred
+answers never satisfy full-hierarchy requests. Provider configuration handles are transient and
+are never persisted.
+
+Authority bootstrap keeps immutable configured captures below
+`semantic-candidates/authority-bootstrap/persistent/catalogs`, with successful identity answers
+shared across attempts below the sibling `identities` directory. An unchanged input can restart
+from its capture without starting plugins or configuring live providers. Reading this format
+verifies its content and archive checksums without constructing a provider. A changed set of codes
+first reuses captured answers and lazily activates only a provider needed for an unseen code.
+Successful configurations and answers from a failed batch are retained as partial captures;
+the missing code remains a failed admission and is retried with the normal backoff.
+
+Capture partitions include the complete authority declarations, selected provider artifact/rights
+revision, and owner revision. Configuration, provider artifact, permission or owner changes select
+a new partition. Current authorization and provider metadata are verified before capture reuse and
+again before candidate publication. If a provider cannot start or resolve a code, a matching prior
+capture can still support ingestion using known identities and ancestry. Unseen codes must resolve
+successfully before that worldview can be accepted. Retrying failures does not discard unrelated
+successful captures.
 
 Bridge requests and persistent keys use the stable worldview name (`Worldview.getUrn()`), not its
 generated loaded-instance ID. The configuration endpoint also accepts the current instance ID for
@@ -293,18 +312,20 @@ The external bridge ID contains the worldview and local configuration name plus 
 of the worldview root, complete parameter map, provider URN, implementation revision and cache policy.
 Nested maps are serialized in sorted-key order. Cache directories under the Reasoner's service data
 directory (`services/reasoner/authority-cache`) retain readable worldview/configuration names with
-hashed suffixes. Parameters themselves are not written to disk. The provider revision includes its
+hashed suffixes. Identity answer paths contain hashes rather than parameter text; offline captures
+also retain the validated configuration proof locally. The provider revision includes its
 annotation version and artifact checksum; development classes fall back to the provider class checksum,
 so helper-only development changes must also bump the provider's explicit cache-policy revision.
 
 `Authority.getCachePolicy()` supplies a revision and lifetimes in seconds for identity, search and
-reconciliation results. Defaults are one day for identities and five minutes for queries. Zero
-disables caching; `Long.MAX_VALUE` denotes immutable data without time expiry. TAXA uses this for its
-pinned taxon identities and limits query retention to one day. Policy/release/provider/root changes
+reconciliation results. Production identity caching uses `Long.MAX_VALUE` for official immutable
+answers regardless of the provider's default identity lifetime. Search and reconciliation lifetimes
+are unchanged: zero disables those query caches. Policy/release/provider/root changes
 select another partition; they never silently reuse incompatible results.
 
-The cache stores core DTOs rather than plug-in objects. Only clean successful identities are retained;
-nulls, exceptions and diagnostic-bearing results are not cached. Empty successful searches may be
+The cache stores core DTOs rather than plug-in objects. Only successful identities without error
+notifications are retained; optional warnings do not invalidate an otherwise valid identity.
+Diagnostics themselves are not persisted. Nulls, exceptions and error results are not cached. Empty successful searches may be
 cached briefly. Search candidates do not seed identity lookup, because providers may perform stronger
 validation there. Canonical IDs and their resolved aliases share the validated lookup result. Dotted
 search-filter dispatch uses the base bridge; explicit provider sub-authority views have separate keys.
@@ -317,9 +338,15 @@ warning. Live bridge release leaves disk data available for subsequent activatio
 requests on one bridge serialize to avoid duplicate upstream misses. Administrative cross-partition
 cleanup and coordinated rate-limit/backoff policies remain future work.
 
-Caching does not establish component provenance, authorize a provider or supply an automatic offline
-configuration path. Providers may still validate their source during `configure()`. Already materialized
-OWL concepts follow worldview/binding reload semantics; cache expiry alone does not rewrite their axioms.
+Caching does not establish component provenance or authorize a provider. Offline reuse requires an
+already verified capture for the same configuration, artifacts and owner. Already materialized OWL
+concepts follow worldview/binding reload semantics; query cache expiry does not rewrite their axioms.
+
+Authority lookup failures identify the local declaration, authority/code, provider, resolution mode
+and either the error notifications or exception type/message. Provider summaries are bounded;
+configuration values, endpoint URLs, credentials and echoed response bodies are excluded from logs.
+The original cause remains available through the redacted stack trace. Source-bound diagnostics use
+`AUTHORITY_IDENTITY_LOOKUP_FAILED`, so an editor can point to the declaration that requested the code.
 
 ## Discovery, Installation, And Updates
 

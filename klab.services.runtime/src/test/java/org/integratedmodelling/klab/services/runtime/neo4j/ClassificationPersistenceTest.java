@@ -28,6 +28,7 @@ class ClassificationPersistenceTest {
     when(driver.session()).thenAnswer(ignored -> {
       var session = mock(org.neo4j.driver.Session.class);
       when(session.beginTransaction(any(TransactionConfig.class))).thenAnswer(config -> embeddedTransaction());
+      when(session.beginTransaction()).thenAnswer(config -> embeddedTransaction());
       return session;
     });
   }
@@ -169,7 +170,25 @@ class ClassificationPersistenceTest {
     try(var tx=graph.createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(read));}
     try(var tx=new Fixture("b").createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.captureClassificationMembers(10));}
   }
-  @Test void emptyCapturedCohortIsAReadSetNotProducerCompletion() throws Exception {
+  @Test void currentMembershipValidationPreservesHistoricalEdgesWithoutCountingCeasedMembers() throws Exception {
+    cohort();rows("MATCH(n:Observation{id:41}) SET n.klabCurrent=false",Map.of());var graph=new Fixture("a");KnowledgeGraph.ClassificationReadSet read;
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){read=tx.captureClassificationMembers(10);}
+    assertTrue(read.members().isEmpty());
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){tx.validateClassificationMembers(read);}
+    assertEquals(1L,rows("MATCH(:Cohort{id:10})-[r:HAS_MEMBER]->(:Observation{id:41}) RETURN count(r) AS n",Map.of()).getFirst().get("n"));
+  }
+  @Test void reactivationInvalidatesAnEarlierCurrentMembershipReadSet() throws Exception {
+    cohort();rows("MATCH(n:Observation{id:41}) SET n.klabCurrent=false",Map.of());var graph=new Fixture("a");KnowledgeGraph.ClassificationReadSet read;
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){read=tx.captureClassificationMembers(10);}
+    rows("MATCH(n:Observation{id:41}) SET n.klabCurrent=true",Map.of());
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(read));}
+  }
+  @Test void cessationInvalidatesAnEarlierActiveMembershipReadSet() throws Exception {
+    cohort();var graph=new Fixture("a");KnowledgeGraph.ClassificationReadSet read;
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){read=tx.captureClassificationMembers(10);}
+    rows("MATCH(n:Observation{id:41}) SET n.klabCurrent=false",Map.of());
+    try(var tx=graph.createTransaction(mock(ContextScope.class))){assertThrows(RuntimeException.class,()->tx.validateClassificationMembers(read));}
+  }  @Test void emptyCapturedCohortIsAReadSetNotProducerCompletion() throws Exception {
     rows("MATCH (a:Context {id:'a'}) CREATE (a)-[:HAS_CHILD]->(:Cohort {id:10, observable:'test:Region'})",Map.of());
     try(var tx=new Fixture("a").createTransaction(mock(ContextScope.class))){assertTrue(tx.captureClassificationMembers(10).members().isEmpty());}
   }
@@ -242,6 +261,28 @@ class ClassificationPersistenceTest {
     }
   }
 
+  private static Value driverValue(Object value) {
+    if(value instanceof org.neo4j.graphdb.Relationship original) {
+      var properties=Map.copyOf(original.getAllProperties());
+      var relationship=mock(org.neo4j.driver.types.Relationship.class);
+      when(relationship.elementId()).thenReturn(original.getElementId());
+      when(relationship.startNodeElementId()).thenReturn(original.getStartNode().getElementId());
+      when(relationship.endNodeElementId()).thenReturn(original.getEndNode().getElementId());
+      when(relationship.type()).thenReturn(original.getType().name());when(relationship.asMap()).thenReturn(properties);
+      when(relationship.get(anyString())).thenAnswer(call->Values.value(properties.get(call.getArgument(0))));
+      var wrapped=mock(Value.class);when(wrapped.asRelationship()).thenReturn(relationship);when(wrapped.asMap()).thenReturn(properties);
+      when(wrapped.get(anyString())).thenAnswer(call->Values.value(properties.get(call.getArgument(0))));return wrapped;
+    }
+    if(value instanceof org.neo4j.graphdb.Node original) {
+      var properties=Map.copyOf(original.getAllProperties());var labels=new ArrayList<String>();original.getLabels().forEach(label->labels.add(label.name()));
+      var node=mock(org.neo4j.driver.types.Node.class);when(node.elementId()).thenReturn(original.getElementId());when(node.labels()).thenReturn(labels);when(node.asMap()).thenReturn(properties);
+      when(node.get(anyString())).thenAnswer(call->Values.value(properties.get(call.getArgument(0))));
+      var wrapped=mock(Value.class);when(wrapped.asNode()).thenReturn(node);when(wrapped.asMap()).thenReturn(properties);
+      when(wrapped.get(anyString())).thenAnswer(call->Values.value(properties.get(call.getArgument(0))));return wrapped;
+    }
+    return Values.value(value);
+  }
+
   static org.neo4j.driver.Transaction embeddedTransaction() {
     var embedded = database.defaultDatabaseService().beginTx();
     var tx = mock(org.neo4j.driver.Transaction.class);
@@ -252,19 +293,31 @@ class ClassificationPersistenceTest {
       try (var result = embedded.execute(call.getArgument(0), call.getArgument(1))) {
         while (result.hasNext()) {
           var row = result.next();
+          // A real Bolt Record is detached. Snapshot embedded Node values while its
+          // transaction is open, including values() used by production adaptation.
+          var detached=new LinkedHashMap<String,Value>();row.forEach((key,value)->detached.put(key,driverValue(value)));
           var record = mock(org.neo4j.driver.Record.class);
           // lockContext returns a node only to establish existence; no caller reads it.
-          when(record.get(anyString())).thenAnswer(key -> Values.value(row.get(key.getArgument(0))));
+          when(record.get(anyString())).thenAnswer(key -> detached.getOrDefault(key.getArgument(0),Values.NULL));
+          when(record.get(anyInt())).thenAnswer(key -> new ArrayList<>(detached.values()).get(key.getArgument(0,Integer.class)));
+          when(record.keys()).thenReturn(new ArrayList<>(detached.keySet()));
+          when(record.values()).thenReturn(new ArrayList<>(detached.values()));
           records.add(record);
         }
       }
       var ret = mock(org.neo4j.driver.Result.class);
       when(ret.list()).thenReturn(records);
-      when(ret.hasNext()).thenReturn(!records.isEmpty());
+      var cursor=new java.util.concurrent.atomic.AtomicInteger();
+      when(ret.hasNext()).thenAnswer(ignored->cursor.get()<records.size());
+      when(ret.next()).thenAnswer(ignored->records.get(cursor.getAndIncrement()));
+      when(ret.single()).thenAnswer(ignored->{if(records.size()!=1)throw new IllegalStateException("Expected one fixture row");return records.getFirst();});
+      var keys=records.isEmpty()?List.<String>of():records.getFirst().keys();
+      when(ret.keys()).thenReturn(keys);
       return ret;
     });
     doAnswer(ignored -> { embedded.commit(); open.set(false); return null; }).when(tx).commit();
     doAnswer(ignored -> { embedded.rollback(); open.set(false); return null; }).when(tx).rollback();
+    doAnswer(ignored -> { if(open.compareAndSet(true,false))embedded.close();return null; }).when(tx).close();
     return tx;
   }
 

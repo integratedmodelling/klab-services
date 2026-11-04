@@ -20,6 +20,32 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class SemanticEnvironmentFactoryTest {
+  @Test void declaredOdoIsCapturedBeforePreflightAndWorkerUsesFrozenRemoteBytes() throws Exception {
+    var bytes = new String(CoreOntologyCatalog.bundledOdo(), java.nio.charset.StandardCharsets.UTF_8)
+        .replace("</rdf:RDF>", "<owl:Class rdf:about=\"http://integratedmodelling.org/odo#OnlyRemote\">"
+            + "<rdfs:subClassOf rdf:resource=\"http://integratedmodelling.org/odo#Subject\"/></owl:Class></rdf:RDF>")
+        .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    var factory = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), directory.resolve("absent"))
+        .withOdoCapture(new OdoImportCapture(directory.resolve("imports"), uri -> { calls.incrementAndGet(); return bytes; }));
+    var source = world("remote-odo", false);
+    source.getOntologies().getFirst().getOwlImports().add(org.integratedmodelling.klab.api.collections.Pair.of("odo", OdoImportCaptureTest.URL));
+    var declaration = statement("RemoteThing", SemanticType.SUBJECT, 50);
+    declaration.setUpperConceptDefined("odo:OnlyRemote");
+    source.getOntologies().getFirst().getStatements().add(declaration);
+    factory.enableAuthorityBootstrap();
+    var input = factory.capture(source, null);
+    assertEquals(CandidatePublicationCoordinator.BeanStatus.VALID, input.beanStatus(), input.diagnostics().toString());
+    assertNotEquals(factory.dependencyRevision(), input.dependencyRevision());
+    var result = factory.build(input, () -> false);
+    try (var environment = result.state()) {
+      assertNotNull(environment, result.diagnostics().toString());
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
+      assertNotNull(environment.actor().owl().getConcept("odo:OnlyRemote"));
+    }
+    assertEquals(1, calls.get(), "The compiler must not fetch after submission");
+    assertTrue(factory.publicationCurrent(input));
+  }
   @TempDir Path directory;
   private Map<String, byte[]> core() throws Exception {
     return Map.of("odo.owl",Files.readAllBytes(Path.of(System.getProperty("klab.test.core.directory"),"odo.owl")));
@@ -571,7 +597,8 @@ class SemanticEnvironmentFactoryTest {
   }
 
   @Test void localCatalogAdmitsVerifiedImmutableReleaseWithoutInjectedLocatorOrPin() throws Exception {
-    var factory = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), directory.resolve("absent"));
+    var factory = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), directory.resolve("absent"))
+        .withOdoCapture(new OdoImportCapture(directory.resolve("imports"), uri -> CoreOntologyCatalog.bundledOdo()));
     var url = "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
         + "08e5a29abbbd32ca8c1b933fc157a1762ba3ee5c/releases/0.2.0/odo.owl";
     assertEquals("http://integratedmodelling.org/odo/0.2.0",
@@ -595,6 +622,7 @@ class SemanticEnvironmentFactoryTest {
     var unverified = new SemanticEnvironmentFactory(directory.resolve("unverified"), different);
     assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED,
         unverified.build(unverified.capture(source), () -> false).logicalStatus());
+    var frozenOnly = new SemanticEnvironmentFactory(directory.resolve("frozen-only"), CoreOntologyCatalog.bundledCore());
     for (var rejected : List.of(url.replace("08e5a29abbbd32ca8c1b933fc157a1762ba3ee5c", "0".repeat(40)),
         url.replace("odo-im/", "wrong-repo/"), url.replace("raw.githubusercontent.com", "example.org"),
         url.replace("08e5a29abbbd32ca8c1b933fc157a1762ba3ee5c", "develop"),
@@ -605,7 +633,7 @@ class SemanticEnvironmentFactoryTest {
       source.getOntologies().getFirst().getOwlImports().add(
           org.integratedmodelling.klab.api.collections.Pair.of("odo", rejected));
       assertEquals(CandidatePublicationCoordinator.LogicalStatus.UNRESOLVED,
-          factory.build(factory.capture(source), () -> false).logicalStatus(), rejected);
+          frozenOnly.build(frozenOnly.capture(source), () -> false).logicalStatus(), rejected);
     }
   }
 
@@ -957,12 +985,22 @@ class SemanticEnvironmentFactoryTest {
             .getOWLOntologyManager().ontologies().count(),"Locality analysis must not create documents in the accepted catalog manager");
       }
 
-      var witnessRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+      var aliasRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
           "deployment",1,fingerprint,List.of("w:Thing"));
+      var aliasWitness=first.<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness>invoke(
+          "semanticDependencies",new Class<?>[]{org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest.class,
+              org.integratedmodelling.klab.api.scope.Scope.class},new Object[]{aliasRequest,null});
+      assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.UNKNOWN,
+          aliasWitness.status(), "An authored alias is not a canonical proof obligation");
+      org.integratedmodelling.klab.api.knowledge.Concept canonical=first.invoke(
+          "resolveConcept",new Class<?>[]{String.class},new Object[]{"w:Thing"});
+      assertNotNull(canonical);
+      var witnessRequest=new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+          "deployment",1,fingerprint,List.of(canonical.getUrn()));
       var witness=first.<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness>invoke(
           "semanticDependencies",new Class<?>[]{org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest.class,
               org.integratedmodelling.klab.api.scope.Scope.class},new Object[]{witnessRequest,null});
-      assertTrue(witness.completeAt(System.currentTimeMillis()));assertEquals(witnessRequest.inputHash(),witness.inputHash());
+      assertTrue(witness.completeAt(System.currentTimeMillis()), witness.toString());assertEquals(witnessRequest.inputHash(),witness.inputHash());
 
 
       var source=new org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl();source.setUrn("source");source.setSourceCode("model numeric");

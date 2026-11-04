@@ -60,6 +60,26 @@ class ActivityHistoryPersistenceTest {
     assertEquals(List.of("test:A","test:B"),member.get("concretePredicates"));assertEquals("EXISTING",member.get("origin"));assertEquals("root-1",result.get("rootAttempt"));
   }
 
+  @Test void configurationRevisionPublicationSurvivesActualActivityEncodingAndRecovery() {
+    var graph=mock(KnowledgeGraphNeo4j.class,CALLS_REAL_METHODS);var activity=Activity.of(Activity.Type.DETECTION);activity.setId(6879);activity.setOutcome(Activity.Outcome.SUCCESS);
+    var row="{\"previous\":{\"observationId\":6832,\"number\":1},\"next\":{\"observationId\":6832,\"number\":2},\"authorities\":[{\"source\":\"unchanged\"}]}";
+    var rows=List.of(row);activity.getMetadata().put("klab.configuration.revisions",rows);
+    var recovered=decode(graph.asParameters(activity));
+    assertEquals(rows,recovered.getMetadata().get("klab.configuration.revisions"));
+    assertEquals(rows,activity.getMetadata().get("klab.configuration.revisions"));
+    assertEquals(Activity.Outcome.SUCCESS,recovered.getOutcome());
+  }
+  @Test void configurationPublicationListPreservesEveryImmutableRowWithoutWhitelistingOtherLists() {
+    var graph=mock(KnowledgeGraphNeo4j.class,CALLS_REAL_METHODS);var activity=Activity.of(Activity.Type.DETECTION);activity.setId(42);
+    var rows=List.of("{\"next\":{\"observationId\":10,\"number\":2}}","{\"next\":{\"observationId\":11,\"number\":3}}");
+    activity.getMetadata().put("klab.configuration.revisions",rows);activity.getMetadata().put("application-private-list",List.of("unsupported"));
+    activity.getMetadata().put("klab.configuration.birth.9","{\"next\":{\"observationId\":9,\"number\":1}}");
+    var recovered=decode(graph.asParameters(activity));
+    assertEquals(rows,recovered.getMetadata().get("klab.configuration.revisions"));
+    assertEquals(activity.getMetadata().get("klab.configuration.birth.9"),recovered.getMetadata().get("klab.configuration.birth.9"));
+    assertFalse(recovered.getMetadata().containsKey("application-private-list"));
+  }
+
   private Activity decode(Map<String,Object> properties) {
     var record=mock(org.neo4j.driver.Record.class);
     when(record.values()).thenReturn(List.of(Values.value(properties)));

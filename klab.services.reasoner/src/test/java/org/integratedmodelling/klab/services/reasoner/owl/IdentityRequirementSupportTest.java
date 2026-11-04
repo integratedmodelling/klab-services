@@ -110,6 +110,24 @@ class IdentityRequirementSupportTest {
     }
   }
 
+  @Test void identityDischargesOnlyRequirementInducedAbstractnessOfASubject() throws Exception {
+    try(var t=new Fixture()) {
+      t.require("SUBJECT",t.type("RootA"));
+      t.declare("Impossible",SemanticType.IDENTITY,SemanticType.PREDICATE);
+      t.sub("Impossible","RootA");
+      t.add(t.f.getOWLSubClassOfAxiom(t.type("Impossible"),t.f.getOWLNothing()));
+      t.concept("SecondSubject").setAbstract(true);t.require("SecondSubject",t.type("RootA"));t.ready();
+      assertTrue(t.project("SUBJECT").isAbstract());
+      assertFalse(t.project("SUBJECT","A").isAbstract());
+      assertTrue(t.project("SUBJECT","Wrong").isAbstract());
+      assertTrue(t.project("SUBJECT","RootA").isAbstract(),"An abstract category is not a concrete identity value");
+      assertTrue(t.project("SUBJECT","Impossible").isAbstract(),"An unsatisfiable identity cannot establish eligibility");
+      assertTrue(t.project("SecondSubject","A").isAbstract(),"Authored abstractness remains binding after legal identity qualification");
+      assertFalse(t.concept("SUBJECT").isAbstract());
+      assertEquals(0,t.ontology.getOWLOntology().getIndividualsInSignature().size(),"Integrity checks must not synthesize observations");
+    }
+  }
+
   @Test void inferredNecessarySuperclassRequirementsCannotBeMissedWhenAssertedPathsDoNotNameIt() throws Exception {
     try (var t = new Fixture()) {
       for (var name : List.of("ConditionOne", "ConditionTwo", "RequiredRule", "Derived"))

@@ -11,6 +11,57 @@ import org.integratedmodelling.klab.api.services.Authority;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 class CapturedAuthorityCatalogTest {
+  @Test void knownCodesDoNotBootProvidersAndNewAnswersExtendTheFrozenAncestryCache() throws Exception {
+    var fixture = fixture(); response(fixture, "", "1", Long.MAX_VALUE);
+    var catalog = captured(fixture);
+    var state = Files.createDirectories(directory.resolve("refresh"));
+    var lazy = catalog.provider(fixture.binding(), request(), state, () -> true);
+    var wrapper = new CachedAuthority(lazy, state.resolve("authority-cache"), true);
+    var id = wrapper.configure(request());
+    String previous = System.getProperty("klab.test.authority.failConstruction");
+    try {
+      System.setProperty("klab.test.authority.failConstruction", "true");
+      assertEquals("1", wrapper.resolveIdentity(id, "1").getId());
+    } finally {
+      if (previous == null) System.clearProperty("klab.test.authority.failConstruction");
+      else System.setProperty("klab.test.authority.failConstruction", previous);
+    }
+    assertEquals("new", wrapper.resolveIdentity(id, "new").getId());
+    var extended = catalog.refreshed(state);
+    wrapper.releaseConfiguration(id);
+    var offline = extended.provider(fixture.binding(), request(), directory.resolve("offline"));
+    var offlineId = offline.configure(AuthorityBindings.providerRequest(request()));
+    assertEquals("new", offline.resolveIdentity(offlineId, "new", Authority.ResolutionMode.FULL_HIERARCHY).getId());
+    offline.releaseConfiguration(offlineId);
+  }
+  @Test void persistentCatalogRestartsWithoutProviderConfigurationAndRejectsUnseenLegacyCodes() throws Exception {
+    var fixture = fixture();
+    response(fixture, "", "1", Long.MAX_VALUE);
+    var original = captured(fixture);
+    var root = directory.resolve("persistent");
+    var store = new PersistentAuthorityStore(root, "configuration", "a".repeat(64));
+    store.save(original);
+    // No dependency on the old staging directory or a live provider instance.
+    SemanticEnvironment.removeAssetsAfterFailure(fixture.data(), null);
+    var restarted = new PersistentAuthorityStore(root, "configuration", "a".repeat(64)).exact();
+    assertNotNull(restarted);
+    assertEquals(original.revision(), restarted.revision());
+    var provider = restarted.provider(fixture.binding(), request(), directory.resolve("restored"));
+    var id = provider.configure(AuthorityBindings.providerRequest(request()));
+    assertEquals("1", provider.resolveIdentity(id, "1").getId());
+    assertThrows(UnsupportedOperationException.class, () -> provider.resolveIdentity(id, "unseen"));
+    assertNull(new PersistentAuthorityStore(root, "changed-configuration", "a".repeat(64)).exact());
+    var nextInput = new PersistentAuthorityStore(root, "configuration", "b".repeat(64));
+    assertNull(nextInput.exact());
+    assertNotNull(nextInput.previous());
+    var partial = new PersistentAuthorityStore(root, "partial-configuration", "c".repeat(64));
+    partial.savePartial(original);
+    assertNull(partial.exact(), "A partially materialized input must still retry unseen codes");
+    assertNotNull(partial.previous(), "Configured providers and successful codes survive a failed batch");
+    provider.releaseConfiguration(id);
+    Files.writeString(root.resolve("catalogs/configuration/" + "a".repeat(64) + "/catalog.json"), "broken");
+    assertNull(store.exact());
+  }
   @Test void acceptedSearchUsesOwnedProviderWhileCandidatesRemainReplayOnly() throws Exception {
     var fixture = fixture(); var catalog = captured(fixture);
     var enabled = new java.util.concurrent.atomic.AtomicBoolean();
@@ -255,8 +306,36 @@ class CapturedAuthorityCatalogTest {
     try(var state=result.state()) {
       assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID,result.logicalStatus(),result.diagnostics().toString());
       assertFalse(state.actor().resolveConcept("TAXA:1").is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING));
-      assertThrows(UnsupportedOperationException.class,()->state.actor().resolveConcept("TAXA:unknown"));
+      assertThrows(AuthorityIdentityResolver.LookupFailure.class,()->state.actor().resolveConcept("TAXA:unknown"));
     }
+    // Exercise the actual bootstrap refresh compiler, not just the response wrapper.
+    var alias = new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl();
+    alias.setUrn("Known"); alias.setNamespace("w"); alias.setAlias(true);
+    alias.setType(EnumSet.of(org.integratedmodelling.klab.api.knowledge.SemanticType.IDENTITY,
+        org.integratedmodelling.klab.api.knowledge.SemanticType.PREDICATE));
+    var reference = new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl();
+    reference.setName("TAXA:1"); reference.setUrn("TAXA:1"); reference.setNamespace("w");
+    alias.setDeclaredParent(reference); ontology.getStatements().add(alias);
+    var persistent = new PersistentAuthorityStore(directory.resolve("store"), "same-configuration", "a".repeat(64));
+    String previousProperty = System.getProperty("klab.test.authority.failConstruction");
+    try {
+      System.setProperty("klab.test.authority.failConstruction", "true");
+      AuthorityBootstrap.refresh(directory.resolve("refresh-actors"), Map.of("odo.owl", core), worldview,
+          null, catalog, persistent, () -> false);
+      assertNotNull(persistent.exact(), "Known aliases compile even when the authority cannot boot");
+    } finally {
+      if (previousProperty == null) System.clearProperty("klab.test.authority.failConstruction");
+      else System.setProperty("klab.test.authority.failConstruction", previousProperty);
+    }
+    reference.setName("TAXA:new"); reference.setUrn("TAXA:new");
+    var changedInput = new PersistentAuthorityStore(directory.resolve("store"), "same-configuration", "b".repeat(64));
+    var refreshed = AuthorityBootstrap.refresh(directory.resolve("refresh-actors"), Map.of("odo.owl", core), worldview,
+        null, catalog, changedInput, () -> false);
+    assertNotNull(changedInput.exact(), "An unseen code extends the capture using its owned provider");
+    var offline = refreshed.provider(fixture.binding(), request(), directory.resolve("new-code-offline"));
+    var offlineId = offline.configure(AuthorityBindings.providerRequest(request()));
+    assertEquals("new", offline.resolveIdentity(offlineId, "new").getId());
+    offline.releaseConfiguration(offlineId);
   }
 
   @Test void configuredSourceProofIsRequiredAndPinnedBeforeDefaultCatalogCanServeBindings() throws Exception {

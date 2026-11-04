@@ -205,6 +205,9 @@ public interface ResourcesService extends KlabService {
    */
   interface Capabilities extends ServiceCapabilities {
 
+    /** Zero on older servers; version 1 supplies graph-independent candidate source snapshots. */
+    default int getModelCandidateProtocol() { return 0; }
+
     boolean isWorldviewProvider();
 
     /**
