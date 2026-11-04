@@ -1,0 +1,45 @@
+{
+  "scope": "LOCAL_PINNED_SOURCE_COMPOSITION_NOT_GITHUB_PR_MERGES_OR_RELEASE_ACCEPTANCE",
+  "local_commit_not_pushed": "80546320525bfd93d06cda495c4bc58fd6dda982",
+  "expected_git_tree": "6cc3b1fd71ec7b2d02ec9b44b0a056f1c577679f",
+  "earlier_recipe": "notes/python-roadmap-combined-results-20261103.json",
+  "starting_public_pr136_commit": "f5871f254d1246bf1bdbcb448d54383fb046e7e0",
+  "initial_public_merge_inputs": [
+    "8928314d542320ef7a182e5985b07019e3610104",
+    "bcf7a4406ea76f60454594a240c248ebd17d69fb",
+    "2d4d44e66747e09462b45bbf4599b2ee9bb6041a"
+  ],
+  "additional_public_merge_inputs_in_order": [
+    "d04fb4e6cc96f51603cca06de03af24a4ed6bf17",
+    "7a33c2e605b9912929773c405c292880270c4595",
+    "568e19632efebc97f203a8a6c71eda0140f6165b",
+    "af8ddbb8f6c01a429f1b5003e895045efa416995"
+  ],
+  "fixture_order_pr140_included_as_ancestor": "28fb28bb4e5e6a000eaeecffb1b3e9e258863f4b",
+  "merge_conflicts": [{"path": "python-client/README.md", "resolution": "retain both complete adjacent feature-link paragraphs with one blank line"}],
+  "later_map_update_in_recorded_tree": false,
+  "python": "3.12.7",
+  "jdk": "Temurin21.0.12.1+1",
+  "maven": "3.9.5",
+  "full_offline_python_tests": 2758,
+  "python_workflow_commands_passed_with_declared_directories": 19,
+  "coverage_gates_passed": 15,
+  "lint_wheel_sdist": "PASS_NOT_PUBLISHED",
+  "selected_common_java_tests": 8,
+  "selected_broker_module_tests": 39,
+  "selected_java_failures_errors_skips": [0, 0, 0],
+  "native_qpid_interop": "PASS_WITH_EXPLICIT_UNCONFIRMED_PUBLICATION_NOT_MANAGED_RUNTIME",
+  "native_interop_invalid_password_wrong_vhost_client_exchange_delete_denied": true,
+  "independent_owned_queue_inventory_remaining": 0,
+  "source_preview_fixture": "PRODUCTION_DTO_AND_KNOWLEDGECLASS_MAPPING_NOT_LIVE_PARSER_ACCEPTANCE",
+  "full_java_reactor": "NOT_GREEN_KNOWN_EXTENT_ATTRIBUTE_COMPILATION_BLOCKER",
+  "genuine_managed_agent_or_restart_or_original_scientific_acceptance": false,
+  "persistent_services_or_remote_runtime_scientific_jobs_created": 0,
+  "historical_ambiguous_mutations_replayed": false,
+  "github_prs_merged_or_checks_bypassed": false,
+  "external_evidence_sha256": {
+    "gates.json": "7b2ccb58b07b634ae953dc1df80513702b7396d74d7195f2eb378b6314e591fe",
+    "gate-01.log": "ee9d10a8c4796766bb8f9044d58aa4cad587f03583b7f4a2b574ba35ad1c14be",
+    "combined-native-java.log": "f315e6a27e886ba81524f9cef3fe0152d0ca56f5eaf142556152301345b63bc8"
+  }
+}
