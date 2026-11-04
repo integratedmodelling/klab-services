@@ -33,6 +33,8 @@ scientific/provider accuracy test. The synthetic body is not a valid scientific
 format;64MiB represents a useful transfer volume, not an invented Java exporter.
 CI runs the same fault paths at8MiB. This does not close the broader real-deployment
 RC-P2.4 gate. Existing scientific exports retain their native format/metadata rules.
+Run this as a standalone process, not by importing it into a working notebook:
+the cancellation case deliberately interrupts its own main thread.
 
 ```python
 formats = client.export_formats(observation)

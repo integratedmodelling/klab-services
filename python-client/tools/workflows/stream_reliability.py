@@ -73,7 +73,7 @@ def case(directory, mode, size):
     sampler = Thread(target=sample, daemon=True)
     canceller = None
     try:
-        with Client(url, "loopback-test-token", runtime_service_id="transport-fixture", timeout=.15 if mode == "timeout" else 10) as client:
+        with Client(url, "loopback-test-token", runtime_service_id="transport-fixture", timeout=.5 if mode == "timeout" else 10) as client:
             raw = json.loads(FIXTURE.read_text())
             observation = observation_from_wire(raw, Context(client, {"id": "s.c", "serviceId": "transport-fixture"}))
             client.runtime.capabilities()  # Warm metadata/HTTP machinery before measuring incremental transfer.
@@ -135,10 +135,13 @@ def case(directory, mode, size):
                 raise AssertionError("Temporary export artifact remains")
             if requests.count("/runtime/export/OBSERVATION/s.c.42") != 1:
                 raise AssertionError("Export was retried or not attempted exactly once")
-            return {"mode": mode, "outcome": outcome, "body_bytes": size, "peak_python_bytes": peak_python,
+            if not done.wait(5):
+                raise AssertionError("Owned HTTP response handler did not finish")
+            return {"mode": mode, "outcome": outcome, "declared_body_bytes": size,
+                    "published_bytes": size if mode == "success" else 0, "peak_python_bytes": peak_python,
                     "rss_before": baseline, "sampled_peak_rss": peak_rss[0], "rss_growth": peak_rss[0] - baseline,
                     "seconds": elapsed, "original_preserved": mode != "success", "temporary_files": 0,
-                    "export_requests": 1, "scientific_or_java_acceptance": False}
+                    "export_requests": 1, "response_handler_closed": True, "scientific_or_java_acceptance": False}
     finally:
         release.set(); stop.set()
         if sampler.is_alive():
