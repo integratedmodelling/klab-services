@@ -2,6 +2,46 @@
 
 ## Current integration checkpoint (2026-11-03)
 
+The syntax snapshot correction and asynchronous rejection assertions now pass
+the paired 62-test selection (zero failures/errors/skips). Reports preserved in
+`integrated-syntax-snapshot-evidence-20261103`; log
+`integrated-syntax-snapshot-20261103.log`. Integrated commit `084763e58`,
+develop-based head `382f860c1`, PR #189. A broader direct fixture-consumer
+selection and PR checks are running. This verifies the public selected-receipt
+fixture case; it does not prove the intermittent bounds-change failure resolved.
+The consumer receipt-association contract and integrated/live acceptance remain open.
+
+Follow-up paired selection: 62 tests, two failures, no errors. All three invalid
+focus/support cases pass when awaiting the future and checking its
+IllegalArgumentException cause; original zero-side-effect assertions remain.
+Reports are preserved in `integrated-selection-contracts-evidence-20261103`.
+The public selected-receipt failure traces to UNKNOWN for the canonical expression
+`audit:Concrete audit:Region`. Fixture registration stores mutable syntax by
+reference; callers subsequently mutate singular syntax into collective syntax.
+A defensive registration snapshot is under test, not yet verified as the repair.
+The other failure is `twoIndependentPredicateClosuresExecuteTheFullCartesianProduct`,
+reporting `Property graph changed during bounds computation`. The isolated
+classifier run previously failed `nativeFamilyInventoryRetainsSharedSourcesOptionalAbsenceAndSuccessfulEmpty`
+instead. No stable classifier root cause has been established. Issue #147 updated:
+https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619114944.
+
+The normal integrated Runtime-server dependency reactor at `87c18a129` passed
+API, Common, Core services, Reasoner and Resolver, then stopped at Runtime:
+1,279 tests, six failures, one error, 11 skips. Runtime-server was skipped.
+Log: `integrated-after-188-reactor-20261103.log`; Runtime reports preserved in
+`integrated-after-188-runtime-evidence-20261103`. Two additional failures versus
+the develop selection are classifier Cartesian-product execution (bounds-change
+diagnostic) and ordinary crop-family native recovery. A full classifier-class
+isolation run is in progress to distinguish reproducible integration differences
+from order-dependent state; neither explanation is established yet.
+
+Contract tracing shows the three rejection tests currently expect synchronous
+exceptions from `RuntimeService.submit`, while `ResolutionCycles.submit` catches
+operation exceptions and completes its returned future exceptionally. Verify
+the completed future and zero-side-effect assertions before calling this a
+production rejection defect. The semantic-proof and receipt-association groups
+remain independently unresolved.
+
 Merged develop `d0ad038c320bd70626876eb4b39e5b302680fdfd` into this candidate,
 incorporating backend PRs #164–#188 without merge conflicts. These PRs passed
 their bounded checks and GitHub Actions/Jenkins individually; this is not
