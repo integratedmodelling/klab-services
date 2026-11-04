@@ -1,0 +1,26 @@
+{
+  "source_commit": "e09a7de7cac6b48526fd8b7ac72879abb36a77a3",
+  "verification": "FRESH_WORKTREE_USING_CURRENT_RESOLVED_MAVEN_ARTIFACTS_NOT_ISOLATED_EMPTY_CACHE",
+  "jdk": "Temurin21.0.12.1+1",
+  "maven": "3.9.5",
+  "issue89_selected_java_command": "FAIL_CORE_SERVICES_COMPILE_BEFORE_ITS_TESTS",
+  "issue125_selected_java_command": "FIVE_COMMON_TESTS_PASS_THEN_CORE_SERVICES_COMPILE_FAIL",
+  "issue125_python_preview_tests": "45_PASS",
+  "compiler_errors": ["LanguageAdapter.java:2006 EXTENT cannot be resolved or is not a field", "LanguageAdapter.java:2007 ATTRIBUTE cannot be resolved or is not a field"],
+  "requires_type_actual_constants": ["IDENTITY", "REALM", "AUTHORITY"],
+  "historical_artifact_reference": "PR132_executable_6f509b2d9",
+  "language_artifacts": [
+    {"artifact": "org.integratedmodelling:org.integratedmodelling.languages.observable:1.0.0-SNAPSHOT", "historical_sha256": "4b89ef600e5d620eaf18553170d11b49f5dd78f93914402d3901e4832f5edcf1", "current_sha256": "db1a58cc9a3ab8f3f56db1855b9cc3812edc352154d377883031558c23db88af"},
+    {"artifact": "org.integratedmodelling:org.integratedmodelling.languages.worldview:1.0.0-SNAPSHOT", "historical_sha256": "b0305ad5e8b27dc6aa56a1dd192ba46677d2152b0ba22dd8880545e373af9455", "current_sha256": "d45c9a49dc262a1963e8391283fd1377b6da9c35cc4237d497b729bc361a7816"},
+    {"artifact": "org.integratedmodelling:org.integratedmodelling.languages.kim:1.0.0-SNAPSHOT", "historical_sha256": "01f8ae62dcb520cadf64931eff1cfc7cdb5db087b9f5daedae2d80bd0a7d8d38", "current_sha256": "ebf4f0caba31e1074aca03f7a21d329babf07808aab6617cf822b4e14c9106e5"},
+    {"artifact": "org.integratedmodelling:org.integratedmodelling.languages.observation:1.0.0-SNAPSHOT", "historical_sha256": "08d77c85a4d945fe5a13496265d33e444b46d2b6854aec632dd60b540685b408", "current_sha256": "291e1a6c07a0900d1581fe8b514bde35f75dd48fc98f6ef7625dd24d5f605b23"},
+    {"artifact": "org.integratedmodelling:org.integratedmodelling.languages.kactors:1.0.0-SNAPSHOT", "historical_sha256": "d727472c78a08c41909204ea8373734c5e4918a2c7dbf90d4e984cbbc7d4971b", "current_sha256": "d0f458916438dd83f75dd70a800ace6a96755cf3a3bfe99ec73f02ad253e1245"}
+  ],
+  "artifact_replacement_cause_proven": false,
+  "correct_supported_pair_proven": false,
+  "maven_cache_overwritten_or_historical_closures_combined": false,
+  "scientific_semantics_changed": false,
+  "services_or_persistent_agents_launched": false,
+  "scientific_jobs": 0,
+  "historical_live_harness_fresh_clone_portability": "INCOMPLETE_EXPLICIT_REMAINING_TEST_INFRASTRUCTURE_TASK"
+}

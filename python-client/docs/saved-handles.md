@@ -100,6 +100,11 @@ that omits serviceId. Contradictory caches cannot be downgraded to URL-only chec
 Same-Runtime second clients remain supported; a legacy source without a known ID
 still needs a compatible URL/configuration and the job client's stable identity.
 
+Existing sync/async Job objects additionally reject process-local binding drift
+before polling, retrieving, cancelling or saving. See [Job binding and retained
+work limits](job-binding.md). This does not add a remote generation token or
+establish that a numeric Job survived a server restart.
+
 Submission and handle capture share Runtime binding validation, rejecting known
 identity conflicts before rebinding or HTTP. Both use the same URL normalization
 as restoration, including uppercase schemes and explicit default ports.

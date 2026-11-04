@@ -1,0 +1,28 @@
+name: Source preview production DTO wire
+on:
+  pull_request:
+    paths: ['python-client/src/klab_client/source_previews.py', 'python-client/tests/unit/test_source_previews.py', 'klab.core.common/src/test/java/org/integratedmodelling/common/data/jackson/SourcePreviewWireTest.java', 'klab.core.common/src/test/resources/source-preview-wire.json', '.github/workflows/source-preview-wire.yml']
+  push:
+    paths: ['python-client/src/klab_client/source_previews.py', 'python-client/tests/unit/test_source_previews.py', 'klab.core.common/src/test/java/org/integratedmodelling/common/data/jackson/SourcePreviewWireTest.java', 'klab.core.common/src/test/resources/source-preview-wire.json', '.github/workflows/source-preview-wire.yml']
+permissions:
+  contents: read
+jobs:
+  dto-wire-not-parser-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: chmod +x mvnw
+      - run: ./mvnw -B -pl klab.core.common -am -Dtest=SourcePreviewWireTest -Dsurefire.failIfNoSpecifiedTests=false test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: source-preview-dto-not-parser-acceptance
+          path: |
+            klab.core.common/target/surefire-reports/
+            klab.core.common/target/source-preview-wire-actual.json

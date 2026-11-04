@@ -236,6 +236,7 @@ def to_handle(source):
         context, client, kind = source._context, source._context.client, "observation"
         extra["observation_id"] = _id(source.id)
     elif isinstance(source, Job):
+        source._check_binding()
         client, kind = source.client, "job"
         token = scope_token(source.scope)
         if token is None or len(token.split("#")[0].split(".")) < 2:
