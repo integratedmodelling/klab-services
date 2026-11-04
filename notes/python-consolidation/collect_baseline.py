@@ -7,8 +7,8 @@ import argparse
 import datetime as dt
 import hashlib
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 
 def main():
@@ -23,16 +23,16 @@ def main():
     manifest = []
 
     def capture(name, command, cwd=root):
-        started = dt.datetime.now(dt.timezone.utc).isoformat()
-        result = subprocess.run(command, cwd=cwd, capture_output=True)
+        started = dt.datetime.now(dt.UTC).isoformat()
+        result = subprocess.run(command, cwd=cwd, capture_output=True, check=False)
         data = result.stdout
         (output / name).write_bytes(data)
         (output / (name + '.stderr')).write_bytes(result.stderr)
-        manifest.append(dict(path=name, sha256=hashlib.sha256(data).hexdigest(),
-                             stderr_sha256=hashlib.sha256(result.stderr).hexdigest(),
-                             command=command, cwd=str(cwd), started_at_utc=started,
-                             finished_at_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
-                             exit_code=result.returncode))
+        manifest.append({'path': name, 'sha256': hashlib.sha256(data).hexdigest(),
+                         'stderr_sha256': hashlib.sha256(result.stderr).hexdigest(),
+                         'command': command, 'cwd': str(cwd), 'started_at_utc': started,
+                         'finished_at_utc': dt.datetime.now(dt.UTC).isoformat(),
+                         'exit_code': result.returncode})
         return data.decode('utf-8', errors='replace') if result.returncode == 0 else None
 
     repo = 'integratedmodelling/klab-services'
@@ -72,9 +72,9 @@ def main():
                       retirement_authorized=False)
         inventory.append(fields)
     (output / 'worktree-inventory.json').write_text(json.dumps(inventory, indent=2), encoding='utf-8')
-    manifest.append(dict(path='worktree-inventory.json', sha256=hashlib.sha256((output / 'worktree-inventory.json').read_bytes()).hexdigest()))
+    manifest.append({'path': 'worktree-inventory.json', 'sha256': hashlib.sha256((output / 'worktree-inventory.json').read_bytes()).hexdigest()})
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
-    print(json.dumps(dict(output=str(output), worktrees=len(inventory), open_prs=len(prs), failed_captures=[item['path'] for item in manifest if item.get('exit_code', 0)]), indent=2))
+    print(json.dumps({'output': str(output), 'worktrees': len(inventory), 'open_prs': len(prs), 'failed_captures': [item['path'] for item in manifest if item.get('exit_code', 0)]}, indent=2))
 
 
 if __name__ == '__main__':

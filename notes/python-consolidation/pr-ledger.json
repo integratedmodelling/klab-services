@@ -191,12 +191,22 @@
       ],
       "evidence": "pr-141.json",
       "review_status": "NOT_STARTED",
-      "current_revision_tests": "NOT_RUN",
+      "current_revision_tests": "PASSED",
       "blockers": [
         "General build failed; inspect and reconcile source/language baseline",
         "Jenkins ERROR; underlying cause not yet verified",
         "Read-only contribution review on actual integration base not yet completed"
-      ]
+      ],
+      "focused_installed_wheel": {
+        "status": "PASSED",
+        "candidate_sha": "568e19632efebc97f203a8a6c71eda0140f6165b",
+        "result": "57 passed in 0.16s",
+        "source_files_verified": 35,
+        "evidence": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-pr-installed-wheel-gates-20261104\\pr-141",
+        "run_sha256": "e3f00bfcccdbcf3d20454e17623f8009677c84c71e3876e8d5ae6408658ebc74"
+      },
+      "head_reachable_from_local_candidate": true,
+      "test_scope": "Focused original-head installed-wheel tests only; combined acceptance not implied"
     },
     {
       "number": 140,
@@ -337,13 +347,23 @@
         "python-client/tools/prepare_runtime_fixture.py"
       ],
       "evidence": "pr-140.json",
-      "review_status": "NOT_STARTED",
-      "current_revision_tests": "NOT_RUN",
+      "review_status": "BLOCKED",
+      "current_revision_tests": "PASSED",
       "blockers": [
         "General build failed; inspect and reconcile source/language baseline",
         "Jenkins ERROR; underlying cause not yet verified",
         "Read-only contribution review on actual integration base not yet completed"
-      ]
+      ],
+      "focused_installed_wheel": {
+        "status": "PASSED",
+        "candidate_sha": "28fb28bb4e5e6a000eaeecffb1b3e9e258863f4b",
+        "result": "47 passed in 1.34s",
+        "source_files_verified": 34,
+        "evidence": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-pr-installed-wheel-gates-20261104\\pr-140",
+        "run_sha256": "e327b62ee62b8b8acaa50786558ef9e4e583cb4adb8384c8fb8dabeafbefad66"
+      },
+      "head_reachable_from_local_candidate": true,
+      "test_scope": "Focused original-head installed-wheel tests only; combined acceptance not implied"
     },
     {
       "number": 139,
@@ -493,12 +513,22 @@
       ],
       "evidence": "pr-139.json",
       "review_status": "NOT_STARTED",
-      "current_revision_tests": "NOT_RUN",
+      "current_revision_tests": "PASSED",
       "blockers": [
         "General build failed; inspect and reconcile source/language baseline",
         "Jenkins ERROR; underlying cause not yet verified",
         "Read-only contribution review on actual integration base not yet completed"
-      ]
+      ],
+      "focused_installed_wheel": {
+        "status": "PASSED",
+        "candidate_sha": "ba368eba6c06b53a4337b943e7d70811ffeedcf5",
+        "result": "195 passed in 2.98s",
+        "source_files_verified": 35,
+        "evidence": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-pr-installed-wheel-gates-20261104\\pr-139",
+        "run_sha256": "bba2bb1f38eb9956f801dacaf25e66135e3a73ad16d655b3d56a6c27c4163d2b"
+      },
+      "head_reachable_from_local_candidate": true,
+      "test_scope": "Focused original-head installed-wheel tests only; combined acceptance not implied"
     },
     {
       "number": 138,
@@ -715,12 +745,22 @@
       ],
       "evidence": "pr-138.json",
       "review_status": "NOT_STARTED",
-      "current_revision_tests": "NOT_RUN",
+      "current_revision_tests": "PASSED",
       "blockers": [
         "General build failed; inspect and reconcile source/language baseline",
         "Jenkins ERROR; underlying cause not yet verified",
         "Read-only contribution review on actual integration base not yet completed"
-      ]
+      ],
+      "focused_installed_wheel": {
+        "status": "PASSED",
+        "candidate_sha": "d04fb4e6cc96f51603cca06de03af24a4ed6bf17",
+        "result": "155 passed in 0.33s",
+        "source_files_verified": 39,
+        "evidence": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-pr-installed-wheel-gates-20261104\\pr-138",
+        "run_sha256": "9d6f3731b9f7c5b974d36bce108eccccdc2239c8dcf667b3dc377f7c5bbee8f8"
+      },
+      "head_reachable_from_local_candidate": true,
+      "test_scope": "Focused original-head installed-wheel tests only; combined acceptance not implied"
     },
     {
       "number": 137,
@@ -864,12 +904,22 @@
       ],
       "evidence": "pr-137.json",
       "review_status": "NOT_STARTED",
-      "current_revision_tests": "NOT_RUN",
+      "current_revision_tests": "PASSED",
       "blockers": [
         "General build failed; inspect and reconcile source/language baseline",
         "Jenkins ERROR; underlying cause not yet verified",
         "Read-only contribution review on actual integration base not yet completed"
-      ]
+      ],
+      "focused_installed_wheel": {
+        "status": "PASSED",
+        "candidate_sha": "ca1a096251eb8499ffa82f53ece8da9fc41c8005",
+        "result": "5 passed in 0.04s",
+        "source_files_verified": 34,
+        "evidence": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-pr-installed-wheel-gates-20261104\\pr-137",
+        "run_sha256": "b101c6af652b06f4ad2e3ce8eeb1c47c297ace9d3eb36d7c175807e9485c31cb"
+      },
+      "head_reachable_from_local_candidate": true,
+      "test_scope": "Focused original-head installed-wheel tests only; combined acceptance not implied"
     },
     {
       "number": 136,
@@ -964,12 +1014,22 @@
       ],
       "evidence": "pr-136.json",
       "review_status": "NOT_STARTED",
-      "current_revision_tests": "NOT_RUN",
+      "current_revision_tests": "PASSED",
       "blockers": [
         "General build failed; inspect and reconcile source/language baseline",
         "Jenkins ERROR; underlying cause not yet verified",
         "Read-only contribution review on actual integration base not yet completed"
-      ]
+      ],
+      "focused_installed_wheel": {
+        "status": "PASSED",
+        "candidate_sha": "2cb6a5d51d426853c10759b8152ada6e01fce788",
+        "result": "29 passed in 0.21s",
+        "source_files_verified": 35,
+        "evidence": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-pr-installed-wheel-gates-20261104\\pr-136",
+        "run_sha256": "0c238fd2134b6525af46dcef60ffd69097b4ad01120ef550b1f6391a82602fe4"
+      },
+      "head_reachable_from_local_candidate": true,
+      "test_scope": "Focused original-head installed-wheel tests only; combined acceptance not implied"
     },
     {
       "number": 135,
@@ -1195,12 +1255,22 @@
       ],
       "evidence": "pr-135.json",
       "review_status": "NOT_STARTED",
-      "current_revision_tests": "NOT_RUN",
+      "current_revision_tests": "PASSED",
       "blockers": [
         "General build failed; inspect and reconcile source/language baseline",
         "Jenkins ERROR; underlying cause not yet verified",
         "Read-only contribution review on actual integration base not yet completed"
-      ]
+      ],
+      "focused_installed_wheel": {
+        "status": "PASSED",
+        "candidate_sha": "8928314d542320ef7a182e5985b07019e3610104",
+        "result": "116 passed in 0.21s",
+        "source_files_verified": 36,
+        "evidence": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-pr-installed-wheel-gates-20261104\\pr-135",
+        "run_sha256": "4cefc97aa4a1ad28857a22d7e9bf9d54d936766b75db2115d9fb18b96763c3d4"
+      },
+      "head_reachable_from_local_candidate": true,
+      "test_scope": "Focused original-head installed-wheel tests only; combined acceptance not implied"
     },
     {
       "number": 134,
@@ -1378,12 +1448,22 @@
       ],
       "evidence": "pr-134.json",
       "review_status": "NOT_STARTED",
-      "current_revision_tests": "NOT_RUN",
+      "current_revision_tests": "PASSED",
       "blockers": [
         "General build failed; inspect and reconcile source/language baseline",
         "Jenkins ERROR; underlying cause not yet verified",
         "Read-only contribution review on actual integration base not yet completed"
-      ]
+      ],
+      "focused_installed_wheel": {
+        "status": "PASSED",
+        "candidate_sha": "bcf7a4406ea76f60454594a240c248ebd17d69fb",
+        "result": "61 passed in 0.14s",
+        "source_files_verified": 35,
+        "evidence": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-pr-installed-wheel-gates-20261104\\pr-134",
+        "run_sha256": "7883ef77187c7ba9b80dbfccf0a5cd12705d1a2df1559ea957a4de03a31f6738"
+      },
+      "head_reachable_from_local_candidate": true,
+      "test_scope": "Focused original-head installed-wheel tests only; combined acceptance not implied"
     },
     {
       "number": 133,
@@ -1479,12 +1559,22 @@
       ],
       "evidence": "pr-133.json",
       "review_status": "NOT_STARTED",
-      "current_revision_tests": "NOT_RUN",
+      "current_revision_tests": "PASSED",
       "blockers": [
         "General build failed; inspect and reconcile source/language baseline",
         "Jenkins ERROR; underlying cause not yet verified",
         "Read-only contribution review on actual integration base not yet completed"
-      ]
+      ],
+      "focused_installed_wheel": {
+        "status": "PASSED",
+        "candidate_sha": "2d4d44e66747e09462b45bbf4599b2ee9bb6041a",
+        "result": "6 passed in 0.46s",
+        "source_files_verified": 34,
+        "evidence": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-pr-installed-wheel-gates-20261104\\pr-133",
+        "run_sha256": "eed6bbc770d79b079e03ecd318e8fe71d2f90c78097d1aa6c20788c2bc9a39bf"
+      },
+      "head_reachable_from_local_candidate": true,
+      "test_scope": "Focused original-head installed-wheel tests only; combined acceptance not implied"
     }
   ],
   "dependency_edges": [
@@ -1536,7 +1626,13 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/190",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "MIXED",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/owl/OWLSemanticClauseSupport.java",
+        "klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/owl/PropertyAncestorMemoTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1554,7 +1650,14 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/189",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/reasoner/owl/SubmissionNativeFixture.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/CollectiveSelectionSubmissionScopeTest.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/SelectedModelClassifierSubmissionTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1572,7 +1675,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/188",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/CollectiveSelectionProducerClassificationDependencyTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1590,7 +1698,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/187",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/CollectiveSelectionValidPrerequisiteTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1608,7 +1721,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/186",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/CollectiveSelectionNativeContextTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1626,7 +1744,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/185",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/LocalAdapterExecutorTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1644,7 +1767,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/184",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/digitaltwin/ClassificationTransactionTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1662,7 +1790,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/183",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/ConsequenceCharacterizationLifecycleTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1680,7 +1813,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/182",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/ProvisionalObservationScopeTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1698,7 +1836,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/181",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/ClassificationExecutionTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1716,7 +1859,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/180",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/PreparedConfigurationInputChangeTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1734,7 +1882,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/179",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/ConsequenceDiscoverySnapshotTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1752,7 +1905,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/178",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/digitaltwin/DirectTransactionCycleTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1770,7 +1928,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/177",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/neo4j/ConfigurationDependencyReadSetTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1788,7 +1951,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/176",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/neo4j/KnowledgeGraphLinkDirectionTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1806,7 +1974,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/175",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/OccurrenceExecutorTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1824,7 +1997,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/174",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/ObservationAnnotationsRuntimeTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1842,7 +2020,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/173",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/ObservationViewExportTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1860,7 +2043,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/172",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/ObserverReferenceSubmissionTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1878,7 +2066,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/171",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/ReferenceParentValidationTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1896,7 +2089,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/170",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/CollectiveSelectionAtomicExecutionTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1914,7 +2112,13 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/169",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "MIXED",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/DigitalTwinImpl.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/CollectiveSelectionContinuationTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1932,7 +2136,13 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/168",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "MIXED",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/DigitalTwinImpl.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/CollectiveSelectionContinuationTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1950,7 +2160,13 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/167",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/CollectiveCompletionQueryTest.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/CollectiveReductionExecutionTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1968,7 +2184,13 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/166",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/digitaltwin/scheduler/OccurrenceRegistrationTest.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/digitaltwin/scheduler/PreparedConfigurationRecomputeTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -1986,7 +2208,14 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/165",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/reasoner/owl/SubmissionNativeFixture.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/SelectedModelClassifierSubmissionTest.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/neo4j/NativeFamilyRecovery.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2004,7 +2233,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/164",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.resolver/src/test/java/org/integratedmodelling/klab/services/resolver/ResolutionCompilerQueryTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2022,7 +2256,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/163",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/internal/SemanticEnvironmentFactoryTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2040,7 +2279,13 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/162",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "MIXED",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java",
+        "klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/internal/StagedDeclarationContractTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2058,7 +2303,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/161",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/owl/ProcessContextualizationSemanticValidationTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2076,7 +2326,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/160",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/owl/DocumentSemanticValidatorTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2094,7 +2349,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/159",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/owl/AuthorityLexicalRootTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2112,7 +2372,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/158",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "PRODUCTION_FIX",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/CapturedAuthorityCatalog.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2130,7 +2395,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/157",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/OntologyProjectValidationTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2148,7 +2418,14 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/156",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "MIXED",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java",
+        "klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/BeanIngestionPreflight.java",
+        "klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/SemanticValidationPublicationTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2166,7 +2443,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/155",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.reasoner/src/test/java/org/integratedmodelling/klab/services/reasoner/internal/PrivateCompilationCancellationTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2184,7 +2466,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/154",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resources/lang/RemoteAuthorityMetadataAdmissionTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2202,7 +2489,13 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/153",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resources/lang/ObservableTranslationTest.java",
+        "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resources/lang/ObservationSemanticAnnotationsTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2220,7 +2513,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/152",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resources/storage/AuthoringSourceStorageTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2238,7 +2536,13 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/151",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resolver/ModelAdmissionFixtures.java",
+        "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resolver/ObservationPipelineTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2256,7 +2560,14 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/150",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resources/SemanticSearchAvailabilityTest.java",
+        "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resources/lang/ObservationAnnotationAdaptationTest.java",
+        "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resources/lang/SemanticTranslationTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2274,7 +2585,14 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/149",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.core.services/src/test/java/org/integratedmodelling/klab/services/scopes/ServiceSessionScopeTest.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/runtime/storage/TemporalInspectorIntegrityTest.java",
+        "klab.services.runtime/src/test/java/org/integratedmodelling/klab/runtime/storage/TemporalProcessIntegrationTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2292,7 +2610,16 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/148",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "MIXED",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.core.common/src/main/java/org/integratedmodelling/common/services/client/digitaltwin/ClientKnowledgeGraph.java",
+        "klab.core.common/src/test/java/org/integratedmodelling/common/services/client/digitaltwin/RemoteObservationCurrentnessTest.java",
+        "klab.core.services/src/test/java/org/integratedmodelling/klab/services/scopes/RemoteContextCacheGenerationTest.java",
+        "klab.services.runtime.server/src/main/java/org/integratedmodelling/klab/services/runtime/server/controllers/RuntimeServerController.java",
+        "klab.services.runtime.server/src/test/java/org/integratedmodelling/klab/services/runtime/server/controllers/ObservationCurrentnessControllerTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2310,7 +2637,14 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/146",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.core.services/src/test/java/org/integratedmodelling/klab/components/ComponentRegistryAuthorityTest.java",
+        "klab.core.services/src/test/java/org/integratedmodelling/klab/services/ServiceInstanceShutdownTest.java",
+        "klab.core.services/src/test/java/org/integratedmodelling/klab/services/application/controllers/KlabWebUiControllerTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "develop",
@@ -2328,7 +2662,12 @@
       "url": "https://github.com/integratedmodelling/klab-services/pull/143",
       "merge_reachable_from_delivery": false,
       "merge_reachable_from_develop": true,
-      "classification": "NOT_YET_AUDITED"
+      "classification": "FIXTURE_ONLY",
+      "classification_method": "Changed-path classification; not a full semantic review",
+      "changed_files": [
+        "klab.core.common/src/test/java/org/integratedmodelling/common/utils/QuietHttpPostTest.java"
+      ],
+      "merge_reachable_from_local_candidate": true
     },
     {
       "baseRefName": "fix/python-fixture-copy-order",
@@ -2474,5 +2813,7 @@
       "merge_reachable_from_develop": null,
       "classification": "NOT_YET_AUDITED"
     }
-  ]
+  ],
+  "local_candidate_sha": "53f925bd1e886e887ecb65149f44e4b7f3c496c4",
+  "updated_at_utc": "2026-11-04T16:37:31.889428+00:00"
 }

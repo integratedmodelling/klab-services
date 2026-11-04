@@ -1,70 +1,115 @@
 {
   "milestone": "dependency-closeout-repository-consolidation",
   "status": "MILESTONE_INCOMPLETE",
-  "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00",
+  "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00",
+  "repository": "integratedmodelling/klab-services",
   "integration_base_sha": "e09a7de7cac6b48526fd8b7ac72879abb36a77a3",
-  "fetched_develop_sha": "196bb9dc142eafc92f4456c5073933fa98ad1c42",
-  "final_candidate_sha": null,
+  "final_candidate_sha": "53f925bd1e886e887ecb65149f44e4b7f3c496c4",
+  "final_candidate_verified": false,
+  "java_tested_candidate_sha": "52197c41b01213628e1fbf4e5290933eb9350f2b",
+  "dependency_manifest": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-dependency-artifacts-before-20261104.json",
+    "sha256": "799278198d48529340c70dc9176acc6eaf5949b1ec1e4349c67a3c2e6fa89b4a",
+    "final": false
+  },
+  "pr_baseline_count": 9,
+  "pr_in_scope_count": 9,
+  "prs_unresolved": [
+    "https://github.com/integratedmodelling/klab-services/pull/133",
+    "https://github.com/integratedmodelling/klab-services/pull/134",
+    "https://github.com/integratedmodelling/klab-services/pull/135",
+    "https://github.com/integratedmodelling/klab-services/pull/136",
+    "https://github.com/integratedmodelling/klab-services/pull/137",
+    "https://github.com/integratedmodelling/klab-services/pull/138",
+    "https://github.com/integratedmodelling/klab-services/pull/139",
+    "https://github.com/integratedmodelling/klab-services/pull/140",
+    "https://github.com/integratedmodelling/klab-services/pull/141"
+  ],
+  "prs_merged": [],
+  "prs_approved_superseded": [],
+  "scientific_acceptance": "BLOCKED",
+  "evidence_index": "notes/python-consolidation/EVIDENCE_INDEX.md",
+  "worktrees_initial": 61,
+  "worktrees_final": 62,
+  "worktree_count_scope": "services repository; geospatial repository separately has one retained worktree",
+  "unique_unpublished_work_preserved": true,
+  "remaining_blockers": [
+    {
+      "owner": "implementing CLI / backend reviewer",
+      "action": "Resolve or explicitly classify the reproduced issued-query-receipt error without weakening rollback/security assertions; rerun affected and combined gates"
+    },
+    {
+      "owner": "implementing CLI / scientific reviewer",
+      "action": "Establish a separately versioned semantically verified fixture for current ODO/language source; preserve original failed oracle"
+    },
+    {
+      "owner": "implementing CLI / dependency maintainer",
+      "action": "Verify HM0.12/GT34.x/H2/Jackson compatibility and targeted dependency change; upstream geospatial push permission is unavailable"
+    },
+    {
+      "owner": "implementing CLI / repository maintainers",
+      "action": "Complete all nine per-PR reviews/current-base tests, hosted/Jenkins checks and required approvals, then merge in verified dependency order"
+    },
+    {
+      "owner": "implementing CLI / operator",
+      "action": "Run exact installed combined client against an authorized nonconflicting owned Java stack; do not reuse or stop Modeler-owned services"
+    },
+    {
+      "owner": "implementing CLI",
+      "action": "Finish worktree purpose/ignored-evidence/lock classification, dry-run safe removals, final verification and complete live census"
+    }
+  ],
   "gates": [
     {
       "id": "baseline",
       "status": "PASSED",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     },
     {
       "id": "dependency_audit",
       "status": "IN_PROGRESS",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     },
     {
       "id": "pr_issue_acceptance_audit",
       "status": "IN_PROGRESS",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     },
     {
       "id": "unique_commit_dirty_file_preservation",
       "status": "PASSED",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     },
     {
       "id": "raw_scientific_evidence_rescue",
       "status": "IN_PROGRESS",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     },
     {
       "id": "worktree_retirement",
-      "status": "NOT_STARTED",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "status": "BLOCKED",
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     },
     {
       "id": "per_pr_review_tests_merges",
       "status": "BLOCKED",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     },
     {
       "id": "combined_java_acceptance",
-      "status": "NOT_RUN",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "status": "FAILED",
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     },
     {
       "id": "installed_python_real_java_science",
-      "status": "NOT_RUN",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "status": "BLOCKED",
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     },
     {
       "id": "final_remote_reconciliation",
-      "status": "NOT_STARTED",
-      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+      "status": "IN_PROGRESS",
+      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
     }
   ],
-  "evidence": [
-    {
-      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-consolidation-baseline-20261104\\manifest.json",
-      "sha256": "9e5a13c2386a0aa4732f52688a7f44fecfa3aeb7abefa3c7e21fa10178fedf84"
-    },
-    {
-      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-consolidation-preservation-20261104\\manifest.json",
-      "sha256": "b5bd14e82cea8a79a28c35113704ff19e152e9ff3c7663d3058b70ab7a87538a"
-    }
-  ]
+  "next_milestone": "python-roadmap-reassessment"
 }

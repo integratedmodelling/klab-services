@@ -2,9 +2,9 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
         head = git(path, 'rev-parse', 'HEAD').decode().strip()
         if head != item['HEAD']:
             raise RuntimeError(f'HEAD changed since inventory: {path}')
-        record = dict(path=str(path), head=head, archive_ref=None)
+        record = {'path': str(path), 'head': head, 'archive_ref': None}
         if item['unpublished_commits']:
             ref = f'refs/archive/consolidation-20261104/worktree-{index:02}'
             git(root, 'update-ref', ref, head, '0' * 40)
@@ -56,13 +56,16 @@ def main():
     git(root, 'bundle', 'create', str(bundle), '--all')
     (output / 'bundle-verification.txt').write_bytes(git(root, 'bundle', 'verify', str(bundle)))
     (output / 'preserved-worktrees.json').write_text(json.dumps(records, indent=2), encoding='utf-8')
-    files = [dict(path=str(path.relative_to(output)), size=path.stat().st_size,
-                  sha256=hashlib.file_digest(path.open('rb'), 'sha256').hexdigest())
-             for path in output.rglob('*') if path.is_file()]
+    files = []
+    for path in output.rglob('*'):
+        if path.is_file():
+            with path.open('rb') as stream:
+                digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+            files.append({'path': str(path.relative_to(output)), 'size': path.stat().st_size, 'sha256': digest})
     (output / 'manifest.json').write_text(json.dumps(files, indent=2), encoding='utf-8')
-    print(json.dumps(dict(output=str(output), files=len(files), worktrees=len(records),
-                          archive_refs=[r['archive_ref'] for r in records if r['archive_ref']],
-                          bundle_bytes=bundle.stat().st_size), indent=2))
+    print(json.dumps({'output': str(output), 'files': len(files), 'worktrees': len(records),
+                      'archive_refs': [r['archive_ref'] for r in records if r['archive_ref']],
+                      'bundle_bytes': bundle.stat().st_size}, indent=2))
 
 
 if __name__ == '__main__':

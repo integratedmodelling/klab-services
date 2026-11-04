@@ -46,3 +46,18 @@ attempts are retained as failures, not overwritten. Fully qualified pinned plugi
 invocations succeeded afterward. Remaining work: exact selected artifact hashes,
 resolver paths/metadata, packaging contents, duplicate classes, toolchain/settings,
 active profiles, before/after verification and final integrated manifest.
+
+## Subsequent inspection
+
+The lock-like `klab-dependency-artifacts-before-20261104.json` records 466 selected
+module/artifact rows with existing resolver files, hashes and metadata. Separate
+language-cache inventory records ten main/IDE artifacts; the five main JAR hashes
+match the prior integration note. Their original source-build provenance remains
+NOT_VERIFIED; no source revision is inferred from a SNAPSHOT filename.
+
+Toolchain, active profiles and password-masked effective settings were captured
+with pinned help-plugin invocations. The first `-version` call exits before goals;
+only the later `-V` run captures the profile/settings goals. Raw settings remain
+private and are not committed. The component fat JAR is flattened, not a set of
+nested JARs: use the expanded packaged-coordinate/class-entry inventory, not an
+empty nested-JAR list, to assess its actual contents and potential host shadowing.

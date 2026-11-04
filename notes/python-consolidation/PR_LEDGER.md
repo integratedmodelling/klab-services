@@ -6,7 +6,7 @@ Delivery `e09a7de7cac6b48526fd8b7ac72879abb36a77a3`; fetched develop `196bb9dc14
 
 No remote merges, approvals, retargets or draft changes performed. All nine existing PRs remain mandatory.
 
-| PR | Kind | Base | Head | State | Current review/tests |
+| PR | Kind | Base | Head | State | Baseline review/tests |
 |---|---|---|---|---|---|
 | [#133](https://github.com/integratedmodelling/klab-services/pull/133) | DOCUMENTATION | `feature/python-experiment-runner` | `2d4d44e66747e09462b45bbf4599b2ee9bb6041a` | BLOCKED / OPEN | NOT_STARTED / NOT_RUN |
 | [#134](https://github.com/integratedmodelling/klab-services/pull/134) | MIXED | `feature/python-experiment-runner` | `bcf7a4406ea76f60454594a240c248ebd17d69fb` | BLOCKED / DRAFT | NOT_STARTED / NOT_RUN |
@@ -31,3 +31,13 @@ Historical PR census, merge ancestry, exact checks, file lists and review decisi
 No submitted reviews were present in the baseline for these nine PRs. This is not proof that approval is unnecessary.
 Delivery branch reports `protected=false`; protection endpoint returned 404 and repository rulesets returned [].
 Account has push/triage, not maintain/admin. Do not bypass failing checks or infer maintainer acceptance.
+
+## Execution checkpoint
+
+All nine exact heads are now ancestors of the **local-only** candidate
+`53f925bd1e886e887ecb65149f44e4b7f3c496c4`. Their original-head focused tests pass
+through noneditable installed wheels with complete source-inventory/hash checks.
+Detailed counts and immutable run references are in `pr-ledger.json` and
+`INTEGRATED_ACCEPTANCE.md`. This does not mean the remote branches were updated,
+the PRs merged, all contributor reviews completed or managed/live/scientific
+acceptance passed. The baseline table above is retained as historical evidence.

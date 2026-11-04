@@ -2,9 +2,9 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import shutil
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 
 def main():
@@ -21,9 +21,9 @@ def main():
     ]
     records = []
     for reports, log in groups:
-        record = dict(reports=reports, log=log, historical=True, final_candidate_evidence=False,
-                      source_sha='UNVERIFIED', command_environment='Recover from raw log; not inferred from directory date',
-                      totals=dict(tests=0, failures=0, errors=0, skipped=0), failing_tests=[], missing=[])
+        record = {'reports': reports, 'log': log, 'historical': True, 'final_candidate_evidence': False,
+                  'source_sha': 'UNVERIFIED', 'command_environment': 'Recover from raw log; not inferred from directory date',
+                  'totals': {'tests': 0, 'failures': 0, 'errors': 0, 'skipped': 0}, 'failing_tests': [], 'missing': []}
         for name in [reports, log]:
             source = args.source / name
             if source.is_dir():
@@ -39,15 +39,15 @@ def main():
             for case in suite.iter('testcase'):
                 for failure in list(case):
                     if failure.tag in ['failure', 'error']:
-                        record['failing_tests'].append(dict(classname=case.get('classname'), name=case.get('name'),
-                                                           kind=failure.tag, message=failure.get('message')))
+                        record['failing_tests'].append({'classname': case.get('classname'), 'name': case.get('name'),
+                                                       'kind': failure.tag, 'message': failure.get('message')})
         records.append(record)
     manifest = []
     for file in args.output.rglob('*'):
         if file.is_file():
             with file.open('rb') as stream:
                 digest = hashlib.file_digest(stream, 'sha256').hexdigest()
-            manifest.append(dict(path=str(file.relative_to(args.output)), sha256=digest, size=file.stat().st_size))
+            manifest.append({'path': str(file.relative_to(args.output)), 'sha256': digest, 'size': file.stat().st_size})
     (args.output / 'manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
     (args.output / 'historical-report-summary.json').write_text(json.dumps(records, indent=2), encoding='utf-8')
     print(json.dumps(records, indent=2))
