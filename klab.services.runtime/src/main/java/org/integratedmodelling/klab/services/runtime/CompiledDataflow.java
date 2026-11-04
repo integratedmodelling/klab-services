@@ -1997,7 +1997,13 @@ public class CompiledDataflow {
             var cohort =
                 runtimeService.getCohortFor(
                     producer.getObservable().getSemantics().singular(), scope, true);
-            transaction.linkCollectiveInput(cohort, consumer, producer, null);
+            if (producer.getId() == Observation.QUERY_ID
+                && producer.getMetadata().containsKey(
+                    org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY)) {
+              var binding = SelectedQueryInput.capture(transaction, cohort, consumer, producer,
+                  entry.getKey(), entry.getKey().getChildren().indexOf(child), scope);
+              transaction.linkSelectedQueryInput(cohort, consumer, binding);
+            } else transaction.linkCollectiveInput(cohort, consumer, producer, null);
           }
         }
     }
@@ -2724,6 +2730,14 @@ public class CompiledDataflow {
       if (scope.isInterrupted()) return false;
       try {
         validateProducingModel(actuator, scope);
+        for (var child : actuator.getChildren()) {
+          var input = child.getObservation();
+          if (child.getActuatorType() == Actuator.Type.REFERENCE && input != null
+              && input.getId() == Observation.QUERY_ID
+              && input.getMetadata().containsKey(
+                  org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY))
+            SelectedQueryInput.requireCurrent(runtimeService, input, contextScope);
+        }
       } catch (IllegalStateException invalid) {
         scope.error(invalid.getMessage());
         return false;
