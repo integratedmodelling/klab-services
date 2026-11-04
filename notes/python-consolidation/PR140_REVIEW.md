@@ -1,5 +1,11 @@
 # Contribution review: deterministic Runtime fixture copying (#140)
 
+Current disposition: **MERGED** at `071f4bfd9368f2165e7821b3ce0d504c70ce02dd`.
+Actual refreshed-base installed-wheel tests and hosted/Jenkins checks passed;
+author-agent review addendum is recorded on GitHub and in `PR_CONTRIBUTOR_REVIEWS.md`.
+The recommendation below is the preserved historical pre-integration checkpoint,
+not a current blocker. Original frozen fixture incompatibility remains issue#193.
+
 ## Recommendation
 
 **Needs contract/coordination evidence for merge**; no demonstrated defect found

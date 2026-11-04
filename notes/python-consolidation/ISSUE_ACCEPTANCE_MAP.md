@@ -1,5 +1,26 @@
 # Issue and acceptance audit — baseline
 
+## Current milestone reconciliation
+
+- #147's retained receipt failure was reproduced, repaired with original rollback
+  and strengthened tamper/port/root guards, verified, and merged via #191.
+- All nine original PRs merged after scoped contributor review, refreshed wheel
+  and hosted gates. This is not closure of the entire Python roadmap.
+- The installed client passes genuine scientific Java execution, partial
+  provenance, independent-client restoration and owned cleanup. Managed Runtime
+  registration/READY/RUNNING/STOPPED also passes; publication UNCONFIRMED and
+  remote-agent cleanup UNKNOWN remain explicit. Broader #89/#125/#144 goals
+  must not be marked universally complete from these bounded workflows.
+- New issue[193](https://github.com/integratedmodelling/klab-services/issues/193)
+  preserves the frozen ODO assertion/large-worldview semantic incompatibility.
+  No original assertion was changed or historical failure hidden.
+- Component PR11 requires an upstream writer's merge or granted permission.
+  This is the only remaining external milestone blocker after internal cleanup
+  and evidence reconciliation, not a request to expand the Python/PaL roadmap.
+
+The tables below preserve baseline states and historical evidence, not a claim
+that later accepted source still fails those repaired gates.
+
 This is not a roadmap-completion claim. Live issue bodies/comments were captured
 on 2026-11-04 in the private baseline archive; future issues remain future scope.
 

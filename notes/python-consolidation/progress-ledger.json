@@ -1,21 +1,98 @@
 {
   "milestone": "dependency-closeout-repository-consolidation",
+  "resume_pass": {
+    "recorded_at_utc": "2026-11-04T18:51:38Z",
+    "remote_prs": "All nine original PRs and prerequisites191/192/194/195 merged normally; component11 is the sole open milestone PR",
+    "coverage": {
+      "status": "PASSED",
+      "scope": "Local workflow commands and current-develop integration-delta gates, retaining full helper counters",
+      "baseline_sha": "196bb9dc142eafc92f4456c5073933fa98ad1c42",
+      "changed_executable_lines": {
+        "reconnect": 10,
+        "cached_origin": 12,
+        "accepted_runtime": 21,
+        "publication": 20
+      },
+      "evidence": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/coverage-current-*-20261104"
+    },
+    "receipt": {
+      "status": "PASSED_AND_MERGED",
+      "original_reproducer": "PASSED with imported selected-input association repair",
+      "additional_negative_tests": "Captured-port mutation guard added; original/copy/tamper/duplicate-alias/foreign-root/rollback checks pass",
+      "transported_input": "PASSED after normalizing GeometryImpl's derived hash cache; support/count tampering remains rejected",
+      "integrated_reactor": "222 tests, zero failures/errors/skips",
+      "clean_develop_reactor": "159 tests, zero failures/errors/skips at fa7b7006aa80af833d63d50d5e3e2d460f6d4519",
+      "pull_request": "https://github.com/integratedmodelling/klab-services/pull/191",
+      "current_pr_head": "33b0a39b64d858ee3c278b7c793f1524d7d979d1",
+      "hosted_state": "MERGED after build, Jenkins and both focused regression checks SUCCESS; normal workflow, no bypass",
+      "merge_commit": "1e75df4e94d72007fe1b96c3f898f3f0fbefab60",
+      "merged_at_utc": "2026-11-04T17:54:10Z",
+      "evidence": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/receipt-*-20261104"
+    },
+    "hm012": {
+      "status": "IN_PROGRESS",
+      "source_sha": "a1d36d30bde17d853de71e0cc7d285e597666e4c",
+      "override": "hortonmachine.version=0.12.0",
+      "compile_tests_package": "PASSED; 22 tests, no failures/errors/skips",
+      "adopted": false,
+      "focused_proposal": "https://github.com/integratedmodelling/klab.component.geospatial/pull/11",
+      "proposal_head": "90f425e0cb6e39e704d96cccf4f52b3b980b0ad6",
+      "upstream_main_candidate": "9 tests and package pass; focused H2GIS1.5/H2 1.4.197 initialization plus planar-area oracle passes",
+      "demonstrated_old_h2_failure": "Actual H2GIS initialization fails with H2 1.1.119: NoClassDefFoundError org/h2/api/Aggregate",
+      "remaining": "Packaged HM/host geographic probes and isolated scientific compatibility PASS; upstream component merge blocked by push=false permission. Warnings and mixed Jackson remain recorded, not globally harmonized.",
+      "flattened_component_sha256": "fe55e198dbe89990d96988bc1d0290e325807b7bdf89bde8589a236e3a03a602",
+      "exact_proposal_manifest": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/hm012-proposal-exact-resolver-20261104/artifact-manifest.json",
+      "evidence": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/hm012-component-package-20261104"
+    },
+    "backend_prerequisite": {
+      "pull_request": "https://github.com/integratedmodelling/klab-services/pull/192",
+      "head": "88ede3937",
+      "status": "MERGED after applicable checks PASS; merge fda27fb2ab976eab65b2cd5b5dd96847f8016920",
+      "java": "222 tests pass on clean c66007d3c20ece5551d01fd75ec57ff3b3adddee",
+      "python": "2208 offline tests pass from fresh noneditable source-hash-matched wheel at clean 1829e0c9acef4c77afb514c2cde3733f2406d51a",
+      "merged_parent": "develop receipt merge 1e75df4e9 incorporated without product-tree changes"
+    },
+    "isolated_science": {
+      "status": "PASSED_SEPARATE_SYNTHETIC_WORKFLOW",
+      "verified": "Five owned Java endpoints start on nonconflicting ports; installed-client signed authentication/service selection passes; four owned component imports finish; all launched processes cleaned and Modeler JVM identities unchanged",
+      "v4_blocker": "Original large worldview has missing TAXA/CHEM provider descriptors and current EMERGES_FROM clause invalidity; no scientific Jobs submitted",
+      "v5": "PASS on baseline and HM0.12/H2 candidate:123.25m/20-valid-cell actual EPSG:3857 geometry, partial provenance, UNKNOWN root durability retained, independent-client restoration, remote scope release/fresh-listing absence and owned process/listener cleanup. No original frozen fixture replaced; issue193 retains incompatibility."
+    },
+    "retirement": "PASSED:53 retired paths absent;39 observed original branch refs retained; coverage files relocated intact. Services11/component2 retained for explicit preservation/active purposes. All owned listeners closed.",
+    "broker_configuration": {
+      "pr": 195,
+      "head": "54defe14fe44d83723c70f7e0333fc933d127471",
+      "local_reactor": "224 tests PASS, no failures/errors/skips",
+      "managed_acceptance": "PASS: genuine Runtime READY/RUNNING/STOPPED; start/stop publication UNCONFIRMED; remote cleanup UNKNOWN"
+    }
+  },
   "status": "MILESTONE_INCOMPLETE",
-  "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00",
+  "final_reconciliation": "Internal implementation/acceptance/merge/cleanup complete; only external component11 upstream merge permission remains. Notes commit/push verification recorded in chat.",
+  "gate_timestamps_note": "Individual recorded_at fields preserve original gate-entry creation; final statuses reconciled after the final source/test/cleanup evidence listed below.",
+  "final_evidence_index_sha256": "e7916bc9dcc0165d54a509af21956a616cebb087d425b9c5ba31b8ea71f98c5a",
+  "final_source_reconciliation": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/final-source-reconciliation-20261104/reconciliation.json",
+  "final_cleanup_verification": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/final-cleanup-verification-20261104/result.json",
+  "recorded_at_utc": "2026-11-04T18:59:25.770465+00:00",
   "repository": "integratedmodelling/klab-services",
   "integration_base_sha": "e09a7de7cac6b48526fd8b7ac72879abb36a77a3",
-  "final_candidate_sha": "53f925bd1e886e887ecb65149f44e4b7f3c496c4",
-  "final_candidate_verified": false,
-  "checkout_head_at_recording": "f56197be4b6fc7593cb4eeb1bdad41a864e1e623",
-  "java_tested_candidate_sha": "52197c41b01213628e1fbf4e5290933eb9350f2b",
+  "final_candidate_sha": "4757e33d93a3d758df4d9392359d9f6d0b928c2a",
+  "final_candidate_verified": true,
+  "final_candidate_verification_scope": "Product scope equal to final225-selected-Java/2772-installed-Python test source and successful managed/science source; not a full unselected Java-suite pass or component upstream adoption",
+  "checkout_head_at_recording": "4757e33d93a3d758df4d9392359d9f6d0b928c2a",
+  "java_tested_candidate_sha": "7f24692ff574794c0615c90ea8d48af66a795e23",
   "dependency_manifest": {
-    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-dependency-artifacts-before-20261104.json",
-    "sha256": "799278198d48529340c70dc9176acc6eaf5949b1ec1e4349c67a3c2e6fa89b4a",
-    "final": false
+    "path": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/final-services-resolved-dependencies-20261104/artifact-manifest.json",
+    "sha256": "90c7f7640093fd8fc1edda45e38ae91e3bc038218713017b324d568640a5c32c",
+    "final": true,
+    "component_proposal_manifest_sha256": "75947eedc5338b40e4ded0735c243f962a1c908a011b5f4534c3699260524fed",
+    "component_upstream_adopted": false
   },
   "pr_baseline_count": 9,
-  "pr_in_scope_count": 9,
+  "pr_in_scope_count": 14,
   "prs_unresolved": [
+    "https://github.com/integratedmodelling/klab.component.geospatial/pull/11"
+  ],
+  "prs_merged": [
     "https://github.com/integratedmodelling/klab-services/pull/133",
     "https://github.com/integratedmodelling/klab-services/pull/134",
     "https://github.com/integratedmodelling/klab-services/pull/135",
@@ -24,40 +101,23 @@
     "https://github.com/integratedmodelling/klab-services/pull/138",
     "https://github.com/integratedmodelling/klab-services/pull/139",
     "https://github.com/integratedmodelling/klab-services/pull/140",
-    "https://github.com/integratedmodelling/klab-services/pull/141"
+    "https://github.com/integratedmodelling/klab-services/pull/141",
+    "https://github.com/integratedmodelling/klab-services/pull/191",
+    "https://github.com/integratedmodelling/klab-services/pull/192",
+    "https://github.com/integratedmodelling/klab-services/pull/194",
+    "https://github.com/integratedmodelling/klab-services/pull/195"
   ],
-  "prs_merged": [],
   "prs_approved_superseded": [],
-  "scientific_acceptance": "BLOCKED",
+  "scientific_acceptance": "PASSED_SEPARATE_SYNTHETIC_WORKFLOW; original frozen-fixture failure preserved in issue193",
   "evidence_index": "notes/python-consolidation/EVIDENCE_INDEX.md",
   "worktrees_initial": 61,
-  "worktrees_final": 62,
-  "worktree_count_scope": "services repository; geospatial repository separately has one retained worktree",
+  "worktrees_final": 11,
+  "worktree_count_scope": "services repository including new receipt and backend-prerequisite PR checkouts; geospatial repository separately has two retained worktrees",
   "unique_unpublished_work_preserved": true,
   "remaining_blockers": [
     {
-      "owner": "implementing CLI / backend reviewer",
-      "action": "Resolve or explicitly classify the reproduced issued-query-receipt error without weakening rollback/security assertions; rerun affected and combined gates"
-    },
-    {
-      "owner": "implementing CLI / scientific reviewer",
-      "action": "Establish a separately versioned semantically verified fixture for current ODO/language source; preserve original failed oracle"
-    },
-    {
-      "owner": "implementing CLI / dependency maintainer",
-      "action": "Verify HM0.12/GT34.x/H2/Jackson compatibility and targeted dependency change; upstream geospatial push permission is unavailable"
-    },
-    {
-      "owner": "implementing CLI / repository maintainers",
-      "action": "Complete all nine per-PR reviews/current-base tests, hosted/Jenkins checks and required approvals, then merge in verified dependency order"
-    },
-    {
-      "owner": "implementing CLI / operator",
-      "action": "Run exact installed combined client against an authorized nonconflicting owned Java stack; do not reuse or stop Modeler-owned services"
-    },
-    {
-      "owner": "implementing CLI",
-      "action": "Finish worktree purpose/ignored-evidence/lock classification, dry-run safe removals, final verification and complete live census"
+      "owner": "upstream component writer",
+      "action": "Merge ready component PR11 or grant upstream permission; push=false is demonstrated. Compatibility and separate synthetic science pass, historical fixture failure preserved in issue193"
     }
   ],
   "gates": [
@@ -68,12 +128,12 @@
     },
     {
       "id": "dependency_audit",
-      "status": "IN_PROGRESS",
+      "status": "CANDIDATE_VERIFIED_UPSTREAM_ADOPTION_BLOCKED",
       "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "pr_issue_acceptance_audit",
-      "status": "IN_PROGRESS",
+      "status": "PASSED_BOUNDED_MILESTONE_SCOPE",
       "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
@@ -83,34 +143,36 @@
     },
     {
       "id": "raw_scientific_evidence_rescue",
-      "status": "IN_PROGRESS",
+      "status": "PASSED_HISTORICAL_FAILURES_AND_UNKNOWNS_RETAINED",
       "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "worktree_retirement",
-      "status": "BLOCKED",
-      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
+      "status": "PASSED",
+      "recorded_at_utc": "2026-11-04T17:38:00+00:00"
     },
     {
       "id": "per_pr_review_tests_merges",
-      "status": "BLOCKED",
+      "status": "ORIGINAL_NINE_AND_FOUR_PREREQUISITES_MERGED; COMPONENT11_PERMISSION_BLOCKED",
       "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "combined_java_acceptance",
-      "status": "FAILED",
-      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
+      "status": "PASSED",
+      "scope": "Final225-test selected reactor, zero failures/errors/skips; not full unselected Java suite",
+      "recorded_at_utc": "2026-11-04T17:19:52+00:00"
     },
     {
       "id": "installed_python_real_java_science",
-      "status": "BLOCKED",
-      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
+      "status": "PASSED_SEPARATE_SYNTHETIC_WORKFLOW",
+      "recorded_at_utc": "2026-11-04T18:51:38+00:00"
     },
     {
       "id": "final_remote_reconciliation",
-      "status": "IN_PROGRESS",
+      "status": "VERIFIED_INCOMPLETE_EXTERNAL_COMPONENT_MERGE",
       "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     }
   ],
-  "next_milestone": "python-roadmap-reassessment"
+  "next_milestone": "python-roadmap-reassessment",
+  "current_github_snapshot": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\live-ledger-20261104T185925Z\\github-current.json"
 }

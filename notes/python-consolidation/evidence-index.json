@@ -1,5 +1,5 @@
 {
-  "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00",
+  "recorded_at_utc": "2026-11-04T19:04:34.189131+00:00",
   "shared_raw_logs": false,
   "entries": [
     {
@@ -9721,6 +9721,3360 @@
           "size": 408
         }
       ]
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\backend-installed-python-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "freeze.txt",
+          "sha256": "e573481310b0fcc49ff397528b97e3be591557cbe5a6edb6f9932f8d7f84e7b5",
+          "size": 1571
+        },
+        {
+          "path": "install.log",
+          "sha256": "ea6c7c1187f7a1dd7086abd02b7b70ccdb092f4392a97bc6280b36c42bdafaf1",
+          "size": 20028
+        },
+        {
+          "path": "installed-source-identity.json",
+          "sha256": "d248cbfd2295a1437be51295ec8c703e4834840a9825e50e00f8236f5f49619b",
+          "size": 3209
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\backend-installed-python-20261104\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "78de7d447f03b5d88851155e2ddffcbf1ca2e0743df0c3fe76f6f157aa240aec",
+          "size": 1304
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "3e3ad64da4890fb109f02ab5c573e06c605007583c7bdbd3ea1a8eb58b9aa308",
+          "size": 3182
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\backend-prerequisite-clean-candidate-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "27b001abe0fcb294363b72578f9ed858d0b21ee46e9e2cf1b54a9db0fab15d4d",
+          "size": 2148
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "a811b9786691895d14bf457f57d66b59e003e9aea80b5566b26e8c6254d094cc",
+          "size": 18127
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "6cd0cce62b2ab345eb280d86a78b009b2ba1bcfe31d98903884ac0e8ceedb6c5",
+          "size": 269508
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\coverage-current-cached-scope-runtime-origin-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "coverage-gate.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "coverage-gate.stdout",
+          "sha256": "dff863d04956fda46db8a23b84b7d1f46d08b5163af8e344106e797946ed3163",
+          "size": 173
+        },
+        {
+          "path": "jacoco.xml",
+          "sha256": "c141a904207c22e31702c8a8a3ecd6895d06dd3eaf8ecd572c4b2bd15fe8bec9",
+          "size": 4037903
+        },
+        {
+          "path": "run.json",
+          "sha256": "8257ddd2897e6dfdcc80e64b0b583fd592bb1c8d0be0213719bcbd512e8ba098",
+          "size": 2060
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "f11da4ca311e3b2f74582b0aaecc0e99af27ac63d43c298fb0fce21eec8d7b4e",
+          "size": 24111
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "54abd1ed48eef730fbd8e13ed45cdea777474b40d651e1774ca681dc59eff218",
+          "size": 1187
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "b3d699866b84a5449a605223c10a43f7b787ac9550610a364722afd8ad53c7a5",
+          "size": 2311
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "ada0cc294f21fc63744d92eb5eb04ea3ee4a178cd891201f74aba9a6d9437322",
+          "size": 243564
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\coverage-current-native-reconnect-parent-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "coverage-gate.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "coverage-gate.stdout",
+          "sha256": "f1f8d52e7193b3b257bc8966aaa8f7407e054b43ff21474a2d2da90193a653c9",
+          "size": 152
+        },
+        {
+          "path": "jacoco.xml",
+          "sha256": "5aec68a1a1bf1027b1054eca9c07af371bd6a634aac0f6cf91e549052391789f",
+          "size": 2094787
+        },
+        {
+          "path": "run.json",
+          "sha256": "0f83b88e4ae853e89861f934d775342bfd4aa63f07c26b5bb0dc33840bf92678",
+          "size": 2036
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "d8c73b5f0313b71d49823c4685df29c7151525d2ac4c15a155bea8e9765644bf",
+          "size": 23711
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "54abd1ed48eef730fbd8e13ed45cdea777474b40d651e1774ca681dc59eff218",
+          "size": 1187
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "171a2609812b1ba3ec6c662f204f5e9b9cdbcf69b1a49a9e67f809319542c946",
+          "size": 2499
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "57f4a14383547f2b7128e98103b80ee794e0b7987a5aaf4de429ddf26d6bf83c",
+          "size": 17078
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\coverage-current-semantic-generation-restoration-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "coverage-gate-corrected.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "coverage-gate-corrected.stdout",
+          "sha256": "4d821806d6884637caab8afc57585cde89b48f65c87c2de987f24deb5bcfd46a",
+          "size": 256
+        },
+        {
+          "path": "coverage-gate-retry.stderr",
+          "sha256": "d36280838429194aaa4ed6433939a2bb2fbfcac04f6618968a628793da324ff3",
+          "size": 157
+        },
+        {
+          "path": "coverage-gate-retry.stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "coverage-gate.stderr",
+          "sha256": "f2beb62b0de26d2d4f59dd093501db78eb0872ae4864ae48b2f77f28809dc4ae",
+          "size": 96
+        },
+        {
+          "path": "coverage-gate.stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "jacoco.xml",
+          "sha256": "78823201b1e7e21e75f347be0e8af803b0d5be8df34d333dc43108131638f462",
+          "size": 1572256
+        },
+        {
+          "path": "run.json",
+          "sha256": "4504d67c472cb3a807bb3cbc01bbd10bc2a9b0b8b028e6d585d337572dfa35bb",
+          "size": 1919
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "f11da4ca311e3b2f74582b0aaecc0e99af27ac63d43c298fb0fce21eec8d7b4e",
+          "size": 24111
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "54abd1ed48eef730fbd8e13ed45cdea777474b40d651e1774ca681dc59eff218",
+          "size": 1187
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "ca6b129709c7300c0e5181077b893e68ed70d829ad0c8db663fe5bc12b7aeadc",
+          "size": 1092
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "e0f4fa8eb9ca524ae0ec322ca4c92faf7e70127c0c5aa1a30a75ddf618436566",
+          "size": 240873
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "first-four-hosted-results.json",
+          "sha256": "d193479f811775bc781813c8d894a6124f28df38ea6e979b4db090ba14001dfa",
+          "size": 207
+        },
+        {
+          "path": "pr-133-hosted-checks.log",
+          "sha256": "835a11217adcdaf61cbee402236082a014063d0c98a3a4ffad383258a6bc1b3a",
+          "size": 11297
+        },
+        {
+          "path": "pr-133-merge.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "pr-133-merge.stdout",
+          "sha256": "1ffb6c1c85ae935b69f11f019c694f008cc437703f2339ce2a7a374642c925ac",
+          "size": 59971
+        },
+        {
+          "path": "pr-133-merged.json",
+          "sha256": "39bf0d7e96209f3701f226d083d36a57d662239c07e5fe747f65e403e0d90305",
+          "size": 342
+        },
+        {
+          "path": "pr-133-premerge.json",
+          "sha256": "0a7594d83b00d600300cabb2b18163520e6aa144ac6dc97ec550f738dd792f4e",
+          "size": 5125
+        },
+        {
+          "path": "pr-133-refresh.json",
+          "sha256": "f1468b51ef6dce954ffea31b584380bc111b33b363962c81f10f8da947056f8a",
+          "size": 278
+        },
+        {
+          "path": "pr-134-hosted-checks.log",
+          "sha256": "8b4fdbc9f81b721780087393cd6de5e27ccf3c44f70b9c75ffcce0417ca477e9",
+          "size": 23845
+        },
+        {
+          "path": "pr-134-merge.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "pr-134-merge.stdout",
+          "sha256": "1ffb6c1c85ae935b69f11f019c694f008cc437703f2339ce2a7a374642c925ac",
+          "size": 59971
+        },
+        {
+          "path": "pr-134-merged.json",
+          "sha256": "00ac1402f596e3f55200962326ddf4978c367f58334a4b4f08f785e67de208d0",
+          "size": 342
+        },
+        {
+          "path": "pr-134-premerge.json",
+          "sha256": "026eb41ca329f46cda35fc0a54a5f0b3efe64ec7a4d33a086ccd96120d1830ef",
+          "size": 6353
+        },
+        {
+          "path": "pr-134-refresh.json",
+          "sha256": "41491e2fff649218dc453b8fd349b8e1d329a86a4a4bf3acf0f789d322def3f7",
+          "size": 281
+        },
+        {
+          "path": "pr-135-hosted-checks.log",
+          "sha256": "1975fe003b9d7369979889994e0396b19626a14183ad23a7454df025f61337bf",
+          "size": 25923
+        },
+        {
+          "path": "pr-135-merge.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "pr-135-merge.stdout",
+          "sha256": "9ec5c3c4365ab29292098a5fa6a2affba10088f923afa8e0b3a85d7a49914b6a",
+          "size": 61636
+        },
+        {
+          "path": "pr-135-merged.json",
+          "sha256": "c4d035a7e1df7c3d71bddc7a72169e75616f68ed79d21079852af7da475aeb70",
+          "size": 342
+        },
+        {
+          "path": "pr-135-premerge.json",
+          "sha256": "81f8a616de62072fc2f58e49ab3292d5dc2fd0aac06aa5a9c8ce04be9fdf5f6b",
+          "size": 7564
+        },
+        {
+          "path": "pr-135-refresh.json",
+          "sha256": "adac69dd0dd5d85c0152def9ab9ccae1b7d4448c24fc5d083ccef30acfd2f203",
+          "size": 431
+        },
+        {
+          "path": "pr-136-hosted-checks.log",
+          "sha256": "27af3feac3303a1684e0dec9ce2a0a8d31b69d64dfdf748fe577743ea9ed6c18",
+          "size": 12892
+        },
+        {
+          "path": "pr-136-merge.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "pr-136-merge.stdout",
+          "sha256": "1ffb6c1c85ae935b69f11f019c694f008cc437703f2339ce2a7a374642c925ac",
+          "size": 59971
+        },
+        {
+          "path": "pr-136-merged.json",
+          "sha256": "d85bded1ea662cc2ceb1abf0a88f88c078972545568c01c46f2786593b5046f2",
+          "size": 342
+        },
+        {
+          "path": "pr-136-premerge.json",
+          "sha256": "66890e7a5ed6de3d8cf273128aa49ef0f213e25a6879d09ca8346a4f758cadcc",
+          "size": 5123
+        },
+        {
+          "path": "pr-136-refresh.json",
+          "sha256": "17e687bad667d84b53392951f4763d9c1ab782929c15b575f37f2090bf25239d",
+          "size": 385
+        },
+        {
+          "path": "pr-137-hosted-checks.log",
+          "sha256": "81b44ba761b1513836a052c0ef56890ca5f3b66f3afcbe87c83ecb637a56a511",
+          "size": 42228
+        },
+        {
+          "path": "pr-137-merge.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "pr-137-merge.stdout",
+          "sha256": "682f91ef2ca9a37594936581fc8a31e75ab4b6854afcded495b2ce5902d7ec3f",
+          "size": 61799
+        },
+        {
+          "path": "pr-137-merged.json",
+          "sha256": "0c1d7bde49a9e453ad805adf856b133df28dba3ff0292b21b4b74bf0fe0d75d3",
+          "size": 342
+        },
+        {
+          "path": "pr-137-premerge.json",
+          "sha256": "fdd9fd98d3da185b0aa4e6ccd6dfdfca52dce49173106ab1c5c57434f31aa4ff",
+          "size": 7986
+        },
+        {
+          "path": "pr-137-refresh.json",
+          "sha256": "2fc9469340948aae6cf61d6f9397def7e5145e6c0f5d8d5447dc0bc69daefe35",
+          "size": 317
+        },
+        {
+          "path": "pr-138-merge.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "pr-138-merge.stdout",
+          "sha256": "d29de9e55cc39e5043d25e93a73785e247fcf0a33817e185c2b61c27036a98a0",
+          "size": 269
+        },
+        {
+          "path": "pr-138-merged.json",
+          "sha256": "8a85902cdff283e247f4fec2178071f647db1f58de3476da40203ec13ec85916",
+          "size": 281
+        },
+        {
+          "path": "pr-138-premerge.json",
+          "sha256": "d2e08c39b5a1cf930f16e41edc6d951c3d11732fab9ce15950fdcc719188dd53",
+          "size": 4672
+        },
+        {
+          "path": "pr-138-refresh-before-broker.json",
+          "sha256": "707e721c24950de8e4753cfc3569e8916da4ffdddefc201044644c511bfc6cb6",
+          "size": 398
+        },
+        {
+          "path": "pr-138-refresh.json",
+          "sha256": "37cb51ccc94e1ad4147d1c7427f81557b03aef346ec333d05bffe7e50c4732b5",
+          "size": 469
+        },
+        {
+          "path": "pr-139-hosted-checks.log",
+          "sha256": "7c876ec8fdef903b553d91359fc43207235db766505c9b190760cf49eba3feae",
+          "size": 44399
+        },
+        {
+          "path": "pr-139-merge.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "pr-139-merge.stdout",
+          "sha256": "6ae1c44f0cc9033b2486dba3f24c1654a9a37b0149fce5c9d08506e5a6409344",
+          "size": 62273
+        },
+        {
+          "path": "pr-139-merged.json",
+          "sha256": "f339c4d7cf5926b5456e046f07ea8fa12e36b28f34112f59047b508cdb56286d",
+          "size": 342
+        },
+        {
+          "path": "pr-139-premerge.json",
+          "sha256": "bf68dd404ca0c6ea18b87be5ded8a33398903f1b97ea88eb7cacd84214e4e336",
+          "size": 7978
+        },
+        {
+          "path": "pr-139-refresh.json",
+          "sha256": "77ce05b1c2e2e5f2bc6320e8bfa5a0c86316b32f66030a63f477d73f229a471c",
+          "size": 317
+        },
+        {
+          "path": "pr-140-hosted-checks.log",
+          "sha256": "7539d480303ac320b7bf073824e8c728921459d53483b0d5b0c3f6254c42014a",
+          "size": 16128
+        },
+        {
+          "path": "pr-140-merge.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "pr-140-merge.stdout",
+          "sha256": "1ffb6c1c85ae935b69f11f019c694f008cc437703f2339ce2a7a374642c925ac",
+          "size": 59971
+        },
+        {
+          "path": "pr-140-merged.json",
+          "sha256": "6f1562e6b553f951fe85327d4b9996bb8f34a2a081b814b2db5f490fb060eff2",
+          "size": 342
+        },
+        {
+          "path": "pr-140-premerge.json",
+          "sha256": "99cd63aff6e0d1c7b203189d35ab050f82d0fa5a965d7603343a49d510197916",
+          "size": 5119
+        },
+        {
+          "path": "pr-140-refresh.json",
+          "sha256": "051155251182cb03c54cf997e8e3a3afb6ca41492c355e059a2ae017505fa7e0",
+          "size": 287
+        },
+        {
+          "path": "pr-141-hosted-checks.log",
+          "sha256": "9b1c851d6ef7bd3be9262289398cba40886fc98a3333c631a517b775dd2b31a3",
+          "size": 51401
+        },
+        {
+          "path": "pr-141-merge.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "pr-141-merge.stdout",
+          "sha256": "d568b75f54ebaed61ac4521873727c8eadbdf9c929fdd1376f85d32b137add71",
+          "size": 62328
+        },
+        {
+          "path": "pr-141-merged.json",
+          "sha256": "a808215b46a540439efe844860be32a1646fa1a9eb70d2c418087b77e834ceb6",
+          "size": 342
+        },
+        {
+          "path": "pr-141-premerge.json",
+          "sha256": "1040f20aedfb11a8938309811a407d1576384f3d211a0ee9d674a32a467987e8",
+          "size": 9238
+        },
+        {
+          "path": "pr-141-refresh.json",
+          "sha256": "4d5694e808c725e8cab419487795a1e958c60e752ef2b666b017daa8a14536dc",
+          "size": 321
+        },
+        {
+          "path": "second-four-hosted-results.json",
+          "sha256": "1732cdaaa0341d27b024e7d619114a94b4ad57c03e24907b47a2921a7aaee7d2",
+          "size": 207
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-133-wheel-isolated-build\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "4ff2e6f102b4b9f7bb4f955dd8d6aebede71712ee0be5096d9dd56002b8bbbd5",
+          "size": 1310
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "9d13e46b06e94212be4cd49ae4bfc9761b556d2e7cc3baed809522464658e432",
+          "size": 100
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-134-wheel-isolated-build\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "d5c8f387ae2cf6678b34387478e5565fd7b517c69c80a3c9ac38355130c8f0cc",
+          "size": 1309
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "f49a0b58224c18a34e704e1d61aa1a3f403580f037377267b6a739b77808ce0b",
+          "size": 101
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-135-wheel-isolated-build\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "8b465c82f37b5f541fe08fabfec16d7664cf564fbb2b4b8ef9c9d783365c77aa",
+          "size": 1495
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "531ba69a70f4ee45201683f4ae01dd0a52af874671230defd112b9b626c13b21",
+          "size": 13
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "e0f33aec5b10c5f2b3e33a2a97bee6053c63a7fbbd72a81bc397016eda6d563c",
+          "size": 183
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-136-wheel-isolated-build\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "717534e697ef78ea7439f99f7599ea698399fe00bbbdfc4f277220a401e7a798",
+          "size": 1447
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "531ba69a70f4ee45201683f4ae01dd0a52af874671230defd112b9b626c13b21",
+          "size": 13
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "faf15e301bfb889447858d1cec40c7ecf68c344df93fdbed6f3874756c15316c",
+          "size": 101
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-137-wheel-isolated-build\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "4d37587bc21580c20fd35fb204df27f2b57f51f79e10506ed039c92790d16199",
+          "size": 1318
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "8ec40b79e91c7782b8cce87cc16ebfbd17ecb8e286b670839c54d325b226746b",
+          "size": 100
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-138-wheel-isolated-build\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "d239f5f667e6676338458d30bd99ac60a948b813d0893d97b05ea992820dc6bf",
+          "size": 1419
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "c6cc17ce2b5ec50db06a1c5c841e873bc7f6a2dc473c5a2c6426a17dbbbaec2d",
+          "size": 264
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-139-wheel-isolated-build\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "24f85a67bb306276e47375857e1837aa1f4ae2f745e9b62ea6d0d581ac707380",
+          "size": 1372
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "9be71d109ffe4ff49234f37587022e11ce289e82e08b25465b6681e799cbc9b3",
+          "size": 264
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-140-wheel-isolated-build\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "c7e94613967a0c2905e91aa8ec48309303a24d1eb5dbeee93e0a6e60df9ca2c1",
+          "size": 1326
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "4c13735db6397a90daed493ea11716d162e688f864a06f4f98bf586ed64bc253",
+          "size": 101
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-141-wheel-isolated-build\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "917c404963b0c8c8595040ba6e1705f2d0b1c6acb52dc1ccd709ab6dd24305d1",
+          "size": 1315
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "af4bbd28451f840133a40021fff3e8f88d83ffb45661dc1f2b2f123639c5e076",
+          "size": 101
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\h2gis-host-candidate-reactor-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "b0bb7777e6fa9cbc196219d0944559f4cd48038a3a3d7bcdfdd026156df9659a",
+          "size": 2406
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "c4278798faa7ebdbb26aaafadf614a5251c11f580c96d8fdb4aecdb27e22ba9e",
+          "size": 1018
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "bd23dbd479eefa7ff2dab6b6162176aa4f402968ffd95cec5392a0b3ac9fc0e8",
+          "size": 11
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "12d9812cd1221c360728a6b09f5da80f63a268bd888f4034c8df1d37386f35b9",
+          "size": 18127
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "1adf8ae9d83eb2ac7f3a7fd32cad4e8117caa08e7886054faba5cecf64f688ff",
+          "size": 273209
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\h2gis-host-new-regression-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "3dad96834c56b3af6ab615c3b6e5524f4fc1e2c2befbde254bda53abf2968f77",
+          "size": 1756
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "c4278798faa7ebdbb26aaafadf614a5251c11f580c96d8fdb4aecdb27e22ba9e",
+          "size": 1018
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "9a9a390d51703aa6fe0f10991ac7dad3818c155f1fea0bbcc5a14ac59255b504",
+          "size": 159
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "21a52d1e1611076f6869f99d04ee1d7193b3cf49560fc25dcf6a0427aad15089",
+          "size": 189
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "8386c1ee473fa3e82297b28002bca1609403cffa26f28305b85f0d1bcaa22b8b",
+          "size": 232561
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\hm012-component-package-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "artifact-manifest.json",
+          "sha256": "fb6daff8418ff9145911deeb190ea1ed5af422734ee0358317f79d3e463001ea",
+          "size": 79853
+        },
+        {
+          "path": "package-and-tests.json",
+          "sha256": "f3b42ea7a84afa83275e1c84a4604159f7e6ba8546a6668f4696706b2b6f6eb3",
+          "size": 958
+        },
+        {
+          "path": "run.json",
+          "sha256": "4b3d060a9c1d9f87518e17f49bb17c16081ce722becb5b0c7ffb505b350abb63",
+          "size": 1331
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "3e22d1a98b536e0e7f11f571a8b0c19baaabe2297802af2910e43e49bcceb1e7",
+          "size": 2425
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "c7f64d6ea28d6133199e1042e59c752430b2da9c568c089dec5162816576f0f7",
+          "size": 34853
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\hm012-component-resolved-after-package-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "e363b69b41649b81966291cdfb9d1eec1b259afaebbbb54326d0cffcf19998d0",
+          "size": 1487
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "7297a03b810f6f5f7af82cfaee4e3c06f7e3ab301e0cfa40f66cac1b281fcaf5",
+          "size": 26019
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\hm012-h2gis-owned-stack-build-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "a1d60a8a8f585ae825fabe1c30810c7eb24cc8f0853462d4a0681eee96a45a8b",
+          "size": 3253
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "a3ef7be15aff0903b8e0569e6073e37495242539fa9e4a37b83f21c3fc41be02",
+          "size": 13142
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "15eb0fc456997c93a239b634b514875d54d26dcc3b13ad2a005e16c6536842ed",
+          "size": 644
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "c3ac6392b64cc6b5a5ec46a8a26403818ea3fbfbca1f33a142c9ca35bae4c80c",
+          "size": 166051
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\hm012-h2gis-probe-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "classpath.txt",
+          "sha256": "cc29af40906a628f2db2f5a3483c63e1e85c2d5a9f575ccb05713c24da59df18",
+          "size": 49738
+        },
+        {
+          "path": "h2-14197-probe.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "h2-14197-probe.stdout",
+          "sha256": "08375e45e951db1fd4c5d8dbd4970a49fff854b253c39ce6982f1d1955c861f9",
+          "size": 339
+        },
+        {
+          "path": "probe.stderr",
+          "sha256": "8d63b66a6124241d5e3595963840c74b71f081120eace1fa37de55eae087e365",
+          "size": 3037
+        },
+        {
+          "path": "probe.stdout",
+          "sha256": "e2a9df61584e77a3b5a7bfa4f8d02e98ff16e4833939563de80e7daa8e7204e1",
+          "size": 262
+        },
+        {
+          "path": "result.json",
+          "sha256": "0163215944fc4cb4872a703b22a7d57d78dc457fa9e3e33cbdeda23d28c50e48",
+          "size": 225
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\hm012-h2gis-probe-20261104\\resolve",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "fceacda1a83aef602710e010d7c48b55c141dabf6bedaa65cb86ac2b17db3db1",
+          "size": 1518
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "82d4a5f5ee301fd50382341ac5dcf70821ab78ce75d43a1ee5945fd6c5935c0c",
+          "size": 1484
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\hm012-packaged-host-probes-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "flattened-component-manifest.json",
+          "sha256": "2d9ad44230baa5f9dd9b4a348100012fedb581a291d05a50794b3234f5ccc0b8",
+          "size": 399970
+        },
+        {
+          "path": "H2GisCompatibilityProbe.stderr",
+          "sha256": "ab101d5476aa18e030d8c238f3c30a7484eadda515a9253c964d826a558558c5",
+          "size": 399
+        },
+        {
+          "path": "H2GisCompatibilityProbe.stdout",
+          "sha256": "08375e45e951db1fd4c5d8dbd4970a49fff854b253c39ce6982f1d1955c861f9",
+          "size": 339
+        },
+        {
+          "path": "hm-class-source-proof.json",
+          "sha256": "aa2771e35ebebf6b601a0d46ae331bd1dd04f9a9726611e3ba527be5f95a9e33",
+          "size": 352
+        },
+        {
+          "path": "HortonMachineCompatibilityProbe.stderr",
+          "sha256": "d3d9a0fb725d02760140b75ac593665a7a75f014aa43064a2f58947702a8ce11",
+          "size": 395
+        },
+        {
+          "path": "HortonMachineCompatibilityProbe.stdout",
+          "sha256": "05b755274d5af2067e9858ab8d3a1da58a94779f716522dc8731c1fa9966d5a4",
+          "size": 302
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\hm012-proposal-exact-resolver-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "artifact-manifest.json",
+          "sha256": "75947eedc5338b40e4ded0735c243f962a1c908a011b5f4534c3699260524fed",
+          "size": 399358
+        },
+        {
+          "path": "run.json",
+          "sha256": "59df3df5f41e892ff1b3a43820b507e2326409111966dd4b7a0fd42464dee19d",
+          "size": 1522
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "96218fe6c53fa168f1d864643719d4f0f513f90d68a0fcf6b6f8633ea8b333a1",
+          "size": 26019
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\hm012-upstream-main-focused-update-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "697a26b51b87ff164059ee54ed28b1d55f17f3c6db07d339404fef57d7649240",
+          "size": 1507
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "8d96aa98623115a6a93a3c0580ba70423db9130ef9dd49656a66c6b8485ae2fa",
+          "size": 1272
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "ed6eb6dbebbcbc937d3d21bcec0b0f3066722c7059206694fb989f593936b3eb",
+          "size": 99
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "0328e32a5bdc32bf03e67f3c946dff10c1a1b57de2163203eb30d6e4614da3c1",
+          "size": 3471
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "fb4ce655849a8f87ab1b1fe3ab114f8f1cbe7e4b5138562e675fdadb4b85d0bd",
+          "size": 35674
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-broker-configuration-reactor-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "05d71f404ab852501853e58b1e2eeef924c6959f588ff1009004f2f33039cc32",
+          "size": 2423
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "1fd3091aa7f16246f635e0eaeb784fabdc6caf3376dae3aed942f559b40b2b5c",
+          "size": 2048
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "3f1ccb5181870f34210fdd57eb64969dc99ab59ecec7ceaaa606dfb780dc2178",
+          "size": 210
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "a67d9f7530af0be20238af0d040f1ac5a87acfd5ebaa7977de411308fe63ac62",
+          "size": 18127
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "bae7adc4ec7f6fd131b39d3362a75d7c29e6456b3eac70026bad3377a2858743",
+          "size": 270087
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-science-stack-hm012-h2gis-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "actual-loaded-identity.json",
+          "sha256": "ead68d4d86b25b7cc1008b97845394c18bfe7ec8a2c9414af3776ad03a483a7e",
+          "size": 1453785
+        },
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "compiled-classes.json",
+          "sha256": "6d70245fd40ba131770f99ea422ea1e5b5e160bd87ff35dd9374b6512d3bb502",
+          "size": 524863
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v5-contract.json",
+          "sha256": "b7f74da279a11c8f6a8f0f8d4ff700d97a9b98abfff991f4a9c489df2426684e",
+          "size": 1081
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "07afc65133e522aea469f6b953295f72a6a16150a5fc8e3c304a00c21f40928b",
+          "size": 5713542
+        },
+        {
+          "path": "import-journal.json",
+          "sha256": "8547c73ce4b4ed428234312512308eeafa96120be2168326a9b8dfdd5093304c",
+          "size": 987
+        },
+        {
+          "path": "installed-client-identity.json",
+          "sha256": "a4c568904984e889f722575510296f33f7450d1705bac51122a8ef009c25e4d7",
+          "size": 3955
+        },
+        {
+          "path": "java-version.txt",
+          "sha256": "c09b3f6e7993628681d0f0e0fdfa12ccbfef6d7798ad260ec13807486db8b267",
+          "size": 208
+        },
+        {
+          "path": "launcher-source.py",
+          "sha256": "ce348964f3fdafbef5f1754aa7f2bb301923c14b6ebf13f3669bfdf7503c940c",
+          "size": 28625
+        },
+        {
+          "path": "python-freeze.txt",
+          "sha256": "8a9311956d6e5451e00b93f2140c4a6bb1c186973f95fdaee1a0ee2ff8842afe",
+          "size": 1703
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "f75d82a8517ed55ff3fbc955269790fc074b8e118a129c33e04f19acf3514eba",
+          "size": 3696332
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "dc5613d8a6cb66c8ad4dcc217e55486a65f6f24a44a1cbba17e975000e571eb0",
+          "size": 2888269
+        },
+        {
+          "path": "resources-reindexed.log",
+          "sha256": "dba06098f1f61c5aee4b186944b47c70b101ef9ef6d0e1e5214926aa89fa7d85",
+          "size": 3639584
+        },
+        {
+          "path": "resources.log",
+          "sha256": "bc168e83f51363a254653c421abe01cf37de98fb81f861c6570945aa1f77bdc4",
+          "size": 3682197
+        },
+        {
+          "path": "result.json",
+          "sha256": "cdc1de4d8f604c0b6a48c120cd6667d769b7c2c8dc686dbac6d1d82faaae9c29",
+          "size": 8493
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "22998c7c83b35da501f7c24de79f35175841ed1963156f58d31a59e5fb0fb726",
+          "size": 3555600
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-science-stack-v4-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v4-contract.json",
+          "sha256": "c9a3e6f0bcfee6ac4b1f0cc318bf58af8f3297e05a2994e886f7655c3a920ae7",
+          "size": 6002
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "c57d9530937f8d4fb3be1ecfee7444f700cfc5f34ea03e1f0cd20a6424d40cff",
+          "size": 3432
+        },
+        {
+          "path": "resources.log",
+          "sha256": "9c6580a392f7d96d41a9a9904bfaf5961033e09fbf095759b33892fd164be0a5",
+          "size": 18402
+        },
+        {
+          "path": "result.json",
+          "sha256": "8a4e5879ca1a3b2e19906dc29e2141b36b0047ce13abf32467f08ce21eb843fc",
+          "size": 894
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-science-stack-v4-explicit-ports-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v4-contract.json",
+          "sha256": "c9a3e6f0bcfee6ac4b1f0cc318bf58af8f3297e05a2994e886f7655c3a920ae7",
+          "size": 6002
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "f032d890d822a3731c6d5264fb51e3d799e2747943a752375eea58627493ce08",
+          "size": 3432
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "3d736374a117bbe142a96f62cda48b4adfa741197025661a54ab546598c5a4e8",
+          "size": 60816
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "304fae59cfe02af5ea9a0789faceff3da4fbe47eeb91b9f0359dc29e56b09068",
+          "size": 25059
+        },
+        {
+          "path": "resources.log",
+          "sha256": "1d36b1770c01afbcd3b60ee9de6411a8aef2c90c6978e7569492e199848b145a",
+          "size": 50548
+        },
+        {
+          "path": "result.json",
+          "sha256": "42367835af5da45d0ae9b4db7db313fec78ed5568b700b124e115b5e94289a3d",
+          "size": 1250
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "9d07d1369a10624abf663e955a4f15c80f2bd1554e681db43af7fe65ec6bcbd6",
+          "size": 26102
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-science-stack-v4-ready-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v4-contract.json",
+          "sha256": "c9a3e6f0bcfee6ac4b1f0cc318bf58af8f3297e05a2994e886f7655c3a920ae7",
+          "size": 6002
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "51ab66769f64b6dc142cf3ff59d6043ab14e8c39b35d2113b515df837e2004ff",
+          "size": 3413
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "104b1aa25634868da01af6c02c82980a9b4cfed61323a14c8a5ea24f04972d5b",
+          "size": 19181
+        },
+        {
+          "path": "resources.log",
+          "sha256": "aeca4cabac035728064920cb96392217521541918447fd6cb2764e03fd120aa3",
+          "size": 31162
+        },
+        {
+          "path": "result.json",
+          "sha256": "aa071fade260b2d8375c14aff15469ee49f9a06da232745719e5197f921b2aae",
+          "size": 1073
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-science-stack-v5-full-evidence-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "actual-loaded-identity.json",
+          "sha256": "8d6b98430bd6d770c256156d47f03ec55ebf7ea70389b7ac626b6e8545fd3f56",
+          "size": 1454560
+        },
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "compiled-classes.json",
+          "sha256": "6d70245fd40ba131770f99ea422ea1e5b5e160bd87ff35dd9374b6512d3bb502",
+          "size": 524863
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v5-contract.json",
+          "sha256": "b7f74da279a11c8f6a8f0f8d4ff700d97a9b98abfff991f4a9c489df2426684e",
+          "size": 1081
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "a5fca340759572ad473f0c7dc4a5e48ced50fad9e74b4ba3571af1e8a02bae8f",
+          "size": 5718710
+        },
+        {
+          "path": "import-journal.json",
+          "sha256": "fb550fb43e843b71b972d26ee7888e442f41a8fbe0424f9400d667a03557215f",
+          "size": 1009
+        },
+        {
+          "path": "installed-client-identity.json",
+          "sha256": "a4c568904984e889f722575510296f33f7450d1705bac51122a8ef009c25e4d7",
+          "size": 3955
+        },
+        {
+          "path": "java-version.txt",
+          "sha256": "c09b3f6e7993628681d0f0e0fdfa12ccbfef6d7798ad260ec13807486db8b267",
+          "size": 208
+        },
+        {
+          "path": "launcher-source.py",
+          "sha256": "129a3dd53a3d679bc09a1cc5fe5ab6fc4f445f2ee406ea002f60bbf74e19c7a8",
+          "size": 26980
+        },
+        {
+          "path": "python-freeze.txt",
+          "sha256": "8a9311956d6e5451e00b93f2140c4a6bb1c186973f95fdaee1a0ee2ff8842afe",
+          "size": 1703
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "ab2f3d9dbeb990c11eff9658128b51114266d4a97f1bd25cd409da3874975276",
+          "size": 3705773
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "60d92bb9a215b354b8a9d23490a662375569a26526b9eaad47cedf5ce7a2b910",
+          "size": 2889864
+        },
+        {
+          "path": "resources-reindexed.log",
+          "sha256": "6dd312f4adeaf0cebd725fc1fe23fb4ac57aa35461220ffbcd76f85b5d6bb997",
+          "size": 3640705
+        },
+        {
+          "path": "resources.log",
+          "sha256": "8fef94a4a7de729233423c14e1731bd07b2a8f137402c3f367874beaffe2f06d",
+          "size": 3683753
+        },
+        {
+          "path": "result.json",
+          "sha256": "75f436688d7dc94007389039a0067bca818bc5e77e0881bdf7aad1b5e482a34d",
+          "size": 8127
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "cc12139d64d22f15a6fbe7b2a7d16d64c82b2a50c35dcf50553474495a4260bb",
+          "size": 3554900
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-science-stack-v5-minimal-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v5-contract.json",
+          "sha256": "6960bed59fa9e05c709dc6b34f33c0cba2a6e7ee331ebc20f329ad65fab4688d",
+          "size": 1081
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "8290298b1f010db87f3eba59a268996930541ded40fe3e5e9691782a7f108a84",
+          "size": 3432
+        },
+        {
+          "path": "import-journal.json",
+          "sha256": "fb550fb43e843b71b972d26ee7888e442f41a8fbe0424f9400d667a03557215f",
+          "size": 1009
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "5ab72ccc36f35fa9a0bc7ac09aebdb8ff536879c129097211e030be96251c92b",
+          "size": 60226
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "1d204f7a468ed1f25b2ffbf0c2c2e6c3675c28e9022a87bf0c5272c90844e248",
+          "size": 25059
+        },
+        {
+          "path": "resources-reindexed.log",
+          "sha256": "2c7de0b9e1b38cbee4f7d6fde40cb0744d0d8660676245414a90a84dfe534b7d",
+          "size": 30371
+        },
+        {
+          "path": "resources.log",
+          "sha256": "7dcc20ba7df7850951b9efaf73a9c7fbae5e1936a79c897dbf7245a684648cba",
+          "size": 51759
+        },
+        {
+          "path": "result.json",
+          "sha256": "cbe0d56913e5dc973a3a4f6830680d0249d7ba17167d0d2bbcea18dc8233ad31",
+          "size": 2415
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "ab7b3becf15b4deeba9858552e5bd162f709004214dec65cbbf2c3b9e95749ad",
+          "size": 46446
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-science-stack-v5-typed-length-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v5-contract.json",
+          "sha256": "b7f74da279a11c8f6a8f0f8d4ff700d97a9b98abfff991f4a9c489df2426684e",
+          "size": 1081
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "88e7d01f32f977c2f245d88e03ebcff50709e671027f072b2e948488fe48fe55",
+          "size": 3413
+        },
+        {
+          "path": "import-journal.json",
+          "sha256": "fb550fb43e843b71b972d26ee7888e442f41a8fbe0424f9400d667a03557215f",
+          "size": 1009
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "1d4995bad07befea628ecf264a1ec395408842bede6b1a5f126c044200d718b2",
+          "size": 51527
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "c42c847b250b2302c64f63ff97c35eb1706dc04dbe67f939f5b30261203d206a",
+          "size": 29959
+        },
+        {
+          "path": "resources-reindexed.log",
+          "sha256": "0792ae619a55c1dde452252cd6a33f811a34f9dc0a6b13cd4314a3c383e65387",
+          "size": 49111
+        },
+        {
+          "path": "resources.log",
+          "sha256": "b7529a8f2c3204bb41a8ccdf14dd62f0708478fecd8e300337629fe77e78d326",
+          "size": 51052
+        },
+        {
+          "path": "result.json",
+          "sha256": "26ffb5ac4dd4d1dc880d2296d36a0bf225dde56af881b83fc069c478e33f4530",
+          "size": 4481
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "1ea5de76719330cba9cf3c5cb18713c4cd717c0edb3ef3ac24762cda48b78d2d",
+          "size": 50955
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-stack-compiled-classpaths-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "resolved-classpaths.json",
+          "sha256": "c59040ec04183124726d45d765daf3889c75730a541fa4e041ebf11cd28c68f3",
+          "size": 2855
+        },
+        {
+          "path": "run.json",
+          "sha256": "6a2364e3b987d842f8ca1929a9de9648f2fe5349619feee8c6e024ac07c014f8",
+          "size": 2239
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "96591e11d7c2fe1e825117ffbd95600217015a8c7033b5a9b02327515465d0c5",
+          "size": 7143
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "b9221f2d8b402b55cca4b7420042836b2bac146f3232b09d183acf841a9ddb4d",
+          "size": 321
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "411e619ad0cdcd93704e0f11c303fc9dd3206b199592a072408df6d752997464",
+          "size": 166177
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\isolated-stack-real-webui-build-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "da5ab2820364f6f2ca7dda05c7dbe049b508cb315c7a4c5e12361e362f60aade",
+          "size": 4330
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "0097e5acf93520ddca31646231e1713a232cbe3bf2e18506bee5d16a8ec45c40",
+          "size": 11471
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "56284d76a96d413bbe9214174e946ec4558b9fe4d1299a2ea937e211ea3af7cb",
+          "size": 1045
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "95e9b3ccf296e5116a19ecd126fa79da407cbab0158c75ba18c0cd9630651e5f",
+          "size": 6560
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\live-ledger-20261104T184259Z",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "github-current.json",
+          "sha256": "0cc9c67a33b655ab9da63152552fc6be84552cc0dca59346601dc91b02dacbe8",
+          "size": 84069
+        },
+        {
+          "path": "pr-ledger.json",
+          "sha256": "915553abf303f631e753b88ef5fe8759f6d67e879daac432088314af3d8389c3",
+          "size": 129160
+        },
+        {
+          "path": "progress-ledger.json",
+          "sha256": "37393abbf2d98b3363c488b57767edf8a64e66dfe063c1724af6b1984999a980",
+          "size": 9304
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\managed-agent-owned-v1-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "compiled-classes.json",
+          "sha256": "0b8efeb8a7201867d4b5b503fb92adb2d385a0cfacfad2f18e91d2331ea4d4ec",
+          "size": 525550
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v5-contract.json",
+          "sha256": "b7f74da279a11c8f6a8f0f8d4ff700d97a9b98abfff991f4a9c489df2426684e",
+          "size": 1081
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "013d0c0fd2636a1cf1dd1ca60b7398c8fde4046db835bfa3a03dfff21c7639e5",
+          "size": 5540104
+        },
+        {
+          "path": "import-journal.json",
+          "sha256": "8547c73ce4b4ed428234312512308eeafa96120be2168326a9b8dfdd5093304c",
+          "size": 987
+        },
+        {
+          "path": "installed-client-identity.json",
+          "sha256": "a4c568904984e889f722575510296f33f7450d1705bac51122a8ef009c25e4d7",
+          "size": 3955
+        },
+        {
+          "path": "java-version.txt",
+          "sha256": "c09b3f6e7993628681d0f0e0fdfa12ccbfef6d7798ad260ec13807486db8b267",
+          "size": 208
+        },
+        {
+          "path": "launcher-source.py",
+          "sha256": "b39a3ac4b44343c45b233931ae58c81107bf9af2bec5b2742ca11b1613be5afb",
+          "size": 33196
+        },
+        {
+          "path": "owned-agent-broker.log",
+          "sha256": "193fd28113a06c639fe82561da69d451cb1f973a07e09318dea3f16a05a112f4",
+          "size": 854
+        },
+        {
+          "path": "python-freeze.txt",
+          "sha256": "8a9311956d6e5451e00b93f2140c4a6bb1c186973f95fdaee1a0ee2ff8842afe",
+          "size": 1703
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "db796d8712c7b5dc6018fd8902353bc0bbbfa9871054b09b64b82ffcf34d6645",
+          "size": 3647905
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "71030dc4c2d355a63119bf7b2f72a93facb3d837e43aaefe9b1f1d6de46a7784",
+          "size": 2704528
+        },
+        {
+          "path": "resources-reindexed.log",
+          "sha256": "f34ba9da96062dda7b6e8580bc633fbdede72d542a3c30134a37448406e413f0",
+          "size": 3612474
+        },
+        {
+          "path": "resources.log",
+          "sha256": "730e67631bf202a6952f324df2b5c540379b1579604478cbd75ca92607d97ae7",
+          "size": 3681834
+        },
+        {
+          "path": "result.json",
+          "sha256": "273480d565ef3675b92ca435c9bc35fcb8c31de0b188a1a6ad9af16a87a379c6",
+          "size": 3296
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "11117a9074a44059565b844f2de90cce5d39397ed2b2392dd38da474ce7839af",
+          "size": 2973810
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\managed-agent-owned-v2-diagnostic-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "compiled-classes.json",
+          "sha256": "0b8efeb8a7201867d4b5b503fb92adb2d385a0cfacfad2f18e91d2331ea4d4ec",
+          "size": 525550
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v5-contract.json",
+          "sha256": "b7f74da279a11c8f6a8f0f8d4ff700d97a9b98abfff991f4a9c489df2426684e",
+          "size": 1081
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "ebdb4cc013c84e513b06b9558982c209ffd001e5f82fdd6cb8a3be6f707fae30",
+          "size": 5547639
+        },
+        {
+          "path": "import-journal.json",
+          "sha256": "8547c73ce4b4ed428234312512308eeafa96120be2168326a9b8dfdd5093304c",
+          "size": 987
+        },
+        {
+          "path": "installed-client-identity.json",
+          "sha256": "a4c568904984e889f722575510296f33f7450d1705bac51122a8ef009c25e4d7",
+          "size": 3955
+        },
+        {
+          "path": "java-version.txt",
+          "sha256": "c09b3f6e7993628681d0f0e0fdfa12ccbfef6d7798ad260ec13807486db8b267",
+          "size": 208
+        },
+        {
+          "path": "launcher-source.py",
+          "sha256": "1ff1cefdd39a448cf8786dca45f914aa9c2975e813aa94e8ebebd3e3e998fc71",
+          "size": 33294
+        },
+        {
+          "path": "owned-agent-broker.log",
+          "sha256": "f4d7b09eb6d045c5a34e76115a7395f461ac368266c295390046ca6ab98374bb",
+          "size": 854
+        },
+        {
+          "path": "python-freeze.txt",
+          "sha256": "8a9311956d6e5451e00b93f2140c4a6bb1c186973f95fdaee1a0ee2ff8842afe",
+          "size": 1703
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "b4266025a491e02fc2699568dac8565ab4410bbd9f0a483eaba3af0c2ce82bcc",
+          "size": 3648505
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "824f9f90e7d0073cf94512606bf9a849249b330396325d8da89455a466703446",
+          "size": 2703753
+        },
+        {
+          "path": "resources-reindexed.log",
+          "sha256": "d529a534f15da97056712768da2ba3290e8e06fdbc8b5a9b1d7af14f906a95b0",
+          "size": 3613414
+        },
+        {
+          "path": "resources.log",
+          "sha256": "324ec5105137cc9e6107444d5dc94e58ed8851c466ce9c9f3ea971d27abba362",
+          "size": 3683502
+        },
+        {
+          "path": "result.json",
+          "sha256": "5f5ca7bde103403d386177e19e4ec09edf2365ebb52b39163ecd5f07f9c10e1a",
+          "size": 3296
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "669bd381426ea2d40d2a6effe7146cedd67724abb803fa3797775029ed1b565c",
+          "size": 2974128
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\managed-agent-owned-v3-versioned-source-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "compiled-classes.json",
+          "sha256": "0b8efeb8a7201867d4b5b503fb92adb2d385a0cfacfad2f18e91d2331ea4d4ec",
+          "size": 525550
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v5-contract.json",
+          "sha256": "b7f74da279a11c8f6a8f0f8d4ff700d97a9b98abfff991f4a9c489df2426684e",
+          "size": 1081
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "754e67bbdecf70792307d69047025136ba3b66d44fc60a2a013d4e1b7a14f3b9",
+          "size": 5552701
+        },
+        {
+          "path": "import-journal.json",
+          "sha256": "8547c73ce4b4ed428234312512308eeafa96120be2168326a9b8dfdd5093304c",
+          "size": 987
+        },
+        {
+          "path": "installed-client-identity.json",
+          "sha256": "a4c568904984e889f722575510296f33f7450d1705bac51122a8ef009c25e4d7",
+          "size": 3955
+        },
+        {
+          "path": "java-version.txt",
+          "sha256": "c09b3f6e7993628681d0f0e0fdfa12ccbfef6d7798ad260ec13807486db8b267",
+          "size": 208
+        },
+        {
+          "path": "launcher-source.py",
+          "sha256": "701c2a161a86fc65af6c1625fd7d229c591ba8e64db49f468c6155186f07128e",
+          "size": 33331
+        },
+        {
+          "path": "owned-agent-broker.log",
+          "sha256": "922a71554db49b8c6d10834f240fb1074b8350cb1387c9a6716679ec46da76db",
+          "size": 854
+        },
+        {
+          "path": "python-freeze.txt",
+          "sha256": "8a9311956d6e5451e00b93f2140c4a6bb1c186973f95fdaee1a0ee2ff8842afe",
+          "size": 1703
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "4cb9b8078e9146ea14a9a28e78924b84e7de2d347c94cab0c3f90dd6109fa27f",
+          "size": 3650837
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "20d83ff491dd1dd23d1c13f1a0a14a782cf33bd7bbd254510e8c82be7b0731cd",
+          "size": 2704087
+        },
+        {
+          "path": "resources-reindexed.log",
+          "sha256": "4b35f0574cfd425a7c4ddc9c9f4194e86cc29a407cc354479a985ebe1e896716",
+          "size": 3659017
+        },
+        {
+          "path": "resources.log",
+          "sha256": "705f20c11c4f5561d4d84b5c6d4ef4280fc4a36534522481565b3e1c889ae9d3",
+          "size": 3681966
+        },
+        {
+          "path": "result.json",
+          "sha256": "5745be385ce74a2a08b250e1eaa05ac7a60d6d5baed901a4f42c958c51b7893d",
+          "size": 3293
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "c2d8ca14c75cc10b7c943b0b728299f7cb37b8ba796e61ed14c9f00472609a17",
+          "size": 2972035
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\managed-agent-owned-v4-console-source-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "compiled-classes.json",
+          "sha256": "0b8efeb8a7201867d4b5b503fb92adb2d385a0cfacfad2f18e91d2331ea4d4ec",
+          "size": 525550
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v5-contract.json",
+          "sha256": "b7f74da279a11c8f6a8f0f8d4ff700d97a9b98abfff991f4a9c489df2426684e",
+          "size": 1081
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "8554d519466310b0fa9decb242c8cc668f63450dc62ebaad810d02ab139d84ca",
+          "size": 5552471
+        },
+        {
+          "path": "import-journal.json",
+          "sha256": "8547c73ce4b4ed428234312512308eeafa96120be2168326a9b8dfdd5093304c",
+          "size": 987
+        },
+        {
+          "path": "installed-client-identity.json",
+          "sha256": "a4c568904984e889f722575510296f33f7450d1705bac51122a8ef009c25e4d7",
+          "size": 3955
+        },
+        {
+          "path": "java-version.txt",
+          "sha256": "c09b3f6e7993628681d0f0e0fdfa12ccbfef6d7798ad260ec13807486db8b267",
+          "size": 208
+        },
+        {
+          "path": "launcher-source.py",
+          "sha256": "e736dadb3cd7555d4aecb1dbfe6b6ceb480658fc1b08c398825e618baf51fe6f",
+          "size": 33409
+        },
+        {
+          "path": "owned-agent-broker.log",
+          "sha256": "cd1cfb7ddb2b6dda665b3ac1da6c644d4f709293180e779e29f0e9adb5b708c1",
+          "size": 854
+        },
+        {
+          "path": "python-freeze.txt",
+          "sha256": "8a9311956d6e5451e00b93f2140c4a6bb1c186973f95fdaee1a0ee2ff8842afe",
+          "size": 1703
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "64fae373b50339a7676b9285124692115feac6a0f339d2d57d4db9302f834105",
+          "size": 3650393
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "f8a37716d75829ca967732a5903bc131c3e36a7c85e4baaac9292cdb27fa2840",
+          "size": 2704644
+        },
+        {
+          "path": "resources-reindexed.log",
+          "sha256": "756ff5a40ddddd5e3478aa2fb8dec73c81965150ee48f6c55fb7d211a463c0bd",
+          "size": 3660612
+        },
+        {
+          "path": "resources.log",
+          "sha256": "da18ce51c2ba8b9547dbbd772cb2b28c0e08d9ac67b67c432ecc8f6e7d6d419e",
+          "size": 3682832
+        },
+        {
+          "path": "result.json",
+          "sha256": "b09ba2e1d60625276d4708df1d6f58309e80964dca7b54086ceb347466c8f7e8",
+          "size": 3382
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "9f99a88e91f0355a269f8c4e8dfec6a2709516e70d88619ed971fe8e758054ba",
+          "size": 3171256
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\merged-pr-retirement-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "post-worktrees.txt",
+          "sha256": "e4548c9e009040f52c4885ecb6ea1c085802e45d97d99db3e89fbc2bccab0c85",
+          "size": 2563
+        },
+        {
+          "path": "retirement-plan.json",
+          "sha256": "9aca812e4ae97d708a826a6cf51d0a0f19b55238da71d05bda7405eb745c9f70",
+          "size": 18279
+        },
+        {
+          "path": "retirement-results.json",
+          "sha256": "880d7c64c58bb6d840ceb640336912e5bf3906713a4060b9057b6f819d90782f",
+          "size": 2986
+        },
+        {
+          "path": "verified-worktrees.txt",
+          "sha256": "58d3437221ac956e438e4ce027f6ab13e112db9ea6eb59f790be37b83ff58ade",
+          "size": 2567
+        },
+        {
+          "path": "worktree-04-files.json",
+          "sha256": "8cf1ec178dc02814e8888fb1e91a234b7ec051a1a3240edac5e7630739f7f6f6",
+          "size": 426192
+        },
+        {
+          "path": "worktree-07-files.json",
+          "sha256": "1b7274f9a1e40ef2f4af2140c7a26874953ec1faba12e4510de92e42accf320d",
+          "size": 46742
+        },
+        {
+          "path": "worktree-09-files.json",
+          "sha256": "30da22d4624a4966a420b2d35a195c798422007cd6222e524795f5d1a95a313c",
+          "size": 47920
+        },
+        {
+          "path": "worktree-10-files.json",
+          "sha256": "03bdba0e40347466952a12ce439f1ce52dd5d91643178779b721e6a75de4ca9b",
+          "size": 47636
+        },
+        {
+          "path": "worktree-12-files.json",
+          "sha256": "5a442becf52ee9f4b70f1682a0516bc3964a2562c95287c98a125853c2b1e3ae",
+          "size": 453505
+        },
+        {
+          "path": "worktree-15-files.json",
+          "sha256": "1483bf9511adbcb27d697ddd1fe5e1603b070566ce128899826098ef7eb10317",
+          "size": 632990
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\owned-agent-stack-build-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "37a6993c783c2d98424b97f51eb6ecb562ecca10670ab445169d457fee4c8b9c",
+          "size": 3625
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "a3ef7be15aff0903b8e0569e6073e37495242539fa9e4a37b83f21c3fc41be02",
+          "size": 13142
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "16603872b8961a2f070b16f18d6016e8d3f4226cae545c7feaa24c0e3cf7d8ed",
+          "size": 763
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "e7894b194376514a8e0ac852877b1c9691063b365a67e4040b1461f54195665e",
+          "size": 167492
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\receipt-cache-corrected-reactor-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "report-sha256.json",
+          "sha256": "8e27f47ea306c7c372a5ae056e38b19c2d521a0db5d41b0086a240fab16858e8",
+          "size": 9261
+        },
+        {
+          "path": "run.json",
+          "sha256": "5446f634e19b03e5fac548210243d026dc50701ec9c82f20df1149ffe89235be",
+          "size": 2535
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "6b5313ee793aed1b91e9de170bdd91a5428ce58e5d67fa4d0f39eed04dd02979",
+          "size": 27450
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "4469417ac136f03db61bbb1cc71ecb4c80160346db92fe34d8c83cbcb3948738",
+          "size": 1238
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "a811b9786691895d14bf457f57d66b59e003e9aea80b5566b26e8c6254d094cc",
+          "size": 18127
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "9417dcaa995411e7a48f58b6c2752d54aeb5523290d9079aec9b714badcc66e3",
+          "size": 266966
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\receipt-clean-develop-head-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "135582e5f5c75b3a60ce42bf9f74a6d1f4b6c0008e26210183d2f4bbb1816d2a",
+          "size": 2148
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "027a0416623b1e9dd1316fbe2161c736adc5042131cdf06cc9f44eaed92dd13b",
+          "size": 14381
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "65d60587c4991672d3908eb091c6f2e195e0ebf335140445daf73eb756e96bbe",
+          "size": 259312
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\receipt-current-candidate-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "efab00ff7e678ecd77f44d10a3943234e2a7bde28e2176da57c5bcab8d263f5d",
+          "size": 2544
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "2074160e88fc532fe3a77d0846eb3f4c3f25017e8ef5ffaaf7b91830597d8be7",
+          "size": 12353
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "6404db196983ec483ad0c1eb5ab7c5a812db857741b36b528dbe1111c1cbf755",
+          "size": 762
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "2e1ba96642fef010149c0b78aac402c80786c375af46876dd894182037da86fc",
+          "size": 3220
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\receipt-current-candidate-retry-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "93e8595dced88162bc22ce9c7ca5e845c0d853a6facc3d35e10223f5c40a58cf",
+          "size": 2535
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "2074160e88fc532fe3a77d0846eb3f4c3f25017e8ef5ffaaf7b91830597d8be7",
+          "size": 12353
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "6404db196983ec483ad0c1eb5ab7c5a812db857741b36b528dbe1111c1cbf755",
+          "size": 762
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "d02e7d4f0129379d3f0c4c1a964c2ee7e4c49fbfaa4be5c66a2c495420374201",
+          "size": 18127
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "76c819bc20f7522ef5424f718e87cfd67d2186e25a93a46056d358cd19de477c",
+          "size": 266967
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\receipt-final-focused-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "8030c720f9df618602d9e13ea83a8d242ffdca73be77bccae30283a7283ec9cc",
+          "size": 2179
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "6b5313ee793aed1b91e9de170bdd91a5428ce58e5d67fa4d0f39eed04dd02979",
+          "size": 27450
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "8d0fecb18a87328eac3b53a6a39ac178198840c801d33ad5edc6eaab7716276b",
+          "size": 1352
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "91ce87d61de1178af617b6fe39a6277adaeccf3204c1b81f0e3576117ac4be58",
+          "size": 11077
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "71a88e890cc3c8cbbaf2f177cd716ac36066d78a27da4da8969a2f25f9f44966",
+          "size": 242458
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\receipt-hosted-selection-local-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "2c12731984306fb9f0e88eda4a6e35665667cc4f6e94b2f2f50e573bd566383c",
+          "size": 1563
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "91ce87d61de1178af617b6fe39a6277adaeccf3204c1b81f0e3576117ac4be58",
+          "size": 11077
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "c98e460c095f51e0afa047a5b5958ab72682bd9007041e81d2550dcd8a4dc1ee",
+          "size": 245662
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\receipt-strengthened-candidate-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "6f440d4f11a577b46a1a4fed4c20d8dd872f7f2cc31ce0e74f4b5ab1f83a765c",
+          "size": 2535
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "7b48b3b63ea97b9eec9405563b1821d238de4c7d703a95ce3f62ca16580ebabe",
+          "size": 17490
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "48a709880ab689f2b051f44ab038876a924dcada8d6646da8123e35480f067fe",
+          "size": 1028
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "cecb240406c880f0e1ebbc68c0a65c0a63f39a5efd0a45deaebc4270b1f3c634",
+          "size": 18127
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "77239384c1a308b77891edeefb0442c801e2ff533b91cb126fd8a257592bf71c",
+          "size": 265845
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\receipt-transport-diagnosis-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "bd2ca3cc60661eb3742e48a0328197cb0c46867532335f1faaeae2af0e984a2d",
+          "size": 1774
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "f11da4ca311e3b2f74582b0aaecc0e99af27ac63d43c298fb0fce21eec8d7b4e",
+          "size": 24111
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "54abd1ed48eef730fbd8e13ed45cdea777474b40d651e1774ca681dc59eff218",
+          "size": 1187
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "3f270a110e4f817d48a12bb3f95cd51097d31d35cbcca47a7ec4a7b87dfdac58",
+          "size": 66102
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\receipt-transport-reactor-diagnosis-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "85c2b24bb2aa20948ff7fba3846e39b9d50da1f566c18c8b1fefc664704100ff",
+          "size": 1834
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "d0f3ee671589980c3adebca46a5fed625c42c14fe9eeaecb3ddf2261ec74eea6",
+          "size": 23825
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "54abd1ed48eef730fbd8e13ed45cdea777474b40d651e1774ca681dc59eff218",
+          "size": 1187
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "901c45a46bc06fdade182fcbda0908c6ca17ab78c6f80d6d8f910b268e76f59f",
+          "size": 903
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "e8ad36af5dbd79c78b6cd817bcf779148c1f68834e9d41c807d5457d77d87308",
+          "size": 258302
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\resume-ci-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "41872452813.log",
+          "sha256": "d5d6fa58106ef078e9dffb3eccebeb2a82d16d628fabf4adc6d060cabf562e10",
+          "size": 7249
+        },
+        {
+          "path": "41872452964.log",
+          "sha256": "6d9979ef5172ac1b2d75bfa8afdd4cd8f1e7bf1b88cb26efbdb089fcc06da74c",
+          "size": 5520
+        },
+        {
+          "path": "41872453052.log",
+          "sha256": "3563ee7945da6921ae3fc3ed284754a953e166e1a6ccb8d9959d495e097f7b26",
+          "size": 4655
+        },
+        {
+          "path": "41872453144.log",
+          "sha256": "22412adbd46ca21205d22dae1981c0630ca557b385334c25d63f991ac696977e",
+          "size": 537837
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\worktree-retirement-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "long-path-reconciliation.json",
+          "sha256": "cbfc0214a9dc52321c9df18c91593e38e8478945fb0dd331c31f9b56cd2a3c6f",
+          "size": 2454
+        },
+        {
+          "path": "post-worktrees.txt",
+          "sha256": "d46c20f8a3babadd5fd23150cfb001270754aebad8b8dec0143cd6891b64b231",
+          "size": 3488
+        },
+        {
+          "path": "reconciled-worktrees.txt",
+          "sha256": "3477d5906ffd22dc47196bbcd10a6869e19de561b7ed10ba04c600c04ee75a93",
+          "size": 3492
+        },
+        {
+          "path": "retirement-plan.json",
+          "sha256": "bcfaa604f376d89a477965a6a1c0967af008d0c913fddfa121949857ef04247e",
+          "size": 99860
+        },
+        {
+          "path": "retirement-results.json",
+          "sha256": "4ee874cc80bc808c41afa6f93128bc869f1e872fa3e9714eb1e6b81257020e14",
+          "size": 22008
+        },
+        {
+          "path": "verified-final-worktrees.txt",
+          "sha256": "45f36405031ad53550ccd136c1cb706cef3a9334d195072e3e8fc0e8145fd309",
+          "size": 3492
+        },
+        {
+          "path": "worktree-01-files.json",
+          "sha256": "a352f8b535ee20cff4db7c10d65179bdcdfa74088c95f95b5699e53925206de0",
+          "size": 10795
+        },
+        {
+          "path": "worktree-02-files.json",
+          "sha256": "0f4fc960c0c0afd2fbc698eb145dfc560379f30e0bf58eecea82c01d07ce0ea1",
+          "size": 2798120
+        },
+        {
+          "path": "worktree-03-files.json",
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "size": 2
+        },
+        {
+          "path": "worktree-04-files.json",
+          "sha256": "badbb7c7275daae8d036c460b3f9d6c8459e98c5416d3cb1d86d169c4e0b8a65",
+          "size": 2850191
+        },
+        {
+          "path": "worktree-05-files.json",
+          "sha256": "9e69539cd20d3fd047c5398a8f0804fddeeaddb7e32bf6e4ded63ea8f9cfff40",
+          "size": 1009841
+        },
+        {
+          "path": "worktree-06-files.json",
+          "sha256": "5dd506b0ea8fc5cdad59fc02337e1f7e91c52def515dadcf07452a162d7558e6",
+          "size": 1252983
+        },
+        {
+          "path": "worktree-07-files.json",
+          "sha256": "f298d692724c09c12abe06954c21b825ba85fd5cc7a43682e5e4d1ba65a54eba",
+          "size": 2705693
+        },
+        {
+          "path": "worktree-08-files.json",
+          "sha256": "a5e4816c232ab8bf69b9443539aa506c7142bb9070531c420cabdf089fdbb595",
+          "size": 31917
+        },
+        {
+          "path": "worktree-09-files.json",
+          "sha256": "27048ac47fa17e2563d164f7faffbda4844fba207d7590b3490e1578b0305c4e",
+          "size": 30987
+        },
+        {
+          "path": "worktree-10-files.json",
+          "sha256": "07c77b84b4e1d08acc63ee22d1f5933f4bfd1509839f775b5b546f3dc632dcd5",
+          "size": 31242
+        },
+        {
+          "path": "worktree-11-files.json",
+          "sha256": "da6945868736724af1dcf755b5240ae89a177d02c7c09412bf8c9956235993d2",
+          "size": 1078015
+        },
+        {
+          "path": "worktree-12-files.json",
+          "sha256": "50bda3ff1dec6c91357c8fd7122c88e4b2d9811bbf324f069bed2bd797f05f27",
+          "size": 30967
+        },
+        {
+          "path": "worktree-13-files.json",
+          "sha256": "12099d0ad59c816d59e307f1fc8895010ab706af68a10c702c09a9a8c0d719c8",
+          "size": 26700
+        },
+        {
+          "path": "worktree-14-files.json",
+          "sha256": "4cc7738243968bcbe9854587f943520a1c565b3b7454f78bd40b90d5ecb39070",
+          "size": 33300
+        },
+        {
+          "path": "worktree-15-files.json",
+          "sha256": "be2a8ac845602673878928790bf5b0718ee62c1533901b0f68809b139278d109",
+          "size": 34058
+        },
+        {
+          "path": "worktree-17-files.json",
+          "sha256": "b8a607681338fa36f9b5cb15c205995bef785ed4ad5175e07d2b6a9cfd763cef",
+          "size": 766767
+        },
+        {
+          "path": "worktree-18-files.json",
+          "sha256": "92e5c9f76d25d11e287334257a2cfd229259c65834a9b2139485f5e75a30bd62",
+          "size": 667631
+        },
+        {
+          "path": "worktree-19-files.json",
+          "sha256": "161813c580bbbbd99abb7a7ad275783518d7f588a82f87788aa6e5847d792f2e",
+          "size": 29445
+        },
+        {
+          "path": "worktree-22-files.json",
+          "sha256": "8af939c19cc5ccc42791a3635e7f3c1fb6e99379b3f3edce2afae4b324cf13ce",
+          "size": 12515
+        },
+        {
+          "path": "worktree-29-files.json",
+          "sha256": "0e2ccb29b8bf641fd2298a920f62aa76694bc99b57a29e5c22622c3c5186f390",
+          "size": 36799
+        },
+        {
+          "path": "worktree-30-files.json",
+          "sha256": "22b710c614895361d218728be5c18f6beb99eabcd2d90a3cc3ed258ce007c717",
+          "size": 412208
+        },
+        {
+          "path": "worktree-31-files.json",
+          "sha256": "ddf8e8a9080ac71aa3cef544c5a01e5e07688766c4d2fc404eeed5490a8fd467",
+          "size": 460225
+        },
+        {
+          "path": "worktree-34-files.json",
+          "sha256": "ece2a96b32305d2dff0d31bea7a6b0bb2d6193be401f850b7f6ebcdf3d43ae41",
+          "size": 39329
+        },
+        {
+          "path": "worktree-36-files.json",
+          "sha256": "696f37bf6d853e3e504f6d1048d68a9dce0d3d61a052d54e164c95906cb9b0ec",
+          "size": 1518220
+        },
+        {
+          "path": "worktree-39-files.json",
+          "sha256": "f0f0d99ffda1f6016d80325d06ac84037618ec2935abd4f8886f1e24b1216011",
+          "size": 2654428
+        },
+        {
+          "path": "worktree-40-files.json",
+          "sha256": "92d07a2b0f8885e29826ef955ed07441cb8bd6b0f7fba874ec6e80f6178965f8",
+          "size": 894315
+        },
+        {
+          "path": "worktree-41-files.json",
+          "sha256": "fb0eda4b4e8e778e1975a6dc4935cf74e3961f356fa247a2476610ee362073f9",
+          "size": 2441283
+        },
+        {
+          "path": "worktree-43-files.json",
+          "sha256": "cf4b8fad2cbb61a248bf72e59028efb64aa9c2c836bcfc95625a75c6d0bcb537",
+          "size": 930292
+        },
+        {
+          "path": "worktree-44-files.json",
+          "sha256": "e4666c66d1eab1e52238a89b1d914a22fcd18200258e745e69e3684c34117199",
+          "size": 2994403
+        },
+        {
+          "path": "worktree-45-files.json",
+          "sha256": "dfc19f9666dc0434abd01746f6ab6633be4f18d63391b0f346e8f75a52c21c51",
+          "size": 993696
+        },
+        {
+          "path": "worktree-47-files.json",
+          "sha256": "3f2fff9e60b733c2706fad12efa84546bfe6ab478ba71224f27d689122c7921e",
+          "size": 893675
+        },
+        {
+          "path": "worktree-48-files.json",
+          "sha256": "7d6204f6a5be73c95ee217420de7e06c05791c763cc7dc4a5a0d0c90e47a1ef8",
+          "size": 812759
+        },
+        {
+          "path": "worktree-49-files.json",
+          "sha256": "3b6d4cfb0df3af3aa1c384f56bc8d0376d72f44745403bd786f0d0a65ecde07a",
+          "size": 694442
+        },
+        {
+          "path": "worktree-50-files.json",
+          "sha256": "5877f612d44e53f28f2a8c56243c0c3c2480a3e9cf881da745f0c9efb66f681c",
+          "size": 632379
+        },
+        {
+          "path": "worktree-51-files.json",
+          "sha256": "a09511b076c5a4927f3e5598d727e03ea960b73ae97ca58fc7598b3515073dbb",
+          "size": 613779
+        },
+        {
+          "path": "worktree-53-files.json",
+          "sha256": "0487f399877ea5e816bd45ae6e2472644a6f5c730a3c1dbd74ffbfd06470fe94",
+          "size": 2364323
+        },
+        {
+          "path": "worktree-54-files.json",
+          "sha256": "bf8c30be44e695e7192b869ab57a902f285bef436360dba1694fc993bcf0f562",
+          "size": 16166
+        },
+        {
+          "path": "worktree-55-files.json",
+          "sha256": "8cc889b7de88b7df6a94784f686ef631817cb8387dce00ee6f343aa5321057e8",
+          "size": 31356
+        },
+        {
+          "path": "worktree-57-files.json",
+          "sha256": "611febc2c0ac6ab7095976f7bee36d23a43a546c1a2bf14d2ba7bd0bc8037616",
+          "size": 48681
+        },
+        {
+          "path": "worktree-59-files.json",
+          "sha256": "99f7025e86dac0a099bbb5b545c385738565eaacc643b2a89de29bdc821a194b",
+          "size": 2302202
+        },
+        {
+          "path": "worktree-60-files.json",
+          "sha256": "21665e639ba980e773ca00e8b96e2b0d7b3da49cb0f0b5f8c019e6f763b10c00",
+          "size": 41809
+        },
+        {
+          "path": "worktree-61-files.json",
+          "sha256": "9d667ddcc0d45fe49034758b25e426b0745370bd2185ecbffa1613cd43af9738",
+          "size": 2307171
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\existing-pr-refresh-20261104\\pr-138-wheel-accepted-broker-base\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "61377291542f2c8565d4c8fc01bdab98fc70936889708e172cbd8b5f375794be",
+          "size": 1419
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "648a8b4ecae3890c558642a51bcf5abb58ef9deb47c88634368bc16a94aa47fa",
+          "size": 264
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-cleanup-verification-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "component-worktrees.txt",
+          "sha256": "c7a61ef920875eb856b0072a47a262a3bddc3349b691f2ae49a866518d590833",
+          "size": 338
+        },
+        {
+          "path": "connectivity-check.json",
+          "sha256": "4c664ca9cf2121009e0adb41033addf6798d894bee8f4affffffa4fd8e5ca197",
+          "size": 219
+        },
+        {
+          "path": "preserved-archive-refs.txt",
+          "sha256": "a308d5ddfc80a3f35e5c8183587d5152bd9e6c7f508585f654f4525e047455d3",
+          "size": 900
+        },
+        {
+          "path": "result.json",
+          "sha256": "40c1532cbbc55315003dd367bf044b74a220b82797ac4900b60bde9fa0254614",
+          "size": 340
+        },
+        {
+          "path": "retained-java-identities.json",
+          "sha256": "17d90117012f2fd8d9f5c3ff1d17ad2e308cac94b0006a752d1d2f008b3462b8",
+          "size": 657
+        },
+        {
+          "path": "services-worktrees.txt",
+          "sha256": "b67c40ee13c13082cd68c5c60f2491513c018c1164d75a46795fc31e8df23bfd",
+          "size": 1684
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-combined-installed-python-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "preflight-failure.json",
+          "sha256": "3da8a476b4f7f9a59748e7310d404f7b96600b9f12f318cd11845b42f828ef83",
+          "size": 1437
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-combined-installed-python-source-matched-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "freeze.txt",
+          "sha256": "8a9311956d6e5451e00b93f2140c4a6bb1c186973f95fdaee1a0ee2ff8842afe",
+          "size": 1703
+        },
+        {
+          "path": "installed-source-identity.json",
+          "sha256": "a4c568904984e889f722575510296f33f7450d1705bac51122a8ef009c25e4d7",
+          "size": 3955
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-combined-installed-python-source-matched-20261104\\tests",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "db9b7458817dbc038eda7ef60956b6374614a700a50f8447c225c0c4bef3d082",
+          "size": 3667
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "c48cd456fffbea8fc6e4eb5f180ce95e24b607274aebbf131b08aa984f016645",
+          "size": 405153
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "2639246dd2a03b37224238321bbc4cdf00ee1685e64288a9950964793ddc3a06",
+          "size": 1112
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "7a3e9d82e497d33d7a9f61d8ff4b21db55484afa2bd9b2581851bfed7ad1c501",
+          "size": 3817
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-combined-selected-java-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "9939d73d93cbc46d2679f6d69473c94681c31ecd4e72d11130374ceae6c91546",
+          "size": 4586
+        },
+        {
+          "path": "selected-report-manifest.json",
+          "sha256": "d77cf7cbd710781249f4e039c1023055591e7eb77c5b37ecc29e995e533d6330",
+          "size": 4125
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "c48cd456fffbea8fc6e4eb5f180ce95e24b607274aebbf131b08aa984f016645",
+          "size": 405153
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "2639246dd2a03b37224238321bbc4cdf00ee1685e64288a9950964793ddc3a06",
+          "size": 1112
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "35b6c6ee7b6962aed69742c6800ac68094c9d02cd411bfcde861187a25f8333b",
+          "size": 18127
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "32b7a90af14b70b7ec210be2a8b5553c8af09ed58585e5b5ebb26ef040f851c8",
+          "size": 267832
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-merged-pr-retirement-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "post-worktrees.txt",
+          "sha256": "f4ec2b1c5c80310795d7538d14a3263a2005cea745bb3f8c5efe85aa513f4181",
+          "size": 1680
+        },
+        {
+          "path": "retirement-plan.json",
+          "sha256": "7779fb9aec4b0a2083aae29b919ec50138e8354e83ea179eb73b70ec542114f5",
+          "size": 11935
+        },
+        {
+          "path": "retirement-results.json",
+          "sha256": "0c883e668f87a40a3c5059afe9e77f784fb58d8a5ec07bc1ce3ada666db35675",
+          "size": 1462
+        },
+        {
+          "path": "worktree-02-files.json",
+          "sha256": "45a147d95c3a36f5adb77ac3f10a5e51cdd41c6505414b43d4044f65848db651",
+          "size": 674962
+        },
+        {
+          "path": "worktree-09-files.json",
+          "sha256": "3fd8c556379a58cf600db12db250e51498e0c75db90c028d0ebfbd08afeca86d",
+          "size": 1137476
+        },
+        {
+          "path": "worktree-13-files.json",
+          "sha256": "3781695555677ba5eaede286704b3df689f33480286fbb99a92f003a2c125610",
+          "size": 1109369
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-services-resolved-dependencies-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "artifact-manifest.json",
+          "sha256": "90c7f7640093fd8fc1edda45e38ae91e3bc038218713017b324d568640a5c32c",
+          "size": 404375
+        },
+        {
+          "path": "run.json",
+          "sha256": "1f354f541298ae4fd14cef4b757cee4afe91815cbdfe30af0de00552b8143bdd",
+          "size": 4002
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "c48cd456fffbea8fc6e4eb5f180ce95e24b607274aebbf131b08aa984f016645",
+          "size": 405153
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "2639246dd2a03b37224238321bbc4cdf00ee1685e64288a9950964793ddc3a06",
+          "size": 1112
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "5427141d6dddf228939e7f596b3d4f8e17b66f4e9bdce9266e97f5e93684ef5a",
+          "size": 131269
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-source-reconciliation-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "external-blocker.json",
+          "sha256": "d05264051507e7c599ba9c31394ed94483e5b3d5498db0472492044ec9b920fa",
+          "size": 657
+        },
+        {
+          "path": "reconciliation.json",
+          "sha256": "ae880eb59be8c7e6ea5a74a2bde785d5ea2d5785441cac5a1a166a6a1d154872",
+          "size": 3109
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\live-ledger-20261104T185138Z",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "github-current.json",
+          "sha256": "37d87d1aa48cd48dab8ed821d62255f58fc1d9743eacdd6b8be98deb25950afb",
+          "size": 84155
+        },
+        {
+          "path": "pr-ledger.json",
+          "sha256": "1d209989b45401b27192438c3b78bc20825e48e720db2ec5a72e25bbcccc551b",
+          "size": 291068
+        },
+        {
+          "path": "progress-ledger.json",
+          "sha256": "b2fa98fbae23507400abe2e972eb80e9baa09f0d674f1c2aa39a6d73997471cf",
+          "size": 9955
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\live-ledger-20261104T185639Z",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "github-current.json",
+          "sha256": "174278e7ab6a19ff2e2d7eb52425e6a86f057aa760691b21bc6addcd1ee39d21",
+          "size": 78465
+        },
+        {
+          "path": "pr-ledger.json",
+          "sha256": "066c01dd945bb9750d0ff24cdf7dfca9f25f8a5c7f820b3b19e22acee8561eb4",
+          "size": 291158
+        },
+        {
+          "path": "progress-ledger.json",
+          "sha256": "c77dd6aeeaadbb10f5967bbb7476099429f44b003cb17a31426daa497943f68a",
+          "size": 10791
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\live-ledger-20261104T185925Z",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "github-current.json",
+          "sha256": "174278e7ab6a19ff2e2d7eb52425e6a86f057aa760691b21bc6addcd1ee39d21",
+          "size": 78465
+        },
+        {
+          "path": "pr-ledger.json",
+          "sha256": "3e5b6386fb9fa1b5848955c1be5e2b093bdb034062ffadc2c9db5649ed0c07c0",
+          "size": 279178
+        },
+        {
+          "path": "progress-ledger.json",
+          "sha256": "7e083e323a8c53ce1fd59188b0e6c3c24895caef74da1473474d84f0b3f3522b",
+          "size": 10765
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\managed-agent-owned-v5-bounded-read-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "actual-loaded-identity.json",
+          "sha256": "2c2f0597ce31ec84258ab3037ebad37815feca19b386be9abd1465f3c35e5046",
+          "size": 1486069
+        },
+        {
+          "path": "authority.log",
+          "sha256": "d9d71241e6dc90dea313734110cb645f17aef2363d19800c7fc55c9ecc928124",
+          "size": 77
+        },
+        {
+          "path": "compiled-classes.json",
+          "sha256": "0b8efeb8a7201867d4b5b503fb92adb2d385a0cfacfad2f18e91d2331ea4d4ec",
+          "size": 525550
+        },
+        {
+          "path": "connection-profile.json",
+          "sha256": "f2a72b5d4bb39e5a9337e6891545a8a0bcb2e91d3093b7feda12d796c4dfa112",
+          "size": 1236
+        },
+        {
+          "path": "fixture-v5-contract.json",
+          "sha256": "b7f74da279a11c8f6a8f0f8d4ff700d97a9b98abfff991f4a9c489df2426684e",
+          "size": 1081
+        },
+        {
+          "path": "graphdb.log",
+          "sha256": "bfbc5141601d4a42f0f3494e56097da6584277eb329f08ee046bd121ab521b19",
+          "size": 5714344
+        },
+        {
+          "path": "import-journal.json",
+          "sha256": "8547c73ce4b4ed428234312512308eeafa96120be2168326a9b8dfdd5093304c",
+          "size": 987
+        },
+        {
+          "path": "installed-client-identity.json",
+          "sha256": "a4c568904984e889f722575510296f33f7450d1705bac51122a8ef009c25e4d7",
+          "size": 3955
+        },
+        {
+          "path": "java-version.txt",
+          "sha256": "c09b3f6e7993628681d0f0e0fdfa12ccbfef6d7798ad260ec13807486db8b267",
+          "size": 208
+        },
+        {
+          "path": "launcher-source.py",
+          "sha256": "40561f2c0a7611b26f1fcbd347417eda7bd7d2c04cc4d3120fe2691b0dafe240",
+          "size": 33433
+        },
+        {
+          "path": "owned-agent-broker.log",
+          "sha256": "1cf2b36be0186f2fc3d2a1b39558789ee770194d3a38f4d56005702dee91296e",
+          "size": 854
+        },
+        {
+          "path": "python-freeze.txt",
+          "sha256": "8a9311956d6e5451e00b93f2140c4a6bb1c186973f95fdaee1a0ee2ff8842afe",
+          "size": 1703
+        },
+        {
+          "path": "reasoner.log",
+          "sha256": "80fc2aa9a54f14decca1d20de4a3c3e4fd5abc652e06ee8670cd5e62595f97bb",
+          "size": 3701064
+        },
+        {
+          "path": "resolver.log",
+          "sha256": "992cafe01beaf16a57dfe1fc4c3d8d0f53611895323d088f49ed67ea32a4d821",
+          "size": 2890434
+        },
+        {
+          "path": "resources-reindexed.log",
+          "sha256": "f7992d19e59eef10f5cc6b27b1facb141b4b2b5b0763bd74028409d1b84c47fe",
+          "size": 3682928
+        },
+        {
+          "path": "resources.log",
+          "sha256": "35a5fce3ce80a12d50f03e3b5583bcc9b514d5d222326fe8df46bfe1fad5694a",
+          "size": 3683644
+        },
+        {
+          "path": "result.json",
+          "sha256": "4427c062377316029700fbf871a2211f365df752f3362945012221053bdc49ae",
+          "size": 9067
+        },
+        {
+          "path": "runtime.log",
+          "sha256": "964967287e75ff510d79473060c533620a85152890d4fb8ed9ae125d05259568",
+          "size": 3620896
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\merged-pr-remaining-retirement-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "post-worktrees.txt",
+          "sha256": "86db13fb798852dbaa4f2c19dc5741de0c6c9cbf4065d63724f60d4718cbf909",
+          "size": 2189
+        },
+        {
+          "path": "retirement-plan.json",
+          "sha256": "659a721bf21dda663593a23136445efec25f04eeec9e4bef545991b4ee26d1ee",
+          "size": 13510
+        },
+        {
+          "path": "retirement-results.json",
+          "sha256": "4fbd209512b3bf43f92b7439db0874285ba512306e25927b641f1b2e8338da6f",
+          "size": 1020
+        },
+        {
+          "path": "worktree-03-files.json",
+          "sha256": "3645324f785e412669f4bb3ef4bc80b9be82c9ed8583ecbf4740be7017bf51f9",
+          "size": 20184
+        },
+        {
+          "path": "worktree-06-files.json",
+          "sha256": "f15fea83f598e1af0bc9e1e3792bfb9fb949d28b756b5097752a4132d4b3dc74",
+          "size": 20006
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\merged-pr-retirement-coverage-20261104",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "relocation.json",
+          "sha256": "d5ad07d46e161fd7a1c44aa11eb1bfe52b24523a5a6703e8fc8dcd62f54154e4",
+          "size": 867
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-tooling-validation-20261104\\lint",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "659b99a0164ca5739aa46b03fe3b70c00b51ac65695b8181849d9b63ef0d6a3f",
+          "size": 3802
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "04e7975d1f436489e849ce63ef1ac9b763928789b671f5760dde81c730f5d90d",
+          "size": 433670
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "dca48cbffec7f9fd02c9e924e4756da0d2fbb39bc257f8e29cc6cccb4a3513cb",
+          "size": 1375
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+          "size": 19
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
+    },
+    {
+      "path": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\final-tooling-validation-20261104\\unit",
+      "kind": "private_archive",
+      "files": [
+        {
+          "path": "run.json",
+          "sha256": "b2c95af5773da985a935e27b3a055b37556b07f08c8cb13764a18d1afaa1d512",
+          "size": 3886
+        },
+        {
+          "path": "source-diff.patch",
+          "sha256": "04e7975d1f436489e849ce63ef1ac9b763928789b671f5760dde81c730f5d90d",
+          "size": 433670
+        },
+        {
+          "path": "source-status.txt",
+          "sha256": "dca48cbffec7f9fd02c9e924e4756da0d2fbb39bc257f8e29cc6cccb4a3513cb",
+          "size": 1375
+        },
+        {
+          "path": "stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        {
+          "path": "stdout.log",
+          "sha256": "f515bf2716e167dc7f9c364196229ae0a941fb932b12a703cda276ba0444b8f1",
+          "size": 100
+        }
+      ],
+      "indexed_at_utc": "2026-11-04T19:04:34.189131+00:00",
+      "final_closeout": true
     }
-  ]
+  ],
+  "reconciliation": "FINAL_INCOMPLETE_EXTERNAL_COMPONENT_MERGE; original entries retained, no original failure waived"
 }

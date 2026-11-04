@@ -1,5 +1,40 @@
 # Integrated acceptance — INCOMPLETE checkpoint
 
+## Final execution reconciliation (supersedes status, not historical failures below)
+
+All original PRs#133–#141 are merged, including #138 at
+`87ef80ff589428f7c088ba60abcb7cf2b88276eb`. Prerequisites#191/#192/#194/#195
+also merged normally after applicable checks. Current consolidated product source
+at `4757e33d93a3d758df4d9392359d9f6d0b928c2a` matches accepted delivery for
+the scientific Java/Python/host dependency scope. `final-source-reconciliation-20261104`
+records exact compared paths and equivalence to the final test and successful
+managed/science candidates. Later documentation commits are not retrospectively
+claimed as tested code revisions.
+
+- **225 selected Java tests**, zero failures/errors/skips, including H2GIS host
+  initialization and explicit local broker configuration regressions.
+- **2,772 offline Python tests**, one retained Rasterio warning, from the noneditable
+  wheel whose complete42-module byte/hash inventory exactly matches this checkout.
+  A first final-check attempt used the sequential PR wheel and rejected three
+  byte mismatches before tests: Git product content was equal but Windows line
+  endings differed. No result was accepted from that mismatched inventory. The
+  immutable original combined environment matches exactly and passed the rerun.
+- Real Java123.25m/20 valid cells, actual grid support, partial provenance,
+  independent-client restoration, scope/listing/process/listener cleanup pass.
+- Genuine deferred managed Runtime behavior reports READY/RUNNING/STOPPED using
+  an owned private broker, not a fake peer. Publication remains UNCONFIRMED;
+  remote-agent cleanup and durable-root proof remain UNKNOWN.
+- Actual flattened HM0.12 component/host GT34.4/H2GIS probes and new-stack science
+  pass. Component#11 is ready but upstream merge is blocked by account permission.
+
+See `SCIENTIFIC_ACCEPTANCE.md`, `MANAGED_AGENT_ACCEPTANCE.md`, `DEPENDENCY_MANIFEST.md`
+and `PR_LEDGER.md`. Original frozen ODO/large-worldview incompatibility remains
+visible in issue#193; no original assertion or negative test was waived. The
+whole milestone is **not COMPLETE** until component#11 is merged/approved superseded
+and the final closeout reconciles that external action.
+
+## Historical checkpoint evidence
+
 ## Exact identities
 
 - Intended delivery base: `feature/python-experiment-runner`,

@@ -1,10 +1,44 @@
 # Worktree inventory
 
+## Latest verified retirement pass
+
+Final census: **11 services worktrees / 2 component worktrees**. Across four
+verified passes, **53 retired directories are absent**, all39 observed original
+branch refs are retained, and recovery archives are verified. Two `.coverage`
+files were relocated intact with recorded hashes before their merged worktrees
+were retired. The last #138, host-H2 and broker-prerequisite checkouts are now
+retired too; the six/16-checkout paragraph below describes an intermediate pass.
+Final evidence: `.consolidation-evidence/final-cleanup-verification-20261104/`.
+
+The retained services paths are the main `klab-services`, active `klab-consolidation`,
+and nine preservation checkouts: `pr90-combined-java-20261031`,
+`python-client-closeout-20261031`, `python-events-20261102`,
+`python-roadmap-public-recipe-20261103`, `python-upstream-integration-20261103`,
+`research-roadmap-publication-20261101`, `selection-submission-fixtures-20261103`,
+`klab-python-develop-integration`, `klab-python-federation-integration`.
+Their unpublished/dirty recovery purposes below remain valid; none is an obsolete
+open-PR checkout. Component retains original exporter work and the ready PR11
+proposal pending upstream permission. No forced deletion or branch cleanup used.
+
+After the original42-path retirement, six newly obsolete merged-PR checkouts were
+archived, recovery-verified and normally removed: agent-status, fixture-copy-order,
+job-binding, roadmap-map, source-previews and roadmap-handoffs. All six directories
+are verified absent, their branch refs retained. Services worktree count is now
+**16**, component count2. Raw evidence and the fresh census are under
+`.consolidation-evidence/merged-pr-retirement-20261104/`.
+The two merged agent-control/graph-projection checkouts retain untracked `.coverage`
+evidence and were deliberately not removed by the clean-only tool. The receipt
+and backend checkouts were reused for focused host-H2/broker corrections, not
+removed while active. The historical22-checkout table below records prior purposes,
+not a claim that all22 still exist. No user dirty work or branch was discarded.
+
 Baseline: 62 services worktrees (61 pre-existing plus this new consolidation checkout).
 A separate geospatial repository has one worktree and is not included in that count.
 
-All paths are retained. UNKNOWN is deliberate: ignored outputs, locks, evidence and purpose still require inspection.
-No path is yet SAFE_TO_RETIRE. A verified bundle does not by itself authorize removal.
+The following table is the **historical baseline**, not the current inventory.
+The resume pass normally retired 42 obsolete registrations; current services
+count is 22 including the new focused receipt-PR and backend-prerequisite checkouts. Nine long-path leftover
+directories were separately reconciled byte-by-byte; all 42 paths are now absent.
 
 | Worktree | HEAD | Initial class | Unpublished count | Preservation ref |
 |---|---|---|---|---|
@@ -74,5 +108,53 @@ No path is yet SAFE_TO_RETIRE. A verified bundle does not by itself authorize re
 Private archive: `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-consolidation-preservation-20261104`.
 Archive contains per-worktree status, staged/unstaged binary patches and nonignored untracked regular files.
 Ignored artifacts are enumerated, not all copied. Unique raw scientific reports must still be rescued before retirement.
-Known uncommitted receipt repairs remain in the upstream-integration and selection-submission worktrees; not imported.
+Known uncommitted receipt repairs remain preserved in the upstream-integration and selection-submission worktrees.
+The selected-input repair was subsequently imported, reviewed, strengthened and tested separately in services PR #191.
 Baseline processes showed no Java/Python workload. Recheck processes and locks immediately before any removal.
+
+## Resume retirement and retained purposes
+
+`C:/Users/lumsd/Downloads/k1/.consolidation-evidence/worktree-retirement-20261104/`
+contains the immutable dry-run plan, per-file ignored-byte manifests, gzip tar
+archives, archive-recovery verification and normal Git removal results. No branches
+were deleted. The prior mirror-restored bundle and archive refs remain available.
+`retirement-results.json` records 33 complete directory removals and 9 Windows
+long-path failures **after Git had unregistered them**. The latter are not lost
+worktrees: their committed tips and all ignored bytes are preserved. Follow-up
+`long-path-reconciliation.json` records individually verified remaining-file removal.
+Final checks confirm all 42 candidate paths absent and every original branch ref
+retained. The earlier chat estimate of 32 complete/10 long-path was a counting
+error; the machine records establish 33/9, with the same total of 42.
+Never interpret the Git registration count as proof that leftover directories vanished.
+
+All 22 current services worktrees have these purposes (basenames resolve through
+the exact historical table above; the new checkout is under `Downloads/k1/`):
+
+| Retained checkout | Purpose |
+|---|---|
+| `klab-services` | Main repository; detached unpublished work, never a retirement target |
+| `pr90-combined-java-20261031` | Preserved unpublished seven-commit Java integration |
+| `python-agent-amqp-20261103` | Open PR #138 focused review |
+| `python-agent-control-20261103` | Open PR #135 focused review |
+| `python-agent-status-20261103` | Open PR #134 focused review |
+| `python-client-closeout-20261031` | Preserved unpublished three-commit closeout |
+| `python-events-20261102` | Dirty event-contract work, preserved for review |
+| `python-fixture-copy-order-20261103` | Open PR #140 focused review |
+| `python-graph-projection-20261103` | Open PR #136 focused review |
+| `python-job-binding-20261103` | Open PR #139 focused review |
+| `python-roadmap-map-20261103` | Open PR #137 focused review |
+| `python-roadmap-public-recipe-20261103` | Preserved unpublished public-recipe work |
+| `python-source-previews-20261103` | Open PR #141 focused review |
+| `python-upstream-integration-20261103` | Dirty distinct collective-selection repair; retained, not overwritten |
+| `research-roadmap-publication-20261101` | Preserved unpublished publication commit |
+| `roadmap-handoffs-20261103` | Open PR #133 focused review |
+| `selection-submission-fixtures-20261103` | Original dirty receipt repair and tests; kept unchanged as recovery evidence |
+| `klab-consolidation` | Active combined milestone checkout |
+| `klab-python-develop-integration` | Preserved unpublished integration tip |
+| `klab-python-federation-integration` | Preserved unpublished federation integration tip |
+| `klab-receipt-closeout` | New clean develop-based receipt fix, services PR #191; actual-base test source |
+| `klab-backend-closeout` | New clean delivery-based backend prerequisite, services PR #192; actual-base Java and installed-wheel test source |
+
+The component repository separately retains its original exporter checkout and
+`klab-geospatial-dependency-closeout`, the upstream-main-based dependency proposal
+in component PR #11. No closed exporter PR was reopened or silently integrated.

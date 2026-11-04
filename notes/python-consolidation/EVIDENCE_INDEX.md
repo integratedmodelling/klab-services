@@ -1,61 +1,89 @@
 # Evidence index
 
-Checkpoint recorded 2026-11-04T16:38:36.686943+00:00. **MILESTONE_INCOMPLETE**.
+Reconciled 2026-11-04T19:04:34.189131+00:00. **Milestone incomplete**.
 
-Raw logs, settings, process details and recoverable bundles remain local. Do not publish them without redaction.
-All listed files have SHA256 entries in `evidence-index.json`; run records include exact commands, revisions, dirty digests and times.
+Raw service logs, private arguments, signed identities and recovery archives remain local; no raw credentials are published.
+Machine-readable SHA256/size records are in `evidence-index.json`. Earlier failures and baseline entries remain retained.
 
-## Navigation
+## Current navigation
 
-- `PR_LEDGER.md` / `pr-ledger.json`: live baseline, PR DAG, merge ancestry, focused wheel checks and unresolved reviews.
-- `ISSUE_ACCEPTANCE_MAP.md`: current issues, historical oracles and acceptance boundaries.
-- `DEPENDENCY_MANIFEST.md`: compatibility findings; raw lock-like manifests listed below.
-- `WORKTREE_INVENTORY.md`: every services worktree and preserved unpublished tips.
-- `INTEGRATION_REVIEW.md`, `COMPOSITION_REVIEW.md`, `PR140_REVIEW.md`: review scope and limitations.
-- `INTEGRATED_ACCEPTANCE.md`: exact candidate checks, not a combined PASS.
-- `progress-ledger.json`: authoritative milestone state.
+- `PR_LEDGER.md` / `pr-ledger.json`: live verified GitHub state and preserved original baseline.
+- `SCIENTIFIC_ACCEPTANCE.md`: installed-client real Java numerical/provenance/restoration/cleanup results and limits.
+- `DEPENDENCY_MANIFEST.md`: flattened component identity, packaged HM/host probes and unresolved upstream adoption.
+- `PR_CONTRIBUTOR_REVIEWS.md` / `RECEIPT_REPAIR_REVIEW.md`: author-agent scoped reviews, not maintainer approvals.
+- `WORKTREE_INVENTORY.md`: original42 plus subsequent6 retirement evidence, retained purposes and current count.
+- `progress-ledger.json` / `CLOSEOUT_SUMMARY.md`: verified reconciliation and exact remaining external action.
 
-## Private local archives
+## Newly consolidated private evidence directories
 
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-compile-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-python-offline-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-targeted-java-20261104` — 63 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-wheel-20261104` — 3 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-wheel-build-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-wheel-install-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-wire-java-20261104` — 32 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-dependencies-before-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-dependencies-before-retry-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-dependency-tree-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-effective-before-20261104.xml` — SHA256 `88bccaa1831c9629ce3179778e1293043f62a83532326537773c97b9ae65ca26`
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-hm012-resolver-probe-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-packaged-before-20261104.json` — SHA256 `d890da0fd2dd004e6c71f3ecb8d6694fe91762026cb5c1cfc8bb07d2c1f97edc`
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-packaged-expanded-20261104.json` — SHA256 `23f86ffcb14c3cb3eef71d42b3025168f0c03c4348a49ed25b0e88e2f2fdb47e`
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-consolidation-baseline-20261104` — 564 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-consolidation-live-recheck-20261104` — 6 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-consolidation-preservation-20261104` — 197 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-consolidation-scientific-evidence-20261104` — 832 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-delivery-effective-before-20261104.xml` — SHA256 `2517a073215bba694dcc0b646bfba6f2855e9dc82cc3490570225fbfa8381698`
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-dependencies-delivery-before-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-dependencies-delivery-before-retry-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-dependency-artifacts-before-20261104.json` — SHA256 `799278198d48529340c70dc9176acc6eaf5949b1ec1e4349c67a3c2e6fa89b4a`
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-dependency-tree-delivery-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-effective-component-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-effective-delivery-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-effective-settings-private-20261104.xml` — SHA256 `f64e22fe7488e791a014ccfc563a21a8262d3a44c5a4401838536d1d7ea9f688`
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-final-state-20261104` — 4 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-language-artifacts-20261104.json` — SHA256 `b668ce2fc50979f377127d16a5ca584d22126fdb4933178ff5dec9016f566e7d`
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-notes-validation-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr-installed-wheel-gates-20261104` — 64 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr133-focused-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr134-focused-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr135-focused-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr136-focused-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr137-focused-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr138-focused-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr139-focused-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr140-focused-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr140-focused-readyenv-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-pr141-focused-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-profiles-settings-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-toolchain-settings-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\backend-installed-python-20261104` — 3 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\backend-installed-python-20261104\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\backend-prerequisite-clean-candidate-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\coverage-current-cached-scope-runtime-origin-20261104` — 8 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\coverage-current-native-reconnect-parent-20261104` — 8 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\coverage-current-semantic-generation-restoration-20261104` — 12 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104` — 56 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-133-wheel-isolated-build\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-134-wheel-isolated-build\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-135-wheel-isolated-build\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-136-wheel-isolated-build\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-137-wheel-isolated-build\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-138-wheel-isolated-build\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-139-wheel-isolated-build\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-140-wheel-isolated-build\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-141-wheel-isolated-build\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\h2gis-host-candidate-reactor-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\h2gis-host-new-regression-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\hm012-component-package-20261104` — 7 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\hm012-component-resolved-after-package-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\hm012-h2gis-owned-stack-build-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\hm012-h2gis-probe-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\hm012-h2gis-probe-20261104\resolve` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\hm012-packaged-host-probes-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\hm012-proposal-exact-resolver-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\hm012-upstream-main-focused-update-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-broker-configuration-reactor-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-science-stack-hm012-h2gis-20261104` — 17 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-science-stack-v4-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-science-stack-v4-explicit-ports-20261104` — 9 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-science-stack-v4-ready-20261104` — 7 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-science-stack-v5-full-evidence-20261104` — 17 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-science-stack-v5-minimal-20261104` — 11 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-science-stack-v5-typed-length-20261104` — 11 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-stack-compiled-classpaths-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\isolated-stack-real-webui-build-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\live-ledger-20261104T184259Z` — 3 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\managed-agent-owned-v1-20261104` — 17 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\managed-agent-owned-v2-diagnostic-20261104` — 17 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\managed-agent-owned-v3-versioned-source-20261104` — 17 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\managed-agent-owned-v4-console-source-20261104` — 17 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\merged-pr-retirement-20261104` — 10 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\owned-agent-stack-build-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\receipt-cache-corrected-reactor-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\receipt-clean-develop-head-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\receipt-current-candidate-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\receipt-current-candidate-retry-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\receipt-final-focused-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\receipt-hosted-selection-local-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\receipt-strengthened-candidate-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\receipt-transport-diagnosis-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\receipt-transport-reactor-diagnosis-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\resume-ci-20261104` — 4 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\worktree-retirement-20261104` — 48 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\existing-pr-refresh-20261104\pr-138-wheel-accepted-broker-base\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-cleanup-verification-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-combined-installed-python-20261104` — 1 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-combined-installed-python-source-matched-20261104` — 2 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-combined-installed-python-source-matched-20261104\tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-combined-selected-java-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-merged-pr-retirement-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-services-resolved-dependencies-20261104` — 6 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-source-reconciliation-20261104` — 2 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\live-ledger-20261104T185138Z` — 3 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\live-ledger-20261104T185639Z` — 3 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\live-ledger-20261104T185925Z` — 3 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\managed-agent-owned-v5-bounded-read-20261104` — 18 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\merged-pr-remaining-retirement-20261104` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\merged-pr-retirement-coverage-20261104` — 1 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-tooling-validation-20261104\lint` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-tooling-validation-20261104\unit` — 5 indexed files
