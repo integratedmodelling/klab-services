@@ -1,17 +1,24 @@
-# Consequence engine status — 3 November 2026
+# Consequence engine status — 4 November 2026
 
 This is a publication checkpoint, not a claim that the complete consequence engine has
 passed a production suite. The implementation contract is in [CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md).
 No new general resolver-reuse policy, named-event generation or termination semantics is included.
 
 The [admission follow-up audit](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md) records five additional
-findings and a staged repair plan. Its controlled probes and failing baseline are separate from
-the historical acceptance results below; the audit does not implement the proposed repairs.
+findings and a staged repair plan. Its 4 November repair checkpoint records local fixes for A1–A5
+and their verification boundary. The original failing baseline and the new controlled regression
+results are separate from the historical live acceptance results below; no fresh deployment or
+live acceptance is implied.
 
 ## Verified results
 
 | Scenario | Evidence and boundary |
 | --- | --- |
+| Read-only trigger inspection and lazy discovery | Follow-up live run used the previous IDE: compiler 139.6s, 116 semantic calls taking 125.1s, Elevation filtering 55.5s. Exact candidate cores now avoid generalized-head expansion; generalized and subtype candidates retain it. Prefilter inspection now uses a graph-level read session, avoiding both context-write construction and the guarded input API's rejection of actuator/data IDs. Unattributed storage changes remain unknown. Isolated reactor **95/95**, zero failures/errors/skips, including inspection while another transaction holds the context/input locks. Slow actor, cycle-admission and submission-preparation timings added. Fixed-IDE end-to-end comparison remains unverified |
+| Native relevance and semantic transport follow-up | User verified live Erosion SIMULATION and correct suppression of CHANGE for its affected Elevation. Native-header filters now skip UNCERTAINTY without changed qualities and CHANGE for new-substantial-only triggers, with journal-only quality updates and unknown evidence preserved. Pure semantic/capabilities RPCs omit unused native perspective; codec mapper reuse preserves detached values. Superseded configuration capture reports DEFERRED. Isolated reactor **100/100**, zero failures/errors/skips, including native read-set validation. Remaining end-to-end latency improvement requires rebuilt live verification; query/attempt logs now include semantic RPC counts/time |
+| Temporal activation and resolution latency follow-up | 4 November live `testregion`: approximately 100 seconds resolution, then a five-minute observer callback timeout before SIMULATION. Post-commit activation now releases the graph monitor; cycle observers remain fixed and scope-free semantic calls avoid graph callbacks. Supplier discovery has a ten-second total deadline and attempt-local failure retention. Requested-core lookup is shared per catalog query; slow queries log phase timings. Byte-identical isolated reactor **100/100**, zero failures/errors/skips. Rebuilt live scheduling and wall-clock improvement remain to be verified |
+| Resources supplier boundary | ContextScope's committed Runtime/Resolver retain graph and admission ownership; Resources supplies authenticated captured sources without graph callbacks. Concept-only requests need no namespace/project. Final byte-identical isolated reactor **170/170**, no failures/errors/skips; legacy remote source listing verified read-only, no deployment or scientific live rerun |
+| Admission audit A1–A5 repairs | 4 November local Maven **150/150**, no failures/errors/skips; CHANGE relevance and scientific completion, real transaction allocation/native encoding, receipt restoration and cleanup, nested cancellation/drain, admission and collective-input compatibility. Prepared recomputation **23/23**. No new live/deployed acceptance; exact command and remaining gaps are in the admission audit |
 | Process birth → intrinsic role → implied quality | Actual Runtime acceptance21:8/8, recursive cycle drain and next explicit request; optional characterization reaches genuine NO_MODEL and the role remains |
 | Dependent configuration birth and recomputation | Actual acceptance30:20/20, real explanatory execution, changed input, same configuration ID, atomic second revision, current modeled time and immutable earlier history; raw wrapper FAILED on a stale log association; correct Runtime-log corroboration and focused association regressions are retained, without claiming a fresh full harness rerun |
 | Modeled cessation and COUNT | Controlled real compiled/native path: current COUNT1→0, prior INIT1 unchanged, actual membership callback APPLIED and next cycle drain; controlled Reasoner/model admission collaborators, not live semantic services |

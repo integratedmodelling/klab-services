@@ -457,7 +457,53 @@ public class ResourcesMerger implements ResourcesService {
             && infoClass == ResourceSet.class
             && scope instanceof ContextScope context
             && context.getResolutionCycleBinding() != null;
-    return collect(service -> service.query(query, assetClass, infoClass, scope), frozenModels);
+    if (frozenModels) return (List<T>) candidateQueries(query, assetClass, infoClass, scope);
+    return collect(service -> service.query(query, assetClass, infoClass, scope), false);
+  }
+
+  private List<ResourceSet> candidateQueries(Parameters<String> query,
+      KlabAsset.KnowledgeClass assetClass, Class<?> infoClass, UserScope scope) {
+    var diagnostics = new ArrayList<Notification>();
+    List<ResourcesService> suppliers;
+    try { suppliers = services(true); }
+    catch (RuntimeException unavailable) {
+      suppliers = services(false);
+      diagnostics.add(candidateUnavailable("advertised supplier list"));
+    }
+    if (suppliers.isEmpty()) diagnostics.add(candidateUnavailable("no Resources supplier"));
+    var session = org.integratedmodelling.common.knowledge.ModelCandidateSources.currentSession();
+    var responses = suppliers.stream().map(service -> CompletableFuture.supplyAsync(() ->
+        org.integratedmodelling.common.knowledge.ModelCandidateSources.inSession(session, () -> {
+      try {
+        var supplied = service.query(query, assetClass, ResourceSet.class, scope);
+        if (supplied == null) throw new IllegalStateException("Missing supplier response");
+        var captured = new ArrayList<ResourceSet>();
+        for (var result : supplied) {
+          if (result == null || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(result.getNotifications()))
+            throw new IllegalStateException("Supplier catalog is unavailable");
+          // Detach response state before any admission, ranking or concurrent provider updates.
+          captured.add(org.integratedmodelling.common.utils.Utils.Json.parseObject(
+              org.integratedmodelling.common.utils.Utils.Json.asString(result), ResourceSet.class));
+        }
+        return List.copyOf(captured);
+      } catch (RuntimeException unavailable) {
+        String identity;
+        try { identity = service.serviceId(); } catch (RuntimeException ignored) { identity = "unknown supplier"; }
+        if (unavailable instanceof org.integratedmodelling.common.utils.Utils.Http.Client.RequestFailure transport)
+          identity += transport.getStatus() > 0 ? " (HTTP " + transport.getStatus() + ")" : " (transport failure)";
+        return List.of(ResourceSet.empty(candidateUnavailable(identity)));
+      }
+    }))).toList();
+    CompletableFuture.allOf(responses.toArray(CompletableFuture[]::new)).join();
+    var result = new ArrayList<ResourceSet>();
+    responses.forEach(response -> result.addAll(response.join()));
+    for (var diagnostic : diagnostics) result.add(ResourceSet.empty(diagnostic));
+    return List.copyOf(result);
+  }
+
+  private static Notification candidateUnavailable(String provider) {
+    return Notification.warning(org.integratedmodelling.common.knowledge.ModelCandidateSources.INCOMPLETE
+        + ": " + provider + "; candidate discovery is incomplete");
   }
 
   @Override

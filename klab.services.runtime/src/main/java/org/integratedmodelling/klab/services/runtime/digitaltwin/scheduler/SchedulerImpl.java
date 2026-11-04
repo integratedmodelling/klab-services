@@ -550,12 +550,24 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
                     frozen.getResolutionCycle(), frozen.getResolutionCycleBinding())
                 .withCycleReasoner(
                     frozen.getService(org.integratedmodelling.klab.api.services.Reasoner.class));
-      var activity =
-          org.integratedmodelling.klab.api.provenance.Activity.of(
-              org.integratedmodelling.klab.api.provenance.Activity.Type.SIMULATION);
+      org.integratedmodelling.klab.api.provenance.Activity activation = null;
+      if (registration != null && registration.activationActivityId() > 0) {
+        activation = knowledgeGraph.getAsset(registration.activationActivityId(), original,
+            org.integratedmodelling.klab.api.provenance.Activity.class);
+        if (activation == null
+            || activation.getType() != org.integratedmodelling.klab.api.provenance.Activity.Type.INITIALIZATION
+            || !Objects.equals(activation.getObservationUrn(), observation.getUrn()))
+          throw new KlabIllegalStateException("Process activation provenance is unavailable");
+      }
+      var activity = org.integratedmodelling.klab.api.provenance.Activity.of(
+          org.integratedmodelling.klab.api.provenance.Activity.Type.SIMULATION, activation);
+      if (activation != null) activity.setParentId(activation.getId());
       org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(
           activity, original.getObserver());
-      var scope = original.executingFresh(activity, observation);
+      var scope = activation == null ? original.executingFresh(activity, observation)
+          : original.executingFresh(activity, observation, activation);
+      if (activation != null && original.getConsequenceCause() != null)
+        scope.getCurrentTransaction().link(activation, activity, GraphModel.Relationship.TRIGGERED);
       attempt = scope;
       if (original.getObserver() != null)
         scope
@@ -1326,6 +1338,8 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
     var transaction = scope.getCurrentTransaction();
     while (transaction.getParent() != null) transaction = transaction.getParent();
     final var root = transaction;
+    var activation = root instanceof DigitalTwinImpl.TransactionImpl owned
+        ? owned.processActivation(observation) : null;
     var schedules =
         plan.getOccurrenceSchedules().entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
@@ -1385,15 +1399,18 @@ public class SchedulerImpl implements Scheduler, AutoCloseable {
                       .bearerId();
           if (encodedProcess != null && bearerId <= 0)
             throw new KlabIllegalStateException("Process bearer has no durable identity");
+          if (activation != null && activation.getId() <= 0)
+            throw new KlabIllegalStateException("Process activation has no durable identity");
           var registration =
               new OccurrenceRegistration(
-                  1,
+                  activation == null ? 1 : 2,
                   id,
                   id,
                   plan.getExecutionRole(),
                   bearerId,
                   schedules,
-                  Utils.Json.asString(CompiledDataflow.portableOccurrencePlan(plan)));
+                  Utils.Json.asString(CompiledDataflow.portableOccurrencePlan(plan)),
+                  activation == null ? 0 : activation.getId());
           observation
               .getMetadata()
               .put(OccurrenceRegistration.METADATA_KEY, Utils.Json.asString(registration));

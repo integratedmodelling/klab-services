@@ -104,6 +104,9 @@ class TemporalProcessIntegrationTest {
       });
       org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.isolate(twin);
       for(var observation:observations.values())recordInitialSelection(observation);
+      doAnswer(call ->
+          creators.values().stream().flatMap(List::stream)
+              .filter(activity->activity.getId()==call.getArgument(0,Long.class)).findFirst().orElse(null)).when(graph).getAsset(anyLong(),any(),eq(Activity.class));
       when(graph.query(eq(Activity.class),any())).thenAnswer(call ->
           new org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<Activity>(
               org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery.AssetType.ACTIVITY));
@@ -290,6 +293,14 @@ class TemporalProcessIntegrationTest {
         doAnswer(failed->{failure=failed.getArgument(0,Throwable.class);tx.fail(failure);return null;}).when(fresh).fail(any(Throwable.class));
         return fresh;
       });
+      when(scope.executingFresh(any(Activity.class),any(Observation.class),any(Activity.class))).thenAnswer(call -> {
+        staged.clear();var fresh=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS);configureScope(fresh,user);
+        when(fresh.getObserver()).thenAnswer(ignored->scope.getObserver());
+        var tx=twin.new TransactionImpl(call.getArgument(0),fresh,RuntimeAsset.PROVENANCE_ASSET,call.getArgument(1,Observation.class),call.getArgument(2,Activity.class));
+        when(fresh.getCurrentTransaction()).thenReturn(tx);when(fresh.commit()).thenAnswer(ignored->tx.commit());
+        doAnswer(failed->{failure=failed.getArgument(0,Throwable.class);tx.fail(failure);return null;}).when(fresh).fail(any(Throwable.class));
+        return fresh;
+      });
       when(scope.executing(any(Activity.class),any(Observation.class))).thenAnswer(call -> {
         var child=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS);configureScope(child,user);
         when(child.getObserver()).thenAnswer(ignored->scope.getObserver());
@@ -329,6 +340,39 @@ class TemporalProcessIntegrationTest {
     void restart() { scheduler.close();stores.values().forEach(s->s.close(null));stores.clear();scheduler=new SchedulerImpl(root,twin); }
     long files() throws Exception { try(var paths=Files.list(directory)){return paths.count();} }
     public void close(){scheduler.close();stores.values().forEach(s->s.close(null));}
+  }
+
+  @Test void restoredRegistrationUsesDurableActivationForIndependentSimulationTransactions() throws Exception {
+    try(var f=new Fixture("elevation - 10")) {
+      var activation=Activity.of(Activity.Type.INITIALIZATION);
+      activation.setId(901);activation.setUrn("context.activation");
+      activation.setObservationUrn(f.process.getUrn());
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(activation,null);
+      f.creators.put(f.process.getId(),new ArrayList<>(List.of(activation)));
+      var old=Utils.Json.parseObject(f.process.getMetadata().get(OccurrenceRegistration.METADATA_KEY).toString(),OccurrenceRegistration.class);
+      f.process.getMetadata().put(OccurrenceRegistration.METADATA_KEY,Utils.Json.asString(
+          new OccurrenceRegistration(2,old.id(),old.planRevision(),old.role(),old.bearerId(),old.schedules(),old.plan(),901)));
+      f.restart();
+      assertTrue(f.scheduler.advanceTo(END),()->f.failureDescription());
+      assertEquals(12,f.journals.size());
+      assertEquals(12,f.activityParents.values().stream().flatMap(List::stream).filter(a->a.getId()==901).count());
+      assertEquals(12,f.activityParents.entrySet().stream().filter(e->e.getValue().contains(activation)).map(Map.Entry::getKey).distinct().count());
+      f.restart();assertTrue(f.scheduler.advanceTo(END));assertEquals(12,f.journals.size());
+    }
+  }
+
+  @Test void missingOrWrongProcessActivationCannotRunRestoredSchedule() throws Exception {
+    for(boolean foreign:List.of(false,true))try(var f=new Fixture("elevation - 10")) {
+      var activation=Activity.of(Activity.Type.INITIALIZATION);activation.setId(901);
+      activation.setObservationUrn("context.other");
+      org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(activation,null);
+      if(foreign) f.creators.put(f.process.getId(),new ArrayList<>(List.of(activation)));
+      var old=Utils.Json.parseObject(f.process.getMetadata().get(OccurrenceRegistration.METADATA_KEY).toString(),OccurrenceRegistration.class);
+      f.process.getMetadata().put(OccurrenceRegistration.METADATA_KEY,Utils.Json.asString(
+          new OccurrenceRegistration(2,old.id(),old.planRevision(),old.role(),old.bearerId(),old.schedules(),old.plan(),901)));
+      f.restart();assertFalse(f.scheduler.advanceTo(END));assertTrue(f.journals.isEmpty());
+      assertArrayEquals(new double[]{100,200,350},f.values(START));
+    }
   }
 
   @Test void registrationCommitAutomaticallyRunsMonthlyScalarTransitions() throws Exception {
@@ -643,6 +687,12 @@ class TemporalProcessIntegrationTest {
           assertTrue(selection.known());assertEquals(observer==null?0:observer.getId(),selection.observer()==null?0:selection.observer().getId());
           var initialization=f.creators.get(f.process.getId()).stream().filter(a->a.getType()==Activity.Type.INITIALIZATION).toList();
           assertEquals(1,initialization.size());assertFalse(initialization.getFirst().getType().isContextualization());
+          var registered=Utils.Json.parseObject(f.process.getMetadata().get(OccurrenceRegistration.METADATA_KEY).toString(),OccurrenceRegistration.class);
+          assertEquals(2,registered.version());
+          assertEquals(initialization.getFirst().getId(),registered.activationActivityId());
+          var simulations=f.activityParents.values().stream().flatMap(List::stream)
+              .filter(a->a.getId()==registered.activationActivityId()).count();
+          assertEquals(12,simulations);
           assertEquals(12,f.journals.size(),()->f.failureDescription());
           assertArrayEquals(new double[]{-20,80,230},f.values(END));
           assertArrayEquals(new double[]{100,200,350},f.values(START));

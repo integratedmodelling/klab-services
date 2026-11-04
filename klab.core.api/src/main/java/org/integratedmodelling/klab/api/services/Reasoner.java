@@ -20,6 +20,9 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
 /** The reasoner service collects all functionalities that use semantics in k.LAB. */
 public interface Reasoner extends KlabService {
+  /** Advisory scheduling signal only; never a semantic admission decision. */
+  String ACTIVE_SEMANTIC_CYCLES_METADATA = "semantic.activeCycles";
+
 
   default org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult
       beginSemanticCycleResult(

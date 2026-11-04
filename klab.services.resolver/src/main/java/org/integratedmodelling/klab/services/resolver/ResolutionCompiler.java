@@ -216,9 +216,15 @@ public class ResolutionCompiler {
 
   private int modelQueries;
   private int matchedModels;
+  private boolean discoveryIncomplete;
+  private final List<org.integratedmodelling.klab.api.services.runtime.Notification> discoveryNotifications = new ArrayList<>();
+  boolean isDiscoveryIncomplete() { return discoveryIncomplete; }
+  List<org.integratedmodelling.klab.api.services.runtime.Notification> discoveryNotifications() {
+    return List.copyOf(discoveryNotifications);
+  }
 
   boolean hasNoExplanatoryModel() {
-    return modelQueries > 0 && matchedModels == 0;
+    return !discoveryIncomplete && modelQueries > 0 && matchedModels == 0;
   }
 
   private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
@@ -237,9 +243,22 @@ public class ResolutionCompiler {
    * @return
    */
   public ResolutionGraph resolve(Observation observation, ContextScope scope) {
+    long started = System.nanoTime();
+    var semanticStart = org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics();
     try (var validation =
-        org.integratedmodelling.klab.runtime.language.ModelValidationGate.openSession()) {
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.openSession();
+        var candidates = org.integratedmodelling.common.knowledge.ModelCandidateSources.openSession()) {
       return resolveAttempt(observation, scope);
+    } finally {
+      long elapsed = System.nanoTime() - started;
+      if (elapsed >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1)) {
+        var semanticEnd = org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics();
+        org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+            "Resolution attempt timing: total=" + elapsed / 1_000_000 + "ms"
+                + ", semanticCalls=" + (semanticEnd.calls() - semanticStart.calls())
+                + ", semanticTime=" + (semanticEnd.elapsedNanos() - semanticStart.elapsedNanos()) / 1_000_000 + "ms"
+                + ", modelQueries=" + modelQueries);
+      }
     }
   }
 
@@ -1782,6 +1801,8 @@ public class ResolutionCompiler {
   public List<Model> queryModels(
       Observable observable, Concept contextObservable, ContextScope scope, Scale scale) {
 
+    long started = System.nanoTime();
+    var semanticStart = org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics();
     var prioritizer =
         new PrioritizerImpl(
             scope,
@@ -1813,15 +1834,36 @@ public class ResolutionCompiler {
                 scope)
             .stream()
             .reduce(ResourceSet.empty(), Utils.Resources::merge);
-    // FIXME the notifications from the resource set must end up in the resolution output
+    long discovered = System.nanoTime();
     var ret = new ArrayList<>(resolver.ingestResources(models, scope, Model.class, true));
+    long mapped = System.nanoTime();
+    int suppliedCount = ret.size();
     if (org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(
         models.getNotifications())) throw new KlabIllegalStateException("Model discovery failed");
+    discoveryNotifications.addAll(models.getNotifications());
+    discoveryIncomplete |= models.getNotifications().stream().anyMatch(n -> n.getMessage() != null
+        && n.getMessage().contains(org.integratedmodelling.common.knowledge.ModelCandidateSources.INCOMPLETE));
     modelQueries++;
+    // The provider supplies syntax, not semantic eligibility. Repeat the catalog's coarse core
+    // lookup with this workflow's retained Reasoner before preparing any contextualizers.
+    java.util.function.Predicate<Model> candidateCoreFilter = ret.stream().anyMatch(model ->
+        model.getMetadata() != null && model.getMetadata().containsKey(
+            org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE))
+        ? candidateCoreFilter(observable, scope) : model -> true;
+    ret.removeIf(model -> model.getMetadata() != null && model.getMetadata().containsKey(
+        org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE)
+        && (!candidateCoreFilter.test(model) || !candidateSpaceMatches(model, scale)));
     matchedModels += ret.size();
     // Catalog PREPARABLE results have no executable/ranking grant. Preserve the original
     // source snapshot while the existing Runtime path prepares components/resources under
     // its normal load policy, then require installed admission BEFORE semantic distance.
+    var selection = org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest.from(
+        Parameters.create("resolutionConstraints", scope.getResolutionConstraints()));
+    ret.removeIf(model -> model.getResolutionInfo() != null
+        && !selection.visible(model.getNamespace(), model.getProjectName(), model.getResolutionInfo().getScope(),
+            model.getResolutionInfo().isInScenario()));
+    long filtered = System.nanoTime();
+    int eligibleCount = ret.size();
     ret.removeIf(model -> !prepareCandidate(model, observable, scope));
     ret.removeIf(
         model -> {
@@ -1849,7 +1891,82 @@ public class ResolutionCompiler {
     }
     prioritizer.prepare(ret);
     ret.sort(prioritizer);
+    long finished = System.nanoTime();
+    var semanticEnd = org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics();
+    if (finished - started >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1))
+      org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+          "Model query timing for " + observable.getUrn()
+              + ": discovery=" + (discovered - started) / 1_000_000 + "ms"
+              + ", mapping=" + (mapped - discovered) / 1_000_000 + "ms"
+              + ", filtering=" + (filtered - mapped) / 1_000_000 + "ms"
+              + ", admission/ranking=" + (finished - filtered) / 1_000_000 + "ms"
+              + ", semanticCalls=" + (semanticEnd.calls() - semanticStart.calls())
+              + ", semanticTime=" + (semanticEnd.elapsedNanos() - semanticStart.elapsedNanos()) / 1_000_000 + "ms"
+              + ", candidates=" + suppliedCount + "/" + eligibleCount + "/" + ret.size());
     return ret;
+  }
+
+  static boolean candidateCoreMatches(Model model, Observable requested, ContextScope scope) {
+    return candidateCoreFilter(requested, scope).test(model);
+  }
+
+  static java.util.function.Predicate<Model> candidateCoreFilter(Observable requested, ContextScope scope) {
+    var reasoner = scope.getService(Reasoner.class);
+    var core = reasoner.coreObservable(requested);
+    if (core == null) return model -> false;
+    var heads = com.google.common.base.Suppliers.memoize(() -> reasoner.resolving(core).stream()
+        .map(Concept::getUrn).collect(java.util.stream.Collectors.toSet()));
+    var lexical = org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest.from(
+        Parameters.create("resolutionConstraints", scope.getResolutionConstraints()));
+    return model -> model.getObservables().stream().filter(Objects::nonNull)
+        .filter(output -> !output.is(SemanticType.SUBJECTIVE) || lexical.namespaces().contains(model.getNamespace()))
+        .anyMatch(output -> {
+      var candidate = reasoner.coreObservable(output);
+      if (candidate == null) return false;
+      if (Objects.equals(core.getUrn(), candidate.getUrn())) return true;
+      if (qualitySubstantialMismatch(core, candidate)) return false;
+      return heads.get().contains(candidate.getUrn());
+    });
+  }
+
+  /** Only reject the disjoint quality/substantial categories; unknown and subtype cases expand. */
+  private static boolean qualitySubstantialMismatch(Concept first, Concept second) {
+    if (first.getType() == null || first.getType().isEmpty()
+        || second.getType() == null || second.getType().isEmpty()) return false;
+    var a = SemanticType.fundamentalType(first.getType());
+    var b = SemanticType.fundamentalType(second.getType());
+    var substantial = java.util.EnumSet.of(SemanticType.SUBJECT, SemanticType.AGENT,
+        SemanticType.PROCESS, SemanticType.EVENT, SemanticType.RELATIONSHIP, SemanticType.CONFIGURATION);
+    return a == SemanticType.QUALITY && substantial.contains(b)
+        || b == SemanticType.QUALITY && substantial.contains(a);
+  }
+
+  /** Preserve the supplier catalog's conservative spatial prefilter in the owning workflow. */
+  static boolean candidateSpaceMatches(Model model, Scale requested) {
+    if (requested == null || requested.getSpace() == null) return true;
+    var space = requested.getSpace();
+    int rank = space.getRank();
+    if (rank < model.getMetadata().get(org.integratedmodelling.klab.api.data.Metadata.IM_MIN_SPATIAL_SCALE,
+            org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space.MIN_SCALE_RANK)
+        || rank > model.getMetadata().get(org.integratedmodelling.klab.api.data.Metadata.IM_MAX_SPATIAL_SCALE,
+            org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space.MAX_SCALE_RANK)) return false;
+    var source = org.integratedmodelling.common.knowledge.ModelCandidateSources.read(model);
+    if (source == null || space.getGeometricShape() == null || space.getGeometricShape().isEmpty()) return true;
+    var coverages = new ArrayList<Geometry>();
+    if (source.getCoverage() != null) coverages.add(source.getCoverage());
+    source.getStatements().stream().filter(org.integratedmodelling.klab.api.lang.kim.KimModel.class::isInstance)
+        .map(org.integratedmodelling.klab.api.lang.kim.KimModel.class::cast)
+        .filter(m -> model.getUrn().equals(m.getUrn()) && m.getCoverage() != null)
+        .forEach(m -> coverages.add(m.getCoverage()));
+    var envelope = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.promote(space.getGeometricShape())
+        .getStandardizedGeometry().getEnvelopeInternal();
+    for (var geometry : coverages) {
+      var provided = GeometryRepository.INSTANCE.scale(geometry).getSpace();
+      if (provided != null && provided.getGeometricShape() != null && !provided.getGeometricShape().isEmpty()
+          && !envelope.intersects(org.integratedmodelling.klab.runtime.scale.space.ShapeImpl
+              .promote(provided.getGeometricShape()).getStandardizedGeometry().getEnvelopeInternal())) return false;
+    }
+    return true;
   }
 
   /**

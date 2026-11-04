@@ -11,6 +11,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class CachedAuthorityTest {
+  @Test void restartRegeneratesMissingTemporaryDocumentationBeforeReturningCachedIdentity() throws Exception {
+    var provider = new Provider();
+    provider.document = directory.resolve("temporary/documentation/taxon.md");
+    var first = new CachedAuthority(provider, directory.resolve("cache"), true);
+    var firstId = first.configure(request());
+    first.resolveIdentity(firstId, "alias");
+    first.releaseConfiguration(firstId);
+    Files.delete(provider.document);
+    Files.delete(provider.document.getParent());
+
+    var restarted = new CachedAuthority(provider, directory.resolve("cache"), true);
+    var id = restarted.configure(request());
+    var identity = restarted.resolveIdentity(id, "alias", Authority.ResolutionMode.FULL_HIERARCHY);
+    assertEquals("A", identity.getId());
+    assertEquals("provider documentation", Files.readString(Path.of(identity.getDocumentation().get("text/markdown").toURI())));
+    assertEquals(2, provider.lookups, "missing documentation must trigger provider materialization");
+    restarted.resolveIdentity(id, "A");
+    assertEquals(2, provider.lookups, "restored documentation must keep canonical aliases cacheable");
+  }
   @Test void validIdentityWithOptionalDocumentationWarningsStillSurvivesProviderOutage() {
     var firstProvider = new Provider(); firstProvider.warnings = true;
     var first = new CachedAuthority(firstProvider, directory, true);
@@ -110,6 +129,7 @@ class CachedAuthorityTest {
   private static final class Provider implements Authority {
     int configurations, lookups, searches, matches, releases;
     boolean fail, diagnostics, warnings;
+    Path document;
     String codelistConfiguration;
     CachePolicy policy = new CachePolicy("1", 10, 10, 10);
     ConfigurationRequest request;
@@ -119,9 +139,15 @@ class CachedAuthorityTest {
     @Override public void releaseConfiguration(String id) { releases++; }
     private Identity identity(String id) {
       if (fail) throw new IllegalStateException("HTTP 429");
+      java.net.URL documentation = documentationUrl();
+      if (document != null) try {
+        Files.createDirectories(document.getParent());
+        Files.writeString(document, "provider documentation");
+        documentation = document.toUri().toURL();
+      } catch (java.io.IOException e) { throw new IllegalStateException(e); }
       var result = new CachedAuthority.StoredIdentity(id.equals("alias") ? "A" : id, "Concept", request.name(),
           request.rootIdentity(), List.of("Parent"), List.of(), "Description", "Label", 1, request.name()+":"+id,
-          Map.of("text/markdown", documentationUrl()));
+          Map.of("text/markdown", documentation));
       if (!diagnostics && !warnings) return result;
       return new Identity() {
         @Override public String getId() { return result.getId(); }

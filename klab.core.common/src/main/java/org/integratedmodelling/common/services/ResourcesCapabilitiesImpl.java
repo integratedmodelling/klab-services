@@ -17,6 +17,9 @@ public class ResourcesCapabilitiesImpl extends AbstractServiceCapabilities imple
     private List<String> workspaceNames = new ArrayList<>();
     private List<Notification> serviceNotifications = new ArrayList<>();
     private boolean semanticSearchCapable;
+    private int modelCandidateProtocol;
+    @Override public int getModelCandidateProtocol() { return modelCandidateProtocol; }
+    public void setModelCandidateProtocol(int version) { this.modelCandidateProtocol = version; }
 
     @Override
     public KlabService.Type getType() {

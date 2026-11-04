@@ -94,7 +94,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
         scope,
         (call, authorized) ->
             client
-                .withScope(authorized)
+                .withScope(SemanticCycleFacade.transportScope(call, authorized))
                 .postRequired(
                     ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE,
                     call,

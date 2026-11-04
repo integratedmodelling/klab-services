@@ -40,7 +40,7 @@ final class NamespaceModelIndex {
       boolean retryable,
       long attemptedAt,
       List<Notification> diagnostics,
-      String admission) {
+      String admission, int failures) {
     Attempt {
       diagnostics = List.copyOf(diagnostics);
     }
@@ -160,6 +160,14 @@ final class NamespaceModelIndex {
       Scope scope,
       long knowledgeRevision,
       long now) {
+    reconcile(namespaceSource, catalog, scope, knowledgeRevision, now, () -> false);
+  }
+
+  synchronized void reconcile(
+      java.util.function.Supplier<? extends Collection<KimNamespace>> namespaceSource,
+      ModelCatalog catalog, Scope scope, long knowledgeRevision, long now,
+      java.util.function.BooleanSupplier shouldYield) {
+    if (shouldYield.getAsBoolean()) return;
     var sources = List.copyOf(namespaceSource.get());
     var affected = new HashSet<>(attempts.keySet());
     sources.forEach(source -> affected.add(source.getUrn()));
@@ -176,23 +184,26 @@ final class NamespaceModelIndex {
                       attempt.retryable(),
                       attempt.attemptedAt(),
                       attempt.diagnostics(),
-                      null)));
+                      null, attempt.failures())));
       publication = Map.copyOf(pending);
       var semantic = ModelValidationGate.currentSemanticSnapshot(scope);
       if (semantic == null || semantic.revision() != knowledgeRevision)
         throw new ReconciliationChanged();
-      var present = new HashSet<String>();
       var fingerprints = new LinkedHashMap<String, Fingerprint>();
       var staged = new HashMap<>(attempts);
       for (var namespace : sources) {
+        if (fingerprints.put(namespace.getUrn(), fingerprint(namespace, semantic)) != null)
+          throw new ReconciliationChanged();
+      }
+      boolean yielded = false;
+      for (var namespace : sources) {
+        if (shouldYield.getAsBoolean()) { yielded = true; break; }
         String urn = namespace.getUrn();
-        if (!present.add(urn)) throw new ReconciliationChanged();
-        var fingerprint = fingerprint(namespace, semantic);
-        fingerprints.put(urn, fingerprint);
+        var fingerprint = fingerprints.get(urn);
         var previous = attempts.get(urn);
         if (previous != null
             && previous.fingerprint().equals(fingerprint)
-            && (!previous.retryable() || now - previous.attemptedAt() < retryDelay)) continue;
+            && (!previous.retryable() || now - previous.attemptedAt() < retryDelay(previous))) continue;
         boolean replacementStarted = false;
         try (var validation = ModelValidationGate.openPublicationSession(namespace, scope)) {
           if (!fingerprint.eligible())
@@ -232,7 +243,7 @@ final class NamespaceModelIndex {
           queryPublication = null; // Invalidate before any shared catalog/dictionary mutation.
           replacementStarted = true;
           catalog.replaceNamespace(namespace, scope);
-          staged.put(urn, new Attempt(fingerprint, false, now, List.of(), admission));
+          staged.put(urn, new Attempt(fingerprint, false, now, List.of(), admission, 0));
         } catch (ReconciliationChanged changed) {
           throw changed;
         } catch (RuntimeException rejected) {
@@ -245,19 +256,21 @@ final class NamespaceModelIndex {
             catalog.withholdNamespace(urn, scope);
           }
           boolean retryable =
-              !(rejected instanceof ModelValidationGate.AdmissionFailure failure)
-                  || failure.retryable();
+              fingerprint.eligible()
+                  && (!(rejected instanceof ModelValidationGate.AdmissionFailure failure)
+                      || failure.retryable());
           List<Notification> diagnostics =
               rejected instanceof ModelValidationGate.AdmissionFailure failure
                   ? failure.diagnostics()
                   : List.of(
                       Notification.error(
                           "Model namespace " + urn + " is withheld: " + rejected.getMessage()));
-          staged.put(urn, new Attempt(fingerprint, retryable, now, diagnostics, null));
+          staged.put(urn, new Attempt(fingerprint, retryable, now, diagnostics, null,
+              previous != null && previous.fingerprint().equals(fingerprint) ? previous.failures() + 1 : 1));
         }
       }
       for (String removed : new ArrayList<>(attempts.keySet()))
-        if (!present.contains(removed)) {
+        if (!fingerprints.containsKey(removed)) {
           queryPublication = null;
           catalog.withholdNamespace(removed, scope);
           staged.remove(removed);
@@ -276,6 +289,11 @@ final class NamespaceModelIndex {
       requireEpoch(semantic, scope);
       attempts.clear();
       attempts.putAll(staged);
+      if (yielded) {
+        // Retain completed work, but never present a partially reconciled catalog as complete.
+        queryPublication = null;
+        return;
+      }
       publication = Map.copyOf(staged);
       var view = queryPublication;
       if (view == null || !view.semantic().equals(semantic) || !view.sources().equals(fingerprints))
@@ -305,6 +323,12 @@ final class NamespaceModelIndex {
       }
       throw changed;
     }
+  }
+
+  private long retryDelay(Attempt attempt) {
+    long factor = 1L << Math.min(6, Math.max(0, attempt.failures() - 1));
+    long cap = Duration.ofMinutes(5).toNanos();
+    return retryDelay > cap / factor ? cap : Math.min(cap, retryDelay * factor);
   }
 
   private static boolean sourceComplete(Attempt attempt) {

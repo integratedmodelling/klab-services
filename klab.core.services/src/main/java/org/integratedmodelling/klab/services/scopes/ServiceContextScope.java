@@ -120,6 +120,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.parent = parent;
     this.splits = parent.splits;
     this.observer = parent.observer;
+    this.observerRevision = parent.observerRevision;
     this.data = parent.data;
     this.contextObservation = parent.contextObservation;
     this.sourceObservation = parent.sourceObservation;
@@ -136,6 +137,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.provisionalObservations = parent.provisionalObservations;
     this.remoteTransactionId = parent.remoteTransactionId;
     this.requestCancelled = parent.requestCancelled;
+    this.consequenceCancelled = parent.consequenceCancelled;
     this.consequenceCause = parent.consequenceCause;
     this.resolutionCycleBinding = parent.resolutionCycleBinding;
     this.resolutionCycle = parent.resolutionCycle;
@@ -197,6 +199,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         || !Objects.equals(cycle.semantics(), binding))
       throw new IllegalArgumentException("Resolution cycle does not match this context");
     var ret = new ServiceContextScope(this);
+    ret.observer = getObserver();
+    ret.observerRevision = observerRevision;
     ret.resolutionCycle = cycle;
     ret.resolutionCycleBinding = binding;
     return ret;
@@ -208,6 +212,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (binding != null && !Objects.equals(getId(), binding.contextId()))
       throw new IllegalArgumentException("Resolution cycle belongs to another context");
     var ret = new ServiceContextScope(this);
+    if (binding != null) {
+      ret.observer = getObserver();
+      ret.observerRevision = observerRevision;
+    }
     ret.resolutionCycleBinding = binding;
     ret.resolutionCycle = null;
     return ret;
@@ -363,9 +371,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
+  // Handler lifetime is independent of the request that originally committed. In particular,
+  // forConsequence detaches request cancellation but must retain active background ownership.
+  private java.util.function.BooleanSupplier consequenceCancelled = () -> false;
+
+  public ServiceContextScope withConsequenceCancellation(java.util.function.BooleanSupplier cancelled) {
+    Objects.requireNonNull(cancelled);
+    var ret = new ServiceContextScope(this);
+    var inherited = consequenceCancelled;
+    ret.consequenceCancelled = () -> inherited.getAsBoolean() || cancelled.getAsBoolean();
+    return ret;
+  }
+
   @Override
   public boolean isInterrupted() {
-    return super.isInterrupted() || requestCancelled.getAsBoolean();
+    return super.isInterrupted() || requestCancelled.getAsBoolean() || consequenceCancelled.getAsBoolean();
   }
 
   @Override
@@ -418,6 +438,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (observer != null
         && observer.getId() > 0
         && digitalTwin != null
+        && resolutionCycleBinding == null
         && currentTransaction == null) {
       long revision = digitalTwin.getKnowledgeGraph().getSemanticRevision();
       if (revision != observerRevision) {
@@ -572,6 +593,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.observer = observer;
+    ret.observerRevision = -1;
     ret.resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
     ret.resolutionConstraints.remove(ResolutionConstraint.Type.ObserverUrn);
     if (observer != null)

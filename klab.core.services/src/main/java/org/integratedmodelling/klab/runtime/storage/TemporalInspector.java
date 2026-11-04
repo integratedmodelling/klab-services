@@ -30,7 +30,7 @@ public final class TemporalInspector {
       Actuator.ExecutionRole role,
       long bearerId,
       List<RegisteredSchedule> schedules,
-      String plan) {}
+      String plan, long activationActivityId) {}
 
   private static Registration registration(Observation process) {
     Object encoded = process.getMetadata().get("klab.scheduler.occurrence");
@@ -38,7 +38,9 @@ public final class TemporalInspector {
       throw new IllegalStateException("Process has no persisted occurrence registration");
     var registration = Utils.Json.parseObject(text, Registration.class);
     if (process.getId() <= 0
-        || registration.version() != 1
+        || (registration.version() != 1 && registration.version() != 2)
+        || (registration.version() == 1 && registration.activationActivityId() != 0)
+        || (registration.version() == 2 && registration.activationActivityId() <= 0)
         || registration.id() == null
         || registration.id().isBlank()
         || registration.planRevision() == null

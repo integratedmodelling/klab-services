@@ -19,6 +19,21 @@ import org.integratedmodelling.klab.utilities.Utils;
 import org.junit.jupiter.api.Test;
 
 class ResolutionCycleScopeTest {
+  @Test void nestedConsequenceRetainsEngineLifetimeWhileDetachingCompletedUserRequest() {
+    var requestCancelled = new java.util.concurrent.atomic.AtomicBoolean();
+    var engineClosed = new java.util.concurrent.atomic.AtomicBoolean();
+    var source = scope().withCancellation(requestCancelled::get);
+    var cause = new Consequence.Cause(1,"context",1,2,0,null,null,"decision",Consequence.Kind.CONFIGURATION_DETECTION);
+    var handler = source.forConsequence(cause).withConsequenceCancellation(engineClosed::get);
+    var nested = handler.forConsequence(cause);
+    var membership = nested.forConsequence(null);
+    requestCancelled.set(true);
+    assertTrue(source.isInterrupted());
+    assertFalse(handler.isInterrupted()); assertFalse(nested.isInterrupted()); assertFalse(membership.isInterrupted());
+    engineClosed.set(true);
+    assertTrue(handler.isInterrupted()); assertTrue(nested.isInterrupted()); assertTrue(membership.isInterrupted());
+    assertTrue(handler.forConsequence(cause).isInterrupted(), "New nested work must see an already closed engine");
+  }
   private ServiceContextScope scope() {
     var user=mock(UserIdentity.class);when(user.getUsername()).thenReturn("tester");when(user.getId()).thenReturn("tester");
     var scope=new ServiceContextScope(new ServiceSessionScope(new ServiceUserScope(user,mock(RuntimeService.class))),

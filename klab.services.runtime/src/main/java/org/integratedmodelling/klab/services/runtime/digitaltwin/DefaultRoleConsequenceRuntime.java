@@ -699,6 +699,7 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
           "No new applicable role acquisition",
           Resolution.NOT_REQUESTED);
     var execution = scope.forConsequence(cause);
+    active(execution);
     var transaction =
         execution
             .getDigitalTwin()

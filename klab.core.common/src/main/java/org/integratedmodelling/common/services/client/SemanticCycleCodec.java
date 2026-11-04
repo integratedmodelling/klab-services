@@ -15,6 +15,13 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 public final class SemanticCycleCodec {
   private SemanticCycleCodec() {}
 
+  /** Capabilities uses caller permissions, but never an observation/observer perspective. */
+  public static boolean usesPerspective(Method method) {
+    return !method.getName().equals("capabilities")
+        && (method.getName().equals("validateDocument")
+            || Arrays.stream(method.getParameterTypes()).anyMatch(Scope.class::isAssignableFrom));
+  }
+
   private static final Set<String> ALLOWED =
       Set.of(
           "resolveConcept",
@@ -154,7 +161,13 @@ public final class SemanticCycleCodec {
   }
 
   private static ObjectMapper mapper() {
-    return JacksonConfiguration.newObjectMapper();
+    return MapperHolder.INSTANCE;
+  }
+
+  // Configuration is immutable after publication. Reuse Jackson's serializers/readers instead
+  // of rebuilding the full k.LAB module for every argument and collection element.
+  private static final class MapperHolder {
+    private static final ObjectMapper INSTANCE = JacksonConfiguration.newObjectMapper();
   }
 
   private static Type bound(Type type) {

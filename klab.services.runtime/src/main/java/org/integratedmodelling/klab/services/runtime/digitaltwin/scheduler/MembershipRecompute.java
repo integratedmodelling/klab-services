@@ -62,6 +62,8 @@ final class MembershipRecompute {
         // native
         // membership receipt supplies this derived transaction's source/read-set authority instead.
         var original = origin.forConsequence(null).of(target);
+        if (original.isInterrupted())
+          throw new InterruptedException("Membership recomputation cancelled");
         var activity =
             Activity.of(
                 Activity.Type.forContextualization(target.getObservable().getContextualization()),

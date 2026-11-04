@@ -120,6 +120,7 @@ public final class ResolutionCycles implements AutoCloseable {
       return CompletableFuture.failedFuture(
           new IllegalStateException("Causal child has no frozen resolution cycle"));
     var result = new CompletableFuture<Admission>();
+    long queuedAt = System.nanoTime();
     var slot = new CompletableFuture<Void>();
     CompletableFuture<Void> previous;
     synchronized (this) {
@@ -142,7 +143,9 @@ public final class ResolutionCycles implements AutoCloseable {
           }
           Frame frame = null;
           try {
+            long readyAt = System.nanoTime();
             frame = prepare(scope, semanticWork.getAsBoolean());
+            long preparedAt = System.nanoTime();
             var captured = frame;
             boolean stopped;
             synchronized (this) {
@@ -173,6 +176,12 @@ public final class ResolutionCycles implements AutoCloseable {
             var admission =
                 new Admission(
                     bind(frame, scope.withoutConsequenceSubmissionAdmission()), frame.cycle());
+            long boundAt = System.nanoTime();
+            if (boundAt - queuedAt >= TimeUnit.SECONDS.toNanos(1))
+              org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+                  "Resolution cycle admission timing: queue=" + (readyAt - queuedAt) / 1_000_000 + "ms"
+                      + ", preparation=" + (preparedAt - readyAt) / 1_000_000 + "ms"
+                      + ", binding=" + (boundAt - preparedAt) / 1_000_000 + "ms");
             if (!result.complete(admission)) admission.close();
           } catch (Throwable failure) {
             if (frame != null)

@@ -63,6 +63,14 @@ class SemanticCycleHttpTest {
         }else {
           assertEquals(ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE,path);
           var invocation=mapper.readValue(bytes,SemanticCycleInvocation.class);assertEquals(owner,invocation.cycle());
+          if(invocation.method().equals("buildConcept")) {
+            assertEquals("context.42#7",exchange.getRequestHeaders().getFirst(ServicesAPI.SCOPE_HEADER));
+            assertEquals("transaction",exchange.getRequestHeaders().getFirst(ServicesAPI.TRANSACTION_ID_HEADER));
+          } else {
+            assertEquals("context",exchange.getRequestHeaders().getFirst(ServicesAPI.SCOPE_HEADER));
+            assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.TRANSACTION_ID_HEADER));
+            assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER));
+          }
           if(released.get()){status=403;response="{\"detail\":\"closed semantic cycle\"}".getBytes();}
           else response=mapper.writeValueAsBytes(SemanticCycleFacadeTest.invoke(invocation,actor));
         }
@@ -71,6 +79,9 @@ class SemanticCycleHttpTest {
       try(var output=exchange.getResponseBody()){output.write(response);}
     });server.start();
     var scope=SemanticCycleFacadeTest.scope();
+    var focus=mock(org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
+    when(focus.getId()).thenReturn(42L);when(scope.getContextObservation()).thenReturn(focus);
+    when(scope.getObserverId()).thenReturn(7L);when(scope.getTransactionId()).thenReturn("transaction");
     try(var http=Utils.Http.getClient("http://127.0.0.1:"+server.getAddress().getPort(),null)) {
       var client=mock(ReasonerClient.class,CALLS_REAL_METHODS);doReturn("reasoner").when(client).serviceId();
       var field=BaseServiceClient.class.getDeclaredField("client");field.setAccessible(true);field.set(client,http);

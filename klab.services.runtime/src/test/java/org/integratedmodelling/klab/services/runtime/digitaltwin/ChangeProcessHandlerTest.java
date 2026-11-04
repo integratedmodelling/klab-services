@@ -49,6 +49,7 @@ class ChangeProcessHandlerTest {
     final ObservationImpl other = observation(12, SemanticType.QUALITY, PHYSICAL);
     final ObservationImpl event = observation(20, SemanticType.EVENT, PHYSICAL);
     final ObservationImpl process = observation(30, SemanticType.PROCESS, PHYSICAL);
+    final ObservationImpl resolved = observation(31, SemanticType.PROCESS, PHYSICAL);
     final List<Observation> observations = new ArrayList<>(List.of(bearer, quality, other));
     final CommitImpl commit = new CommitImpl();
     final Observation.Builder first;
@@ -72,11 +73,24 @@ class ChangeProcessHandlerTest {
       var semanticBuilder = mock(Observable.Builder.class, RETURNS_SELF);
       when(quality.getObservable().builder(scope)).thenReturn(semanticBuilder);
       var change = mock(Observable.class);
+      when(change.is(SemanticType.PROCESS)).thenReturn(true);
+      when(change.is(SemanticType.CHANGE)).thenReturn(true);
       when(semanticBuilder.buildObservable()).thenReturn(change);
       var builder = mock(Observation.Builder.class, RETURNS_SELF);
       when(scope.observation(change)).thenReturn(builder);
       when(builder.build()).thenReturn(mock(Observation.class));
-      when(builder.submit()).thenReturn(CompletableFuture.completedFuture(process));
+      when(process.getObservable().is(SemanticType.CHANGE)).thenReturn(true);
+      when(resolved.getObservable().is(SemanticType.CHANGE)).thenReturn(true);
+      resolved.getMetadata().put(org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.KEY, "RESOLVED");
+      when(graph.isObservationCurrent(resolved, scope)).thenReturn(true);
+      when(graph.getAsset(resolved.getId(), scope, Observation.class)).thenReturn(resolved);
+      when(graph.isObservationCurrent(process, scope)).thenReturn(true);
+      var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+      var capabilities = mock(org.integratedmodelling.klab.api.services.Reasoner.Capabilities.class);
+      when(reasoner.capabilities(scope)).thenReturn(capabilities);
+      when(reasoner.semanticDistance(any(Observable.class), any(Observable.class), isNull(), anyLong())).thenReturn(0);
+      when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+      when(builder.submit()).thenReturn(CompletableFuture.completedFuture(resolved));
       return builder;
     }
     ConsequenceEngine.Result evaluate() throws Exception { return new ChangeProcessHandler().evaluate(null, commit, scope); }
@@ -100,7 +114,7 @@ class ChangeProcessHandlerTest {
     var f = new Fixture();
     assertEquals(Consequence.Outcome.NO_ACTION, f.evaluate().outcome());
     verify(f.first, never()).submit();
-    f.bearer.setGeometry(GRID);
+    f.bearer.setGeometry(GRID); f.resolved.setGeometry(GRID); f.commit.getAddedObservations().add(f.bearer.getId());
     assertEquals(Consequence.Outcome.APPLIED, f.evaluate().outcome());
     verify(f.first, times(2)).geometry(GRID); verify(f.second).submit();
     verify(f.quality.getObservable().builder(f.scope)).as(UnarySemanticOperator.CHANGE);
@@ -118,6 +132,7 @@ class ChangeProcessHandlerTest {
       f.commit.getAddedObservations().clear(); f.commit.getAddedObservations().add(12L);
       assertEquals(Consequence.Outcome.APPLIED, f.evaluate().outcome());
       verify(f.second).submit();
+      verify(f.first, never()).submit();
     }
   }
 
@@ -126,7 +141,7 @@ class ChangeProcessHandlerTest {
     var installed = new java.util.concurrent.atomic.AtomicBoolean();
     when(f.graph.getLinks(any(Observation.class), eq(GraphModel.Relationship.Direction.INCOMING), eq(f.scope),
         eq(GraphModel.Relationship.AFFECTS))).thenAnswer(call -> installed.get() ? List.of(f.writer(call.getArgument(0))) : List.of());
-    when(f.first.submit()).thenAnswer(call -> { installed.set(true); return CompletableFuture.completedFuture(f.process); });
+    when(f.first.submit()).thenAnswer(call -> { installed.set(true); return CompletableFuture.completedFuture(f.resolved); });
     assertEquals(List.of(11L), f.evaluate().observationIds());
     verify(f.second, never()).submit();
     assertEquals(Consequence.Outcome.NO_ACTION, f.evaluate().outcome());
@@ -157,12 +172,129 @@ class ChangeProcessHandlerTest {
     assertEquals(Consequence.Outcome.FAILED, f.evaluate().outcome());
   }
 
+  @Test void retainedSemanticBuilderRequestsOptionalChangeForElevationAndSlope() throws Exception {
+    var f = new Fixture(); f.bearer.setGeometry(GRID); f.resolved.setGeometry(GRID);
+    f.commit.getAddedObservations().add(f.bearer.getId());
+    var reasoner=f.scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    var built=new ArrayList<String>();
+    when(reasoner.buildObservable(any(org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy.class),eq(f.scope)))
+        .thenAnswer(call -> {
+          var strategy=call.getArgument(0,org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy.class);
+          assertTrue(strategy.getOperations().stream().anyMatch(o -> o.getOperator()==UnarySemanticOperator.CHANGE));
+          assertTrue(strategy.getOperations().stream().anyMatch(o ->
+              o.getType()==org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy.OperationType.AS_OPTIONAL
+                  && Boolean.TRUE.equals(o.getPod())));
+          built.add(strategy.getBaseObservable().getUrn());
+          var meaning=new org.integratedmodelling.common.knowledge.ConceptImpl();
+          meaning.setUrn("change in "+strategy.getBaseObservable().asConcept().getUrn());
+          meaning.setType(java.util.EnumSet.of(SemanticType.PROCESS,SemanticType.CHANGE));
+          return org.integratedmodelling.common.knowledge.ObservableImpl.promote(meaning,null);
+        });
+    for (var item:List.of(f.quality,f.other)) {
+      var meaning=new org.integratedmodelling.common.knowledge.ConceptImpl();
+      meaning.setUrn(item==f.quality?"geography:Elevation":"geography:Slope");
+      meaning.setType(java.util.EnumSet.of(SemanticType.QUALITY));
+      item.setObservable(org.integratedmodelling.common.knowledge.ObservableImpl.promote(meaning,null));
+    }
+    when(f.scope.observation(any(Observable.class))).thenAnswer(call -> {
+      var requested=call.getArgument(0,Observable.class);
+      assertTrue(requested.is(SemanticType.CHANGE));
+      return requested.getUrn().contains("Elevation")?f.first:f.second;
+    });
+    assertEquals(List.of(11L,12L),f.evaluate().observationIds());
+    assertEquals(List.of("geography:Elevation","geography:Slope"),built);
+    clearInvocations(f.first,f.second);
+    f.observations.add(f.process);f.commit.getAddedObservations().clear();f.commit.getAddedObservations().add(30L);
+    assertEquals(Consequence.Outcome.NO_ACTION,f.evaluate().outcome());
+    verify(f.first,never()).submit();verify(f.second,never()).submit();
+  }
+
+  @Test void processOnlyFollowUpDoesNotResubmitUnchangedQualities() throws Exception {
+    var f = new Fixture(); f.bearer.setGeometry(GRID); f.resolved.setGeometry(GRID);
+    f.commit.getAddedObservations().add(f.bearer.getId());
+    f.evaluate();
+    clearInvocations(f.first, f.second);
+    f.observations.add(f.process);
+    f.commit.getAddedObservations().clear(); f.commit.getAddedObservations().add(f.process.getId());
+    assertEquals(Consequence.Outcome.NO_ACTION, f.evaluate().outcome());
+    verify(f.first, never()).submit(); verify(f.second, never()).submit();
+    f.commit.getModifiedAssets().add(f.quality.getId());
+    f.evaluate(); verify(f.first).submit(); verify(f.second, never()).submit();
+    clearInvocations(f.first, f.second);
+    f.commit.getModifiedAssets().clear(); f.commit.getModifiedAssets().add(f.bearer.getId());
+    f.evaluate(); verify(f.first).submit(); verify(f.second).submit();
+  }
+
+  @Test void firstChangeOccurrenceStillEnablesOldQualities() throws Exception {
+    var f = new Fixture(); f.observations.add(f.process);
+    f.commit.getAddedObservations().clear(); f.commit.getAddedObservations().add(f.process.getId());
+    assertEquals(Consequence.Outcome.APPLIED, f.evaluate().outcome());
+  }
+
+  @Test void unprovedChangeResultsNeverCountAsApplied() throws Exception {
+    for (int variant = 0; variant < 8; variant++) {
+      var f = new Fixture(); f.observations.add(f.event);
+      switch (variant) {
+        case 0 -> f.resolved.setResolvedCoverage(0);
+        case 1 -> when(f.resolved.getObservable().is(SemanticType.CHANGE)).thenReturn(false);
+        case 2 -> {
+          f.resolved.getMetadata().remove(org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.KEY);
+          when(f.graph.getAsset(f.resolved.getId(),f.scope,Observation.class)).thenReturn(null);
+        }
+        case 3 -> f.resolved.setGeometry(Geometry.create("T0(1){ttype=PHYSICAL,tstart=1000,tend=2000}"));
+        case 4 -> when(f.graph.isObservationCurrent(f.resolved, f.scope)).thenReturn(false);
+        case 5 -> f.resolved.getMetadata().put(org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.KEY, "DEFERRED");
+        case 7 -> f.resolved.setResolvedCoverage(0.5);
+        case 6 -> when(f.scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)
+            .semanticDistance(any(Observable.class), any(Observable.class), isNull(), anyLong())).thenReturn(-1);
+      }
+      assertEquals(Consequence.Outcome.DEFERRED, f.evaluate().outcome(), "variant " + variant);
+    }
+  }
+
+  @Test void typedOptionalAbsenceIsNonfatalAndUntypedEmptyIsDeferred() throws Exception {
+    var f = new Fixture(); f.observations.add(f.event);
+    var absent = org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.terminal(Observation.empty(),
+        org.integratedmodelling.klab.api.services.runtime.Dataflow.ResolutionOutcome.NO_MODEL);
+    when(f.first.submit()).thenReturn(CompletableFuture.completedFuture(absent));
+    when(f.second.submit()).thenReturn(CompletableFuture.completedFuture(absent));
+    assertEquals(Consequence.Outcome.NO_ACTION, f.evaluate().outcome());
+    when(f.first.submit()).thenReturn(CompletableFuture.completedFuture(Observation.empty()));
+    assertEquals(Consequence.Outcome.DEFERRED, f.evaluate().outcome());
+  }
+
+  @Test void completeReuseAndSelectedObserverDiscoveryRemainDistinct() throws Exception {
+    for (int variant = 0; variant < 3; variant++) {
+      var f = new Fixture(); f.observations.add(f.event);
+      when(f.scope.getObservation(any(Observation.class))).thenReturn(f.resolved);
+      if (variant > 0) { var observer=observation(40,SemanticType.AGENT,PHYSICAL);
+        when(f.scope.getObserver()).thenReturn(observer); }
+      if (variant == 2) when(f.resolved.getObservable().getObserverSemantics()).thenReturn(mock(Concept.class));
+      assertEquals(variant == 1 ? Consequence.Outcome.APPLIED : Consequence.Outcome.NO_ACTION,
+          f.evaluate().outcome());
+      if (variant == 1) { verify(f.first).submit(); verify(f.second).submit(); }
+      else { verify(f.first,never()).submit(); verify(f.second,never()).submit(); }
+    }
+  }
+
+  @Test void untypedSuccessRequiresCompleteIndependentNativeEvidence() throws Exception {
+    var f=new Fixture();f.observations.add(f.event);
+    f.resolved.getMetadata().remove(org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.KEY);
+    assertEquals(Consequence.Outcome.APPLIED,f.evaluate().outcome());
+    var partialNative=observation(31,SemanticType.PROCESS,PHYSICAL);
+    when(partialNative.getObservable().is(SemanticType.CHANGE)).thenReturn(true);
+    partialNative.setResolvedCoverage(0.5);
+    when(f.graph.getAsset(31L,f.scope,Observation.class)).thenReturn(partialNative);
+    assertEquals(Consequence.Outcome.DEFERRED,f.evaluate().outcome());
+  }
+
   private static Fixture runningWriterWithObserver() {
     var f = new Fixture(); f.observations.remove(f.other); f.observations.add(f.process);
     when(f.process.getObservable().getUrn()).thenReturn("earth:Erosion");
     when(f.quality.getObservable().getUrn()).thenReturn("geography:Elevation");
     var observer = observation(40, SemanticType.AGENT, PHYSICAL);
     when(f.scope.getObserver()).thenReturn(observer);
+    f.commit.getAddedObservations().clear(); f.commit.getModifiedAssets().add(f.quality.getId());
     when(f.graph.getLinks(f.quality, GraphModel.Relationship.Direction.INCOMING, f.scope,
         GraphModel.Relationship.AFFECTS)).thenReturn(List.of(f.writer(f.quality)));
     return f;
@@ -182,7 +314,7 @@ class ChangeProcessHandlerTest {
       }
       verify(f.first, never()).submit();
       verify(f.quality.getObservable(), never()).builder(f.scope);
-      verify(f.scope, never()).getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+
       verify(f.scope, atLeastOnce()).getObserver();
     }
   }
@@ -219,7 +351,7 @@ class ChangeProcessHandlerTest {
       when(f.scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
       when(reasoner.capabilities(f.scope)).thenReturn(variant == 2 ? null : receipt);
       when(reasoner.semanticDistance(provided, requested, null, 7)).thenReturn(variant == 0 ? 0 : -1);
-      assertEquals(variant == 0 ? Consequence.Outcome.NO_ACTION : Consequence.Outcome.APPLIED,
+      assertEquals(variant == 0 ? Consequence.Outcome.NO_ACTION : variant == 2 ? Consequence.Outcome.DEFERRED : Consequence.Outcome.APPLIED,
           f.evaluate().outcome());
       if (variant == 0) verify(f.first, never()).submit(); else verify(f.first).submit();
     }
@@ -244,7 +376,7 @@ class ChangeProcessHandlerTest {
       when(f.scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
       when(reasoner.capabilities(f.scope)).thenReturn(variant == 2 ? null : receipt);
       when(reasoner.semanticDistance(provided, selectedMeaning, null, 7)).thenReturn(variant == 0 ? 0 : -1);
-      assertEquals(variant == 0 ? Consequence.Outcome.NO_ACTION : Consequence.Outcome.APPLIED,
+      assertEquals(variant == 0 ? Consequence.Outcome.NO_ACTION : variant == 2 ? Consequence.Outcome.DEFERRED : Consequence.Outcome.APPLIED,
           f.evaluate().outcome());
       if (variant == 0) verify(f.first, never()).submit(); else verify(f.first).submit();
     }

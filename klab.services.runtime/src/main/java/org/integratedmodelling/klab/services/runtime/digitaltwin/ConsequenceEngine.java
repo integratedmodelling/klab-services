@@ -135,6 +135,7 @@ public final class ConsequenceEngine implements AutoCloseable {
             0,
             sequence++,
             () -> {
+              var trigger = ConsequenceTrigger.capture(snapshot, activityId, evaluationScope);
               try {
                 if (origin != null)
                   publish(
@@ -142,6 +143,7 @@ public final class ConsequenceEngine implements AutoCloseable {
                       new Consequence.Commit(origin, CommitImpl.copyOf(snapshot)));
                 for (var kind : Consequence.Kind.values()) {
                   if (kind == Consequence.Kind.UNCERTAINTY) continue;
+                  if (!trigger.relevant(kind)) continue;
                   if (closed || Thread.currentThread().isInterrupted()) break;
                   evaluate(
                       kind,
@@ -156,7 +158,8 @@ public final class ConsequenceEngine implements AutoCloseable {
               } finally {
                 boolean finishNow;
                 synchronized (this) {
-                  finishNow = closed || Thread.currentThread().isInterrupted();
+                  finishNow = closed || Thread.currentThread().isInterrupted()
+                      || !trigger.relevant(Consequence.Kind.UNCERTAINTY);
                   if (!finishNow)
                     worker.execute(
                         new Work(
@@ -225,7 +228,7 @@ public final class ConsequenceEngine implements AutoCloseable {
       if (closed) return;
       // Admission is linearized with close. An admitted handler remains owned until it drains.
       // forConsequence resets request cancellation; attach our lifetime afterwards.
-      handlerScope = evaluationScope.forConsequence(cause).withCancellation(() -> closed);
+      handlerScope = evaluationScope.forConsequence(cause).withConsequenceCancellation(() -> closed);
     }
     Result result;
     try {

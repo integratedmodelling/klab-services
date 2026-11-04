@@ -3080,6 +3080,7 @@ public class CompiledDataflow {
                             ? null
                             : proof.witness().inputHash())));
         transaction.update(activity);
+        owned.registerProcessActivation(observation, activity);
         if (provenance.commit() < 0)
           throw new KlabInternalErrorException("Could not record process existence");
         return true;

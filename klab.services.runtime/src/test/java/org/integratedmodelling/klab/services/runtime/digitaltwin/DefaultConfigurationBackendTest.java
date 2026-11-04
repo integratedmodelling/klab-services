@@ -17,6 +17,15 @@ import org.integratedmodelling.klab.runtime.consequence.ConsequencePatternMatche
 import org.integratedmodelling.klab.services.runtime.RuntimeService;
 import org.junit.jupiter.api.*;
 class DefaultConfigurationBackendTest {
+ @Test void supersededNativeCaptureDefersWithoutPublishing()throws Exception {
+  var f=new Fixture();
+  var tx=mock(KnowledgeGraph.Transaction.class);
+  when(f.nativeInputs.graph.createTransaction(any())).thenReturn(tx);
+  when(tx.captureConsequenceInputs(any(),any())).thenThrow(new KnowledgeGraph.ConsequenceInputsChangedException());
+  var outcome=f.backend.evaluate(f.cause,f.commit,f.nativeInputs.scope);
+  assertEquals(Consequence.Outcome.DEFERRED,outcome.outcome());
+  verifyNoInteractions(f.publisher);
+ }
  @BeforeAll static void configure(){org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();}
  static final String FP=ConfigurationConsequenceRuntimeTest.FINGERPRINT;
  static final ConsequenceRuleResponse.Epoch EPOCH=new ConsequenceRuleResponse.Epoch("reasoner",1,FP,"session");

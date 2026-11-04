@@ -110,7 +110,7 @@ class TemporalInspectorIntegrityTest {
     var old = registration(f);
     f.process.getMetadata().put(OccurrenceRegistration.METADATA_KEY, Utils.Json.asString(
         new OccurrenceRegistration(old.version(), old.id(), old.planRevision(), old.role(),
-            old.bearerId(), old.schedules(), Utils.Json.asString(plan))));
+            old.bearerId(), old.schedules(), Utils.Json.asString(plan), old.activationActivityId())));
   }
 
   @Test void preTransitionSnapshotCannotCertifyLaterRevisionButFreshSameIdentityCan() throws Exception {

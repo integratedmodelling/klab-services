@@ -152,7 +152,19 @@ enqueueing and separately copied for each handler. Graph queries see committed
 current state, which may include later commits; they are not historical snapshots.
 No reasoner or client-messaging call runs on the committing thread.
 
-Each pass visits configuration detection, change processes, role conferral, role
+Before assessment, a native-header prefilter classifies changed observations and scheduler-journal
+outputs without calling the Reasoner. UNCERTAINTY requires a changed quality. A commit whose
+observation changes are exclusively births of non-occurrent substantials (including an observer)
+does not initiate CHANGE discovery. Skipped categories have no decision notification or handler
+invocation. Missing, obsolete or unsupported type evidence conservatively retains assessment;
+quality updates named only in the transition journal remain eligible. Configuration and role
+consequences can apply to substantials and are not excluded by that classification.
+Header inspection uses a separate read session, not a native write transaction (whose construction
+locks the owning context). It accepts actuator/data bookkeeping IDs and projects only type/journal
+fields; it is not publication authority. Storage changes without an identified quality remain
+unknown and retain assessment. Real input guards still use the locked native capture path.
+
+For eligible triggers, each pass visits configuration detection, change processes, role conferral, role
 implication and uncertainty. `register(kind, handler)` supplies the runtime extension
 point. Configuration discovery is installed with an explicit deferred result; change
 resolution is installed and active; the other missing handlers report `DEFERRED`.
@@ -202,8 +214,10 @@ not turn a failed dependency into successful scientific computation. Errors and 
 reported through the consequence scope or its copies are collected for its decision;
 they do not set the originating user's error state or send separate error/warning
 notifications. An exception becomes a `FAILED` decision and processing continues. Each
-handler produces one outcome notification through the root scope, including on failure.
+assessed handler produces one outcome notification through the root scope, including on failure.
 Activity/provenance events still describe attempts; they are not additional user errors.
+If configuration capture is superseded by concurrent native input changes, its typed snapshot
+exception produces DEFERRED and retains the input guard; it does not report storage corruption.
 
 Ordinary user submission notifications are unchanged. Consequence submissions do not
 send `ObservationSubmissionFinished`, which existing interfaces interpret as a user

@@ -521,6 +521,8 @@ public interface ServicesAPI {
 
     /** Fail-closed model discovery for an authenticated retained semantic cycle. */
     String SEMANTIC_CYCLE_MODELS = API_BASE + "/semantic/cycle/models/{knowledgeClass}";
+    /** Authenticated source catalog supplier; no ContextScope or graph callback is required. */
+    String MODEL_CANDIDATES = API_BASE + "/models/candidates";
 
     String WORKFLOWS = API_BASE + "/workflows";
     String WORKFLOW = WORKFLOWS + "/{workflowId}";

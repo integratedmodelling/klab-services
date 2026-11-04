@@ -82,12 +82,15 @@ class AcceptedSemanticCycleTest {
     }).when(actor).computeObservationStrategies(any(),any());
     try(var runtime=new AcceptedSemanticRuntime(AcceptedSemanticObserverScopeTest.factory(current),"reasoner")) {
       runtime.submit(AcceptedSemanticObserverScopeTest.world());assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertEquals(0,runtime.activeCycleCount());
       var binding=runtime.beginCycle(request(null,"annotations"),scope);
+      assertEquals(1,runtime.activeCycleCount());
       var result=facade(runtime,binding,"annotations",scope).computeObservationStrategies(observation,scope);
       assertEquals("test:strategy",result.getFirst().getUrn());
       assertEquals(concept.getUrn(),result.getFirst().getOperations().getFirst().getObservable().getUrn());
       assertEquals("Cotechino",observation.getAnnotations().getFirst().get("value"));
       runtime.releaseCycle(request(binding,"annotations"),scope);
+      assertEquals(0,runtime.activeCycleCount());
     }
   }
   @Test void oldCycleRetainsActorCapabilitiesAndWitnessAcrossPublicationWhileNewCycleSeesNewActor() throws Exception {
@@ -136,6 +139,23 @@ class AcceptedSemanticCycleTest {
       runtime.releaseCycle(request(nextBinding,"new"),scope);
     }
     verify(newState).close();
+  }
+
+  @Test void scopeFreeCycleCallsNeverLoadObserverFromRuntimeGraph() throws Exception {
+    var actor=actor("fingerprint","test:Subject");
+    var current=new AtomicReference<>(state(actor,"fingerprint"));
+    var scope=scope("alice","context","runtime");
+    try(var runtime=new AcceptedSemanticRuntime(AcceptedSemanticObserverScopeTest.factory(current),"reasoner")) {
+      runtime.submit(AcceptedSemanticObserverScopeTest.world());
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      var binding=runtime.beginCycle(request(null,"scope-free"),scope);
+      clearInvocations(scope);
+      doThrow(new AssertionError("Unexpected Runtime graph callback")).when(scope).getObserver();
+      var pinned=facade(runtime,binding,"scope-free",scope);
+      assertEquals("test:Subject",pinned.resolveConcept("test:Subject").getUrn());
+      verify(scope,never()).getObserver();
+      runtime.releaseCycle(request(binding,"scope-free"),scope);
+    }
   }
   @Test void exactOwnerContextRuntimeCycleAndBindingAreRequiredAndShutdownReleasesLeases() throws Exception {
     var actor=actor("fingerprint","test:Old");var state=state(actor,"fingerprint");

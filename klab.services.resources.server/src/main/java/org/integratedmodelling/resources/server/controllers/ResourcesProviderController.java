@@ -55,6 +55,17 @@ public class ResourcesProviderController {
 
   @Autowired private ServiceAuthorizationManager authenticationManager;
 
+  @PostMapping(ServicesAPI.RESOURCES.MODEL_CANDIDATES)
+  public @ResponseBody org.integratedmodelling.klab.api.services.resources.ResourceSet queryModelCandidates(
+      @RequestBody org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest request,
+      Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization)
+        || !(authorization.getScope() instanceof UserScope scope))
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.FORBIDDEN, "An authenticated user is required");
+    return resourcesServer.klabService().modelCandidates(request, scope);
+  }
+
   /** A separate route makes pre-cycle Resources servers fail closed instead of ignoring the pin. */
   @PostMapping(ServicesAPI.RESOURCES.SEMANTIC_CYCLE_MODELS)
   public @ResponseBody List<ResourceSet> queryCycleModels(

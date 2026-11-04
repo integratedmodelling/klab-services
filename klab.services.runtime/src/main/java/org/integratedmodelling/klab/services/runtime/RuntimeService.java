@@ -915,6 +915,7 @@ public class RuntimeService extends BaseService
   }
 
   private CompletableFuture<Observation> submitInternal(Observation submitted, ContextScope scope) {
+    long preparationStarted = System.nanoTime();
 
     if (ConnectionSupport.isIndividual(submitted)
         && submitted.getId() <= 0
@@ -1265,6 +1266,11 @@ public class RuntimeService extends BaseService
 
       // Remote generation/source checks run outside native transaction commit locks. Local
       // exact member/result read-set guards remain on that commit transaction.
+      long preparedAt = System.nanoTime();
+      if (preparedAt - preparationStarted >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1))
+        org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+            "Submission preparation timing for " + observation.getObservable().getUrn()
+                + ": total=" + (preparedAt - preparationStarted) / 1_000_000 + "ms");
       var classifierValidationChecks = new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
       var selectionFinalizers = new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
       return (predefinedContextualization != null

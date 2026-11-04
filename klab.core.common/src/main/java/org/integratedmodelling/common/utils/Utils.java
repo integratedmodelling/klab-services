@@ -1388,6 +1388,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
 
       private Client(Client other) {
+        this.timeoutSeconds = other.timeoutSeconds;
         this.getFailureReports = other.getFailureReports;
         this.client = other.client;
         this.uri = other.uri;
@@ -1466,6 +1467,19 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
        * @param scope
        * @return
        */
+      public Client withResourceSupplierScope(Scope scope) {
+        var ret = withScope(scope);
+        // Preserve the verified user/federation and credential, but do not delegate a workflow
+        // or require this provider to call a possibly non-public originating Runtime.
+        ret = new Client(ret);
+        for (var header : List.of(ServicesAPI.SCOPE_HEADER, ServicesAPI.SERVICE_ID_HEADER,
+            ServicesAPI.TRANSACTION_ID_HEADER, ServicesAPI.CONSEQUENCE_HEADER,
+            ServicesAPI.RESOLUTION_CYCLE_HEADER, ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER,
+            ServicesAPI.SOURCE_OBSERVATION_ID_HEADER, ServicesAPI.TARGET_OBSERVATION_ID_HEADER))
+          ret.headers.remove(header);
+        return ret;
+      }
+
       public Client withScope(Scope scope) {
         if (scope == null) {
           return this;
@@ -1834,6 +1848,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return post(true, false, true, apiRequest, payload, resultClass, parameters);
       }
 
+      /** Source catalogs use ordinary resource response sizes, with typed payload-free failures. */
+      public <T> T postResourceSnapshot(
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+        return post(true, false, true, false, apiRequest, payload, resultClass, parameters);
+      }
+
       private static HttpResponse.BodySubscriber<byte[]> diagnosticBody() {
         var delegate = HttpResponse.BodySubscribers.ofByteArray();
         return new HttpResponse.BodySubscriber<>() {
@@ -1898,6 +1918,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           Object payload,
           Class<T> resultClass,
           Object... parameters) {
+        return post(propagateFailure, reportFailure, typedStatus, typedStatus,
+            apiRequest, payload, resultClass, parameters);
+      }
+
+      private <T> T post(
+          boolean propagateFailure, boolean reportFailure, boolean typedStatus, boolean boundedDiagnosticBody,
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 
         var options = new Options();
         var params = makeKeyMap(options, parameters);
@@ -1952,7 +1979,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var response =
               client.send(
                   request,
-                  typedStatus ? info -> diagnosticBody() : HttpResponse.BodyHandlers.ofByteArray());
+                  boundedDiagnosticBody ? info -> diagnosticBody() : HttpResponse.BodyHandlers.ofByteArray());
 
           if (response != null
               && (typedStatus
@@ -1967,7 +1994,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           } else {
             if (typedStatus)
               throw new RequestFailure(
-                  response == null ? 0 : response.statusCode(), "Diagnostic request failed", null);
+                  response == null ? 0 : response.statusCode(),
+                  boundedDiagnosticBody ? "Diagnostic request failed" : "Resource snapshot request failed", null);
             var failure =
                 "POST "
                     + apiCall

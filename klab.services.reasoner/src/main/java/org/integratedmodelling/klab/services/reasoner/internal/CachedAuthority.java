@@ -161,7 +161,7 @@ public final class CachedAuthority implements Authority {
         try {
           var result = new ArrayList<Identity>();
           for (var node : hit) result.add(JSON.treeToValue(node, StoredIdentity.class));
-          if (result.stream().allMatch(CachedAuthority::clean)) return List.copyOf(result);
+          if (result.stream().allMatch(i -> clean(i) && documentationAvailable(i))) return List.copyOf(result);
         } catch (Exception ignored) { /* Corruption is a cache miss. */ }
       }
     }
@@ -187,13 +187,23 @@ public final class CachedAuthority implements Authority {
     var hit = cache.get(key);
     if (hit != null) try {
       var result = JSON.treeToValue(hit, StoredIdentity.class);
-      if (clean(result)) return result;
+      if (clean(result) && documentationAvailable(result)) return result;
     } catch (Exception ignored) { /* Corruption is a cache miss. */ }
     return null;
   }
 
   private void check(String id) {
     if (providerId == null || !Objects.equals(id, stableId)) throw new IllegalArgumentException("Unknown or released authority bridge");
+  }
+  /** Temporary provider files do not survive every restart, even when the identity cache does.
+   * Let the live provider recreate them instead of returning a dangling cached URL. */
+  private static boolean documentationAvailable(Identity identity) {
+    if (identity.getDocumentation() == null) return true;
+    try {
+      for (var url : identity.getDocumentation().values())
+        if ("file".equals(url.getProtocol()) && !Files.isRegularFile(Path.of(url.toURI()))) return false;
+      return true;
+    } catch (Exception unavailable) { return false; }
   }
   private static boolean clean(Identity identity) {
     return identity != null && identity.getId() != null && !identity.getId().isBlank()

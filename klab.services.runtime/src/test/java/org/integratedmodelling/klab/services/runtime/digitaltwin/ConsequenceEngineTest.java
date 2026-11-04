@@ -143,6 +143,25 @@ class ConsequenceEngineTest {
     }
   }
 
+  @Test void postCommitActivationAllowsServiceCallbackToAcquireGraphMonitor() throws Exception {
+    try (var f = new Fixture()) {
+      var root = f.transaction(f.scope);
+      var callbacks = new java.util.concurrent.atomic.AtomicInteger();
+      var field = DigitalTwinImpl.TransactionImpl.class.getDeclaredField("graph");
+      field.setAccessible(true);
+      var monitor = field.get(root);
+      root.afterCommit(() -> {
+        assertFalse(Thread.holdsLock(monitor));
+        var callback = java.util.concurrent.CompletableFuture.runAsync(() -> {
+          synchronized (monitor) { callbacks.incrementAndGet(); }
+        });
+        assertDoesNotThrow(() -> callback.get(2, TimeUnit.SECONDS));
+      });
+      assertEquals(900, root.commit());
+      assertEquals(1, callbacks.get());
+    }
+  }
+
   @Test void rollbackAndDurableCloseFailureNeverScheduleConsequences() throws Exception {
     try (var f = new Fixture()) {
       var failed = f.transaction(f.scope);
@@ -327,9 +346,11 @@ class ConsequenceEngineTest {
       var closeFailure = new AtomicReference<Throwable>();
       f.engine.register(Consequence.Kind.CONFIGURATION_DETECTION, (cause, changes, scope) -> {
         calls.incrementAndGet();
+        var nested = scope.forConsequence(cause).forConsequence(null);
         entered.countDown();
         try {
-          while (!scope.isInterrupted()) Thread.sleep(1);
+          while (!nested.isInterrupted()) Thread.sleep(1);
+          assertTrue(scope.isInterrupted());
           cancellationSeen.countDown();
           releaseOperation.await(); // an already-running read/atomic operation may finish safely
         } catch (InterruptedException failure) { interrupted.set(true); throw failure; }

@@ -265,6 +265,7 @@ public final class DefaultConfigurationBackend implements ConsequenceEngine.Hand
       var effect = publisher.publishBatch(updates, births, cause, scope);
       return result(effect.outcome(), effect.reason(), effect.observations());
     } catch (Deferred
+        | KnowledgeGraph.ConsequenceInputsChangedException
         | ConfigurationComponents.UnsupportedGrouping
         | ConfigurationObserverFilter.Unavailable unavailable) {
       return result(Consequence.Outcome.DEFERRED, unavailable.getMessage(), List.of());

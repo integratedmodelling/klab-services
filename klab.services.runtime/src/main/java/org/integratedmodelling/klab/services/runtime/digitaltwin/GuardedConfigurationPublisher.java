@@ -155,7 +155,9 @@ public final class GuardedConfigurationPublisher {
       throw new IllegalArgumentException("Configuration publication cause/context mismatch");
     // Use the normal activity scope factory: opening a transaction directly only registers it;
     // explanation preparation must see that exact transaction as its current execution root.
-    var execution = scope.forConsequence(cause).executing(Activity.of(Activity.Type.DETECTION));
+    var nested = scope.forConsequence(cause);
+    if (nested.isInterrupted()) throw new InterruptedException("Configuration publication cancelled");
+    var execution = nested.executing(Activity.of(Activity.Type.DETECTION));
     var transaction = execution.getCurrentTransaction();
     if (!(transaction instanceof DigitalTwinImpl.TransactionImpl nativeTransaction)) {
       var failure = new IllegalStateException("Guarded configuration transaction unavailable");

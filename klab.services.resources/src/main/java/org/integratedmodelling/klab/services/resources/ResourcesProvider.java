@@ -418,9 +418,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     if (reasoner != null && reasoner.status().isOperational()) {
       try {
+        if (foregroundSemanticWork(reasoner)) return this.semanticSearchAvailable.get();
         var capabilities = reasoner.capabilities(scope);
         long revision = capabilities == null ? -1 : capabilities.getKnowledgeRevision();
-        this.semanticSearchAvailable.set(revision >= 0 && indexKnowledge(scope, revision));
+        this.semanticSearchAvailable.set(revision >= 0 && indexKnowledge(scope, revision, reasoner));
       } catch (RuntimeException unavailable) {
         this.semanticSearchAvailable.set(false);
         Logging.INSTANCE.warn(
@@ -571,7 +572,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     }
   }
 
-  private boolean indexKnowledge(Scope scope, long revision) {
+  private static boolean foregroundSemanticWork(Reasoner reasoner) {
+    var active = reasoner.status().getMetadata().get(Reasoner.ACTIVE_SEMANTIC_CYCLES_METADATA);
+    return active instanceof Number count && count.longValue() > 0;
+  }
+
+  private boolean indexKnowledge(Scope scope, long revision, Reasoner reasoner) {
 
     // TODO index ontologies
     try {
@@ -581,7 +587,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         index = namespaceModelIndex;
       }
       // Catalog publication serializes on its own index, never the provider's HTTP-facing monitor.
-      index.reconcile(workspaceManager::getNamespaces, kbox, scope, revision, System.nanoTime());
+      index.reconcile(workspaceManager::getNamespaces, kbox, scope, revision, System.nanoTime(),
+          () -> foregroundSemanticWork(reasoner));
     } catch (Throwable t) {
       Logging.INSTANCE.error("Error indexing semantic content", t);
       return false;
@@ -1289,6 +1296,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public Capabilities capabilities(Scope scope) {
 
     var ret = new ResourcesCapabilitiesImpl();
+    ret.setModelCandidateProtocol(1);
     ret.setWorldviewProvider(workspaceManager.isWorldviewProvider());
     ret.setAdoptedWorldview(workspaceManager.getAdoptedWorldview());
     ret.setWorkspaceNames(workspaceManager.getWorkspaceURNs());
@@ -1907,6 +1915,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public <T> List<T> query(
       Parameters<String> query, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
     query = query == null ? Parameters.create() : query;
+    if (assetClass == KnowledgeClass.MODEL && infoClass == ResourceSet.class
+        && scope instanceof ContextScope context && context.getResolutionCycleBinding() != null)
+      return (List<T>) List.of(modelCandidates(
+          org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest.from(query), scope));
     if (isCommonInformationClass(assetClass, infoClass)
         && (assetClass == KnowledgeClass.COMPONENT
             || assetClass == KnowledgeClass.RESOURCE_ADAPTER
@@ -1976,6 +1988,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   @Override
   public String serviceId() {
     return workspaceManager.getConfiguration().getServiceId();
+  }
+
+  /** Supply authorized syntactic sources without accessing the requesting graph or semantic actor. */
+  public ResourceSet modelCandidates(
+      org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest request, UserScope scope) {
+    return org.integratedmodelling.common.knowledge.ModelCandidateSources.freeze(serviceId(), request,
+        () -> org.integratedmodelling.common.knowledge.ModelCandidateSources.capture(
+            list(KimNamespace.class, scope), request, serviceId(), getUrl()));
   }
 
   public KimConcept.Descriptor describeConcept(String conceptUrn) {
