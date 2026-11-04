@@ -11,6 +11,79 @@ C1–C7 acceptance gaps and explicitly unsupported semantics remain separate wor
 
 ## Findings
 
+### Repair checkpoint — 4 November 2026
+
+All five findings have local repairs in the working tree. No additional semantic-policy decision
+was needed. The findings below retain the original evidence; they describe the audited behavior
+before these repairs. The staged prompts remain acceptance guidance, not a claim that every
+stage's live exit gate has been completed.
+
+- **A1:** CHANGE candidates are bounded by committed quality or bearer changes. A newly relevant
+  occurrence can still revisit existing qualities; a CHANGE result does not cause that rescan
+  when an unchanged occurrence already exists. A first CHANGE occurrence can enable discovery.
+  Optional CHANGE construction, observer-specific discovery and joint-writer reuse remain intact.
+- **A2:** APPLIED requires native currentness, CHANGE semantics compatible with the request and
+  observer, complete resolved coverage and complete geometric support. A typed RESOLVED result
+  is checked against these requirements. Successful ordinary Runtime submissions currently lack
+  a positive terminal receipt; for those, the handler separately reloads and checks the native
+  result rather than trusting delivery metadata or a positive ID. Typed negative outcomes take
+  precedence over such reuse evidence.
+  Typed NO_MODEL is ordinary optional absence; generic empty responses and incomplete results
+  remain DEFERRED. Missing positive receipts require independently complete
+  native evidence. FAILED receipts and error notifications remain failures.
+  Decision observationIds continue to identify the fulfilled **qualities**, not new process IDs.
+  Existing complete reusable results and native INFLUENCE writers avoid new submission; their
+  native identity/support is evidence distinct from a new submission's terminal receipt.
+- **A3/A4:** Receipts are scalar JSON strings with `{version:1, receipts:{key:"RESOLVED"}}`;
+  activity input-change provenance is scalar JSON with `version:1` and the existing evidence
+  fields. Both survive the actual native metadata encoder. A native beforeCommit callback
+  replaces the birth key and provenance identity after allocation, before modified assets are
+  encoded. Both the configuration and activity are registered for update. Cleanup captures the
+  original registration key; commit and rollback release both in-flight registries. Rollback
+  restores prior receipt and activity metadata. Legacy map decoding accepts at most 10,000 valid
+  receipt rows; JSON input is limited to 1 MiB and version 1. Unknown/malformed evidence is ignored.
+  Receipts remain descriptive duplicate evidence inside the existing admitted native/cycle path;
+  they confer no execution or source authority and introduce no durable crash replay.
+- **A5:** Engine cancellation now has a separate inherited supplier from request cancellation.
+  `forConsequence` still detaches a completed user request, while retaining engine lifetime through
+  configuration publication, role attribution and membership-derived work. These nested paths
+  check cancellation before opening a transaction. All production call sites were inspected,
+  including scope restoration, engine snapshots and membership validation. Cycle leases and the
+  bounded close/drain implementation are unchanged.
+
+Regression sources now include the retained ObservableBuildStrategy boundary for Elevation/Slope,
+process-only follow-up and changed-support controls, typed completion negatives, production native
+encoding, a real TransactionImpl birth/allocation/update callback path, restored-metadata duplicate
+lookup, rollback cleanup, native transient ownership and nested cancellation during engine drain.
+The test fixture recognizes explicit durable inputs and uses real TransactionImpl ownership for
+transient inputs; production currentness rules were not relaxed.
+
+**Local verification:** 150 tests passed, zero failures/errors/skips: 4 in core services,
+1 in the Resolver module and 145 in Runtime (including resolver-package planning controls).
+PreparedConfigurationRecomputeTest passed **23/23**, including its original 20 controls and
+three new persistence/identity controls. Ordinary and reference submission controls passed
+without changing Runtime delivery identity or its existing metadata contract. The source trace
+confirmed that successful ordinary/reference submissions lack a typed positive outcome, while
+empty terminal failures carry typed outcomes. ObserverResolution.deferred deliberately allows
+observer-specific discovery over an absolute result; the repair bounds which commits may invoke
+that discovery rather than disabling this observer policy.
+
+The final command was:
+
+```powershell
+mvn -o '-Dmaven.repo.local=C:/Users/Ferd/.m2/repository' -pl klab.services.runtime -am '-Dtest=ChangeProcessHandlerTest,PreparedConfigurationRecomputeTest,ConfigurationRecomputeTest,ResolutionCycleScopeTest,SchedulerCurrentValidityTest,ConsequenceEngineTest,GuardedConfigurationPublisherTest,DefaultRoleConsequenceRuntimeTest,ProducingModelAdmissionTest,ModelAdmissionBeforeRankingTest,CollectiveSelectionProducerClassificationDependencyTest,MemberQualityDependencyPlanningTest,ConfigurationTransactionTest,PreparedConfigurationInputChangeTest,ConfigurationExplanationPreparationTest,ConsequenceAdmissionTest,SubmissionAdmissionCancellationTest,DirectTransactionCycleTest,ConsequenceSubmissionTest,ObserverReferenceSubmissionTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```
+
+The final local log is `review-evidence/consequence-admission-repair/tests.log` (ignored by Git).
+Default-cache and sandbox-access attempts failed before validation; the final command used the
+existing cache with the necessary filesystem access. Intermediate runs exposed fixture mistakes;
+the final result above is the passing production-source run, not a shadow copy.
+
+Live stack restart, the six historical
+request/result correlations, deployed cotechino acceptance and live durable reload remain unverified.
+The ignored audit probe/log directory named below was absent in this checkout, so its exact
+historical 97-test command could not be recovered. The repair run names its own test group explicitly.
+
 ### A1 — P1: CHANGE follow-up commits rescan and resubmit unchanged qualities
 
 `ChangeProcessHandler.evaluate` only uses the incoming commit to check whether anything was

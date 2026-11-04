@@ -9,6 +9,15 @@ This document describes the implementation in this repository. See also
 [resolver internals](RESOLUTION.md), [observation strategies](OBSERVATION.md), and
 [conditional model contexts](CONDITIONAL_MODEL_CONTEXT.md).
 
+Post-commit CHANGE submission follows the same distinction between existence and scientific
+completion: a positive result ID alone cannot justify APPLIED. The handler requires typed
+RESOLVED evidence or separately loaded complete native reuse evidence, current native lifecycle,
+compatible CHANGE/observer semantics and complete resolved support. Optional typed NO_MODEL is
+nonfatal; absent or partial completion remains deferred. Recomputations retain native/cycle/source
+admission even when duplicate receipt metadata
+is present. See the [admission audit repair checkpoint](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md)
+for local verification and the remaining live acceptance boundary.
+
 ## The model path
 
 1. **Discover visible candidates.** Resources checks catalog readiness, user permissions,

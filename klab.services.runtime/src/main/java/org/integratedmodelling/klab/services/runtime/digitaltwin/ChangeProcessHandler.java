@@ -36,6 +36,16 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
     if (observations.stream().noneMatch(ChangeProcessHandler::occurrent))
       return result(Consequence.Outcome.NO_ACTION, "The context has no observed occurrence", List.of());
 
+    var changed = new java.util.HashSet<>(changes.getAddedObservations());
+    changed.addAll(changes.getModifiedAssets());
+    // An arriving occurrence enables discovery for existing qualities. A CHANGE result is
+    // itself an occurrence, but must not turn its own follow-up commit into another full scan.
+    // Still allow a CHANGE to establish the very first occurrence in a previously static twin.
+    boolean hadOccurrence = observations.stream()
+        .anyMatch(o -> !changed.contains(o.getId()) && occurrent(o));
+    boolean scanExisting = observations.stream().anyMatch(o -> changed.contains(o.getId())
+        && occurrent(o) && (!o.getObservable().is(SemanticType.CHANGE) || !hadOccurrence));
+
     var qualities = new LinkedHashMap<Long, List<Observation>>();
     var bearers = new LinkedHashMap<Long, Observation>();
     int deferred = 0;
@@ -43,7 +53,10 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
       checkCancelled(scope);
       if (!quality.getObservable().is(SemanticType.QUALITY)
           || quality.getObservable().isAbstract() || quality.getResolvedCoverage() <= 0) continue;
-      if (!(scope.getParentOf(quality) instanceof Observation bearer) || bearer.getId() <= 0) {
+      var parent = scope.getParentOf(quality);
+      if (!scanExisting && !changed.contains(quality.getId())
+          && (parent == null || !changed.contains(parent.getId()))) continue;
+      if (!(parent instanceof Observation bearer) || bearer.getId() <= 0) {
         deferred++;
         continue;
       }
@@ -72,18 +85,31 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
         if (request.isEmpty()) { failures++; continue; }
         var existing = requestScope.getObservation(request);
         var coverage = existing == null ? null : ObserverReuseSupport.coverage(existing, support);
-        if (coverage != null && coverage.isComplete()
+        if (coverage != null && coverage.isComplete() && existing.getResolvedCoverage() >= 1.0 - 1.0e-9
+            && existing.getObservable() != null && existing.getObservable().is(SemanticType.CHANGE)
             && !ObserverResolution.deferred(existing, change, requestScope)) continue;
         checkCancelled(scope);
         var task = requestScope.observation(change).geometry(support).submit();
         try {
           var resolved = awaitSubmissionDrain(task);
           checkCancelled(scope);
-          if (resolved == null || resolved.isEmpty() || resolved.getId() <= 0) {
-            if (resolved != null && org.integratedmodelling.klab.api.utils.Utils.Notifications
-                .hasErrors(resolved.getNotifications())) failures++;
-            else deferred++;
-          } else submitted.add(quality.getId());
+          var outcome = org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt
+              .read(resolved).orElse(null);
+          if (outcome == org.integratedmodelling.klab.api.services.runtime.Dataflow.ResolutionOutcome.FAILED
+              || resolved != null && org.integratedmodelling.klab.api.utils.Utils.Notifications
+                  .hasErrors(resolved.getNotifications())) failures++;
+          else if (outcome == org.integratedmodelling.klab.api.services.runtime.Dataflow.ResolutionOutcome.NO_MODEL) {
+            // Optional absence is terminal for this trigger, not a permanent negative cache.
+          } else if ((outcome == org.integratedmodelling.klab.api.services.runtime.Dataflow.ResolutionOutcome.RESOLVED
+                  || outcome == null)
+              && completeChange(resolved, change, support, requestScope)
+              // Ordinary successful submissions currently have no typed positive receipt. In
+              // that case verify complete native reuse independently of the delivered object.
+              && (outcome != null || completeChange(graph.getAsset(resolved.getId(), requestScope,
+                  Observation.class), change, support, requestScope))) {
+            // Decision IDs identify the qualities whose change obligations were fulfilled.
+            submitted.add(quality.getId());
+          } else deferred++;
         } catch (ExecutionException failure) {
           failures++;
         }
@@ -94,6 +120,23 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
             : submitted.isEmpty() ? Consequence.Outcome.NO_ACTION : Consequence.Outcome.APPLIED,
         "Change resolution: " + submitted.size() + " qualities resolved, " + deferred
             + " deferred, " + failures + " failed", submitted);
+  }
+
+  private static boolean completeChange(Observation resolved,
+      org.integratedmodelling.klab.api.knowledge.Observable requested, Geometry support,
+      org.integratedmodelling.klab.api.scope.ContextScope scope) {
+    if (resolved == null || resolved.isEmpty() || resolved.getId() <= 0
+        || !(resolved.getResolvedCoverage() >= 1.0 - 1.0e-9) || resolved.getObservable() == null
+        || !resolved.getObservable().is(SemanticType.CHANGE)
+        || !scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(resolved, scope)) return false;
+    var coverage = ObserverReuseSupport.coverage(resolved, support);
+    if (coverage == null || !coverage.isComplete()) return false;
+    var reasoner = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    var capabilities = reasoner == null ? null : reasoner.capabilities(scope);
+    return capabilities != null
+        && reasoner.semanticDistance(resolved.getObservable(), requested, null,
+            capabilities.getKnowledgeRevision()) >= 0
+        && ObserverResolution.preference(resolved.getObservable(), requested, scope) >= 0;
   }
 
   /**
@@ -153,8 +196,10 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
       if (!ProcessPlan.INFLUENCE.equals(link.properties().get(ProcessPlan.EDGE_ROLE))
           || !(link.target() instanceof Observation affected) || affected.getId() != quality.getId()
           || !(link.source() instanceof Observation process)
+          || process.getObservable() == null
           || !process.getObservable().is(SemanticType.PROCESS)
-          || process.getResolvedCoverage() <= 0
+          || !(process.getResolvedCoverage() >= 1.0 - 1.0e-9)
+          || !scope.getDigitalTwin().getKnowledgeGraph().isObservationCurrent(process, scope)
           || !samePerspective(process, quality, scope))
         continue;
       var parent = scope.getParentOf(process);

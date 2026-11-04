@@ -243,9 +243,7 @@ final class ConfigurationRecompute {
           ? Scheduler.ConfigurationRecomputeOutcome.ALREADY_EXECUTED
           : Scheduler.ConfigurationRecomputeOutcome.DEFERRED;
     var previous = configuration.getMetadata().get(RECEIPTS);
-    var receipts = new LinkedHashMap<String, String>();
-    if (previous instanceof Map<?, ?> map)
-      map.forEach((k, v) -> receipts.put(k.toString(), v.toString()));
+    var receipts = readReceipts(previous);
     if (receipts.containsKey(key)) return Scheduler.ConfigurationRecomputeOutcome.ALREADY_EXECUTED;
     if (transaction.getTemporalWrites() != null)
       return Scheduler.ConfigurationRecomputeOutcome.DEFERRED;
@@ -348,19 +346,20 @@ final class ConfigurationRecompute {
       OptionalLong instant,
       Scheduler.ConfigurationRecomputeOutcome result) {
     var transaction = scope.getCurrentTransaction();
+    long registrationId = configuration.getId();
     scheduler.inputChangesInFlight.put(key, transaction);
-    scheduler.configurationsInFlight.put(configuration.getId(), transaction);
+    scheduler.configurationsInFlight.put(registrationId, transaction);
     Runnable release =
         () -> {
           synchronized (scheduler) {
             scheduler.inputChangesInFlight.remove(key, transaction);
-            scheduler.configurationsInFlight.remove(configuration.getId(), transaction);
+            scheduler.configurationsInFlight.remove(registrationId, transaction);
           }
         };
     transaction.afterCommit(release);
     transaction.afterRollback(release);
     receipts.put(key, result.name());
-    configuration.getMetadata().put(RECEIPTS, Map.copyOf(receipts));
+    configuration.getMetadata().put(RECEIPTS, encodeReceipts(receipts));
     transaction.afterRollback(
         () -> {
           if (previous == null) configuration.getMetadata().remove(RECEIPTS);
@@ -368,12 +367,62 @@ final class ConfigurationRecompute {
         });
     transaction.update(configuration);
     var evidence = new LinkedHashMap<String, Object>();
+    evidence.put("version", 1);
     evidence.put("configuration", configuration.getId());
     evidence.put("revision", revision);
     evidence.put("triggeringCommit", trigger);
     instant.ifPresent(value -> evidence.put("modeledInstant", value));
     evidence.put("cycle", scope.getResolutionCycleBinding().cycleId());
     evidence.put("outcome", result.name());
-    transaction.getActivity().getMetadata().put(PROVENANCE, Map.copyOf(evidence));
+    var activity = transaction.getActivity();
+    var previousProvenance = activity.getMetadata().get(PROVENANCE);
+    activity.getMetadata().put(PROVENANCE, org.integratedmodelling.klab.utilities.Utils.Json.asString(evidence));
+    transaction.update(activity);
+    // Native beforeCommit runs after allocation and before modified assets are encoded. Both
+    // births and ordinary revisions must use the same durable key at the persistence boundary.
+    transaction.beforeCommit(() -> {
+      if (configuration.getId() != registrationId) {
+        if (configuration.getId() <= 0)
+          throw new IllegalStateException("Recomputed configuration was not allocated durably");
+        receipts.remove(key);
+        receipts.put("configuration-input:" + configuration.getId() + ":" + revision + ":" + trigger,
+            result.name());
+        configuration.getMetadata().put(RECEIPTS, encodeReceipts(receipts));
+        evidence.put("configuration", configuration.getId());
+        activity.getMetadata().put(PROVENANCE, org.integratedmodelling.klab.utilities.Utils.Json.asString(evidence));
+      }
+    });
+    transaction.afterRollback(() -> {
+      if (previousProvenance == null) activity.getMetadata().remove(PROVENANCE);
+      else activity.getMetadata().put(PROVENANCE, previousProvenance);
+    });
+  }
+
+  private static String encodeReceipts(Map<String, String> receipts) {
+    return org.integratedmodelling.klab.utilities.Utils.Json.asString(
+        Map.of("version", 1, "receipts", receipts));
+  }
+
+  /** Descriptive duplicate evidence, consulted only after native currentness/cycle admission. */
+  static LinkedHashMap<String, String> readReceipts(Object value) {
+    var receipts = new LinkedHashMap<String, String>();
+    Object rows = value;
+    if (value instanceof String encoded) {
+      if (encoded.length() > 1_048_576) return receipts;
+      try {
+        var envelope = org.integratedmodelling.klab.utilities.Utils.Json.parseObject(encoded, Map.class);
+        if (!(envelope.get("version") instanceof Number version) || version.intValue() != 1)
+          return receipts;
+        rows = envelope.get("receipts");
+      } catch (RuntimeException invalid) { return receipts; }
+    }
+    // Bounded compatibility with the pre-versioned in-memory map. Unknown/malformed evidence
+    // cannot certify a completed computation; it never relaxes native admission.
+    if (rows instanceof Map<?, ?> map && map.size() <= 10_000)
+      map.forEach((k, v) -> {
+        if (k instanceof String key && key.matches("configuration-input:-?[0-9]+:[0-9]+:[0-9]+")
+            && "RESOLVED".equals(v)) receipts.put(key, "RESOLVED");
+      });
+    return receipts;
   }
 }

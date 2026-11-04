@@ -124,6 +124,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.provisionalObservations = parent.provisionalObservations;
     this.remoteTransactionId = parent.remoteTransactionId;
     this.requestCancelled = parent.requestCancelled;
+    this.consequenceCancelled = parent.consequenceCancelled;
     this.consequenceCause = parent.consequenceCause;
     this.resolutionCycleBinding = parent.resolutionCycleBinding;
     this.resolutionCycle = parent.resolutionCycle;
@@ -342,9 +343,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     return ret;
   }
 
+  // Handler lifetime is independent of the request that originally committed. In particular,
+  // forConsequence detaches request cancellation but must retain active background ownership.
+  private java.util.function.BooleanSupplier consequenceCancelled = () -> false;
+
+  public ServiceContextScope withConsequenceCancellation(java.util.function.BooleanSupplier cancelled) {
+    Objects.requireNonNull(cancelled);
+    var ret = new ServiceContextScope(this);
+    var inherited = consequenceCancelled;
+    ret.consequenceCancelled = () -> inherited.getAsBoolean() || cancelled.getAsBoolean();
+    return ret;
+  }
+
   @Override
   public boolean isInterrupted() {
-    return super.isInterrupted() || requestCancelled.getAsBoolean();
+    return super.isInterrupted() || requestCancelled.getAsBoolean() || consequenceCancelled.getAsBoolean();
   }
 
   @Override

@@ -26,8 +26,9 @@ class PreparedConfigurationRecomputeTest {
   final KnowledgeGraph graph=mock(KnowledgeGraph.class);
   final ObservationImpl configuration=new ObservationImpl();
   final ObservationImpl bearer=new ObservationImpl();
-  final List<Runnable> committed=new ArrayList<>(),rollback=new ArrayList<>();
+  final List<Runnable> committed=new ArrayList<>(),rollback=new ArrayList<>(),before=new ArrayList<>();
   final SchedulerImpl scheduler;
+  DigitalTwinImpl.TransactionImpl ownership;
   DigitalTwin.Transaction transaction;
   DigitalTwin.Executor preparedExecutor;
   void register(org.integratedmodelling.klab.api.lang.TriFunction<Geometry,Scheduler.Event,
@@ -62,14 +63,19 @@ class PreparedConfigurationRecomputeTest {
    }:new SchedulerImpl(scope,twin);begin();
   }
   void begin() {
-   committed.clear();rollback.clear();transaction=mock(DigitalTwin.Transaction.class);
+   committed.clear();rollback.clear();before.clear();transaction=mock(DigitalTwin.Transaction.class);
    when(scope.getCurrentTransaction()).thenReturn(transaction);
    when(transaction.getExecutor(configuration)).thenAnswer(call->preparedExecutor);
-   when(transaction.getActivity()).thenReturn(Activity.of(Activity.Type.DETECTION));
+   var activity=Activity.of(Activity.Type.DETECTION);activity.setId(90);
+   when(transaction.getActivity()).thenReturn(activity);
    when(transaction.assets()).thenReturn(List.of(configuration));
+   ownership=twin.new TransactionImpl(Activity.of(Activity.Type.DETECTION),scope,
+       org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET,configuration);
    // This exact negative-ID birth is owned by the fixture's current staging transaction.
     when(graph.isObservationCurrent(any(),same(scope))).thenAnswer(call->
-        scope.getCurrentTransaction()!=null && scope.getCurrentTransaction().assets().stream().anyMatch(asset->asset==call.getArgument(0)));
+        scope.getCurrentTransaction()==transaction && (call.getArgument(0)==configuration && configuration.getId()>0
+            || ownership.currentStatusFor(call.getArgument(0)).orElse(false)));
+   doAnswer(c->{before.add(c.getArgument(0));return null;}).when(transaction).beforeCommit(any());
    doAnswer(c->{committed.add(c.getArgument(0));return null;}).when(transaction).afterCommit(any());
    doAnswer(c->{rollback.add(c.getArgument(0));return null;}).when(transaction).afterRollback(any());
   }
@@ -78,9 +84,90 @@ class PreparedConfigurationRecomputeTest {
        scope,instant,graph,initial,(actual,event)->{actualSupports.add(actual);supportEvents.add(event.getType());},
        (geometry,event,execution)->preparedExecutor==null?true:preparedExecutor.run(geometry,event,execution));
   }
-  void commit(){List.copyOf(committed).forEach(Runnable::run);}
+  void commit(){List.copyOf(before).forEach(Runnable::run);List.copyOf(committed).forEach(Runnable::run);}
   public void close(){scheduler.close();}
  }
+ // Exercise the production native encoder rather than serializing the in-memory map directly.
+ static Map<String,Object> encoded(Object asset) throws Exception {
+  var graph=mock(org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j.class,CALLS_REAL_METHODS);
+  var method=org.integratedmodelling.klab.services.runtime.neo4j.AbstractKnowledgeGraph.class
+      .getDeclaredMethod("asParameters",Object.class,Object[].class);method.setAccessible(true);
+  var properties=(Map<String,Object>)method.invoke(graph,asset,new Object[0]);
+  return org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+      properties.get(GraphModel.Fields.METADATA).toString(),Map.class);
+ }
+ @Test void allocatedBirthReceiptsAndActivitySurviveNativeEncodingAndDuplicateLookup() throws Exception {
+  try(var f=new Fixture()) {
+   assertEquals(Scheduler.ConfigurationRecomputeOutcome.RESOLVED,f.run(101,1,OptionalLong.empty(),true));
+   f.configuration.setId(700);
+   f.commit();
+   assertTrue(f.scheduler.configurationsInFlight.isEmpty());assertTrue(f.scheduler.inputChangesInFlight.isEmpty());
+   var metadata=encoded(f.configuration);
+   var persisted=metadata.get(ConfigurationRecompute.RECEIPTS);
+   assertEquals(Map.of("configuration-input:700:1:101","RESOLVED"),ConfigurationRecompute.readReceipts(persisted));
+   var provenance=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+       encoded(f.transaction.getActivity()).get(ConfigurationRecompute.PROVENANCE).toString(),Map.class);
+   assertEquals(700,((Number)provenance.get("configuration")).longValue());
+   assertEquals(1,((Number)provenance.get("version")).intValue());
+   // Replace warm metadata with only its native representation, as on a restored observation.
+   f.configuration.getMetadata().clear();f.configuration.getMetadata().put(ConfigurationRecompute.RECEIPTS,persisted);
+   f.begin();
+   assertEquals(Scheduler.ConfigurationRecomputeOutcome.ALREADY_EXECUTED,f.run(101,1,OptionalLong.empty(),true));
+   assertEquals(Scheduler.ConfigurationRecomputeOutcome.RESOLVED,f.run(101,2,OptionalLong.empty(),false));
+   List.copyOf(f.rollback).reversed().forEach(Runnable::run);
+   assertTrue(f.scheduler.configurationsInFlight.isEmpty());assertTrue(f.scheduler.inputChangesInFlight.isEmpty());
+   assertEquals(persisted,f.configuration.getMetadata().get(ConfigurationRecompute.RECEIPTS));
+   assertFalse(f.transaction.getActivity().getMetadata().containsKey(ConfigurationRecompute.PROVENANCE));
+  }
+ }
+ @Test void nativeTransactionAllocatesBirthBeforeEncodingReboundReceiptAndDrainsRegistries() throws Exception {
+  try(var f=new Fixture()) {
+   var graph=mock(org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j.class);
+   var storage=mock(KnowledgeGraph.Transaction.class);
+   when(graph.nextKey()).thenReturn(900L);when(graph.createTransaction(f.scope)).thenReturn(storage);
+   var graphField=DigitalTwinImpl.class.getDeclaredField("knowledgeGraph");graphField.setAccessible(true);graphField.set(f.twin,graph);
+   var cacheField=DigitalTwinImpl.class.getDeclaredField("commitCache");cacheField.setAccessible(true);cacheField.set(f.twin,com.google.common.cache.CacheBuilder.newBuilder().build());
+   when(f.twin.getKnowledgeGraph()).thenReturn(graph);
+   var user=mock(org.integratedmodelling.klab.api.identities.UserIdentity.class);when(user.getUsername()).thenReturn("tester");when(f.scope.getUser()).thenReturn(user);when(f.scope.getId()).thenReturn("context");
+   var root=f.twin.new TransactionImpl(Activity.of(Activity.Type.DETECTION),f.scope,
+       org.integratedmodelling.klab.api.data.RuntimeAsset.PROVENANCE_ASSET,f.configuration);
+   when(f.scope.getCurrentTransaction()).thenReturn(root);
+   when(graph.isObservationCurrent(any(),same(f.scope))).thenAnswer(call->root.currentStatusFor(call.getArgument(0)).orElse(false));
+   when(f.graph.isObservationCurrent(any(),same(f.scope))).thenAnswer(call->root.currentStatusFor(call.getArgument(0)).orElse(false));
+   var persisted=new java.util.HashMap<Long,Map<String,Object>>();
+   var sequence=new java.util.concurrent.atomic.AtomicLong(700);
+   doAnswer(call->{
+    var asset=call.getArgument(0,org.integratedmodelling.klab.api.data.RuntimeAsset.class);
+    if(asset instanceof ObservationImpl observation){observation.setId(sequence.incrementAndGet());observation.setUrn("context."+observation.getId());}
+    if(asset instanceof org.integratedmodelling.klab.api.provenance.impl.ActivityImpl activity)activity.setId(sequence.incrementAndGet());
+    persisted.put(asset.getId(),encoded(asset));return null;
+   }).when(storage).store(any());
+   doAnswer(call->{var asset=call.getArgument(0,org.integratedmodelling.klab.api.data.RuntimeAsset.class);
+    persisted.put(asset.getId(),encoded(asset));return null;}).when(storage).update(any());
+   assertEquals(Scheduler.ConfigurationRecomputeOutcome.RESOLVED,ConfigurationRecompute.executePrepared(
+       f.scheduler,f.configuration,f.configuration.getGeometry(),101,1,f.scope,OptionalLong.empty(),graph,true,(g,e)->{},(g,e,c)->true),()->mockingDetails(f.scope).getInvocations().toString());
+   assertTrue(root.commit()>0);
+   assertTrue(f.scheduler.configurationsInFlight.isEmpty());assertTrue(f.scheduler.inputChangesInFlight.isEmpty());
+   assertEquals(Map.of("configuration-input:"+f.configuration.getId()+":1:101","RESOLVED"),
+       ConfigurationRecompute.readReceipts(persisted.get(f.configuration.getId()).get(ConfigurationRecompute.RECEIPTS)));
+   var evidence=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(
+       persisted.get(root.getActivity().getId()).get(ConfigurationRecompute.PROVENANCE).toString(),Map.class);
+   assertEquals(f.configuration.getId(),((Number)evidence.get("configuration")).longValue());
+  }
+ }
+
+ @Test void boundedLegacyReceiptDecodingDoesNotAuthorizeInactiveConfiguration() {
+  try(var f=new Fixture()) {
+   var old=Map.of("configuration-input:-7:1:101","RESOLVED");
+   f.configuration.getMetadata().put(ConfigurationRecompute.RECEIPTS,old);
+   assertEquals(Scheduler.ConfigurationRecomputeOutcome.ALREADY_EXECUTED,f.run(101,1,OptionalLong.empty(),true));
+   when(f.graph.isObservationCurrent(f.configuration,f.scope)).thenReturn(false);
+   assertEquals(Scheduler.ConfigurationRecomputeOutcome.DEFERRED,f.run(101,1,OptionalLong.empty(),true));
+   assertTrue(ConfigurationRecompute.readReceipts("{\"version\":2,\"receipts\":{}}").isEmpty());
+   assertTrue(ConfigurationRecompute.readReceipts(Map.of("unrelated","RESOLVED")).isEmpty());
+  }
+ }
+
  @Test void transientDependentBirthInitializesOnceThenRecomputesAtCurrentTimeWithoutLosingBearer() {
   try(var f=new Fixture()) {
    var events=new ArrayList<Scheduler.Event.Type>();
@@ -163,6 +250,8 @@ class PreparedConfigurationRecomputeTest {
    when(f.transaction.getExecutor(input)).thenReturn(mode.equals("missing")?null:producer);
    if(mode.equals("missing"))f.scheduler.registerExecutor(input,(g,e,c)->{throw new AssertionError("Cached producer must not run");});
    when(f.transaction.assets()).thenReturn(owned?List.of(f.configuration,input):List.of(f.configuration));
+   if(owned)f.ownership.add(input);
+   if(id>0)when(f.graph.isObservationCurrent(same(input),same(f.scope))).thenReturn(true);
    var link=mock(KnowledgeGraph.Link.class);when(link.source()).thenReturn(input);when(link.target()).thenReturn(f.configuration);
    when(link.properties()).thenReturn(org.integratedmodelling.klab.api.collections.Parameters.create());
    when(f.graph.getLinks(any(),eq(GraphModel.Relationship.Direction.INCOMING),same(f.scope),eq(GraphModel.Relationship.AFFECTS)))
@@ -230,6 +319,7 @@ class PreparedConfigurationRecomputeTest {
    var plan=new org.integratedmodelling.common.runtime.ActuatorImpl();plan.setId(-77);plan.setObservation(fresh);plan.setActuatorType(org.integratedmodelling.klab.api.services.runtime.Actuator.Type.OBSERVE);plan.setExecutionRole(org.integratedmodelling.klab.api.services.runtime.Actuator.ExecutionRole.INITIALIZATION);
    var producer=mock(DigitalTwin.Executor.class);when(producer.getActuator()).thenReturn(plan);when(producer.executionScope(any())).thenReturn(f.scope);
    var broken=mock(DigitalTwin.Executor.class);when(broken.executionScope(any())).thenReturn(f.scope);when(broken.run(any(),any(),any())).thenThrow(new IllegalStateException("nested original failure"));
+   f.ownership.add(fresh);f.ownership.add(nested);
    when(f.transaction.getExecutor(fresh)).thenReturn(producer);when(f.transaction.getExecutor(nested)).thenReturn(broken);when(f.transaction.assets()).thenReturn(List.of(f.configuration,fresh,nested));
    var top=mock(KnowledgeGraph.Link.class);when(top.source()).thenReturn(fresh);when(top.target()).thenReturn(f.configuration);when(top.properties()).thenReturn(org.integratedmodelling.klab.api.collections.Parameters.create());
    var inner=mock(KnowledgeGraph.Link.class);when(inner.source()).thenReturn(nested);when(inner.target()).thenReturn(fresh);when(inner.properties()).thenReturn(org.integratedmodelling.klab.api.collections.Parameters.create());

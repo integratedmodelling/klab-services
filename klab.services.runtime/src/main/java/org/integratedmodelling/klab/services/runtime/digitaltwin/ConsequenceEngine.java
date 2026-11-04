@@ -225,7 +225,7 @@ public final class ConsequenceEngine implements AutoCloseable {
       if (closed) return;
       // Admission is linearized with close. An admitted handler remains owned until it drains.
       // forConsequence resets request cancellation; attach our lifetime afterwards.
-      handlerScope = evaluationScope.forConsequence(cause).withCancellation(() -> closed);
+      handlerScope = evaluationScope.forConsequence(cause).withConsequenceCancellation(() -> closed);
     }
     Result result;
     try {

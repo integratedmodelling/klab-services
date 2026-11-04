@@ -327,9 +327,11 @@ class ConsequenceEngineTest {
       var closeFailure = new AtomicReference<Throwable>();
       f.engine.register(Consequence.Kind.CONFIGURATION_DETECTION, (cause, changes, scope) -> {
         calls.incrementAndGet();
+        var nested = scope.forConsequence(cause).forConsequence(null);
         entered.countDown();
         try {
-          while (!scope.isInterrupted()) Thread.sleep(1);
+          while (!nested.isInterrupted()) Thread.sleep(1);
+          assertTrue(scope.isInterrupted());
           cancellationSeen.countDown();
           releaseOperation.await(); // an already-running read/atomic operation may finish safely
         } catch (InterruptedException failure) { interrupted.set(true); throw failure; }

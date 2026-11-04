@@ -1,17 +1,20 @@
-# Consequence engine status — 3 November 2026
+# Consequence engine status — 4 November 2026
 
 This is a publication checkpoint, not a claim that the complete consequence engine has
 passed a production suite. The implementation contract is in [CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md).
 No new general resolver-reuse policy, named-event generation or termination semantics is included.
 
 The [admission follow-up audit](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md) records five additional
-findings and a staged repair plan. Its controlled probes and failing baseline are separate from
-the historical acceptance results below; the audit does not implement the proposed repairs.
+findings and a staged repair plan. Its 4 November repair checkpoint records local fixes for A1–A5
+and their verification boundary. The original failing baseline and the new controlled regression
+results are separate from the historical live acceptance results below; no fresh deployment or
+live acceptance is implied.
 
 ## Verified results
 
 | Scenario | Evidence and boundary |
 | --- | --- |
+| Admission audit A1–A5 repairs | 4 November local Maven **150/150**, no failures/errors/skips; CHANGE relevance and scientific completion, real transaction allocation/native encoding, receipt restoration and cleanup, nested cancellation/drain, admission and collective-input compatibility. Prepared recomputation **23/23**. No new live/deployed acceptance; exact command and remaining gaps are in the admission audit |
 | Process birth → intrinsic role → implied quality | Actual Runtime acceptance21:8/8, recursive cycle drain and next explicit request; optional characterization reaches genuine NO_MODEL and the role remains |
 | Dependent configuration birth and recomputation | Actual acceptance30:20/20, real explanatory execution, changed input, same configuration ID, atomic second revision, current modeled time and immutable earlier history; raw wrapper FAILED on a stale log association; correct Runtime-log corroboration and focused association regressions are retained, without claiming a fresh full harness rerun |
 | Modeled cessation and COUNT | Controlled real compiled/native path: current COUNT1→0, prior INIT1 unchanged, actual membership callback APPLIED and next cycle drain; controlled Reasoner/model admission collaborators, not live semantic services |

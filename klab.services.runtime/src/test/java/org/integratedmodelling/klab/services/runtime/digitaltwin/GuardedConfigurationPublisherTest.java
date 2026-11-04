@@ -41,6 +41,12 @@ class GuardedConfigurationPublisherTest {
   verify(f.f.scope).commit();verify(f.f.scope,never()).fail(any(Throwable.class));
   verify(f.f.storage).updateConfigurations(argThat(rows->rows.size()==1&&rows.getFirst().participants().equals(List.of(43L))&&rows.getFirst().revision()==2));
  }
+ @Test void cancelledNestedScopeCannotOpenPublicationTransaction() {
+  when(f.f.scope.isInterrupted()).thenReturn(true);
+  assertThrows(InterruptedException.class,()->publisher.publish(f.update,f.f.scope.getConsequenceCause(),f.f.scope));
+  verify(f.f.scope,never()).executing(any(Activity.class));
+  verifyNoInteractions(admission,scheduler);
+ }
  @Test void failedOrUnavailableExplanationRollsBackTheRevision()throws Exception {
   for(var outcome:List.of(Scheduler.ConfigurationRecomputeOutcome.FAILED,Scheduler.ConfigurationRecomputeOutcome.DEFERRED)) {
    setup();when(scheduler.recomputeConfiguration(any(),any(),anyLong(),anyLong(),any())).thenReturn(outcome);

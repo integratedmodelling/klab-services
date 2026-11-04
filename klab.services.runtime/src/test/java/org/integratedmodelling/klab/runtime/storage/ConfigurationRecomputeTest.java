@@ -204,7 +204,8 @@ class ConfigurationRecomputeTest {
         else abortA.reversed().forEach(Runnable::run);
         f.begin("transaction-b-retry",0,0);
         assertEquals(Scheduler.ConfigurationRecomputeOutcome.RESOLVED,scheduler.recomputeConfiguration(config,config.getGeometry(),502,2,f.scope));f.commit();
-        var receipts=(Map<?,?>)config.getMetadata().get("klab.scheduler.configurationRecomputations");
+        var envelope=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(config.getMetadata().get("klab.scheduler.configurationRecomputations").toString(),Map.class);
+        var receipts=(Map<?,?>)envelope.get("receipts");
         assertEquals(commitFirst?2:1,receipts.size());assertEquals(2,calls.get());
         var history=org.integratedmodelling.klab.utilities.Utils.Json.parseObject(f.quality.getMetadata().get(StateRevisionHistory.KEY).toString(),StateRevisionHistory.class);
         assertEquals(commitFirst?2:1,history.revisions().size());assertTrue(history.revisions().getLast().id().endsWith(":2:502"));
