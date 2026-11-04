@@ -18,6 +18,33 @@ refreshed = projection.load(observation)  # Explicitly refetch just this page.
 
 ## Guarantees and non-guarantees
 
+### Reproducible owned Runtime disconnect
+
+The development runner supports `--scenario partial-refresh` with the same explicit
+compiled checkout, Java21 and component pins as nonuniform-export acceptance:
+
+```console
+python tools/run_reliability_acceptance.py --server-repo <compiled-checkout> --java <jdk21-java.exe> --components <pins.json> --state-dir <fresh-private-state> --scenario partial-refresh
+```
+
+The functional child retains two actual Java graph query selections. Only its
+parent may stop/restart the captured owned Runtime process; control files live
+in the fresh private state and are not product endpoints. Restarted processes are
+added to the existing ownership journal/final cleanup. There is no scientific
+resubmission, old-Job replay, event replay cursor or automatic full refresh.
+Failed reads must retain prior page identity, timestamps and query metadata but
+invalidate all pages. An explicit one-page refetch must leave the other page
+invalidated; even refetched content remains partial with UNKNOWN consistency.
+Owner read/reattach and separate signed-identity private-context attach/release
+denials are tested at the actual Java service, never inferred from a local role.
+
+Transport failure, HTTP authentication/authorization, missing state and service
+errors stay distinct exceptions. An HTTP404 alone does not distinguish expired
+scope from deleted/missing state; no expiry claim is inferred. Controlled contract
+tests cover these status distinctions while the owned stack supplies genuine
+disconnect/reconnect evidence. Revisioned two-client convergence and durable
+restart/replay acceptance remain outside this recipe (#126).
+
 - Immutable pages retain their original identity, query selection, offset and
   fetched timestamp. `view` is an immutable point-in-time local snapshot, not a
   live object and not a current server authorization check.

@@ -61,6 +61,25 @@ def ready(port, route, process):
     raise RuntimeError("Owned fixture endpoint did not become ready")
 
 
+def runtime_control(state, launches, spawn, actions):
+    """One ordered stop/start pair, only for the parent's captured Runtime."""
+    for action in ("stop", "start"):
+        if not (state / (action + "-runtime.request")).exists() or action in actions:
+            continue
+        if action == "start" and actions != ["stop"]:
+            raise RuntimeError("Runtime control sequence rejected")
+        process, command, cwd, route = launches["runtime"]
+        if action == "stop":
+            process.terminate(); process.wait(timeout=20)
+        else:
+            process = spawn("runtime-restarted", command, cwd)
+            launches["runtime"] = (process, command, cwd, route)
+            ready(PORTS["runtime"], route, process)
+        actions.append(action)
+        (state / "runtime-actions.json").write_text(json.dumps(actions))
+        (state / (action + "-runtime.done")).write_text("confirmed")
+
+
 def run(args):
     import klab_client
     state, repo = args.state_dir.resolve(), args.server_repo.resolve()
@@ -89,6 +108,8 @@ def run(args):
     result["java_version"] = subprocess.run([str(args.java), "-version"], capture_output=True, check=True).stderr.decode(errors="replace")
     result["tool_sha256"] = {str(p.relative_to(PACKAGE)): sha(p) for p in
         (Path(__file__), PACKAGE / "tools/workflows/nonuniform_export.py", PACKAGE / "tests/fixtures/nonuniform-export.json")}
+    result["functional_sha256"] = {p.relative_to(PACKAGE).as_posix(): sha(p)
+        for p in (PACKAGE / "tests/functional").glob("*.py")}
     def spawn(name, command, cwd):
         log = (state / (name + ".log")).open("xb"); logs.append(log)
         env = {k: v for k, v in os.environ.items() if not k.startswith("KLAB_") and k not in ("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS")}
@@ -173,10 +194,38 @@ def run(args):
         fixture_hub.SERVICES = PORTS
         fixture_hub.issue(state, key)
         with (state / "functional-private.log").open("xb") as log:
-            subprocess.run([sys.executable, str(PACKAGE / "tools/run_functional_acceptance.py"),
+            functional = subprocess.Popen([sys.executable, str(PACKAGE / "tools/run_functional_acceptance.py"),
                 "--suite", args.scenario, "--state-dir", str(state), "--report", str(state / "functional.xml")],
-                cwd=PACKAGE, stdout=log, stderr=log, check=True, timeout=300, creationflags=subprocess.CREATE_NO_WINDOW)
-        result["science"] = json.loads((state / "nonuniform-science.json").read_text())
+                cwd=PACKAGE, stdout=log, stderr=log, creationflags=subprocess.CREATE_NO_WINDOW)
+            try:
+                actions = []
+                deadline = time.monotonic() + 420
+                while functional.poll() is None:
+                    if time.monotonic() > deadline:
+                        raise TimeoutError("Owned functional deadline expired; never replay")
+                    if args.scenario == "partial-refresh":
+                        runtime_control(state, launches, spawn, actions)
+                    time.sleep(.1)
+                if functional.returncode:
+                    raise RuntimeError("Owned functional suite failed; inspect private evidence")
+            finally:
+                if functional.poll() is None:
+                    # The named-suite launcher owns a pytest child. Capture only
+                    # this process tree before terminating its parent on failure.
+                    descendants = psutil.Process(functional.pid).children(recursive=True)
+                    for child in reversed(descendants):
+                        try:
+                            child.terminate()
+                        except psutil.NoSuchProcess:
+                            pass
+                    functional.terminate(); functional.wait(timeout=20)
+                    _, alive = psutil.wait_procs(descendants, timeout=20)
+                    for child in alive:
+                        child.kill()
+                    _, alive = psutil.wait_procs(alive, timeout=20)
+                    if alive:
+                        raise RuntimeError("Owned functional descendant cleanup unconfirmed")
+        result["science"] = json.loads((state / ("partial-refresh.json" if args.scenario == "partial-refresh" else "nonuniform-science.json")).read_text())
         result["passed"] = True
     except Exception as error:
         result["error_type"] = type(error).__name__  # Private service/credential text is not echoed.
@@ -211,7 +260,7 @@ if __name__ == "__main__":
     parser.add_argument("--java", type=Path)
     parser.add_argument("--components", type=Path, help="JSON list of exactly two explicit {path,sha256} archives")
     parser.add_argument("--state-dir", type=Path, required=True)
-    parser.add_argument("--scenario", choices=("nonuniform-export",), default="nonuniform-export")
+    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh"), default="nonuniform-export")
     args = parser.parse_args()
     if args.authority:
         fixture_hub.SERVICES = PORTS

@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "partial-refresh": "tests/functional/test_partial_refresh.py",
     "nonuniform-export": "tests/functional/test_nonuniform_export.py",
     "milestone-compatibility-units": "tests/functional/test_connected_semantics.py",
     "milestone-compatibility-compute": "tests/functional/test_connected_workflows.py::test_connected_tiny_terrestrial_region_completes",
