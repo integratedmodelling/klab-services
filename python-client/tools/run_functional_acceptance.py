@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "nonuniform-export": "tests/functional/test_nonuniform_export.py",
     "milestone-compatibility-units": "tests/functional/test_connected_semantics.py",
     "milestone-compatibility-compute": "tests/functional/test_connected_workflows.py::test_connected_tiny_terrestrial_region_completes",
     "milestone-discovery": "tests/functional/test_discover_compare_explain.py::test_discovery_and_model_inspection_use_existing_java_contracts",

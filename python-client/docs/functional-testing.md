@@ -33,6 +33,7 @@ tools/
 
 | Suite | User outcome | Shared implementation |
 |---|---|---|
+| `nonuniform-export` | Explicit minimal single-shard Java fixture, asymmetric values/precision/zero/missingness and native TIFF/reader coordinates | `workflows/nonuniform_export.py`; owned runner below |
 | `compute-and-analyze` | Compute, read in metres/millimetres, reconnect; validate Jobs, identity, access and lifecycle | `workflows/compute_and_analyze.py`, `verify_fixture.py` |
 | `develop-compatibility` | Python scientific roundtrips against the combined Java services before/after an actual Runtime-only restart; retain graph and verify private/shared/excluded context ACLs | `workflows/develop_compatibility.py`, `cold_context_check.py` |
 | `resume-saved-work` | Save original work and restore/share it in separate authorized Python processes | `workflows/resume_saved_work.py`, existing saved-handles example |
@@ -49,6 +50,33 @@ them. Local subprocess integration has its own marker and remains in offline CI.
 No assertion was converted into a skip to make the reorganization pass.
 
 ## Captured semantic dependencies
+
+### Portable asymmetric single-shard export acceptance
+
+`tools/run_reliability_acceptance.py` stages the committed, separately labelled
+`tests/fixtures/scientific-reliability` assets. It requires an explicit compiled
+server checkout, JDK21, and JSON list of exactly two `{path, sha256}` component
+archives (generators and geospatial). It refuses occupied fixed loopback ports
+38091–38094,38382/37687/37474 and18090; never point it at shared/Modeler services.
+Its fresh state is access-restricted, TEST credentials are generated, services are
+hidden and owned, and finally cleanup verifies owned process/listener closure and
+unchanged pre-existing Java identities. No authority/credential files belong in Git.
+
+```console
+python tools/run_reliability_acceptance.py --server-repo <compiled-checkout> --java <jdk21-java.exe> --components <explicit-pinned-archives.json> --state-dir <fresh-private-state>
+python tools/workflows/nonuniform_export.py <native-export.tif>
+```
+
+The installed SDK must match the selected client source. The Java test producer
+is compiled from the explicit server checkout and never enters its product JAR.
+The writer's native column traversal and the independently authored north-first
+JSON oracle are separate. Real scientific source, model admission, computation,
+export, and installed optional reader remain in Java/SDK respectively; no Python
+replacement values are served. It is not original-study reproduction or full
+multi-shard/time/revision acceptance. The published exporter may fail this oracle;
+use only a separately hash-pinned, validated correction when testing that candidate.
+The existing branch-carried patch builder can produce it without modifying the
+external component repository or adopting HortonMachine#11.
 
 Current develop's Reasoner requires explicit captured ontology imports before it
 can publish accepted semantic knowledge. Capture the worldview's **declared** ODO
