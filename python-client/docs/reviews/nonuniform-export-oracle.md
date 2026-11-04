@@ -15,7 +15,11 @@ promoted by this contribution. Required hosted checks/normal merge still apply.
   `feature/python-experiment-runner`; product/test candidate
   `03c4a25c5e2f22b490da1f42d509274825b8d0f6` (initial fixture9a6e47c79,
   followed only by startup process-identity persistence). Subsequent preflight
-  tests and review text do not change the scientific scenario.
+  tests and review text do not change the scientific scenario. Final validator
+  correction `85278f3a4bf0e5c80f8d6d04f2def718f674f280` pins native GeoTIFF before
+  the first read and streams byte hashing; its fresh-process check passes on the
+  retained unchanged actual-Java artifact. No new Java execution is attributed to
+  that local validator-only check.
 - Includes the complete base diff: independent JSON oracle, test-only Java producer,
   separate minimal synthetic fixture assets, owned runner, shared validator, named
   functional suite, negative tests, packaging/usage and existing-map queue contract.
@@ -49,6 +53,12 @@ promoted by this contribution. Required hosted checks/normal merge still apply.
    single-shard producer. The full multi-shard fixture gate is unprovisioned/blocked
    for this recipe, not a demonstrated Java engine defect or a reason to block
    unrelated client work. RC-P2.1, CAP-09/15 and time/revision claims remain PARTIAL.
+4. **Fixed native-reader admission gap (source inspection):** the native oracle's
+   initial read did not pin GTiff/internal metadata like the SDK reader. It now
+   rejects other encodings before reading values, ignores sidecars, and streams
+   hashes rather than allocating the entire input. A VRT admission regression and
+   the unchanged actual-Java artifact pass the corrected checks. No external-read
+   exploit is claimed from source inspection alone.
 
 ## Validation and evidence
 
@@ -60,8 +70,8 @@ Never publish the raw authority, service keys, logs or scientist configuration.
 | Check | Result / scope |
 |---|---|
 | Baseline installed smoke |143 passed, one retained Rasterio warning |
-| Independent validator negative tests |14 pass: flipped rows/columns, missing-to-zero, rounded float32, shape, wrong CRS/units/transform/mask/bands |
-| Installed offline regressions |2833 passed, one retained Rasterio warning, all16 existing coverage gates pass; subsequent four preflight guards pass in the65-test focused selection; no live services selected |
+| Independent validator negative tests |15 pass: flipped rows/columns, missing-to-zero, rounded float32, shape, wrong CRS/units/transform/mask/bands, non-GTiff admission |
+| Installed offline regressions |2833 passed, one retained Rasterio warning, all16 existing coverage gates pass; subsequent preflight/admission guards pass in the66-test focused selection; no live services selected |
 | Existing corrected-component builder `--offline --independent-reader` |22 Java component tests, independent files and pinned source-tree recheck pass |
 | Original actual-Java export |Rejected, with failed artifact retained; no scientific oracle weakened |
 | Corrected actual-Java export `f1-live-corrected-v2` |20 cells/two missing/one zero, signed TEST native reads, coordinates, masks, units and precise native/reader values pass; release and process/listener cleanup pass |
@@ -74,8 +84,8 @@ failed state remains preserved; all owned ports/processes were checked absent.
 V4 changes the outer execution budget, persists startup process identities and
 uses entirely fresh state; it does not retry an ambiguous scientific/import write.
 
-Final wheel SHA256 `2668547c2849b58b1c9676e4d0c6d144997dac81f389cf2e154c4880852de33d`;
-sdist SHA256 `bf2406a99d55e78125d00c76c63949c0ee3a9765dcd8663aff74cc41a0259956`.
+Reviewed wheel SHA256 `876c9f1c906039551b1a38c5945a09a4fc60fc5101ee3d8fdd9dcd96d58938bd`;
+sdist SHA256 `befdc21af6b95edccaeb8ab9fe595513eecc78357c69ec4d01082475bae6c809`.
 All43 installed SDK modules match the named live run byte-for-byte; production SDK
 code is unchanged. The freshly installed final wheel also passes the standalone
 oracle CLI on the unchanged691-byte Java-served artifact. Required fixture language
