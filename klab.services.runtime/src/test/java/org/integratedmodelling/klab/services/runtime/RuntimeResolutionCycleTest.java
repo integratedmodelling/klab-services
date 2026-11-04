@@ -76,6 +76,31 @@ class RuntimeResolutionCycleTest {
    doCallRealMethod().when(f.runtime).withinResolutionCycle(any(),any(),any());
    return cycles;
  }
+ @Test void readOnlyQueryAdmissionRetainsReasonerButExistingPerceptionDoesNot() throws Exception {
+   var f=new SubmissionCancellationTest.Fixture();
+   try(var cycles=cycles(f,new AtomicBoolean(),new AtomicLong(7))) {
+     for(long id:new long[]{org.integratedmodelling.klab.api.knowledge.observation.Observation.QUERY_ID,
+         org.integratedmodelling.klab.api.knowledge.observation.Observation.UNASSIGNED_ID,42}) {
+       var request=(org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl)subject();
+       request.setId(id);
+       var result=f.runtime.withinResolutionCycle(request,f.scope,admitted->{
+         if(id<=0) {
+           assertNotNull(admitted.getResolutionCycleBinding().semanticBinding());
+           assertSame(f.reasoner,admitted.getService(org.integratedmodelling.klab.api.services.Reasoner.class));
+         } else {
+           assertNull(admitted.getResolutionCycleBinding().semanticBinding());
+           assertTrue(admitted.getServices(org.integratedmodelling.klab.api.services.Reasoner.class).isEmpty());
+         }
+         return CompletableFuture.completedFuture(request);
+       });
+       assertSame(request,result.get(5,TimeUnit.SECONDS));cycles.awaitQuiescence(5,TimeUnit.SECONDS);
+     }
+     verify(f.reasoner,times(2)).beginSemanticCycleResult(anyString(),anyString(),anyString(),any());
+     verify(f.reasoner,times(2)).releaseSemanticCycle(any(),anyString(),anyString(),anyString(),any());
+     verifyNoInteractions(f.resolver);
+   }
+ }
+
  @Test void cancelledPublicSubscriberKeepsCycleUntilUnderlyingResolverDrains() throws Exception {
    var f=new SubmissionCancellationTest.Fixture();
    try(var cycles=cycles(f,new AtomicBoolean(),new AtomicLong(1))) {

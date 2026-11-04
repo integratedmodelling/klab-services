@@ -58,6 +58,19 @@ class ContextActorObserverTest {
     verify(agent, never()).getCreationScope();
     assertEquals(false, options.get("observer"));
     verify(runtime, times(2)).submit(observation, context);
+    var cleanup=ArgumentCaptor.forClass(reactor.core.Disposable.class);
+    verify(agentScope,times(2)).disposeWith(cleanup.capture());
+    cleanup.getAllValues().getFirst().dispose();
+    assertTrue(pending.isCancelled(), "Stopping the action cancels its Runtime submission");
+  }
+
+  @Test void stoppedAgentDoesNotOpenAnotherSubmission() {
+    var context=mock(ContextScope.class);
+    var action=mock(org.integratedmodelling.klab.runtime.kactors.AgentScope.class);
+    when(action.isDone()).thenReturn(true);
+    assertThrows(java.util.concurrent.CancellationException.class,
+        ()->new CoreActorLibrary.Context(context).submit(action).join());
+    verifyNoInteractions(context);
   }
 
   @Test

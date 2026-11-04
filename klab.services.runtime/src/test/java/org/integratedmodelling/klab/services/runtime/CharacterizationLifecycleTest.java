@@ -67,6 +67,20 @@ class CharacterizationLifecycleTest {
     }
   }
 
+  @Test void cancellationBetweenMembersPreventsFurtherCharacterizationRequests() {
+    try(var promotion=mockStatic(Observable.class)) {
+      var f=new Fixture(promotion);var first=f.member(42);var second=f.member(43);
+      when(f.resolver.resolve(any(),eq(first.resolution))).thenAnswer(call->{
+        when(f.scope.isInterrupted()).thenReturn(true);
+        return CompletableFuture.completedFuture(Dataflow.noModel(List.of()));
+      });
+      assertThrows(java.util.concurrent.CancellationException.class,
+          ()->CharacterizationLifecycle.run(List.of(first.pending,second.pending),f.scope,f.runtime));
+      verify(f.resolver).resolve(any(),eq(first.resolution));
+      verify(f.resolver,never()).resolve(any(),eq(second.resolution));
+    }
+  }
+
   @Test void executionFailureFailsChildAndStopsLaterMembers() {
     try (var promotion = mockStatic(Observable.class)) {
       var f = new Fixture(promotion);

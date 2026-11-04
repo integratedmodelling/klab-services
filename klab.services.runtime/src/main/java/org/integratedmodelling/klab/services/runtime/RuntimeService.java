@@ -555,8 +555,9 @@ public class RuntimeService extends BaseService
         || !(scope.getDigitalTwin() instanceof DigitalTwinImpl twin))
       return CompletableFuture.failedFuture(
           new IllegalArgumentException("Runtime submissions require a local digital twin"));
-    boolean semanticWork =
-        !submitted.isEmpty() && submitted.getId() <= 0 && submitted.getId() != Observation.QUERY_ID;
+    // Read-only queries can validate semantic selection/reduction receipts and must retain the
+    // same accepted actor as resolving submissions. Positive-ID perception needs no semantic pin.
+    boolean semanticWork = !submitted.isEmpty() && submitted.getId() <= 0;
     return twin.getResolutionCycles().submit(context, semanticWork, operation::apply);
   }
 

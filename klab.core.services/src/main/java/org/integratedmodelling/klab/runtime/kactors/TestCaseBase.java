@@ -288,7 +288,7 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
    *
    * <p>Each test action reports its own failure through {@link TestCaseScope}. Ordinary test
    * failures are therefore isolated at this suite boundary instead of failing the testcase agent.
-   * Every declared test is attempted in both modes. Parallel tests use one virtual thread per
+   * Every declared test is attempted unless the agent is stopped. Parallel tests use one virtual thread per
    * action and the method waits until every finite test has completed. Emitter tests only start
    * their emitter and leave testcase termination to the normal agent lifecycle.
    */
@@ -297,6 +297,7 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
     Object result = VOID_VALUE;
     if (!runTestsInParallel()) {
       for (var test : tests) {
+        if (rootScope().isDone() || Thread.currentThread().isInterrupted()) break;
         try {
           result = test.get();
         } catch (Throwable failure) {
@@ -307,10 +308,12 @@ public abstract class TestCaseBase extends RuntimeAgentBase {
       return result;
     }
 
+    if (rootScope().isDone() || Thread.currentThread().isInterrupted()) return result;
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
       var futures =
           Arrays.stream(tests)
-              .map(test -> CompletableFuture.supplyAsync(test, executor))
+              .map(test -> CompletableFuture.supplyAsync(
+                  () -> rootScope().isDone() ? VOID_VALUE : test.get(), executor))
               .toList();
       CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
           .handle((ignored, failure) -> null)

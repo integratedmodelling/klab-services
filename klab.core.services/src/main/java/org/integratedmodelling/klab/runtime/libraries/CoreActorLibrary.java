@@ -2563,6 +2563,9 @@ public class CoreActorLibrary {
             Agent, or !observer to inhibit automatic default observer creation in root submissions.""")
     public CompletableFuture<Observation> submit(AgentScope scope, Object... arguments) {
 
+      if (scope.isDone())
+        return CompletableFuture.failedFuture(
+            new java.util.concurrent.CancellationException("Agent submission cancelled"));
       var metadata = ContextActorSupport.metadata(arguments);
       var selectedContext = ContextActorSupport.submissionScope(requireContext(), metadata);
       var runtimeService = selectedContext.getService(RuntimeService.class);
@@ -2607,7 +2610,9 @@ public class CoreActorLibrary {
           selectedContext.withResolutionConstraints(
               ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, provenanceAgent));
 
-      return runtimeService.submit(target, submissionScope);
+      var submission = runtimeService.submit(target, submissionScope);
+      scope.disposeWith(() -> submission.cancel(true));
+      return submission;
     }
   }
 

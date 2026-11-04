@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -159,6 +160,49 @@ class RuntimeAgentBaseTest {
     assertEquals(0, bothStarted.getCount(), "both tests must start before either can finish");
     assertEquals(2, completed.size());
     assertTrue(completed.containsAll(List.of("first", "second")));
+  }
+
+  @Test void testcaseStopPreventsLaterTestsEvenWhenCurrentFailureIsIsolated() {
+    var agent=new TestExecutionAgent(false);var order=new ArrayList<String>();
+    agent.execute(()->{order.add("first");agent.stop();throw new IllegalStateException("cancelled test");},
+        ()->{order.add("second");return null;});
+    assertEquals(List.of("first"),order);
+    for(boolean parallel:new boolean[]{false,true}) {
+      var stopped=new TestExecutionAgent(parallel);stopped.stop();
+      stopped.execute(()->{fail("A stopped suite must not start tests");return null;});
+    }
+  }
+
+  @Test void synchronousTestcaseMainDoesNotBlockDeliveryOfStopMessage() throws Exception {
+    var entered=new CountDownLatch(1);var exited=new CountDownLatch(1);
+    var pending=new CompletableFuture<Object>();
+    var agent=new TestExecutionAgent(false) {
+      @Override protected ExitValue main(AgentScope scope) {
+        scope.disposeWith(()->pending.cancel(true));entered.countDown();
+        try {pending.join();return NORMAL_EXIT;} finally {exited.countDown();}
+      }
+    };
+    var receive=RuntimeAgentBase.class.getDeclaredMethod("receiveMessage",Message.class);
+    receive.setAccessible(true);
+    try(var delivery=Executors.newSingleThreadExecutor()) {
+      var start=delivery.submit(()->{
+        try {receive.invoke(agent,Message.create("test:case",Message.MessageClass.AgentCommunication,
+            Message.MessageType.AgentStartRequested));}
+        catch(ReflectiveOperationException failure){throw new AssertionError(failure);}
+      });
+      try {
+        assertTrue(entered.await(5,TimeUnit.SECONDS));
+        start.get(2,TimeUnit.SECONDS);
+        assertFalse(pending.isDone());
+        delivery.submit(()->{
+          try {receive.invoke(agent,Message.create("test:case",Message.MessageClass.AgentCommunication,
+              Message.MessageType.AgentStopRequested));}
+          catch(ReflectiveOperationException failure){throw new AssertionError(failure);}
+        }).get(2,TimeUnit.SECONDS);
+        assertTrue(exited.await(5,TimeUnit.SECONDS));assertTrue(pending.isCancelled());
+        assertEquals("stopped",agent.status());
+      } finally {agent.stop();pending.cancel(true);}
+    }
   }
 
   private static Supplier<Object> concurrentTest(
@@ -1611,7 +1655,7 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
-  void deferredTestStartDeliversLifecycleReportBeforeTerminalStatus() {
+  void deferredTestStartDeliversLifecycleReportBeforeTerminalStatus() throws Exception {
     var channel = mock(ConnectedScope.class);
     var amqp = mock(AMQPChannel.class);
     when(channel.isConnected()).thenReturn(true);
@@ -1624,6 +1668,8 @@ class RuntimeAgentBaseTest {
     client.setViable(true);
     var lifecycle = new CopyOnWriteArrayList<RuntimeAgent.TestMessageType>();
 
+    var stopped=new CountDownLatch(1);
+
     try (var mocked = mockStatic(AMQPChannel.class)) {
       mocked
           .when(() -> AMQPChannel.forAgent(any(), anyString(), any(), any()))
@@ -1633,6 +1679,7 @@ class RuntimeAgentBaseTest {
       assertTrue(client.connect(channel));
       client.addMessageListener(
           message -> {
+            if (message.getMessageType() == Message.MessageType.AgentStopped) stopped.countDown();
             if (message.getMessageType() == Message.MessageType.CustomAgentMessage) {
               var custom = message.getPayload(RuntimeAgent.CustomMessage.class);
               for (var type : RuntimeAgent.TestMessageType.values()) {
@@ -1644,6 +1691,7 @@ class RuntimeAgentBaseTest {
           });
 
       assertTrue(client.start());
+      assertTrue(stopped.await(5,TimeUnit.SECONDS));
 
       assertEquals(
           List.of(
@@ -1660,7 +1708,7 @@ class RuntimeAgentBaseTest {
   }
 
   @Test
-  void failedTestcasePublishesStoppedInsteadOfAgentFailed() {
+  void failedTestcasePublishesStoppedInsteadOfAgentFailed() throws Exception {
     var channel = mock(ConnectedScope.class);
     var amqp = mock(AMQPChannel.class);
     when(channel.isConnected()).thenReturn(true);
@@ -1673,6 +1721,8 @@ class RuntimeAgentBaseTest {
     client.setViable(true);
     var lifecycle = new CopyOnWriteArrayList<Message.MessageType>();
 
+    var stopped=new CountDownLatch(1);
+
     try (var mocked = mockStatic(AMQPChannel.class)) {
       mocked
           .when(() -> AMQPChannel.forAgent(any(), anyString(), any(), any()))
@@ -1680,9 +1730,13 @@ class RuntimeAgentBaseTest {
       assertTrue(
           runtime.initializeMessaging("agent:failed-testcase", channel, ignored -> {}));
       assertTrue(client.connect(channel));
-      client.addMessageListener(message -> lifecycle.add(message.getMessageType()));
+      client.addMessageListener(message -> {
+        lifecycle.add(message.getMessageType());
+        if (message.getMessageType() == Message.MessageType.AgentStopped) stopped.countDown();
+      });
 
       assertTrue(client.start());
+      assertTrue(stopped.await(5,TimeUnit.SECONDS));
 
       assertTrue(lifecycle.contains(Message.MessageType.AgentStopped));
       assertFalse(lifecycle.contains(Message.MessageType.AgentFailed));

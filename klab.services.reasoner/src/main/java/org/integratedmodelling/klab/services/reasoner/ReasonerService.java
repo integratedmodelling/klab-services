@@ -510,6 +510,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return conceptSyntax;
   }
 
+  private record ResolvingKey(long revision, long refinements, Concept concept) {}
+  private final java.util.concurrent.atomic.AtomicLong resolvingRefinements =
+      new java.util.concurrent.atomic.AtomicLong();
+  private final Cache<ResolvingKey, List<Concept>> resolvingHeads =
+      Caffeine.newBuilder().maximumSize(1_000).build();
+
   private final Cache<SubsumptionKey, Boolean> subsumption =
       Caffeine.newBuilder().maximumSize(20_000).recordStats().build();
 
@@ -1164,6 +1170,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
    * Derived closure changes invalidate queries without changing the accepted knowledge revision.
    */
   public void derivedRefinementsChanged() {
+    if (resolvingRefinements != null) resolvingRefinements.incrementAndGet();
+    if (resolvingHeads != null) resolvingHeads.invalidateAll();
     if (semanticExpressions != null) semanticExpressions.invalidateAll();
     if (concepts != null) concepts.invalidateAll();
     if (observables != null) observables.invalidateAll();
@@ -2341,7 +2349,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   /*
-   * TODO this is used in resolution and can be work, so it should cache
+   * Generalized heads are cached within this actor and semantic/refinement generation.
    *
    * FIXME concrete observables must remain the same; inherent and clauses should be generalized to all parents
    * FIXME value operators should be all added back as they are
@@ -2355,6 +2363,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return candidateRuntime.invoke(
           "resolving", new Class<?>[] {Semantics.class}, new Object[] {semantics});
 
+    if (owl != null) owl.requireAvailableClosure();
+    var key = new ResolvingKey(knowledgeRevision(), resolvingRefinements.get(), semantics.asConcept());
+    return new ArrayList<>(resolvingHeads.get(key,
+        ignored -> List.copyOf(computeResolving(semantics))));
+  }
+
+  Collection<Concept> computeResolving(Semantics semantics) {
     var concept = semantics.asConcept();
     Set<Concept> ret = new LinkedHashSet<>();
 

@@ -868,11 +868,15 @@ public abstract class RuntimeAgentBase extends GroovyObjectSupport implements Ru
     switch (message.getMessageType()) {
       case AgentStartRequested -> {
         if (!started.get()) {
-          try {
-            run();
-          } catch (Throwable failure) {
-            rootScope.done(failure);
-          }
+          // AMQP serializes delivery on a channel. A synchronous testcase main must not keep
+          // that delivery thread busy, or its Stop/Status messages cannot be consumed.
+          Thread.ofVirtual().name("kactors-start-" + agentUrn).start(() -> {
+            try {
+              run();
+            } catch (Throwable failure) {
+              rootScope.done(failure);
+            }
+          });
         } else {
           publishStatus(Message.MessageType.AgentStatusChanged, null);
         }

@@ -16,7 +16,7 @@ class ResolutionCandidatesTest {
   @Test void characterizationSurvivesInternalAndIncompatibleAncestors() { exercise(false); }
 
   @Test void normalizationDiscoversTransformerWithFoundationalQualityBearer() {
-    var reasoner = mock(ReasonerService.class, CALLS_REAL_METHODS);
+    var reasoner = reasoner();
     var request = concept("data:Normalized of geography:Elevation", SemanticType.PREDICATE);
     var head = concept("data:Normalized", SemanticType.PREDICATE);
     var elevation = concept("geography:Elevation", SemanticType.QUALITY);
@@ -52,7 +52,7 @@ class ResolutionCandidatesTest {
   }
 
   private void exercise(boolean collective) {
-    var reasoner = mock(ReasonerService.class, CALLS_REAL_METHODS);
+    var reasoner = reasoner();
     var request = concept("test:Environment of test:Region", SemanticType.PREDICATE);
     var head = concept("test:Environment", SemanticType.PREDICATE);
     var internalHead = concept("odo:Attribute", SemanticType.PREDICATE);
@@ -86,6 +86,43 @@ class ResolutionCandidatesTest {
       builders.when(() -> SemanticsBuilder.create(head, reasoner, null)).thenReturn(application);
       assertEquals(java.util.Set.of(request, generalized), java.util.Set.copyOf(reasoner.resolving(request)));
     }
+  }
+
+  private static ReasonerService reasoner() {
+    var reasoner=mock(ReasonerService.class,CALLS_REAL_METHODS);
+    try {
+      var heads=ReasonerService.class.getDeclaredField("resolvingHeads");heads.setAccessible(true);
+      heads.set(reasoner,com.github.benmanes.caffeine.cache.Caffeine.newBuilder().build());
+      var epoch=ReasonerService.class.getDeclaredField("resolvingRefinements");epoch.setAccessible(true);
+      epoch.set(reasoner,new java.util.concurrent.atomic.AtomicLong());
+    } catch(ReflectiveOperationException failure){throw new AssertionError(failure);}
+    doReturn(1L).when(reasoner).knowledgeRevision();return reasoner;
+  }
+
+  @Test void cachedHeadsAreDetachedAndInvalidatedBySemanticRevisionAndDerivedRefinements() {
+    var reasoner=reasoner();var request=concept("test:Classified",SemanticType.PREDICATE);
+    var parent=concept("test:Parent",SemanticType.PREDICATE);
+    doReturn(List.of(request,parent)).when(reasoner).computeResolving(any());
+    var first=reasoner.resolving(request);first.clear();
+    assertEquals(List.of(request,parent),reasoner.resolving(request));
+    verify(reasoner,times(1)).computeResolving(any());
+    doReturn(2L).when(reasoner).knowledgeRevision();reasoner.resolving(request);
+    verify(reasoner,times(2)).computeResolving(any());
+    reasoner.derivedRefinementsChanged();reasoner.resolving(request);
+    verify(reasoner,times(3)).computeResolving(any());
+  }
+
+  @Test void cachedHeadsCannotBypassUnavailableSemanticClosureAndFailuresAreNotRetained() throws Exception {
+    var reasoner=reasoner();var request=concept("test:Predicate",SemanticType.PREDICATE);
+    doThrow(new IllegalStateException("temporarily unavailable"))
+        .doReturn(List.of(request)).when(reasoner).computeResolving(any());
+    assertThrows(IllegalStateException.class,()->reasoner.resolving(request));
+    assertEquals(List.of(request),reasoner.resolving(request));
+    var owl=mock(org.integratedmodelling.klab.services.reasoner.owl.OWL.class);
+    var field=ReasonerService.class.getDeclaredField("owl");field.setAccessible(true);field.set(reasoner,owl);
+    doThrow(new IllegalStateException("closure unavailable")).when(owl).requireAvailableClosure();
+    assertThrows(IllegalStateException.class,()->reasoner.resolving(request));
+    verify(reasoner,times(2)).computeResolving(any());
   }
 
   private static ConceptImpl concept(String urn, SemanticType type) {

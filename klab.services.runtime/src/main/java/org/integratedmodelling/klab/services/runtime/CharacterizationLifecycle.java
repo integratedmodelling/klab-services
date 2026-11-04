@@ -17,6 +17,8 @@ final class CharacterizationLifecycle {
       RuntimeService runtime) {
     var visited = new HashSet<String>();
     for (var attribution : pending) {
+      if (classificationScope.isInterrupted() || Thread.currentThread().isInterrupted())
+        throw new java.util.concurrent.CancellationException("Member characterization cancelled");
       var key = attribution.member().getId() + ":" + attribution.predicate().getUrn();
       if (!visited.add(key)) continue;
       var member = classificationScope.getObservation(attribution.member().getId());
