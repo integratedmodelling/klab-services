@@ -140,8 +140,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       operation = requireCycle(request.cycle(), owner).lease().retain();
     }
     try (operation) {
+      long started = System.nanoTime();
       // Graph/observer callbacks are completed before acquiring the retained actor monitor.
-      var prepared = prepareScopes(authorizedScope);
+      // Scope-free operations (including restoring an observable from the native graph) must
+      // not refresh observers by calling back into that graph. Validation consumes scope
+      // implicitly; the other scoped operations declare it in their method signature.
+      var prepared = SemanticCycleCodec.usesPerspective(method)
+          ? prepareScopes(authorizedScope) : authorizedScope;
       var arguments = new Object[method.getParameterCount()];
       var types = method.getGenericParameterTypes();
       for (int i = 0; i < arguments.length; i++)
@@ -157,10 +162,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
                   .Operation.LIST)
         throw new SecurityException(
             "Authority ledger mutation is not a retained semantic operation");
+      long preparedAt = System.nanoTime();
       synchronized (operation.state()) {
+        long enteredAt = System.nanoTime();
         requireOpen();
         var actor = operation.state().actor();
         for (int i = 0; i < arguments.length; i++) arguments[i] = bind(arguments[i], actor);
+        long boundAt = System.nanoTime();
         Object result;
         if (method.getName().equals("validateDocument")) {
           var validation =
@@ -190,11 +198,15 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
                       : -50;
             } else result = method.invoke(actor, arguments);
           }
+        long computedAt = System.nanoTime();
         var output = new ArrayList<String>();
         for (int i = 0; i < arguments.length; i++)
           output.add(SemanticCycleCodec.encode(arguments[i], types[i]));
-        return new SemanticCycleResult(
+        var response = new SemanticCycleResult(
             SemanticCycleCodec.encode(result, method.getGenericReturnType()), output);
+        logSlowSemantic("cycle." + method.getName(), started, preparedAt, enteredAt,
+            boundAt, computedAt, System.nanoTime());
+        return response;
       }
     } catch (InvocationTargetException e) {
       if (e.getCause() instanceof RuntimeException runtime) throw runtime;
@@ -203,6 +215,19 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     } catch (IllegalAccessException e) {
       throw new IllegalStateException("Pinned semantic signature mismatch", e);
     }
+  }
+
+  private static void logSlowSemantic(String operation, long started, long prepared, long entered,
+      long bound, long computed, long encoded) {
+    if (encoded - started < java.util.concurrent.TimeUnit.SECONDS.toNanos(1)) return;
+    org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+        "Semantic operation timing: operation=" + operation
+            + ", total=" + (encoded - started) / 1_000_000 + "ms"
+            + ", preparation=" + (prepared - started) / 1_000_000 + "ms"
+            + ", actorWait=" + (entered - prepared) / 1_000_000 + "ms"
+            + ", binding=" + (bound - entered) / 1_000_000 + "ms"
+            + ", execution=" + (computed - bound) / 1_000_000 + "ms"
+            + ", encoding=" + (encoded - computed) / 1_000_000 + "ms");
   }
 
   private void requireOpen() {
@@ -580,6 +605,10 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     }
   }
 
+  public int activeCycleCount() {
+    synchronized (lifecycle) { return cyclesById.size(); }
+  }
+
   public Metadata metadata() {
     try (var lease = lease()) {
       return new Metadata(
@@ -730,6 +759,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           Scope requestingScope,
           CandidatePublicationCoordinator<Worldview, SemanticEnvironment>.Lease lease,
           boolean retained) {
+    long started = System.nanoTime();
     response.setKnowledgeRevision(lease.generation());
     response.setSemanticSessionId(semanticSessionId);
     response.setSemanticContentFingerprint(lease.state().semanticContentFingerprint());
@@ -753,7 +783,9 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       response.setReason("The saved document is not part of the retained semantic cycle");
       return response;
     }
+    long preparedAt = System.nanoTime();
     synchronized (lease.state()) {
+      long enteredAt = System.nanoTime();
       var actor = lease.state().actor();
       try (var portable = portableCapabilities(actor, lease.generation())) {
         var validator =
@@ -800,6 +832,9 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         response.setStatus(
             org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
                 .Status.COMPLETE);
+        long completedAt = System.nanoTime();
+        logSlowSemantic("documentValidation", started, preparedAt, enteredAt, enteredAt,
+            completedAt, completedAt);
         return response;
       }
     }

@@ -68,6 +68,33 @@ public class ResolverService extends BaseService implements Resolver {
 
     List<T> ret = new ArrayList<>();
 
+    // Map supplier sources using this Resolver's retained actor, bypassing the global URN cache.
+    if (resultClass == Model.class && resourceSet.getResults().stream().anyMatch(r ->
+        r.getMetadata().containsKey(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE))) {
+      for (var descriptor : resourceSet.getResults()) {
+        if (descriptor.getKnowledgeClass() != KlabAsset.KnowledgeClass.MODEL) continue;
+        try {
+          var model = org.integratedmodelling.common.knowledge.ModelCandidateSources.project(descriptor, scope, source -> {
+            var statement = source.getStatements().stream().filter(KimModel.class::isInstance)
+                .map(KimModel.class::cast).filter(m -> descriptor.getResourceUrn().equals(m.getUrn()))
+                .findFirst().orElseThrow();
+            return loadModel(statement, source, scope);
+          });
+          model.getMetadata().put(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE,
+              descriptor.getMetadata().get(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE));
+          model.getMetadata().put(org.integratedmodelling.common.knowledge.ModelCandidateSources.HASH,
+              descriptor.getMetadata().get(org.integratedmodelling.common.knowledge.ModelCandidateSources.HASH));
+          ret.add(resultClass.cast(model));
+        } catch (RuntimeException invalid) {
+          resourceSet.getNotifications().add(Notification.warning(
+              org.integratedmodelling.common.knowledge.ModelCandidateSources.INCOMPLETE
+                  + ": rejected source snapshot " + descriptor.getResourceUrn()
+                  + " (" + invalid.getClass().getSimpleName() + ")"));
+        }
+      }
+      return ret;
+    }
+
     final Function<KlabAsset, List<KlabAsset>> namespaceTranslator =
         (namespace) -> {
           if (namespace instanceof KimNamespace kimNamespace) {
@@ -170,6 +197,7 @@ public class ResolverService extends BaseService implements Resolver {
             var ret = compiler.resolve(observation, contextScope);
             if (!ret.isEmpty()) {
               var result = new DataflowCompiler(observation, ret, contextScope).compile();
+              result.getNotifications().addAll(compiler.discoveryNotifications());
               var current = reasoner == null ? null : reasoner.capabilities(contextScope);
               org.integratedmodelling.klab.runtime.ObserverSemanticUse.stamp(
                   result,
@@ -179,6 +207,11 @@ public class ResolverService extends BaseService implements Resolver {
               return result;
             }
 
+            if (compiler.isDiscoveryIncomplete()) {
+              var diagnostics = new ArrayList<>(compiler.discoveryNotifications());
+              diagnostics.addAll(ret.getNotifications());
+              return incompleteDiscovery(diagnostics);
+            }
             return unresolvedOutcome(
                 observation,
                 contextScope,
@@ -209,6 +242,13 @@ public class ResolverService extends BaseService implements Resolver {
           ? Dataflow.noModel(notifications)
           : Dataflow.empty(notifications);
     return unresolvedOutcome(observation.getObservable(), noModel, notifications);
+  }
+
+  static Dataflow incompleteDiscovery(List<Notification> diagnostics) {
+    var result = new org.integratedmodelling.klab.api.services.runtime.impl.EmptyDataflow();
+    result.setResolutionOutcome(Dataflow.ResolutionOutcome.DEFERRED);
+    result.getNotifications().addAll(diagnostics);
+    return result;
   }
 
   static Dataflow unresolvedOutcome(

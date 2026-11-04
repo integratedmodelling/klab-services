@@ -133,9 +133,33 @@ including Resources clients advertised in a service-side scope even when they ar
 absent from its live status-filtered typed projection. It de-duplicates the snapshot by service ID
 (or URL when no ID is known), excludes itself, queries the services concurrently, tolerates an
 individual failure, and returns distinct results in service order. This prevents a cached merger
-from silently becoming local-only while the advertised federation still contains a remote
-provider. `retrieve`, writes, and operational calls go to the primary service because their results
+from silently dropping an advertised provider when a live typed view temporarily filters it out. `retrieve`, writes, and operational calls go to the primary service because their results
 cannot be combined safely.
+
+### Candidate source supply
+
+A ContextScope owns one Runtime/Resolver workflow; this is independent of where those services
+are hosted. Resources can reconstruct scopes for ordinary purposes but model discovery must not
+require callbacks into their possibly non-public knowledge graph. `POST /api/v1/models/candidates`
+is therefore a user-authenticated source-catalog operation. Its version-1 request contains optional
+namespace, project and scenario selectors, and its ResourceSet returns detached namespace sources
+and candidate model descriptors with source digests. Project READ and lexical visibility rules
+apply. An unqualified concept request can use accessible public models without a namespace or
+project selection.
+
+Clients omit graph/cycle/transaction headers for candidate and source/artifact reads. The
+`modelCandidateProtocol=1` capability selects the new route. An older provider (default 0) uses
+its authenticated namespace listing directly,
+with the same source capture and visibility filtering. No shared Reasoner lease, Runtime callback,
+or provider executable-admission grant is needed. The owning Resolver maps and checks candidate
+sources against its retained semantic actor before ordinary prerequisite and executable admission.
+The first implementation exports broad source candidates rather than using a provider Reasoner to
+exclude possibly suitable local candidates. This may transfer more data than semantic catalog search.
+
+Supplier failures retain diagnostics and mark discovery incomplete while successful suppliers remain
+usable. Missing candidates under incomplete discovery cannot certify model absence. See
+[admission](ADMISSION.md#receipts-and-semantic-cycles) for source retention, admission and terminal
+outcome boundaries.
 
 ### Info
 
@@ -155,6 +179,19 @@ returns the matched URN, which lets query callers request identifiers without a 
 `AdapterDescriptor`, component descriptors, and service-implementation descriptors are supplied by
 the common `BaseService` component-registry implementation and are therefore available from any
 service that has loaded the corresponding component.
+
+Background model-catalog reconciliation checks the Reasoner's advisory `semantic.activeCycles`
+status before starting and between namespaces. It yields during foreground semantic cycles;
+completed namespace work is checkpointed only after source-manifest and semantic-epoch checks.
+A partial reconciliation is never published as a complete query view. Candidate source supply
+remains independent of this catalog. The signal is best effort with status-poll latency and does
+not interrupt a validation already in progress. Older Reasoners without the signal retain the
+normal reconciliation behavior.
+
+Unchanged successful or permanently rejected namespaces are not revalidated. Inactive or
+parser-invalid namespaces retry after their eligibility/source changes. Transient failures use
+exponential retry delays from five seconds to five minutes; a source or semantic-epoch change
+resets that delay. All existing publication and executable-admission checks remain in force.
 
 Additional `DomainObject` projections should describe a stable schema suitable for API discovery.
 Unsupported projections fail explicitly. Model `Coverage` is reserved but not computed yet.

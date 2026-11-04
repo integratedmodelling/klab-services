@@ -25,6 +25,22 @@ class ChildContextualizationProvenanceTest {
   }
   private Activity effect(){return Activity.of(Activity.Type.forContextualization(Contextualization.MEASURE));}
 
+  @Test void additionalActivationAncestorPreservesExplicitImmediateTriggerOnPersistence() throws Exception {
+    var transaction=root();
+    var activation=Activity.of(Activity.Type.INITIALIZATION);activation.setId(41);activation.setUrn("context.activation");
+    var immediate=Activity.of(Activity.Type.SIMULATION);immediate.setId(42);immediate.setUrn("context.immediate");
+    var simulation=Activity.of(Activity.Type.SIMULATION,immediate);
+    transaction.link(activation,simulation,GraphModel.Relationship.TRIGGERED);
+    transaction.link(immediate,simulation,GraphModel.Relationship.TRIGGERED);
+    var prepare=DigitalTwinImpl.TransactionImpl.class.getDeclaredMethod("prepareActivityForStorage",
+        org.integratedmodelling.klab.api.provenance.impl.ActivityImpl.class);
+    prepare.setAccessible(true);prepare.invoke(transaction,simulation);
+    assertEquals(immediate.getUrn(),simulation.getTriggeringActivityUrn());
+    assertEquals(immediate.getId(),simulation.getParentId());
+    assertEquals(2,transaction.incoming(simulation).stream()
+        .filter(link->link.type()==GraphModel.Relationship.TRIGGERED).count());
+  }
+
   @Test void persistedTargetAbsentFromLocalGraphIsRegisteredWithoutCreationOrNewIdentity() {
     var root=root();var target=observation(42);var effect=effect();
     assertFalse(root.assets().contains(target));

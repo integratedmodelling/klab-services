@@ -11,6 +11,31 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.*;
 public final class SemanticCycleFacade {
   private SemanticCycleFacade() {}
 
+  public record Metrics(long calls, long elapsedNanos) {}
+  private static final ThreadLocal<long[]> METRICS = ThreadLocal.withInitial(() -> new long[2]);
+  public static Metrics metrics() {
+    var values = METRICS.get();
+    return new Metrics(values[0], values[1]);
+  }
+
+  /** Pure semantic calls need the authenticated context and lease, not its native perspective. */
+  static Scope transportScope(SemanticCycleInvocation invocation, Scope authorized) {
+    var method = SemanticCycleCodec.method(invocation.method(), invocation.parameterTypes());
+    if (!(authorized instanceof ContextScope)
+        || SemanticCycleCodec.usesPerspective(method))
+      return authorized;
+    return (ContextScope) Proxy.newProxyInstance(ContextScope.class.getClassLoader(),
+        new Class<?>[] {ContextScope.class}, (proxy, getter, arguments) -> {
+          // Omitting the perspective prevents authentication from materializing observations
+          // through Runtime before a scope-free Reasoner operation even reaches its controller.
+          if (Set.of("getContextObservation", "getSourceObservation", "getTargetObservation",
+              "getObserver", "getObserverId", "getTransactionId").contains(getter.getName()))
+            return null;
+          try { return getter.invoke(authorized, arguments); }
+          catch (InvocationTargetException failure) { throw failure.getCause(); }
+        });
+  }
+
   private static final Set<String> METADATA =
       Set.of(
           "serviceId",
@@ -66,57 +91,64 @@ public final class SemanticCycleFacade {
               if (!SemanticCycleCodec.allowed(method))
                 throw new UnsupportedOperationException(
                     "Operation cannot escape a retained semantic cycle: " + method.getName());
-              var values = args == null ? new Object[0] : args;
-              var types = method.getGenericParameterTypes();
-              var encoded = new ArrayList<String>();
-              Scope requestScope = scope;
-              for (int i = 0; i < values.length; i++) {
-                if (Scope.class.isAssignableFrom(method.getParameterTypes()[i])) {
-                  if (values[i] instanceof Scope supplied) {
-                    if (scope.getIdentity() != null
-                        && supplied.getIdentity() != null
-                        && !Objects.equals(
-                            scope.getIdentity().getId(), supplied.getIdentity().getId()))
-                      throw new SecurityException(
-                          "Semantic cycle scope belongs to another identity");
-                    if (supplied instanceof ContextScope context) {
-                      if (!Objects.equals(context.getId(), cycle.contextId()))
-                        throw new SecurityException("Semantic cycle context mismatch");
-                      var envelope = context.getResolutionCycleBinding();
-                      if (envelope != null
-                          && (!Objects.equals(envelope.cycleId(), cycle.cycleId())
-                              || !Objects.equals(envelope.semanticBinding(), cycle.binding())))
+              long started = System.nanoTime();
+              try {
+                var values = args == null ? new Object[0] : args;
+                var types = method.getGenericParameterTypes();
+                var encoded = new ArrayList<String>();
+                Scope requestScope = scope;
+                for (int i = 0; i < values.length; i++) {
+                  if (Scope.class.isAssignableFrom(method.getParameterTypes()[i])) {
+                    if (values[i] instanceof Scope supplied) {
+                      if (scope.getIdentity() != null
+                          && supplied.getIdentity() != null
+                          && !Objects.equals(
+                              scope.getIdentity().getId(), supplied.getIdentity().getId()))
                         throw new SecurityException(
-                            "Semantic cycle scope carries a different binding");
-                      requestScope = supplied;
+                            "Semantic cycle scope belongs to another identity");
+                      if (supplied instanceof ContextScope context) {
+                        if (!Objects.equals(context.getId(), cycle.contextId()))
+                          throw new SecurityException("Semantic cycle context mismatch");
+                        var envelope = context.getResolutionCycleBinding();
+                        if (envelope != null
+                            && (!Objects.equals(envelope.cycleId(), cycle.cycleId())
+                                || !Objects.equals(envelope.semanticBinding(), cycle.binding())))
+                          throw new SecurityException(
+                              "Semantic cycle scope carries a different binding");
+                        requestScope = supplied;
+                      }
+                      // A UserScope argument changes neither the authenticated context nor the pin.
                     }
-                    // A UserScope argument changes neither the authenticated context nor the pin.
-                  }
-                  encoded.add("null");
-                } else encoded.add(SemanticCycleCodec.encode(values[i], types[i]));
+                    encoded.add("null");
+                  } else encoded.add(SemanticCycleCodec.encode(values[i], types[i]));
+                }
+                var invocation =
+                    new SemanticCycleInvocation(
+                        cycle,
+                        method.getName(),
+                        Arrays.stream(method.getParameterTypes()).map(Class::getName).toList(),
+                        encoded);
+                var response =
+                    Objects.requireNonNull(
+                        transport.apply(invocation, requestScope),
+                        "Missing pinned semantic response");
+                if (response.arguments().size() != values.length)
+                  throw new IllegalStateException("Pinned semantic response arity mismatch");
+                // match's third argument is an output, not just a serialized input.
+                if (method.getName().equals("match")
+                    && values.length == 3
+                    && values[2] instanceof Map original) {
+                  var updated =
+                      (Map) SemanticCycleCodec.decode(response.arguments().get(2), types[2]);
+                  original.clear();
+                  original.putAll(updated);
+                }
+                return SemanticCycleCodec.decode(response.result(), method.getGenericReturnType());
+              } finally {
+                var metrics = METRICS.get();
+                metrics[0]++;
+                metrics[1] += System.nanoTime() - started;
               }
-              var invocation =
-                  new SemanticCycleInvocation(
-                      cycle,
-                      method.getName(),
-                      Arrays.stream(method.getParameterTypes()).map(Class::getName).toList(),
-                      encoded);
-              var response =
-                  Objects.requireNonNull(
-                      transport.apply(invocation, requestScope),
-                      "Missing pinned semantic response");
-              if (response.arguments().size() != values.length)
-                throw new IllegalStateException("Pinned semantic response arity mismatch");
-              // match's third argument is an output, not just a serialized input.
-              if (method.getName().equals("match")
-                  && values.length == 3
-                  && values[2] instanceof Map original) {
-                var updated =
-                    (Map) SemanticCycleCodec.decode(response.arguments().get(2), types[2]);
-                original.clear();
-                original.putAll(updated);
-              }
-              return SemanticCycleCodec.decode(response.result(), method.getGenericReturnType());
             });
   }
 

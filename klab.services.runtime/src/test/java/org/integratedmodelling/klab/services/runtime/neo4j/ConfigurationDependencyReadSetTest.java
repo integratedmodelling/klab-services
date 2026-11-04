@@ -16,13 +16,32 @@ class ConfigurationDependencyReadSetTest {
  static List<Map<String,Object>> rows(String query){return ClassificationPersistenceTest.rows(query,Map.of());}
  static KnowledgeGraph.Transaction tx(String context){return new ClassificationPersistenceTest.Fixture(context).createTransaction(mock(ContextScope.class));}
  static ObservationImpl observation(long id){var value=new ObservationImpl();value.setId(id);return value;}
+ @Test void nativeHeaderInspectionIncludesBookkeepingWithoutTakingInputWriteLocks()throws Exception {
+  rows("MATCH(n:Observation{id:1}) SET n.semantictype='AGENT' "
+      +"CREATE(:Actuator{id:3,ownerContextId:'a'}),(:Data{id:4,ownerContextId:'a',payload:'not a header'}),"
+      +"(:Observation{id:5,ownerContextId:'b',semantictype:'QUALITY'})");
+  var executor=Executors.newSingleThreadExecutor();
+  var scope=mock(ContextScope.class);when(scope.getId()).thenReturn("a");
+  try {
+   try(var writer=tx("a")) {
+    writer.lockConsequenceInputs(List.of(1L));
+    var inspected=executor.submit(()->new ClassificationPersistenceTest.Fixture("a")
+        .inspectAssetHeaders(List.of(1L,3L,4L,5L,999L),scope)).get(5,TimeUnit.SECONDS);
+    assertEquals(List.of(1L,3L,4L),inspected.stream().map(KnowledgeGraph.ConsequenceAssetSnapshot::id).toList());
+    assertEquals("AGENT",inspected.getFirst().nativeProperties().get(GraphModel.Fields.SEMANTICTYPE));
+    assertTrue(inspected.get(1).labels().contains(GraphModel.Labels.ACTUATOR));
+    assertTrue(inspected.get(2).labels().contains(GraphModel.Labels.DATA));
+    assertFalse(inspected.get(2).nativeProperties().containsKey("payload"));
+   }
+  }finally{executor.shutdownNow();assertTrue(executor.awaitTermination(5,TimeUnit.SECONDS));}
+ }
  @Test void selectedDependencyRemovalCannotRevalidateAnOldReadSet()throws Exception {
   for(var type:List.of(GraphModel.Relationship.AFFECTS,GraphModel.Relationship.EMERGED_FROM)) {
    seed();rows("MATCH(a:Observation{id:1}),(b:Observation{id:2}) CREATE(a)-[:"+type+"]->(b)");
    KnowledgeGraph.ConsequenceReadSet read;
    try(var capture=tx("a")){read=capture.captureConsequenceInputs(List.of(1L,2L),List.of(new KnowledgeGraph.ConsequenceEdgeSelection(1,type,GraphModel.Relationship.Direction.OUTGOING)));}
    rows("MATCH(:Observation{id:1})-[r:"+type+"]->() DELETE r");
-   try(var guard=tx("a")){assertThrows(RuntimeException.class,()->guard.validateConsequenceInputs(read));}
+   try(var guard=tx("a")){assertThrows(KnowledgeGraph.ConsequenceInputsChangedException.class,()->guard.validateConsequenceInputs(read));}
   }
  }
  @Test void denseCrossContextDependencyPhantomsWaitForTheGuard()throws Exception {

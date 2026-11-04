@@ -11,6 +11,101 @@ C1–C7 acceptance gaps and explicitly unsupported semantics remain separate wor
 
 ## Findings
 
+### Resources supplier boundary — 4 November 2026
+
+The user clarified the deployment contract after the investigation below: “local” means the
+Runtime and Resolver committed to a ContextScope, not localhost. Other services may reconstruct
+the requesting scopes; access to a non-public originating knowledge graph is the obstacle.
+Requiring Resources to participate in that graph/semantic-cycle workflow was the wrong boundary.
+
+The implementation now obtains authenticated candidate source snapshots from Resources suppliers
+without sending graph, transaction, consequence or semantic-cycle headers. Optional namespace,
+project and scenario selectors preserve lexical visibility; no namespace/project is required for
+an ordinary concept-URN request in the selected context. Public authorized sources are captured
+broadly, then mapped and filtered with the committed Resolver's retained Reasoner. Source-only and
+executable admission remain in that workflow, and captured source bytes/digests bypass the global
+model cache and later provider re-fetch during model admission. Supplier project READ checks,
+parser diagnostics, inactive sources and native execution checks remain in force.
+
+Candidate responses are retained within one Resolver attempt. The new supplier endpoint has a
+capability-selected user-scoped authorized namespace-list compatibility path for older Resources
+servers, with no probing of unsupported routes or fallback to graph-dependent frozen queries. A failed supplier does not discard usable local
+candidates; it marks discovery incomplete. An unresolved result under incomplete discovery is
+DEFERRED, not a model-absence certificate, including optional requests. This changes the previous
+all-provider-completion policy deliberately; it does not weaken model execution admission.
+
+See ADMISSION.md and RESOURCES.md for the implemented contract. The older investigation below
+is retained as historical evidence; its suggested topology requirement is superseded here.
+**Verification:** the final isolated Maven run passed **170/170**, zero failures/errors/skips:
+21 common-client/source controls, 56 core admission controls, 10 Resolver controls, 15 Resources
+controls and 68 Runtime/collective/consequence controls. API, common, core services, Reasoner,
+Resolver, Resources, Resources server and Runtime compiled in that run. The isolation was a
+byte-identical copy of all 19 changed Java source/test files, with no validation-only edits;
+it avoided inconsistent build artifacts observed in the shared IDE checkout. Earlier incremental
+and clean-checkout classpath failures remain in their logs and are not passing results.
+
+Coverage includes authenticated supplier HTTP transport without graph/cycle headers, capability
+negotiation for old providers, source catalogs larger than the diagnostic response limit, immutable
+source digests, source-backed admission with no provider re-fetch, concept-only requests without
+namespace/project selectors, public-model versus private/project/scenario controls, supplier READ
+permissions, local coarse semantic/spatial filtering, and transported DEFERRED outcomes when
+missing suppliers prevent an explanation. Existing admission, collective-input and A1–A5 controls
+also pass. Snapshot validation log: `review-evidence/candidate-supplier-isolated-tests.log`.
+
+The command used the ordinary offline Maven reactor with
+`-f review-evidence/candidate-supplier-validation/pom.xml -pl klab.services.runtime,klab.services.resources.server -am`
+and `-Dsurefire.failIfNoSpecifiedTests=false`, selecting FrozenModelQueryFailureTest,
+ModelCandidateSourcesTest, ResourcesMergerTest, ModelValidationGateTest, ModelAdmissionReceiptTest,
+FrozenSourceAdmissionTest, PinnedPublicationAdmissionTest, ModelAdmissionBeforeRankingTest,
+ModelCandidateIngestionTest, ModelCandidateSupplierTest, ResolutionOutcomeTest, NamespaceModelIndexTest,
+AdapterDiscoveryTransportTest, ProjectMaterialAuthorizationTest, ProducingModelAdmissionTest,
+ConsequenceSubmissionTest, ChangeProcessHandlerTest, PreparedConfigurationRecomputeTest,
+ConsequenceEngineTest, CollectiveSelectionProducerClassificationDependencyTest,
+MemberQualityDependencyPlanningTest and DiagnosticHttpPostTest.
+
+Read-only live verification confirmed that the existing remote provider advertises candidate
+protocol 0 and serves its authorized namespace listing with HTTP 200 (19 sources), without graph
+workflow headers. Its old routing returned 500 for the unimplemented new route; capability
+negotiation avoids that probe. This proves access to the legacy source-export path, not execution
+of a remotely supplied scientific model. The new implementation has not been deployed, no service
+was restarted, and the original basic process example has not been rerun against rebuilt services.
+
+### Authenticated federation follow-up — 4 November 2026
+
+The reported `staging.vxii.test.process.basic.testregion` failure was traced through the running
+services in context `ESA_INSTITUTIONAL.42fb7ia008`. Local Resources logged a successful match for
+`staging.vxii.test.process.basic.terrestrial-region-explainer` at 10:27:13 Madrid time; Resolver
+failed the federated model query at 10:27:14, before the CHANGE consequence handler ran.
+
+The advertised remote Resources provider, `im.resources-main` at
+`https://services.integratedmodelling.org/resources/main`, was healthy and exposed the frozen
+model-query API. Bounded read-only probes using the existing user's credential and actual dotted
+federation ID (`ESA.INSTITUTIONAL`) succeeded without a context, but both status and model-query
+requests carrying the existing context and Runtime ID returned **404 with an empty body**.
+The model-query probe used an empty body and no fabricated cycle/lease, so it initiated no
+scientific resolution. This reproduces a remote context-access failure; the exact status of the
+earlier original request was not retained in its generic exception. Remote diagnostic log queries
+returned no records, so the server's precise internal reconstruction failure remains unconfirmed.
+
+Source inspection shows that frozen discovery intentionally fails when any participating provider
+fails, even when local discovery finds a model. Context restoration requires a known authorized
+originating Runtime; a caller header alone cannot establish that authority. Loopback-only local
+Runtime/Reasoner access is therefore a deployment concern for full remote participation. This
+failure path predates the A1–A5 repair commit. The evidence points to the authenticated federation
+topology rather than a demonstrated regression in those repairs. Local-only selection is a
+bounded way to rerun the previous local-stack acceptance; no live selection, authentication,
+deployment or service identity was changed during this investigation.
+
+A targeted diagnostic repair now preserves provider ID, base URL without credentials/query/fragment,
+and HTTP status in ResourcesClient's frozen model-query errors, retaining fail-closed behavior and
+the typed underlying cause. **17/17 focused Maven tests passed**, including real HTTP empty 403/404
+responses with a successful local provider and preservation of frozen-discovery completeness.
+Command: `mvn -o '-Dmaven.repo.local=C:/Users/Ferd/.m2/repository' -pl klab.core.common -am
+'-Dtest=FrozenModelQueryFailureTest,ResourcesMergerTest,CollectionFailureDetailTest,SemanticCycleHttpTest'
+'-Dsurefire.failIfNoSpecifiedTests=false' test`. Local log:
+`review-evidence/federated-model-query-tests.log`. This diagnostic repair is not yet deployed and
+does not itself make the remote provider able to use the local context.
+
 ### Repair checkpoint — 4 November 2026
 
 All five findings have local repairs in the working tree. No additional semantic-policy decision

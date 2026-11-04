@@ -8,6 +8,22 @@ import org.integratedmodelling.klab.api.services.logging.LogPage;
 import org.junit.jupiter.api.Test;
 
 class DiagnosticHttpPostTest {
+  @Test void configuredTimeoutSurvivesScopeAndHeaderCopies() throws Exception {
+    var release=new java.util.concurrent.CountDownLatch(1);
+    var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
+    server.createContext("/",exchange->{
+      exchange.getRequestBody().readAllBytes();
+      try {release.await(5,java.util.concurrent.TimeUnit.SECONDS);}
+      catch(InterruptedException interrupted){Thread.currentThread().interrupt();}
+      exchange.close();
+    });server.start();
+    try(var client=Utils.Http.getClient("http://127.0.0.1:"+server.getAddress().getPort(),null)) {
+      assertTimeoutPreemptively(java.time.Duration.ofSeconds(3),()->
+          assertThrows(Utils.Http.Client.RequestFailure.class,()->client.withTimeout(1)
+              .withScope("context").withAuthentication("test")
+              .postWithStatus("/",Map.of(),LogPage.class)));
+    } finally {release.countDown();server.stop(0);}
+  }
   @Test void preservesHttpStatusWithoutResponseOrRequestSecrets() throws Exception {
     var server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
     server.createContext("/",exchange->{

@@ -108,6 +108,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     this.parent = parent;
     this.splits = parent.splits;
     this.observer = parent.observer;
+    this.observerRevision = parent.observerRevision;
     this.data = parent.data;
     this.contextObservation = parent.contextObservation;
     this.sourceObservation = parent.sourceObservation;
@@ -185,6 +186,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         || !Objects.equals(cycle.semantics(), binding))
       throw new IllegalArgumentException("Resolution cycle does not match this context");
     var ret = new ServiceContextScope(this);
+    ret.observer = getObserver();
+    ret.observerRevision = observerRevision;
     ret.resolutionCycle = cycle;
     ret.resolutionCycleBinding = binding;
     return ret;
@@ -196,6 +199,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (binding != null && !Objects.equals(getId(), binding.contextId()))
       throw new IllegalArgumentException("Resolution cycle belongs to another context");
     var ret = new ServiceContextScope(this);
+    if (binding != null) {
+      ret.observer = getObserver();
+      ret.observerRevision = observerRevision;
+    }
     ret.resolutionCycleBinding = binding;
     ret.resolutionCycle = null;
     return ret;
@@ -410,6 +417,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     if (observer != null
         && observer.getId() > 0
         && digitalTwin != null
+        && resolutionCycleBinding == null
         && currentTransaction == null) {
       long revision = digitalTwin.getKnowledgeGraph().getSemanticRevision();
       if (revision != observerRevision) {
@@ -564,6 +572,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
     ServiceContextScope ret = new ServiceContextScope(this);
     ret.observer = observer;
+    ret.observerRevision = -1;
     ret.resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
     ret.resolutionConstraints.remove(ResolutionConstraint.Type.ObserverUrn);
     if (observer != null)

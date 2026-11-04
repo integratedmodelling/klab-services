@@ -687,8 +687,11 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         var actual = captureConsequenceInputs(expected.assetIds(), expected.selections());
         if (!expected.equals(actual)) {
           diagnoseConsequenceReadSet(expected, actual);
-          throw new KlabStorageException("Consequence source, support or structure changed");
+          throw new KnowledgeGraph.ConsequenceInputsChangedException();
         }
+      } catch (KnowledgeGraph.ConsequenceInputsChangedException superseded) {
+        closed = true;
+        throw superseded;
       } catch (RuntimeException failure) {
         closed = true;
         throw storageFailure("validating consequence inputs", failure);
@@ -1766,6 +1769,39 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         session.close();
         sessionClosed = true;
       }
+    }
+  }
+
+  @Override
+  public List<ConsequenceAssetSnapshot> inspectAssetHeaders(Collection<Long> ids, ContextScope scope) {
+    if (scope == null || !Objects.equals(scope.getId(), rootContextId))
+      throw new SecurityException("Native header inspection belongs to another context");
+    var ordered = new ArrayList<>(new TreeSet<>(ids));
+    if (ordered.stream().anyMatch(id -> id <= 0))
+      throw new IllegalArgumentException("Native headers require durable asset IDs");
+    if (ordered.isEmpty()) return List.of();
+    try (var reader = driver.session(); var inspection = reader.beginTransaction()) {
+      var rows = inspection.run(
+          "MATCH (n) WHERE n.id IN $ids AND coalesce(n.ownerContextId,n.`im:context-id`,$context)=$context AND "
+              + "(coalesce(n.ownerContextId,n.`im:context-id`)=$context OR EXISTS { "
+              + "MATCH (:Context {id:$context})-[:HAS_CHILD|HAS_MEMBER*1..]->(n) } "
+              + "OR (n:Activity AND EXISTS { MATCH (:Context {id:$context})-[:HAS_PROVENANCE]"
+              + "->(:Provenance)-[:HAS_CHILD|TRIGGERED*1..]->(n) })) "
+              + "RETURN n.id AS id,elementId(n) AS element,labels(n) AS labels, "
+              + "n.semantictype AS semanticType,n.`klab.transition.commit` AS journal ORDER BY id,element",
+          Map.of("ids", ordered, "context", rootContextId)).list();
+      var result = new ArrayList<ConsequenceAssetSnapshot>();
+      for (var row : rows) {
+        var properties = new LinkedHashMap<String, Object>();
+        if (!row.get("semanticType").isNull())
+          properties.put(GraphModel.Fields.SEMANTICTYPE, row.get("semanticType").asString());
+        if (!row.get("journal").isNull())
+          properties.put(org.integratedmodelling.klab.api.digitaltwin.TransitionCommit.METADATA_KEY,
+              row.get("journal").asString());
+        result.add(new ConsequenceAssetSnapshot(row.get("id").asLong(),row.get("element").asString(),
+            row.get("labels").asList(org.neo4j.driver.Value::asString),properties,null,null));
+      }
+      return List.copyOf(result);
     }
   }
 

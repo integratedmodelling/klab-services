@@ -16,6 +16,44 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.*;
 import org.junit.jupiter.api.Test;
 
 class SemanticCycleFacadeTest {
+  @Test void pureCallsTransportIdentityAndLeaseWithoutNativePerspective() {
+    var scope=scope();var focus=mock(org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
+    when(focus.getId()).thenReturn(42L);when(scope.getContextObservation()).thenReturn(focus);
+    when(scope.getSourceObservation()).thenReturn(focus);when(scope.getTargetObservation()).thenReturn(focus);
+    when(scope.getObserverId()).thenReturn(7L);when(scope.getTransactionId()).thenReturn("transaction");
+    var binding=new org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding(
+        1,"cycle","context","runtime",true,request("cycle").binding());
+    when(scope.getResolutionCycleBinding()).thenReturn(binding);
+    var call=new SemanticCycleInvocation(request("cycle"),"resolveConcept",List.of(String.class.getName()),List.of("\"test:Tree\""));
+    var lean=(ContextScope)SemanticCycleFacade.transportScope(call,scope);
+    assertEquals("context",ContextScope.getScopeId(lean));assertEquals("runtime",lean.getHostServiceId());
+    assertSame(binding,lean.getResolutionCycleBinding());
+    assertNull(lean.getSourceObservation());assertNull(lean.getTargetObservation());assertNull(lean.getTransactionId());
+    assertEquals("context.42#7",ContextScope.getScopeId(scope));
+    var scoped=new SemanticCycleInvocation(request("cycle"),"buildConcept",
+        List.of(ObservableBuildStrategy.class.getName(),Scope.class.getName()),List.of("null","null"));
+    assertSame(scope,SemanticCycleFacade.transportScope(scoped,scope));
+    var capabilities=new SemanticCycleInvocation(request("cycle"),"capabilities",List.of(Scope.class.getName()),List.of("null"));
+    assertNull(((ContextScope)SemanticCycleFacade.transportScope(capabilities,scope)).getObserverId());
+    var validation=new SemanticCycleInvocation(request("cycle"),"validateDocument",
+        List.of(SemanticValidationRequest.class.getName(),Scope.class.getName()),List.of("null","null"));
+    assertSame(scope,SemanticCycleFacade.transportScope(validation,scope));
+  }
+
+  @Test void concurrentCodecReadersKeepResultsDetached() throws Exception {
+    var type=Reasoner.class.getMethod("resolving",Semantics.class).getGenericReturnType();
+    var json=SemanticCycleCodec.encode(List.of(concept("test:Tree")),type);
+    try(var pool=java.util.concurrent.Executors.newFixedThreadPool(4)) {
+      var work=new ArrayList<java.util.concurrent.Future<Concept>>();
+      for(int i=0;i<32;i++)work.add(pool.submit(()->{
+        var values=(List<Concept>)SemanticCycleCodec.decode(json,type);
+        assertEquals("test:Tree",values.getFirst().getUrn());return values.getFirst();
+      }));
+      var values=new java.util.IdentityHashMap<Concept,Boolean>();
+      for(var task:work)values.put(task.get(5,java.util.concurrent.TimeUnit.SECONDS),true);
+      assertEquals(32,values.size());
+    }
+  }
   static Concept concept(String urn) {
     var c=new ConceptImpl();c.setUrn(urn);c.setType(EnumSet.of(SemanticType.SUBJECT));return c;
   }

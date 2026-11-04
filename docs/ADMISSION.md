@@ -14,19 +14,20 @@ completion: a positive result ID alone cannot justify APPLIED. The handler requi
 RESOLVED evidence or separately loaded complete native reuse evidence, current native lifecycle,
 compatible CHANGE/observer semantics and complete resolved support. Optional typed NO_MODEL is
 nonfatal; absent or partial completion remains deferred. Recomputations retain native/cycle/source
-admission even when duplicate receipt metadata
-is present. See the [admission audit repair checkpoint](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md)
+admission even when duplicate receipt metadata is present. See the [admission audit repair checkpoint](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md)
 for local verification and the remaining live acceptance boundary.
 
 ## The model path
 
-1. **Discover visible candidates.** Resources checks catalog readiness, user permissions,
-   namespace/project visibility, scenarios, and the requested observable. A private model
+1. **Discover visible candidates.** Resources exports source candidates under user/project READ
+   permissions and lexical model/scenario visibility. The committed Resolver checks coarse
+   semantic and spatial suitability with its retained actor. A private model
    requires the matching `ResolutionNamespace`; project-private models require the matching
    `ResolutionProject`. These constraints express lexical visibility, not transaction ownership.
 2. **Prove the source snapshot.** The Resolver asks `ModelValidationGate` for a
    `PreparationReceipt` through `validatedSourcePreparation`. The saved namespace must be
-   present, active, and free of blocking/deferred validation. Admission binds the source
+   present, active, and free of blocking parser diagnostics. Source semantics are checked against
+   the owning workflow's retained actor. Admission binds the source
    timestamp and digest, executable model digest, and Reasoner semantic snapshot. A matching
    publication receipt may be reused; otherwise the source is validated against the selected
    semantic snapshot. A preparation receipt permits prerequisite preparation, not execution.
@@ -52,6 +53,42 @@ be prepared. It does not certify them as installed or executable. Compatibility/
 precedes semantic distance and ranking.
 
 ## Receipts and semantic cycles
+
+A ContextScope commits to one Runtime and one Resolver. “Local” means this owning workflow,
+not a hostname or loopback address. Runtime and Resolver need access to the same knowledge graph.
+Other services may reconstruct the requesting scopes, but cannot assume that graph queries back
+to a non-public originating service will succeed.
+
+Resources therefore supplies candidate source snapshots rather than joining the resolution
+workflow. Candidate requests authenticate the user and federation and carry optional lexical
+namespace/project/scenario selectors. They carry no graph focus, transaction, consequence or
+resolution-cycle headers. A concept-only request in the selected context needs no resolution
+namespace or project: accessible public candidates remain eligible. Private and project-private
+models still require the corresponding explicit lexical selection and supplier READ permission.
+
+The candidate endpoint exports authorized syntactic namespace snapshots with provider identity,
+version, timestamp and content digest. The public capability `modelCandidateProtocol=1` selects the new endpoint. Older suppliers
+(default protocol 0) use the authenticated namespace-list endpoint directly; this compatibility
+path never falls back to a context-bound semantic query or probes an unadvertised route. Provider
+publication receipts and deferred semantic-index status do not grant or withhold local admission;
+parser diagnostics and explicit inactive sources remain relevant. The committed Resolver maps the
+captured syntax using its retained Reasoner, performs coarse core matching locally, then follows
+the ordinary source, prerequisite, installed-method, semantic and native execution gates. Captured
+models bypass the process-global URN/version cache, and source admission checks the captured
+namespace rather than fetching a potentially different provider version. Source/artifact and
+component inspection requests also use the supplier boundary.
+
+One supplier response per provider and lexical selection is detached and retained within the
+Resolver attempt, including across concurrent fan-out and dependency queries. A later attempt
+can fetch a newer source. This is not a durable catalog lease or crash-replay protocol. Candidate
+export currently favors a broad authorized source catalog over filtering with a potentially
+incompatible provider Reasoner; semantic filtering and ranking take place in the owning workflow.
+
+A failed supplier is reported as incomplete discovery without discarding successful candidates.
+A successful executable explanation may proceed with that diagnostic. If resolution remains
+unexplained after incomplete discovery, the terminal outcome is DEFERRED, including for optional
+requests; an unavailable catalog cannot certify NO_MODEL or justify conclusions based on absence.
+A successful empty catalog is distinct from an unavailable provider.
 
 | Evidence | What it establishes | What it does not establish |
 | --- | --- | --- |

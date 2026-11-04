@@ -34,6 +34,13 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
  * service calls.
  */
 public interface KnowledgeGraph {
+  /** An otherwise valid native snapshot was superseded; no storage corruption is implied. */
+  class ConsequenceInputsChangedException
+      extends org.integratedmodelling.klab.api.exceptions.KlabStorageException {
+    public ConsequenceInputsChangedException() {
+      super("Consequence source, support or structure changed");
+    }
+  }
   /** Atomically bind the root context; reject any existing incompatible commitment. */
   default void bindWorldview(
       org.integratedmodelling.klab.api.knowledge.WorldviewCommitment commitment) {
@@ -696,6 +703,16 @@ public interface KnowledgeGraph {
   }
 
   /**
+   * Read-only native type/journal inspection for relevance filtering, outside any context-write
+   * transaction. Includes bookkeeping asset kinds; missing or foreign IDs are omitted. This is
+   * not a guarded read set and must never authorize semantic evaluation or publication.
+   */
+  default java.util.List<ConsequenceAssetSnapshot> inspectAssetHeaders(
+      java.util.Collection<Long> ids, ContextScope scope) {
+    throw new UnsupportedOperationException("Native asset header inspection is unavailable");
+  }
+
+  /**
    * One transaction-owned configuration replacement; semantic/source authority remains the server's
    * admission responsibility. Native batches validate all inputs before any mutation.
    */
@@ -740,6 +757,7 @@ public interface KnowledgeGraph {
         java.util.Collection<Long> ids, java.util.Collection<ConsequenceEdgeSelection> selections) {
       throw new UnsupportedOperationException("Consequence input snapshots are unavailable");
     }
+
 
     /**
      * Lock the union of read/write Observation, Cohort and raw Activity proof IDs in ascending

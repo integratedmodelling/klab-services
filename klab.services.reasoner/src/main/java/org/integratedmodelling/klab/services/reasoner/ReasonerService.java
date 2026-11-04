@@ -1758,6 +1758,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     var ret = super.status();
     if (candidateRuntime != null && !semanticOnly) {
       var status = candidateRuntime.status();
+      ret.getMetadata().put(Reasoner.ACTIVE_SEMANTIC_CYCLES_METADATA, candidateRuntime.activeCycleCount());
       ret.getMetadata()
           .put(
               org.integratedmodelling.klab.services.reasoner.internal.SemanticValidationState

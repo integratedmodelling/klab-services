@@ -900,6 +900,21 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
     }
 
+    private final Map<Observation, Activity> processActivations = new IdentityHashMap<>();
+
+    public void registerProcessActivation(Observation process, Activity activation) {
+      synchronized (graph) {
+        if (!ownsExecutionActivity(activation)
+            || activation.getType() != Activity.Type.INITIALIZATION)
+          throw new IllegalArgumentException("Process activation must be owned initialization");
+        rootAttempt().processActivations.put(process, activation);
+      }
+    }
+
+    public Activity processActivation(Observation process) {
+      synchronized (graph) { return rootAttempt().processActivations.get(process); }
+    }
+
     public boolean ownsExecutionActivity(Activity candidate) {
       synchronized (graph) {
         var root = rootAttempt();
@@ -1603,6 +1618,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     private List<Runnable> afterCommitActions = new ArrayList<>();
+    private KnowledgeGraph.Commit committedChanges;
+    private long committedObserverId;
     private List<Runnable> rollbackActions = new ArrayList<>();
     private List<org.integratedmodelling.klab.api.digitaltwin.SchedulerJournal> schedulerJournal =
         new ArrayList<>();
@@ -3526,7 +3543,24 @@ public class DigitalTwinImpl implements DigitalTwin {
           membershipLease = cycle.retain();
         }
         long committed = commitWithCycle();
-        if (parent == null && committed > 0) propagateCommittedMembership(committed);
+        if (parent == null && committed > 0) {
+          final List<Runnable> activations;
+          synchronized (graph) {
+            activations = List.copyOf(afterCommitActions);
+            afterCommitActions.clear();
+          }
+          // Activation may synchronously run a simulation and call services that read this graph.
+          // Retain the cycle driver, but never the graph monitor, across these callbacks.
+          for (var action : activations) {
+            try {
+              action.run();
+            } catch (Throwable failure) {
+              scope.error(failure);
+            }
+          }
+          publishCommittedConsequences();
+          propagateCommittedMembership(committed);
+        }
         return committed;
       } finally {
         endCycleDriver();
@@ -3672,8 +3706,6 @@ public class DigitalTwinImpl implements DigitalTwin {
       //      }
 
       var ret = Transaction.INTERMEDIATE_COMMIT_ID;
-      KnowledgeGraph.Commit committedChanges = null;
-      long committedObserverId = 0;
 
       /*
       Open transaction in the knowledge graph and store everything that needs to, then make all connections
@@ -4001,15 +4033,6 @@ public class DigitalTwinImpl implements DigitalTwin {
         committedChanges = commit;
         committedObserverId = activeObserver == null ? 0 : activeObserver.getId();
 
-        for (var action : List.copyOf(afterCommitActions)) {
-          // The graph is committed; failed activation is recovered from durable metadata.
-          try {
-            action.run();
-          } catch (Throwable failure) {
-            scope.error(failure);
-          }
-        }
-        afterCommitActions.clear();
         beforeCommitActions.clear();
         consequenceCommitAdmissions.clear();
         consequenceReadGuards.clear();
@@ -4033,17 +4056,20 @@ public class DigitalTwinImpl implements DigitalTwin {
 
       scope.unregisterTransaction(this);
 
+      return ret;
+    }
+
+    private void publishCommittedConsequences() {
       if (committedChanges != null && getConsequenceEngine() != null) {
         try {
           getConsequenceEngine()
               .committed(committedChanges, scope, activity.getId(), committedObserverId);
         } catch (RuntimeException failure) {
           // A scheduling failure must never turn a durable commit into a failed submission.
-          scope.warn("Cannot enqueue consequences for commit " + ret, failure);
+          scope.warn("Cannot enqueue consequences for commit " + committedChanges.getId(), failure);
         }
       }
 
-      return ret;
     }
 
     static void finalizeCommittedTarget(
@@ -4140,7 +4166,9 @@ public class DigitalTwinImpl implements DigitalTwin {
           .map(graph::getEdgeSource)
           .filter(Activity.class::isInstance)
           .map(Activity.class::cast)
-          .findFirst()
+          // Preserve the explicit immediate trigger when additional causal ancestors are linked.
+          .min(Comparator.comparing(parentActivity -> !Objects.equals(
+              parentActivity.getUrn(), storedActivity.getTriggeringActivityUrn())))
           .ifPresent(
               parentActivity -> {
                 storedActivity.setTriggeringActivityUrn(parentActivity.getUrn());

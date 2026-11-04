@@ -41,6 +41,9 @@ import org.integratedmodelling.klab.rest.ResourceContextualizationRequest;
 public class ResourcesClient extends BaseServiceClient implements ResourcesService {
 
   @Override
+  protected Utils.Http.Client requestClient(Scope scope) { return client.withResourceSupplierScope(scope); }
+
+  @Override
   public <T> List<T> query(
       org.integratedmodelling.klab.api.collections.Parameters<String> query,
       KnowledgeClass assetClass,
@@ -49,20 +52,89 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     if (assetClass == KnowledgeClass.MODEL
         && infoClass == ResourceSet.class
         && scope instanceof ContextScope context
-        && context.getResolutionCycleBinding() != null)
-      return client
-          .withScope(scope)
-          .postCollectionOrThrow(
-              ServicesAPI.RESOURCES.SEMANTIC_CYCLE_MODELS,
-              query == null
-                  ? org.integratedmodelling.klab.api.collections.Parameters.create()
-                  : query,
-              infoClass,
-              "knowledgeClass",
-              assetClass,
-              "infoClass",
-              infoClass.getCanonicalName());
+        && context.getResolutionCycleBinding() != null) {
+      try {
+        var request = org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest.from(query);
+        var response = org.integratedmodelling.common.knowledge.ModelCandidateSources.freeze(
+            serviceId(), request, () -> fetchModelCandidatesWithinDeadline(request, scope));
+        return (List<T>) List.of(response);
+      } catch (Utils.Http.Client.RequestFailure failure) {
+        // Empty security-filter responses otherwise hide both the provider and HTTP status
+        // when concurrent frozen discovery propagates through ResourcesMerger.
+        String provider = "unknown Resources service";
+        try {
+          provider = "Resources service " + serviceId();
+          var url = getUrl();
+          if (url != null)
+            provider += " at " + new java.net.URI(url.getProtocol(), null, url.getHost(),
+                url.getPort(), url.getPath(), null, null);
+        } catch (RuntimeException | java.net.URISyntaxException ignored) {
+          // Diagnostic lookup must not replace the original transport failure.
+        }
+        throw new Utils.Http.Client.RequestFailure(failure.getStatus(),
+            "Model candidate discovery failed for " + provider
+                + (failure.getStatus() > 0 ? " (HTTP " + failure.getStatus() + ")"
+                    : " (transport or response failure)")
+                + ": " + failure.getMessage(), failure);
+      }
+    }
     return super.query(query, assetClass, infoClass, scope);
+  }
+
+  protected int candidateTimeoutSeconds() {
+    return Math.max(1, Math.min(300, Integer.getInteger("klab.resources.candidateTimeoutSeconds", 10)));
+  }
+
+  private ResourceSet fetchModelCandidatesWithinDeadline(
+      org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest request, UserScope scope) {
+    var task = new java.util.concurrent.FutureTask<ResourceSet>(() -> fetchModelCandidates(request, scope));
+    Thread.startVirtualThread(task);
+    try {
+      // One budget includes capabilities, source transfer and any legacy fallback.
+      return task.get(candidateTimeoutSeconds(), java.util.concurrent.TimeUnit.SECONDS);
+    } catch (java.util.concurrent.TimeoutException timeout) {
+      throw new Utils.Http.Client.RequestFailure(0, "Candidate supplier deadline exceeded", timeout);
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      throw new Utils.Http.Client.RequestFailure(0, "Candidate discovery interrupted", interrupted);
+    } catch (ExecutionException failure) {
+      if (failure.getCause() instanceof RuntimeException runtime) throw runtime;
+      if (failure.getCause() instanceof Error error) throw error;
+      throw new Utils.Http.Client.RequestFailure(0, "Candidate discovery failed", failure.getCause());
+    } finally {
+      task.cancel(true);
+    }
+  }
+
+  private ResourceSet fetchModelCandidates(
+      org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest request, UserScope scope) {
+    ResourceSet response;
+    var advertised = capabilities(scope);
+    if (advertised == null || advertised.getModelCandidateProtocol() != 1) {
+      response = legacyCandidateSources(request, scope);
+    } else try {
+      response = client.withResourceSupplierScope(scope).withTimeout(candidateTimeoutSeconds()).postResourceSnapshot(
+          ServicesAPI.RESOURCES.MODEL_CANDIDATES, request, ResourceSet.class);
+    } catch (Utils.Http.Client.RequestFailure unsupported) {
+      if (unsupported.getStatus() != 404) throw unsupported;
+      // An older supplier can export authorized source without entering the graph workflow.
+      response = legacyCandidateSources(request, scope);
+    }
+    if (response == null) throw new Utils.Http.Client.RequestFailure(0,
+        "Candidate supplier returned no source snapshot", null);
+    for (var descriptor : response.getResults())
+      if (descriptor.getKnowledgeClass() != KnowledgeClass.MODEL
+          || !descriptor.getMetadata().containsKey(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE))
+        throw new Utils.Http.Client.RequestFailure(0, "Candidate supplier returned an invalid snapshot protocol", null);
+    return response;
+  }
+
+  private ResourceSet legacyCandidateSources(
+      org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest request, UserScope scope) {
+    var sources = client.withResourceSupplierScope(scope).withTimeout(candidateTimeoutSeconds()).getCollectionOrThrow(
+        ServicesAPI.RESOURCES.LIST, KimNamespace.class, "knowledgeClass", KnowledgeClass.NAMESPACE);
+    return org.integratedmodelling.common.knowledge.ModelCandidateSources.capture(
+        sources, request, serviceId(), getUrl());
   }
 
   private Capabilities capabilities;
@@ -286,7 +358,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     // the generic resolver's single URN path segment. Use the existing query-based endpoints.
     if (assetClass == KnowledgeClass.INFORMATION && urn.startsWith("export-schema:")) {
       return client
-          .withScope(scope)
+          .withResourceSupplierScope(scope)
           .get(
               ServicesAPI.RESOURCES.RESOLVE_EXPORT_SCHEMA,
               ResourceSet.class,
@@ -295,7 +367,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     }
     if (assetClass == KnowledgeClass.INFORMATION && urn.startsWith("import-schema:")) {
       return client
-          .withScope(scope)
+          .withResourceSupplierScope(scope)
           .get(
               ServicesAPI.RESOURCES.RESOLVE_IMPORT_SCHEMA,
               ResourceSet.class,
@@ -304,7 +376,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     }
     ResourceSet resolution =
         client
-            .withScope(scope)
+            .withResourceSupplierScope(scope)
             .get(
                 ServicesAPI.RESOURCES.RESOLVE,
                 ResourceSet.class,
@@ -426,7 +498,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     }
 
     return client
-        .withScope(scope)
+        .withResourceSupplierScope(scope)
         .get(
             urn.contains("/")
                 ? ServicesAPI.RESOURCES.RETRIEVE_QUERY
@@ -441,7 +513,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   @Override
   public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
     return client
-        .withScope(scope)
+        .withResourceSupplierScope(scope)
         .getCollection(
             ServicesAPI.RESOURCES.LIST,
             assetClass,
@@ -458,7 +530,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     request.setGeometry(geometry.encode());
 
     return client
-        .withScope(scope)
+        .withResourceSupplierScope(scope)
         .post(ServicesAPI.RESOURCES.CONTEXTUALIZE_RESOURCE, resource, ResourceImpl.class);
   }
 
