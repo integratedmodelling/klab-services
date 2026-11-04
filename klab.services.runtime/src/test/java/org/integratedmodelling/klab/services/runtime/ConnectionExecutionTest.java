@@ -308,6 +308,41 @@ class ConnectionExecutionTest {
     }
   }
 
+  @Test void sameDeclaredEndpointTypesAcceptObservableWrappersWithRealSubsumption() {
+    var source=observation(11,SemanticType.SUBJECT,false,false);
+    var target=observation(12,SemanticType.SUBJECT,false,false);
+    var relationship=observation(-20,SemanticType.RELATIONSHIP,false,false);
+    relationship.setParticipants(List.of(source,target));
+    var scope=scope(source,target);
+    var actor=mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class,CALLS_REAL_METHODS);
+    when(scope.getService(Reasoner.class)).thenReturn(actor);
+    doReturn(source.getObservable().asConcept()).when(actor).relationshipSource(any());
+    doReturn(target.getObservable().asConcept()).when(actor).relationshipTarget(any());
+    assertEquals(List.of(source,target),ConnectionSupport.participants(relationship,scope));
+  }
+
+  @Test void declaredEndpointTypeMismatchStillRejectsWholeBatchBeforeAcknowledgements() {
+    var source=observation(11,SemanticType.SUBJECT,false,false);
+    var target=observation(12,SemanticType.SUBJECT,false,false);
+    var other=new ConceptImpl();other.setUrn("test:OtherSubject");
+    other.setType(EnumSet.of(SemanticType.SUBJECT));
+    target.setObservable(ObservableImpl.promote(other,null));
+    var relationship=observation(-20,SemanticType.RELATIONSHIP,false,false);
+    relationship.setParticipants(List.of(source,target));
+    var scope=scope(source,target);var reasoner=scope.getService(Reasoner.class);
+    var expected=new ConceptImpl();expected.setUrn("test:Expected");
+    when(reasoner.relationshipSource(any())).thenReturn(expected);
+    when(reasoner.relationshipTarget(any())).thenReturn(expected);
+    when(reasoner.is(source.getObservable(),expected)).thenReturn(true);
+    when(reasoner.is(target.getObservable(),expected)).thenReturn(false);
+    var collective=observation(-10,SemanticType.RELATIONSHIP,true,false);
+    var outcomes=new ContextualizationScopeImpl(collective,null);outcomes.getOutcomes().add(relationship);
+    var runtime=mock(RuntimeService.class,CALLS_REAL_METHODS);
+    assertThrows(IllegalArgumentException.class,()->runtime.submitContextualizationResult(outcomes,scope,Activity.Outcome.SUCCESS));
+    verify(scope,never()).within(any());
+    verify(scope,never()).getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
+  }
+
   @Test void invalidParticipantsFailBeforeAnyMemberIsSubmitted() {
     var source = observation(11, SemanticType.SUBJECT, false, false);
     var target = observation(12, SemanticType.SUBJECT, false, false);

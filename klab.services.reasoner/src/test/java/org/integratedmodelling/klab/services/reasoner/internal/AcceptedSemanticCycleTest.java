@@ -93,6 +93,30 @@ class AcceptedSemanticCycleTest {
       assertEquals(0,runtime.activeCycleCount());
     }
   }
+  @Test void retainedSubsumptionIsReflexiveAcrossConceptAndObservableWrappers() throws Exception {
+    var actor=actor("fingerprint","test:StreamJunction");
+    var junction=actor.resolveConcept("test:StreamJunction");
+    doReturn(junction.collective()).when(actor).resolveConcept("each test:StreamJunction");
+    var current=new AtomicReference<>(state(actor,"fingerprint"));
+    var scope=scope("alice","context","runtime");
+    try(var runtime=new AcceptedSemanticRuntime(AcceptedSemanticObserverScopeTest.factory(current),"reasoner")) {
+      runtime.submit(AcceptedSemanticObserverScopeTest.world());assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      var binding=runtime.beginCycle(request(null,"endpoint-types"),scope);
+      try {
+        var pinned=facade(runtime,binding,"endpoint-types",scope);
+        var observable=org.integratedmodelling.common.knowledge.ObservableImpl.promote(junction,null);
+        var detached=org.integratedmodelling.common.utils.Utils.Json.parseObject(
+            org.integratedmodelling.common.utils.Utils.Json.asString(observable),org.integratedmodelling.klab.api.knowledge.Observable.class);
+        assertTrue(pinned.is(observable,junction));
+        assertTrue(pinned.is(junction,detached));
+        assertTrue(pinned.is(observable,detached));
+        assertTrue(pinned.is(junction,junction));
+        assertFalse(pinned.is(observable,junction.collective()));
+        assertFalse(pinned.is(org.integratedmodelling.common.knowledge.ObservableImpl.promote(junction.collective(),null),junction));
+      } finally {runtime.releaseCycle(request(binding,"endpoint-types"),scope);}
+    }
+  }
+
   @Test void oldCycleRetainsActorCapabilitiesAndWitnessAcrossPublicationWhileNewCycleSeesNewActor() throws Exception {
     var first=actor("first-fingerprint","test:First");var second=actor("second-fingerprint","test:Second");
     var oldState=state(first,"first-fingerprint");var newState=state(second,"second-fingerprint");

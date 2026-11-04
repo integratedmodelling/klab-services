@@ -3971,7 +3971,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     Objects.requireNonNull(concept, "concept");
     Objects.requireNonNull(other, "other");
 
-    if (concept == other || concept.equals(other)) {
+    // Observable wrappers are preserved by retained-cycle transport. Subsumption is reflexive
+    // on their semantic concepts, independent of the observable's contextualization metadata.
+    if (concept.asConcept().equals(other.asConcept())) {
       return true;
     }
 
