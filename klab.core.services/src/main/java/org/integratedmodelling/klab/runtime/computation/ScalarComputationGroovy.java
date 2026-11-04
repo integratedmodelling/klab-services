@@ -458,12 +458,46 @@ public class ScalarComputationGroovy implements ScalarComputation {
     this.semanticOwner=semanticOwner;this.semanticRevision=semanticRevision;this.semanticSteps=semanticSteps;
   }
 
+  /** Diagnostic facts deliberately exclude messages, source code and argument values. */
+  static List<Map<String,Object>> safeFailureFacts(Throwable failure) {
+    var rows=new ArrayList<Map<String,Object>>();
+    var seen=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Throwable,Boolean>());
+    for(var cause=failure;cause!=null&&rows.size()<8&&seen.add(cause);cause=cause.getCause()) {
+      var row=new LinkedHashMap<String,Object>();row.put("type",cause.getClass().getName());
+      row.put("frames",java.util.Arrays.stream(cause.getStackTrace()).limit(16).map(Object::toString).toList());
+      if(cause instanceof groovy.lang.MissingMethodException missing) {
+        var name=missing.getMethod();if(name!=null&&name.matches("[A-Za-z_$][A-Za-z0-9_$]{0,63}"))row.put("method",name);
+        row.put("receiverType",missing.getType()==null?null:missing.getType().getName());
+        row.put("arity",missing.getArguments()==null?0:missing.getArguments().length);
+      }
+      rows.add(row);
+    }
+    return rows;
+  }
+  /** Generated scalar catch boundary; never a receipt or an execution capability. */
+  public static void diagnoseFailure(Throwable failure,Observation target,Scheduler.Event event,ContextScope scope) {
+    if(!Boolean.getBoolean("klab.diagnostics.configurationRecompute"))return;
+    try {
+      var data=new LinkedHashMap<String,Object>();data.put("stage","scalar-engine-catch");
+      data.put("target",target==null?null:target.getId());data.put("parent",target==null?null:target.getParentId());
+      data.put("context",scope.getId());data.put("event",event==null?null:event.getType());
+      data.put("thread",Thread.currentThread().threadId());data.put("nanoTime",System.nanoTime());
+      var tx=scope.getCurrentTransaction();data.put("transaction",tx==null?null:System.identityHashCode(tx));
+      var root=tx;while(root!=null&&root.getParent()!=null)root=root.getParent();
+      data.put("rootTransaction",root==null?null:System.identityHashCode(root));
+      data.put("transactionFailed",tx==null?null:tx.isFailed());data.put("causes",safeFailureFacts(failure));
+      org.integratedmodelling.common.logging.Logging.INSTANCE.info("SCALAR_ENGINE_FAILURE_DIAGNOSTIC "+
+          org.integratedmodelling.klab.utilities.Utils.Json.asString(data));
+    }catch(RuntimeException ignored){/* Cannot replace the original failure. */}
+  }
+
   @Override
   public boolean execute(
       Map<String, Storage.Scanner> scanners, Scheduler.Event event, ContextScope scope) {
     try {
       return script.run(scanners, event, scope);
     } catch (Throwable t) {
+      diagnoseFailure(t,null,event,scope);
       // TODO this must reach the client
       scope.error(t, sourceCode);
     }

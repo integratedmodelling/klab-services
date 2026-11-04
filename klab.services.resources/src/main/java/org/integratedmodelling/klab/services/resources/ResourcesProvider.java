@@ -8,8 +8,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.Serializable;
 import java.net.URL;
-import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
-
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +21,8 @@ import org.integratedmodelling.common.data.SerializingDataBuilder;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
-import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -59,11 +58,18 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
+import org.integratedmodelling.klab.api.services.resources.ModelDiscoveryMode;
 import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.adapters.ResourceAdapter;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowParticipant;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowRole;
+import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
@@ -72,8 +78,8 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.ResourceIndexer;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.resources.ResourcesKBox;
-import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.lang.ConceptCodelistBuilder;
 import org.integratedmodelling.klab.services.resources.persistence.ModelCatalog;
 import org.integratedmodelling.klab.services.resources.persistence.ModelCatalogs;
@@ -81,12 +87,6 @@ import org.integratedmodelling.klab.services.resources.persistence.ModelReferenc
 import org.integratedmodelling.klab.services.resources.storage.ResourceManager;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.klab.services.resources.workflow.WorkflowManager;
-import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
-import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
-import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
-import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowParticipant;
-import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowRole;
-import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.jgrapht.Graph;
@@ -156,11 +156,18 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             scope, getStartupOptions(), this, this.resourcesKbox, this::resolveRemoteProject);
     this.resourceManager = new ResourceManager(this.resourcesKbox, this);
     this.workflowManager = new WorkflowManager(this.resourcesKbox);
+    ((SettingsImpl) settings())
+        .setExecutionHandler(
+            Setting.RESET_ALL_GIT_PROJECTS,
+            request -> workspaceManager.resetAllGitProjects());
 
     setComponentRegistry();
-    workflowManager.setBehaviorBridge(new org.integratedmodelling.klab.services.resources.workflow.WorkflowBehaviorBridge(
-        () -> org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler.componentResolver(getComponentRegistry()),
-        owner -> getScopeManager().getScope(owner, UserScope.class)));
+    workflowManager.setBehaviorBridge(
+        new org.integratedmodelling.klab.services.resources.workflow.WorkflowBehaviorBridge(
+            () ->
+                org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler
+                    .componentResolver(getComponentRegistry()),
+            owner -> getScopeManager().getScope(owner, UserScope.class)));
 
     ServiceConfiguration.INSTANCE.setMainService(this);
 
@@ -225,7 +232,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   @Override
   public Flow initializeFlow(
       String workflowId, Flow.InitializationRequest request, UserScope scope) {
-    if (request == null) throw new KlabIllegalArgumentException("An initialization request is required");
+    if (request == null)
+      throw new KlabIllegalArgumentException("An initialization request is required");
     validateFlowTarget(request.getInitialState(), scope);
     return workflowManager.initializeFlow(workflowId, request, scope);
   }
@@ -338,13 +346,18 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public List<WorkflowBehavior.AvailableAction> getFlowActions(String flowId, String stateId, UserScope scope) {
+  public List<WorkflowBehavior.AvailableAction> getFlowActions(
+      String flowId, String stateId, UserScope scope) {
     return workflowManager.getActions(flowId, stateId, scope);
   }
 
   @Override
-  public Flow executeFlowAction(String flowId, String stateId, String actionId,
-      WorkflowBehavior.ActionRequest request, UserScope scope) {
+  public Flow executeFlowAction(
+      String flowId,
+      String stateId,
+      String actionId,
+      WorkflowBehavior.ActionRequest request,
+      UserScope scope) {
     return workflowManager.executeAction(flowId, stateId, actionId, request, scope);
   }
 
@@ -380,40 +393,75 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   @Override
   public void runAdditionalTimedTasks() {
     // Resources may become operational before the Reasoner; prepare its catalog once that changes.
-    var scope=serviceScope();
-    if (scope.getServices(Reasoner.class).stream().anyMatch(reasoner -> reasoner.status().isOperational()))
-      checkSemanticServices(scope);
+    var scope = serviceScope();
+    if (scope.getServices(Reasoner.class).stream()
+        .anyMatch(reasoner -> reasoner.status().isOperational())) checkSemanticServices(scope);
   }
 
   public boolean checkSemanticServices(Scope scope) {
-      var iAmLocal = this.serviceScope().getIdentity() instanceof UserIdentity;
+    if (scope instanceof ContextScope context && context.getResolutionCycleBinding() != null) {
+      captureModelQueryView(context);
+      return true;
+    }
+    var iAmLocal = this.serviceScope().getIdentity() instanceof UserIdentity;
 
-      /** Only local reasoners can index semantic content of a local resources service. */
-      var reasoner =
-          scope.getServices(Reasoner.class).stream()
-              .filter(
-                  r ->
-                      !iAmLocal
-                          || org.integratedmodelling.klab.api.utils.Utils.URLs.isLocalHost(
-                              r.getUrl()))
-              .findAny()
-              .orElse(null);
+    /** Only local reasoners can index semantic content of a local resources service. */
+    var reasoner =
+        scope.getServices(Reasoner.class).stream()
+            .filter(
+                r ->
+                    !iAmLocal
+                        || org.integratedmodelling.klab.api.utils.Utils.URLs.isLocalHost(
+                            r.getUrl()))
+            .findAny()
+            .orElse(null);
 
-      if (reasoner != null && reasoner.status().isOperational()) {
-        try {
-          var capabilities = reasoner.capabilities(scope);
-          long revision = capabilities == null ? -1 : capabilities.getKnowledgeRevision();
-          this.semanticSearchAvailable.set(revision >= 0 && indexKnowledge(scope, revision));
-        } catch (RuntimeException unavailable) {
-          this.semanticSearchAvailable.set(false);
-          Logging.INSTANCE.warn("Reasoner knowledge revision is unavailable: " + unavailable.getMessage());
-        }
-        return this.semanticSearchAvailable.get();
-      } else {
-        Logging.INSTANCE.warn("reasoner is inoperative: cannot index semantic content");
+    if (reasoner != null && reasoner.status().isOperational()) {
+      try {
+        var capabilities = reasoner.capabilities(scope);
+        long revision = capabilities == null ? -1 : capabilities.getKnowledgeRevision();
+        this.semanticSearchAvailable.set(revision >= 0 && indexKnowledge(scope, revision));
+      } catch (RuntimeException unavailable) {
         this.semanticSearchAvailable.set(false);
+        Logging.INSTANCE.warn(
+            "Reasoner knowledge revision is unavailable: " + unavailable.getMessage());
       }
+      return this.semanticSearchAvailable.get();
+    } else {
+      Logging.INSTANCE.warn("reasoner is inoperative: cannot index semantic content");
+      this.semanticSearchAvailable.set(false);
+    }
     return this.semanticSearchAvailable.get();
+  }
+
+  /** Bound requests never rebuild a shared catalog using an old semantic actor. */
+  public Object captureModelQueryView(ContextScope scope) {
+    var cycle = scope.getResolutionCycleBinding();
+    if (cycle == null || cycle.semanticBinding() == null || namespaceModelIndex == null)
+      throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
+          "MODEL_CATALOG_VIEW_UNAVAILABLE: the cycle has no frozen semantic catalog view");
+    var selected =
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.currentSemanticSnapshot(
+            scope);
+    var pin = cycle.semanticBinding();
+    if (selected == null
+        || !Objects.equals(pin.reasonerServiceId(), selected.serviceId())
+        || pin.knowledgeRevision() != selected.revision()
+        || !Objects.equals(pin.semanticFingerprint(), selected.semanticFingerprint())
+        || !Objects.equals(pin.reasonerSessionId(), selected.semanticSessionId()))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
+          "MODEL_CATALOG_VIEW_UNAVAILABLE: selected semantic actor does not match the cycle");
+    namespaceModelIndex.awaitInitialPublication(java.time.Duration.ofSeconds(60));
+    return namespaceModelIndex.queryView(List.copyOf(workspaceManager.getNamespaces()), selected);
+  }
+
+  public void requireModelQueryView(Object captured, ContextScope scope) {
+    if (namespaceModelIndex == null)
+      throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
+          "MODEL_CATALOG_VIEW_UNAVAILABLE");
+    if (captured != captureModelQueryView(scope))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabStorageException(
+          "MODEL_CATALOG_VIEW_UNAVAILABLE: catalog changed during discovery");
   }
 
   /** Semantic-owned model diagnostics; source documents remain available for authoring. */
@@ -447,13 +495,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     snapshot.getObservationStrategies().addAll(source.getObservationStrategies());
     snapshot.getNotifications().addAll(source.getNotifications());
     snapshot.getAnnotations().addAll(source.getAnnotations());
-    var installed = getComponentRegistry().getComponents(scope).stream()
-        .filter(component -> component.usageRights() == null
-            || component.usageRights().checkAuthorization(authorizationScope)).toList();
-    var authorityMetadata = org.integratedmodelling.klab.components.AuthorityComponentResolver
-        .forWorldview(snapshot, installed, scope, serviceScope());
-    snapshot.getMetadata().put(org.integratedmodelling.klab.components.AuthorityComponentResolver.REVISION_METADATA,
-        authorityMetadata.revision());
+    var installed =
+        getComponentRegistry().getComponents(scope).stream()
+            .filter(
+                component ->
+                    component.usageRights() == null
+                        || component.usageRights().checkAuthorization(authorizationScope))
+            .toList();
+    var authorityMetadata =
+        org.integratedmodelling.klab.components.AuthorityComponentResolver.forWorldview(
+            snapshot, installed, scope, serviceScope());
+    snapshot
+        .getMetadata()
+        .put(
+            org.integratedmodelling.klab.components.AuthorityComponentResolver.REVISION_METADATA,
+            authorityMetadata.revision());
     snapshot.getNotifications().addAll(authorityMetadata.diagnostics());
     org.integratedmodelling.klab.services.resources.lang.WorldviewAuthorityValidator.validate(
         snapshot, authorityMetadata.components());
@@ -522,7 +578,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       NamespaceModelIndex index;
       synchronized (this) {
         if (namespaceModelIndex == null) namespaceModelIndex = new NamespaceModelIndex();
-        index=namespaceModelIndex;
+        index = namespaceModelIndex;
       }
       // Catalog publication serializes on its own index, never the provider's HTTP-facing monitor.
       index.reconcile(workspaceManager::getNamespaces, kbox, scope, revision, System.nanoTime());
@@ -599,18 +655,24 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   public Workspace retrieveWorkspace(String urn, Scope scope) {
     if (!(scope instanceof ServiceScope)
-        && (!(scope instanceof UserScope user) || !allowsWorkspaceRead(
-            resourcesKbox.getStatus(urn, null), user, isAllowed(CRUDOperation.ADMINISTER, user)))) return null;
+        && (!(scope instanceof UserScope user)
+            || !allowsWorkspaceRead(
+                resourcesKbox.getStatus(urn, null),
+                user,
+                isAllowed(CRUDOperation.ADMINISTER, user)))) return null;
     var workspace = this.workspaceManager.getWorkspace(urn);
     return scope instanceof UserScope user ? projectWorkspaceForUser(workspace, user) : workspace;
   }
 
   private Workspace projectWorkspaceForUser(Workspace workspace, UserScope user) {
     if (workspace == null) return null;
-    var projected = (org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl)
-        Utils.Json.parseObject(Utils.Json.asString(workspace), Workspace.class);
-    projected.setProjects(projected.getProjects().stream()
-        .filter(project -> canProjectOperation(project.getUrn(), CRUDOperation.READ, user)).toList());
+    var projected =
+        (org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl)
+            Utils.Json.parseObject(Utils.Json.asString(workspace), Workspace.class);
+    projected.setProjects(
+        projected.getProjects().stream()
+            .filter(project -> canProjectOperation(project.getUrn(), CRUDOperation.READ, user))
+            .toList());
     return projected;
   }
 
@@ -643,9 +705,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (component == null) {
       return ResourceSet.empty(Notification.error("No embeddable authority available for " + urn));
     }
-    var ret = ResourceSet.of(
-        componentResource(
-            component.id(), component.version(), component.timestamp(), component));
+    var ret =
+        ResourceSet.of(
+            componentResource(
+                component.id(), component.version(), component.timestamp(), component));
     ret.getServices().put(serviceId(), getUrl());
     return ret;
   }
@@ -724,11 +787,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             KnowledgeClass.COMPONENT,
             timestamp,
             false);
+    ret.setLocal(isLocal());
     if (component != null && component.mavenCoordinates() != null) {
       ret.getMetadata()
-          .put(
-              Extensions.COMPONENT_MAVEN_COORDINATES_METADATA_KEY,
-              component.mavenCoordinates());
+          .put(Extensions.COMPONENT_MAVEN_COORDINATES_METADATA_KEY, component.mavenCoordinates());
     }
     return ret;
   }
@@ -875,7 +937,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
               "Resource " + resource.getUrn() + " failed remote pre-contextualization validation"));
     }
 
-    var builder = new SerializingDataBuilder(name, observation.getObservable(), input, observation.getGeometry(), null);
+    var builder =
+        new SerializingDataBuilder(
+            name, observation.getObservable(), input, observation.getGeometry(), null);
     Urn urn = Urn.of(resource.getUrn());
 
     if (adapter.encode(
@@ -933,16 +997,27 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return importProject(workspaceName, projectUrl, overwriteIfExisting, scope, null);
   }
 
-  public synchronized List<ResourceSet> importProject(String workspaceName, String projectUrl,
-      boolean overwriteIfExisting, UserScope scope, String credentialId) {
-    if (scope == null || !isAllowed(CRUDOperation.CREATE, scope) && !isAllowed(CRUDOperation.ADMINISTER, scope))
+  public synchronized List<ResourceSet> importProject(
+      String workspaceName,
+      String projectUrl,
+      boolean overwriteIfExisting,
+      UserScope scope,
+      String credentialId) {
+    if (scope == null
+        || !isAllowed(CRUDOperation.CREATE, scope) && !isAllowed(CRUDOperation.ADMINISTER, scope))
       throw new KlabResourceAccessException("Importing projects requires CREATE");
     // Import is intentionally non-destructive, including requests from older clients.
-    if (workspaceManager.getProject(Utils.Git.isRemoteGitURL(projectUrl)
-        ? Utils.Git.repositoryName(projectUrl) : Utils.URLs.getURLBaseName(projectUrl)) != null)
-      throw new IllegalStateException("Project is already present locally");
-    var storage = Utils.Git.withCredentials(this, scope, credentialId,
-        () -> workspaceManager.importProject(projectUrl, workspaceName));
+    if (workspaceManager.getProject(
+            Utils.Git.isRemoteGitURL(projectUrl)
+                ? Utils.Git.repositoryName(projectUrl)
+                : Utils.URLs.getURLBaseName(projectUrl))
+        != null) throw new IllegalStateException("Project is already present locally");
+    var storage =
+        Utils.Git.withCredentials(
+            this,
+            scope,
+            credentialId,
+            () -> workspaceManager.importProject(projectUrl, workspaceName));
     if (storage == null) {
       return List.of(
           Utils.Resources.createEmpty(
@@ -971,8 +1046,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public synchronized boolean createWorkspace(String workspace, Metadata metadata, UserScope scope) {
-    if (scope == null || scope.getUser() == null || scope.getUser().isAnonymous()
-        || scope.getUser().getUsername() == null || scope.getUser().getUsername().isBlank()) return false;
+    if (scope == null
+        || scope.getUser() == null
+        || scope.getUser().isAnonymous()
+        || scope.getUser().getUsername() == null
+        || scope.getUser().getUsername().isBlank()) return false;
     /*
      * We just create the descriptor. Project URNs are unique anyway, so the workspace is a purely
      * logical entity for now.
@@ -1004,7 +1082,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public synchronized ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
-    if (scope == null || !isAllowed(CRUDOperation.CREATE, scope) && !isAllowed(CRUDOperation.ADMINISTER, scope))
+    if (scope == null
+        || !isAllowed(CRUDOperation.CREATE, scope) && !isAllowed(CRUDOperation.ADMINISTER, scope))
       throw new KlabResourceAccessException("Creating projects requires CREATE");
 
     var workspaceInfo = resourcesKbox.getStatus(workspaceName, null);
@@ -1235,19 +1314,26 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   @Override
   public <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope) {
-    if (org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class.isAssignableFrom(assetClass)) {
-      var material = org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.coordinates(urn);
-      if (material.isDirectory()) requireMaterialWrite(material.getProjectName(), SubmissionMode.ADD, scope);
+    if (org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.class
+        .isAssignableFrom(assetClass)) {
+      var material =
+          org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.coordinates(urn);
+      if (material.isDirectory())
+        requireMaterialWrite(material.getProjectName(), SubmissionMode.ADD, scope);
       else requireMaterialRead(material.getProjectName(), scope);
       return assetClass.cast(workspaceManager.readMaterial(material));
     }
-    if (org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class.isAssignableFrom(assetClass)) {
+    if (org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class.isAssignableFrom(
+        assetClass)) {
       var definition = workspaceManager.retrieve(urn, KimSymbolDefinition.class);
       if (definition == null) return null;
-      return assetClass.cast(org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.decode(definition, serviceId()));
+      return assetClass.cast(
+          org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.decode(
+              definition, serviceId()));
     }
 
-    if (Workspace.class.isAssignableFrom(assetClass)) return assetClass.cast(retrieveWorkspace(urn, scope));
+    if (Workspace.class.isAssignableFrom(assetClass))
+      return assetClass.cast(retrieveWorkspace(urn, scope));
     // TODO RESOURCES-CRUD enforce the asset's ResourcePrivileges for every branch.
     var workflowClass = workflowKnowledgeClass(assetClass);
     if (workflowClass != null) {
@@ -1270,15 +1356,18 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       }
     }
     var result = workspaceManager.retrieve(urn, assetClass);
-    if (result instanceof Project project) requireProjectOperation(project.getUrn(), CRUDOperation.READ, scope);
-    if (result instanceof KlabDocument<?> document) requireProjectOperation(document.getProjectName(), CRUDOperation.READ, scope);
+    if (result instanceof Project project)
+      requireProjectOperation(project.getUrn(), CRUDOperation.READ, scope);
+    if (result instanceof KlabDocument<?> document)
+      requireProjectOperation(document.getProjectName(), CRUDOperation.READ, scope);
     if (result instanceof KimAssetImpl asset && asset.getServiceId() == null)
       asset.setServiceId(serviceId());
     if (result instanceof KlabDocumentImpl<?> document && document.getServiceId() == null)
       document.setServiceId(serviceId());
     if (result instanceof KimNamespace namespace)
-      return assetClass.cast((namespaceModelIndex == null ? new NamespaceModelIndex() : namespaceModelIndex)
-          .forTransport(namespace));
+      return assetClass.cast(
+          (namespaceModelIndex == null ? new NamespaceModelIndex() : namespaceModelIndex)
+              .forTransport(namespace));
     return result;
   }
 
@@ -1293,10 +1382,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   @Override
   public <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope) {
     if (Workspace.class.isAssignableFrom(assetClass)) {
-      return workspaceManager.list(assetClass).stream().filter(workspace -> allowsWorkspaceRead(
-          resourcesKbox.getStatus(workspace.getUrn(), null), scope,
-          scope != null && isAllowed(CRUDOperation.ADMINISTER, scope)))
-          .map(workspace -> assetClass.cast(projectWorkspaceForUser((Workspace) workspace, scope))).toList();
+      return workspaceManager.list(assetClass).stream()
+          .filter(
+              workspace ->
+                  allowsWorkspaceRead(
+                      resourcesKbox.getStatus(workspace.getUrn(), null),
+                      scope,
+                      scope != null && isAllowed(CRUDOperation.ADMINISTER, scope)))
+          .map(workspace -> assetClass.cast(projectWorkspaceForUser((Workspace) workspace, scope)))
+          .toList();
     }
     // TODO RESOURCES-CRUD filter every result using the requesting scope and ResourcePrivileges.
     var workflowClass = workflowKnowledgeClass(assetClass);
@@ -1308,12 +1402,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           .filter(Objects::nonNull)
           .toList();
     } else if (AdapterDescriptor.class.isAssignableFrom(assetClass)) {
-      return super
-          .query(
-              Parameters.create(),
-              KnowledgeClass.RESOURCE_ADAPTER,
-              AdapterDescriptor.class,
-              scope)
+      return super.query(
+              Parameters.create(), KnowledgeClass.RESOURCE_ADAPTER, AdapterDescriptor.class, scope)
           .stream()
           .map(assetClass::cast)
           .toList();
@@ -1322,24 +1412,38 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       var worldview = retrieveWorldview(scope);
       return worldview == null ? List.of() : List.of(assetClass.cast(worldview));
     }
-    return workspaceManager.list(assetClass).stream().filter(asset ->
-        asset instanceof KlabDocument<?> document ? canProjectOperation(document.getProjectName(), CRUDOperation.READ, scope)
-            : !(asset instanceof Project project) || canProjectOperation(project.getUrn(), CRUDOperation.READ, scope)).toList();
+    return workspaceManager.list(assetClass).stream()
+        .filter(
+            asset ->
+                asset instanceof KlabDocument<?> document
+                    ? canProjectOperation(document.getProjectName(), CRUDOperation.READ, scope)
+                    : !(asset instanceof Project project)
+                        || canProjectOperation(project.getUrn(), CRUDOperation.READ, scope))
+        .toList();
   }
 
   @Override
   public List<ResourceSet> delete(String urn, KnowledgeClass knowledgeClass, UserScope scope) {
     switch (knowledgeClass) {
       case ADDITIONAL_MATERIAL:
-        var material = org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.coordinates(urn);
-        if (material.isDirectory()) requireMaterialWrite(material.getProjectName(), SubmissionMode.ADD, scope);
+        var material =
+            org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial.coordinates(
+                urn);
+        if (material.isDirectory())
+          requireMaterialWrite(material.getProjectName(), SubmissionMode.ADD, scope);
         requireProjectOperation(material.getProjectName(), CRUDOperation.DELETE, scope);
         return workspaceManager.deleteMaterial(material, scope);
       case PROJECT:
         return deleteProject(urn, scope);
       case WORKSPACE:
         return deleteWorkspace(urn, scope);
-      case NAMESPACE, BEHAVIOR, APPLICATION, SCRIPT, TESTCASE, OBSERVATION_STRATEGY_DOCUMENT, ONTOLOGY:
+      case NAMESPACE,
+      BEHAVIOR,
+      APPLICATION,
+      SCRIPT,
+      TESTCASE,
+      OBSERVATION_STRATEGY_DOCUMENT,
+      ONTOLOGY:
         String[] urns = urn.split("/");
         if (urns.length < 2) {
           throw new KlabIllegalArgumentException(
@@ -1353,8 +1457,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         if (separator >= 0) {
           String project = urn.substring(0, separator);
           project = project.substring(project.lastIndexOf('/') + 1);
-          return deleteDocument(project, urn.substring(separator + 1),
-              ProjectStorage.ResourceType.BEHAVIOR, scope);
+          return deleteDocument(
+              project, urn.substring(separator + 1), ProjectStorage.ResourceType.BEHAVIOR, scope);
         }
         getComponentRegistry().unloadComponent(urn, Urn.of(urn).getVersion());
         // TODO delete from registry!
@@ -1533,7 +1637,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
               Notification.error("PUBLISH is only supported for the Resource contract")));
     }
     if (submissionMode == SubmissionMode.VALIDATE) {
-      if (!(asset instanceof Workspace)) throw new KlabIllegalArgumentException("VALIDATE requires a workspace");
+      if (!(asset instanceof Workspace))
+        throw new KlabIllegalArgumentException("VALIDATE requires a workspace");
       var changes = workspaceManager.validateDeferred(asset.getUrn(), scope);
       invalidateCaches();
       return changes;
@@ -1541,7 +1646,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (submissionMode == SubmissionMode.UPDATE_DEFERRED) {
       if (!(asset instanceof org.integratedmodelling.klab.api.lang.kim.KimOntology
           || asset instanceof org.integratedmodelling.klab.api.lang.kim.KimNamespace))
-        throw new KlabIllegalArgumentException("Deferred validation requires an ontology or namespace");
+        throw new KlabIllegalArgumentException(
+            "Deferred validation requires an ontology or namespace");
       var document = (KlabDocument<?>) asset;
       requireProjectOperation(document.getProjectName(), CRUDOperation.UPDATE, scope);
       return workspaceManager.saveDeferred(document, scope);
@@ -1583,9 +1689,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             return List.of();
           }
           if (submissionMode == SubmissionMode.REPLACE) {
-            return updateWorkspaceSettings(workspace.getUrn(), workspace.getMetadata(), workspace.getPrivileges(), scope)
+            return updateWorkspaceSettings(
+                    workspace.getUrn(), workspace.getMetadata(), workspace.getPrivileges(), scope)
                 ? List.of(workspaceChange(workspace.getUrn(), CRUDOperation.UPDATE_METADATA))
-                : List.of(ResourceSet.empty(Notification.error("Workspace settings require its owner or a service administrator")));
+                : List.of(
+                    ResourceSet.empty(
+                        Notification.error(
+                            "Workspace settings require its owner or a service administrator")));
           }
           return List.of(
               ResourceSet.empty(
@@ -1611,8 +1721,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             return List.of();
           }
           if (submissionMode == SubmissionMode.REPLACE && project.getManifest() == null) {
-            return List.of(workspaceManager.replaceProjectSettings(
-                coordinates[0], coordinates[1], project.getSettings(), scope));
+            return List.of(
+                workspaceManager.replaceProjectSettings(
+                    coordinates[0], coordinates[1], project.getSettings(), scope));
           }
           return List.of(
               ResourceSet.empty(
@@ -1635,8 +1746,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                           + document.getProjectName())));
         }
         var knowledgeClass = KlabAsset.classify(document);
-        requireProjectOperation(document.getProjectName(), submissionMode == SubmissionMode.ADD
-            ? CRUDOperation.CREATE : CRUDOperation.UPDATE, scope);
+        requireProjectOperation(
+            document.getProjectName(),
+            submissionMode == SubmissionMode.ADD ? CRUDOperation.CREATE : CRUDOperation.UPDATE,
+            scope);
         if (submissionMode == SubmissionMode.MERGE) {
           return List.of(
               ResourceSet.empty(
@@ -1657,7 +1770,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         var existingDocument = retrieve(document.getUrn(), knowledgeClass.getAssetClass(), scope);
         if (org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(document) != null
             && submissionMode == SubmissionMode.ADD)
-          return List.of(ResourceSet.empty(Notification.error("New document creation cannot select an existing authoring source")));
+          return List.of(
+              ResourceSet.empty(
+                  Notification.error(
+                      "New document creation cannot select an existing authoring source")));
         if (existingDocument != null && submissionMode == SubmissionMode.ADD) {
           return List.of(
               ResourceSet.empty(
@@ -1665,7 +1781,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                       "ADD requested for an existing document " + document.getUrn())));
         }
         if (submissionMode == SubmissionMode.UPDATE
-            || ((existingDocument != null || org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(document) != null)
+            || ((existingDocument != null
+                    || org.integratedmodelling.klab.api.services.resources.AuthoringSource.id(
+                            document)
+                        != null)
                 && submissionMode == SubmissionMode.CREATE_OR_UPDATE)) {
 
           // UPDATE currently replaces the source in file storage. Version history is pending
@@ -1674,7 +1793,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
           // indexes while its file remains the project's source of truth.
           return updateDocument(
               document.getProjectName(),
-              org.integratedmodelling.klab.api.services.resources.AuthoringSource.selector(document),
+              org.integratedmodelling.klab.api.services.resources.AuthoringSource.selector(
+                  document),
               ProjectStorage.ResourceType.classify(document),
               document.getSourceCode(),
               submissionMode == SubmissionMode.CREATE_OR_UPDATE,
@@ -1763,9 +1883,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       return (T) retrieve(urn, (Class<? extends KlabAsset>) infoClass, scope);
     } else if (infoClass == String.class) {
       var asset = retrieve(urn, assetClass.getAssetClass(), scope);
-      if (asset != null && (assetClass == KnowledgeClass.CONCEPT || assetClass == KnowledgeClass.OBSERVABLE)) {
-        return infoClass.cast(org.integratedmodelling.klab.runtime.language.SyntacticDocumentation.describeWithPaths(
-            urn, asset, workspaceManager::conceptDeclarationPath));
+      if (asset != null
+          && (assetClass == KnowledgeClass.CONCEPT || assetClass == KnowledgeClass.OBSERVABLE)) {
+        return infoClass.cast(
+            org.integratedmodelling.klab.runtime.language.SyntacticDocumentation.describeWithPaths(
+                urn, asset, workspaceManager::conceptDeclarationPath));
       }
       return asset == null ? null : (T) asset.getUrn();
     } else if (infoClass.isAssignableFrom(ResourceInfo.class)) {
@@ -1813,7 +1935,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                   query.get("geometry", Geometry.class),
                   query.get("contextObservable", Concept.class),
                   query.getList("resolutionConstraints", ResolutionConstraint.class),
-                  contextScope, ModelDiscoveryMode.fromParameter(query.get(ModelDiscoveryMode.PARAMETER))));
+                  contextScope,
+                  ModelDiscoveryMode.fromParameter(query.get(ModelDiscoveryMode.PARAMETER))));
     }
 
     var unsupported =
@@ -2090,21 +2213,29 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
-      UserScope scope, String credentialId, String... arguments) {
+  public List<ResourceSet> manageRepository(
+      String projectName,
+      RepositoryState.Operation operation,
+      UserScope scope,
+      String credentialId,
+      String... arguments) {
     if (!(scope instanceof org.integratedmodelling.klab.api.scope.ServiceSideScope local)
         || !local.isAuthorized(CRUDOperation.ADMINISTER))
       throw new SecurityException("Repository administration requires an administrator");
-    return Utils.Git.withCredentials(this, scope, credentialId, () -> {
-      if (operation == RepositoryState.Operation.SAVE_CHANGES
-          || operation == RepositoryState.Operation.PUBLISH_CHANGES
-          || operation == RepositoryState.Operation.SYNC_AND_PUBLISH
-          || operation == RepositoryState.Operation.COMMIT_AND_SWITCH)
-        Utils.Git.requireWriteCredentials(workspaceManager.repositoryStorage(projectName).getRootFolder(), scope);
-      return workspaceManager.manageRepository(projectName, operation, arguments);
-    });
+    return Utils.Git.withCredentials(
+        this,
+        scope,
+        credentialId,
+        () -> {
+          if (operation == RepositoryState.Operation.SAVE_CHANGES
+              || operation == RepositoryState.Operation.PUBLISH_CHANGES
+              || operation == RepositoryState.Operation.SYNC_AND_PUBLISH
+              || operation == RepositoryState.Operation.COMMIT_AND_SWITCH)
+            Utils.Git.requireWriteCredentials(
+                workspaceManager.repositoryStorage(projectName).getRootFolder(), scope);
+          return workspaceManager.manageRepository(projectName, operation, arguments);
+        });
   }
-
 
   public ResourceInfo registerResource(
       String urn,
@@ -2153,19 +2284,37 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       Concept contextObservable,
       List<ResolutionConstraint> resolutionConstraints,
       ContextScope scope) {
-    return resolveModels(observable, geometry, contextObservable, resolutionConstraints, scope, ModelDiscoveryMode.EXECUTABLE);
+    return resolveModels(
+        observable,
+        geometry,
+        contextObservable,
+        resolutionConstraints,
+        scope,
+        ModelDiscoveryMode.EXECUTABLE);
   }
 
-  public ResourceSet resolveModels(Observable observable, Geometry geometry, Concept contextObservable,
-      List<ResolutionConstraint> resolutionConstraints, ContextScope scope, ModelDiscoveryMode mode) {
+  public ResourceSet resolveModels(
+      Observable observable,
+      Geometry geometry,
+      Concept contextObservable,
+      List<ResolutionConstraint> resolutionConstraints,
+      ContextScope scope,
+      ModelDiscoveryMode mode) {
     Objects.requireNonNull(mode, "model discovery mode");
-    if (!checkSemanticServices(scope)) {
-      return ResourceSet.empty(Notification.error("Semantic search is not available: model indexing or reasoner availability failed"));
+    var frozen =
+        scope != null && scope.getResolutionCycleBinding() != null
+            ? captureModelQueryView(scope)
+            : null;
+    if (frozen == null && !checkSemanticServices(scope)) {
+      return ResourceSet.empty(
+          Notification.error(
+              "Semantic search is not available: model indexing or reasoner availability failed"));
     }
 
     ResourceSet results = new ResourceSet();
     for (ModelReference model :
-        this.kbox.query(observable, geometry, contextObservable, resolutionConstraints, scope, mode)) {
+        this.kbox.query(
+            observable, geometry, contextObservable, resolutionConstraints, scope, mode)) {
       results
           .getResults()
           .add(
@@ -2181,6 +2330,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     addDependencies(results, scope);
 
+    if (frozen != null) requireModelQueryView(frozen, scope);
     return results;
   }
 
@@ -2385,18 +2535,26 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     }
     ret.setServiceId(serviceId());
     if (ret.getKnowledgeClass() == KnowledgeClass.WORKSPACE) {
-      boolean administrator = scope instanceof UserScope user && isAllowed(CRUDOperation.ADMINISTER, user);
-      boolean edit = scope instanceof UserScope user && allowsWorkspaceEdit(ret, user, administrator);
-      boolean read = scope instanceof ServiceScope
-          || scope instanceof UserScope user && allowsWorkspaceRead(ret, user, administrator);
+      boolean administrator =
+          scope instanceof UserScope user && isAllowed(CRUDOperation.ADMINISTER, user);
+      boolean edit =
+          scope instanceof UserScope user && allowsWorkspaceEdit(ret, user, administrator);
+      boolean read =
+          scope instanceof ServiceScope
+              || scope instanceof UserScope user && allowsWorkspaceRead(ret, user, administrator);
       if (!read) {
         var denied = new ResourceInfo();
-        denied.setUrn(urn); denied.setServiceId(serviceId()); denied.setKnowledgeClass(KnowledgeClass.WORKSPACE);
-        denied.setType(ResourceInfo.Type.UNAUTHORIZED); denied.setPermissions(EnumSet.noneOf(CRUDOperation.class));
+        denied.setUrn(urn);
+        denied.setServiceId(serviceId());
+        denied.setKnowledgeClass(KnowledgeClass.WORKSPACE);
+        denied.setType(ResourceInfo.Type.UNAUTHORIZED);
+        denied.setPermissions(EnumSet.noneOf(CRUDOperation.class));
         return denied;
       }
-      ret.setPermissions(edit ? EnumSet.of(CRUDOperation.READ, CRUDOperation.UPDATE, CRUDOperation.ADMINISTER)
-          : EnumSet.of(CRUDOperation.READ));
+      ret.setPermissions(
+          edit
+              ? EnumSet.of(CRUDOperation.READ, CRUDOperation.UPDATE, CRUDOperation.ADMINISTER)
+              : EnumSet.of(CRUDOperation.READ));
       return ret;
     }
     ResourcePrivileges effectiveRights = effectiveRights(ret);
@@ -2413,9 +2571,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       if (scope instanceof UserScope userScope && canEditProject(urn, userScope)) {
         projectPermissions.add(CRUDOperation.UPDATE);
       }
-      if (scope instanceof UserScope userScope) for (var operation : CRUDOperation.values()) {
-        if (canProjectOperation(urn, operation, userScope)) projectPermissions.add(operation);
-      }
+      if (scope instanceof UserScope userScope)
+        for (var operation : CRUDOperation.values()) {
+          if (canProjectOperation(urn, operation, userScope)) projectPermissions.add(operation);
+        }
       ret.setPermissions(projectPermissions);
     }
     return ret;
@@ -2423,31 +2582,41 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   /** Project settings and rights share the authenticated project's edit-access boundary. */
   public boolean canAdministerProjectSettings(UserScope scope) {
-    return scope != null && scope.getUser() != null && !scope.getUser().isAnonymous()
+    return scope != null
+        && scope.getUser() != null
+        && !scope.getUser().isAnonymous()
         && isAllowed(CRUDOperation.ADMINISTER, scope);
   }
 
   public boolean canEditProject(String urn, UserScope scope) {
     if (scope == null || scope.getUser() == null || scope.getUser().isAnonymous()) return false;
-    return allowsProjectEdit(resourcesKbox.getStatus(urn, null), scope,
-        isAllowed(CRUDOperation.UPDATE, scope), isAllowed(CRUDOperation.ADMINISTER, scope));
+    return allowsProjectEdit(
+        resourcesKbox.getStatus(urn, null),
+        scope,
+        isAllowed(CRUDOperation.UPDATE, scope),
+        isAllowed(CRUDOperation.ADMINISTER, scope));
   }
 
   /** Shared project grant for API and actor operations. */
   public boolean canProjectOperation(String project, CRUDOperation operation, UserScope user) {
-    return allowsProjectEdit(resourcesKbox.getStatus(project, null), user,
-        user != null && isAllowed(operation, user), user != null && isAllowed(CRUDOperation.ADMINISTER, user));
+    return allowsProjectEdit(
+        resourcesKbox.getStatus(project, null),
+        user,
+        user != null && isAllowed(operation, user),
+        user != null && isAllowed(CRUDOperation.ADMINISTER, user));
   }
 
   public void requireProjectOperation(String project, CRUDOperation operation, UserScope user) {
     if (!canProjectOperation(project, operation, user))
-      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Project " + project + " requires " + operation);
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+          "Project " + project + " requires " + operation);
   }
 
   private void requireMaterialRead(String project, UserScope user) {
     if (!canProjectOperation(project, CRUDOperation.READ, user)
         && !canManageMaterial(project, user))
-      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("No material access to project " + project);
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+          "No material access to project " + project);
   }
 
   private boolean canManageMaterial(String project, UserScope user) {
@@ -2458,21 +2627,32 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   /** Includes metadata contributors supported by the original material CRUD contract. */
   public void requireMaterialWrite(String project, SubmissionMode mode, UserScope user) {
-    boolean allowed = mode == SubmissionMode.ADD ? canManageMaterial(project, user)
-        : canProjectOperation(project, CRUDOperation.UPDATE, user)
-            || canProjectOperation(project, CRUDOperation.UPDATE_METADATA, user);
-    if (!allowed) throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
-        "Project " + project + " requires material write access");
+    boolean allowed =
+        mode == SubmissionMode.ADD
+            ? canManageMaterial(project, user)
+            : canProjectOperation(project, CRUDOperation.UPDATE, user)
+                || canProjectOperation(project, CRUDOperation.UPDATE_METADATA, user);
+    if (!allowed)
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+          "Project " + project + " requires material write access");
   }
 
-  static boolean allowsProjectEdit(ResourceInfo info, UserScope scope, boolean update, boolean administer) {
-    if (info == null || info.getKnowledgeClass() != KlabAsset.KnowledgeClass.PROJECT
-        || scope == null || scope.getUser() == null || scope.getUser().isAnonymous()
-        || scope.getUser().getUsername() == null || scope.getUser().getUsername().isBlank()) return false;
+  static boolean allowsProjectEdit(
+      ResourceInfo info, UserScope scope, boolean update, boolean administer) {
+    if (info == null
+        || info.getKnowledgeClass() != KlabAsset.KnowledgeClass.PROJECT
+        || scope == null
+        || scope.getUser() == null
+        || scope.getUser().isAnonymous()
+        || scope.getUser().getUsername() == null
+        || scope.getUser().getUsername().isBlank()) return false;
     if (administer) return true;
-    return update && (Objects.equals(info.getOwner(), scope.getUser().getUsername())
-        || info.getRights() != null && info.getRights().checkAuthorization(
-            scope.getUser().getUsername(), scope.getUser().getGroups()));
+    return update
+        && (Objects.equals(info.getOwner(), scope.getUser().getUsername())
+            || info.getRights() != null
+                && info.getRights()
+                    .checkAuthorization(
+                        scope.getUser().getUsername(), scope.getUser().getGroups()));
   }
 
   public boolean setResourceInfo(String urn, ResourceInfo info, Scope scope) {
@@ -2505,10 +2685,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public byte[] adapt(String source, String mediaType, KlabAsset.KnowledgeClass assetClass,
-      UserScope scope) {
+  public byte[] adapt(
+      String source, String mediaType, KlabAsset.KnowledgeClass assetClass, UserScope scope) {
     if (assetClass != null && "application/json".equalsIgnoreCase(mediaType)) {
-      return org.integratedmodelling.common.utils.Utils.Json.asString(parseAsset(source, assetClass))
+      return org.integratedmodelling.common.utils.Utils.Json.asString(
+              parseAsset(source, assetClass))
           .getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
     return super.adapt(source, mediaType, assetClass, scope);
@@ -2549,7 +2730,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
         return updateWorkspaceSettings(resourceUrn, null, resourcePrivileges, userScope);
       }
       if (status.getKnowledgeClass() == KlabAsset.KnowledgeClass.PROJECT) {
-        return workspaceManager.updateProjectPermissions(resourceUrn, resourcePrivileges.toString(), userScope);
+        return workspaceManager.updateProjectPermissions(
+            resourceUrn, resourcePrivileges.toString(), userScope);
       }
       if (!allowsRightsUpdate(
           resourceUrn,
@@ -2595,29 +2777,41 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     if (status == null
         || status.getPermissionsOwnerUrn() != null
             && !resourceUrn.equals(status.getPermissionsOwnerUrn())) return false;
-    return administrator
-        || status.getOwner() != null && status.getOwner().equals(username);
+    return administrator || status.getOwner() != null && status.getOwner().equals(username);
   }
 
   static boolean allowsWorkspaceEdit(ResourceInfo info, UserScope scope, boolean administrator) {
-    return info != null && info.getKnowledgeClass() == KnowledgeClass.WORKSPACE
-        && scope != null && scope.getUser() != null && !scope.getUser().isAnonymous()
-        && scope.getUser().getUsername() != null && !scope.getUser().getUsername().isBlank()
+    return info != null
+        && info.getKnowledgeClass() == KnowledgeClass.WORKSPACE
+        && scope != null
+        && scope.getUser() != null
+        && !scope.getUser().isAnonymous()
+        && scope.getUser().getUsername() != null
+        && !scope.getUser().getUsername().isBlank()
         && (administrator || Objects.equals(info.getOwner(), scope.getUser().getUsername()));
   }
 
   static boolean allowsWorkspaceRead(ResourceInfo info, UserScope scope, boolean administrator) {
     return allowsWorkspaceEdit(info, scope, administrator)
-        || info != null && info.getKnowledgeClass() == KnowledgeClass.WORKSPACE
-        && scope != null && scope.getUser() != null
-        && info.getRights() != null && info.getRights().checkAuthorization(
-            scope.getUser().getUsername(), scope.getUser().getGroups());
+        || info != null
+            && info.getKnowledgeClass() == KnowledgeClass.WORKSPACE
+            && scope != null
+            && scope.getUser() != null
+            && info.getRights() != null
+            && info.getRights()
+                .checkAuthorization(scope.getUser().getUsername(), scope.getUser().getGroups());
   }
 
-  /** Metadata and rights share one catalog write; workspace contents and ownership are never submitted. */
-  synchronized boolean updateWorkspaceSettings(String urn, Metadata metadata, ResourcePrivileges rights, UserScope scope) {
+  /**
+   * Metadata and rights share one catalog write; workspace contents and ownership are never
+   * submitted.
+   */
+  synchronized boolean updateWorkspaceSettings(
+      String urn, Metadata metadata, ResourcePrivileges rights, UserScope scope) {
     var existing = resourcesKbox.getStatus(urn, null);
-    if (scope == null || !allowsWorkspaceEdit(existing, scope, isAllowed(CRUDOperation.ADMINISTER, scope))) return false;
+    if (scope == null
+        || !allowsWorkspaceEdit(existing, scope, isAllowed(CRUDOperation.ADMINISTER, scope)))
+      return false;
     var updated = Utils.Json.parseObject(Utils.Json.asString(existing), ResourceInfo.class);
     if (metadata != null) updated.setMetadata(Metadata.create(metadata));
     if (rights != null) {
@@ -2799,23 +2993,34 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   /**
-   * Legacy imports are idempotent by source URN, including resources whose URN was rewritten
-   * during their first import. Serialize lookup and ingestion so concurrent imports cannot both
-   * create a copy. Ordinary resource edits and submissions retain their existing update behavior.
+   * Legacy imports are idempotent by source URN, including resources whose URN was rewritten during
+   * their first import. Serialize lookup and ingestion so concurrent imports cannot both create a
+   * copy. Ordinary resource edits and submissions retain their existing update behavior.
    */
   public synchronized ResourceSet ingestLegacyResource(Resource resource, UserScope scope) {
     var existing = getResourcesKbox().getResourceByOriginalUrn(resource.getUrn());
     if (existing != null) {
       var result = new ResourceSet();
-      var descriptor = new ResourceSet.Resource(
-          serviceId(), existing.getUrn(), existing.getLocalProjectName(), existing.getVersion(),
-          KlabAsset.KnowledgeClass.RESOURCE, existing.getTimestamp(), false);
+      var descriptor =
+          new ResourceSet.Resource(
+              serviceId(),
+              existing.getUrn(),
+              existing.getLocalProjectName(),
+              existing.getVersion(),
+              KlabAsset.KnowledgeClass.RESOURCE,
+              existing.getTimestamp(),
+              false);
       descriptor.setOperation(CRUDOperation.READ);
       descriptor.setLocal(isLocal());
       result.getResources().add(descriptor);
-      result.getNotifications().add(Notification.info(
-          "Skipped legacy import: resource " + resource.getUrn()
-              + " is already present as " + existing.getUrn()));
+      result
+          .getNotifications()
+          .add(
+              Notification.info(
+                  "Skipped legacy import: resource "
+                      + resource.getUrn()
+                      + " is already present as "
+                      + existing.getUrn()));
       return result;
     }
     return ingestResource(resource, scope);
@@ -2825,8 +3030,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       Resource resource, SubmissionMode submissionMode, UserScope scope) {
 
     var operation = CRUDOperation.CREATE;
-    boolean editorSubmission =
-        submissionMode == SubmissionMode.PUBLISH && isWorkflowEditor(scope);
+    boolean editorSubmission = submissionMode == SubmissionMode.PUBLISH && isWorkflowEditor(scope);
 
     if (submissionMode == SubmissionMode.PUBLISH) {
       if (isLocal()) {
@@ -2946,11 +3150,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
     var result =
         resourceManager.ingestResource(
-            resource, adapter, scope, submissionMode == SubmissionMode.PUBLISH ? serviceName() : null);
+            resource,
+            adapter,
+            scope,
+            submissionMode == SubmissionMode.PUBLISH ? serviceName() : null);
     if (submissionMode == SubmissionMode.PUBLISH
         && !Utils.Notifications.hasErrors(result.getNotifications())) {
       String authoritativeUrn =
-          result.getResources().isEmpty() ? null : result.getResources().getFirst().getResourceUrn();
+          result.getResources().isEmpty()
+              ? null
+              : result.getResources().getFirst().getResourceUrn();
       var status =
           authoritativeUrn == null ? null : resourcesKbox.getStatus(authoritativeUrn, null);
       if (status == null) {
@@ -2964,9 +3173,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             Notification.error("Could not set the published resource status to under review"));
       }
       String workflowId = workspaceManager.getConfiguration().getPublicationReviewWorkflow();
-      if (editorSubmission
-          && workflowId != null
-          && !workflowId.isBlank()) {
+      if (editorSubmission && workflowId != null && !workflowId.isBlank()) {
         try {
           var initial = new FlowImpl.StateImpl();
           initial.setSchemaId("editing");

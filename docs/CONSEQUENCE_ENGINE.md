@@ -1,18 +1,30 @@
-# Consequence engine — design draft
+# Consequence engine — contracts and implementation
 
-This document collects the current design and the initial runtime implementation.
-Post-commit scheduling, decision/commit messages and automatic change resolution are
-implemented as described below. Configuration discovery and role conferral have
-handler designs; their semantic evaluation is not yet executable. Raw role implication
-remains unspecified. Declaration parsing, OWL restrictions, activity names and source
-validation alone do not establish that a consequence executes.
-This is the authoritative home for the evolving design; reference guides and the
-agent context pack should summarize it and link here.
+This document specifies the implemented consequence contracts and their verification
+boundary. Intrinsic conferral followed by implication has passed a complete live cycle
+without a characterization model. Dependent configuration birth and same-identity,
+current-time explanatory recomputation have passed a bounded live scenario. These
+results do not establish every relationship, network or cessation path.
+
+See [implementation status and continuation prompts](CONSEQUENCE_ENGINE_STATUS.md)
+for exact verified scenarios, controlled-only coverage, unsupported cases and remaining
+blockers. Parsing, OWL declarations and a successful helper test alone do not prove a
+Runtime consequence or scientific model executed.
+
+The [admission follow-up audit and staged repair prompts](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md)
+cover CHANGE repetition, recomputation evidence, birth identities and nested cancellation.
 
 Here, a **commit** means an observation/knowledge transaction commit in a digital
 twin, not a Git commit. Consequences operate on observations and their scientific
 meaning, not source-control changes.
 
+## Integrity constraints and actionable consequences
+
+`requires` records integrity constraints, not consequence execution. `requires identity`
+remains active: legal identity qualification discharges requirement-induced abstractness,
+while explicitly authored abstractness remains. The unsupported `requires attribute`
+and `requires extent` forms are removed. `implies`, `confers` and `emerges from` record
+actionable consequences under the contracts below.
 ## Agreed semantic contract
 
 The engine runs after each observation/knowledge commit. Its responsibilities are:
@@ -22,7 +34,7 @@ The engine runs after each observation/knowledge commit. Its responsibilities ar
 | Configuration DETECTION | Recognize an emergent configuration observation from detected ingredients |
 | Change processes | Resolve change processes for qualities when their context becomes occurrent |
 | Conferred roles | Apply `confer` axioms for roles conferred by processes or relationships |
-| Role implications | Follow implications of roles |
+| Implications | Resolve targets implied by roles or relationships, and attribute roles implied by configurations |
 | Optional uncertainty | Optionally resolve `uncertainty of` qualities |
 
 Consequences may cause further consequences through the models selected to resolve
@@ -44,8 +56,8 @@ derivation:
 A configuration's application target is stated explicitly with `applies to`
 (`odo:appliesTo`). `Network of Relationship` therefore identifies emergence
 ingredients; it does not name the Network's application target. The configuration
-rule is agreed language semantics, while the runtime that detects the resulting
-observation remains future work. Independent subject/agent/event heads cannot take
+rule is implemented by the normalized consequence-rule and configuration-detection
+paths described below. Independent subject/agent/event heads cannot take
 binary `of`; unary forms containing that token retain their own derivation rules.
 
 ### Configuration lifecycle
@@ -104,26 +116,21 @@ fixed-point or work-queue algorithm is mandated by this document.
 
 ## Current support and implementation boundary
 
-| Component | Observed source support | What this does not establish |
+| Path | Implemented behavior | Verification limit |
 | --- | --- | --- |
-| Activity API | [Contextualization.java](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Contextualization.java) defines DETECTION and maps configuration semantics to it | A working post-commit detector, placement engine or separate detection/resolution scheduler |
-| Worldview compilation | [WorldviewDeclarationSupport.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/owl/WorldviewDeclarationSupport.java) compiles explicit emergence triggers to `odo:emergesFrom` | Automatic observation creation or completed runtime trigger evaluation |
-| Trigger registration | [ReasonerService.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java) registers emergence declarations through `registerEmergent` | A successful detection consequence |
-| Emergence runtime | The same service's `emergentResolvables` currently returns an empty map; `Emergence.makeObservationCatalog` has no active catalog population | End-to-end detection, placement, updates or network construction |
-| Model validation candidate | [KimNamespaceVisitor.java](../klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/language/KimNamespaceVisitor.java) and [DocumentSemanticValidator.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/DocumentSemanticValidator.java) contain the focused `model each Configuration` rejection | A runtime detector; passing-test status must come from the implementation report |
-| Transactions and reuse | [Knowledge graph transactions](KNOWLEDGE_GRAPH.md#semantic-attribution-transactions) and [resolution state](RESOLUTION.md#11-reentrancy-and-concurrency-risks) describe existing identity, isolation and commit behavior | A complete consequence-engine integration or general committed semantic-plan catalog |
+| Rule source and transport | Normalized authored conferral, implication and emergence evidence with source spans, accepted-generation indexing and retained semantic-cycle binding | Syntax/source evidence is not execution authority |
+| Roles and implications | Guarded intrinsic role attribution before optional characterization; ordinary optional resolution for implied targets | Process→role→quality is live verified; relationship endpoints and independent alternative supports lack equivalent full-stack acceptance |
+| Configuration discovery | Incremental candidates, positive Boolean matching, guarded native capture, detection placement and prepared single-root explanatory execution | Simple dependent birth/recomputation is live verified; disconnected/cross-cohort and split/merge paths have controlled coverage |
+| Cycles and settings | Per-twin explicit-cycle serialization; frozen enablement and semantic view through recursive drain | In-memory ownership is not durable recovery or an authority-dataset snapshot |
+| Modeled cessation | Local Data.Builder output intent, execution-bound validation, atomic native deactivation/history, current-view and scheduler exclusion, cohort affects propagation | Controlled native COUNT1→0 is verified; full service-side cessation acceptance remains blocked before testcase start |
+| Change processes | Existing resolved semantic writer avoids a redundant change request only with valid perspective/support evidence | General resolve-once and per-timestep model reuse policy remain deferred |
 
-The existing resolution guide documents attempt isolation and process-local
-coalescing of concurrent singular-substantial submissions. It also identifies the
-missing atomic publication of reusable successful semantic plans. Reuse and
-idempotency integration must therefore be verified for each consequence category;
-the design must not equate one existing coalescing path with complete engine support.
+The legacy `emergentResolvables` stub is not the runtime discovery implementation.
+The active rule API is `Reasoner.consequenceRules`, consumed through retained semantic
+cycles and guarded Runtime handlers. Missing or unsupported evidence defers explicitly;
+there is no receipt-free discovery or model-execution fallback.
 
-The initial paths below implement change-process triggering and the runtime extension
-boundary. They do not establish complete emergence, role conferral, role implication,
-optional uncertainty, durable work recovery or recursive termination.
-
-## Initial runtime implementation
+## Runtime implementation
 
 ### Commit boundary, worker and lifecycle
 
@@ -360,95 +367,186 @@ binding validation, normal reuse and scheduler writer arbitration still apply. T
 an initial preference, not a global set-cover optimizer or permission to run overlapping
 writers. The existing scheduling and process-plan machinery performs actual change.
 
-## Configuration discovery handler design
+## Configuration discovery implementation
 
-[ConfigurationDiscoveryHandler](../klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/ConfigurationDiscoveryHandler.java)
-is the installed entry point. It currently returns `DEFERRED` with the missing reasoner
-capability named explicitly. The following is the intended implementation contract,
-not a claim that configuration observations are already submitted.
+`ConfigurationDiscoveryHandler` delegates to the installed configuration runtime and
+backend. The retained Reasoner view supplies complete normalized rules; candidate indexes
+limit revisits to affected contexts, bearers and structural components. A rule candidate
+is not a successful match. Matching retains Boolean branches, distinct ingredient IDs,
+observer scope, actual support and full source/scientific evidence.
 
-1. **Select rules affected by the commit.** Obtain configuration declarations whose
-   `emerges from` ingredients or `applies to` targets can match added/modified
-   observations and changed links. Also revisit existing ingredients when a suitable
-   target first appears. Remove/reclassify/retract changes require invalidation of
-   earlier matches; lack of invalidation support must produce deferral, not an invented
-   deletion. Candidate indexing is an optimization; the reasoner retains the complete
-   normalized declaration and source provenance.
-2. **Match emergence.** Evaluate the authored Boolean expression over committed,
-   observer-visible observations, returning ingredient IDs and their matched clauses.
-   AND needs every operand under compatible support; OR preserves the successful
-   alternative(s). Preserve nested expressions, inherited restrictions, aliases and
-   effective head semantics. Do not flatten clauses to an unordered set or collapse
-   distinct observations keyed only by observable. Absence, negation and mixed-bearer
-   matching remain explicit unsupported cases until their contracts are defined.
-3. **Check applicability independently.** `emerges from` answers which evidence creates
-   the configuration; `applies to` answers which observed targets admit it. For every
-   potential target, require reasoner evidence that its semantics satisfy the complete
-   applicability expression. A match on ingredients alone is insufficient. Inherited
-   applicability and specialization must be preserved. An absent applicability clause
-   must be represented distinctly from failed/unavailable evaluation; target selection
-   for that case needs an explicit language/runtime policy before submission.
-4. **Choose placement and support.** Common-bearer dependent ingredients produce a
-   configuration under that bearer when the applicability check admits the target.
-   Substantials/relationships produce configurations in root cohorts; their application
-   target is separate from their graph parent. Relationship ingredients produce Network
-   configurations. Record target, placement, ingredients and actual shared support;
-   never infer geometry from containment or select an arbitrary bearer. Different
-   dependent bearers and ambiguous target/support matches defer with an explanation.
-5. **Validate and submit detection.** A match receipt should contain configuration
-   semantics, rule/source ID, ingredient IDs, target ID, placement, support, observer,
-   worldview/reasoner revision and graph read guards. Revalidate this evidence at the
-   DETECTION commit boundary. Resolve an existing configuration identity first; admit
-   a new identity atomically only for a supported new match. Pass the receipt into
-   the normal context-scope submission path specialized for DETECTION. DETECTION
-   materializes the emergent observation; any subsequent `model Configuration`
-   resolution happens after that observation exists. Never use `model each Configuration`
-   or let model execution manufacture the discovery evidence.
-6. **Notify and continue.** Return the detection decision with evidence IDs. A successful
-   resulting root commit automatically persists its cause, emits `ConsequenceCommitted`
-   and schedules another pass. A no-match, unsupported evaluation, no-model resolution
-   and failure remain distinct; detecting a configuration does not assert that a model
-   for it was resolved.
+The native capture includes exact positive assets and selected structural neighborhoods,
+including relevant absence evidence. Semantic relevance is checked before incomplete
+support can block a recipe: a proved unrelated unresolved optional observation does not
+block complete ingredients, while relevant or uncertain incomplete evidence still defers.
+Payload, attribution, phantom and concurrent-update guards remain active for the captured
+domain. Detection uses the existing issued-receipt path; read-only matching alone cannot
+authorize publication.
 
-The reasoner needs a public, transported declaration/match contract before step 5 can
-be enabled. `Reasoner.applicableObservables` supplies existing applicability access,
-but not a complete Boolean match receipt. `ReasonerService.emergentResolvables` is not
-a usable public detection API: it currently returns an empty map and its catalog is
-unpopulated. Parsing/normalization can be extended to retain the emergence/applicability
-expression trees and provenance required here; existing clause syntax and OWL support
-are not replaced by a runtime text parser. Unsupported capability must remain distinct
-from a successful query with no matches.
+Dependent configurations require a common bearer and compatible support. Substantial or
+relationship components may include participants from different source cohorts; each
+configuration belongs to its own cohort. Disconnected networks produce separate instances.
+The detector does not invent an inherency or combine unrelated contexts to complete a match.
+Mixed dependent bearers, negative/absence patterns and unsupported structural expressions
+remain explicit limits.
 
-For Terrain, Elevation/Slope/Aspect under an applicable Region would supply the common
-bearer and ingredient evidence. For a StreamNetwork, StreamConnection observations
-supply emergence evidence and an applicable Region supplies the application target;
-the Network still belongs to a root cohort. Its network model is a subsequent request.
+After guarded detection, a normal admitted single-root model may explain the configuration.
+Preparation retains the actual compiled root and its dependencies; execution receipts and
+native read sets are revalidated at atomic publication. A successful match does not mean a
+model was found or executed. Input changes recompute at the current modeled instant, update
+the same configuration identity and append immutable revision history. Existing historical
+support is checked against its immutable before-state rather than against legitimately
+changed current input support. Foreign concurrent writes still reject publication.
 
-## Process role conferral handler design
+The [status report](CONSEQUENCE_ENGINE_STATUS.md) distinguishes the actual dependent
+birth/recomputation acceptance from controlled network/lifecycle tests. Multi-root
+explanations and configuration termination are explicitly unsupported.
 
-The `ROLE_CONFERRAL` slot currently defers. Its intended first executable path is a
-committed process plus reasoner evidence for its `confer` declarations. For each
-declaration, retain the conferred concrete role, the process/rule identity, applicability
-restrictions, observer and semantic revision. Find the process's actual durable bearer
-and validate that the role applies there. A relationship-based rule must specify which
-participant receives the role; it must not confer to both endpoints by default.
+## Role conferral and implication contract (November 1)
 
-Resolve the role within the selected bearer scope using normal role/classification
-resolution, then apply the resulting semantic attribution through the existing guarded
-transaction mechanism. Reuse the bearer identity rather than creating a new bearer,
-and persist process/rule/evidence provenance in addition to the consequence cause.
-Idempotent role attribution must precede any follow-on resolution of observables enabled
-by that role. Abstract roles requiring specialization, missing target evidence, and
-unspecified withdrawal/lifetime rules must defer explicitly. A successful attribution
-commit naturally causes another engine pass and both decision/commit notifications.
+These contracts supersede the earlier model-mediated conferral design. Their runtime
+handlers require the corresponding evidence, attribution and cycle paths; missing or
+unsupported evidence remains explicitly deferred. Verification by scenario is listed in the status report;
+a parser hook alone does not execute them.
 
-Conferral is separate from raw implication. `ROLE_IMPLICATION` must not infer a closure
-or call existing implication stubs as if they supplied an agreed operational contract.
-Direction, inherited implications, withdrawal, conflicts, provenance and termination of
-role-to-role implication remain to be specified. Uncertainty also remains deferred
-until its selection policy is defined, and always occupies the lowest queue priority.
-Configuration, change, conferral, implication and uncertainty requests all obey the
-same optional-resolution and single-outcome-notification contract.
+### Conferral
+
+`confers <role> [to <substantial>|source|target] [within <bearer>]` attributes a role
+without requiring characterization or a characterization model. For a process with
+no recipient clause, use its actual durable substantial bearer. For a relationship,
+`to source` and `to target` select that endpoint; omission selects both endpoints.
+There is no `both` keyword. Explicit `to <substantial>` resolves `each <substantial>`
+through normal resolution and attributes the role to the resulting recipients.
+Successful empty membership, incomplete discovery and failed resolution are distinct.
+`within` specializes the role-bearing substantial's context of application, not the
+declaring process or relationship; it is not a replacement
+recipient or permission to fabricate inherency. Roles apply only to substantials.
+
+Use the guarded semantic-attribution transaction with source-rule, observer, support,
+recipient and semantic-witness evidence. Retain the existing bearer identities and
+normal applicability/satisfiability checks. This authority is distinct from classifier
+invocation evidence: do not invent classifier events or bypass classification guards.
+Attribution records the source observation, authored rule and cause. A second supporting
+source for an already present role must not appear to be a newly acquired role.
+
+A conferral commits attribution first. The generated commit then triggers that role's
+implications before optional role characterization. Characterization uses the recipient's
+singular scope and cannot undo intrinsic attribution merely because no model exists.
+Its directive is resolved through Runtime's guarded semantic-update lifecycle, not registered
+as a new observation. Only an explicit Resolver `NO_MODEL` outcome establishes an absent
+characterization model; rejected admission, malformed plans and execution failures remain failures.
+Never wait for the consequence worker's own queue or execute the same implication both
+inline and again after commit. Withdrawal and role lifetime are not inferred here.
+
+### Implication
+
+`implies <target> [for <substantial>] [within <bearer>]` retains three separate things:
+its target expression, secondary inherency supplied by `for`, and specialization
+supplied by `within`. Native inherency in the target is preserved. In this declaration,
+a top-level `for` is the secondary clause; parentheses can preserve a native target
+`for` expression. Ordinary observable syntax outside this clause is unchanged.
+
+- A role implies a dependent, relationship or predicate by requesting normal optional
+  resolution of the target when the role is attributed. For a consequence-conferred
+  role, attempt the implications before characterization of that role.
+- A configuration implies a role on selected substantial participants. Without `for`,
+  only a dependent configuration's actual bearer is a default. A configuration of
+  substantials has no such bearer and needs an explicit recipient. Never assign a role
+  to a dependent merely to make this route executable.
+- A relationship may imply model-resolved dependents, relationships or predicates when
+  inherency is unambiguous. `for` must identify the intended bearer where the
+  relationship context alone is ambiguous. Relationship role attribution belongs to
+  `confers`; it is not a second implicit attribution route through `implies`.
+
+These are operational consequences, not calls to the old unimplemented role-closure
+methods. All normal access, scientific dependencies, support and semantic checks remain.
+
+### Emergence and incremental evidence
+
+`emerges from <ingredients> [within <context>]` detects a configuration under its bearer
+for dependent ingredients, or across the relevant context for substantial ingredients.
+The configuration belongs to its own cohort, linked to its configuration observable;
+connected participants may belong to different source cohorts. Preserve authored
+Boolean expressions and distinct observation identities. Detection precedes resolution
+of the configuration; the resulting configuration may imply roles. Models do not
+instantiate configurations. A `within` restriction specializes the emergence context.
+
+Build semantic candidate indexes for accepted rule generations, then use changed
+observations, attributions and structural links to revisit only affected bearer/cohort
+partitions. Keep supporting observation IDs, support and rule/semantic evidence so
+changes can invalidate cached matches. A one-time partition initialization is distinct
+from a global rescan after every commit. A source candidate is not a successful match;
+unavailable proof, unsupported matching and a proven no-match must remain distinct.
+
+Participant changes update the same configuration observation, preserving immutable
+history. Legitimate modeled cessation of a participant or relationship triggers the
+configuration's explanatory model through its affects dependencies; it is not an
+integrity failure and does not cause generic structural retraction or deactivation.
+Later worldview definition mismatches do not retroactively rewrite the twin. New
+requests still require ordinary admission, access and semantic guards. Disconnected relationship networks form separate configuration
+instances. Match each connected component independently and preserve its identity as
+members change. On split, retain one existing identity and create the additional components; on merge,
+choose one continuing identity while preserving the others and their history. A stable
+deterministic arbitrary choice is acceptable; record identity lineage and participant
+changes. Configurations persist even when no composing relationships remain. Explicitly
+reject unsupported configuration termination models; do not add termination semantics.
+
+An input-change recomputation runs the newly admitted explanatory root at the current
+modeled time and appends a revision without advancing time or creating a named event.
+Its private preparation retains the exact compiled root, including valid roots with
+no direct computation. Scheduler still traverses ordinary prerequisites; their current
+knowledge and existing initialization/reuse rules are preserved. This does not claim
+that every upstream model is refreshed for each input revision. General resolution
+reuse remains a separate policy discussion. Multiple explanatory roots are explicitly
+unsupported in this initial implementation.
+
+Modeled cessation requires authentic execution-bound output and retained native beforeimage.
+Local components may call `Data.Builder.cease(target)`; the builder records intent, not
+authority. Successful typed/adapter output transfers that intent through its actual owning
+execution and transaction. Arbitrary metadata, copied IDs, unexecuted inputs, foreign scopes,
+failed outputs and configuration targets cannot authorize removal. Remote builders do not
+yet implement this output contract and reject it explicitly.
+
+The native commit excludes ceased substantials, their dependent consequences and involved
+relationships from current lookup/reference/enumeration and scheduling, while preserving
+historical state and provenance. Surviving cohort-dependent computations receive membership
+change propagation; the controlled actual COUNT path preserves INIT1 and writes current0
+without advancing modeled time. Unrelated survivors remain accessible. Independent alternate
+role-support behavior is not established by that result. Full service-side cessation has not
+passed acceptance; see the status report. No named events or `on termination` semantics are
+introduced, and configuration termination remains rejected.
+
+### Configurations and assemblages
+
+Detection does not instantiate an assemblage subject from the co-occurrence of its
+component subjects. First detect their configuration or network through explicit
+structuring properties. A model resolving that configuration may instantiate an
+assemblage through the ordinary, guarded instantiation pathway. The configuration
+records detected organization; the assemblage is a model-produced substantial.
+## Frozen resolution/contextualization cycles
+
+Consequence enablement and semantics are pre-contextualization choices. Capture them
+at a resolution/contextualization cycle's start and retain them through its ordinary,
+queued and recursively generated consequence work. Changing the Runtime setting or
+publishing a worldview must not drop or reinterpret an already admitted chain. Later
+cycles can observe those changes after the prior cycle's consequences are handled.
+`DISABLE_CONSEQUENCE_ENGINE` defaults to false; a disabled cycle still permits ordinary
+explicit resolution/contextualization, while scheduling no automatic consequences.
+This is not a whole-twin immutable setting and is separate from explicit shutdown.
+
+Use retained accepted semantic actors and cycle-owned lifetime references, not cached
+rule DTOs or a current-epoch comparison alone. Scope copies and remote requests must
+preserve cycle identity. Unknown, closed or wrong-owner semantic handles must fail
+explicitly, never fall back to current semantics. Keep existing authority, admission,
+source, access and coverage guards inside the selected view. A retained logical actor
+does not guarantee a snapshot of an external mutable authority.
+
+Within each digital twin, explicit requests wait for the active cycle and all its
+consequences to drain, then begin a fresh frozen cycle. Causal child submissions inherit
+their parent's cycle and must not queue behind it. This does not serialize unrelated
+twins or supported internal model evaluation. Cycle ownership must outlive subscriber
+cancellation until actual work and queued consequences drain. In-memory ownership does
+not imply crash recovery, durable replay or migration of existing observations.
 
 ## Verification paths
 
@@ -501,9 +599,9 @@ that role may imply another consequence. Optional uncertainty resolution for a
 quality is another ordinary resolution request. Failure, absence of a suitable
 model and successful empty membership must retain their distinct outcomes.
 
-## Integration proposals and prerequisites to verify
+## Remaining integration and verification boundaries
 
-These are design considerations, not a promised implementation schedule:
+These checks constrain continuation; they are not evidence that the unverified scenarios pass:
 
 1. Identify the authoritative successful observation/knowledge commit boundary and
    its durable notification/replay semantics. Consequences must not inspect a
@@ -517,17 +615,21 @@ These are design considerations, not a promised implementation schedule:
 5. Verify incremental processing, duplicate notification, cycles, concurrent commits,
    failure and restart/replay behavior without duplicating the resolver state model.
 
-The initial root commit hook is now selected above. Durable work ownership,
-optional-uncertainty policy and exact invalidation rules are not selected here. Nor is a common-bearer algorithm for
-mixed dependent emergence. Establish these dependencies before claiming an engine
-or assigning delivery commitments.
+The root commit hook and in-memory cycle ownership are specified above. Durable
+restart/replay ownership, optional-uncertainty policy and negative/absence detection
+remain separate work. Mixed dependent emergence needs complete common-bearer evidence;
+unsupported or incomplete evidence must defer rather than manufacture a configuration.
 
 ## Questions for collaborators
 
-- What defines the identity of an emerged configuration, and when does a changed
-  ingredient update it, invalidate it or produce a different observation?
-- How do boolean emergence clauses, partial ingredient availability, absence and
-  removal affect detection and retraction?
+- Split/merge continuity uses a deterministic economic identity choice. A split retains
+  one existing identity and creates additional components; a merge retains one continuing
+  identity while preserving other configurations and their history, including empty ones.
+  Identity choice has no additional semantic meaning. Configuration termination models
+  remain explicitly unsupported.
+- Which negative/absence patterns are supported beyond positive Boolean emergence?
+  Incomplete evidence defers; modeled participant cessation recomputes the existing
+  configuration rather than causing generic structural retraction.
 - What common-bearer rule is justified when dependent ingredients have different
   bearers, including inherited or specialized bearer types?
 - Which identity/scope/revision guarantees bound distinct consequence work, and
@@ -538,6 +640,33 @@ or assigning delivery commitments.
   change-process requests from generating repeated equivalent work?
 - How should provenance and explanations present conferral, implication and
   detection decisions to users?
+
+## Native validation captures and durable audit references
+
+A live configuration attempt retains its complete, detached native read sets through
+semantic admission, scientific execution and atomic publication. These captures include
+opaque metadata and structural absence evidence; every native guard still validates the
+original full objects. Audit JSON never recreates or authorizes a native capture.
+
+Configuration source and affects receipts serialize a versioned audit reference for each
+such capture: context, asset IDs, selected neighborhoods, native edge IDs, and SHA-256 over
+the complete capture's UTF-8 JSON under the normal k.LAB mapper. Hashing streams the full
+capture, including metadata and previous history, without allocating another JSON string.
+The original in-memory capture remains unchanged. A reference is audit data, not executable
+proof, a content store, or a promise that the raw capture can be reconstructed from it.
+
+Only opaque concurrency-capture payloads are omitted from receipt serialization. Recipe,
+query, source response, model-plan, semantic request/witness, placement and prior-content
+hash fields remain. Participant/support revisions, execution provenance and existing
+immutable historical rows are not rewritten. Source and temporal artifacts retain their
+ordinary history contracts; an audit reference must never stand in for missing execution
+or scientific-input evidence.
+
+Embedding full captures in their own audit would re-embed prior configuration authorities
+and history on each revision. The resulting finite JSON tree amplifies through repeated
+escaping; it is not a geometry expansion or a Java object cycle. The audit projection
+prevents this feedback without changing parser limits, global observation transport,
+semantic admission or native concurrency guards.
 
 ## Candidate worldview migration and verification
 

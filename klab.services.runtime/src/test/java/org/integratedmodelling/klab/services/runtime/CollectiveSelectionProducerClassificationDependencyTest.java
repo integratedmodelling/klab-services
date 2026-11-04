@@ -54,7 +54,8 @@ class CollectiveSelectionProducerClassificationDependencyTest {
   private void exercise(boolean fail) throws Exception { exercise(fail, false, false); }
 
   private void exercise(boolean fail, boolean drift, boolean existing) throws Exception {
-    try (var f = new SelectedModelClassifierSubmissionTest.Fixture()) {
+    try (var f = new SelectedModelClassifierSubmissionTest.Fixture();
+        var cycle = f.cycles.admit(f.scope, true).get(30, TimeUnit.SECONDS)) {
       fixture = f; failOther = fail; driftNativeInput = drift; expectExisting = existing;
       if (!existing) f.region.setObservable(f.reasoner.declareObservable(f.observable(f.semantic.named("Region"))));
       var before = f.region.getObservable();
@@ -93,7 +94,7 @@ class CollectiveSelectionProducerClassificationDependencyTest {
       when(registry.getFunctionDescriptor(org.mockito.ArgumentMatchers.<ServiceCall>argThat(call -> call != null && "fixture.discoverAfter".equals(call.getUrn())), any(org.integratedmodelling.klab.api.scope.Scope.class)))
           .thenReturn(List.of(descriptor));
       when(registry.implementation(descriptor)).thenReturn(implementation);
-      var execution = f.scope.executing(Activity.of(Activity.Type.SUBMISSION, null, "Collective classification prerequisite"));
+      var execution = cycle.scope().executing(Activity.of(Activity.Type.SUBMISSION, null, "Collective classification prerequisite"));
       var transaction = (DigitalTwinImpl.TransactionImpl) execution.getCurrentTransaction();
       var otherCohort = new CohortImpl(); otherCohort.setId(-10000);
       otherCohort.setObservable(f.reasoner.declareObservable(f.observable(f.semantic.named("Other")))); otherCohort.setGeometry(f.geometry);

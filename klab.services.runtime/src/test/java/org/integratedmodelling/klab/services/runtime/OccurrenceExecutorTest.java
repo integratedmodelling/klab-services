@@ -121,6 +121,18 @@ class OccurrenceExecutorTest {
     return result;
   }
 
+  private org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.TransactionImpl
+      processBirthTransaction(ServiceContextScope scope,ObservationImpl process) {
+    var transaction=mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.TransactionImpl.class);
+    var owned=new java.util.concurrent.atomic.AtomicReference<org.integratedmodelling.klab.api.provenance.Activity>();
+    when(scope.executing(any(org.integratedmodelling.klab.api.provenance.Activity.class),eq(process)))
+        .thenAnswer(call->{owned.set(call.getArgument(0));return scope;});
+    when(scope.getCurrentTransaction()).thenReturn(transaction);
+    when(transaction.ownsExecutionActivity(any())).thenAnswer(call->call.getArgument(0)==owned.get());
+    when(transaction.readObservation(same(process))).thenReturn(process);
+    return transaction;
+  }
+
   @Test void restoredTemporalExecutorsInitializeInputsWithoutExecutingComputation() {
     for (var role : new Actuator.ExecutionRole[] {
         Actuator.ExecutionRole.PROCESS, Actuator.ExecutionRole.EVENT_INSTANTIATOR}) {
@@ -134,8 +146,7 @@ class OccurrenceExecutorTest {
           ? SemanticType.PROCESS : SemanticType.EVENT, 100);
       if (role == Actuator.ExecutionRole.EVENT_INSTANTIATOR)
         ((ConceptImpl) process.getObservable().getSemantics()).setCollective(true);
-      when(scope.executing(any(org.integratedmodelling.klab.api.provenance.Activity.class),eq(process))).thenReturn(scope);
-      when(scope.getCurrentTransaction()).thenReturn(mock(DigitalTwin.Transaction.class));
+      processBirthTransaction(scope,process);
       var input = observation("elevation", SemanticType.QUALITY, 101);
       when(scope.getObservation(100)).thenReturn(process);
       when(scope.getObservation(101)).thenReturn(input);
@@ -181,8 +192,7 @@ class OccurrenceExecutorTest {
     var twin = mock(DigitalTwin.class);
     when(scope.getDigitalTwin()).thenReturn(twin);
     var process = observation("rainfall", SemanticType.PROCESS, 100);
-    when(scope.executing(any(org.integratedmodelling.klab.api.provenance.Activity.class),eq(process))).thenReturn(scope);
-    var transaction=mock(DigitalTwin.Transaction.class);when(scope.getCurrentTransaction()).thenReturn(transaction);
+    var transaction=processBirthTransaction(scope,process);
     var bearer = observation("region", SemanticType.SUBJECT, 200);
     when(scope.getObservation(100)).thenReturn(process);
     when(scope.getContextObservation()).thenReturn(bearer);

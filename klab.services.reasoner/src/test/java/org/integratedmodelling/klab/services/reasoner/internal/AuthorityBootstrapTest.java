@@ -41,6 +41,27 @@ class AuthorityBootstrapTest {
     for(int i=0;i<5;i++) assertSame(catalog,bootstrap.prepare(source,scope,key,()->false));
     assertEquals(1,calls.get());
   }
+  @Test void retryingFailuresKeepsSuccessfulProviderCaptures() throws Exception {
+    var bootstrap = bootstrap((w,s,p,c) -> {
+      calls.incrementAndGet();
+      if ("bad".equals(w.getOntologies().getFirst().getSourceCode())) throw new IllegalStateException();
+      return catalog;
+    });
+    var good = source("good");
+    bootstrap.prepare(good, scope, AuthorityBootstrap.key(good, scope), () -> false);
+    // A changed provider request forces an independent attempt, which fails.
+    var bad = source("bad");
+    var root = new org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl();
+    root.setUrn("Root"); root.setNamespace("w"); root.setAuthorityRequired("OTHER");
+    root.getAuthorityParameters().put("urn", "test.authority");
+    bad.getOntologies().getFirst().getStatements().add(root);
+    assertThrows(Exception.class, () -> bootstrap.prepare(bad, scope, AuthorityBootstrap.key(bad, scope), () -> false));
+    bootstrap.retryFailures();
+    assertSame(catalog, bootstrap.prepare(good, scope, AuthorityBootstrap.key(good, scope), () -> false));
+    assertEquals(2, calls.get());
+    assertThrows(Exception.class, () -> bootstrap.prepare(bad, scope, AuthorityBootstrap.key(bad, scope), () -> false));
+    assertEquals(3, calls.get());
+  }
   @Test void failedConfigurationIsNotRepeatedByPollingOrLeakedInDiagnostic() {
     var bootstrap=bootstrap((w,s,p,c)->{calls.incrementAndGet();throw new IllegalStateException("private parameters secret");});
     var source=source("first");var key=AuthorityBootstrap.key(source,scope);

@@ -25,8 +25,16 @@ public final class CachedAuthority implements Authority {
   private String stableId, providerId;
   private AuthorityCache cache;
   private CachePolicy policy;
+  private boolean durableIdentities;
 
   public CachedAuthority(Authority source, Path root) { this(source, root, Clock.systemUTC()); }
+  CachedAuthority(Authority source, Path root, boolean durableIdentities) {
+    this(source, root, Clock.systemUTC(), durableIdentities);
+  }
+  CachedAuthority(Authority source, Path root, Clock clock, boolean durableIdentities) {
+    this(source, root, clock);
+    this.durableIdentities = durableIdentities;
+  }
   CachedAuthority(Authority source, Path root, Clock clock) {
     this(source, root, clock, implementationRevision(source));
   }
@@ -123,17 +131,24 @@ public final class CachedAuthority implements Authority {
   private Identity resolve(Authority provider, String view, String identity, ResolutionMode mode) {
     String operation = mode == ResolutionMode.FULL_HIERARCHY ? "identity-full" : "identity";
     String key = canonical(Arrays.asList(operation, view, identity));
-    var cached = readIdentity(key, policy.identitySeconds());
+    long lifetime = durableIdentities ? Long.MAX_VALUE : policy.identitySeconds();
+    var cached = readIdentity(key, lifetime);
     if (cached != null) return cached;
     var result = mode == ResolutionMode.CONFIGURED ? provider.resolveIdentity(providerId, identity)
         : provider.resolveIdentity(providerId, identity, mode);
     if (mode == ResolutionMode.FULL_HIERARCHY && result != null && result.getHierarchyStatus() == HierarchyStatus.DEFERRED)
       throw new IllegalStateException("Authority returned deferred ancestry for a full lookup");
     if (clean(result)) {
-      cache.put(key, JSON.valueToTree(StoredIdentity.of(result)), policy.identitySeconds());
+      cache.put(key, JSON.valueToTree(StoredIdentity.of(result)), lifetime);
       // A canonical synonym ID must not force a second lookup after a restart.
       if (!Objects.equals(identity, result.getId())) cache.put(canonical(Arrays.asList(operation, view, result.getId())),
-          JSON.valueToTree(StoredIdentity.of(result)), policy.identitySeconds());
+          JSON.valueToTree(StoredIdentity.of(result)), lifetime);
+      // Complete ancestry answers are valid in both resolution modes. Persist both aliases so
+      // a later hierarchy traversal does not repeat a configured lookup (or vice versa).
+      if (durableIdentities && result.getHierarchyStatus() == HierarchyStatus.COMPLETE)
+        for (var code : Set.copyOf(Arrays.asList(identity, result.getId())))
+          for (var op : List.of("identity", "identity-full"))
+            cache.put(canonical(Arrays.asList(op, view, code)), JSON.valueToTree(StoredIdentity.of(result)), lifetime);
     }
     return result;
   }
@@ -183,7 +198,8 @@ public final class CachedAuthority implements Authority {
   private static boolean clean(Identity identity) {
     return identity != null && identity.getId() != null && !identity.getId().isBlank()
         && identity.getConceptName() != null && !identity.getConceptName().isBlank()
-        && (identity.getNotifications() == null || identity.getNotifications().isEmpty());
+        && (identity.getNotifications() == null || identity.getNotifications().stream()
+            .noneMatch(notification -> notification.getLevel() == Notification.Level.Error));
   }
   private static String canonical(Object value) {
     try { return JSON.writeValueAsString(value); }
@@ -199,6 +215,8 @@ public final class CachedAuthority implements Authority {
     return prefix + "_" + readable + "_" + digest(value).substring(0, 16);
   }
   private static String implementationRevision(Authority authority) {
+    var captured = CapturedAuthorityCatalog.implementationRevision(authority);
+    if (captured != null) return captured;
     var type = authority.getClass();
     var annotation = type.getAnnotation(org.integratedmodelling.klab.api.services.reasoner.Authority.class);
     String version = annotation == null ? "unannotated" : annotation.version();

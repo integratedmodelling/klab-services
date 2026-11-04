@@ -114,8 +114,8 @@ class WorldviewDeclarationSupportTest {
         (self, method, args) -> null);
     var owl = new OWL(scope); owl.manager = OWLManager.createOWLOntologyManager();
     var properties = new ArrayList<Axiom>();
-    for (String name : List.of("affects", "creates", "requiresIdentity", "requiresRealm", "requiresExtent",
-        "requiresAttribute", "impliesObservable", "emergesFrom", "describes", "describesQuality", "increasesWith",
+    for (String name : List.of("affects", "creates", "requiresIdentity", "requiresRealm",
+        "impliesObservable", "emergesFrom", "describes", "describesQuality", "increasesWith",
         "decreasesWith", "marksQuality", "classifiesQuality", "discretizesQuality", "impliesSource",
         "impliesDestination", "appliesTo", "isInherentTo", "describesConfiguration")) properties.add(Axiom.ObjectPropertyAssertion(name));
     owl.requireOntology("odo").define(properties);
@@ -162,7 +162,6 @@ class WorldviewDeclarationSupportTest {
     statement.getQualitiesAffected().add(syntax("Quality"));
     statement.getObservablesCreated().add(syntax("Entity"));
     statement.getRequiredIdentities().add(syntax("IDENTITY")); statement.getRequiredRealms().add(syntax("REALM"));
-    statement.getRequiredExtents().add(syntax("EXTENT")); statement.getRequiredAttributes().add(syntax("ATTRIBUTE"));
     statement.getImpliedObservables().add(syntax("Quality")); statement.getEmergenceTriggers().add(syntax("Entity"));
     statement.getAppliesTo().add(new ApplicableConceptImpl(null, syntax("Entity")));
     statement.getAppliesTo().add(new ApplicableConceptImpl(null, syntax("Quality")));
@@ -174,7 +173,7 @@ class WorldviewDeclarationSupportTest {
     for (String property : List.of("affects","impliesObservable"))
       assertRestriction(owl,ontology,owner,property,ontology.getConcept("Quality"));
     assertRestriction(owl,ontology,owner,"creates",ontology.getConcept("Entity"));
-    for (String kind : List.of("Identity","Realm","Extent","Attribute"))
+    for (String kind : List.of("Identity","Realm"))
       assertRestriction(owl,ontology,owner,"requires"+kind,ontology.getConcept(kind.toUpperCase()));
     var f=owl.manager.getOWLDataFactory();
     var union=f.getOWLObjectUnionOf(owl.getOWLClass(ontology.getConcept("Entity")),owl.getOWLClass(ontology.getConcept("Quality")));

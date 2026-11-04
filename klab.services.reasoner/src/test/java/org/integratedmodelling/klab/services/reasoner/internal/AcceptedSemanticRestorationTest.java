@@ -74,6 +74,30 @@ class AcceptedSemanticRestorationTest {
     }
   }
 
+  @Test void forcedReloadDoesNotRestoreAcceptedInputInsteadOfValidatingIt() throws Exception {
+    var state = mock(SemanticEnvironment.class);
+    var factory = AcceptedSemanticObserverScopeTest.factory(new AtomicReference<>(state));
+    var owner = mock(ServiceScope.class);
+    var a = source("A");
+    try (var runtime = new AcceptedSemanticRuntime(factory)) {
+      runtime.submit(a, owner);
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      long accepted = runtime.status().acceptedGeneration();
+      assertTrue(runtime.rejectPreflight(runtime.beginPreflight(source("B"), owner),
+          List.of(org.integratedmodelling.klab.api.services.runtime.Notification.error("rejected B")), owner));
+
+      var forced = runtime.beginPreflight(a, owner, true);
+      assertTrue(forced.retry(), "Explicit reload must validate even an exactly restorable input");
+      assertEquals(accepted, runtime.status().acceptedGeneration());
+      assertNotEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, runtime.status().logicalStatus(),
+          "Starting validation must not silently restore accepted status");
+      verify(factory, times(1)).build(any(), any());
+      try (var lease = runtime.lease()) {
+        assertSame(state, lease.state(), "Validation must preserve the accepted actor until replacement");
+      }
+    }
+  }
+
   @Test void explicitInvalidationDiscardsRestorationProof() throws Exception {
     var first = mock(SemanticEnvironment.class); var next = mock(SemanticEnvironment.class);
     var current = new AtomicReference<>(first); var factory = AcceptedSemanticObserverScopeTest.factory(current);

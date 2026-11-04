@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.scope.Persistence;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy;
@@ -63,6 +64,7 @@ class TemporalProcessIntegrationTest {
     final ObservationImpl quality=observation("relief",SemanticType.QUALITY,101);
     final ObservationImpl bearer=observation("region",SemanticType.SUBJECT,20);
     final Data.ShardingStrategy layout=Data.ShardingStrategy.trivial(Storage.Type.DOUBLE);
+    final BufferArray initialBuffer;
     final Map<Long,Observation> observations=new HashMap<>();
     final Map<Long,StorageImpl> stores=new HashMap<>();
     final Map<Long,List<Storage.Shard>> data=new HashMap<>();
@@ -88,6 +90,19 @@ class TemporalProcessIntegrationTest {
       when(twin.getScheduler()).thenAnswer(call -> scheduler);
       var user=mock(UserIdentity.class); when(user.getUsername()).thenReturn("tester");
       configureScope(root,user);
+      // This numeric fixture's observation map is its committed lifecycle inventory.
+      when(graph.isObservationCurrent(any(),any())).thenAnswer(call -> {
+        var observation=call.getArgument(0,Observation.class);
+        var requestScope=call.getArgument(1,ContextScope.class);
+        if(observation==null || requestScope==null || !"context".equals(requestScope.getId())
+            || requestScope.getDigitalTwin()!=twin) return false;
+        if(requestScope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction) {
+          var pending=transaction.currentStatusFor(observation);
+          if(pending.isPresent())return pending.get();
+        }
+        return observation.getId()>0 && observations.containsKey(observation.getId());
+      });
+      org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.isolate(twin);
       for(var observation:observations.values())recordInitialSelection(observation);
       when(graph.query(eq(Activity.class),any())).thenAnswer(call ->
           new org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<Activity>(
@@ -105,7 +120,13 @@ class TemporalProcessIntegrationTest {
       });
       when(graph.query(any(KnowledgeGraph.Query.class),eq(Observation.class),any())).thenAnswer(call -> {
         var query=(org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery<?>)call.getArgument(0);
-        if (query.getSource()==null && query.getTarget()==null) return List.copyOf(observations.values());
+        if (query.getSource()==null && query.getTarget()==null) {
+          for (var criterion : query.getCriteria())
+            if (!GraphModel.Fields.ID.equals(criterion.field()) || criterion.operator()!=KnowledgeGraph.Query.Operator.EQUALS
+                || !(criterion.argument() instanceof Number)) throw new IllegalArgumentException("Unsupported fixture observation criterion");
+          return observations.values().stream().filter(o -> query.getCriteria().stream()
+              .allMatch(c -> o.getId()==((Number)c.argument()).longValue())).toList();
+        }
         return query.getSource()!=null && query.getRelationship()==GraphModel.Relationship.HAS_OBSERVER
             ? activityObservers.getOrDefault(query.getSource().getId(),List.of()):List.of();
       });
@@ -150,6 +171,7 @@ class TemporalProcessIntegrationTest {
       doAnswer(call -> { if(failCommit) throw new IllegalStateException("injected graph failure"); staged.forEach(Runnable::run); return null; }).when(graphTx).close();
       var nativeStorage=store(quality);
       var initial=nativeStorage.scan(Scheduler.Event.initialization(),layout,Storage.DoubleScanner.class,false).getFirst();
+      initialBuffer=((StorageImpl.BaseScanner)initial).data;
       initial.add(100);initial.add(200);initial.add(350); nativeStorage.finalizeRun(initial);
       manager.persistTemporalShard(initial.shard(),((StorageImpl.BaseScanner)initial).data);
       data.computeIfAbsent(101L,ignored->new ArrayList<>()).add(initial.shard());
@@ -240,6 +262,7 @@ class TemporalProcessIntegrationTest {
       link(input,output,ProcessPlan.PREREQUISITE);return output;
     }
     void configureScope(ServiceContextScope scope,UserIdentity user) {
+      org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.transparentCycleOverlay(scope);
       // No semantic service is provisioned by this numeric scheduler fixture. In particular,
       // Mockito's generic deep stub is not a Reasoner or a completeness certificate.
       doReturn(null).when(scope).getService(org.integratedmodelling.klab.api.services.Reasoner.class);
@@ -341,6 +364,16 @@ class TemporalProcessIntegrationTest {
       assertTrue(f.scheduler.advanceTo(END));
       assertEquals(13, f.data.get(101L).size());
       assertEquals(12, f.journals.size());
+    }
+  }
+
+  @Test void absentProcessCannotRunFromRetainedScheduleMetadata() throws Exception {
+    try(var f=new Fixture("elevation - 10")) {
+      f.observations.remove(f.process.getId());
+      f.scheduler.advanceTo(date("2014-02-01"));
+      assertTrue(f.journals.isEmpty());
+      assertEquals(1,f.data.get(f.quality.getId()).size());
+      assertArrayEquals(new double[]{100,200,350},f.values(START));
     }
   }
 

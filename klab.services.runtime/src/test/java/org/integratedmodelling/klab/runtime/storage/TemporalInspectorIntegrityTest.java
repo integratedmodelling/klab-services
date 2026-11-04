@@ -34,6 +34,10 @@ class TemporalInspectorIntegrityTest {
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
 
   private TemporalProcessIntegrationTest.Fixture registered(String expression, boolean actualObserver)
+      throws Exception { return registered(expression, actualObserver, ignored -> {}); }
+
+  private TemporalProcessIntegrationTest.Fixture registered(String expression, boolean actualObserver,
+      java.util.function.Consumer<org.integratedmodelling.klab.api.knowledge.observation.Observation> beforeCommit)
       throws Exception {
     var owner = new TemporalProcessIntegrationTest();
     owner.directory = directory;
@@ -55,6 +59,7 @@ class TemporalInspectorIntegrityTest {
     scope.getCurrentTransaction().resolveWith(f.process,
         new CompiledDataflow(f.runtime, f.process, scope).restoreOccurrenceExecutor(plan));
     assertTrue(f.scheduler.submit(f.process, scope), f::failureDescription);
+    beforeCommit.accept(org.integratedmodelling.klab.api.knowledge.observation.Observation.forTransport(f.quality));
     assertTrue(scope.commit() > 0, f::failureDescription);
     assertEquals(12, f.journals.size(), f::failureDescription);
     assertTrue(schedule(f), "Uncorrupted scheduler evidence must pass before mutation");
@@ -106,6 +111,77 @@ class TemporalInspectorIntegrityTest {
     f.process.getMetadata().put(OccurrenceRegistration.METADATA_KEY, Utils.Json.asString(
         new OccurrenceRegistration(old.version(), old.id(), old.planRevision(), old.role(),
             old.bearerId(), old.schedules(), Utils.Json.asString(plan))));
+  }
+
+  @Test void preTransitionSnapshotCannotCertifyLaterRevisionButFreshSameIdentityCan() throws Exception {
+    var held = new java.util.concurrent.atomic.AtomicReference<org.integratedmodelling.klab.api.knowledge.observation.Observation>();
+    var property = "klab.diagnostics.temporalInspector"; var previous = System.getProperty(property);
+    try (var f = registered("elevation - 10", false, held::set)) {
+      var before = held.get(); var history = before.getMetadata().get(TemporalHistory.KEY);
+      assertEquals(before.getId(), f.quality.getId());
+      assertNotEquals(history, f.quality.getMetadata().get(TemporalHistory.KEY));
+      assertTrue(f.graph.query(org.integratedmodelling.klab.api.knowledge.observation.Observation.class, f.root)
+          .where(GraphModel.Fields.ID, org.integratedmodelling.klab.api.data.KnowledgeGraph.Query.Operator.EQUALS, -999L).run(f.root).isEmpty());
+      var journalCount = f.journals.size();
+      System.setProperty(property, "true");
+      assertFalse(TemporalInspector.relativeCheck(f.root, f.process, before, 12, -10, 1e-8));
+      assertTrue(relative(f, -10));
+      assertEquals(history, before.getMetadata().get(TemporalHistory.KEY));
+      assertEquals(journalCount, f.journals.size());
+      var encoded = mockingDetails(f.root).getInvocations().stream()
+          .filter(i -> i.getMethod().getName().equals("warn"))
+          .flatMap(i -> java.util.Arrays.stream(i.getRawArguments()))
+          .flatMap(v -> v instanceof Object[] a ? java.util.Arrays.stream(a) : java.util.stream.Stream.of(v))
+          .filter(v -> v instanceof String text && text.startsWith("TEMPORAL_RELATIVE_DIAGNOSTIC "))
+          .map(Object::toString).findFirst().orElseThrow();
+      var facts = Utils.Json.parseObject(encoded.substring("TEMPORAL_RELATIVE_DIAGNOSTIC ".length()), Map.class);
+      assertEquals(before.getId(), ((Number) facts.get("freshId")).longValue());
+      assertEquals(history, facts.get("heldTemporalHistory"));
+      assertNotNull(facts.get("freshTemporalHistory"));
+      assertNotNull(facts.get("initial")); assertEquals(12, ((List<?>) facts.get("transitions")).size());
+      assertFalse(facts.containsKey("readFailure"));
+    } finally { if (previous == null) System.clearProperty(property); else System.setProperty(property, previous); }
+  }
+
+  @Test void temporalInspectionRequiresTheActualFocusedBearerEvenForRecordedNoObserver() throws Exception {
+    try (var f = registered("elevation - 10", false)) {
+      var count = f.journals.size();
+      when(f.root.getContextObservation()).thenReturn(null);
+      var failure = assertThrows(IllegalStateException.class, () -> schedule(f));
+      assertEquals("Process and focused root require recorded observers", failure.getMessage());
+      when(f.root.getContextObservation()).thenReturn(f.bearer);
+      assertTrue(schedule(f));
+      assertTrue(relative(f, -10));
+      assertEquals(count, f.journals.size(), "Changing inspector perspective must not execute another transition");
+    }
+  }
+
+  @Test void enabledDiagnosticCapturesRealScheduleAndJournalWithoutChangingChecksOrEvidence() throws Exception {
+    var previous = System.getProperty("klab.diagnostics.temporalInspector");
+    try (var f = registered("elevation - 10", false)) {
+      var metadata = Utils.Json.asString(f.process.getMetadata());
+      var journalCount = f.journals.size();
+      System.setProperty("klab.diagnostics.temporalInspector", "true");
+      assertFalse(TemporalInspector.scheduleCheck(f.root, f.process, 1, Time.Resolution.Type.YEAR,
+          "2014-01-01T00:00:00Z", "2015-01-01T00:00:00Z", 1));
+      assertTrue(schedule(f));
+      assertEquals(metadata, Utils.Json.asString(f.process.getMetadata()));
+      assertEquals(journalCount, f.journals.size());
+      var diagnostic = mockingDetails(f.root).getInvocations().stream()
+          .filter(i -> i.getMethod().getName().equals("warn"))
+          .flatMap(i -> java.util.Arrays.stream(i.getRawArguments()))
+          .flatMap(v -> v instanceof Object[] a ? java.util.Arrays.stream(a) : java.util.stream.Stream.of(v))
+          .filter(v -> v instanceof String text && text.startsWith("TEMPORAL_SCHEDULE_DIAGNOSTIC "))
+          .map(Object::toString).findFirst().orElseThrow();
+      var facts = Utils.Json.parseObject(diagnostic.substring("TEMPORAL_SCHEDULE_DIAGNOSTIC ".length()), Map.class);
+      assertEquals(f.process.getId(), ((Number) facts.get("processId")).longValue());
+      assertEquals(true, facts.get("registered"));
+      assertTrue(((List<?>) facts.get("creators")).stream().anyMatch(row ->
+          "SIMULATION".equals(((Map<?, ?>) row).get("type")) && ((Map<?, ?>) row).get("transition") != null));
+    } finally {
+      if (previous == null) System.clearProperty("klab.diagnostics.temporalInspector");
+      else System.setProperty("klab.diagnostics.temporalInspector", previous);
+    }
   }
 
   @Test void committedHistoryPassesForActualAndNullObserverDespiteUnrelatedOrdinaryPlan() throws Exception {
@@ -245,15 +321,15 @@ class TemporalInspectorIntegrityTest {
   @Test void nonfiniteInitialEvidenceAndChangedMissingnessAreRejected() throws Exception {
     try (var f = registered("elevation - 10", false)) {
       assertTrue(relative(f, -10));
-      var initial = (StorageImpl.BaseScanner) f.store(f.quality)
-          .scan(Scheduler.Event.initialization(), f.layout, Storage.DoubleScanner.class, false).getFirst();
-      f.store(f.quality).finalizeRun(initial);
-      // Deliberately corrupt the native INIT buffer, preserving the committed event descriptors.
-      initial.data.set(0, Double.POSITIVE_INFINITY);
+      assertThrows(org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException.class,
+          () -> f.store(f.quality).scan(
+              Scheduler.Event.initialization(), f.layout, Storage.DoubleScanner.class, false));
+      // Fault injection uses the fixture's retained buffer; the production API must not reopen INIT.
+      f.initialBuffer.set(0, Double.POSITIVE_INFINITY);
       assertFalse(relative(f, -10));
-      initial.data.set(0, Double.NaN);
+      f.initialBuffer.set(0, Double.NaN);
       assertFalse(relative(f, -10), "Missingness must agree at each position");
-      initial.data.set(0, 100.0);
+      f.initialBuffer.set(0, 100.0);
       assertTrue(relative(f, -10));
     }
   }

@@ -1,0 +1,17 @@
+ontology imod in domain root version 1.0;
+
+// Independent authority-free fixture; not a replacement for authored imod.
+abstract thing Subject is core odo:Subject;
+abstract configuration Configuration is core odo:Configuration;
+abstract role Role is core odo:Role;
+abstract length Length is core odo:Length;
+
+thing Bearer is imod:Subject;
+length Height is imod:Length of imod:Bearer;
+length Width is imod:Length of imod:Bearer;
+length Summary is imod:Length;
+length ImpliedValue is imod:Length;
+role Marked is imod:Role implies imod:ImpliedValue;
+configuration Pair is imod:Configuration
+    emerges from (imod:Height and imod:Width) within imod:Bearer
+    implies imod:Marked;

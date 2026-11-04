@@ -190,7 +190,8 @@ public final class AuthorityBootstrap {
             source.getAuthorityBindings().size()),failure);
       } catch (Throwable loggingUnavailable) { /* Logging must never replace the bootstrap failure. */ }
       // Provider exceptions can contain private parameters, URLs, or headers.
-      var sanitized = new Failure("AUTHORITY_BOOTSTRAP_FAILED: "+failure.getClass().getSimpleName(),
+      var sanitized = new Failure(failure instanceof AuthorityIdentityResolver.LookupFailure lookup
+          ? lookup.diagnostic() : "AUTHORITY_BOOTSTRAP_FAILED: "+failure.getClass().getSimpleName(),
           failure instanceof OwnedCleanupFailure || failure.getSuppressed().length > 0);
       remember(expectedKey,new Outcome(startedEpoch,null,sanitized,null,null));
       throw sanitized.exception();
@@ -218,6 +219,17 @@ public final class AuthorityBootstrap {
   // Called under the runtime lifecycle lock: never wait on provider network/configuration.
   void invalidate() { epoch.incrementAndGet(); outcomes.clear();
     CandidateTrace.stage(CandidateTrace.Event.BOOTSTRAP_INVALIDATED,null,epoch.get(),CandidateTrace.Reason.EXPLICIT);
+  }
+
+  /** Retry failed work without throwing away independently reusable successful captures. */
+  void retryFailures() { outcomes.entrySet().removeIf(entry -> entry.getValue().failure() != null); }
+
+  synchronized void incompleteCapture(String key) {
+    var previous = outcomes.get(key);
+    if (previous == null || previous.failure() != null) return;
+    outcomes.entrySet().removeIf(entry -> Objects.equals(previous.providerInput(), entry.getValue().providerInput()));
+    remember(key, new Outcome(epoch.get(), null,
+        new Failure("AUTHORITY_IDENTITY_CACHE_MISS: retry live capture", false), null, null));
   }
 
   static Plan resolve(Worldview source, Scope owner) { return resolve(source,owner,null); }
@@ -258,11 +270,28 @@ public final class AuthorityBootstrap {
 
   private static CapturedAuthorityCatalog produce(Path root, Map<String,byte[]> core, Worldview source,
       Scope owner, Plan plan, CandidatePublicationCoordinator.Cancellation cancellation) throws Exception {
+    var requests = source.allConceptStatements().stream().filter(s -> s.getAuthorityRequired() != null)
+        .map(s -> new org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest(
+            source.getUrn(), s.getAuthorityRequired(), s.getNamespace() + ":" + s.getUrn(), s.getAuthorityParameters()))
+        .sorted(Comparator.comparing(org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest::name)).toList();
+    String configuration = digest(JSON.writeValueAsBytes(Arrays.asList("persistent-authorities-v1",
+        source.getUrn(), requests, source.getAuthorityBindings().stream()
+            .sorted(Comparator.comparing(Worldview.AuthorityBinding::localId)).toList(),
+        plan.revision(), AuthorityComponentResolver.ownerRevision(owner))));
+    var store = new PersistentAuthorityStore(root.resolve("persistent"), configuration, providerInput(source, owner));
+    cancellation.checkpoint();
+    var cached = store.exact();
+    if (cached != null && source.getAuthorityBindings().stream().allMatch(cached::supports)) return cached;
+    var previous = store.previous();
+    if (previous != null && source.getAuthorityBindings().stream().allMatch(previous::supports))
+      return refresh(root, core, source, owner, previous, store, cancellation);
     Files.createDirectories(root);var job=Files.createTempDirectory(root,"capture-");
     var knowledge=Files.createDirectories(job.resolve("knowledge"));var state=Files.createDirectories(job.resolve("data/services/reasoner"));
     ReasonerService actor=null;
     Throwable failure=null;
     try {
+      try { store.seedIdentities(state); }
+      catch (Exception cacheUnavailable) { cacheWarning(); }
       for(var entry:core.entrySet()) {
         var target=knowledge.resolve(entry.getKey()).normalize();if(!target.startsWith(knowledge))throw new IllegalArgumentException("Core escapes staging");
         Files.createDirectories(target.getParent());Files.write(target,entry.getValue());
@@ -296,41 +325,38 @@ public final class AuthorityBootstrap {
           || source.getAuthorityBindings().stream().anyMatch(b->!versions.containsKey(b.localId())))
         throw new IllegalStateException("Real provider configuration did not finish successfully");
       if(!evidence.equals(CapturedAuthorityCatalog.captureProviderEvidence(state))) throw new IllegalStateException("Configured provider provenance changed");
-      var capture=Files.createDirectories(state.resolve("captured-authority-state"));
-      copy(state.resolve("components"),capture.resolve("provider-components"));
-      var documents=new TreeMap<String,Path>();
-      if(Files.isDirectory(state.resolve("authority-cache")))try(var files=Files.walk(state.resolve("authority-cache"))) {
-        for(var file:files.filter(Files::isRegularFile).filter(p->p.toString().endsWith(".json")).toList())
-          documents(JSON.readTree(Files.readAllBytes(file)),documents);
-      }
-      var ownedDocuments=new ArrayList<Map<String,Object>>();var temp=Path.of(System.getProperty("java.io.tmpdir")).toRealPath();
-      for(var entry:documents.entrySet()) {
-        var original=entry.getValue().toRealPath();
-        if(!original.startsWith(temp) || !Files.isRegularFile(original) || Files.size(original)>4*1024*1024)
-          throw new IllegalStateException("Provider documentation escapes owned supported capture contract");
-        var bytes=Files.readAllBytes(original);var hash=digest(bytes);var relative=Path.of("provider-documentation",original.getFileName().toString());
-        Files.createDirectories(capture.resolve(relative).getParent());Files.write(capture.resolve(relative),bytes);
-        ownedDocuments.add(Map.of("originalUri",entry.getKey(),"bundlePath",relative.toString().replace('\\','/'),"sha256",hash,"bytes",bytes.length,"missingAtCapture",false));
-      }
-      Files.write(capture.resolve("documentation-materialization.json"),JSON.writeValueAsBytes(ownedDocuments));
-      var snapshotHashes = new TreeMap<String, String>();
-      for (var entry : actor.configuredAuthoritySnapshots().entrySet()) {
-        var bytes = JSON.writeValueAsBytes(entry.getValue());
-        var folder = Files.createDirectories(capture.resolve("configured-snapshots"));
-        Files.write(folder.resolve(digest(entry.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8))+".json"), bytes);
-        snapshotHashes.put(entry.getKey(), digest(bytes));
-      }
-      var sourceBytes=JSON.writeValueAsBytes(source);Files.write(capture.resolve("source.json"),sourceBytes);
-      var proof=Map.of("inputSha256",digest(sourceBytes),"authorityVersions",versions,"providerEvidence",evidence,
-          "configuredSnapshots",snapshotHashes);
-      Files.write(capture.resolve("proof.json"),JSON.writeValueAsBytes(proof));
-      var result=CapturedAuthorityCatalog.capture(state);cancellation.checkpoint();
+      var result=captureConfigured(actor,state,source,evidence);cancellation.checkpoint();
+      try { store.save(result); }
+      catch (Exception cacheUnavailable) { cacheWarning(); }
       CandidateTrace.stage(CandidateTrace.Event.CAPTURE_COMPLETE,null,-1,CandidateTrace.Reason.SUCCESS);
       return result;
     } catch (Throwable error) {
       failure=error;
+      if (error instanceof AuthorityIdentityResolver.LookupFailure && actor != null) {
+        // Provider configuration succeeded before declaration materialization. Preserve that
+        // proof and the successful answers even though one code prevented full ingestion.
+        try { store.savePartial(captureConfigured(actor, state, source,
+            CapturedAuthorityCatalog.captureProviderEvidence(state))); }
+        catch (Exception cacheUnavailable) { cacheWarning(); }
+        throw error;
+      }
+      // The plan/configuration/owner key is unchanged and verified again by prepare(). An
+      // immutable prior catalog can answer known codes even if the live provider cannot boot.
+      // Unseen codes still fail in the captured resolver and keep that candidate unaccepted.
+      if (error instanceof Exception && !(error instanceof java.util.concurrent.CancellationException)
+          && !(error instanceof SecurityException)) {
+        cancellation.checkpoint();
+        var retained = store.previous();
+        if (retained != null && source.getAuthorityBindings().stream().allMatch(retained::supports)) return retained;
+      }
       throw error;
     } finally {
+      // Retain successful leaves/ancestors even when a later identity aborts this batch.
+      try {
+        if (actor != null) PersistentAuthorityStore.activeEntries(state, actor.activeAuthorityCacheFingerprints());
+        store.retainIdentities(state);
+      }
+      catch (Exception cacheUnavailable) { cacheWarning(); }
       CandidateTrace.stage(CandidateTrace.Event.PRODUCER_DISPOSE,null,-1,CandidateTrace.Reason.NONE);
       try {
       Throwable cleanupFailure=failure;
@@ -347,6 +373,104 @@ public final class AuthorityBootstrap {
         if (failure == null) throw new OwnedCleanupFailure(cleanup);
         throw cleanup;
       }
+    }
+  }
+  private static CapturedAuthorityCatalog captureConfigured(ReasonerService actor, Path state,
+      Worldview source, Map<String, CapturedAuthorityCatalog.ProviderEvidence> evidence) throws Exception {
+    var versions = actor.successfulAuthorityConfigurations();
+    if (source.getAuthorityBindings().stream().anyMatch(b -> !versions.containsKey(b.localId()))
+        || !evidence.equals(CapturedAuthorityCatalog.captureProviderEvidence(state)))
+      throw new IllegalStateException("No successful authority configuration proof");
+    PersistentAuthorityStore.activeEntries(state, actor.activeAuthorityCacheFingerprints());
+    var capture=Files.createDirectories(state.resolve("captured-authority-state"));
+    copy(state.resolve("components"),capture.resolve("provider-components"));
+    var documents=new TreeMap<String,Path>();
+    if(Files.isDirectory(state.resolve("authority-cache")))try(var files=Files.walk(state.resolve("authority-cache"))) {
+      for(var file:files.filter(Files::isRegularFile).filter(p->p.toString().endsWith(".json")).toList())
+        documents(JSON.readTree(Files.readAllBytes(file)),documents);
+    }
+    var ownedDocuments=new ArrayList<Map<String,Object>>();var temp=Path.of(System.getProperty("java.io.tmpdir")).toRealPath();
+    for(var entry:documents.entrySet()) {
+      var original=entry.getValue().toRealPath();
+      if(!original.startsWith(temp) || !Files.isRegularFile(original) || Files.size(original)>4*1024*1024)
+        throw new IllegalStateException("Provider documentation escapes owned supported capture contract");
+      var bytes=Files.readAllBytes(original);var hash=digest(bytes);var relative=Path.of("provider-documentation",original.getFileName().toString());
+      Files.createDirectories(capture.resolve(relative).getParent());Files.write(capture.resolve(relative),bytes);
+      ownedDocuments.add(Map.of("originalUri",entry.getKey(),"bundlePath",relative.toString().replace('\\','/'),"sha256",hash,"bytes",bytes.length,"missingAtCapture",false));
+    }
+    Files.write(capture.resolve("documentation-materialization.json"),JSON.writeValueAsBytes(ownedDocuments));
+    var snapshotHashes = new TreeMap<String, String>();
+    for (var entry : actor.configuredAuthoritySnapshots().entrySet()) {
+      var bytes = JSON.writeValueAsBytes(entry.getValue());
+      var folder = Files.createDirectories(capture.resolve("configured-snapshots"));
+      Files.write(folder.resolve(digest(entry.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8))+".json"), bytes);
+      snapshotHashes.put(entry.getKey(), digest(bytes));
+    }
+    var sourceBytes=JSON.writeValueAsBytes(source);Files.write(capture.resolve("source.json"),sourceBytes);
+    var proof=Map.of("inputSha256",digest(sourceBytes),"authorityVersions",versions,"providerEvidence",evidence,
+        "configuredSnapshots",snapshotHashes);
+    Files.write(capture.resolve("proof.json"),JSON.writeValueAsBytes(proof));
+    return CapturedAuthorityCatalog.capture(state);
+  }
+  private static void cacheWarning() {
+    System.getLogger(AuthorityBootstrap.class.getName()).log(System.Logger.Level.WARNING,
+        "Persistent authority cache unavailable; continuing with verified provider/capture state");
+  }
+
+  /** Reuse frozen providers first; only a cache miss can lazily configure its owning archive. */
+  static CapturedAuthorityCatalog refresh(Path root, Map<String, byte[]> core, Worldview source,
+      Scope owner, CapturedAuthorityCatalog previous, PersistentAuthorityStore store,
+      CandidatePublicationCoordinator.Cancellation cancellation) throws Exception {
+    Files.createDirectories(root);
+    var job = Files.createTempDirectory(root, "refresh-");
+    var knowledge = Files.createDirectories(job.resolve("knowledge"));
+    var state = Files.createDirectories(job.resolve("data/services/reasoner"));
+    ReasonerService actor = null;
+    Throwable failure = null;
+    try {
+      for (var entry : core.entrySet()) {
+        var target = knowledge.resolve(entry.getKey()).normalize();
+        if (!target.startsWith(knowledge)) throw new IllegalArgumentException("Core escapes staging");
+        Files.createDirectories(target.getParent()); Files.write(target, entry.getValue());
+      }
+      try { store.seedIdentities(state); } catch (Exception unavailable) { cacheWarning(); }
+      var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(source).service(), owner);
+      actor = new ReasonerService(scope, knowledge, state, previous, true);
+      actor.bootstrapDisposalBindings(source);
+      var loaded = actor.compilePrivateKnowledge(source, scope, cancellation);
+      cancellation.checkpoint();
+      if (scope.hasErrors() || org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(loaded.getNotifications()))
+        throw new IllegalStateException("Authority refresh compilation failed");
+      PersistentAuthorityStore.activeEntries(state, actor.activeAuthorityCacheFingerprints());
+      var result = previous.refreshed(state);
+      try { store.save(result); } catch (Exception unavailable) { cacheWarning(); }
+      return result;
+    } catch (Exception unavailable) {
+      failure = unavailable;
+      if (unavailable instanceof java.util.concurrent.CancellationException || unavailable instanceof SecurityException)
+        throw unavailable;
+      org.integratedmodelling.common.logging.Logging.INSTANCE.warn(
+          unavailable instanceof AuthorityIdentityResolver.LookupFailure lookup ? lookup.diagnostic()
+              : "AUTHORITY_CACHE_REFRESH_PENDING: " + unavailable.getClass().getSimpleName());
+      // Compilation with the old catalog still succeeds for known codes. Missing codes fail
+      // admission and schedule another live refresh; no invented or negative answers are stored.
+      try {
+        if (actor != null) PersistentAuthorityStore.activeEntries(state, actor.activeAuthorityCacheFingerprints());
+        var partial = previous.refreshed(state);
+        store.savePartial(partial);
+        return partial;
+      } catch (Exception cacheUnavailable) { cacheWarning(); return previous; }
+    } finally {
+      try {
+        if (actor != null) PersistentAuthorityStore.activeEntries(state, actor.activeAuthorityCacheFingerprints());
+        store.retainIdentities(state);
+      } catch (Exception unavailable) { cacheWarning(); }
+      Exception cleanupFailure = null;
+      try { if (actor != null) actor.disposeSemanticEnvironment(); }
+      catch (Exception cleanup) { cleanupFailure = cleanup; }
+      try { SemanticEnvironment.removeAssetsAfterFailure(job, cleanupFailure); }
+      catch (Exception cleanup) { cleanupFailure = cleanup; }
+      if (cleanupFailure != null) throw new OwnedCleanupFailure(cleanupFailure);
     }
   }
   private static void copy(Path from,Path to)throws Exception {
