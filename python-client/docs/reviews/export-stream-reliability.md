@@ -17,6 +17,14 @@ integration test, usage and the existing acceptance map's F2 contract. There are
 no production SDK/Java/dependency changes; all43 SDK source modules must match the
 installed wheel. All original exporter coverage gates remain enforced.
 
+Final workflow/demo source: `4dc36476a2e797dd5918068bfdb25c6c74211b14`.
+Installed offline gates pass **2839 tests**, one retained Rasterio warning,
+all16 coverage gates, lint and wheel/sdist builds. Wheel SHA256
+`4a05d02fc7e62b180474a0719f0f97c4c2fbeb40f46c589d9d9781480a1f4c96`;
+sdist `52a1b3f8997edd2c4790e530fa792e850f5c6f431ffaab36c5c75337321afe93`.
+The final report-only field clarification does not alter SDK bytes or transfer
+behavior; its complete64MiB run is separately recorded in `f2-final-64mib`.
+
 ## Scientist-facing outcome and evidence
 
 Scientists/maintainers can reproduce actual network/failure and memory behavior
@@ -29,6 +37,13 @@ paths. Metadata warmup/client creation/import allocations are outside the stated
 incremental measurement. RSS is sampled every2ms and remains an observation, not
 a universal bound or SLA; the selected streamed path must stay below4MiB traced
 Python peak, while the buffered control must expose a body-sized allocation.
+
+Actual final Windows Python3.12.7 measurement: **67,108,864 bytes published**;
+streamed Python peak **664,481 bytes**, RSS growth **819,200 bytes**. Eager positive
+control Python peak **134,510,729 bytes**, RSS growth **73,834,496 bytes**. All six
+fault outcomes match the table below with zero new published bytes, previous-file
+preservation, no temporary files and one export attempt. These numbers describe
+this execution only, not a general capacity/performance promise.
 
 All six negative cases check one export GET only, no false completed artifact,
 preservation of the previous valid file, temporary-file cleanup, response-handler
