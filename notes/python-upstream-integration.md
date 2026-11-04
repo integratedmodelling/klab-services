@@ -2,6 +2,33 @@
 
 ## Current integration checkpoint (2026-11-03)
 
+The explicit Runtime-server selection passed all 19 tests in six classes:
+federated scope, member quality, observation currentness, observation view,
+context release and prospective-focus transport. Zero failures/errors/skips.
+Reports: `runtime-server-inventory-evidence-20261103`; log:
+`runtime-server-inventory-20261103.log`. This completes the previously unreached
+module inventory, not the normal full-reactor gate or deployed acceptance.
+The sole remaining observed Runtime inventory error is consumer receipt
+association. Issue #147 records the combined status:
+https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619526360.
+
+PR #190 merged as `95678100e9d9e7bf19b6fd267a47aa9c6dca55ad` after
+11 property-cache tests and 53 classifier tests plus GitHub Actions/Jenkins passed.
+The real OWL-manager duplicate-axiom regression failed before the fix: an empty
+applied-change notification incorrectly invalidated bounds. Only nonempty batches
+now invalidate; actual property/import changes and replacement controls still pass.
+Integration includes the fix and merged develop ancestry through #190.
+
+The post-fix integrated Runtime inventory ran 1,279 tests, zero failures, one error,
+11 skips. Its only error is the original atomic consumer receipt-association case.
+Reports: `runtime-empty-change-fixed-evidence-20261103`; log:
+`runtime-empty-change-fixed-20261103.log`. This used the recorded Runtime class
+inventory via Surefire includesFile; it is not a full dependency-reactor pass.
+The preceding normal reactor passed dependencies through Resolver and stopped
+at Runtime with one classifier failure and one receipt error. Runtime-server
+was skipped. An explicit server-only class selection is now running to inventory
+that previously unreached module; it cannot establish full-reactor acceptance.
+
 PR #189 merged as `469a844f6f2951c4830bdc94c2552c083c2d43b5` after
 71 direct fixture-consumer tests, GitHub Actions and Jenkins passed. The normal
 integrated dependency reactor is running with equivalent changes. A separate
