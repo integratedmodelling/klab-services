@@ -85,7 +85,7 @@ def run(args):
     existing = {p.pid: p.create_time() for p in psutil.process_iter() if p.name().lower() in ("java.exe", "javaw.exe")}
     processes, logs = [], []
     result = {"passed": False, "server_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip(),
-              "components": archives, "core_sha256": CORE, "mutations": [], "scenario": args.scenario}
+              "components": archives, "core_sha256": CORE, "mutations": [], "scenario": args.scenario, "owned_processes": []}
     result["java_version"] = subprocess.run([str(args.java), "-version"], capture_output=True, check=True).stderr.decode(errors="replace")
     result["tool_sha256"] = {str(p.relative_to(PACKAGE)): sha(p) for p in
         (Path(__file__), PACKAGE / "tools/workflows/nonuniform_export.py", PACKAGE / "tests/fixtures/nonuniform-export.json")}
@@ -94,6 +94,8 @@ def run(args):
         env = {k: v for k, v in os.environ.items() if not k.startswith("KLAB_") and k not in ("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS")}
         process = subprocess.Popen(command, cwd=cwd, env=env, stdout=log, stderr=log, creationflags=subprocess.CREATE_NO_WINDOW)
         processes.append(process)
+        result["owned_processes"].append({"name": name, "pid": process.pid, "created": psutil.Process(process.pid).create_time()})
+        (state / "owned-processes.json").write_text(json.dumps(result["owned_processes"], indent=2), encoding="utf-8")
         return process
     try:
         projects = state / "projects"
