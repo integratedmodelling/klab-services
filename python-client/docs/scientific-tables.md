@@ -79,6 +79,58 @@ does not bless user-authored metadata as server validation.
 
 ## Limits and local postprocessing
 
+### Offline indexed-read snapshots
+
+`ScientificData.dumps(max_bytes=1048576)` and
+`ScientificData.loads(text, max_bytes=1048576)` preserve an existing bounded read
+for later **local inspection**, without pandas or a connection:
+
+```python
+from pathlib import Path
+from klab_client import ScientificData
+
+# data = observation.fetch_data([0, 4, 4], curve="D2_YX")
+with Path("samples.json").open("x", encoding="utf-8") as output:
+    output.write(data.dumps())
+with Path("samples.json").open(encoding="utf-8") as saved:
+    text = saved.read(1024 * 1024 + 1)  # bound the caller-owned filesystem read too
+restored = ScientificData.loads(text)
+frame = restored.to_dataframe()  # optional pandas view; still no network
+```
+
+Version 1 stores original scalar **wire text**, explicit ordered offsets (including
+duplicates), declared primitive/contextualization, source/requested observable and
+units, supplied geometry/slice, and optional origin. Existing checked cell decoders
+restore integer/Decimal/bool/text/null semantics, including valid zero/False,
+nonfinite numeric tokens and Decimal precision. There is no lossy float conversion
+or inferred coordinates/time labels. Geometry/slice metadata are detached copies.
+The same NUMBER/BOOLEAN/TEXT and categorical restrictions as tables apply.
+
+Input must be JSON text, not pickle, bytes, a remote handle or arbitrary class.
+Unknown versions/fields, duplicate JSON keys, malformed metadata, inconsistent
+primitive values and oversized/nonmatching columns fail explicitly. Budgets are
+positive integer UTF-8 byte limits, at most 16 MiB, with at most 256 samples.
+Budgets constrain encoded input/output, not total Python process memory. The
+serializer may allocate validation copies; this is not bulk storage or streaming.
+Metadata object keys must be strings; they are never silently coerced or collapsed.
+Do not mutate source slice/geometry metadata concurrently with serialization.
+Callers choose filesystem permissions, atomic publication and overwrite policy;
+the codec itself opens no file and performs no network operation.
+
+The snapshot is **not** a revision-pinned server snapshot, authorization grant,
+live observation, saved remote handle, authenticity signature, full provenance
+package, offline reasoning environment or queued operation. There is no submit,
+restore, cancel, release or automatic replay. A changed but schema-valid local
+file is still accepted as caller-provided data, not authenticated server truth.
+Unknown origin/revision information stays unknown. No Client or credential-provider
+state is serialized, but cells/metadata may themselves be sensitive: this is not a
+redactor. Review data rights and supplied content before sharing.
+
+Reproduce the installed-package fresh-process demonstration with
+`python -I examples/offline_scientific_read.py`. Its scalar fixture is explicitly
+local, checks exact large integers/Decimal/null/order/origin with network blocked,
+and does **not** claim new Java execution, geographic accuracy or paper replication.
+
 - Default/max row budget: 256; an exceeded budget fails, never truncates.
 - Default serialized metadata budget: 1 MiB, configurable to at most 16 MiB.
   This is not a universal peak-memory estimator for arbitrary caller objects.

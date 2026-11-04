@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "kind": "klab-local-indexed-read",
+  "metadata": {
+    "observation_id": 42,
+    "observable": "example:Elevation in m",
+    "units": "m",
+    "geometry": {
+      "dimensions": [{"type": "SPACE", "shape": [2, 2], "parameters": {"projection": "EPSG:3857"}}],
+      "scalar": false,
+      "futureDescription": "retained, not interpreted"
+    },
+    "curve": "D2_YX",
+    "slice": {"type": "INITIALIZATION", "start": 0, "end": 0},
+    "source_observable": "example:Elevation in m",
+    "source_units": "m",
+    "origin": {"runtime_url": "https://runtime.invalid/runtime", "context_id": "s.c", "scope": "s.c", "runtime_id": null},
+    "artifact_type": "NUMBER",
+    "contextualization": "MEASURE"
+  },
+  "offsets": [3, 0, 3, 1],
+  "text": ["9007199254740993", "0", "1.2300", "null"]
+}

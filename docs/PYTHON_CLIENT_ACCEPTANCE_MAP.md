@@ -1,5 +1,142 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Current reconciliation — 4 November 2026
+
+This section supersedes status claims below, not the historical requirements or
+failed/UNKNOWN evidence. Primary planning authority is
+[the complete modified guide](contributor-guides/KLAB_Python_Client_Planning_Guide.md),
+with [the shorter guide](PYTHON_CLIENT_PLANNING_GUIDE.md) as its implementation
+companion; server contracts and maintainer decisions take precedence. The original
+roadmap remains intact. **A** dependable science, **B** full remote Engine/Modeler
+user workflows, and **C** future worker/provider SDK are separate targets. B is
+still a completion target; C is explicitly excluded from this assignment only.
+
+### Verified baseline and evidence vocabulary
+
+Fetched origin on 4 November: Python integration and Java acceptance base
+`87ef80ff589428f7c088ba60abcb7cf2b88276eb`, branch
+`feature/python-experiment-runner`. All #133–#141 merge commits are ancestors;
+#191/#192/#194/#195 prerequisites are merged. Newer develop
+`c3c1260ef3a28b6b7c3a08f25db4c800f799bf33` is **not** substituted or certified.
+The starting checkout was clean; existing worktrees/branches were preserved.
+
+Evidence **S**: [consolidated science](https://github.com/integratedmodelling/klab-services/blob/ef289f4fa5dc90e1eab978258192d526a5ca494b/notes/python-consolidation/SCIENTIFIC_ACCEPTANCE.md),
+**I**: [integrated acceptance](https://github.com/integratedmodelling/klab-services/blob/ef289f4fa5dc90e1eab978258192d526a5ca494b/notes/python-consolidation/INTEGRATED_ACCEPTANCE.md),
+**M**: [managed agent](https://github.com/integratedmodelling/klab-services/blob/ef289f4fa5dc90e1eab978258192d526a5ca494b/notes/python-consolidation/MANAGED_AGENT_ACCEPTANCE.md),
+**L**: [merged PR identities](https://github.com/integratedmodelling/klab-services/blob/ef289f4fa5dc90e1eab978258192d526a5ca494b/notes/python-consolidation/PR_LEDGER.md).
+These are bounded accepted integration results, not an upstream release. Reuse is
+based on unchanged product source, not proximity of commit dates. Original module
+tests and controlled results are linked by the evidence groups below and by
+`python-client/docs/public-api.md`; offline evidence is not live acceptance.
+
+Dependency identity: host GT34.4/JTS1.20/Jackson2.19, H2 1.4.197, H2GIS1.5;
+Graphdb Jackson2.18.3 is distinct. Baseline science geospatial archive SHA256
+`c5192eec7fe1d47a5b4a4750c334ea3ff88520afe8d096e04c8640c3cfb289c6`;
+separate verified HM0.12 candidate component #11 at
+`90f425e0cb6e39e704d96cccf4f52b3b980b0ad6`, base
+`3f98082db59e4b0b82eecff0e5753eec41fed671`, flattened SHA256
+`fe55e198dbe89990d96988bc1d0290e325807b7bdf89bde8589a236e3a03a602`.
+Upstream main still declares HM0.11.3-SNAPSHOT; #11 remains open, not published.
+Exact resolved/packaged/loaded distinctions and worldview/model hashes are in
+[the pinned manifest](https://github.com/integratedmodelling/klab-services/blob/ef289f4fa5dc90e1eab978258192d526a5ca494b/notes/python-consolidation/DEPENDENCY_MANIFEST.md)
+and S. No dependency changes are needed by the selected local feature.
+
+### Primary requirement ledger
+
+Each RC row maps to its original criterion below; CAP rows additionally cover
+the complete guide's capability matrix, architectural and delivery requirements.
+Exactly one primary status applies to each unique ID. Priorities: P1 immediate
+scientific value, P2 subsequent client delivery, P3 platform/product-dependent.
+Tests/evidence listed establish only the demonstrated portion. Broad PARTIAL
+rows do not revoke their separately accepted subcapabilities.
+
+| Requirement ID | Target / behavior | Primary status | Implementation / merged evidence | Remaining work, dependencies and priority |
+|---|---|---|---|---|
+| RC-P0 | A/B operation inventory and compatibility diagnostics | PARTIAL | public-api/contracts; transport tests; I/L | Exhaustive operation/feature and mixed-version inventory; support decisions #129; P1 |
+| RC-P1.1 | A supported onboarding through computation | PARTIAL | connection/credentials/requests; #84/#85; controlled connection tests; S | Actual supported Hub/license end-user walkthrough still unverified; deployment credentials/consent; P1 |
+| RC-P1.2 | A fresh-process restoration without disposal | PARTIAL | handles/client; #86/#139; saved-handles tests; S separate Client restore | Full fresh-process retained Job/restart chain and retention contract #89; P1 |
+| RC-P1.3 | A collaborator reads, forbidden writes and expiry diagnosis | PARTIAL | transport/context ACLs; connection-access tests and historical controlled positive controls | Current integrated private-parent/stale-vs-forbidden matrix #89; P1 |
+| RC-P1.4 | A actionable readiness/trust diagnostics | PARTIAL | connection/catalog origin guards; connection HTTP tests | Supported-deployment provider outage/recovery and mixed capabilities; #129; P1 |
+| RC-P1.5 | A requested options visible in actual plan | PARTIAL | requests/evidence; #85 and plan tests; S partial plans | Complete option-to-served-plan matrix, observer/model/lexical constraints; existing Java contracts; P1 |
+| RC-P2.1 | A nonuniform multi-shard scientific export | PARTIAL | exports/analysis; #92; scalar/reader tests; S uniform field only | Portable served nonuniform zero/false/missing oracle; exporter fixture #130; P1 |
+| RC-P2.2 | A time/window selection, precision, revision and masks | PARTIAL | explicit point slice/geometry and raster descriptors | Remote selection/revision contract #123 plus adapter; not internal scan API; P1 |
+| RC-P2.3 | A independent real-provider accuracy | BLOCKED_EXTERNAL | provider-reference runner exists; historical failures retained | Frozen admitted model/data/datum/tolerance references #130 absent; obtain artifacts then run unchanged scientific query; P1 |
+| RC-P2.4 | A representative bounded stream/interrupt | IMPLEMENTED_UNVERIFIED | exports transport atomic files/budgets; stream failure tests | Agree workload and measure actual memory/closure/soak; no missing platform prerequisite established; P1 |
+| RC-P2.5 | A faithful raster/xarray and categorical views | PARTIAL | analysis/tables; adapter tests and historical controlled raster evidence | Broader served categorical dictionary/worldview and vector adapters; #123/#130; P1 |
+| RC-P3.1 | A committed two-client race convergence | PARTIAL | graph_projection/notifications; #136 hint invalidation and dedup tests | Authoritative commit/version contract #126 plus reconciliation/race fixture; P2 |
+| RC-P3.2 | A disconnect and honest partial refresh | PARTIAL | graph browser/projection explicit refresh; #136 tests | Portable genuine disconnect/refresh verification; no durable replay prerequisite for this bounded test; P1 |
+| RC-P3.3 | A cancel/expiry/restart/no replay | PARTIAL | client/async/_job_binding; #139; cancellation and drift tests | Retained history/incarnation contract and deployed expiry/restart chain #89; P1 |
+| RC-P3.4 | A explain actual dependencies and semantic effects | PARTIAL | evidence/provenance; recorded neighborhoods/tests; S | Full lineage and semantic-update execution fixture; Java extraction gaps, not portable replay; P2 |
+| RC-P3.5 | A bounded notebook concurrency and own-wait cancellation | IMPLEMENTED_UNVERIFIED | async/experiments; #105, runner tests and controlled results | Exact supported integrated multi-principal notebook/race acceptance; no new backend defect established; P1 |
+| RC-P4.1 | B meaning-based asset applicability/version/access | PARTIAL | semantics/inspection; semantic/resource controlled results | Capability-aware full applicability/history/access matrix; actual Resources projections; P2 |
+| RC-P4.2 | B revision-aware parse/validate | PARTIAL | authoring/source_previews; #141 DTO and stale-knowledge tests | Actual parser/invalid-document/knowledge-revision matrix, not DTO-only text; P2 |
+| RC-P4.3 | B import/annotate/compute with input provenance | NOT_IMPLEMENTED | native export/inspection are reusable, not import workflow | Enumerate implemented schemas/routes before client import; real Java annotation contract; P2 |
+| RC-P4.4 | B authorized edit/publish/conflict | PARTIAL | authoring namespace ADD, source previews, honest unsupported errors | Safe edit/lock/version/history/publication contracts plus client slices; #129; P2 |
+| RC-P4.5 | B behavior invocation/outcomes/reconnect | PARTIAL | #134/#135/#138; agents/status/journal/AMQP tests; M READY/RUNNING/STOPPED | Production principal/incarnation provisioning and independent remote cleanup UNKNOWN #125; P2 |
+| RC-P5 | C separate scoped worker product | DEFERRED_APPROVED | Explicitly excluded by this assignment; no worker SDK | Future execution/isolation/publication contracts #127; not remote-client completion gate; P3 |
+| RC-R1 | A/B continuous evidence layers | PARTIAL | I: 2772 installed offline/225 selected Java; S/M; hosted checks | Portable fixture, mixed services and workload-specific failures; retain distinct layers; P1 |
+| RC-R2 | A/B supported public release | PARTIAL | support-and-release/check_release_readiness and tests | Maintainer scope/version/publication approval #129 and provider/scale evidence; packaging is not release; P2 |
+
+### Complete-guide capabilities and accepted slices
+
+| Requirement ID | Target / behavior | Primary status | Implementation / merged evidence | Remaining work, dependencies and priority |
+|---|---|---|---|---|
+| CAP-01 | A certificate/token providers, profiles, renewal seam | PARTIAL | connection/_bootstrap/credentials; connection tests; historical controlled exchange | Actual Hub acceptance RC-P1.1; optional selected secret-store and Engine attachment only on verified contract; P1 |
+| CAP-02 | A explicit catalog/selection/health and peer initialization | PARTIAL | connection_models/connection; origin and readiness tests; S selection | Broader provider/mixed-version verification RC-P1.4; no global discovery assumption; P1 |
+| CAP-03 | A/B configured origin-qualified routing | PARTIAL | client/handles/inspection and binding tests; #139; S | Multi-provider partial failures; migration/failover/ownership platform #124 not provided; P2 |
+| CAP-04 | A typed scope/observe/register/query/focus/grid | PARTIAL | requests/client; #84/#85; typed tests; S computation | Supported option matrix RC-P1.5, collections/relationships and lifecycle distinctions; P1 |
+| CAP-05 | B semantic search/predicates/composition/revision objects | PARTIAL | semantics/dto; semantic-explorer tests and controlled records | Full supported semantic operations and maintained knowledge-revision acceptance; P2 |
+| CAP-06 | A typed plans versus execution | ACCEPTED | evidence/provenance; tests; S actual partial plans and activity effects; L merged | Bounded read-only evidence only; RC-P3.4 owns complete lineage/replay gap |
+| CAP-07 | A jobs, polling, cancellation, sync/async and bounded concurrency | PARTIAL | client/async_client/experiments; #105/#139; I | Retention/incarnation and notebook verification RC-P3.3/5; no replay after ambiguity; P1 |
+| CAP-08 | A exact sparse NUMBER/BOOLEAN/TEXT and explicit missingness | ACCEPTED | dto/client/tables; scientific-table tests; I and S actual numeric reads | Bounded 1..256 samples, wire-null distinct from finite validity; no bulk or guessed coordinates |
+| CAP-09 | A scientific exports/descriptors, time/space/units/categories | PARTIAL | exports/analysis/tables; reader/oracle/stream tests | RC-P2.1/2/5; preserve native bytes and unknown revision, no Python mediation guess; P1 |
+| CAP-10 | A/B typed partial twin graph, stale markers, refresh | PARTIAL | graph/projection/provenance; #136 tests; S | Authoritative versions and integrated disconnect/refresh verification; RC-P3.1/2; P1 |
+| CAP-11 | A/B best-effort scoped events and resync | PARTIAL | notifications; #136; controlled activity records | Bounded notification accepted portions do not establish durable cursors/retention #126; P2 |
+| CAP-12 | A offline snapshot inspection, never queued replay | IMPLEMENTED_UNVERIFIED | ScientificData.dumps/loads, shared table validation, versioned fixture and fresh-process demo in this PR | Implemented candidate; normal merge and final installed/CI acceptance pending; local-only format, no Java changes; P1 |
+| CAP-13 | B resources/models read/query/dependency inspection | PARTIAL | inspection/services; resource-inspector tests and controlled records | Full supported dependency/routing/export schema matrix; RC-P4.1/3/4; P2 |
+| CAP-14 | B authoring/behaviors actual authorized operations | PARTIAL | authoring/agents/agent_execution; #138/#141; M | RC-P4.2–5 contracts/validation, no compiler or scheduler port; P2 |
+| CAP-15 | A optional NumPy/pandas/xarray/raster/vector and notebooks | PARTIAL | analysis/tables; #106; reader/scalar precision tests | General vectors/time/categories and verified notebook presentation; optional extras remain optional; P2 |
+| CAP-16 | A/B compatibility, fixtures, package, support/migration/scale | PARTIAL | package/workflow and release checker; I/L | RC-P0/R1/R2, explicit async export/restore not delivered; maintain evidence by exact tuple; P1 |
+| CAP-17 | C provider SDK / local embedded runtime | DEFERRED_APPROVED | Explicit assignment exclusion, same boundary as RC-P5 | Future #127, no Python algorithm/server replacement; P3 |
+| CAP-18 | A/B safe architecture and irreversible-contract boundaries | ACCEPTED | Existing origin guards, codecs, no replay, explicit errors, optional imports; I and regression tests | Ongoing invariant for each change, not certification of unknown future operations |
+
+### Roadmap status and selected implementation contract
+
+Today the merged client demonstrably computes the synthetic 123.25 m/20-cell
+field through Java, inspects partial plans/provenance, restores authorized work
+through an independent Client and explicitly releases owned resources. Those
+accepted slices are CAP-06/08/18, not whole phases. Verification-only priorities
+are RC-P2.4/P3.5; other PARTIAL rows explicitly need Python work, fixtures or actual
+backend guarantees. Real-provider artifacts and release approvals remain external.
+
+Candidate comparison (scientific value / scope / risk are separate):
+onboarding acceptance: high / medium / deployment-dependent;
+nonuniform export oracle: high / medium / component-fixture integration;
+window/time/revision access: high / large / missing remote contract;
+option-to-plan acceptance: high / medium / served-option matrix;
+offline read snapshots: high for reproducible sparse inspection / small / low;
+full lineage, authoring and agents: useful / medium-large / backend-specific.
+The selected independently deliverable gap is **CAP-12**, building directly on
+accepted CAP-08 instead of another remote-state abstraction. It does not block
+later portable scientific fixtures or the full B target.
+
+Included: versioned bounded JSON serialization on existing ScientificData; exact
+wire text decoded by existing primitive codecs; offsets/order/duplicates, source
+and requested semantics/units, supplied geometry/slice and optional origin.
+Strict malformed/version/size/type checks; fresh-process installed-core demo.
+Excluded: graph snapshot, server snapshot/revision authority, fetching, credentials,
+offline reasoning, scientific recalculation, categorical inference, replay, bulk
+data or new dependencies. Filesystem policy remains the caller's responsibility.
+Changes: ScientificData convenience methods, shared indexed-read validation,
+snapshot codec, tests/docs/example. No Java/component/worldview changes.
+Definition of done: exact independent scalar/missingness/metadata assertions,
+negative/budget tests, existing regressions/coverage/CI, contributor-guide review,
+installed-package demonstration and normal merge. One PR from
+`feature/python-scientific-read-snapshots` to `feature/python-experiment-runner`.
+No second feature begins before this contribution merges.
+
+## Historical inventory — retained verbatim below
+
 **The roadmap is not complete, and remaining work is not external-only.** This
 inventory covers all22 phase acceptance statements/scenarios and both continuous
 release paragraphs in [the original roadmap](PYTHON_CLIENT_ROADMAP.md). It does
