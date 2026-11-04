@@ -86,6 +86,12 @@ public class ConsequenceDiscoverySnapshotTest {
       assets.put(300L,snapshot(activity,GraphModel.Labels.ACTIVITY));edges.add(edge("execution",300,200,GraphModel.Relationship.INSTANTIATED));
       doAnswer(call->{requireNativeScope(call.getArgument(1));return sourceQuery(call.getArgument(0));}).when(graph).query(any(Class.class),any(org.integratedmodelling.klab.api.scope.Scope.class));
       doAnswer(call->{requireNativeScope(call.getArgument(1));return decode(((Number)call.getArgument(0)).longValue(),call.getArgument(2));}).when(graph).getAsset(anyLong(),any(org.integratedmodelling.klab.api.scope.Scope.class),any(Class.class));
+      when(graph.isObservationCurrent(any(),any())).thenAnswer(call->{
+        requireNativeScope(call.getArgument(1));
+        var observation=call.getArgument(0,Observation.class);
+        var asset=observation==null?null:assets.get(observation.getId());
+        return asset!=null && asset.labels().contains(GraphModel.Labels.OBSERVATION);
+      });
       doAnswer(call->{requireNativeScope(call.getArgument(0));return nativeTransaction;}).when(graph).createTransaction(any(org.integratedmodelling.klab.api.scope.ContextScope.class));
       when(nativeTransaction.captureConsequenceInputs(anyCollection(),anyCollection())).thenAnswer(c->read(c.getArgument(0),c.getArgument(1)));
       doAnswer(c->{var expected=c.getArgument(0,KnowledgeGraph.ConsequenceReadSet.class);if(!expected.equals(read(expected.assetIds(),expected.selections())))throw new IllegalStateException("Native inputs changed");return null;}).when(nativeTransaction).validateConsequenceInputs(any());

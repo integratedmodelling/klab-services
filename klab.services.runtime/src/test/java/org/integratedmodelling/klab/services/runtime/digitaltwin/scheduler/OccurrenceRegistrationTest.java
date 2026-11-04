@@ -48,6 +48,7 @@ class OccurrenceRegistrationTest {
       when(f.kg.getLinks(eq(slope),eq(GraphModel.Relationship.Direction.INCOMING),eq(f.scope),
           eq(GraphModel.Relationship.AFFECTS))).thenReturn(List.of(prerequisite));
       f.transaction.add(root);f.transaction.add(slope);
+      f.durable.add(root);f.durable.add(slope);
       f.transaction.registerExecutors();
       assertTrue(f.scheduler.executeDependency(root,root.getGeometry(),Scheduler.Event.initialization(),f.scope));
       assertEquals(1,f.qualityInit.get());
@@ -85,6 +86,7 @@ class OccurrenceRegistrationTest {
     final DigitalTwinImpl.TransactionImpl transaction;
     final SchedulerImpl scheduler;
     final AtomicInteger qualityInit = new AtomicInteger();
+    final Set<Observation> durable = Collections.newSetFromMap(new IdentityHashMap<>());
     boolean failInput;
     String durableRegistration;
     List<String> durableJournal;
@@ -110,10 +112,21 @@ class OccurrenceRegistrationTest {
       transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), scope,
           RuntimeAsset.PROVENANCE_ASSET, process);
       when(scope.getCurrentTransaction()).thenReturn(transaction);
+      durable.add(bearer);
+      when(kg.isObservationCurrent(any(),any())).thenAnswer(call -> {
+        var observation=call.getArgument(0,Observation.class);
+        var requested=call.getArgument(1,ContextScope.class);
+        if(requested==null||!"context".equals(requested.getId()))return false;
+        if(requested.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl current) {
+          var pending=current.currentStatusFor(observation);
+          if(pending.isPresent())return pending.get();
+        }
+        return durable.contains(observation);
+      });
       var ids = new AtomicLong(1000);
       doAnswer(call -> {
         var asset = call.getArgument(0);
-        if (asset instanceof ObservationImpl o) o.setId(ids.incrementAndGet());
+        if (asset instanceof ObservationImpl o) {o.setId(ids.incrementAndGet());durable.add(o);}
         else if (asset instanceof ActivityImpl a) {
           a.setId(ids.incrementAndGet());
           if (a.getMetadata().containsKey(SchedulerJournal.METADATA_KEY))
@@ -260,6 +273,7 @@ class OccurrenceRegistrationTest {
       }
       var eventA = observation("eventA", SemanticType.EVENT, 700);
       var eventB = observation("eventB", SemanticType.EVENT, 701);
+      f.durable.add(eventA);f.durable.add(eventB);
       assertTrue(scheduler.dispatchObserved(eventA));
       assertTrue(scheduler.dispatchObserved(eventB));
       assertTrue(scheduler.dispatchObserved(eventA));

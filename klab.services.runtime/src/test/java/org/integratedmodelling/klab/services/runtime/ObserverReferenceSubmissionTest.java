@@ -22,6 +22,17 @@ import org.junit.jupiter.api.Test;
 class ObserverReferenceSubmissionTest {
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
 
+  private void current(SubmissionCancellationTest.Fixture fixture, Observation... observations) {
+    for(var observation:observations)
+      when(fixture.twin.getKnowledgeGraph().isObservationCurrent(argThat(candidate ->
+          candidate!=null && (candidate==observation
+              || observation.getId()>0 && candidate.getId()==observation.getId())),any()))
+          .thenAnswer(call -> {
+            var scope=call.getArgument(1,org.integratedmodelling.klab.api.scope.ContextScope.class);
+            return scope!=null && java.util.Objects.equals(fixture.scope.getId(),scope.getId());
+          });
+  }
+
   private org.integratedmodelling.klab.api.services.Reasoner semanticReceipt(SubmissionCancellationTest.Fixture fixture) {
     var reasoner = fixture.reasoner;
     var capabilities = mock(org.integratedmodelling.klab.api.services.Reasoner.Capabilities.class);
@@ -48,6 +59,7 @@ class ObserverReferenceSubmissionTest {
     semanticReceipt(fixture);
     var requested = process(-7); var existing = process(4416); existing.setParentId(4386);
     var focus = process(4386);
+    current(fixture,existing,focus);
     ((ConceptImpl)focus.getObservable().asConcept()).setType(EnumSet.of(SemanticType.SUBJECT));
     ((ConceptImpl)focus.getObservable().asConcept()).setUrn("earth:Region");
     when(fixture.twin.getKnowledgeGraph().getAsset(eq(4386L), any(), eq(Observation.class))).thenReturn(focus);
@@ -68,6 +80,7 @@ class ObserverReferenceSubmissionTest {
   @Test void referenceTerminalPreservesExistingIdentityMetadataAndSkipsCreationAndExecution() {
     var fixture = new SubmissionCancellationTest.Fixture();
     var requested = process(-2); var existing = process(42);
+    current(fixture,existing);
     existing.getMetadata().put("im:commit-id", 123L);
     var before = new java.util.HashMap<>(existing.getMetadata());
     when(fixture.twin.getKnowledgeGraph().getAsset(eq(42L), any(), eq(Observation.class))).thenReturn(existing);
@@ -92,6 +105,7 @@ class ObserverReferenceSubmissionTest {
     var focus = process(-12);
     ((ConceptImpl)focus.getObservable().asConcept()).setType(EnumSet.of(SemanticType.SUBJECT));
     var existing = process(4416); existing.setParentId(-12);
+    current(fixture,existing,focus);
     when(fixture.rootTransaction.assets()).thenReturn(List.of(focus));
     when(fixture.resolutionTransaction.assets()).thenReturn(List.of(focus));
     when(fixture.twin.getKnowledgeGraph().getAsset(eq(4416L), any(), eq(Observation.class))).thenReturn(existing);
@@ -138,6 +152,7 @@ class ObserverReferenceSubmissionTest {
     var parent = fixture.scope.executing(org.integratedmodelling.klab.api.provenance.Activity.of(
         org.integratedmodelling.klab.api.provenance.Activity.Type.RESOLUTION, "parent resolution"));
     var source = process(42); var requested = process(-2);
+    current(fixture,source);
     source.getMetadata().put("old-commit", 123L);
     var metadata = new java.util.HashMap<>(source.getMetadata());
     when(fixture.twin.getKnowledgeGraph().getAsset(eq(42L), any(), eq(Observation.class))).thenReturn(source);
@@ -157,6 +172,7 @@ class ObserverReferenceSubmissionTest {
   @Test void terminalRequiresCurrentFullWrapperCompatibilityReceipt() {
     for (boolean missingReceipt : List.of(false, true)) {
       var fixture = new SubmissionCancellationTest.Fixture(); var source = process(42);
+      current(fixture,source);
       when(fixture.twin.getKnowledgeGraph().getAsset(eq(42L), any(), eq(Observation.class))).thenReturn(source);
       var reasoner = semanticReceipt(fixture);
       if (missingReceipt) when(reasoner.capabilities(any())).thenReturn(null);
@@ -172,6 +188,7 @@ class ObserverReferenceSubmissionTest {
   }
   @Test void claimedCompleteReferenceCannotHidePartialActualProcessSupport() {
     var fixture = new SubmissionCancellationTest.Fixture(); var source = process(42); var requested = process(-2);
+    current(fixture,source);
     source.setGeometry(Geometry.create("T0(1){tstart=0,tend=5,ttype=PHYSICAL}"));
     requested.setGeometry(Geometry.create("T0(1){tstart=0,tend=10,ttype=PHYSICAL}"));
     when(fixture.twin.getKnowledgeGraph().getAsset(eq(42L), any(), eq(Observation.class))).thenReturn(source);

@@ -18,13 +18,14 @@ class CollectiveSelectionNativeContextTest {
   @BeforeAll static void configure() { SelectedModelClassifierSubmissionTest.configure(); }
 
   @Test void fullResolverPreservesTheExistingObservedSingularContextBoundary() throws Exception {
-    try (var f = new SelectedModelClassifierSubmissionTest.Fixture()) {
+    try (var f = new SelectedModelClassifierSubmissionTest.Fixture();
+        var admission = f.cycles.admit(f.scope, true).get(30, TimeUnit.SECONDS)) {
       f.semantic.otherIsRegionSubtype();
       var nativeSyntax = f.semantic.named("Other"); nativeSyntax.setCollective(true); f.semantic.register(nativeSyntax);
       var nativeObservable = f.observable(nativeSyntax); f.remember(nativeObservable);
       var discovery = new ContextualizableImpl(); discovery.setServiceCall(new ServiceCallImpl("fixture.discover"));
       f.model("dependent_instantiator", nativeObservable, List.of(f.original), discovery);
-      var execution = f.scope.executing(Activity.of(Activity.Type.SUBMISSION, null, "Native context boundary"));
+      var execution = admission.scope().executing(Activity.of(Activity.Type.SUBMISSION, null, "Native context boundary"));
       var requested = new ObservationImpl(); requested.setObservable(f.reasoner.declareObservable(nativeObservable)); requested.setGeometry(f.geometry);
       var target = f.runtime.register(requested, execution);
       assertTrue(target.getId() < -1);

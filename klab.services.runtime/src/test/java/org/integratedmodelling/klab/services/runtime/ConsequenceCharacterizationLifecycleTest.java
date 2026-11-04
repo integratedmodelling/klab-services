@@ -48,6 +48,12 @@ class ConsequenceCharacterizationLifecycleTest {
       var optional=new ObservableImpl(requested);optional.setOptional(true);optional.setUrn(requested.getUrn()+" optional");
       when(f.reasoner.buildObservable(any(),any())).thenReturn(optional);
       when(f.twin.getKnowledgeGraph().getAsset(eq(42L),any(),eq(Observation.class))).thenReturn(member);
+      when(f.twin.getKnowledgeGraph().isObservationCurrent(
+          argThat(observation -> observation != null && observation.getId() == 42L), any()))
+          .thenAnswer(call -> {
+            var scope = call.getArgument(1, org.integratedmodelling.klab.api.scope.ContextScope.class);
+            return scope != null && "cancellation-test".equals(scope.getId());
+          });
       owned=cycles.admit(f.scope.within(member),true).get(5,TimeUnit.SECONDS);
       admitted=owned.scope().forConsequence(new Consequence.Cause(1,"cancellation-test",1,2,0,null,null,"role-implication",Consequence.Kind.ROLE_IMPLICATION))
           .withConsequenceSubmissionAdmission(authority);

@@ -68,8 +68,8 @@ class PreparedConfigurationRecomputeTest {
    when(transaction.getActivity()).thenReturn(Activity.of(Activity.Type.DETECTION));
    when(transaction.assets()).thenReturn(List.of(configuration));
    // This exact negative-ID birth is owned by the fixture's current staging transaction.
-   when(graph.isObservationCurrent(same(configuration),same(scope))).thenAnswer(call->
-       scope.getCurrentTransaction()!=null && scope.getCurrentTransaction().assets().stream().anyMatch(asset->asset==configuration));
+    when(graph.isObservationCurrent(any(),same(scope))).thenAnswer(call->
+        scope.getCurrentTransaction()!=null && scope.getCurrentTransaction().assets().stream().anyMatch(asset->asset==call.getArgument(0)));
    doAnswer(c->{committed.add(c.getArgument(0));return null;}).when(transaction).afterCommit(any());
    doAnswer(c->{rollback.add(c.getArgument(0));return null;}).when(transaction).afterRollback(any());
   }
@@ -195,7 +195,8 @@ class PreparedConfigurationRecomputeTest {
 
  void recipeEdge(String classification,String occurrenceRole,boolean substantial,boolean shouldRun) {
   try(var f=new Fixture()) {
-   var input=new ObservationImpl();input.setId(77);input.setGeometry(Geometry.create("1"));
+    var input=new ObservationImpl();input.setId(77);input.setGeometry(Geometry.create("1"));
+    when(f.graph.isObservationCurrent(same(input),same(f.scope))).thenReturn(true);
    var meaning=new ConceptImpl();meaning.setUrn(substantial?"test:Bearer":"test:Width");meaning.getType().add(substantial?SemanticType.SUBJECT:SemanticType.QUALITY);
    input.setObservable(ObservableImpl.promote(meaning,null));
    var producer=mock(DigitalTwin.Executor.class);when(producer.executionScope(any())).thenReturn(f.scope);

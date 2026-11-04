@@ -124,6 +124,7 @@ class ConfigurationDependencyReadSetTest {
   standaloneDriver();rows("CREATE(:Observation{id:3,ownerContextId:'a'})");
   rows("MATCH(a:Observation{id:1}),(b:Observation{id:2}) CREATE(a)-[:EMERGED_FROM]->(b),(a)-[:AFFECTS]->(b)");
   var graph=spy(new ClassificationPersistenceTest.Fixture("a"));var scope=mock(ContextScope.class);var transaction=mock(org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction.class);
+  when(scope.getId()).thenReturn("a");
   var config=observation(1);var previous=observation(2);var current=observation(3);
   when(scope.getCurrentTransaction()).thenReturn(transaction);when(transaction.assets()).thenReturn(List.of(config,previous,current));
   when(transaction.configurationParticipantReplacements()).thenReturn(Set.of(1L));

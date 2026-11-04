@@ -98,6 +98,8 @@ public class SubmissionNativeFixture extends SubmissionOntologyFixture {
       owl.setApplicableObservables(concept("Category"),categoryOnInput?List.of(concept("Region"),concept("Input")):List.of(concept("Region")),ontology);
       ready();field(owl,OWL.class,"mergedReasonerOntology",ontology);field(owl,OWL.class,"scope",scope);
       field(reasoner,ReasonerService.class,"owl",owl);
+      field(reasoner,ReasonerService.class,"semanticProofRestoration",
+          new org.integratedmodelling.klab.services.reasoner.internal.SemanticProofRestoration());
       field(reasoner,ReasonerService.class,"knowledgeRevision",new java.util.concurrent.atomic.AtomicLong(3));
       field(reasoner,ReasonerService.class,"knowledgeReady",true);
       field(reasoner,ReasonerService.class,"worldview",mock(Worldview.class));
