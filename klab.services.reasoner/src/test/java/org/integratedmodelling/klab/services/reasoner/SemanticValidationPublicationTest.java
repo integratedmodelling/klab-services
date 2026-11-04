@@ -108,9 +108,30 @@ class SemanticValidationPublicationTest {
     return (String) reasoner.status().getMetadata().get(SemanticValidationState.METADATA_KEY);
   }
 
+  @Test void copiedDiagnosticsCollapseButDistinctSourceOccurrencesRemain() {
+    var source = ontology("A"); source.setProjectName("first");
+    var statement = new KimConceptImpl(); statement.setOffsetInDocument(10);
+    var original = Notification.error("same error", Notification.LexicalContext.of(statement, source));
+    source.getNotifications().add(original);
+    var copied = BeanIngestionPreflight.snapshot(source).getNotifications().iterator().next();
+    assertNotSame(original, copied);
+    statement.setOffsetInDocument(20);
+    var otherOffset = Notification.error("same error", Notification.LexicalContext.of(statement, source));
+    statement.setOffsetInDocument(10); source.setUrn("B");
+    var otherDocument = Notification.error("same error", Notification.LexicalContext.of(statement, source));
+    source.setUrn("A"); source.setProjectName("second");
+    var otherProject = Notification.error("same error", Notification.LexicalContext.of(statement, source));
+    assertEquals(List.of(original, otherOffset, otherDocument, otherProject),
+        BeanIngestionPreflight.distinctOccurrences(
+            List.of(original, copied, otherOffset, otherDocument, otherProject)));
+  }
+
   /** Empty publication fixtures still traverse the real declaration-staging primitive. */
   private static OWL stagingOwl() throws Exception {
     var owl = mock(OWL.class);
+    var constructor=MonotoneRefinementSupport.class.getDeclaredConstructor(OWL.class);
+    constructor.setAccessible(true);
+    when(owl.monotoneRefinements()).thenReturn(constructor.newInstance(owl));
     var manager = OWLManager.createOWLOntologyManager();
     field(owl, "manager", manager);
     var property = manager.getOWLDataFactory().getOWLObjectProperty(
@@ -145,7 +166,9 @@ class SemanticValidationPublicationTest {
     assertFalse(first.getNotifications().isEmpty());
     assertTrue(signal(reasoner).endsWith(":7:failed"));
     reasoner.updateKnowledge(ontologyChange("B"), scope);
-    assertTrue(signal(reasoner).endsWith(":8:failed"));
+    var afterB = reasoner.knowledgeRevision();
+    assertTrue(afterB > 7);
+    assertTrue(signal(reasoner).endsWith(":" + afterB + ":failed"), signal(reasoner));
     assertFalse(((AtomicBoolean) field(reasoner, "consistent")).get());
     assertFalse(((Map<?, ?>) field(reasoner, "loadedOntologySources")).containsKey("A"));
     assertTrue(((Map<?, ?>) field(reasoner, "loadedOntologySources")).containsKey("B"));
@@ -157,11 +180,14 @@ class SemanticValidationPublicationTest {
     when(resources.retrieve("policy", KimObservationStrategyDocument.class, scope)).thenReturn(strategy);
     field(reasoner, "observationReasoner", mock(ObservationReasoner.class));
     reasoner.updateKnowledge(strategies, scope);
-    assertTrue(signal(reasoner).endsWith(":9:failed"));
+    var afterStrategy = reasoner.knowledgeRevision();
+    assertTrue(afterStrategy > afterB);
+    assertTrue(signal(reasoner).endsWith(":" + afterStrategy + ":failed"));
 
     doReturn(ontology("A")).when(resources).retrieve("A", KimOntology.class, scope);
     reasoner.updateKnowledge(ontologyChange("A"), scope);
-    assertTrue(signal(reasoner).endsWith(":10:ready"));
+    assertTrue(reasoner.knowledgeRevision() > afterStrategy);
+    assertTrue(signal(reasoner).endsWith(":" + reasoner.knowledgeRevision() + ":ready"));
     assertTrue(((AtomicBoolean) field(reasoner, "consistent")).get());
     assertTrue(((Map<?, ?>) field(reasoner, "loadedOntologySources")).containsKey("A"));
   }
@@ -217,7 +243,8 @@ class SemanticValidationPublicationTest {
     var rejected = reasoner.updateKnowledge(changes, scope);
     assertFalse(rejected.getNotifications().isEmpty(), failure);
     if (failure.equals("bean error")) assertEquals(1, rejected.getNotifications().stream()
-        .filter(n -> n.getMessage().contains("Authoritative bean error")).count());
+        .filter(n -> n.getMessage().contains("Authoritative bean error")).count(),
+        rejected.getNotifications().toString());
     verifyNoInteractions(owl);
     assertSame(previous, field(reasoner, "worldview"));
     assertSame(bindings, field(reasoner, "authorityBindings"));
@@ -261,7 +288,8 @@ class SemanticValidationPublicationTest {
     }).when(owl).releaseOntology(retained);
     var updated = reasoner.updateKnowledge(ontologyChange("imod"), scope);
     assertTrue(updated.getNotifications().isEmpty());
-    assertTrue(signal(reasoner).endsWith(":8:ready"));
+    assertTrue(reasoner.knowledgeRevision() > 7);
+    assertTrue(signal(reasoner).endsWith(":" + reasoner.knowledgeRevision() + ":ready"), signal(reasoner));
     assertEquals(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.sourceHash("saved repaired source"),
         ((Map<?, ?>) field(reasoner, "loadedOntologySources")).get("imod"));
     verify(resources, times(1)).retrieve("imod", KimOntology.class, parsing);

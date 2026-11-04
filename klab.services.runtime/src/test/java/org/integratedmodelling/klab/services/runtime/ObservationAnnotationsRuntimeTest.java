@@ -16,6 +16,12 @@ class ObservationAnnotationsRuntimeTest {
   @Test
   void compilationMergesRemoteAnnotationsIntoTheSubmittedRoot() throws Exception {
     var submitted = new ObservationImpl();
+    var concept = new org.integratedmodelling.common.knowledge.ConceptImpl();
+    concept.setUrn("test:AnnotatedQuality");
+    concept.setType(java.util.EnumSet.of(org.integratedmodelling.klab.api.knowledge.SemanticType.QUALITY));
+    var observable = new org.integratedmodelling.common.knowledge.ObservableImpl();
+    observable.setSemantics(concept); observable.setUrn(concept.getUrn());
+    submitted.setObservable(observable);
     submitted.mergeAnnotations(List.of(Annotation.of("style", "value", "define")), 2);
     var remote = (ObservationImpl) Observation.forTransport(submitted);
     remote.mergeAnnotations(List.of(Annotation.of("style", "value", "model"),

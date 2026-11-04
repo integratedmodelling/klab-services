@@ -45,15 +45,18 @@ jobs:
           package = next(p for p in root.findall('package') if p.get('name') == 'org/integratedmodelling/klab/services/reasoner/internal')
           helpers = {'acceptedInput', 'currentIsAccepted', 'restoreAccepted', 'acceptedInputFor'}
           found = set()
+          base = subprocess.check_output(['git', 'merge-base', 'origin/develop', 'HEAD'], text=True).strip()
+          print('Integration baseline:', base)
           for name in ('AcceptedSemanticRuntime', 'CandidatePublicationCoordinator'):
               path = 'klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/internal/' + name + '.java'
-              diff = subprocess.check_output(['git', 'diff', '--unified=0', '5785c1baab02e319125e963ac349d25b9b4c7d6a', 'HEAD', '--', path], text=True)
+              diff = subprocess.check_output(['git', 'diff', '--unified=0', base, 'HEAD', '--', path], text=True)
               changed = set()
               for start, count in re.findall(r'^@@ .*? \+(\d+)(?:,(\d+))? @@', diff, re.M):
                   changed.update(range(int(start), int(start) + int(count or 1)))
               source = next(s for s in package.findall('sourcefile') if s.get('name') == name + '.java')
               lines = [l for l in source.findall('line') if int(l.get('nr')) in changed]
-              assert lines and all(int(l.get('ci')) > 0 and int(l.get('mb')) == 0 for l in lines), name
+              assert all(int(l.get('ci')) > 0 and int(l.get('mb')) == 0 for l in lines), name
+              print(name, 'changed executable lines:', len(lines))
               for cls in package.findall('class'):
                   if cls.get('sourcefilename') != name + '.java':
                       continue

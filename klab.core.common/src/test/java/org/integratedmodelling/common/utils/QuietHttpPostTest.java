@@ -65,11 +65,12 @@ class QuietHttpPostTest {
     } finally { server.stop(0); }
   }
 
-  @Test void requiredCommandsStillReportHttpStatusAndStructuredErrorDetails() throws Exception {
+  @Test void requiredCommandsReportHttpStatusWithoutDisclosingResponseBodies() throws Exception {
     var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     server.createContext("/", exchange -> {
       String text = exchange.getRequestURI().getPath().equals("/gateway")
-          ? "<html>Bad Gateway</html>" : "{\"body\":{\"detail\":\"Invalid configuration\"}}";
+          ? "<html>Bad Gateway secret-token</html>"
+          : "{\"body\":{\"detail\":\"Invalid configuration secret-token\"}}";
       byte[] body = text.getBytes(StandardCharsets.UTF_8);
       exchange.sendResponseHeaders(502, body.length);
       try (var output = exchange.getResponseBody()) { output.write(body); }
@@ -81,7 +82,10 @@ class QuietHttpPostTest {
       assertEquals("POST /gateway failed with HTTP 502", gateway.getMessage());
       var structured = assertThrows(KlabServiceAccessException.class,
           () -> client.postRequired("/structured", Map.of(), Boolean.class));
-      assertTrue(structured.getMessage().contains("HTTP 502: Invalid configuration"));
+      // 8c675521a intentionally removed response-body disclosure from this path.
+      assertEquals("POST /structured failed with HTTP 502", structured.getMessage());
+      assertNull(gateway.getCause());
+      assertNull(structured.getCause());
     } finally { server.stop(0); }
   }
 }

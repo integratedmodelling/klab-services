@@ -177,6 +177,31 @@ class CollectiveSelectionExecutionTest {
   }
 
   Observation query() { return CollectiveSelectionExecution.query(f.runtime, request, f.scope); }
+
+  @Test void transportedSelectedInputRequiresFreshReadBeforeItCanSupplyEvidence() {
+    member(-30, "Selected", beech, mature); complete();
+    var original = query(); assertFalse(original.isEmpty());
+    original.getGeometry().key(); // Warm the derived cache; it is not scientific support.
+    var transported = Observation.forTransport(original);
+    assertNull(SemanticExecutionEvidence.issuedForSelectedInput(transported, f.scope));
+    var checked = CollectiveSelectionExecution.query(f.runtime, Observation.forTransport(transported), f.scope);
+    assertFalse(checked.isEmpty(), "A fresh read must resolve the transported selection");
+    assertTrue(SemanticExecutionEvidence.sameCheckedPayload(transported, checked),
+        () -> "Original: " + Utils.Json.asString(transported) + "\nFresh: " + Utils.Json.asString(checked));
+    SelectedQueryInput.requireCurrent(f.runtime, transported, f.scope);
+    assertNotNull(SemanticExecutionEvidence.issuedForSelectedInput(transported, f.scope));
+    var tampered = (org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl)
+        Observation.forTransport(original);
+    tampered.setChildrenCount(original.getChildrenCount() + 1);
+    assertThrows(IllegalStateException.class, () -> SelectedQueryInput.requireCurrent(f.runtime, tampered, f.scope));
+    assertNull(SemanticExecutionEvidence.issuedForSelectedInput(tampered, f.scope));
+    var differentSupport = (org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl)
+        Observation.forTransport(original);
+    differentSupport.setGeometry(Geometry.create("T1(1){tend=20,tstart=0,ttype=PHYSICAL}"));
+    assertThrows(IllegalStateException.class,
+        () -> SelectedQueryInput.requireCurrent(f.runtime, differentSupport, f.scope));
+    assertNull(SemanticExecutionEvidence.issuedForSelectedInput(differentSupport, f.scope));
+  }
   /** Controlled source-admission boundary for handcrafted plans; not executable validation. */
   void admitPlan(ActuatorImpl plan) {
     var model = new org.integratedmodelling.common.knowledge.ModelImpl();

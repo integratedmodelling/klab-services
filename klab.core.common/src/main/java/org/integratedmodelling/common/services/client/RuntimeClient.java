@@ -571,6 +571,11 @@ public class RuntimeClient extends BaseServiceClient
         .get(ServicesAPI.RUNTIME.GET_SERVICE_INFO, ServiceInfo.class, "urn", urn);
   }
 
+  public Observation getObservationForAdmission(long id, ContextScope scope) {
+    return client.withScope(scope).get(
+        ServicesAPI.RUNTIME.RETRIEVE_OBSERVATION_FOR_ADMISSION, Observation.class, "id", id);
+  }
+
   public <T extends RuntimeAsset> T getAsset(long id, Class<T> assetClass, Scope scope) {
     return client
         .withScope(scope)

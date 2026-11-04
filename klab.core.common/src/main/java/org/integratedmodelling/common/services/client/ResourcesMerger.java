@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.services.client;
 
-import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URL;
@@ -13,22 +12,14 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Data;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RepositoryState;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.organization.Project;
-import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -37,14 +28,11 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.api.services.resources.ResourceInfo;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.services.runtime.extension.AdapterDescriptor;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
@@ -67,6 +55,10 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   private List<ResourcesService> services() {
+    return services(false);
+  }
+
+  private List<ResourcesService> services(boolean requireComplete) {
     /*
      * A service-side scope retains every service advertised by the client but its typed view is a
      * live, status-filtered projection. In particular, a merger may have been created while two
@@ -88,6 +80,7 @@ public class ResourcesMerger implements ResourcesService {
                 .toList());
       }
     } catch (RuntimeException ignored) {
+      if (requireComplete) throw ignored;
       // Some delegating scopes expose only typed service views. The typed snapshot above remains
       // authoritative for those scopes.
     }
@@ -95,8 +88,7 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   private void addServices(
-      Map<String, ResourcesService> destination,
-      Collection<? extends ResourcesService> services) {
+      Map<String, ResourcesService> destination, Collection<? extends ResourcesService> services) {
     if (services == null) {
       return;
     }
@@ -180,13 +172,22 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   private <T> List<T> collect(Function<ResourcesService, List<T>> operation) {
-    var snapshot = services();
+    return collect(operation, false);
+  }
+
+  private <T> List<T> collect(
+      Function<ResourcesService, List<T>> operation, boolean requireComplete) {
+    var snapshot = services(requireComplete);
+    if (requireComplete && snapshot.isEmpty())
+      throw new KlabServiceAccessException(
+          "No resources service is available for frozen model discovery");
     var responses =
         snapshot.stream()
             .map(
-                service ->
-                    CompletableFuture.supplyAsync(() -> operation.apply(service))
-                        .exceptionally(failure -> List.of()))
+                service -> {
+                  var response = CompletableFuture.supplyAsync(() -> operation.apply(service));
+                  return requireComplete ? response : response.exceptionally(failure -> List.of());
+                })
             .toList();
     CompletableFuture.allOf(responses.toArray(CompletableFuture[]::new)).join();
     var merged = new LinkedHashSet<T>();
@@ -366,7 +367,8 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
-  public java.util.List<org.integratedmodelling.klab.api.authentication.CredentialSchema> getCredentialSchemas(Scope scope) {
+  public java.util.List<org.integratedmodelling.klab.api.authentication.CredentialSchema>
+      getCredentialSchemas(Scope scope) {
     return primary().getCredentialSchemas(scope);
   }
 
@@ -374,7 +376,6 @@ public class ResourcesMerger implements ResourcesService {
   public boolean removeCredentials(String id, Scope scope) {
     return primary().removeCredentials(id, scope);
   }
-
 
   @Override
   public <T extends Serializable> T retrieveAsset(
@@ -434,8 +435,8 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
-  public byte[] adapt(String source, String mediaType, KlabAsset.KnowledgeClass assetClass,
-      UserScope scope) {
+  public byte[] adapt(
+      String source, String mediaType, KlabAsset.KnowledgeClass assetClass, UserScope scope) {
     return primary().adapt(source, mediaType, assetClass, scope);
   }
 
@@ -451,7 +452,58 @@ public class ResourcesMerger implements ResourcesService {
       KlabAsset.KnowledgeClass assetClass,
       Class<T> infoClass,
       UserScope scope) {
-    return collect(service -> service.query(query, assetClass, infoClass, scope));
+    boolean frozenModels =
+        assetClass == KlabAsset.KnowledgeClass.MODEL
+            && infoClass == ResourceSet.class
+            && scope instanceof ContextScope context
+            && context.getResolutionCycleBinding() != null;
+    if (frozenModels) return (List<T>) candidateQueries(query, assetClass, infoClass, scope);
+    return collect(service -> service.query(query, assetClass, infoClass, scope), false);
+  }
+
+  private List<ResourceSet> candidateQueries(Parameters<String> query,
+      KlabAsset.KnowledgeClass assetClass, Class<?> infoClass, UserScope scope) {
+    var diagnostics = new ArrayList<Notification>();
+    List<ResourcesService> suppliers;
+    try { suppliers = services(true); }
+    catch (RuntimeException unavailable) {
+      suppliers = services(false);
+      diagnostics.add(candidateUnavailable("advertised supplier list"));
+    }
+    if (suppliers.isEmpty()) diagnostics.add(candidateUnavailable("no Resources supplier"));
+    var session = org.integratedmodelling.common.knowledge.ModelCandidateSources.currentSession();
+    var responses = suppliers.stream().map(service -> CompletableFuture.supplyAsync(() ->
+        org.integratedmodelling.common.knowledge.ModelCandidateSources.inSession(session, () -> {
+      try {
+        var supplied = service.query(query, assetClass, ResourceSet.class, scope);
+        if (supplied == null) throw new IllegalStateException("Missing supplier response");
+        var captured = new ArrayList<ResourceSet>();
+        for (var result : supplied) {
+          if (result == null || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(result.getNotifications()))
+            throw new IllegalStateException("Supplier catalog is unavailable");
+          // Detach response state before any admission, ranking or concurrent provider updates.
+          captured.add(org.integratedmodelling.common.utils.Utils.Json.parseObject(
+              org.integratedmodelling.common.utils.Utils.Json.asString(result), ResourceSet.class));
+        }
+        return List.copyOf(captured);
+      } catch (RuntimeException unavailable) {
+        String identity;
+        try { identity = service.serviceId(); } catch (RuntimeException ignored) { identity = "unknown supplier"; }
+        if (unavailable instanceof org.integratedmodelling.common.utils.Utils.Http.Client.RequestFailure transport)
+          identity += transport.getStatus() > 0 ? " (HTTP " + transport.getStatus() + ")" : " (transport failure)";
+        return List.of(ResourceSet.empty(candidateUnavailable(identity)));
+      }
+    }))).toList();
+    CompletableFuture.allOf(responses.toArray(CompletableFuture[]::new)).join();
+    var result = new ArrayList<ResourceSet>();
+    responses.forEach(response -> result.addAll(response.join()));
+    for (var diagnostic : diagnostics) result.add(ResourceSet.empty(diagnostic));
+    return List.copyOf(result);
+  }
+
+  private static Notification candidateUnavailable(String provider) {
+    return Notification.warning(org.integratedmodelling.common.knowledge.ModelCandidateSources.INCOMPLETE
+        + ": " + provider + "; candidate discovery is incomplete");
   }
 
   @Override
@@ -498,11 +550,14 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
-  public List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
-      UserScope scope, String credentialId, String... arguments) {
+  public List<ResourceSet> manageRepository(
+      String projectName,
+      RepositoryState.Operation operation,
+      UserScope scope,
+      String credentialId,
+      String... arguments) {
     return primary().manageRepository(projectName, operation, scope, credentialId, arguments);
   }
-
 
   @Override
   public CompletableFuture<Resource> publishObservation(

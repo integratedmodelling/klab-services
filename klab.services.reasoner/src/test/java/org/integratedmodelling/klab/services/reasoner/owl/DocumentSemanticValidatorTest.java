@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.reasoner.owl;
 
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -16,6 +17,15 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class DocumentSemanticValidatorTest {
+  private static void validationCapabilities(ReasonerService reasoner, Scope scope) {
+    var capabilities = mock(org.integratedmodelling.klab.api.services.Reasoner.Capabilities.class);
+    when(capabilities.getServiceId()).thenReturn("validation-fixture");
+    when(capabilities.getKnowledgeRevision()).thenAnswer(call -> reasoner.knowledgeRevision());
+    when(reasoner.capabilities(scope)).thenReturn(capabilities);
+    // These tests exercise source synchronization, not durable dependency-proof acquisition.
+    when(reasoner.semanticDependencies(any(), same(scope))).thenAnswer(call ->
+        SemanticDependencyWitness.unknown(call.getArgument(0), "No dependency proof in this fixture"));
+  }
   @Test void modelEachUsesResolvedConfigurationKindAndDoesNotConfuseOperandCollectivity() {
     var reasoner=mock(ReasonerService.class);when(reasoner.owl()).thenReturn(mock(OWL.class));
     var syntax=new KimConceptImpl();syntax.setName("w:Alias");syntax.setCollective(true);
@@ -319,6 +329,7 @@ class DocumentSemanticValidatorTest {
         .thenReturn(mock(org.integratedmodelling.klab.api.services.ResourcesService.class));
     var ontology = new KimOntologyImpl(); ontology.setUrn("earth"); ontology.setSourceCode("edited ontology");
     var request = SemanticValidationRequest.of(ontology, "2");
+    validationCapabilities(reasoner, scope);
     var response = reasoner.validateDocument(request, scope);
     assertEquals(SemanticValidationResponse.Status.UNAVAILABLE, response.getStatus());
     assertEquals(7, response.getKnowledgeRevision()); assertFalse(response.valid());
@@ -326,7 +337,9 @@ class DocumentSemanticValidatorTest {
     var hashes = (Map<String,String>) loaded.get(reasoner);
     hashes.put("earth", SemanticValidationRequest.sourceHash(ontology.getSourceCode()));
 
-    assertTrue(reasoner.validateDocument(request, scope).valid());
+    var synchronizedResponse = reasoner.validateDocument(request, scope);
+    assertTrue(synchronizedResponse.valid(), synchronizedResponse.getReason());
+    assertEquals(SemanticDependencyWitness.Status.UNKNOWN, synchronizedResponse.getSemanticWitness().status());
     var lexical = new KimConceptImpl(); lexical.setOffsetInDocument(12); lexical.setLength(8);
     var notification = org.integratedmodelling.klab.api.services.runtime.Notification.error("Invalid ontology clause",
         org.integratedmodelling.klab.api.services.runtime.Notification.LexicalContext.of(lexical, ontology));
@@ -402,7 +415,10 @@ class DocumentSemanticValidatorTest {
       state.settle(0, true);
       return changes;
     });
-    assertTrue(reasoner.validateDocument(SemanticValidationRequest.of(ontology, "1"), scope).valid());
+    validationCapabilities(reasoner, scope);
+    var synchronizedResponse = reasoner.validateDocument(SemanticValidationRequest.of(ontology, "1"), scope);
+    assertTrue(synchronizedResponse.valid(), synchronizedResponse.getReason());
+    assertEquals(SemanticDependencyWitness.Status.UNKNOWN, synchronizedResponse.getSemanticWitness().status());
     var draft = new KimOntologyImpl(); draft.setUrn("earth"); draft.setSourceCode("unsaved draft");
     assertEquals(SemanticValidationResponse.Status.UNAVAILABLE,
         reasoner.validateDocument(SemanticValidationRequest.of(draft, "2"), scope).getStatus());

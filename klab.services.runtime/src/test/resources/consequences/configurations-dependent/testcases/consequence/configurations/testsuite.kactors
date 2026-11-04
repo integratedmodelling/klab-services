@@ -1,0 +1,80 @@
+testcase consequence.configurations.dependent.testsuite
+    "Dependent configuration from two normally resolved scalar qualities"
+    version 1.0
+    using core.context as context, core.inspector as inspector
+
+action init:
+    def bearer_definition {
+        namespace: "consequence.configurations.dependent"
+        name: "dependent configuration bearer"
+        semantics: {{imod:Bearer}}
+        space: {
+            shape: "EPSG:3857 POLYGON ((0 0,0 200,200 200,200 0,0 0))"
+            grid: "100 m"
+        }
+        time: {year: 2014, step: 1.year}
+    }
+
+@test(name="Dependent configuration with actual explanation", description="Ordinary scalar models on one actual bearer trigger detection and a real single-root explanatory model")
+action dependent_configuration_birth:
+    ctx <- context.new
+    bearer <- ctx.submit(bearer_definition !observer
+        :namespace "consequence.configurations.dependent")
+    assert inspector.viable(bearer)
+    height <- ctx.query({{imod:Height in m}} :within bearer)
+    width <- ctx.query({{imod:Width in m}} :within bearer)
+    assert inspector.viable(height)
+    assert inspector.viable(width)
+    configuration <- inspector.configuration(ctx, {{imod:Pair}}, 1, true, 30000)
+    assert inspector.present(configuration)
+    assert inspector.configurationcheck(ctx, configuration, {{imod:Pair}}, 1, true)
+    summary <- ctx.query({{imod:Summary in m}} :within configuration)
+    assert inspector.viable(summary)
+    repeated <- ctx.submit({{imod:Summary in m}} !observer :within configuration
+        :namespace "consequence.configurations.dependent")
+    assert inspector.viable(repeated)
+    assert [summary.id == repeated.id]
+
+@test(name="Dependent configuration recomputes at the genuine transition time", description="One supported annual Resize simulation updates Height, preserves Pair identity and immutable lineage, and recomputes its explanation without an extra clock advance")
+action dependent_configuration_recompute:
+    ctx <- context.new
+    bearer <- ctx.submit(bearer_definition !observer
+        :namespace "consequence.configurations.dependent")
+    assert inspector.viable(bearer)
+    height <- ctx.query({{imod:Height in m}} :within bearer)
+    width <- ctx.query({{imod:Width in m}} :within bearer)
+    assert inspector.viable(height)
+    assert inspector.viable(width)
+    configuration <- inspector.configuration(ctx, {{imod:Pair}}, 1, true, 30000)
+    assert inspector.present(configuration)
+    assert inspector.configurationcheck(ctx, configuration, {{imod:Pair}}, 1, true)
+    summary <- ctx.query({{imod:Summary in m}} :within configuration)
+    assert inspector.viable(summary)
+    // An ordinary new submission waits for the prior root's entire causal cycle.
+    repeated <- ctx.submit({{imod:Summary in m}} !observer :within configuration
+        :namespace "consequence.configurations.dependent")
+    assert inspector.viable(repeated)
+    assert [summary.id == repeated.id]
+    before <- inspector.configurationsnapshot(ctx, configuration)
+    assert [before.revision() == 1]
+    resize <- ctx.submit({{imod:Resize}} !observer :within bearer
+        :namespace "consequence.configurations.update")
+    assert inspector.viable(resize)
+    simulation <- ctx.focus(:within bearer)
+    assert inspector.schedulecheck(simulation, resize, 1, "YEAR",
+        "2014-01-01T00:00:00Z", "2015-01-01T00:00:00Z", 1)
+    // Query results are detached read-time snapshots; fetch the committed revision by the SAME ID.
+    current_height <- ctx.query(:id [height.id] :within bearer)
+    assert inspector.viable(current_height)
+    assert [current_height.id == height.id]
+    assert inspector.relativecheck(simulation, resize, current_height, 1, 1, 0.00000001)
+    updated <- inspector.configuration(ctx, {{imod:Pair}}, 2, true, 30000)
+    assert inspector.present(updated)
+    assert [configuration.id == updated.id]
+    assert inspector.configurationcheck(ctx, updated, {{imod:Pair}}, 2, true)
+    // Drain the transition and its recursive consequences through ordinary root admission.
+    drained <- ctx.submit({{imod:Summary in m}} !observer :within updated
+        :namespace "consequence.configurations.dependent")
+    assert inspector.viable(drained)
+    assert [summary.id == drained.id]
+    assert inspector.configurationrecomputed(ctx, before, updated, resize, current_height, width)
