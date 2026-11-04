@@ -27,7 +27,11 @@ final class ModelAdmissionFixtures {
       response.setStatus(SemanticValidationResponse.Status.COMPLETE); response.setKnowledgeRevision(7);
       return response;
     }).when(reasoner).validateDocument(any(), any());
-    doAnswer(invocation -> mock(KimObservable.class)).when(resources).declareObservable(nullable(String.class));
+    doAnswer(invocation -> {
+      var observable = new KimObservableImpl();
+      observable.setUrn(invocation.getArgument(0));
+      return observable;
+    }).when(resources).declareObservable(nullable(String.class));
     return resources;
   }
 

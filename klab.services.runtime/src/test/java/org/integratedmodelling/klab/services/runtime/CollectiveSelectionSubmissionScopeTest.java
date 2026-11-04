@@ -111,7 +111,8 @@ class CollectiveSelectionSubmissionScopeTest {
       if(invalid==2)focus.setGeometry(null);
       Observation targetFocus=invalid==3?Observation.empty():focus;
       var scope=f.scope.within(targetFocus);var request=selection(f,true);
-      assertThrows(IllegalArgumentException.class,()->f.runtime.submit(request,scope));
+      assertInstanceOf(IllegalArgumentException.class, assertThrows(java.util.concurrent.ExecutionException.class,
+          ()->f.runtime.submit(request,scope).get(30,TimeUnit.SECONDS)).getCause());
       assertTrue(f.modelQueries.isEmpty());assertEquals(0,f.rootCommits.get());
       assertEquals(0,f.classifier.discoveries.get());assertSame(f.geometry,request.getGeometry());
     }
@@ -122,7 +123,8 @@ class CollectiveSelectionSubmissionScopeTest {
       var focus=(ObservationImpl)Observation.forTransport(f.region);focus.setGeometry(null);
       var scope=observed(f,f.scope.within(focus));var request=selection(f,false);
       assertSame(f.geometry,ContextScope.getResolutionGeometry(scope));
-      assertThrows(IllegalArgumentException.class,()->f.runtime.submit(request,scope));
+      assertInstanceOf(IllegalArgumentException.class, assertThrows(java.util.concurrent.ExecutionException.class,
+          ()->f.runtime.submit(request,scope).get(30,TimeUnit.SECONDS)).getCause());
       assertNull(request.getGeometry());assertTrue(f.modelQueries.isEmpty());assertEquals(0,f.rootCommits.get());
     }
   }
@@ -132,7 +134,8 @@ class CollectiveSelectionSubmissionScopeTest {
       var focus=(ObservationImpl)Observation.forTransport(f.region);focus.setGeometry(null);
       var scope=f.scope.within(focus);var request=selection(f,false);
       assertNull(ContextScope.getResolutionGeometry(scope));
-      assertThrows(IllegalArgumentException.class,()->f.runtime.submit(request,scope));
+      assertInstanceOf(IllegalArgumentException.class, assertThrows(java.util.concurrent.ExecutionException.class,
+          ()->f.runtime.submit(request,scope).get(30,TimeUnit.SECONDS)).getCause());
       assertNull(request.getGeometry());assertTrue(f.modelQueries.isEmpty());assertEquals(0,f.rootCommits.get());
       assertEquals(0,f.classifier.discoveries.get());
     }

@@ -145,11 +145,13 @@ public interface Data {
 
     /** Validate declarations without resolving neutral values. Sizes count states, not bytes. */
     public ShardingStrategy validate() {
-      if (curve == null) throw new IllegalArgumentException("A curve must use UNSPECIFIED instead of null");
+      if (curve == null)
+        throw new IllegalArgumentException("A curve must use UNSPECIFIED instead of null");
       if (suggestedSplits != -1 && suggestedSplits < 1)
         throw new IllegalArgumentException("Splits must be -1 (unspecified) or a positive count");
       if (minSplitSize < 0 || maxBufferSize < 0)
-        throw new IllegalArgumentException("Sharding sizes must be nonnegative (zero is unspecified)");
+        throw new IllegalArgumentException(
+            "Sharding sizes must be nonnegative (zero is unspecified)");
       if (maxBufferSize > 0 && minSplitSize > maxBufferSize)
         throw new IllegalArgumentException("Minimum split size exceeds maximum shard size");
       return this;
@@ -708,6 +710,22 @@ public interface Data {
     List<Builder> getObjects();
 
     /**
+     * Report cessation of a committed singular Subject/Agent through the successful modeled
+     * invocation. This is an intent only: Runtime verifies the exact current server-held target,
+     * scope and execution, then admits it through its guarded native transaction. Metadata and
+     * transported observation copies grant no removal authority. Legacy/remote builders fail
+     * explicitly until they support this operation; no termination event or model is implied.
+     */
+    default Builder cease(Observation observation) {
+      throw new UnsupportedOperationException("Modeled cessation is unavailable on this builder");
+    }
+
+    /** Runtime adapter output, not a mutation capability. Empty for legacy builders. */
+    default List<Observation> getCessations() {
+      return List.of();
+    }
+
+    /**
      * Add the passed non-semantic metadata. Can be used for properties when no data content is
      * added but an adapter is used. Returns self.
      *
@@ -741,8 +759,8 @@ public interface Data {
     Builder state(String outputId);
 
     /**
-     * Returns a new builder for an object, automatically included in this builder's outputs.
-     * The child builder can be used to add metadata, states or child objects.
+     * Returns a new builder for an object, automatically included in this builder's outputs. The
+     * child builder can be used to add metadata, states or child objects.
      *
      * @param name the name of the object
      * @param observable the observable for the object FIXME should not be necessary?
@@ -756,14 +774,17 @@ public interface Data {
      * Emit an individual relationship. The connector chooses the pairs; Runtime acknowledges each
      * emitted observation. For bonds the two arguments are interchangeable.
      */
-    default Builder relationship(String name, Observable observable, Geometry geometry, Urn identity,
-        Observation source, Observation target) {
+    default Builder relationship(
+        String name,
+        Observable observable,
+        Geometry geometry,
+        Urn identity,
+        Observation source,
+        Observation target) {
       return object(name, observable, geometry, identity)
           .metadata("im:relationship-source-id", source.getId())
           .metadata("im:relationship-target-id", target.getId());
     }
-
-
 
     /**
      * Retrieve the observation being contextualized (not resolved at this point).

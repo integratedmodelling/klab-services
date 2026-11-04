@@ -115,8 +115,6 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
           || !statement.getObservablesDescribed().isEmpty()
           || !statement.getRequiredIdentities().isEmpty()
           || !statement.getRequiredRealms().isEmpty()
-          || !statement.getRequiredAttributes().isEmpty()
-          || !statement.getRequiredExtents().isEmpty()
           || statement.getAuthorityRequired() != null) {
         result.add(
             Notification.error(

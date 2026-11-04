@@ -35,9 +35,11 @@ class CollectiveSelectionAtomicExecutionTest implements AutoCloseable {
   boolean failAge;
   Observation received;
   ComponentRegistry registry;
+  org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles cycles;
+  org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles.Admission admission;
   org.mockito.MockedStatic<SemanticExecutionFootprints> fixtureFootprint;
 
-  @AfterEach public void close() { if (fixtureFootprint != null) fixtureFootprint.close(); }
+  @AfterEach public void close() { if(admission!=null)admission.close(); if(cycles!=null)cycles.close(); if (fixtureFootprint != null) fixtureFootprint.close(); }
 
   public Concept classify(Observable directive, Observation member, ContextScope scope, ServiceCall call) {
     calls.add(call.getUrn());
@@ -54,6 +56,34 @@ class CollectiveSelectionAtomicExecutionTest implements AutoCloseable {
 
   @BeforeEach void setup() throws Exception {
     q.setup();
+    doReturn("atomic-fixture-runtime").when(q.f.runtime).serviceId();
+    doReturn(mock(org.integratedmodelling.klab.api.configuration.Settings.class)).when(q.f.runtime).settings();
+    var user=mock(org.integratedmodelling.klab.api.identities.UserIdentity.class);
+    when(user.getUsername()).thenReturn("atomic-fixture-user");when(q.f.scope.getUser()).thenReturn(user);
+    when(q.f.scope.withCycleSubscriberCancellation(any())).thenReturn(q.f.scope);
+    when(q.f.scope.withCancellation(any())).thenReturn(q.f.scope);
+    when(q.f.scope.withoutConsequenceSubmissionAdmission()).thenReturn(q.f.scope);
+    org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.transparentCycleOverlay(q.f.scope);
+    when(q.f.scope.withResolutionCycle(any(),any())).thenAnswer(call -> {
+      doReturn(call.getArgument(0)).when(q.f.scope).getResolutionCycle();
+      doReturn(call.getArgument(1)).when(q.f.scope).getResolutionCycleBinding();
+      return q.f.scope;
+    });
+    when(q.f.scope.getServices(Reasoner.class)).thenReturn(List.of(q.reasoner));
+    when(q.reasoner.beginSemanticCycleResult(anyString(),anyString(),anyString(),any())).thenAnswer(call ->
+        new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult(
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult.Status.BOUND,
+            new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding(
+                org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding.VERSION,
+                q.capabilities.getServiceId(),q.capabilities.getSemanticSessionId(),q.capabilities.getKnowledgeRevision(),
+                q.capabilities.getSemanticContentFingerprint(),"fixture-lease-"+call.getArgument(2)),null));
+    when(q.reasoner.bindSemanticCycle(any(),anyString(),anyString(),anyString(),any())).thenReturn(q.reasoner);
+    cycles=new org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles(q.f.runtime,q.f.scope.getId());
+    when(q.f.twin.getResolutionCycles()).thenReturn(cycles);
+    // Admit the root before exposing its causal transaction, as normal submission does.
+    when(q.f.scope.getCurrentTransaction()).thenReturn(null);
+    admission=cycles.admit(q.f.scope,true).join();
+    when(q.f.scope.getCurrentTransaction()).thenReturn(q.f.root);
     q.traits.put(q.qualified.getSemantics().getUrn(), List.of(q.beech, q.mature));
     registry = mock(ComponentRegistry.class);
     doReturn(registry).when(q.f.runtime).getComponentRegistry();
@@ -61,6 +91,8 @@ class CollectiveSelectionAtomicExecutionTest implements AutoCloseable {
     doNothing().when(q.f.runtime).characterizePending(anyList(), any());
     doReturn(q.f.cohort).when(q.f.runtime).getCohortFor(any(), any(), eq(false));
     when(q.f.graph.dataflow()).thenReturn(RuntimeAsset.DATAFLOW_ASSET);
+    // Compiled collective consumers reuse the fixture's existing cohort.
+    doReturn(q.f.cohort).when(q.f.runtime).getCohortFor(any(),any(),eq(true));
     // The query-only persistence fixture did not allocate identities for compiled Actuators.
     // A real compiled classification plan persists these alongside its observations/activities.
     var ids = new java.util.concurrent.atomic.AtomicLong(2000);
@@ -197,6 +229,51 @@ class CollectiveSelectionAtomicExecutionTest implements AutoCloseable {
         .filter(o -> o.getId() == member.getId()).count());
     assertTrue(q.f.durable.values().stream().filter(Observation.class::isInstance).map(Observation.class::cast)
         .noneMatch(o -> q.qualified.getUrn().equals(o.getObservable().getUrn())));
+  }
+
+  @Test void selectedInputAssociationRequiresOriginalReceiptAndExactCompiledPort() {
+    q.member(-30, "Unclassified").setUrn("member-original"); q.complete();
+    var selected = CollectiveSelectionExecution.execute(q.f.runtime, plan(), q.request, q.f.scope, new ArrayList<>());
+    var consumer = new ObservationImpl(); consumer.setId(-50);
+    var parent = new ActuatorImpl(); parent.setObservation(consumer);
+    var child = new ActuatorImpl(); child.setActuatorType(Actuator.Type.REFERENCE);
+    child.setObservation(selected); child.setName("selected"); parent.getChildren().add(child);
+    var cohort = q.f.runtime.getCohortFor(selected.getObservable().getSemantics().singular(), q.f.scope, false);
+    var association = SelectedQueryInput.capture(q.f.root, cohort, consumer, selected, parent, 0, q.f.scope);
+    var encoded = association.require(q.f.root, cohort, consumer, q.f.scope);
+    assertSame(selected, SelectedQueryInput.requireBinding(encoded, parent));
+
+    var copy = Observation.forTransport(selected); child.setObservation(copy);
+    assertThrows(IllegalStateException.class,
+        () -> SelectedQueryInput.capture(q.f.root, cohort, consumer, copy, parent, 0, q.f.scope));
+    child.setObservation(selected); child.setName("forged");
+    assertThrows(IllegalStateException.class, () -> SelectedQueryInput.requireBinding(encoded, parent));
+    assertThrows(IllegalStateException.class,
+        () -> association.require(q.f.root, cohort, consumer, q.f.scope));
+    child.setName("selected");
+    var count = selected.getChildrenCount();
+    ((ObservationImpl) selected).setChildrenCount(count + 1);
+    assertThrows(IllegalStateException.class,
+        () -> SelectedQueryInput.capture(q.f.root, cohort, consumer, selected, parent, 0, q.f.scope));
+    ((ObservationImpl) selected).setChildrenCount(count);
+    var second = new ActuatorImpl(); second.setActuatorType(Actuator.Type.REFERENCE);
+    second.setObservation(selected); second.setName("second"); parent.getChildren().add(second);
+    var secondAssociation = SelectedQueryInput.capture(q.f.root, cohort, consumer, selected, parent, 1, q.f.scope);
+    assertNotEquals(encoded, secondAssociation.require(q.f.root, cohort, consumer, q.f.scope));
+    second.setName("selected");
+    assertThrows(IllegalStateException.class,
+        () -> SelectedQueryInput.capture(q.f.root, cohort, consumer, selected, parent, 0, q.f.scope));
+    parent.getChildren().remove(second);
+    var foreign = mock(DigitalTwinImpl.TransactionImpl.class);
+    assertThrows(IllegalStateException.class,
+        () -> association.require(foreign, cohort, consumer, q.f.scope));
+    when(q.f.scope.getCurrentTransaction()).thenReturn(foreign);
+    assertThrows(IllegalStateException.class,
+        () -> SelectedQueryInput.capture(foreign, cohort, consumer, selected, parent, 0, q.f.scope));
+    when(q.f.scope.getCurrentTransaction()).thenReturn(q.f.root);
+    q.f.root.fail(new IllegalStateException("rollback"));
+    assertThrows(IllegalStateException.class,
+        () -> association.require(q.f.root, cohort, consumer, q.f.scope));
   }
 
   @Test void actualConsumerFailureReceivesSelectedAliasAndRootRollbackDiscardsClassification() throws Exception {

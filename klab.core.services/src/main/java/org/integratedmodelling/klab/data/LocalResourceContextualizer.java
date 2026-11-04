@@ -41,7 +41,10 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
   }
 
   @Override
-  protected Data.Builder getData(Storage.Scanner scanner, Scheduler.Event event, ContextScope scope,
+  protected Data.Builder getData(
+      Storage.Scanner scanner,
+      Scheduler.Event event,
+      ContextScope scope,
       org.integratedmodelling.klab.api.geometry.Geometry invocationGeometry) {
 
     var name =
@@ -60,19 +63,25 @@ public class LocalResourceContextualizer extends AbstractResourceContextualizer 
 
     // TODO add observation, observable, urn, input data if the resource requires them, observation
     //  storage and anything the adapter may want.
-    adapter.encode(
-        resource,
-        scanner == null ? invocationGeometry == null ? observation.getGeometry() : invocationGeometry
-            : scanner.shard().getGeometry(),
-        event,
-        builder,
-        scanner,
-        observation,
-        observable,
-        urn,
-        urnParameters,
-        scope);
+    boolean encoded =
+        adapter.encode(
+            resource,
+            scanner == null
+                ? invocationGeometry == null ? observation.getGeometry() : invocationGeometry
+                : scanner.shard().getGeometry(),
+            event,
+            builder,
+            scanner,
+            observation,
+            observable,
+            urn,
+            urnParameters,
+            scope);
 
+    if (!encoded)
+      builder.notification(
+          org.integratedmodelling.klab.api.services.runtime.Notification.error(
+              "Local adapter contextualization failed"));
     return builder;
   }
 }

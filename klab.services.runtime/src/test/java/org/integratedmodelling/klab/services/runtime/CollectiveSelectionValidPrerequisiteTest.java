@@ -20,8 +20,9 @@ class CollectiveSelectionValidPrerequisiteTest {
   @BeforeAll static void configure() { SelectedModelClassifierSubmissionTest.configure(); }
 
   @Test void validOrdinaryClassifierInputExpandsBeforeSelectedPlanExecution() throws Exception {
-    try (var f = new SelectedModelClassifierSubmissionTest.Fixture(); var permit=f.useGatedEmptyProducer()) {
-      var execution = f.scope.executing(Activity.of(Activity.Type.SUBMISSION, null, "Nested selection prerequisites"));
+    try (var f = new SelectedModelClassifierSubmissionTest.Fixture(); var permit=f.useGatedEmptyProducer();
+        var cycle = f.cycles.admit(f.scope, true).get(30, TimeUnit.SECONDS)) {
+      var execution = cycle.scope().executing(Activity.of(Activity.Type.SUBMISSION, null, "Nested selection prerequisites"));
       var target = new ObservationImpl(); target.setObservable(f.reasoner.declareObservable(f.output)); target.setGeometry(f.geometry);
       var ordinary = f.resolver.resolve(f.runtime.register(target, execution), execution).get(30, TimeUnit.SECONDS);
       assertEquals(Dataflow.ResolutionOutcome.DEFERRED, ordinary.getResolutionOutcome());

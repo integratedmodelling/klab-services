@@ -22,9 +22,11 @@ from klab_client.api.services import (
 from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData, ScientificDataOrigin
 from klab_client.tables import to_dataframe
 from klab_client.graph import GraphBrowser, GraphPage
+from klab_client.graph_projection import GraphProjection, GraphProjectionView, ProjectedGraphPage
 from klab_client.authoring import Authoring, AuthoringReceipt, ParsedSource
 from klab_client.source_previews import SourcePreview, SourcePreviews
 from klab_client.agents import AgentPreviews, AgentSourcePreview
+from klab_client.agent_status import AgentStatusSnapshot, decode_agent_status
 from klab_client.async_client import AsyncClient, AsyncContext, AsyncSession, AsyncJob
 from klab_client.transport import Endpoint
 from klab_client.connection import Connection, SelectionPolicy, connect
@@ -56,7 +58,9 @@ __all__ = [
     "Authoring", "AuthoringReceipt", "ParsedSource",
     "SourcePreview", "SourcePreviews",
     "AgentPreviews", "AgentSourcePreview",
+    "AgentStatusSnapshot", "decode_agent_status",
     "GraphBrowser", "GraphPage",
+    "GraphProjection", "GraphProjectionView", "ProjectedGraphPage",
     "ScientificDataOrigin", "to_dataframe",
     "AsyncClient", "AsyncContext", "AsyncSession", "AsyncJob",
     "WaitCancelled",
