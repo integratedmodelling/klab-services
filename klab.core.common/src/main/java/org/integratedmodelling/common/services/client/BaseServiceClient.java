@@ -103,9 +103,12 @@ public abstract class BaseServiceClient implements KlabService {
   @Override
   public byte[] adapt(String source, String mediaType, KlabAsset.KnowledgeClass assetClass,
       UserScope scope) {
-    return client.withScope(scope).accepting(List.of(mediaType))
+    return requestClient(scope).accepting(List.of(mediaType))
         .postRequired(ServicesAPI.ADAPT, source, byte[].class, "assetClass", assetClass);
   }
+
+  /** Subclasses may supply data without participating in the caller's graph workflow. */
+  protected Utils.Http.Client requestClient(Scope scope) { return client.withScope(scope); }
 
   @Override
   public <T> T info(
@@ -113,11 +116,11 @@ public abstract class BaseServiceClient implements KlabService {
     if (infoClass == String.class
         && (objectClass == KlabAsset.KnowledgeClass.CONCEPT
             || objectClass == KlabAsset.KnowledgeClass.OBSERVABLE)) {
-      return client.withScope(scope).accepting(List.of("text/markdown"))
+      return requestClient(scope).accepting(List.of("text/markdown"))
           .get(ServicesAPI.INFO, infoClass, "urn", urn, "knowledgeClass", objectClass);
     }
     if (infoClass == java.awt.image.BufferedImage.class) {
-      var bytes = client.withScope(scope).accepting(List.of("image/png"))
+      var bytes = requestClient(scope).accepting(List.of("image/png"))
           .getBytes(ServicesAPI.INFO, "urn", urn, "knowledgeClass", objectClass);
       if (bytes == null) return null;
       try {
@@ -129,8 +132,7 @@ public abstract class BaseServiceClient implements KlabService {
       }
     }
 
-    return client
-        .withScope(scope)
+    return requestClient(scope)
         .get(
             ServicesAPI.INFO,
             infoClass,
@@ -148,8 +150,7 @@ public abstract class BaseServiceClient implements KlabService {
       KlabAsset.KnowledgeClass objectClass,
       Class<T> infoClass,
       UserScope scope) {
-    return client
-        .withScope(scope)
+    return requestClient(scope)
         .postCollection(
             ServicesAPI.QUERY,
             query == null ? Parameters.create() : query,
@@ -494,7 +495,7 @@ public abstract class BaseServiceClient implements KlabService {
   protected <T extends ServiceCapabilities> T getCapabilities(Scope scope, Class<T> tClass) {
     try {
       var capabilities =
-          client.withScope(scope).get(ServicesAPI.CAPABILITIES, tClass, Notification.Mode.Silent);
+          requestClient(scope).get(ServicesAPI.CAPABILITIES, tClass, Notification.Mode.Silent);
       if (capabilities instanceof ServiceCapabilities) {
         this.capabilities = capabilities;
       }

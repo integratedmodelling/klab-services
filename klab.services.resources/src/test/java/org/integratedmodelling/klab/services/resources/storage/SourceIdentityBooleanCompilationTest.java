@@ -28,6 +28,11 @@ class SourceIdentityBooleanCompilationTest {
       abstract identity B;
       abstract identity C;
       identity Both is (imod:A and imod:B);
+      identity ConcreteA is imod:A;
+      identity WrongIdentity;
+      thing RequiredSubject is imod:Subject requires identity imod:A;
+      thing QualifiedSubject is imod:ConcreteA imod:RequiredSubject;
+      thing WrongQualifiedSubject is imod:WrongIdentity imod:RequiredSubject;
       identity ImportedNarrow;
       thing ASubject is imod:Subject inherits imod:A;
       thing BothSubject is imod:Subject inherits imod:Both;
@@ -91,6 +96,10 @@ class SourceIdentityBooleanCompilationTest {
     assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, compiled.logicalStatus(), compiled.diagnostics().toString());
     try (var state = compiled.state()) {
       var actor = state.actor();
+      assertTrue(actor.resolveConcept("imod:RequiredSubject").isAbstract(),"Missing identity is an integrity obligation");
+      assertFalse(actor.resolveConcept("imod:QualifiedSubject").isAbstract(),"Legal concrete identity discharges inherited requirement");
+      assertTrue(actor.resolveConcept("imod:WrongQualifiedSubject").isAbstract(),"An unrelated concrete identity cannot discharge the requirement");
+      assertFalse(actor.owl().getOntology("imod").getConcept("RequiredSubject").isAbstract(),"Effective incompleteness must not rewrite authored abstractness");
       var graph = actor.owl().getOntology("imod").getOWLOntology();
       var evidence = new ArrayList<String>();
       for (var statement : ontologies.getFirst().getStatements()) if (!statement.getRequiredIdentities().isEmpty()) {

@@ -1,0 +1,11 @@
+ontology rolefixture version 1.0 using imod, earth, geography, agency in domain imod:Earth;
+
+// Isolated acceptance vocabulary. Never install this into the user's authored worldview.
+thing Bearer is earth:Terrestrial earth:Region;
+length Input is geography:Elevation;
+length ImpliedValue is geography:Elevation;
+role Marked is agency:Patient implies rolefixture:ImpliedValue;
+process Birth is earth:Erosion
+    affects rolefixture:Input
+    confers rolefixture:Marked within rolefixture:Bearer;
+

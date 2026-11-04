@@ -48,9 +48,66 @@ import org.springframework.web.bind.annotation.*;
     description = "Resource resolution, contextualization, parsing, schemas, and access rights")
 public class ResourcesProviderController {
 
+  private static final com.fasterxml.jackson.databind.ObjectMapper MODEL_QUERY_MAPPER =
+      org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+
   @Autowired private ResourcesServer resourcesServer;
 
   @Autowired private ServiceAuthorizationManager authenticationManager;
+
+  @PostMapping(ServicesAPI.RESOURCES.MODEL_CANDIDATES)
+  public @ResponseBody org.integratedmodelling.klab.api.services.resources.ResourceSet queryModelCandidates(
+      @RequestBody org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest request,
+      Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization)
+        || !(authorization.getScope() instanceof UserScope scope))
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.FORBIDDEN, "An authenticated user is required");
+    return resourcesServer.klabService().modelCandidates(request, scope);
+  }
+
+  /** A separate route makes pre-cycle Resources servers fail closed instead of ignoring the pin. */
+  @PostMapping(ServicesAPI.RESOURCES.SEMANTIC_CYCLE_MODELS)
+  public @ResponseBody List<ResourceSet> queryCycleModels(
+      @PathVariable("knowledgeClass") KlabAsset.KnowledgeClass knowledgeClass,
+      @RequestParam("infoClass") String infoClass,
+      @RequestBody com.fasterxml.jackson.databind.JsonNode body,
+      Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization)
+        || !(authorization.getScope()
+            instanceof org.integratedmodelling.klab.api.scope.ContextScope scope)
+        || scope.getResolutionCycleBinding() == null
+        || scope.getResolutionCycleBinding().semanticBinding() == null) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.FORBIDDEN, "An authorized bound context is required");
+    }
+    org.integratedmodelling.klab.api.collections.Parameters<String> query;
+    try {
+      Object decoded =
+          MODEL_QUERY_MAPPER.treeToValue(
+              body, org.integratedmodelling.klab.api.collections.Parameters.class);
+      if (!(decoded instanceof org.integratedmodelling.klab.api.collections.Parameters<?>))
+        throw new IllegalArgumentException("Expected typed query parameters");
+      query = (org.integratedmodelling.klab.api.collections.Parameters<String>) decoded;
+    } catch (java.io.IOException | IllegalArgumentException invalid) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST,
+          "Invalid model query parameters",
+          invalid);
+    }
+    if (knowledgeClass != KlabAsset.KnowledgeClass.MODEL
+        || !ResourceSet.class.getName().equals(infoClass)
+        || query == null
+        || !(query.get("observable")
+            instanceof org.integratedmodelling.klab.api.knowledge.Observable)
+        || !(query.get("geometry") instanceof Geometry)) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST, "A model discovery query is required");
+    }
+    var service = resourcesServer.klabService();
+    service.captureModelQueryView(scope);
+    return service.query(query, knowledgeClass, ResourceSet.class, scope);
+  }
 
   //  /**
   //   * Retrieve all the knowledge included in one or more projects. The return set contains all
@@ -502,8 +559,7 @@ public class ResourcesProviderController {
         && authorization.getScope() instanceof UserScope userScope) {
       return resourcesServer
           .klabService()
-          .markPublished(
-              urn, serviceId, publication.get("authoritativeResourceUrn"), userScope);
+          .markPublished(urn, serviceId, publication.get("authoritativeResourceUrn"), userScope);
     }
     return false;
   }

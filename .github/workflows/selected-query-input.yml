@@ -1,0 +1,37 @@
+name: Selected query input receipt association
+on:
+  push:
+    paths:
+      - 'klab.services.runtime/src/main/java/**/SelectedQueryInput.java'
+      - 'klab.services.runtime/src/main/java/**/SemanticExecutionEvidence.java'
+      - 'klab.services.runtime/src/main/java/**/CompiledDataflow.java'
+      - 'klab.services.runtime/src/main/java/**/DigitalTwinImpl.java'
+      - 'klab.services.runtime/src/main/java/**/ComputationalClosure.java'
+      - 'klab.services.runtime/src/test/java/**/CollectiveSelection*Test.java'
+      - 'klab.services.runtime/src/test/java/**/CohortComputationalClosureTest.java'
+      - '.github/workflows/selected-query-input.yml'
+  pull_request:
+    paths:
+      - 'klab.services.runtime/src/**'
+      - '.github/workflows/selected-query-input.yml'
+permissions:
+  contents: read
+jobs:
+  receipt-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: chmod +x mvnw
+      - name: Original rollback, selected ports, transport and semantic evidence
+        run: ./mvnw -B -nsu -pl klab.services.runtime -am -Dtest=CollectiveSelectionAtomicExecutionTest,CollectiveSelectionExecutionTest,CohortComputationalClosureTest,CollectiveReductionExecutionTest,SemanticExecutionEvidenceTest,SemanticEvidenceTest,ConsequenceInputEvidenceTest -Dsurefire.failIfNoSpecifiedTests=false test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selected-query-input-reports
+          path: '**/target/surefire-reports/'

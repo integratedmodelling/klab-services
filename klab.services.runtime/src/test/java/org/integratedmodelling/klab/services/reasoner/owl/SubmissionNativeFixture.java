@@ -98,6 +98,8 @@ public class SubmissionNativeFixture extends SubmissionOntologyFixture {
       owl.setApplicableObservables(concept("Category"),categoryOnInput?List.of(concept("Region"),concept("Input")):List.of(concept("Region")),ontology);
       ready();field(owl,OWL.class,"mergedReasonerOntology",ontology);field(owl,OWL.class,"scope",scope);
       field(reasoner,ReasonerService.class,"owl",owl);
+      field(reasoner,ReasonerService.class,"semanticProofRestoration",
+          new org.integratedmodelling.klab.services.reasoner.internal.SemanticProofRestoration());
       field(reasoner,ReasonerService.class,"knowledgeRevision",new java.util.concurrent.atomic.AtomicLong(3));
       field(reasoner,ReasonerService.class,"knowledgeReady",true);
       field(reasoner,ReasonerService.class,"worldview",mock(Worldview.class));
@@ -113,7 +115,11 @@ public class SubmissionNativeFixture extends SubmissionOntologyFixture {
       for(var name:List.of("Region","Other","Input","Result","Category","Concrete"))register(leaf(name));
     }
     public void otherIsRegionSubtype() { sub("Other", "Region"); }
-    public KimConceptImpl register(KimConceptImpl c){c.setNamespace("audit");c.finalizeDefinition();syntax.put(c.getUrn(),c);return c;}
+    public KimConceptImpl register(KimConceptImpl c){
+      c.setNamespace("audit");c.finalizeDefinition();
+      // Keep each published expression stable when callers derive another expression from it.
+      syntax.put(c.getUrn(),(KimConceptImpl)KimConceptImpl.copyValue(c));return c;
+    }
     public KimConceptImpl bearer(String predicate){var c=leaf("Region");c.getTraits().add(leaf(predicate));return register(c);}
     public KimObservableImpl request(String head,KimConcept bearer){var c=leaf(head);c.setInherent(bearer);register(c);var o=new KimObservableImpl();o.setNamespace("audit");o.setSemantics(c);var bare=new KimConceptImpl();bare.setName("audit:"+head);bare.setType(c.getType());bare.setInherent(leaf("Region"));register(bare);return o;}
     org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse validate(KimObservable out,KimObservable input){

@@ -22,10 +22,36 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.junit.jupiter.api.Test;
 
 class ObservationViewExportTest {
+  private org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles cycles;
+
+  @org.junit.jupiter.api.AfterEach void closeCycle() { if(cycles!=null)cycles.close(); }
+
+  private org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl admitQueries(
+      RuntimeService runtime,ServiceContextScope scope) {
+    var twin=mock(org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class,RETURNS_DEEP_STUBS);
+    when(scope.getDigitalTwin()).thenReturn(twin);when(scope.getId()).thenReturn("view-export");
+    when(scope.getCurrentTransaction()).thenReturn(null);when(scope.getConsequenceCause()).thenReturn(null);
+    when(scope.getResolutionCycleBinding()).thenReturn(null);
+    when(scope.getResolutionCycle()).thenReturn(null);
+    when(scope.getConsequenceSubmissionAdmission()).thenReturn(null);
+    var user=mock(org.integratedmodelling.klab.api.identities.UserIdentity.class);
+    when(user.getUsername()).thenReturn("view-export-user");when(scope.getUser()).thenReturn(user);
+    doReturn("view-export-runtime").when(runtime).serviceId();
+    doReturn(mock(org.integratedmodelling.klab.api.configuration.Settings.class)).when(runtime).settings();
+    when(scope.withCycleSubscriberCancellation(any())).thenReturn(scope);
+    when(scope.withCancellation(any())).thenReturn(scope);
+    when(scope.withoutConsequenceSubmissionAdmission()).thenReturn(scope);
+    org.integratedmodelling.klab.services.runtime.digitaltwin.CycleFixtureSupport.transparentCycleOverlay(scope);
+    cycles=new org.integratedmodelling.klab.services.runtime.digitaltwin.ResolutionCycles(runtime,scope.getId());
+    when(twin.getResolutionCycles()).thenReturn(cycles);
+    return twin;
+  }
+
   @Test
   void noMatchCompletesAsAnEmptyQueryWithoutMutatingTheSharedEmptySentinel() {
     var runtime = mock(RuntimeService.class, CALLS_REAL_METHODS);
     var scope = mock(ServiceContextScope.class);
+    var twin=admitQueries(runtime,scope);
     var semantics = new org.integratedmodelling.common.knowledge.ConceptImpl();
     semantics.setType(java.util.EnumSet.of(SemanticType.QUALITY));
     var observable = new org.integratedmodelling.common.knowledge.ObservableImpl();
@@ -36,7 +62,8 @@ class ObservationViewExportTest {
     assertTrue(result.isEmpty());
     assertEquals(Observation.QUERY_ID, result.getId());
     assertEquals(Observation.UNASSIGNED_ID, Observation.empty().getId());
-    verify(scope, never()).getDigitalTwin();
+    // Cycle admission accesses the twin; an empty query still performs no graph work.
+    verify(twin, never()).getKnowledgeGraph();
   }
 
   static class CapturingRuntime extends RuntimeService {
@@ -53,6 +80,7 @@ class ObservationViewExportTest {
   void qualityExportRevalidatesSourceAndRetainsTheConsumerContractWithoutResolution() {
     var runtime = mock(CapturingRuntime.class, CALLS_REAL_METHODS);
     var scope = mock(ServiceContextScope.class, RETURNS_DEEP_STUBS);
+    admitQueries(runtime,scope);
     var nativeObservable = mock(Observable.class);
     var requested = mock(Observable.class);
     when(requested.is(SemanticType.QUALITY)).thenReturn(true);

@@ -77,6 +77,13 @@ class ComponentRegistryAuthorityTest {
     var registry = registry(KlabService.Type.REASONER);
     discover(registry);
 
+    assertNull(registry.getAuthority("test.authority", Version.ANY_VERSION, null),
+        "Writer registration must not leak into the published reader view");
+    // This fixture calls the writer helper directly; publish as component registration does.
+    var publish = ComponentRegistry.class.getDeclaredMethod("publishRegistryView");
+    publish.setAccessible(true);
+    publish.invoke(registry);
+
     assertInstanceOf(
         TestAuthority.class, registry.getAuthority("test.authority", Version.ANY_VERSION, null));
   }

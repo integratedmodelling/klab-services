@@ -4,6 +4,11 @@ This contract supersedes the 2026-10-16 dependent-targeting rule. Authored
 abstractness, permitted bearer types, and satisfaction of identity obligations
 are separate semantic questions.
 
+`requires identity` is an integrity constraint, not a request to compute or assign an
+identity. A substantial whose effective abstractness comes from an unmet identity
+requirement becomes eligible after legal concrete identity evidence satisfies it.
+Explicit authored abstractness remains separate and is preserved.
+
 ## Bearer-directed requirements (2026-10-20)
 
 For a dependent observable (a quality or process), `requires identity R` constrains
@@ -102,7 +107,8 @@ Requirements are collected through asserted and classified necessary superclass
 and equivalence closure. Unavailable closure, unmaterialized complex bearer
 syntax, or unavailable satisfiability/subsumption proof leaves eligibility
 unresolved. No individuals are created, no authority lookup is triggered, and no
-rules change for `requires realm`, `requires attribute`, or `requires extent`.
+rules change for the retained `requires realm` clause. `requires attribute` and
+`requires extent` are removed syntax, not additional consequence handlers.
 
 The source translator preserves boolean identity requirements as anonymous OWL
 boolean fillers. General generated union/intersection classes currently use

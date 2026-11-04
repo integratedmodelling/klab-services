@@ -1,0 +1,12 @@
+private namespace consequence.configurations.dependent version 1.0;
+
+model imod:Bearer observing imod:Height in m, imod:Width in m;
+private model 2 as imod:Height in m;
+private model 3 as imod:Width in m;
+
+model imod:Pair observing imod:Summary in m;
+private model 7 as imod:Summary in m;
+private model 11 as imod:ImpliedValue in m;
+
+// No characterization model for Marked: inheritance and implication must
+// follow the detected dependent configuration's actual substantial bearer.

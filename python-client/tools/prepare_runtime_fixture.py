@@ -99,7 +99,8 @@ def _prepare(source, destination, contract):
             raise ValueError("Derived synthetic model must retain the exact numerical expression")
     destination.mkdir()
     # Do not delete or roll back partially written outputs on I/O failure.
-    for name, body in files.items():
+    # Stable failure prefixes on every filesystem; never depend on rglob order.
+    for name, body in sorted(files.items()):
         target = destination.joinpath(*_safe_name(name).parts)
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("xb") as stream:
