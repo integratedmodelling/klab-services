@@ -9,6 +9,11 @@ For development planning and CLI review, see the
 See the [support matrix and release-evidence policy](docs/support-and-release.md)
 for verified environments, bounded features and remaining acceptance gates.
 
+[Read-only source previews](docs/source-previews.md) inspect namespace,
+ontology, strategy-document and behavior source through the existing server parser.
+They are separate from authoring write admission; native DTO compatibility is
+tested, while maintained-server parser acceptance remains a separate gate.
+
 Optional [scientific analysis and recorded provenance](docs/scientific-analysis.md)
 open native rasters as labeled xarray values plus validity and inspect bounded,
 read-only partial neighborhoods without claiming revision-consistent snapshots.

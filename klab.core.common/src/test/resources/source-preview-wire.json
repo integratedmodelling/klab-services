@@ -1,0 +1,6 @@
+[
+  {"kind":"NAMESPACE","document":{"@CLASS":"org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl","urn":"test.preview","serviceId":"resources-fixture","sourceCode":"DTO-only source, not parser acceptance\n","notifications":[]}},
+  {"kind":"ONTOLOGY","document":{"@CLASS":"org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl","urn":"test.preview","serviceId":"resources-fixture","sourceCode":"DTO-only source, not parser acceptance\n","notifications":[]}},
+  {"kind":"OBSERVATION_STRATEGY_DOCUMENT","document":{"@CLASS":"org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl","urn":"test.preview","serviceId":"resources-fixture","sourceCode":"DTO-only source, not parser acceptance\n","notifications":[]}},
+  {"kind":"BEHAVIOR","document":{"@CLASS":"org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl","urn":"test.preview","serviceId":"resources-fixture","sourceCode":"DTO-only source, not parser acceptance\n","notifications":[]}}
+]
