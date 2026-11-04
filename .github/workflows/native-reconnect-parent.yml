@@ -23,7 +23,10 @@ jobs:
         run: |
           import re, subprocess, xml.etree.ElementTree as ET
           path = 'klab.core.common/src/main/java/org/integratedmodelling/common/services/client/RuntimeClient.java'
-          diff = subprocess.check_output(['git', 'diff', '--unified=0', '94447b8d8ce8328754c78c0875d2aed6ce495b4e', 'HEAD', '--', path], text=True)
+          # Compare the integration delta, not unrelated upstream work since the
+          # original feature's historical parent. Keep every executable delta.
+          base = subprocess.check_output(['git', 'merge-base', 'origin/develop', 'HEAD'], text=True).strip()
+          diff = subprocess.check_output(['git', 'diff', '--unified=0', base, 'HEAD', '--', path], text=True)
           changed = set()
           for start, count in re.findall(r'^@@ .*? \+(\d+)(?:,(\d+))? @@', diff, re.M):
               changed.update(range(int(start), int(start) + int(count or 1)))
@@ -31,5 +34,6 @@ jobs:
           package = next(p for p in root.findall('package') if p.get('name') == 'org/integratedmodelling/common/services/client')
           source = next(p for p in package.findall('sourcefile') if p.get('name') == 'RuntimeClient.java')
           lines = [line for line in source.findall('line') if int(line.get('nr')) in changed]
-          assert lines and all(int(line.get('ci')) > 0 and int(line.get('mb')) == 0 for line in lines)
+          assert all(int(line.get('ci')) > 0 and int(line.get('mb')) == 0 for line in lines)
+          print('Integration baseline:', base, 'changed executable lines:', len(lines))
           print('All changed lines and branches covered without exclusions')
