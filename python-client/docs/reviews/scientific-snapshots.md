@@ -13,7 +13,8 @@ within scope. Hosted checks and normal merge are still required.
 
 - Integration: `feature/python-experiment-runner`, base
   `87ef80ff589428f7c088ba60abcb7cf2b88276eb`.
-- Product candidate: `cf7f10db83e2a711bcf0519cac81d422e6c3d345`.
+- Product candidate: `351ef3a789ef4ddd798183ba910bfa1e411a419b`, following
+  original implementation `cf7f10db83e2a711bcf0519cac81d422e6c3d345`.
 - Review includes the complete base diff: map, codec, validation extraction,
   ScientificData methods, example, tests, API/usage docs and CI gate. No inherited
   integration changes. Subsequent review/evidence text does not alter product code.
@@ -49,6 +50,11 @@ Client/credential state is serialized, but the codec is not a general redactor.
 3. **Fixed diagnostic defect:** invalid origin URL leaked a ConfigurationError
    rather than a snapshot-input diagnostic. The existing origin rejection remains
    intact; the codec converts that category to a generic InvalidRequestError.
+4. **Fixed important diagnostic defect in final review:** an unknown primitive
+   label reached the existing decoder and appeared in its error message. A failing
+   sentinel test reproduced this against the prior installed wheel. Snapshot
+   admission now rejects unsupported primitive labels with a generic message before
+   decoding; the regression requires the supplied private value not to be echoed.
 
 No scientific oracle, authorization rule, coverage gate or negative assertion was
 weakened. Unknown schema versions and columns fail, harmless supplied geometry
@@ -61,9 +67,9 @@ Commands run from `python-client`, with an explicitly installed noneditable whee
 
 | Check / command | Status | Establishes / limits |
 |---|---|---|
-| `python -m build --wheel --sdist --outdir <evidence>/final-dist` | Passed | Distribution builds, no publication |
+| `python -m build --wheel --sdist --outdir <evidence>/review-dist` | Passed | Distribution builds, no publication |
 | `python -m pip install --force-reinstall --no-deps <wheel>` and complete source-hash comparison | Passed | All43 package modules exactly match source bytes |
-| `python -m pytest -q tests/unit tests/integration` with the unchanged workflow's coverage targets and `--cov-branch --cov-report=json:<evidence>/final-coverage.json` | Passed | **2817 tests**, one retained Rasterio georeferencing warning; not live Java acceptance |
+| `python -m pytest -q tests/unit tests/integration` with the unchanged workflow's coverage targets and `--cov-branch --cov-report=json:<evidence>/review-coverage.json` | Passed | **2818 tests**, one retained Rasterio georeferencing warning; not live Java acceptance |
 | All16 `tools/check_feature_coverage.py` commands in `.github/workflows/python-client.yml`, same report/base/module arguments | Passed | Unexcluded new-module100% line/branch and changed-code gates; none removed |
 | `python -m ruff check src tests examples tools --select E9,F63,F7,F82` | Passed | Established lint selection |
 | `python -I examples/offline_scientific_read.py` | Passed | Installed SDK, network-forbidden fresh process, exact known values and invalid-schema failure |
@@ -71,8 +77,11 @@ Commands run from `python-client`, with an explicitly installed noneditable whee
 | Independent authored `tests/fixtures/scientific-snapshot-v1.json` | Passed | Loader checked without its own serializer, explicit geometry/slice retained |
 | New real Java/scientific/provider execution | Not applicable | No server code/contract or scientific computation changed; historical S/I evidence remains bounded, not reattributed |
 
-Wheel SHA256: `1a91cffa3942f515c2b1c61dbba092e729e21607c40a63bd6357ff006fdc24f9`.
-Sdist SHA256: `3fc7070b631007a8f3498021f5842ea5701ca28781b3b4789e22488813670d9d`.
+Wheel SHA256: `6e22140a99784c3575c221b865f5d0423fea473bdb91f3de7f0fb91a66a8fe1a`.
+Sdist SHA256: `7e78b393b70616325aa02a23e76ed4fad2762e4cb6ea15b3cb6f362bd0e8d19a`.
+Earlier `final-*` files identify the pre-diagnostic-fix candidate and remain
+historical, not acceptance of the corrected product. The `review-*` files are the
+final product's source-matched acceptance.
 Raw commands, exit statuses, dependency freeze, source identities and earlier
 failures are retained under
 `C:/Users/lumsd/AppData/Local/Temp/opencode/scientific-snapshot-evidence-20261104/`.
