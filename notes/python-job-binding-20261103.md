@@ -1,5 +1,31 @@
 # Process-local sync/async Job binding guard
 
+## Stabilization review (3 November 2026)
+
+Replaced positional binding construction with named fields and split validation
+into job, scope, endpoint, known-service and decoder checks. Existing behavior is
+preserved. The clearer checks exposed a coverage gap: Context-based tests rejected
+endpoint drift earlier in scope validation, leaving the standalone endpoint guard
+unexercised. Added sync/async string-scope cancellation regressions for Runtime ID,
+origin and credential drift on Runtime and Resolver Jobs; all reject before I/O.
+
+Verification on Python 3.12: 2,404 unit/integration tests pass; `_job_binding.py`
+has 54 statements and 18 branch outcomes, all covered. Repository-selected Ruff
+checks pass. This pass does not claim a new full Java or live acceptance result.
+
+The build diagnosis now has upstream context: `develop` commit
+`0e77650abc2bfb5db072fc00eb4f5a44f2d2cd19` deliberately removed `requires extent`
+and `requires attribute`, documented in `docs/ONTOLOGY_LANGUAGE.md` and
+`docs/IDENTITY_REQUIREMENTS.md`. Current upstream `919dcf4ba92d843cf4c31fdecc5dedd55f3ab920`
+build run 41661233832 passes packaging with tests skipped. This is an integration
+and semantic compatibility task, not proof of an unexplained broken artifact.
+An in-memory merge of the accepted Python base with that upstream has conflicts
+in AcceptedSemanticRuntime, ResourcesProvider and RuntimeService. No resolution
+or scientific-input migration is accepted by this note. Jenkins console access
+returns HTTP 403; its separate failure cause remains unknown.
+
+## Historical implementation verification
+
 Base: `e09a7de7cac6b48526fd8b7ac72879abb36a77a3` (merged #132).
 Independent slice; does not depend on unmerged agent/graph/documentation PRs.
 Current branch includes the separately reviewed fixture-order prerequisite
