@@ -1,0 +1,21 @@
+name: H2GIS host dependency compatibility
+on:
+  push:
+    paths: ['pom.xml', 'klab.core.services/pom.xml', 'klab.core.services/src/test/java/**/H2GisDependencyCompatibilityTest.java', '.github/workflows/h2gis-host.yml']
+  pull_request:
+    paths: ['pom.xml', 'klab.core.services/pom.xml', 'klab.core.services/src/test/java/**/H2GisDependencyCompatibilityTest.java', '.github/workflows/h2gis-host.yml']
+permissions:
+  contents: read
+jobs:
+  host-spatial-extension:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: chmod +x mvnw
+      - run: ./mvnw -B -nsu -pl klab.core.services -am -Dtest=H2GisDependencyCompatibilityTest -Dsurefire.failIfNoSpecifiedTests=false test
