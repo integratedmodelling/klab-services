@@ -1,12 +1,17 @@
 # Python behavior/agent lifecycle: historical transport audit
 
-Current PR111 development implements only the separately labelled
-[source-only preview](agent-source-preview.md). The following original audit is
-retained; full lifecycle remains incomplete, never inferred from source translation.
+PR111 is **MERGED** at `19668515a7307aec4b1e671207f5b2d595572a14`, implementing
+only the separately labelled [source-only preview](agent-source-preview.md).
+Full execution/control remains issue125, with internal Python work as well as
+transport/provisioning decisions. The [current runnable handoff](../../notes/issue-125-agent-handoff.md)
+records exact source, commands, Java/Python evidence and the actual current
+language-dependency compilation failure. The original audit below is historical;
+its PR-draft instructions do not describe the present PR state.
 
-**BLOCKED full lifecycle; not implemented or accepted.** Audit source base
+**Historical audit: full lifecycle was not implemented or accepted.** Audit source base
 `bb4f62ce01bb41d93f506ee34c19687b401d8640`, under the user's explicit instruction
-to defer blockers and continue to other features. Keep this PR draft/unmerged.
+to defer blockers and continue to other features. Its then-current instruction was
+to keep the audit draft/unmerged; later preview delivery did not complete full lifecycle.
 
 ## Existing implementation is not an absent feature
 
