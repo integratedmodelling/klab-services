@@ -9,11 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.model.LocalFileHeader;
@@ -26,8 +24,6 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.CredentialsProvider;
@@ -50,14 +46,15 @@ import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.impl.HistogramImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIView;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
@@ -93,8 +90,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           queryResources(
               scope,
               ResourcesService.class,
-              service ->
-                  service.resolve(urn, KlabAsset.KnowledgeClass.COMPONENT, scope));
+              service -> service.resolve(urn, KlabAsset.KnowledgeClass.COMPONENT, scope));
 
       if (!result.isEmpty()) {
         if (targetService.getComponentRegistry().loadComponents(result, scope)) {
@@ -110,27 +106,42 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     /**
      * Resolve an authority into a Reasoner, installing its component from a Resources service when
-     * the authority is advertised as embeddable. Connected owner-authorized Resources
-     * services participate through COMPONENT resolution; worldview hosting is unrelated.
-     * Locally installed providers remain available without discovery.
+     * the authority is advertised as embeddable. Connected owner-authorized Resources services
+     * participate through COMPONENT resolution; worldview hosting is unrelated. Locally installed
+     * providers remain available without discovery.
      */
     public static org.integratedmodelling.klab.api.services.Authority resolveAuthority(
-        Worldview.AuthorityBinding binding, Scope scope, BaseService targetService, Worldview worldview) {
+        Worldview.AuthorityBinding binding,
+        Scope scope,
+        BaseService targetService,
+        Worldview worldview) {
       var registry = targetService.getComponentRegistry();
       var provider = registry.getAuthority(binding, scope);
       if (provider != null || !binding.provider().embeddable()) return provider;
-      var resolution = org.integratedmodelling.klab.components.AuthorityComponentResolver.resolve(
-          binding.provider().urn() + "@" + binding.provider().version(), scope);
-      var exact = resolution.components().stream()
-          .filter(component -> component.id().equals(binding.componentUrn())
-              && component.version().equals(binding.componentVersion())
-              && component.authorities().contains(binding.provider())).toList();
-      if (exact.size() > 1) throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
-          "Ambiguous authority component content for " + binding.provider().urn());
+      var resolution =
+          org.integratedmodelling.klab.components.AuthorityComponentResolver.resolve(
+              binding.provider().urn() + "@" + binding.provider().version(), scope);
+      var exact =
+          resolution.components().stream()
+              .filter(
+                  component ->
+                      component.id().equals(binding.componentUrn())
+                          && component.version().equals(binding.componentVersion())
+                          && component.authorities().contains(binding.provider()))
+              .toList();
+      if (exact.size() > 1)
+        throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
+            "Ambiguous authority component content for " + binding.provider().urn());
       if (exact.size() == 1) {
         var resources = resolution.resources();
-        resources.getResults().removeIf(resource -> !binding.componentUrn().equals(Version.splitVersion(resource.getResourceUrn()).getFirst())
-            || !binding.componentVersion().equals(resource.getResourceVersion()));
+        resources
+            .getResults()
+            .removeIf(
+                resource ->
+                    !binding
+                            .componentUrn()
+                            .equals(Version.splitVersion(resource.getResourceUrn()).getFirst())
+                        || !binding.componentVersion().equals(resource.getResourceVersion()));
         if (!resources.isEmpty() && loadAuthorityComponents(resources, scope, registry))
           return registry.getAuthority(binding, scope);
       }
@@ -149,7 +160,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
               .getComponentRegistry()
               .getAuthority(coordinates.getFirst(), coordinates.getSecond(), scope);
       if (ret != null) return ret;
-      var resolved = org.integratedmodelling.klab.components.AuthorityComponentResolver.resolve(urn, scope);
+      var resolved =
+          org.integratedmodelling.klab.components.AuthorityComponentResolver.resolve(urn, scope);
       if (resolved.components().size() > 1)
         throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
             "Ambiguous authority component content for " + coordinates.getFirst());
@@ -160,20 +172,39 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
               "Failed to load component for authority " + urn + ": " + result.getNotifications());
         }
         var component = resolved.components().getFirst();
-        var authorities = component.authorities().stream().filter(authority ->
-            coordinates.getFirst().equals(authority.urn())
-                && (!urn.contains("@") || coordinates.getSecond().equals(authority.version()))).toList();
+        var authorities =
+            component.authorities().stream()
+                .filter(
+                    authority ->
+                        coordinates.getFirst().equals(authority.urn())
+                            && (!urn.contains("@")
+                                || coordinates.getSecond().equals(authority.version())))
+                .toList();
         if (authorities.size() != 1)
           throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
               "Cannot honor an exact authority descriptor for " + urn);
-        return targetService.getComponentRegistry().getAuthority(new Worldview.AuthorityBinding(
-            coordinates.getFirst(), "", "", 0, 0, "", authorities.getFirst(),
-            component.id(), component.version(), null), scope);
+        return targetService
+            .getComponentRegistry()
+            .getAuthority(
+                new Worldview.AuthorityBinding(
+                    coordinates.getFirst(),
+                    "",
+                    "",
+                    0,
+                    0,
+                    "",
+                    authorities.getFirst(),
+                    component.id(),
+                    component.version(),
+                    null),
+                scope);
       }
       return result.isEmpty() ? ret : null;
     }
 
-    private static boolean loadAuthorityComponents(ResourceSet resources, Scope scope,
+    private static boolean loadAuthorityComponents(
+        ResourceSet resources,
+        Scope scope,
         org.integratedmodelling.klab.components.ComponentRegistry registry) {
       synchronized (registry) {
         for (var resource : resources.getResults()) {
@@ -182,8 +213,11 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           // The legacy loader accepts compatible installed components. Authority binding is exact.
           if (installed != null && !installed.version().equals(requested.getSecond()))
             throw new org.integratedmodelling.klab.api.exceptions.KlabValidationException(
-                "Cannot honor exact authority component " + resource.getResourceUrn()
-                    + ": installed compatible version " + installed.version() + " would be selected");
+                "Cannot honor exact authority component "
+                    + resource.getResourceUrn()
+                    + ": installed compatible version "
+                    + installed.version()
+                    + " would be selected");
         }
         return registry.loadComponents(resources, scope);
       }
@@ -532,8 +566,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       }
       try (var input =
           new java.io.DataInputStream(
-              new java.io.ByteArrayInputStream(
-                  java.util.Base64.getDecoder().decode(histogram)))) {
+              new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode(histogram)))) {
         var layout = com.dynatrace.dynahist.layout.Layout.readWithTypeInfo(input);
         return com.dynatrace.dynahist.Histogram.readAsDynamic(layout, input);
       } catch (IllegalArgumentException | java.io.IOException e) {
@@ -541,9 +574,12 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       }
     }
 
-    public static String serializeHistogramMap(
-        Map<Long, ? extends Histogram> histograms) {
-      return Json.asString(histograms == null ? Map.of() : histograms);
+    public static String serializeHistogramMap(Map<Long, ? extends Histogram> histograms) {
+      var snapshots = new TreeMap<Long, Histogram>();
+      if (histograms != null)
+        histograms.forEach(
+            (time, histogram) -> snapshots.put(time, Histogram.forTransport(histogram)));
+      return Json.asString(snapshots);
     }
 
     public static Map<Long, Histogram> deserializeHistogramMap(String histograms) {
@@ -620,9 +656,11 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     private static final HttpClient HTTP_CLIENT =
         HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build();
 
-    private static final MavenSnapshotRepository SNAPSHOTS = new MavenSnapshotRepository(
-        HTTP_CLIENT, System::nanoTime,
-        Duration.ofMinutes(Long.getLong("maven.snapshot.cache.minutes", 20L)));
+    private static final MavenSnapshotRepository SNAPSHOTS =
+        new MavenSnapshotRepository(
+            HTTP_CLIENT,
+            System::nanoTime,
+            Duration.ofMinutes(Long.getLong("maven.snapshot.cache.minutes", 20L)));
 
     /** Maven coordinates holder class */
     public static class MavenCoordinates {
@@ -1511,7 +1549,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       return ret;
     }
 
-    public static Modifications commitChanges(File localRepository, String commitMessage, Scope scope) {
+    public static Modifications commitChanges(
+        File localRepository, String commitMessage, Scope scope) {
 
       Modifications ret = new Modifications();
       ret.setRepositoryName(Files.getFileBaseName(localRepository));
@@ -1567,40 +1606,66 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       return ret;
     }
 
-    private record CredentialContext(org.integratedmodelling.common.authentication.CredentialVault vault,
-                                     Scope caller, String id, boolean nativeGit) {}
+    private record CredentialContext(
+        org.integratedmodelling.common.authentication.CredentialVault vault,
+        Scope caller,
+        String id,
+        boolean nativeGit) {}
+
     private static final ThreadLocal<CredentialContext> credentialContext = new ThreadLocal<>();
 
-    /** Bind the owning service and requesting principal for one synchronous repository operation. */
-    public static <T> T withCredentials(org.integratedmodelling.klab.services.base.BaseService service,
-        Scope caller, String id, java.util.function.Supplier<T> operation) {
+    /**
+     * Bind the owning service and requesting principal for one synchronous repository operation.
+     */
+    public static <T> T withCredentials(
+        org.integratedmodelling.klab.services.base.BaseService service,
+        Scope caller,
+        String id,
+        java.util.function.Supplier<T> operation) {
       if (caller == null) throw new SecurityException("A repository operation requires a caller");
       var previous = credentialContext.get();
-      credentialContext.set(new CredentialContext(service.credentialVault(), caller, id, service.isLocal()));
-      try { return operation.get(); }
-      finally { if (previous == null) credentialContext.remove(); else credentialContext.set(previous); }
+      credentialContext.set(
+          new CredentialContext(service.credentialVault(), caller, id, service.isLocal()));
+      try {
+        return operation.get();
+      } finally {
+        if (previous == null) credentialContext.remove();
+        else credentialContext.set(previous);
+      }
     }
 
-    private static ExternalAuthenticationCredentials resolveCredentials(String endpoint, Scope scope, String storedId) {
+    private static ExternalAuthenticationCredentials resolveCredentials(
+        String endpoint, Scope scope, String storedId) {
       var context = credentialContext.get();
-      if (context != null) return context.vault().resolve(
-          context.id() == null || context.id().isBlank() ? storedId : context.id(), endpoint, context.caller());
+      if (context != null)
+        return context
+            .vault()
+            .resolve(
+                context.id() == null || context.id().isBlank() ? storedId : context.id(),
+                endpoint,
+                context.caller());
       if (scope == null) throw new SecurityException("A repository operation requires a caller");
-      for (var service : scope.getServices(org.integratedmodelling.klab.api.services.KlabService.class)) {
+      for (var service :
+          scope.getServices(org.integratedmodelling.klab.api.services.KlabService.class)) {
         if (service instanceof org.integratedmodelling.klab.services.base.BaseService local
-            && (local.serviceScope() == scope || scope instanceof org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl reactive
-                && local.serviceId().equals(reactive.getHostServiceId()))) {
+            && (local.serviceScope() == scope
+                || scope
+                        instanceof
+                        org.integratedmodelling.common.authentication.scope
+                                .AbstractReactiveScopeImpl
+                            reactive
+                    && local.serviceId().equals(reactive.getHostServiceId()))) {
           return local.credentialVault().resolve(storedId, endpoint, scope);
         }
       }
       if (scope instanceof org.integratedmodelling.klab.api.scope.ServiceSideScope
           || scope instanceof org.integratedmodelling.klab.api.scope.ServiceScope)
         throw new SecurityException("The owning service credential vault is unavailable");
-      return org.integratedmodelling.common.authentication.Authentication.INSTANCE.getCredentials(endpoint, scope);
+      return org.integratedmodelling.common.authentication.Authentication.INSTANCE.getCredentials(
+          endpoint, scope);
     }
 
-    static CredentialsProvider getCredentialsProvider(
-        org.eclipse.jgit.api.Git git, Scope scope) {
+    static CredentialsProvider getCredentialsProvider(org.eclipse.jgit.api.Git git, Scope scope) {
 
       CredentialsProvider ret = null;
       ExternalAuthenticationCredentials credentials = null;
@@ -1609,7 +1674,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           if ("origin".equals(remoteConfig.getName()) && !remoteConfig.getURIs().isEmpty()) {
             for (var uri : remoteConfig.getURIs()) {
               credentials =
-                  resolveCredentials(uri.toString(), scope,
+                  resolveCredentials(
+                      uri.toString(),
+                      scope,
                       git.getRepository().getConfig().getString("klab", null, "credentialId"));
               if (credentials != null) {
                 break;
@@ -1624,71 +1691,117 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       var provider = getCredentialsProvider(credentials);
       if (credentials != null && credentials.getId() != null) {
         try {
-          git.getRepository().getConfig().setString("klab", null, "credentialId", credentials.getId());
+          git.getRepository()
+              .getConfig()
+              .setString("klab", null, "credentialId", credentials.getId());
           git.getRepository().getConfig().save();
-        } catch (IOException error) { throw new KlabIOException(error); }
+        } catch (IOException error) {
+          throw new KlabIOException(error);
+        }
       }
-      if (provider == null && credentialContext.get() != null && credentialContext.get().nativeGit()) {
+      if (provider == null
+          && credentialContext.get() != null
+          && credentialContext.get().nativeGit()) {
         var origin = git.getRepository().getConfig().getString("remote", "origin", "url");
-        if (origin != null) provider = getCredentialsProvider(NativeGitCredentials.resolve(origin, git.getRepository().getWorkTree()));
+        if (origin != null)
+          provider =
+              getCredentialsProvider(
+                  NativeGitCredentials.resolve(origin, git.getRepository().getWorkTree()));
       }
       return provider;
     }
 
     /** Check local publication eligibility before committing or contacting the origin. */
     public static void requireWriteCredentials(File directory, Scope caller) {
-      try (var repository = openRepository(directory); var git = new org.eclipse.jgit.api.Git(repository)) {
+      try (var repository = openRepository(directory);
+          var git = new org.eclipse.jgit.api.Git(repository)) {
         if (getCredentialsProvider(git, caller) == null)
-          throw new SecurityException("Publishing or committing requires an authorized Git credential set or installed Git credentials");
-      } catch (IOException error) { throw new KlabIOException(error); }
+          throw new SecurityException(
+              "Publishing or committing requires an authorized Git credential set or installed Git credentials");
+      } catch (IOException error) {
+        throw new KlabIOException(error);
+      }
     }
 
     public static String repositoryName(String coordinates) {
       String path;
       try {
         path = new org.eclipse.jgit.transport.URIish(coordinates.split("#", 2)[0]).getPath();
-      } catch (java.net.URISyntaxException error) { throw new IllegalArgumentException("Invalid Git repository URL", error); }
-      if (path == null || path.endsWith("/")) throw new IllegalArgumentException("Invalid Git repository URL");
+      } catch (java.net.URISyntaxException error) {
+        throw new IllegalArgumentException("Invalid Git repository URL", error);
+      }
+      if (path == null || path.endsWith("/"))
+        throw new IllegalArgumentException("Invalid Git repository URL");
       var name = path.substring(path.lastIndexOf('/') + 1);
       return name.endsWith(".git") ? name.substring(0, name.length() - 4) : name;
     }
 
-    private static final class EndpointCredentialsProvider extends UsernamePasswordCredentialsProvider {
+    private static final class EndpointCredentialsProvider
+        extends UsernamePasswordCredentialsProvider {
       private final String endpoint;
+
       EndpointCredentialsProvider(ExternalAuthenticationCredentials credentials) {
-        super(credentials.getParameters().get("username"), credentials.getParameters().get("password"));
+        super(
+            credentials.getParameters().get("username"),
+            credentials.getParameters().get("password"));
         endpoint = credentials.getEndpoint();
       }
+
       @Override
-      public boolean get(org.eclipse.jgit.transport.URIish uri, org.eclipse.jgit.transport.CredentialItem... items) {
-        if (!org.integratedmodelling.common.authentication.CredentialVault.matchesEndpoint(endpoint, uri.toString()))
+      public boolean get(
+          org.eclipse.jgit.transport.URIish uri,
+          org.eclipse.jgit.transport.CredentialItem... items) {
+        if (!org.integratedmodelling.common.authentication.CredentialVault.matchesEndpoint(
+            endpoint, uri.toString()))
           throw new SecurityException("Credential destination does not match its endpoint");
         return super.get(uri, items);
       }
     }
 
-    private static void secureTransport(org.eclipse.jgit.transport.Transport transport, CredentialsProvider provider) {
+    private static void secureTransport(
+        org.eclipse.jgit.transport.Transport transport, CredentialsProvider provider) {
       if (!(provider instanceof EndpointCredentialsProvider bound)) return;
       if (!(transport instanceof org.eclipse.jgit.transport.TransportHttp http))
         throw new SecurityException("HTTP credentials require an HTTP transport");
       var delegate = http.getHttpConnectionFactory();
       // Check every connection, including redirects after authentication has already been cached.
-      http.setHttpConnectionFactory(new org.eclipse.jgit.transport.http.HttpConnectionFactory() {
-        private void check(java.net.URL url) throws java.io.IOException {
-          try {
-            var uri = url.toURI();
-            if (uri.getUserInfo() != null || !org.integratedmodelling.common.authentication.CredentialVault.matchesEndpoint(
-                bound.endpoint, new java.net.URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), null, null).toString()))
-              throw new java.io.IOException("Credential transport destination is outside its configured endpoint");
-          } catch (java.net.URISyntaxException e) { throw new java.io.IOException("Invalid credential transport destination"); }
-        }
-        public org.eclipse.jgit.transport.http.HttpConnection create(java.net.URL url) throws java.io.IOException {
-          check(url); return delegate.create(url);
-        }
-        public org.eclipse.jgit.transport.http.HttpConnection create(java.net.URL url, java.net.Proxy proxy) throws java.io.IOException {
-          check(url); return delegate.create(url, proxy);
-        }
-      });
+      http.setHttpConnectionFactory(
+          new org.eclipse.jgit.transport.http.HttpConnectionFactory() {
+            private void check(java.net.URL url) throws java.io.IOException {
+              try {
+                var uri = url.toURI();
+                if (uri.getUserInfo() != null
+                    || !org.integratedmodelling.common.authentication.CredentialVault
+                        .matchesEndpoint(
+                            bound.endpoint,
+                            new java.net.URI(
+                                    uri.getScheme(),
+                                    null,
+                                    uri.getHost(),
+                                    uri.getPort(),
+                                    uri.getPath(),
+                                    null,
+                                    null)
+                                .toString()))
+                  throw new java.io.IOException(
+                      "Credential transport destination is outside its configured endpoint");
+              } catch (java.net.URISyntaxException e) {
+                throw new java.io.IOException("Invalid credential transport destination");
+              }
+            }
+
+            public org.eclipse.jgit.transport.http.HttpConnection create(java.net.URL url)
+                throws java.io.IOException {
+              check(url);
+              return delegate.create(url);
+            }
+
+            public org.eclipse.jgit.transport.http.HttpConnection create(
+                java.net.URL url, java.net.Proxy proxy) throws java.io.IOException {
+              check(url);
+              return delegate.create(url, proxy);
+            }
+          });
     }
 
     public static CredentialsProvider getCredentialsProvider(
@@ -1700,9 +1813,15 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             switch (credentials.getScheme()) {
               case ExternalAuthenticationCredentials.BASIC ->
                   new EndpointCredentialsProvider(credentials);
-              case "bearer" -> throw new IllegalArgumentException("Git requires a basic/token schema with username and password fields");
-              case "ssh" -> throw new IllegalArgumentException("Stored SSH keys require an SSH transport adapter; use HTTPS tokens for Git");
-              default -> throw new IllegalArgumentException("Credential schema has no Git authentication adapter");
+              case "bearer" ->
+                  throw new IllegalArgumentException(
+                      "Git requires a basic/token schema with username and password fields");
+              case "ssh" ->
+                  throw new IllegalArgumentException(
+                      "Stored SSH keys require an SSH transport adapter; use HTTPS tokens for Git");
+              default ->
+                  throw new IllegalArgumentException(
+                      "Credential schema has no Git authentication adapter");
             };
       }
       return ret;
@@ -1896,8 +2015,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                       ? "Committed by k.LAB resources service"
                       : commitMessage);
       if (scope instanceof UserScope userScope && userScope.getUser() != null) {
-        commit.setAuthor(
-            userScope.getUser().getUsername(), userScope.getUser().getEmailAddress());
+        commit.setAuthor(userScope.getUser().getUsername(), userScope.getUser().getEmailAddress());
       }
       commit.call();
       ret.getNotifications()
@@ -1951,10 +2069,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             ret.getNotifications()
                 .add(
                     Notification.error(
-                        "Push to origin failed for "
-                            + update.getRemoteName()
-                            + ": "
-                            + message,
+                        "Push to origin failed for " + update.getRemoteName() + ": " + message,
                         UIView.Interactivity.DISPLAY));
           }
         }
@@ -2191,7 +2306,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       branch = normalizeBranchName(branch);
       if (branch.isBlank() || !Repository.isValidRefName("refs/heads/" + branch)) {
         ret.getNotifications()
-            .add(Notification.error("A valid branch name is required to merge changes", UIView.Interactivity.DISPLAY));
+            .add(
+                Notification.error(
+                    "A valid branch name is required to merge changes",
+                    UIView.Interactivity.DISPLAY));
         return ret;
       }
 
@@ -2230,7 +2348,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           if (!mergeResult.getMergeStatus().isSuccessful()) {
             resetHard(git, oldCommit);
             ret.getNotifications()
-                .add(Notification.error(formatMergeFailure(localRepository, mergeResult), UIView.Interactivity.DISPLAY));
+                .add(
+                    Notification.error(
+                        formatMergeFailure(localRepository, mergeResult),
+                        UIView.Interactivity.DISPLAY));
             return ret;
           }
 
@@ -2277,7 +2398,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       branch = normalizeBranchName(branch);
       if (branch.isBlank() || !Repository.isValidRefName("refs/heads/" + branch)) {
         ret.getNotifications()
-            .add(Notification.error("A valid branch name is required to switch branches", UIView.Interactivity.DISPLAY));
+            .add(
+                Notification.error(
+                    "A valid branch name is required to switch branches",
+                    UIView.Interactivity.DISPLAY));
         return ret;
       }
 
@@ -2317,13 +2441,63 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
     }
 
     /**
-     * Perform a hard reset, bringing the current repository to the last commit.
+     * Discard local commits and working changes, reset to the current branch on origin, then
+     * fetch/merge again. Fetch and validate the origin branch before discarding local work.
      *
      * @param localRepository
      * @return Modifications record. Empty notifications means all OK. May have no errors but
      *     warnings, no info. Use {@link Notifications#hasErrors(Collection)} on the notifications
      *     element to check.
      */
+    public static Modifications resetToOriginAndFetch(File localRepository, Scope scope) {
+      Modifications ret = new Modifications();
+      ret.setRepositoryName(Files.getFileBaseName(localRepository));
+      try (var repo = openRepository(localRepository);
+          var git = new org.eclipse.jgit.api.Git(repo)) {
+        String branch = repo.getFullBranch();
+        if (branch == null || !branch.startsWith("refs/heads/")) {
+          throw new IOException("Cannot reset a repository with a detached or unborn HEAD");
+        }
+        // Fetch before discarding anything, so an unavailable origin leaves local work intact.
+        fetchOrigin(git, scope, ret);
+        String target = "refs/remotes/origin/" + branch.substring("refs/heads/".length());
+        if (repo.resolve(target + "^{commit}") == null) {
+          throw new IOException("No origin commit for current branch " + branch);
+        }
+        ObjectId oldTree = repo.resolve("HEAD^{tree}");
+        var status = git.status().call();
+        compileResetModifications(status, ret);
+        for (var path : status.getConflicting()) ret.addModifiedPath(path);
+        git.reset().setMode(ResetCommand.ResetType.HARD).setRef(target).call();
+        for (var path : git.clean().setForce(true).setCleanDirectories(true).setIgnore(true).call()) {
+          ret.addRemovedPath(path);
+        }
+        var pulled = fetchAndMerge(localRepository, scope);
+        ret.getNotifications().addAll(pulled.getNotifications());
+        compileDiff(repo, git, oldTree, ret);
+        // A path may be affected by both the reset and the pull. Report its final state once.
+        var paths = new TreeSet<String>();
+        paths.addAll(ret.getAddedPaths());
+        paths.addAll(ret.getModifiedPaths());
+        paths.addAll(ret.getRemovedPaths());
+        for (var path : paths) {
+          if (new File(localRepository, path).exists()) {
+            ret.getRemovedPaths().remove(path);
+            if (ret.getAddedPaths().contains(path)) ret.getModifiedPaths().remove(path);
+            else ret.addModifiedPath(path);
+          } else {
+            ret.getAddedPaths().remove(path);
+            ret.getModifiedPaths().remove(path);
+            ret.addRemovedPath(path);
+          }
+        }
+      } catch (Exception e) {
+        ret.getNotifications().add(Notification.error(e));
+      }
+      return ret;
+    }
+
+    /** Discard uncommitted changes while retaining the current local HEAD. */
     public static Modifications hardReset(File localRepository) {
 
       Modifications ret = new Modifications();
@@ -2357,11 +2531,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             ret.addRemovedPath(path);
           }
           if (!cleanedPaths.isEmpty()) {
-            git.clean()
-                .setForce(true)
-                .setCleanDirectories(true)
-                .setIgnore(true)
-                .call();
+            git.clean().setForce(true).setCleanDirectories(true).setIgnore(true).call();
           }
           ret.getNotifications()
               .add(
@@ -2401,7 +2571,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
       String url = pdefs[0];
 
       var credentials = resolveCredentials(url, scope, null);
-      if (credentials == null && credentialContext.get() != null && credentialContext.get().nativeGit())
+      if (credentials == null
+          && credentialContext.get() != null
+          && credentialContext.get().nativeGit())
         credentials = NativeGitCredentials.resolve(url, directory);
       CredentialsProvider credentialsProvider = getCredentialsProvider(credentials);
 
@@ -2424,13 +2596,17 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
           org.eclipse.jgit.api.Git.cloneRepository()
               .setURI(url)
               .setCredentialsProvider(credentialsProvider)
-              .setTransportConfigCallback(transport -> secureTransport(transport, credentialsProvider))
+              .setTransportConfigCallback(
+                  transport -> secureTransport(transport, credentialsProvider))
               .setBranch(branch)
               .setDirectory(pdir)
               .call()) {
 
         if (credentials != null && credentials.getId() != null) {
-          result.getRepository().getConfig().setString("klab", null, "credentialId", credentials.getId());
+          result
+              .getRepository()
+              .getConfig()
+              .setString("klab", null, "credentialId", credentials.getId());
           result.getRepository().getConfig().save();
         }
         Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());

@@ -1,0 +1,58 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="semantic-consequences" name="An observation can make further knowledge actionable">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#FFFFFF" adaptiveColors="auto">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="An observation can make further knowledge actionable" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=40;align=left;verticalAlign=middle;spacing=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="25" width="1520" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="ILLUSTRATIVE RULES  /  Continue the erosion example in the same context and observer perspective" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=23;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="112" width="1520" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="erosion" value="&lt;b&gt;1  COMMITTED OBSERVATION&lt;/b&gt;&lt;br&gt;&lt;br&gt;A soil-erosion process&lt;br&gt;affects a hillslope." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=25;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="225" width="420" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="role" value="&lt;b&gt;2  CONFERRED ROLE&lt;/b&gt;&lt;br&gt;&lt;br&gt;The affected hillslope&lt;br&gt;has a sediment-source role." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFF2D9;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=25;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="590" y="225" width="420" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="request" value="&lt;b&gt;3  IMPLIED REQUEST&lt;/b&gt;&lt;br&gt;&lt;br&gt;Observe sediment export&lt;br&gt;from that hillslope." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFF2D9;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=25;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="225" width="420" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="confers" value="confers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=0;" edge="1" source="erosion" target="role" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="implies" value="implies" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=0;" edge="1" source="role" target="request" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="resolution" value="&lt;b&gt;4  RESOLUTION&lt;/b&gt;&lt;br&gt;&lt;br&gt;Find an export method&lt;br&gt;and transport / retention evidence." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=25;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="565" width="420" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="contextualization" value="&lt;b&gt;5  CONTEXTUALIZATION&lt;/b&gt;&lt;br&gt;&lt;br&gt;Compute export using the&lt;br&gt;selected scientific method." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=25;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="590" y="565" width="420" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="result" value="&lt;b&gt;6  DIGITAL-TWIN COMMIT&lt;/b&gt;&lt;br&gt;&lt;br&gt;Add the export observation&lt;br&gt;with its own provenance." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=25;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="565" width="420" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="resolve-request" value="new request" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=1;" edge="1" source="request" target="resolution" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="run" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=0;" edge="1" source="resolution" target="contextualization" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="save" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=0;" edge="1" source="contextualization" target="result" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="guard" value="&lt;b&gt;Meaning initiates the question; a method and evidence establish the value.&lt;/b&gt;" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="450" width="950" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="Dashed arrow: a new observation request. Further commits can trigger further consequences." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=21;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="790" width="1520" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" value="Illustrative rules, not supplied ontology axioms. Soil loss does not establish sediment delivery to a river." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="840" width="1520" height="45" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

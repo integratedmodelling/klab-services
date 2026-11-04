@@ -85,6 +85,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification
     )
       }
     } catch ( Throwable t ) {
+      org.integratedmodelling.klab.runtime.computation.ScalarComputationGroovy.diagnoseFailure(t, __self, event, scope)
       __self.getNotifications ( ).add ( Notification.error ( t .getMessage ( ), t ) )
     return false;
     }

@@ -102,10 +102,12 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
 
   /**
    * Participants supplied when creating a relationship. Directed relationships use source, target
-   * order; bonds have no participant order. Durable participants are obtained through
-   * {@link ContextScope#getRelationshipParticipants(Observation)}.
+   * order; bonds have no participant order. Durable participants are obtained through {@link
+   * ContextScope#getRelationshipParticipants(Observation)}.
    */
-  default List<Observation> getParticipants() { return List.of(); }
+  default List<Observation> getParticipants() {
+    return List.of();
+  }
 
   /**
    * A builder for creating new observations is only created by a context scope, which communicates
@@ -387,17 +389,22 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     ret.setObservable(observation.getObservable());
     // Participant references must retain transaction-local IDs across service transport, without
     // recursively serializing the participant's own relationships.
-    ret.setParticipants(observation.getParticipants().stream().map(participant -> {
-      var reference = new ObservationImpl();
-      reference.setId(participant.getId());
-      reference.setUrn(participant.getUrn());
-      reference.setObservable(participant.getObservable());
-      return (Observation) reference;
-    }).toList());
+    ret.setParticipants(
+        observation.getParticipants().stream()
+            .map(
+                participant -> {
+                  var reference = new ObservationImpl();
+                  reference.setId(participant.getId());
+                  reference.setUrn(participant.getUrn());
+                  reference.setObservable(participant.getObservable());
+                  return (Observation) reference;
+                })
+            .toList());
     ret.mergeAnnotations(observation);
     ret.setGeometry(Geometry.forTransport(observation.getGeometry()));
     if (observation.getObservable() != null && observation.getObservable().is(SemanticType.AGENT)) {
-      ret.setPerceivedGeometry(Geometry.forTransport(observation.geometry(GeometryRelationship.PERCEIVES)));
+      ret.setPerceivedGeometry(
+          Geometry.forTransport(observation.geometry(GeometryRelationship.PERCEIVES)));
     }
     var metadata = org.integratedmodelling.klab.api.data.Metadata.create();
     observation
@@ -407,7 +414,11 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
     ret.setId(observation.getId());
     ret.setUrn(observation.getUrn());
     ret.setValue(Geometry.valueForTransport(observation.getValue()));
-    ret.setHistograms(observation.getHistograms());
+    var histograms = new java.util.TreeMap<Long, Histogram>();
+    observation
+        .getHistograms()
+        .forEach((time, histogram) -> histograms.put(time, Histogram.forTransport(histogram)));
+    ret.setHistograms(histograms);
     ret.setName(observation.getName());
     ret.setResolvedCoverage(observation.getResolvedCoverage());
     ret.setEventTimestamps(new java.util.ArrayList<>(observation.getEventTimestamps()));

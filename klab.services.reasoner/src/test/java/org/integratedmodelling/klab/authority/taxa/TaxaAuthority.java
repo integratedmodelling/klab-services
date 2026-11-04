@@ -4,6 +4,10 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.services.Authority;
 @org.integratedmodelling.klab.api.services.reasoner.Authority(urn="klab.authority.taxa", version="1.0.0", embeddable=true, searchable=true, subAuthorities={"SPECIES"})
 public class TaxaAuthority implements Authority {
+  public TaxaAuthority() {
+    if (Boolean.getBoolean("klab.test.authority.failConstruction"))
+      throw new IllegalStateException("Authority fixture cannot boot");
+  }
   public String getUrn() { return "klab.authority.taxa"; }
   public CachePolicy getCachePolicy() { return new CachePolicy("fixture-1",Long.getLong("klab.test.authority.identitySeconds",Long.MAX_VALUE),86400,86400); }
   public Set<String> getSemanticBoundaries() { return Set.of("SPECIES"); }

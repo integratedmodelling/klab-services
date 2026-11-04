@@ -226,6 +226,11 @@ public enum Setting {
       "Use short floats to save space instead of doubles, at the expense of precision",
       Boolean.class,
       Boolean.FALSE),
+  DISABLE_CONSEQUENCE_ENGINE(
+          Page.RUNTIME,
+          "Disable automatic resolution of consequences such as change, role implications, configuration emergence and role conferral",
+          Boolean.class,
+          Boolean.FALSE),
   PARALLELIZE_OBSERVATIONS(
       Page.RUNTIME,
       "Honor configured parallelism strategy and splits when processing quality observations with multiple states",
@@ -252,6 +257,29 @@ public enum Setting {
       "Execute to remove one or more components from the service",
       Map.class,
       Map.of("component", String.class, "result", Boolean.class)),
+  /**
+   * Resources administrator action, invoked with an empty map. Returns a map containing a boolean
+   * {@code result} and per-project ResourceSet lists under {@code projects}. Discards local commits
+   * and uncommitted/untracked files, preserves the selected branch, and never pushes to origin.
+   */
+  RESET_ALL_GIT_PROJECTS(
+      Page.RESOURCES,
+      "Discard local commits and working changes in all managed Git projects and update the current branches from origin",
+      Map.class,
+      Map.of("result", Boolean.class),
+      EnumSet.of(KlabService.Type.RESOURCES)),
+  /**
+   * Reasoner administrator action, invoked with an empty map. Repeats service-owned worldview
+   * discovery and waits up to five minutes for validation, ingestion and authority synchronization.
+   * Returns a boolean {@code result} and structured {@code notifications}, including failures,
+   * timeout or supersession. A prior accepted generation may remain available after failure.
+   */
+  RELOAD_WORLDVIEW(
+      Page.REASONER,
+      "Rediscover and reload the worldview, reporting validation, ingestion and authority synchronization errors",
+      Map.class,
+      Map.of("result", Boolean.class),
+      EnumSet.of(KlabService.Type.REASONER)),
   UPDATE_COMPONENT(
       Page.SERVICES,
       "Update an installed component from the highest-priority available source",

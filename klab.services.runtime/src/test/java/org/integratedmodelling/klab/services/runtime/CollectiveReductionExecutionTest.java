@@ -68,6 +68,7 @@ class CollectiveReductionExecutionTest {
     var member=new ObservationImpl();member.setId(id);member.setUrn("member:"+id);
     var observable=new ObservableImpl();observable.setSemantics(base);observable.setUrn(base.getUrn());
     member.setObservable(observable);member.setGeometry(f.producer.getGeometry());
+    f.existing.add(id);
     f.root.link(f.cohort,member,GraphModel.Relationship.HAS_MEMBER);
     var creator=Activity.of(Activity.Type.INSTANTIATION);
     org.integratedmodelling.common.runtime.ObserverProvenance.recordSelection(creator,null);
@@ -199,4 +200,21 @@ class CollectiveReductionExecutionTest {
       assertNull(CollectiveReductionBinding.capture(output,f.scope,reasoner));
     }
   }
-}
+  @Test void nativeEncodedOutputRetainsAdmittedWholeSupportIntent() {
+    try(var storage=new StorageConsumerExecutionTest.Fixture()) {
+      var output=output(CollectiveReductionBinding.Mode.COUNT,storage);var value=scalarCompiler(output,storage);complete();
+      var executor=executor(output);
+      output.setGeometry(Geometry.create(org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.scale(output.getGeometry()).encode()));
+      assertFalse(CollectiveReductionBinding.scalarSupport(output.getGeometry()),"Native scale encoding loses the original whole-support flag");
+      assertTrue(executor.execute(Scheduler.Event.initialization(),f.scope,null),()->String.valueOf(executor.getCause()));
+      assertEquals(0L,value.get());assertEquals(0,read(output,storage));
+    }
+  }
+  @Test void changedNativeOutputSupportCannotUseAnEarlierWholeSupportBinding() {
+    try(var storage=new StorageConsumerExecutionTest.Fixture()) {
+      var output=output(CollectiveReductionBinding.Mode.COUNT,storage);var value=scalarCompiler(output,storage);complete();
+      var executor=executor(output);
+      output.setGeometry(Geometry.create("T0(1){tstart=0,tend=20,ttype=PHYSICAL}"));
+      assertFalse(executor.execute(Scheduler.Event.initialization(),f.scope,null));assertNull(value.get());
+    }
+  }}

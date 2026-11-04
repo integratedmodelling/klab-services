@@ -1,0 +1,17 @@
+ontology imod in domain root version 1.0;
+
+// A separate self-contained accepted test worldview, not a replacement for authored imod.
+abstract thing Subject is core odo:Subject;
+abstract process Process is core odo:Process;
+abstract relationship Relationship is core odo:Relationship;
+abstract role Role is core odo:Role;
+abstract length Length is core odo:Length;
+
+thing Bearer is imod:Subject;
+length Input is imod:Length of imod:Bearer;
+length ImpliedValue is imod:Length of imod:Bearer;
+role Marked is imod:Role implies imod:ImpliedValue;
+process Birth is imod:Process
+    affects imod:Input
+    confers imod:Marked within imod:Bearer;
+

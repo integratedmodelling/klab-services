@@ -81,6 +81,32 @@ class ModelAdmissionReceiptTest {
         cap.getServiceId(),cap.getKnowledgeRevision(),cap.getSemanticContentFingerprint(),response.getSemanticObligations())));
   }
 
+  @Test void capturedSupplierSourceIsValidatedLocallyWithoutLexicalRequestOrProviderCallback() {
+    namespace.setScope(KlabStatement.Scope.PUBLIC);
+    ((KimModelImpl)namespace.getStatements().getFirst()).setScope(KlabStatement.Scope.PUBLIC);
+    var response=org.integratedmodelling.common.knowledge.ModelCandidateSources.capture(List.of(namespace),
+        new org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest(1,List.of(),List.of(),List.of()),"supplier",null);
+    var descriptor=response.getResults().iterator().next();
+    model.getMetadata().put(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE,
+        descriptor.getMetadata().get(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE));
+    model.getMetadata().put(org.integratedmodelling.common.knowledge.ModelCandidateSources.HASH,
+        descriptor.getMetadata().get(org.integratedmodelling.common.knowledge.ModelCandidateSources.HASH));
+    when(resources.retrieve(anyString(),eq(KimNamespace.class),same(scope)))
+        .thenThrow(new AssertionError("Captured source must not be replaced by a provider read"));
+    clearInvocations(resources,reasoner);
+    var preparation=ModelValidationGate.validatedSourcePreparation(model,scope,model.getObservables().getFirst());
+    assertNotNull(preparation);
+    var receipt=ModelValidationGate.validatedPreparableAdmission(model,scope,model.getObservables().getFirst());
+    assertNotNull(receipt);assertTrue(ModelValidationGate.sameSnapshot(preparation,receipt));
+    namespace.setSourceCode("supplier changed after capture");
+    assertTrue(ModelValidationGate.matches(receipt,model,scope));
+    verify(resources,never()).retrieve(anyString(),eq(KimNamespace.class),any());
+    verify(reasoner,atLeastOnce()).validateDocument(any(),same(scope));
+    model.getMetadata().put(org.integratedmodelling.common.knowledge.ModelCandidateSources.HASH,"corrupted");
+    assertFalse(ModelValidationGate.matches(receipt,model,scope));
+    assertNull(ModelValidationGate.validatedPreparableAdmission(model,scope,null));
+  }
+
   @Test void repeatedGenerationNewSessionInvalidatesActiveReceiptButRevalidatesSavedNamespace() {
     when(cap.getSemanticSessionId()).thenReturn("session-a");publish();
     var old=ModelValidationGate.validatedPreparableAdmission(model,scope,null);assertNotNull(old);
