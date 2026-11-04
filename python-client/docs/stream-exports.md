@@ -8,6 +8,32 @@ Current review findings, validation and deployment dependencies are in
 
 ## Usage
 
+### Reproducible transport reliability measurement
+
+From a checkout with the installed SDK and development `[local]` extra:
+
+```console
+python -I python-client/tools/workflows/stream_reliability.py --work-dir <fresh-parent>/stream-run
+```
+
+This sends a deterministic64MiB binary body over actual loopback HTTP sockets,
+verifies exact streamed bytes and contrasts an eager buffered positive control.
+It then exercises partial peer disconnect, read timeout, user interruption after
+a partial file write, invalid media, byte-budget rejection and HTTP403. Every
+failure must preserve a previous valid destination, remove temporary files and
+issue exactly one export GET. No new cancellation, retry or scientific algorithm
+is introduced. The controlled credential and scope are HTTP-contract fixtures,
+not genuine Java authorization acceptance.
+
+Reports include Python/platform, incremental tracemalloc peak and process RSS
+sampled every2ms after imports/client creation and metadata warmup. The server
+retains one64KiB pattern block. These are bounded selected-workload measurements,
+not a total-RSS guarantee, native memory bound, soak result, throughput SLA or
+scientific/provider accuracy test. The synthetic body is not a valid scientific
+format;64MiB represents a useful transfer volume, not an invented Java exporter.
+CI runs the same fault paths at8MiB. This does not close the broader real-deployment
+RC-P2.4 gate. Existing scientific exports retain their native format/metadata rules.
+
 ```python
 formats = client.export_formats(observation)
 for format in formats:

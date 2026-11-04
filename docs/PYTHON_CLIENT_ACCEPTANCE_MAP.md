@@ -188,7 +188,7 @@ single queue progress ledger; detailed evidence belongs in existing review paths
 | Feature | Disposition | Base / head / PR / merge | Scope, evidence and remaining proof |
 |---|---|---|---|
 | F1 nonuniform export | MERGED_BOUNDED | Base10bf4b616; head dabe5d700; [PR197](https://github.com/integratedmodelling/klab-services/pull/197); merge c9bf30abc7a726db9d290b89b448fd9a77a63e9f | Installed named actual-Java fixture passes20 cells/two missing/one zero, float64/units/axes/masks and owned cleanup using separately pinned corrected exporter98441476.. (HM0.11.3, not #11); published archive fails strict oracle; full multi-shard/time/revision gate unproven. All final-head hosted checks pass; postmerge19 tests and installed native-file demo pass; feature branch retired locally/remotely; [review](../python-client/docs/reviews/nonuniform-export-oracle.md) |
-| F2 stream reliability | NOT_STARTED | — | Atomic transport interruption/cancellation and measured bounded workload |
+| F2 stream reliability | ACTIVE | Base4a54145de; branch feature/python-export-stream-reliability; no PR yet | Actual loopback sockets,64MiB synthetic binary body and buffered positive control; interruption/timeout/cancel/invalid/budget/denial; no Java/provider capacity claim |
 | F3 partial refresh | NOT_STARTED | — | Honest disconnect/unavailable/auth/refetch states, not durable convergence |
 | F4 served request plan | NOT_STARTED | — | Actual supported typed-option-to-Java-plan subset, no algorithm change |
 | F5 concurrent notebook (optional) | NOT_STARTED | — | Evaluate only after F1–F4 dispositions; no active dependency stacking |
@@ -204,6 +204,18 @@ ontology, model or oracle is edited; new minimal test assets are separately labe
 Success needs actual native exported field checks, negative/malformed/representation
 tests, package/regression gates, contributor review and a normal merged PR.
 Unproven multi-shard/time/revision guarantees remain RC-P2.1/P2.2 PARTIAL.
+
+F2 contract: reuse the installed SDK's existing atomic exporter, without protocol
+or retry changes. Add actual-socket acceptance for success, peer truncation, read
+timeout, user KeyboardInterrupt after a partial write, invalid media, budget and
+denial. Existing valid output must survive each failure and temporary files must
+disappear; one export request only, never a replay. The representative bounded
+workload is64MiB (the byte volume of roughly4096×2048 float64 cells), but is
+explicitly generated binary HTTP data, not a raster or Java scientific result.
+Measure incremental tracemalloc and process RSS with a streamed path and an eager
+buffered positive control. No universal RSS/capacity/soak claim; real-deployment
+RC-P2.4 acceptance remains separate. CI uses8MiB to test the same protocol/fault
+paths economically; the standalone installed demonstration uses64MiB.
 
 ## Historical inventory — retained verbatim below
 
