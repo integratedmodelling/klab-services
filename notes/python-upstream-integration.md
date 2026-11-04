@@ -2,6 +2,41 @@
 
 ## Current integration checkpoint (2026-11-03)
 
+PR #189 merged as `469a844f6f2951c4830bdc94c2552c083c2d43b5` after
+71 direct fixture-consumer tests, GitHub Actions and Jenkins passed. The normal
+integrated dependency reactor is running with equivalent changes. A separate
+classifier diagnostic run records whether bounds invalidation came from an
+ontology change, manager/reasoner/root replacement, or changed ontology inventory;
+this instrumentation is uncommitted in the fixture worktree and is not a repair.
+
+### Remaining consumer receipt contract
+
+The exact failing path is `CollectiveSelectionAtomicExecutionTest`
+`.actualConsumerFailureReceivesSelectedAliasAndRootRollbackDiscardsClassification`:
+`CompiledDataflow.store` → `TransactionImpl.linkCollectiveInput` rejects QUERY_ID.
+`ComputationalClosure.requireCollectiveInput` separately requires a durable
+`COLLECTIVE_SOURCE_OBSERVATION` matching a child observation. Removing the first
+rejection would therefore leave the scheduler association invalid.
+
+The existing selection path issues exact-object/payload/scope semantic evidence
+in `SemanticExecutionEvidence.issue`, and refreshes its portable selection view
+in a before-commit callback after source/member identities become durable.
+`RuntimeService.getCohortFor` already normalizes to the native substantial base.
+Any production correction must preserve these contracts and must cover:
+- An exact compiled child/alias and native cohort association, distinct from the
+  shared QUERY_ID sentinel and from portable bytes presented as authority.
+- Real issued input evidence, same owning transaction/context and lifecycle;
+  reject copied/tampered receipts, foreign roots and rolled-back inputs.
+- Durable source/member identity binding at publication, with dependency data
+  matching the persisted executable plan after transport.
+- Scheduler association validation plus fresh query evidence when recomputing;
+  historical selected member lists cannot authorize later computations.
+- The original actual-consumer alias and root-rollback assertions, ordinary
+  durable collective inputs, reductions, and multi-input disambiguation controls.
+
+This is implementation analysis, not an approved new wire contract or a completed
+repair. #147 remains the acceptance blocker; no replay or oracle changes made.
+
 The syntax snapshot correction and asynchronous rejection assertions now pass
 the paired 62-test selection (zero failures/errors/skips). Reports preserved in
 `integrated-syntax-snapshot-evidence-20261103`; log
