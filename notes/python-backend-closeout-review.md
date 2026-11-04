@@ -32,8 +32,12 @@ The local gate checks passed on the Java-identical combined checkout.
 - Separate PR #191 clean develop-based source passed 159 selected tests; its exact
   focused hosted selection separately passed 90 tests locally. Counts are not
   interchangeable with the 222-test integration selection.
-- **Pending:** noneditable installed-wheel baseline Python gate on this actual
-  integration candidate, current GitHub build/Jenkins and appropriate scoped checks.
+- **PASS:** fresh noneditable installed wheel at documentation head `1829e0c9a`,
+  2,208 offline tests, complete installed Python source hash/inventory equality.
+  One expected Rasterio georeferencing warning is retained.
+- **Pending:** current GitHub build/Jenkins and appropriate scoped checks. PR #191
+  merged normally as develop commit `1e75df4e9`; the subsequent develop merge into
+  this branch changed ancestry only (no product tree delta).
 - **Still failed:** original immutable ODO hash fixture expects `496bc663…`, while
   current bundled bytes are `5c020dac…`. No original assertion was changed or
   excluded. A separately labelled current-core synthetic fixture is being checked;
