@@ -1,5 +1,34 @@
 # Python delivery-base stabilization
 
+## Current integration checkpoint (2026-11-03)
+
+Merged develop `d0ad038c320bd70626876eb4b39e5b302680fdfd` into this candidate,
+incorporating backend PRs #164–#188 without merge conflicts. These PRs passed
+their bounded checks and GitHub Actions/Jenkins individually; this is not
+integrated or live acceptance. Earlier sections below retain historical evidence.
+
+The latest develop-only Runtime/server class selection ran 1,204 tests with
+four failures, one error and 11 skips. Runtime-server was skipped by normal
+failure handling. Reports: `runtime-after-188-evidence-20261103`; log:
+`runtime-after-188-selection-20261103.log`, under the approved OpenCode temp root.
+
+Remaining groups requiring contract analysis:
+- Three selection submission tests expect rejection of invalid focus or absent
+  support but receive none. These exercise shared Runtime submission policy.
+- Public selected-result submission fails semantic completeness revalidation.
+  Preserve UNKNOWN/incomplete evidence; do not manufacture a successful proof.
+- Atomic selected-input consumer execution hits the explicit requirement for an
+  issued query-receipt association. A correction must cover both portable
+  dependency representation and scheduler validation, retaining rollback.
+
+These block full Runtime acceptance; their exact impact on the Python workflow
+must be demonstrated by integrated and live checks, not inferred from test names.
+Next: normal integrated Runtime-server dependency reactor with configured core
+and pinned staging, then reproducible live acceptance and #140 → #139.
+Related fixture repairs should be consolidated by root cause; production defects
+remain separately tested PRs. Original ODO oracle, language provenance and paired
+remote lifecycle (#144) gates remain open. No publication or deployment accepted.
+
 Candidate parents: Python integration `e09a7de7cac6b48526fd8b7ac72879abb36a77a3`
 and upstream `919dcf4ba92d843cf4c31fdecc5dedd55f3ab920`.
 The current candidate integrates merged stabilization PRs #143, #146 and
