@@ -1,0 +1,70 @@
+{
+  "milestone": "dependency-closeout-repository-consolidation",
+  "status": "MILESTONE_INCOMPLETE",
+  "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00",
+  "integration_base_sha": "e09a7de7cac6b48526fd8b7ac72879abb36a77a3",
+  "fetched_develop_sha": "196bb9dc142eafc92f4456c5073933fa98ad1c42",
+  "final_candidate_sha": null,
+  "gates": [
+    {
+      "id": "baseline",
+      "status": "PASSED",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    },
+    {
+      "id": "dependency_audit",
+      "status": "IN_PROGRESS",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    },
+    {
+      "id": "pr_issue_acceptance_audit",
+      "status": "IN_PROGRESS",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    },
+    {
+      "id": "unique_commit_dirty_file_preservation",
+      "status": "PASSED",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    },
+    {
+      "id": "raw_scientific_evidence_rescue",
+      "status": "IN_PROGRESS",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    },
+    {
+      "id": "worktree_retirement",
+      "status": "NOT_STARTED",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    },
+    {
+      "id": "per_pr_review_tests_merges",
+      "status": "BLOCKED",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    },
+    {
+      "id": "combined_java_acceptance",
+      "status": "NOT_RUN",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    },
+    {
+      "id": "installed_python_real_java_science",
+      "status": "NOT_RUN",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    },
+    {
+      "id": "final_remote_reconciliation",
+      "status": "NOT_STARTED",
+      "recorded_at_utc": "2026-11-04T16:17:42.800443+00:00"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-consolidation-baseline-20261104\\manifest.json",
+      "sha256": "9e5a13c2386a0aa4732f52688a7f44fecfa3aeb7abefa3c7e21fa10178fedf84"
+    },
+    {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-consolidation-preservation-20261104\\manifest.json",
+      "sha256": "b5bd14e82cea8a79a28c35113704ff19e152e9ff3c7663d3058b70ab7a87538a"
+    }
+  ]
+}

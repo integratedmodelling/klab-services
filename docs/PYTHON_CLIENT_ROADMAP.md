@@ -1,5 +1,19 @@
 # Building the full k.LAB Python client
 
+## Current handoffs — 3 November 2026
+
+See the [criterion-by-criterion acceptance map](PYTHON_CLIENT_ACCEPTANCE_MAP.md)
+for all structured phase/release acceptance items, remaining internal work and
+explicit tracking gaps. It is not a declaration of full-roadmap completion.
+
+The assessment below is the historical roadmap, not a completion checklist. Merged
+bounded features do not establish full-roadmap completion or external-only blockers.
+Current agent-ready issue handoffs: [#89 integration/acceptance](../notes/issue-89-agent-handoff.md)
+and [#125 agent execution/control](../notes/issue-125-agent-handoff.md). They include
+exact source boundaries, commands, observed failures and remaining client/test work.
+The current Java command repeat fails on language SNAPSHOT enum incompatibility;
+earlier passing acceptance is not a current dependency-compatibility claim.
+
 ## Assessment and recommendation
 
 PR 84 establishes a substantial and useful first client milestone. It connects a Python program to real k.LAB service contracts and implements a complete, deliberately bounded scientific workflow: initialize an explicitly configured user scope, create or attach a context, submit an observation, distinguish job outcomes, read actual storage values, reconnect, and release remote state explicitly. Its attention to authorization, scientific-value integrity, ambiguous failures and lifecycle ownership is valuable infrastructure to preserve.

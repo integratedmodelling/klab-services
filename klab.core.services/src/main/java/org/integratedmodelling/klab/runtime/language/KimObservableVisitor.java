@@ -354,10 +354,14 @@ public class KimObservableVisitor {
     for (var concept : safe(statement.getQualitiesAffected())) visitConcept(concept, context);
     for (var concept : safe(statement.getObservablesCreated())) visitConcept(concept, context);
     for (var concept : safe(statement.getTraitsConferred())) visitConcept(concept, context);
+    for (var rule : safe(statement.getConsequenceRules())) {
+      visitConcept(rule.target(), context);
+      visitConcept(rule.recipient().expression(), context);
+      visitConcept(rule.secondaryInherency(), context);
+      visitConcept(rule.within(), context);
+    }
     for (var concept : safe(statement.getTraitsInherited())) visitConcept(concept, context);
-    for (var concept : safe(statement.getRequiredExtents())) visitConcept(concept, context);
     for (var concept : safe(statement.getRequiredRealms())) visitConcept(concept, context);
-    for (var concept : safe(statement.getRequiredAttributes())) visitConcept(concept, context);
     for (var concept : safe(statement.getRequiredIdentities())) visitConcept(concept, context);
     for (var concept : safe(statement.getEmergenceTriggers())) visitConcept(concept, context);
     for (var concept : safe(statement.getImpliedObservables())) visitConcept(concept, context);

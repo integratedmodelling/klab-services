@@ -30,6 +30,7 @@ class CollectiveContributionInitializationTest {
     var twin = mock(DigitalTwinImpl.class);
     var graph = mock(KnowledgeGraphNeo4j.class);
     when(twin.getKnowledgeGraph()).thenReturn(graph); when(scope.getDigitalTwin()).thenReturn(twin);
+    when(graph.isObservationCurrent(argThat(o->o!=null&&o.getId()==42),same(scope))).thenReturn(true);
     var field = DigitalTwinImpl.class.getDeclaredField("knowledgeGraph"); field.setAccessible(true); field.set(twin, graph);
     var transaction = twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION), scope,
         RuntimeAsset.PROVENANCE_ASSET, producer);

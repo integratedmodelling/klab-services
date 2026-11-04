@@ -18,7 +18,7 @@ from .dto import (check_notifications, concept_from_wire, object_payload,
                   observable_from_wire, observation_from_wire, observation_to_wire,
                   required_text)
 from .errors import (ConfigurationError, InvalidRequestError, MissingAssetError,
-                     ProtocolError, TransportError, UnsupportedOperationError, WaitTimeout)
+                     ProtocolError, SubmissionOutcomeUnknown, TransportError, UnsupportedOperationError, WaitTimeout)
 from .requests import _prepare_observe
 from .transport import Endpoint
 
@@ -34,20 +34,28 @@ class AsyncJob(Job):
         super().__init__(client, *args, **kwargs)
 
     async def status(self, *, timeout=None, _deadline=None):
+        self._check_binding()
         payload = await self.client.transport.request(self.service, "GET", f"/jobs/status/{self.id}",
             scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
             timeout=timeout, deadline=_deadline)
+        self._check_binding()
         return self._decode_status(payload)
 
     async def cancel(self):
+        self._check_binding()
         accepted = await self.client.transport.request(self.service, "GET", f"/jobs/cancel/{self.id}",
             scope=scope_token(self.scope), service_id=self.client.runtime_service_id, ambiguous=True)
+        try:
+            self._check_binding()
+        except ProtocolError:
+            raise SubmissionOutcomeUnknown("Cancellation response binding changed; outcome unknown, do not replay") from None
         if type(accepted) is not bool:
             raise ProtocolError("Cancellation must return a boolean")
         self.cancellation_requested = self.cancellation_requested or accepted
         return accepted
 
     async def result(self, timeout=None):
+        self._check_binding()
         if timeout is not None and (not math.isfinite(timeout) or timeout < 0):
             raise InvalidRequestError("Wait timeout must be finite and nonnegative")
         deadline = time.monotonic() + timeout if timeout is not None else None
@@ -65,10 +73,13 @@ class AsyncJob(Job):
                 try:
                     status = await self.status(timeout=remaining(), _deadline=deadline)
                     if self._finished(status):
+                        self._check_binding()
                         payload = await self.client.transport.request(self.service, "GET", f"/jobs/retrieve/{self.id}",
                             scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
                             timeout=remaining(), deadline=deadline)
+                        self._check_binding()
                         result = self._decode_result(payload)
+                        self._check_binding()
                         remaining()
                         return result
                 except TransportError:

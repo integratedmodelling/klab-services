@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.junit.jupiter.api.Test;
 
 class SingularContextBindingTest {
+  @org.junit.jupiter.api.BeforeAll static void configureGeometry(){org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();}
   private final org.integratedmodelling.klab.services.scopes.ServiceContextScope scope = mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
   private final Reasoner reasoner = mock(Reasoner.class);
   private final Reasoner.Capabilities capabilities = mock(Reasoner.Capabilities.class);
@@ -171,4 +172,26 @@ class SingularContextBindingTest {
     verify(scope,never()).executing(any(org.integratedmodelling.klab.api.provenance.Activity.class),any());
   }
 
-}
+  @Test void rawManualBootstrapCannotSubstituteForSanitizedNativeContext() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var raw=Geometry.create("t0(1){ttype=PHYSICAL,tstart=1000,tend=2000}");
+    context.setGeometry(raw);
+    var captured=new SingularContextBinding(21,context.getUrn(),context.getObservable().getUrn(),raw.encode(),quality.getUrn(),"reasoner",3);
+    var nativeContext=context(21);
+    nativeContext.setGeometry(org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.sanitize(raw));
+    assertNotEquals(raw.encode(),Geometry.forTransport(nativeContext.getGeometry()).encode());
+    when(scope.getObservation(21)).thenReturn(nativeContext);
+    assertThrows(IllegalStateException.class,()->captured.require(scope,quality));
+  }
+  @Test void runtimeSanitizedContextBindingSurvivesNativeEncodingRoundTrip() {
+    org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
+    var raw=Geometry.create("t0(1){ttype=PHYSICAL,tstart=1000,tend=2000}");
+    context.setGeometry(org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.sanitize(raw));
+    var encoded=Geometry.forTransport(context.getGeometry()).encode();
+    var captured=new SingularContextBinding(21,context.getUrn(),context.getObservable().getUrn(),encoded,quality.getUrn(),"reasoner",3);
+    var nativeContext=context(21);nativeContext.setGeometry(Geometry.create(encoded));
+    when(scope.getObservation(21)).thenReturn(nativeContext);
+    assertSame(nativeContext,captured.require(scope,quality));
+    nativeContext.setGeometry(Geometry.create("T1(1){ttype=PHYSICAL,tstart=1000,tend=3000}"));
+    assertThrows(IllegalStateException.class,()->captured.require(scope,quality));
+  }}

@@ -228,10 +228,17 @@ public final class WorldviewDeclarationRegistry {
     for(var operand:s.getCreatedBy())require(entry,operand,"created by",type->type.contains(SemanticType.PROCESS)||type.contains(SemanticType.EVENT));
     for(var operand:s.getRequiredIdentities())require(entry,operand,"requires identity",type->type.contains(SemanticType.IDENTITY));
     for(var operand:s.getRequiredRealms())require(entry,operand,"requires realm",type->type.contains(SemanticType.REALM));
-    for(var operand:s.getRequiredAttributes())require(entry,operand,"requires attribute",type->type.contains(SemanticType.ATTRIBUTE));
-    for(var operand:s.getRequiredExtents())require(entry,operand,"requires extent",type->type.contains(SemanticType.EXTENT));
-    for(var operand:s.getEmergenceTriggers())require(entry,operand,"emerges from",WorldviewDeclarationRegistry::observable);
-    for(var operand:s.getImpliedObservables())require(entry,operand,"implies",WorldviewDeclarationRegistry::observable);
+    // Compatibility for older/partially upgraded beans, independently for each clause kind.
+    // Normalized rules of that kind are authoritative; scoped targets are absent from flat lists.
+    if(s.getConsequenceRules().stream().noneMatch(rule->rule!=null&&rule.kind()==KimConsequenceRule.Kind.EMERGES_FROM))
+      for(var operand:s.getEmergenceTriggers()) {
+        if(!own.contains(SemanticType.CONFIGURATION))
+          error("DECLARATION_CLAUSE_SOURCE_INVALID: "+entry.urn()+" EMERGES_FROM",entry);
+        require(entry,operand,"emerges from",WorldviewDeclarationRegistry::observable);
+      }
+    if(s.getConsequenceRules().stream().noneMatch(rule->rule!=null&&rule.kind()==KimConsequenceRule.Kind.IMPLIES))
+      for(var operand:s.getImpliedObservables())require(entry,operand,"implies",WorldviewDeclarationRegistry::observable);
+    validateConsequences(entry);
     require(entry,s.getDeclaredInherent(),"inherent",WorldviewDeclarationRegistry::observable);
     for (var declaration : s.getObservationalContainments()) {
       if (declaration == null || declaration.container() == null || declaration.contained() == null) {
@@ -246,6 +253,90 @@ public final class WorldviewDeclarationRegistry {
             + " observational containment requires subject/agent or event/process pairs", entry);
     }
     for(var applicable:s.getAppliesTo())require(entry,applicable.getTarget(),"applies to",WorldviewDeclarationRegistry::observable);
+  }
+
+  private static boolean substantial(Set<SemanticType> type) {
+    return !type.contains(SemanticType.NOTHING)&&SemanticType.isEnumerableSubstantial(type);
+  }
+
+  private static boolean implicationTarget(Set<SemanticType> type) {
+    return !type.contains(SemanticType.NOTHING)
+        &&(SemanticType.isDependent(type)||type.contains(SemanticType.RELATIONSHIP)
+            ||type.contains(SemanticType.PREDICATE)||type.stream().anyMatch(SemanticType::isPredicate));
+  }
+
+  private void validateConsequences(Declaration entry) {
+    var own=entry.statement().getType();
+    for(var rule:entry.statement().getConsequenceRules()) {
+      if(rule==null) {
+        error("DECLARATION_CLAUSE_TARGET_MISSING: "+entry.urn()+" consequence",entry);continue;
+      }
+      boolean validSource=!own.contains(SemanticType.NOTHING)&&switch(rule.kind()) {
+        case CONFERS -> own.contains(SemanticType.PROCESS)||own.contains(SemanticType.RELATIONSHIP);
+        case IMPLIES -> own.contains(SemanticType.ROLE)||own.contains(SemanticType.CONFIGURATION)
+            ||own.contains(SemanticType.RELATIONSHIP);
+        case EMERGES_FROM -> own.contains(SemanticType.CONFIGURATION);
+      };
+      if(!validSource)error("DECLARATION_CLAUSE_SOURCE_INVALID: "+entry.urn()+" "+rule.kind(),entry);
+      switch(rule.kind()) {
+        case CONFERS -> {
+          require(entry,rule.target(),"confers",type->!type.contains(SemanticType.NOTHING)&&type.contains(SemanticType.ROLE));
+          if(rule.recipient().kind()==KimConsequenceRule.RecipientKind.EXPRESSION)
+            require(entry,rule.recipient().expression(),"confers to",WorldviewDeclarationRegistry::substantial);
+          else if((rule.recipient().kind()==KimConsequenceRule.RecipientKind.SOURCE
+              ||rule.recipient().kind()==KimConsequenceRule.RecipientKind.TARGET)
+              &&!own.contains(SemanticType.RELATIONSHIP))
+            error("DECLARATION_CLAUSE_RECIPIENT_INVALID: endpoint selector requires a relationship at "+entry.urn(),entry);
+        }
+        case IMPLIES -> {
+          if(own.contains(SemanticType.CONFIGURATION)) {
+            require(entry,rule.target(),"configuration implies",type->!type.contains(SemanticType.NOTHING)&&type.contains(SemanticType.ROLE));
+            if(rule.secondaryInherency()==null&&definitelySubstantialConfiguration(entry))
+              error("DECLARATION_CLAUSE_RECIPIENT_MISSING: a configuration of substantials requires implies for at "+entry.urn(),entry);
+          }else require(entry,rule.target(),"implies",type->implicationTarget(type)
+              &&(!own.contains(SemanticType.RELATIONSHIP)||!type.contains(SemanticType.ROLE)));
+          require(entry,rule.secondaryInherency(),"implies for",WorldviewDeclarationRegistry::substantial);
+        }
+        case EMERGES_FROM -> require(entry,rule.target(),"emerges from",WorldviewDeclarationRegistry::observable);
+      }
+      // `within` specializes the role-bearing substantial, never the declaring process/role.
+      // Actual subtype/recipient compatibility is an obligation of the retained Runtime match.
+      if(rule.kind()==KimConsequenceRule.Kind.CONFERS
+          ||rule.kind()==KimConsequenceRule.Kind.IMPLIES&&own.contains(SemanticType.ROLE))
+        require(entry,rule.within(),"consequence within",WorldviewDeclarationRegistry::substantial);
+    }
+  }
+
+  private boolean definitelySubstantialConfiguration(Declaration entry) {
+    var ingredients=entry.statement().getConsequenceRules().stream()
+        .filter(rule->rule!=null&&rule.kind()==KimConsequenceRule.Kind.EMERGES_FROM)
+        .map(KimConsequenceRule::target).toList();
+    if(ingredients.isEmpty())ingredients=entry.statement().getEmergenceTriggers();
+    // Missing/unknown placement is a Runtime obligation, not a reason to reject authored syntax.
+    return !ingredients.isEmpty()&&ingredients.stream()
+        .allMatch(expression->substantialIngredients(expression,entry.ontology().getUrn()));
+  }
+
+  private boolean substantialIngredients(KimConcept expression,String namespace) {
+    if(expression==null)return false;
+    if(expression.getSemanticModifier()!=null)
+      return substantial(typeOf(expression,namespace));
+    if(expression.getName()==null&&expression.getObservable()!=null&&expression.getOperands().isEmpty())
+      return transparentIngredientWrapper(expression)&&substantialIngredients(expression.getObservable(),namespace);
+    if(expression.getOperands().isEmpty())return substantial(typeOf(expression,namespace));
+    var terms=new ArrayList<KimConcept>(expression.getOperands());
+    if(expression.getObservable()!=null)terms.add(expression.getObservable());
+    else if(expression.getName()!=null)return substantial(typeOf(expression,namespace))
+        &&terms.stream().allMatch(term->substantialIngredients(term,namespace));
+    return terms.stream().allMatch(term->substantialIngredients(term,namespace));
+  }
+
+  private static boolean transparentIngredientWrapper(KimConcept expression) {
+    return !expression.isNegated()&&!expression.isCollective()&&!expression.isPattern()
+        &&expression.getTraits().isEmpty()&&expression.getRoles().isEmpty()
+        &&expression.getModifiers().isEmpty()&&expression.getValueOperators().isEmpty()
+        &&expression.getAbout().isEmpty()&&expression.getComparisonConcept()==null
+        &&expression.getAuthority()==null&&expression.getAuthorityTerm()==null&&expression.getParent()==null;
   }
 
   private static int containmentFamily(Set<SemanticType> types) {

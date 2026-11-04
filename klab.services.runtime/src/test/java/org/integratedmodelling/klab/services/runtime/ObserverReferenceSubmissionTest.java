@@ -22,8 +22,19 @@ import org.junit.jupiter.api.Test;
 class ObserverReferenceSubmissionTest {
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
 
+  private void current(SubmissionCancellationTest.Fixture fixture, Observation... observations) {
+    for(var observation:observations)
+      when(fixture.twin.getKnowledgeGraph().isObservationCurrent(argThat(candidate ->
+          candidate!=null && (candidate==observation
+              || observation.getId()>0 && candidate.getId()==observation.getId())),any()))
+          .thenAnswer(call -> {
+            var scope=call.getArgument(1,org.integratedmodelling.klab.api.scope.ContextScope.class);
+            return scope!=null && java.util.Objects.equals(fixture.scope.getId(),scope.getId());
+          });
+  }
+
   private org.integratedmodelling.klab.api.services.Reasoner semanticReceipt(SubmissionCancellationTest.Fixture fixture) {
-    var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+    var reasoner = fixture.reasoner;
     var capabilities = mock(org.integratedmodelling.klab.api.services.Reasoner.Capabilities.class);
     when(capabilities.getKnowledgeRevision()).thenReturn(7L);
     when(reasoner.capabilities(any())).thenReturn(capabilities);
@@ -39,12 +50,37 @@ class ObserverReferenceSubmissionTest {
     var observable = new ObservableImpl(); observable.setSemantics(concept); observable.setUrn(concept.getUrn());
     var observation = new ObservationImpl(); observation.setId(id); observation.setUrn("test:process:"+id);
     observation.setObservable(observable); observation.setGeometry(Geometry.create("1"));
+    if (id > 0) observation.setParentId(org.integratedmodelling.klab.api.data.RuntimeAsset.CONTEXT_ASSET_ID);
     return observation;
+  }
+
+  @Test void unstagedCapturedRequestReusesFocusedPersistedReferenceWithoutCreatingATarget() {
+    var fixture = new SubmissionCancellationTest.Fixture();
+    semanticReceipt(fixture);
+    var requested = process(-7); var existing = process(4416); existing.setParentId(4386);
+    var focus = process(4386);
+    current(fixture,existing,focus);
+    ((ConceptImpl)focus.getObservable().asConcept()).setType(EnumSet.of(SemanticType.SUBJECT));
+    ((ConceptImpl)focus.getObservable().asConcept()).setUrn("earth:Region");
+    when(fixture.twin.getKnowledgeGraph().getAsset(eq(4386L), any(), eq(Observation.class))).thenReturn(focus);
+    when(fixture.twin.getKnowledgeGraph().getAsset(eq(4416L), any(), eq(Observation.class))).thenReturn(existing);
+    var reference = new ActuatorImpl(); reference.setId(4416); reference.setObservation(Observation.forTransport(existing));
+    reference.setActuatorType(Actuator.Type.REFERENCE);
+    var dataflow = new DataflowImpl(); dataflow.setResolvedCoverage(1); dataflow.setComputation(List.of(reference));
+    var pending = fixture.runtime.submit(requested, fixture.scope.within(focus));
+    fixture.resolution.complete(dataflow);
+    var result = pending.join();
+    assertSame(existing, result, () -> result.getNotifications().toString());
+    assertEquals(-7, requested.getId()); assertEquals(-1, requested.getParentId());
+    verify(fixture.rootTransaction, never()).setTarget(any());
+    verify(fixture.scheduler, never()).submit(any(), any());
+    verify(fixture.rootTransaction, never()).link(any(), eq(requested), any(), any(Object[].class));
   }
 
   @Test void referenceTerminalPreservesExistingIdentityMetadataAndSkipsCreationAndExecution() {
     var fixture = new SubmissionCancellationTest.Fixture();
     var requested = process(-2); var existing = process(42);
+    current(fixture,existing);
     existing.getMetadata().put("im:commit-id", 123L);
     var before = new java.util.HashMap<>(existing.getMetadata());
     when(fixture.twin.getKnowledgeGraph().getAsset(eq(42L), any(), eq(Observation.class))).thenReturn(existing);
@@ -62,6 +98,25 @@ class ObserverReferenceSubmissionTest {
     verify(fixture.rootTransaction, never()).fail(any());
     verify(fixture.resolutionTransaction).commit(); verify(fixture.rootTransaction).commit();
     verify(fixture.rootTransaction, never()).link(any(), eq(requested), any(), any(Object[].class));
+  }
+
+  @Test void transactionLocalFocusIsResolvedThroughItsOwningTransaction() {
+    var fixture = new SubmissionCancellationTest.Fixture(); semanticReceipt(fixture);
+    var focus = process(-12);
+    ((ConceptImpl)focus.getObservable().asConcept()).setType(EnumSet.of(SemanticType.SUBJECT));
+    var existing = process(4416); existing.setParentId(-12);
+    current(fixture,existing,focus);
+    when(fixture.rootTransaction.assets()).thenReturn(List.of(focus));
+    when(fixture.resolutionTransaction.assets()).thenReturn(List.of(focus));
+    when(fixture.twin.getKnowledgeGraph().getAsset(eq(4416L), any(), eq(Observation.class))).thenReturn(existing);
+    var reference = new ActuatorImpl(); reference.setId(4416); reference.setObservation(Observation.forTransport(existing));
+    reference.setActuatorType(Actuator.Type.REFERENCE);
+    var dataflow = new DataflowImpl(); dataflow.setResolvedCoverage(1); dataflow.setComputation(List.of(reference));
+    var pending = fixture.runtime.submit(process(-7), fixture.scope.within(focus));
+    fixture.resolution.complete(dataflow);
+    assertSame(existing, pending.join());
+    verify(fixture.twin.getKnowledgeGraph(), never()).getAsset(eq(-12L), any(), eq(Observation.class));
+    verify(fixture.scheduler, never()).submit(any(), any());
   }
 
   @Test void inaccessibleReferenceFailsClosedWithoutCompilingTransportCopy() {
@@ -97,6 +152,7 @@ class ObserverReferenceSubmissionTest {
     var parent = fixture.scope.executing(org.integratedmodelling.klab.api.provenance.Activity.of(
         org.integratedmodelling.klab.api.provenance.Activity.Type.RESOLUTION, "parent resolution"));
     var source = process(42); var requested = process(-2);
+    current(fixture,source);
     source.getMetadata().put("old-commit", 123L);
     var metadata = new java.util.HashMap<>(source.getMetadata());
     when(fixture.twin.getKnowledgeGraph().getAsset(eq(42L), any(), eq(Observation.class))).thenReturn(source);
@@ -116,6 +172,7 @@ class ObserverReferenceSubmissionTest {
   @Test void terminalRequiresCurrentFullWrapperCompatibilityReceipt() {
     for (boolean missingReceipt : List.of(false, true)) {
       var fixture = new SubmissionCancellationTest.Fixture(); var source = process(42);
+      current(fixture,source);
       when(fixture.twin.getKnowledgeGraph().getAsset(eq(42L), any(), eq(Observation.class))).thenReturn(source);
       var reasoner = semanticReceipt(fixture);
       if (missingReceipt) when(reasoner.capabilities(any())).thenReturn(null);
@@ -131,6 +188,7 @@ class ObserverReferenceSubmissionTest {
   }
   @Test void claimedCompleteReferenceCannotHidePartialActualProcessSupport() {
     var fixture = new SubmissionCancellationTest.Fixture(); var source = process(42); var requested = process(-2);
+    current(fixture,source);
     source.setGeometry(Geometry.create("T0(1){tstart=0,tend=5,ttype=PHYSICAL}"));
     requested.setGeometry(Geometry.create("T0(1){tstart=0,tend=10,ttype=PHYSICAL}"));
     when(fixture.twin.getKnowledgeGraph().getAsset(eq(42L), any(), eq(Observation.class))).thenReturn(source);

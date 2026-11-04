@@ -13,7 +13,8 @@ final class BootstrapFailureDiagnostics {
     LoggerFactory.getLogger(AuthorityBootstrap.class).error(
         "AUTHORITY_BOOTSTRAP_FAILURE phase=" + context.phase()
             + " input=" + context.inputHash() + " plan=" + context.planHash()
-            + " providers=" + context.bindingsHash() + " components=" + context.components() + " bindings=" + context.bindingCount(), snapshot(original));
+            + " providers=" + context.bindingsHash() + " components=" + context.components() + " bindings=" + context.bindingCount()
+            + (original instanceof AuthorityIdentityResolver.LookupFailure lookup ? " lookup=" + lookup.diagnostic() : ""), snapshot(original));
   }
 
   static Throwable snapshot(Throwable original) {

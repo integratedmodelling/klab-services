@@ -20,6 +20,36 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.junit.jupiter.api.Test;
 
 class ObserverScopeTest {
+  @Test void observerRefreshOccursAtCycleEntryAndIsSharedByDerivedScopes() {
+    var user=mock(UserIdentity.class);when(user.getId()).thenReturn("alice");
+    var session=new org.integratedmodelling.klab.services.scopes.ServiceSessionScope(
+        new org.integratedmodelling.klab.services.scopes.ServiceUserScope(user,mock(RuntimeService.class)));
+    var root=new org.integratedmodelling.klab.services.scopes.ServiceContextScope(session,
+        org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Configuration.builder()
+            .id("context").name("Twin").build(),user);
+    root.setId("context");
+    var twin=mock(org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.class);
+    var graph=mock(org.integratedmodelling.klab.api.data.KnowledgeGraph.class);
+    when(twin.getKnowledgeGraph()).thenReturn(graph);root.setDigitalTwin(twin);
+    var selected=observer();
+    var query=mock(org.integratedmodelling.klab.api.data.KnowledgeGraph.Query.class,RETURNS_SELF);
+    when(query.run(any())).thenReturn(java.util.List.of(selected));
+    doReturn(query).when(graph).query(eq(Observation.class),any());
+    when(graph.getSemanticRevision()).thenReturn(1L);
+    var connection=root.withObserver(selected);
+    var binding=new org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding(
+        1,"cycle","context","runtime",true,null);
+    var cycle=connection.withResolutionCycleBinding(binding);
+    verify(query,times(1)).run(any());
+    when(graph.getSemanticRevision()).thenReturn(2L);
+    assertSame(selected,cycle.getObserver());
+    assertSame(selected,cycle.within(selected).getObserver());
+    verify(query,times(1)).run(any());
+    assertSame(selected,connection.getObserver());
+    verify(query,times(2)).run(any());
+    assertSame(selected,connection.within(selected).getObserver());
+    verify(query,times(2)).run(any());
+  }
   private ObservationImpl observer() {
     var concept = new ConceptImpl(); concept.setUrn("test:Agent"); concept.setName("Agent");
     concept.setType(EnumSet.of(SemanticType.AGENT));

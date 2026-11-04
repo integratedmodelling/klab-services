@@ -41,6 +41,12 @@ class ClassificationTransactionTest {
     root.add(value.member());
     var transactionField=ServiceContextScope.class.getDeclaredField("currentTransaction");
     transactionField.setAccessible(true);transactionField.set(scope,root);
+    var twinField=ServiceContextScope.class.getDeclaredField("digitalTwin");
+    twinField.setAccessible(true);twinField.set(scope,twin);
+    when(twin.getKnowledgeGraph()).thenReturn(kg);
+    when(kg.isObservationCurrent(any(),same(scope))).thenAnswer(call ->
+        root.currentStatusFor(call.getArgument(0))
+            .orElse(call.getArgument(0,Observation.class).getId()==value.member().getId()));
     doCallRealMethod().when(scope).getObservation(41L);
     var after=new org.integratedmodelling.common.knowledge.ObservableImpl(before);
     after.setUrn("test:ClassifiedRegion41");

@@ -1,0 +1,6 @@
+private namespace consequence.configurations.update version 1.0;
+
+@time(step=1.year)
+model imod:Resize
+    observing imod:Height in m named height
+    set height to [height + 1];

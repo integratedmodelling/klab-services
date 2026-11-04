@@ -61,6 +61,76 @@ public final class CapturedAuthorityCatalog {
     return Collections.unmodifiableMap(owned);
   }
   public String revision() { return revision; }
+  static String implementationRevision(Authority authority) {
+    return authority instanceof CapturedAuthorityCatalog.Snapshot frozen ? frozen.provider.implementation() : null;
+  }
+
+  /** Add only successful immutable answers from an owned refresh; original provider proof stays fixed. */
+  CapturedAuthorityCatalog refreshed(Path state) throws Exception {
+    var answers = new LinkedHashMap<>(records);
+    var docs = new LinkedHashMap<>(documentation);
+    var cache = state.resolve("authority-cache");
+    if (Files.isDirectory(cache)) try (var files = Files.walk(cache)) {
+      for (var file : files.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".json")).toList()) {
+        if (Files.isSymbolicLink(file)) throw new IOException("Authority response is a symbolic link");
+        var bytes = Files.readAllBytes(file);
+        var envelope = JSON.readTree(bytes);
+        if (!envelope.has("value") || envelope.path("expires").asLong() != Long.MAX_VALUE) continue;
+        answers.put(cache.relativize(file).toString().replace('\\', '/'), bytes);
+        var locations = envelope.get("value").path("documentation");
+        if (locations.isObject()) for (var location : locations) {
+          var uri = URI.create(location.asText());
+          if ("file".equals(uri.getScheme())) {
+            if (docs.containsKey(location.asText())) continue;
+            var path = Path.of(uri).toRealPath();
+            if ((!path.startsWith(Path.of(System.getProperty("java.io.tmpdir")).toRealPath())
+                && !path.startsWith(state.toRealPath()))
+                || Files.size(path) > 4L * 1024 * 1024)
+              throw new IOException("Provider documentation is outside the owned capture boundary");
+            docs.put(location.asText(), Files.readAllBytes(path));
+          }
+        }
+      }
+    }
+    return new CapturedAuthorityCatalog(providers, answers, docs, codelists, validatedRequests, configuredSnapshots);
+  }
+  private record PersistentSnapshot(int format, String revision, Map<String, Provider> providers,
+      Map<String, byte[]> records, Map<String, byte[]> documentation, Map<String, byte[]> codelists,
+      Map<String, byte[]> validatedRequests, Map<String, FrozenConfiguredSnapshot> configuredSnapshots) {}
+
+  /** Already validated, owned value data. Reading this format never constructs a provider. */
+  void writePersistent(Path file) throws IOException {
+    var mapper = JacksonConfiguration.newObjectMapper().addMixIn(ComponentDescriptor.class, ComponentWireMixin.class);
+    // Search/reconciliation TTLs must not make immutable identity captures unusable at restart.
+    var durableRecords = new LinkedHashMap<String, byte[]>();
+    for (var entry : records.entrySet())
+      if (JSON.readTree(entry.getValue()).path("expires").asLong() == Long.MAX_VALUE)
+        durableRecords.put(entry.getKey(), entry.getValue());
+    var durable = new CapturedAuthorityCatalog(providers, durableRecords, documentation, codelists,
+        validatedRequests, configuredSnapshots);
+    Files.write(file, mapper.writeValueAsBytes(new PersistentSnapshot(1, durable.revision(), providers, durableRecords,
+        documentation, codelists, validatedRequests, configuredSnapshots)));
+  }
+
+  static CapturedAuthorityCatalog readPersistent(Path file) throws Exception {
+    if (Files.size(file) > 256L * 1024 * 1024) throw new IOException("Authority capture exceeds cache limit");
+    var mapper = JacksonConfiguration.newObjectMapper().addMixIn(ComponentDescriptor.class, ComponentWireMixin.class);
+    var snapshot = mapper.readValue(Files.readAllBytes(file), PersistentSnapshot.class);
+    if (snapshot.format() != 1) throw new IOException("Unknown authority capture format");
+    var result = new CapturedAuthorityCatalog(snapshot.providers(), snapshot.records(), snapshot.documentation(),
+        snapshot.codelists(), snapshot.validatedRequests(), snapshot.configuredSnapshots());
+    if (!result.revision().equals(snapshot.revision())) throw new IOException("Authority capture checksum mismatch");
+    for (var provider : result.providers.values()) {
+      var md5 = HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(provider.archive()));
+      if (!md5.equalsIgnoreCase(provider.component().fileHash())
+          || !provider.implementation().endsWith(":" + digest(provider.archive())))
+        throw new IOException("Authority capture archive checksum mismatch");
+    }
+    for (var snapshotEntry : result.configuredSnapshots.values())
+      if (!digest(bytes(snapshotEntry.snapshot())).equals(snapshotEntry.contentSha256()))
+        throw new IOException("Authority configured snapshot checksum mismatch");
+    return result;
+  }
   /** Only deterministic restored providers certify unseen answers across process restarts.
    * Legacy interactive providers remain enabled, but cannot issue a durable content certificate. */
   boolean certifiesDurableContent(Worldview worldview) {
@@ -452,9 +522,10 @@ public final class CapturedAuthorityCatalog {
     }
     @Override public synchronized String configure(ConfigurationRequest request) {
       if (!AuthorityBindings.providerRequest(original).equals(request)) throw unresolved("provider parameters changed since capture: " + original.name());
+      // A configured snapshot must prove it can restore before a candidate can publish its handle.
+      // SnapshottingAuthority.restoreConfiguration is offline; other providers remain lazy.
+      if (configuredSnapshots.containsKey(original.name())) live();
       bridge.configured = "snapshot:" + revision + ":" + original.name();
-      if (configuredSnapshots.containsKey(original.name())) try { live(); }
-      catch (RuntimeException failure) { bridge.configured = null; throw failure; }
       return bridge.configured;
     }
     @Override public synchronized void releaseConfiguration(String id) {
@@ -548,6 +619,12 @@ public final class CapturedAuthorityCatalog {
     @Override public synchronized Identity resolveIdentity(String id, String code) { return resolveIdentity(id, code, ResolutionMode.CONFIGURED); }
     @Override public synchronized Identity resolveIdentity(String id, String code, ResolutionMode mode) {
       check(id);
+      var operation = List.of(mode == ResolutionMode.FULL_HIERARCHY ? "identity-full" : "identity", view, code);
+      var contents = records.get(prefix + digest(bytes(operation)) + ".json");
+      if (contents != null) try {
+        var entry = JSON.readTree(contents);
+        if (entry.path("expires").asLong() > Clock.systemUTC().millis()) return identity(entry.get("value"));
+      } catch (IOException malformed) { throw new IllegalStateException("Invalid captured identity", malformed); }
       if (configuredSnapshots.containsKey(original.name()) || interactive.getAsBoolean()) return live().resolveIdentity(bridge.liveId, code, mode);
       return identity(response(List.of(mode == ResolutionMode.FULL_HIERARCHY ? "identity-full" : "identity", view, code)));
     }
