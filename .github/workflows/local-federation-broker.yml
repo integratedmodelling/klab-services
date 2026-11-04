@@ -1,0 +1,21 @@
+name: Local federation broker configuration
+on:
+  push:
+    paths: ['klab.core.api/src/main/java/**/Federation.java', 'klab.core.api/src/test/java/**/LocalFederationBrokerConfigurationTest.java', '.github/workflows/local-federation-broker.yml']
+  pull_request:
+    paths: ['klab.core.api/src/main/java/**/Federation.java', 'klab.core.api/src/test/java/**/LocalFederationBrokerConfigurationTest.java', '.github/workflows/local-federation-broker.yml']
+permissions:
+  contents: read
+jobs:
+  explicit-broker-configuration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: chmod +x mvnw
+      - run: ./mvnw -B -nsu -pl klab.core.api -am -Dtest=LocalFederationBrokerConfigurationTest -Dsurefire.failIfNoSpecifiedTests=false test
