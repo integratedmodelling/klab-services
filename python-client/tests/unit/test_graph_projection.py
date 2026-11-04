@@ -9,6 +9,31 @@ from klab_client.errors import AuthorizationError, InvalidRequestError, Protocol
 from test_graph import setup
 
 
+@pytest.mark.parametrize("status,error_name", [(401, "AuthenticationError"), (403, "AuthorizationError"),
+    (404, "MissingAssetError"), (503, "ServerError")])
+def test_refresh_http_failure_retains_prior_metadata_without_claiming_scope_expiry(monkeypatch, status, error_name):
+    import httpx
+    from klab_client import errors
+    api, ctx, obs, calls = setup()
+    with api:
+        browser = GraphBrowser(ctx)
+        projection = GraphProjection(browser)
+        first = projection.load(obs)
+        original = api.transport._http.send
+        def failed(request, *args, **kwargs):
+            return httpx.Response(status, request=request, json={"message": "unavailable"})
+        monkeypatch.setattr(api.transport._http, "send", failed)
+        with pytest.raises(getattr(errors, error_name)):
+            projection.load(obs)
+        retained = projection.view
+        assert retained.pages[0].page == first.page
+        assert retained.pages[0].invalidated and retained.invalidation_reason == "READ_FAILED"
+        assert "UNKNOWN" in retained.consistency and "NOT_RECHECKED" in retained.current_authorization
+        # HTTP404 alone cannot establish expiry vs deletion; no synthetic scope diagnosis.
+        monkeypatch.setattr(api.transport._http, "send", original)
+        assert not projection.load(obs).invalidated
+
+
 def test_explicit_load_always_rechecks_membership_never_serves_a_cache_hit():
     api, ctx, obs, calls = setup()
     with api:
