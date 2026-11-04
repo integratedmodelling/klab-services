@@ -13,6 +13,27 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.utilities.Utils;
 class CohortComputationalClosureTest {
+ @Test void transportedSelectedPortAssociationIsBoundToAliasSupportAndNativeCohort() {
+  var f=new Fixture();f.plan.getData().clear();f.edge.properties().remove(CollectiveReductionBinding.DATA_KEY);
+  var view=new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+  view.setId(org.integratedmodelling.klab.api.knowledge.observation.Observation.QUERY_ID);
+  view.setObservable(f.reasoner.resolveObservable("each test:Stream"));view.setGeometry(f.count.getGeometry());
+  var receipt=new CollectiveSelectionView(1,"each test:Stream","each test:Stream",List.of("test:Selected"),
+      List.of("test:Category"),"reasoner",1,0,null,view.getGeometry().encode(),70,List.of(10L),List.of(),List.of(),"context",null,null);
+  view.getMetadata().put(CollectiveSelectionView.DATA_KEY,Utils.Json.asString(receipt));
+  var child=new ActuatorImpl();child.setActuatorType(Actuator.Type.REFERENCE);child.setName("selected");child.setObservation(view);
+  f.plan.getChildren().add(child);
+  var key=org.integratedmodelling.klab.services.runtime.SelectedQueryInput.DATA_KEY;
+  f.edge.properties().put(key,Utils.Json.asString(new org.integratedmodelling.klab.services.runtime.SelectedQueryInput.Binding(
+      0,"selected",view.getObservable().getUrn(),view.getGeometry().encode())));
+  var transported=Utils.Json.parseObject(Utils.Json.asString(f.plan),ActuatorImpl.class);
+  assertDoesNotThrow(()->ComputationalClosure.requireCollectiveInput(f.cohort,f.edge,transported,f.scope));
+  ((ActuatorImpl)transported.getChildren().getFirst()).setName("other");
+  assertThrows(IllegalStateException.class,()->ComputationalClosure.requireCollectiveInput(f.cohort,f.edge,transported,f.scope));
+  ((ActuatorImpl)transported.getChildren().getFirst()).setName("selected");
+  f.edge.properties().put(ProcessPlan.COLLECTIVE_COHORT_OBSERVABLE,"test:Other");
+  assertThrows(IllegalStateException.class,()->ComputationalClosure.requireCollectiveInput(f.cohort,f.edge,transported,f.scope));
+ }
  @Test void schedulerCatalogueAssociationRetainsExactPlanAndNativeMeaningGuards() {
   var f=new Fixture();assertDoesNotThrow(()->ComputationalClosure.requireCollectiveInput(f.cohort,f.edge,f.plan,f.scope));
   f.edge.properties().put(ProcessPlan.COLLECTIVE_COHORT_OBSERVABLE,"test:Other");
