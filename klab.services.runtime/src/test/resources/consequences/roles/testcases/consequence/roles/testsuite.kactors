@@ -1,0 +1,30 @@
+testcase consequence.roles.testsuite
+    "Guarded intrinsic role attribution and implication before optional characterization"
+    version 1.0
+    using core.context as context, core.inspector as inspector
+
+action init:
+    def bearer_definition {
+        namespace: "consequence.roles.process"
+        name: "bearer"
+        semantics: {{rolefixture:Bearer}}
+        space: {
+            shape: "EPSG:3857 POLYGON ((0 0,0 200,200 200,200 0,0 0))"
+            grid: "100 m"
+        }
+        time: {year: 2014, step: 1.month}
+    }
+
+@test(name="Intrinsic conferral without characterization", description="The authored process confers its role; the role implies a quality even though no role characterization model exists")
+action process_confers_and_role_implies:
+    ctx <- context.new
+    bearer <- ctx.submit(bearer_definition !observer
+        :namespace "consequence.roles.process")
+    assert inspector.viable(bearer)
+    process <- ctx.query({{rolefixture:Birth}} :within bearer)
+    assert inspector.present(process)
+    assert inspector.consequencerole(ctx, process, bearer, {{rolefixture:Marked}}, 30000)
+    assert inspector.consequencetarget(ctx, bearer, {{rolefixture:ImpliedValue}}, 30000)
+    implied <- ctx.query({{rolefixture:ImpliedValue in m}} :within bearer)
+    assert inspector.viable(implied)
+

@@ -253,6 +253,7 @@ class AuthorityLexicalRootTest {
     var registry = mock(ComponentRegistry.class); when(registry.getAuthority(selected, scope)).thenReturn(t.provider);
     doReturn(registry).when(t.service).getComponentRegistry();
     for (var value : Map.of("worldview", (Object) world, "authorityBindings", t.bindings,
+        "capturedAuthorities", org.integratedmodelling.klab.services.reasoner.internal.CapturedAuthorityCatalog.empty(),
         "authorityBootstrapActor", true).entrySet()) {
       var field = ReasonerService.class.getDeclaredField(value.getKey()); field.setAccessible(true); field.set(t.service, value.getValue());
     }

@@ -104,6 +104,22 @@ class AcceptedSemanticRuntimePreflightTest {
     }
   }
 
+  @Test void explicitReloadBypassesRejectionBackoffAndUnchangedAcceptedInput() throws Exception {
+    try (var runtime = runtime()) {
+      var source = world("unchanged");
+      assertTrue(runtime.rejectPreflight(runtime.beginPreflight(source, scope), errors, scope));
+      assertFalse(runtime.beginPreflight(source, scope).retry());
+      var forced = runtime.beginPreflight(source, scope, true);
+      assertTrue(forced.retry());
+      assertTrue(runtime.submit(forced.snapshot(), forced, scope));
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      assertFalse(runtime.beginPreflight(source, scope).retry());
+      assertTrue(runtime.beginPreflight(source, scope, true).retry());
+      verify(factory, times(2)).retryBootstrapFailures();
+      verify(factory, times(2)).invalidateBootstrap();
+    }
+  }
+
   @Test void transientFailureRetriesWithCappedBackoff() {
     try(var runtime=runtime()) {
       var source=world("first");
@@ -239,7 +255,8 @@ class AcceptedSemanticRuntimePreflightTest {
       assertTrue(runtime.shouldRetryPreflight(source,scope));
       var retry=runtime.beginPreflight(source,scope);
       assertTrue(retry.retry());
-      verify(factory).invalidateBootstrap();
+      verify(factory).retryBootstrapFailures();
+      verify(factory, never()).invalidateBootstrap();
       assertTrue(runtime.submit(source,retry,scope));
       assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
       verify(factory,times(2)).capture(any(),same(scope));

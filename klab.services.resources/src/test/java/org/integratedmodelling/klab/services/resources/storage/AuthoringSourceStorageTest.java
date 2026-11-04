@@ -33,6 +33,10 @@ public class AuthoringSourceStorageTest {
     RejectedOntologyAuthoringTest.set(fixture.manager,"projectLocks",new HashMap<>(Map.of(project,WorkspaceManager.projectLockOwner(fixture.user))));
    }
    var service=(ResourcesProvider)RejectedOntologyAuthoringTest.get(fixture.manager,"service");when(service.serviceId()).thenReturn(issuer);when(service.canEditProject(project,fixture.user)).thenReturn(true);
+   // Startup loading reads the configured identity before the provider has its manager assigned.
+   var configuration=(org.integratedmodelling.klab.services.configuration.ResourcesConfiguration)
+       RejectedOntologyAuthoringTest.get(fixture.manager,"configuration");
+   configuration.setServiceId(issuer);
    RejectedOntologyAuthoringTest.set(fixture.manager,"_ontologyOrder",null);fixture.manager.getOntologies(false);
   }
   Project view(){return fixture.manager.createProjectData(project,"workspace");}

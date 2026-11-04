@@ -76,6 +76,11 @@ class RemoteAuthorityMetadataAdmissionTest {
     var finder=ComponentRegistry.class.getDeclaredField("authorityFinder");finder.setAccessible(true);
     @SuppressWarnings("unchecked") var authorities=(org.apache.commons.collections4.MultiValuedMap<String,Extensions.ComponentDescriptor>)finder.get(registry);
     authorities.put("fixture.authority",component);
+    // Direct fixture mutation must cross the same publication boundary as registry writers.
+    assertNull(registry.resolveAuthorityComponent("fixture.authority",null));
+    var publish=ComponentRegistry.class.getDeclaredMethod("publishRegistryView");publish.setAccessible(true);
+    publish.invoke(registry);
+    assertNotNull(registry.resolveAuthorityComponent("fixture.authority",null));
     var server=mock(ResourcesProvider.class,CALLS_REAL_METHODS);doReturn(registry).when(server).getComponentRegistry();doReturn("remote").when(server).serviceId();
     var url=fixture.remote().getUrl();doReturn(url).when(server).getUrl();
     // Existing server protocol treats this suffix as component version: authority v1 is in component v2.

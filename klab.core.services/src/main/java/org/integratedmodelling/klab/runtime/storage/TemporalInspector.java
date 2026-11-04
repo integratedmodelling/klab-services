@@ -20,46 +20,70 @@ public final class TemporalInspector {
   private record Transition(Activity activity, SchedulerJournal journal, TransitionCommit commit) {}
 
   /** Private projection of the durable service wire format; never an execution grant. */
-  private record RegisteredSchedule(int computation, OccurrenceSchedule declaration,
-      OccurrenceSchedule.Bound bound) {}
-  private record Registration(int version, String id, String planRevision,
-      Actuator.ExecutionRole role, long bearerId, List<RegisteredSchedule> schedules, String plan) {}
+  private record RegisteredSchedule(
+      int computation, OccurrenceSchedule declaration, OccurrenceSchedule.Bound bound) {}
+
+  private record Registration(
+      int version,
+      String id,
+      String planRevision,
+      Actuator.ExecutionRole role,
+      long bearerId,
+      List<RegisteredSchedule> schedules,
+      String plan, long activationActivityId) {}
 
   private static Registration registration(Observation process) {
     Object encoded = process.getMetadata().get("klab.scheduler.occurrence");
     if (!(encoded instanceof String text))
       throw new IllegalStateException("Process has no persisted occurrence registration");
     var registration = Utils.Json.parseObject(text, Registration.class);
-    if (process.getId() <= 0 || registration.version() != 1
-        || registration.id() == null || registration.id().isBlank()
-        || registration.planRevision() == null || registration.planRevision().isBlank()
+    if (process.getId() <= 0
+        || (registration.version() != 1 && registration.version() != 2)
+        || (registration.version() == 1 && registration.activationActivityId() != 0)
+        || (registration.version() == 2 && registration.activationActivityId() <= 0)
+        || registration.id() == null
+        || registration.id().isBlank()
+        || registration.planRevision() == null
+        || registration.planRevision().isBlank()
         || registration.role() != Actuator.ExecutionRole.PROCESS
-        || registration.schedules() == null || registration.schedules().size() != 1
-        || registration.plan() == null || registration.plan().isBlank())
+        || registration.schedules() == null
+        || registration.schedules().size() != 1
+        || registration.plan() == null
+        || registration.plan().isBlank())
       throw new IllegalStateException("Invalid process occurrence registration");
     var plan = plan(registration);
-    if (plan.getExecutionRole() != registration.role() || plan.getObservation() == null
+    if (plan.getExecutionRole() != registration.role()
+        || plan.getObservation() == null
         || plan.getObservation().getId() != process.getId()
-        || !Objects.equals(plan.getObservation().getObservable().getSemantics(),
+        || !Objects.equals(
+            plan.getObservation().getObservable().getSemantics(),
             process.getObservable().getSemantics())
         || plan.getOccurrenceSchedules().size() != 1)
       throw new IllegalStateException("Occurrence plan belongs to a different process");
     var scheduled = registration.schedules().getFirst();
-    if (!Objects.equals(scheduled.declaration(), plan.getOccurrenceSchedules().get(scheduled.computation()))
-        || !Objects.equals(scheduled.bound(), scheduled.declaration()
-            .bind(Scale.create(process.getGeometry()).getTime())))
+    if (!Objects.equals(
+            scheduled.declaration(), plan.getOccurrenceSchedules().get(scheduled.computation()))
+        || !Objects.equals(
+            scheduled.bound(),
+            scheduled.declaration().bind(Scale.create(process.getGeometry()).getTime())))
       throw new IllegalStateException("Occurrence plan and registered schedule disagree");
     return registration;
   }
 
   private static Actuator plan(Registration registration) {
-    // The occurrence registration is authoritative; ordinary prerequisite-plan metadata is unrelated.
+    // The occurrence registration is authoritative; ordinary prerequisite-plan metadata is
+    // unrelated.
     return Utils.Json.parseObject(registration.plan(), Actuator.class);
   }
 
   private static List<Activity> creators(ContextScope scope, Observation observation) {
-    return scope.getDigitalTwin().getKnowledgeGraph().query(Activity.class, scope)
-        .target(observation).along(GraphModel.Relationship.CREATED).run(scope);
+    return scope
+        .getDigitalTwin()
+        .getKnowledgeGraph()
+        .query(Activity.class, scope)
+        .target(observation)
+        .along(GraphModel.Relationship.CREATED)
+        .run(scope);
   }
 
   private static List<Transition> history(ContextScope scope, Observation process) {
@@ -82,11 +106,14 @@ public final class TemporalInspector {
       if (journal.kind() != Scheduler.Event.Type.TEMPORAL_TRANSITION
           || !registration.id().equals(journal.registrationId())
           || !registration.planRevision().equals(journal.planRevision())
-          || !events.add(journal.eventId()) || !commits.add(journal.commitId()))
+          || !events.add(journal.eventId())
+          || !commits.add(journal.commitId()))
         throw new IllegalStateException("Duplicate, foreign or non-temporal process commit");
       var support = Geometry.create(journal.support());
       var time = Scale.create(support).getTime();
-      if (time == null || time.getStart() == null || time.getEnd() == null
+      if (time == null
+          || time.getStart() == null
+          || time.getEnd() == null
           || time.getStart().getMilliseconds() != journal.start()
           || time.getEnd().getMilliseconds() != journal.end()
           || !nonTemporalSupport(support).equals(nonTemporalSupport(process.getGeometry())))
@@ -100,14 +127,19 @@ public final class TemporalInspector {
   private static List<String> nonTemporalSupport(Geometry geometry) {
     // Localization promotes the original descriptor to native extents. Compare both in that
     // canonical representation, rather than rejecting equivalent descriptor spellings.
-    return Scale.create(geometry).getDimensions().stream().filter(d -> d.getType() != Geometry.Dimension.Type.TIME)
-        .map(d -> d.encode()).sorted().toList();
+    return Scale.create(geometry).getDimensions().stream()
+        .filter(d -> d.getType() != Geometry.Dimension.Type.TIME)
+        .map(d -> d.encode())
+        .sorted()
+        .toList();
   }
 
   private static long requireObserver(ContextScope scope, Observation process) {
-    var selected = org.integratedmodelling.common.runtime.ObserverProvenance.recover(scope, process);
-    var root = org.integratedmodelling.common.runtime.ObserverProvenance.recover(
-        scope, scope.getContextObservation());
+    var selected =
+        org.integratedmodelling.common.runtime.ObserverProvenance.recover(scope, process);
+    var root =
+        org.integratedmodelling.common.runtime.ObserverProvenance.recover(
+            scope, scope.getContextObservation());
     if (!selected.known() || !root.known())
       throw new IllegalStateException("Process and focused root require recorded observers");
     long observer = selected.observer() == null ? 0 : selected.observer().getId();
@@ -116,20 +148,82 @@ public final class TemporalInspector {
     return observer;
   }
 
-  /** Require one model cadence, its bound context support and exactly the expected durable ticks. */
-  public static boolean scheduleCheck(ContextScope scope, Observation process,
-      double step, Time.Resolution.Type unit, String start, String end, int count) {
+  /**
+   * Opt-in read-only facts captured before a testcase can release its context. Never an execution
+   * grant.
+   */
+  private static void diagnoseSchedule(
+      ContextScope scope,
+      Observation process,
+      Registration registration,
+      double step,
+      Time.Resolution.Type unit,
+      long from,
+      long until,
+      int count) {
+    if (!Boolean.getBoolean("klab.diagnostics.temporalInspector")) return;
+    try {
+      var facts = new LinkedHashMap<String, Object>();
+      facts.put("contextId", scope.getId());
+      facts.put("processId", process.getId());
+      facts.put("geometry", process.getGeometry().encode());
+      facts.put("registered", process.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY));
+      facts.put("registration", registration);
+      var focused = scope.getContextObservation();
+      facts.put("focusId", focused == null ? null : focused.getId());
+      facts.put(
+          "expected",
+          Map.of("step", step, "unit", unit, "start", from, "end", until, "count", count));
+      try {
+        facts.put(
+            "creators",
+            creators(scope, process).stream()
+                .map(
+                    activity -> {
+                      var row = new LinkedHashMap<String, Object>();
+                      row.put("id", activity.getId());
+                      row.put("type", activity.getType());
+                      row.put("outcome", activity.getOutcome());
+                      row.put(
+                          "transition", activity.getMetadata().get(TransitionCommit.METADATA_KEY));
+                      return row;
+                    })
+                .toList());
+      } catch (RuntimeException failure) {
+        facts.put("creatorsFailure", failure.getClass().getName());
+      }
+      scope.warn("TEMPORAL_SCHEDULE_DIAGNOSTIC " + Utils.Json.asString(facts));
+    } catch (RuntimeException ignored) {
+      /* Diagnostics must not change any assertion or guard. */
+    }
+  }
+
+  /**
+   * Require one model cadence, its bound context support and exactly the expected durable ticks.
+   */
+  public static boolean scheduleCheck(
+      ContextScope scope,
+      Observation process,
+      double step,
+      Time.Resolution.Type unit,
+      String start,
+      String end,
+      int count) {
     if (count < 1) throw new IllegalArgumentException("Expected transition count must be positive");
     long from = Instant.parse(start).toEpochMilli(), until = Instant.parse(end).toEpochMilli();
     var registration = registration(process);
     var plan = plan(registration);
+    diagnoseSchedule(scope, process, registration, step, unit, from, until, count);
     if (plan.getExecutionRole() != Actuator.ExecutionRole.PROCESS
         || !Boolean.TRUE.equals(process.getMetadata().get(Scheduler.REGISTRATION_METADATA_KEY))
         || plan.getOccurrenceSchedules().size() != 1) return false;
     var declaration = plan.getOccurrenceSchedules().values().iterator().next();
     var bound = declaration.bind(Scale.create(process.getGeometry()).getTime());
-    if (declaration.source() != OccurrenceSchedule.Source.MODEL || declaration.step() != step
-        || declaration.unit() != unit || bound.start() != from || bound.end() != until
+    if (declaration.source() != OccurrenceSchedule.Source.MODEL
+        || declaration.step() != step
+        || declaration.unit() != unit
+        || bound.start() != from
+        || bound.end() != until
         || bound.anchor() != from) return false;
     var transitions = history(scope, process);
     if (transitions.size() != count) return false;
@@ -137,19 +231,109 @@ public final class TemporalInspector {
     long cursor = from;
     for (var transition : transitions) {
       long next = Math.min(until, cadence.advance(cursor));
-      if (transition.journal().start() != cursor || transition.journal().end() != next
+      if (transition.journal().start() != cursor
+          || transition.journal().end() != next
           || next <= cursor) return false;
       cursor = next;
     }
     return cursor == until;
   }
 
+  private static Map<String, Object> diagnosticRead(
+      ContextScope scope, Observation quality, Scheduler.Event event) {
+    try (var frame =
+        StorageReads.open(
+            quality, scope, event, Data.FillCurve.UNSPECIFIED, Storage.DoubleScanner.class)) {
+      var scanner = frame.scanners().getFirst();
+      var cells = new ArrayList<Map<String, Object>>();
+      while (scanner.hasNext() && cells.size() < 16) {
+        var cell = new LinkedHashMap<String, Object>();
+        cell.put("position", scanner.position());
+        cell.put("valid", scanner.isValid());
+        cell.put("value", scanner.isValid() ? scanner.peek() : null);
+        cells.add(cell);
+        scanner.nextLong();
+      }
+      return Map.of(
+          "size",
+          scanner.size(),
+          "cells",
+          cells,
+          "sources",
+          scanner.view().sources().stream().map(StorageScan.SourceShard::urn).toList());
+    }
+  }
+
+  /**
+   * Bounded read-only evidence comparison. It never substitutes the fresh handle in the assertion.
+   */
+  private static void diagnoseRelative(
+      ContextScope scope,
+      Observation process,
+      Observation quality,
+      List<Transition> transitions,
+      int count,
+      double delta,
+      double tolerance) {
+    if (!Boolean.getBoolean("klab.diagnostics.temporalInspector")) return;
+    try {
+      var facts = new LinkedHashMap<String, Object>();
+      facts.put("contextId", scope.getId());
+      facts.put("processId", process.getId());
+      facts.put("qualityId", quality.getId());
+      facts.put("heldMeaning", quality.getObservable().getUrn());
+      facts.put("heldTemporalHistory", quality.getMetadata().get(TemporalHistory.KEY));
+      facts.put("count", count);
+      facts.put("delta", delta);
+      facts.put("tolerance", tolerance);
+      var fresh =
+          scope
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .query(Observation.class, scope)
+              .where(GraphModel.Fields.ID, KnowledgeGraph.Query.Operator.EQUALS, quality.getId())
+              .run(scope);
+      facts.put("freshMatches", fresh.size());
+      if (fresh.size() == 1) {
+        var current = fresh.getFirst();
+        facts.put("freshId", current.getId());
+        facts.put("freshMeaning", current.getObservable().getUrn());
+        facts.put("freshTemporalHistory", current.getMetadata().get(TemporalHistory.KEY));
+        try {
+          facts.put("initial", diagnosticRead(scope, current, Scheduler.Event.initialization()));
+          var reads = new ArrayList<Map<String, Object>>();
+          facts.put("transitionCount", transitions.size());
+          for (var transition : transitions.stream().limit(16).toList()) {
+            var journal = transition.journal();
+            var event =
+                new StorageScan.Slice(
+                        journal.kind(), journal.eventId(), journal.start(), journal.end())
+                    .event();
+            reads.add(Map.of("journal", journal, "read", diagnosticRead(scope, current, event)));
+          }
+          facts.put("transitions", reads);
+        } catch (RuntimeException failure) {
+          facts.put("readFailure", failure.getClass().getName());
+        }
+      }
+      scope.warn("TEMPORAL_RELATIVE_DIAGNOSTIC " + Utils.Json.asString(facts));
+    } catch (RuntimeException ignored) {
+      /* Diagnostic reads never replace assertion evidence. */
+    }
+  }
+
   /** Compare every covered cell at tick n with its own INIT value plus n*delta. */
-  public static boolean relativeCheck(ContextScope scope, Observation process, Observation quality,
-      int count, double delta, double tolerance) {
+  public static boolean relativeCheck(
+      ContextScope scope,
+      Observation process,
+      Observation quality,
+      int count,
+      double delta,
+      double tolerance) {
     if (count < 1 || !Double.isFinite(delta) || !Double.isFinite(tolerance) || tolerance < 0)
       throw new IllegalArgumentException("Invalid relative-value assertion");
     var transitions = history(scope, process);
+    diagnoseRelative(scope, process, quality, transitions, count, delta, tolerance);
     if (transitions.size() != count) return false;
     Object encodedHistory = quality.getMetadata().get(TemporalHistory.KEY);
     if (!(encodedHistory instanceof String text)) return false;
@@ -159,41 +343,62 @@ public final class TemporalInspector {
       var journal = transitions.get(n).journal();
       if (!journal.changedAssets().contains(quality.getId())) return false;
       var matching = revisions.stream().filter(r -> r.event().equals(journal.eventId())).toList();
-      var deltas = transitions.get(n).commit().qualities().stream()
-          .filter(d -> d.observationId() == quality.getId() && d.eventId().equals(journal.eventId())).toList();
+      var deltas =
+          transitions.get(n).commit().qualities().stream()
+              .filter(
+                  d ->
+                      d.observationId() == quality.getId() && d.eventId().equals(journal.eventId()))
+              .toList();
       if (matching.size() != 1 || deltas.size() != 1) return false;
-      var revision = matching.getFirst(); var committed = deltas.getFirst();
+      var revision = matching.getFirst();
+      var committed = deltas.getFirst();
       var expectedShards = new HashSet<>(committed.shards());
       var revisionTime = Scale.create(Geometry.create(revision.support())).getTime();
-      if (revision.start() != journal.start() || revision.end() != journal.end()
-          || !revision.support().equals(committed.support()) || revisionTime == null
-          || revisionTime.getStart() == null || revisionTime.getEnd() == null
+      if (revision.start() != journal.start()
+          || revision.end() != journal.end()
+          || !revision.support().equals(committed.support())
+          || revisionTime == null
+          || revisionTime.getStart() == null
+          || revisionTime.getEnd() == null
           || revisionTime.getStart().getMilliseconds() != journal.start()
           || revisionTime.getEnd().getMilliseconds() != journal.end()
           || !new HashSet<>(revision.shards()).equals(expectedShards)
           || expectedShards.size() != committed.shards().size()) return false;
-      var event = new StorageScan.Slice(journal.kind(), journal.eventId(), journal.start(), journal.end()).event();
-      try (var initial = StorageReads.open(quality, scope, Scheduler.Event.initialization(),
-              Data.FillCurve.UNSPECIFIED, Storage.DoubleScanner.class);
-          var current = StorageReads.open(quality, scope, event,
-              Data.FillCurve.UNSPECIFIED, Storage.DoubleScanner.class)) {
+      var event =
+          new StorageScan.Slice(journal.kind(), journal.eventId(), journal.start(), journal.end())
+              .event();
+      try (var initial =
+              StorageReads.open(
+                  quality,
+                  scope,
+                  Scheduler.Event.initialization(),
+                  Data.FillCurve.UNSPECIFIED,
+                  Storage.DoubleScanner.class);
+          var current =
+              StorageReads.open(
+                  quality, scope, event, Data.FillCurve.UNSPECIFIED, Storage.DoubleScanner.class)) {
         var left = initial.scanners().getFirst();
         var right = current.scanners().getFirst();
-        if (!right.view().sources().stream().map(StorageScan.SourceShard::urn)
-            .collect(java.util.stream.Collectors.toSet()).equals(expectedShards)) return false;
+        if (!right.view().sources().stream()
+            .map(StorageScan.SourceShard::urn)
+            .collect(java.util.stream.Collectors.toSet())
+            .equals(expectedShards)) return false;
         if (left.size() != right.size()) return false;
         while (left.hasNext()) {
-          if (!right.hasNext() || left.position() != right.position()
+          if (!right.hasNext()
+              || left.position() != right.position()
               || left.isValid() != right.isValid()) return false;
           if (left.isValid()) {
             double expected = left.peek() + (n + 1) * delta;
             double actual = right.peek();
-            if (!Double.isFinite(expected) || !Double.isFinite(actual)
+            if (!Double.isFinite(expected)
+                || !Double.isFinite(actual)
                 || Math.abs(actual - expected) > Math.max(tolerance, 4 * Math.ulp(expected)))
               return false;
             finite++;
           }
-          left.nextLong(); right.nextLong();
+          left.nextLong();
+          right.nextLong();
         }
         if (right.hasNext()) return false;
       }
@@ -208,10 +413,17 @@ public final class TemporalInspector {
     for (var activity : creators(scope, process)) {
       var recorded = activity.getMetadata().get(Metadata.IM_OBSERVER_SELECTION_ID);
       if (!(recorded instanceof Number id) || id.longValue() != observer) return false;
-      var linked = scope.getDigitalTwin().getKnowledgeGraph().query(Observation.class, scope)
-          .source(activity).along(GraphModel.Relationship.HAS_OBSERVER).run(scope);
-      if (observer == 0 ? !linked.isEmpty() : linked.size() != 1 || linked.getFirst().getId() != observer)
-        return false;
+      var linked =
+          scope
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .query(Observation.class, scope)
+              .source(activity)
+              .along(GraphModel.Relationship.HAS_OBSERVER)
+              .run(scope);
+      if (observer == 0
+          ? !linked.isEmpty()
+          : linked.size() != 1 || linked.getFirst().getId() != observer) return false;
       if (activity.getType() == Activity.Type.INITIALIZATION) {
         existence++;
         if (activity.getType().isContextualization()
@@ -221,27 +433,45 @@ public final class TemporalInspector {
       } else if (activity.getSchedulerTime().contains(0L)) return false;
     }
     if (existence != 1) return false;
-    if (scope.getDigitalTwin().getKnowledgeGraph().query(Storage.Shard.class, scope)
-        .source(process).along(GraphModel.Relationship.HAS_DATA).run(scope).stream()
+    if (scope
+        .getDigitalTwin()
+        .getKnowledgeGraph()
+        .query(Storage.Shard.class, scope)
+        .source(process)
+        .along(GraphModel.Relationship.HAS_DATA)
+        .run(scope)
+        .stream()
         .anyMatch(shard -> shard.getTimestamp() == 0)) return false;
     var encoded = plan(registration(process)).getData().get(ProcessPlan.DATA_KEY);
     if (encoded == null) return false;
     var bindings = Utils.Json.parseObject(encoded.toString(), ProcessPlan.class);
-    var created = bindings.bindings().stream()
-        .filter(b -> b.effect() == ProcessPlan.Effect.CREATED).toList();
+    var created =
+        bindings.bindings().stream().filter(b -> b.effect() == ProcessPlan.Effect.CREATED).toList();
     if (!created.isEmpty()) {
-      var observations = scope.getDigitalTwin().getKnowledgeGraph().query(Observation.class, scope).run(scope);
-      for (var binding : created) for (var quality : observations) {
-        long bearer = binding.bearer() == ProcessPlan.Bearer.OCCURRENT ? process.getId() : bindings.bearerId();
-        if (quality.getParentId() != bearer) continue;
-        if (!quality.getObservable().getSemantics().equals(binding.observable().getSemantics())) continue;
-        if (creators(scope, quality).stream().anyMatch(a -> a.getType() == Activity.Type.INITIALIZATION))
-          return false;
-        // Native INIT access may allocate storage: inspect committed descriptors instead.
-        if (scope.getDigitalTwin().getKnowledgeGraph().query(Storage.Shard.class, scope)
-            .source(quality).along(GraphModel.Relationship.HAS_DATA).run(scope).stream()
-            .anyMatch(shard -> shard.getTimestamp() == 0)) return false;
-      }
+      var observations =
+          scope.getDigitalTwin().getKnowledgeGraph().query(Observation.class, scope).run(scope);
+      for (var binding : created)
+        for (var quality : observations) {
+          long bearer =
+              binding.bearer() == ProcessPlan.Bearer.OCCURRENT
+                  ? process.getId()
+                  : bindings.bearerId();
+          if (quality.getParentId() != bearer) continue;
+          if (!quality.getObservable().getSemantics().equals(binding.observable().getSemantics()))
+            continue;
+          if (creators(scope, quality).stream()
+              .anyMatch(a -> a.getType() == Activity.Type.INITIALIZATION)) return false;
+          // Native INIT access may allocate storage: inspect committed descriptors instead.
+          if (scope
+              .getDigitalTwin()
+              .getKnowledgeGraph()
+              .query(Storage.Shard.class, scope)
+              .source(quality)
+              .along(GraphModel.Relationship.HAS_DATA)
+              .run(scope)
+              .stream()
+              .anyMatch(shard -> shard.getTimestamp() == 0)) return false;
+        }
     }
     return true;
   }

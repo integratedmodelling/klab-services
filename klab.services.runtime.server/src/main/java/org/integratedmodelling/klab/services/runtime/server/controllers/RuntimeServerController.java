@@ -25,8 +25,8 @@ import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
@@ -71,55 +71,78 @@ public class RuntimeServerController {
 
   @PostMapping(ServicesAPI.RUNTIME.MEMBER_QUALITY_CONSUMER)
   public boolean memberQualityConsumer(
-      @RequestBody org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerRequest request,
+      @RequestBody
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerRequest
+              request,
       Principal principal) {
-    if(!(principal instanceof EngineAuthorization authorization))
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
-    var scope=authorization.getScope(ContextScope.class);
-    if(scope==null)throw new IllegalArgumentException("Consumer inspection requires an authorized context");
+    if (!(principal instanceof EngineAuthorization authorization))
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.UNAUTHORIZED);
+    var scope = authorization.getScope(ContextScope.class);
+    if (scope == null)
+      throw new IllegalArgumentException("Consumer inspection requires an authorized context");
     request.validate();
-    return runtimeService.klabService().supportsMemberQualityInput(request.call(),request.port(),scope);
+    return runtimeService
+        .klabService()
+        .supportsMemberQualityInput(request.call(), request.port(), scope);
   }
 
   @PostMapping(ServicesAPI.RUNTIME.MEMBER_QUALITY_INPUTS)
   public org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection
-      memberQualityInputs(@RequestBody org.integratedmodelling.klab.api.lang.ServiceCall call,Principal principal) {
-    if(!(principal instanceof EngineAuthorization authorization))
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
-    var scope=authorization.getScope(Scope.class);
-    if(scope==null)throw new IllegalArgumentException("Consumer inspection requires an authorized scope");
-    if(call==null || call.getUrn()==null || call.getUrn().isBlank())
+      memberQualityInputs(
+          @RequestBody org.integratedmodelling.klab.api.lang.ServiceCall call,
+          Principal principal) {
+    if (!(principal instanceof EngineAuthorization authorization))
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.UNAUTHORIZED);
+    var scope = authorization.getScope(Scope.class);
+    if (scope == null)
+      throw new IllegalArgumentException("Consumer inspection requires an authorized scope");
+    if (call == null || call.getUrn() == null || call.getUrn().isBlank())
       throw new IllegalArgumentException("Consumer inspection requires a named function");
-    return runtimeService.klabService().inspectMemberQualityInputs(call,scope);
+    return runtimeService.klabService().inspectMemberQualityInputs(call, scope);
   }
 
   @PostMapping(ServicesAPI.RUNTIME.MEMBER_QUALITIES)
-  @Operation(summary = "Resolve a native quality for each member without creating a container field")
+  @Operation(
+      summary = "Resolve a native quality for each member without creating a container field")
   public long memberQualities(
-      @RequestBody org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
+      @RequestBody
+          org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityRequest request,
       Principal principal) {
     if (!(principal instanceof EngineAuthorization authorization))
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
-    var scope=authorization.getScope(ContextScope.class);
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.UNAUTHORIZED);
+    var scope = authorization.getScope(ContextScope.class);
     if (!(scope instanceof ServiceContextScope serviceScope))
       throw new IllegalArgumentException("Member qualities require an authorized context");
     request.validate();
-    if (request.agentName()==null || request.agentName().isBlank())
+    if (request.agentName() == null || request.agentName().isBlank())
       throw new IllegalArgumentException("Member qualities require a provenance agent");
-    var agent=serviceScope.getDigitalTwin().getKnowledgeGraph().requireAgent(request.agentName());
-    var selected=serviceScope.withResolutionConstraints(request.resolutionConstraints().toArray(new ResolutionConstraint[0]))
-        .withResolutionConstraints(ResolutionConstraint.of(ResolutionConstraint.Type.Provenance,agent));
-    var future=runtimeService.klabService().resolveMemberQualities(request,selected);
-    return serviceScope.getJobManager().submit(future,"Native member qualities",()->future.cancel(true));
+    var agent = serviceScope.getDigitalTwin().getKnowledgeGraph().requireAgent(request.agentName());
+    var selected =
+        serviceScope
+            .withResolutionConstraints(
+                request.resolutionConstraints().toArray(new ResolutionConstraint[0]))
+            .withResolutionConstraints(
+                ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
+    var future = runtimeService.klabService().resolveMemberQualities(request, selected);
+    return serviceScope
+        .getJobManager()
+        .submit(future, "Native member qualities", () -> future.cancel(true));
   }
 
-  @Operation(summary = "Read one observation cell", description = "Exact text from a planned read view; null denotes missing data")
+  @Operation(
+      summary = "Read one observation cell",
+      description = "Exact text from a planned read view; null denotes missing data")
   @PostMapping(value = ServicesAPI.RUNTIME.READ_VALUE, produces = "text/plain")
   public @ResponseBody String readValue(
-      @RequestBody org.integratedmodelling.klab.api.data.StorageScan.Point point, Principal principal) {
+      @RequestBody org.integratedmodelling.klab.api.data.StorageScan.Point point,
+      Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
       var scope = authorization.getScope(ContextScope.class);
-      if (scope == null) throw new IllegalArgumentException("Cell access requires an authorized context");
+      if (scope == null)
+        throw new IllegalArgumentException("Cell access requires an authorized context");
       return runtimeService.klabService().readValue(point, scope);
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
@@ -128,15 +151,19 @@ public class RuntimeServerController {
   // TODO rename to generalized AGENT geometry endpoint
   @GetMapping(ServicesAPI.RUNTIME.GET_OBSERVER_GEOMETRY)
   @Operation(summary = "Audit occupied and perceived geometry of an observer")
-  public org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView getObserverGeometry(
-      @PathVariable long id, Principal principal) {
+  public org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryView
+      getObserverGeometry(@PathVariable long id, Principal principal) {
     if (!(principal instanceof EngineAuthorization authorization)) {
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.UNAUTHORIZED);
     }
     try {
-      return runtimeService.klabService().getObserverGeometry(id, authorization.getScope(ContextScope.class));
+      return runtimeService
+          .klabService()
+          .getObserverGeometry(id, authorization.getScope(ContextScope.class));
     } catch (IllegalArgumentException e) {
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
   }
 
@@ -144,18 +171,24 @@ public class RuntimeServerController {
   @PostMapping(ServicesAPI.RUNTIME.UPDATE_OBSERVER_GEOMETRY)
   @Operation(summary = "Replace an observer's perceived spatial extent, preserving time")
   public Observation updateObserverGeometry(
-      @RequestBody org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryUpdate update,
+      @RequestBody
+          org.integratedmodelling.klab.api.services.runtime.objects.ObserverGeometryUpdate update,
       Principal principal) {
     if (!(principal instanceof EngineAuthorization authorization)) {
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.UNAUTHORIZED);
     }
     try {
-      return Observation.forTransport(runtimeService.klabService().updateObserverGeometry(
-          update, authorization.getScope(ContextScope.class)));
+      return Observation.forTransport(
+          runtimeService
+              .klabService()
+              .updateObserverGeometry(update, authorization.getScope(ContextScope.class)));
     } catch (java.util.ConcurrentModificationException e) {
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, e.getMessage(), e);
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.CONFLICT, e.getMessage(), e);
     } catch (IllegalArgumentException e) {
-      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
   }
 
@@ -190,15 +223,17 @@ public class RuntimeServerController {
       if (contextScope instanceof ServiceContextScope serviceContextScope) {
         var scope = serviceContextScope;
         if (resolutionRequest.getObservation().getId() != Observation.QUERY_ID) {
-          var agent = serviceContextScope.getDigitalTwin().getKnowledgeGraph()
-              .requireAgent(resolutionRequest.getAgentName());
-          scope = serviceContextScope.withResolutionConstraints(
-              ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
+          var agent =
+              serviceContextScope
+                  .getDigitalTwin()
+                  .getKnowledgeGraph()
+                  .requireAgent(resolutionRequest.getAgentName());
+          scope =
+              serviceContextScope.withResolutionConstraints(
+                  ResolutionConstraint.of(ResolutionConstraint.Type.Provenance, agent));
         }
         var submission =
-            runtimeService
-                .klabService()
-                .submit(resolutionRequest.getObservation(), scope);
+            runtimeService.klabService().submit(resolutionRequest.getObservation(), scope);
         var ret = submission.thenApply(Observation::forTransport);
         return serviceContextScope
             .getJobManager()
@@ -215,13 +250,17 @@ public class RuntimeServerController {
   public void exportObservation(
       @RequestBody ObservationExportRequest request,
       @RequestHeader(HttpHeaders.ACCEPT) String mediaType,
-      HttpServletResponse response, Principal principal) throws IOException {
+      HttpServletResponse response,
+      Principal principal)
+      throws IOException {
     if (!(principal instanceof EngineAuthorization authorization))
-      throw new KlabAuthorizationException(
-          "Observation export requires a context scope");
+      throw new KlabAuthorizationException("Observation export requires a context scope");
     var scope = authorization.getScope(ContextScope.class);
-    try (var stream = runtimeService.klabService().exportObservation(
-        request.getObservation(), mediaType, request.getParameters(), scope)) {
+    try (var stream =
+        runtimeService
+            .klabService()
+            .exportObservation(
+                request.getObservation(), mediaType, request.getParameters(), scope)) {
       if (stream == null) throw new IllegalArgumentException("Exporter returned no data");
       response.setContentType(mediaType);
       stream.transferTo(response.getOutputStream());
@@ -232,11 +271,13 @@ public class RuntimeServerController {
   public List<Observation> observationMembers(
       @RequestBody Observation observation, Principal principal) {
     if (!(principal instanceof EngineAuthorization authorization))
-      throw new KlabAuthorizationException(
-          "Member enumeration requires a context scope");
-    return runtimeService.klabService()
-        .getMembers(observation, authorization.getScope(ContextScope.class)).stream()
-        .map(Observation::forTransport).toList();
+      throw new KlabAuthorizationException("Member enumeration requires a context scope");
+    return runtimeService
+        .klabService()
+        .getMembers(observation, authorization.getScope(ContextScope.class))
+        .stream()
+        .map(Observation::forTransport)
+        .toList();
   }
 
   /**
@@ -324,8 +365,7 @@ public class RuntimeServerController {
               agentSession.setupQueues(
                   queuesHeader == null ? agentSession.defaultQueues() : queuesHeader);
           response.setHeader(
-              ServicesAPI.MESSAGING_QUEUES_HEADER,
-              Utils.Strings.join(implementedQueues, ", "));
+              ServicesAPI.MESSAGING_QUEUES_HEADER, Utils.Strings.join(implementedQueues, ", "));
         }
       }
       return clientAgent;
@@ -353,9 +393,11 @@ public class RuntimeServerController {
       })
   @PostMapping(ServicesAPI.RUNTIME.CONFIGURE_GRID)
   public @ResponseBody org.integratedmodelling.klab.api.digitaltwin.GridAlignment configureGrid(
-      @RequestBody java.util.Map<String,String> request, Principal principal) {
+      @RequestBody java.util.Map<String, String> request, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
-      return runtimeService.klabService().configureGrid(request.get("definitionUrn"), authorization.getScope(ContextScope.class));
+      return runtimeService
+          .klabService()
+          .configureGrid(request.get("definitionUrn"), authorization.getScope(ContextScope.class));
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
@@ -633,16 +675,18 @@ public class RuntimeServerController {
   }
 
   @ExceptionHandler(KnowledgeGraph.QueryException.class)
-  public org.springframework.http.ResponseEntity<org.springframework.http.ProblemDetail> queryFailure(
-      KnowledgeGraph.QueryException failure) {
-    var status = switch (failure.getCode()) {
-      case INVALID_QUERY -> org.springframework.http.HttpStatus.BAD_REQUEST;
-      case UNSUPPORTED_QUERY -> org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
-      case ACCESS_DENIED -> org.springframework.http.HttpStatus.FORBIDDEN;
-      case BACKEND_UNAVAILABLE -> org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
-      case EXECUTION_FAILED -> org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-    };
-    var problem = org.springframework.http.ProblemDetail.forStatusAndDetail(status, failure.getMessage());
+  public org.springframework.http.ResponseEntity<org.springframework.http.ProblemDetail>
+      queryFailure(KnowledgeGraph.QueryException failure) {
+    var status =
+        switch (failure.getCode()) {
+          case INVALID_QUERY -> org.springframework.http.HttpStatus.BAD_REQUEST;
+          case UNSUPPORTED_QUERY -> org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
+          case ACCESS_DENIED -> org.springframework.http.HttpStatus.FORBIDDEN;
+          case BACKEND_UNAVAILABLE -> org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
+          case EXECUTION_FAILED -> org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+        };
+    var problem =
+        org.springframework.http.ProblemDetail.forStatusAndDetail(status, failure.getMessage());
     problem.setProperty("code", failure.getCode().name());
     return org.springframework.http.ResponseEntity.status(status).body(problem);
   }
@@ -653,12 +697,58 @@ public class RuntimeServerController {
   @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_KNOWLEDGE_GRAPH_ASSET)
   public @ResponseBody RuntimeAsset retrieveAsset(
       @PathVariable(name = "id") long id, Principal principal) {
+    return retrieveAsset(id, principal, false);
+  }
+
+  @GetMapping(ServicesAPI.RUNTIME.RETRIEVE_OBSERVATION_FOR_ADMISSION)
+  public @ResponseBody RuntimeAsset retrieveObservationForAdmission(
+      @PathVariable(name = "id") long id, Principal principal) {
+    return retrieveAsset(id, principal, true);
+  }
+
+  private RuntimeAsset retrieveAsset(long id, Principal principal, boolean forAdmission) {
     if (principal instanceof EngineAuthorization authorization) {
       var contextScope = authorization.getScope(ContextScope.class);
-      return contextScope
-          .getDigitalTwin()
-          .getKnowledgeGraph()
-          .getAsset(id, contextScope, RuntimeAsset.class);
+      if (id < Observation.UNASSIGNED_ID) {
+        var transaction = contextScope == null ? null : contextScope.getCurrentTransaction();
+        if (!(contextScope
+                instanceof org.integratedmodelling.klab.services.scopes.ServiceContextScope local)
+            || transaction == null
+            || transaction.isFailed()
+            || local.getTransaction(transaction.getId()) != transaction
+            || !(transaction
+                instanceof
+                org.integratedmodelling.klab.runtime.lifecycle.CycleScopedTransaction scoped))
+          throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+              "Prospective observation requires an active owned transaction");
+        var owner = scoped.executionScope();
+        if (owner == null
+            || !authorization.isAuthenticated()
+            || !java.util.Objects.equals(owner.getId(), local.getId())
+            || owner.getUser() == null
+            || local.getUser() == null
+            || !java.util.Objects.equals(authorization.getUsername(), local.getUser().getUsername())
+            || !java.util.Objects.equals(
+                owner.getUser().getUsername(), local.getUser().getUsername())
+            || owner.getResolutionCycleBinding() == null
+            || !owner.getResolutionCycleBinding().equals(local.getResolutionCycleBinding())
+            || !java.util.Objects.equals(owner.getObserverId(), local.getObserverId()))
+          throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+              "Prospective observation differs from its transaction owner");
+        var observation = forAdmission
+            ? local.getObservationForAdmission(id) : local.getObservation(id);
+        if (observation == null || observation.getId() != id)
+          throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+              "Prospective observation is not registered in this transaction");
+        return Observation.forTransport(observation);
+      }
+      var graph = contextScope.getDigitalTwin().getKnowledgeGraph();
+      var asset = graph.getAsset(id, contextScope, RuntimeAsset.class);
+      // A cached representation is not proof of current lifecycle status or context ownership.
+      return asset instanceof Observation observation
+              && !graph.isObservationCurrent(observation, contextScope)
+          ? null
+          : asset;
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
@@ -782,7 +872,8 @@ public class RuntimeServerController {
                   .getScope(request.getConfiguration().getId(), SessionScope.class);
           if (existing != null) {
             if (!(existing instanceof ServiceSessionScope managed)
-                || !org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(managed, userScope)) {
+                || !org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(
+                    managed, userScope)) {
               throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
                   "Session is not accessible to the requesting user");
             }
@@ -883,7 +974,8 @@ public class RuntimeServerController {
           var requestedId = contextId == null ? request.getConfiguration().getId() : contextId;
           if (requestedId != null) {
             if (!requestedId.startsWith(sessionScope.getId() + ".")) {
-              throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context does not belong to the authorized session");
+              throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+                  "Context does not belong to the authorized session");
             }
             var existing = runtimeService.klabService().getConfiguration(requestedId, userScope);
             if (existing != null) {
@@ -894,12 +986,20 @@ public class RuntimeServerController {
 
           var ret =
               new ServiceContextScope(
-                  serviceSessionScope.forRequest((ServiceUserScope) userScope), request.getConfiguration(), userScope.getUser());
+                  serviceSessionScope.forRequest((ServiceUserScope) userScope),
+                  request.getConfiguration(),
+                  userScope.getUser());
 
-          if (request.getConfiguration() instanceof org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl configuration) {
+          if (request.getConfiguration()
+              instanceof
+              org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl configuration) {
             configuration.setOwner(userScope.getUser().getUsername());
-            configuration.setSessionFederationId(org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(serviceSessionScope, userScope)
-                && federation != null ? federation.getId() : null);
+            configuration.setSessionFederationId(
+                org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(
+                            serviceSessionScope, userScope)
+                        && federation != null
+                    ? federation.getId()
+                    : null);
           }
 
           if (!ret.getUser().getUsername().equals(identity.getUsername())) {
@@ -954,13 +1054,23 @@ public class RuntimeServerController {
     if (principal instanceof EngineAuthorization authorization) {
       var sessionScope = authorization.getScope(SessionScope.class);
       if (sessionScope != null) {
-        var registered = runtimeService.klabService().getScopeManager()
-            .getScope(sessionScope.getId(), ServiceSessionScope.class);
+        var registered =
+            runtimeService
+                .klabService()
+                .getScopeManager()
+                .getScope(sessionScope.getId(), ServiceSessionScope.class);
         if (registered == null) return false;
-        var requester = runtimeService.klabService().getScopeManager().getOrCreateUserScope(authorization);
-        if (!org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(registered, requester)
-            || (org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(registered)
-                && !authorization.getRoles().contains(org.integratedmodelling.klab.services.application.security.Role.ROLE_ADMINISTRATOR))) {
+        var requester =
+            runtimeService.klabService().getScopeManager().getOrCreateUserScope(authorization);
+        if (!org.integratedmodelling.klab.services.scopes.ScopeManager.allowsManagedScope(
+                registered, requester)
+            || (org.integratedmodelling.klab.services.scopes.ScopeManager.isSharedDefaultSession(
+                    registered)
+                && !authorization
+                    .getRoles()
+                    .contains(
+                        org.integratedmodelling.klab.services.application.security.Role
+                            .ROLE_ADMINISTRATOR))) {
           throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
               "Only an administrator may release a shared federation session");
         }

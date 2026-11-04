@@ -1,5 +1,84 @@
 # Observation resolution in k.LAB
 
+For the admission stages, receipt meanings, transaction ownership, and HTTP focus restoration,
+see [model and observation admission](ADMISSION.md).
+
+## Cycle observer and discovery latency
+
+The observer selected on entry to a resolution cycle remains fixed through its consequences.
+Derived server scopes retain that snapshot; native graph revisions during the cycle do not
+refresh it. Outside a cycle, observer access still checks the current graph revision.
+Retained Reasoner operations without a scope argument do not reconstruct the observer or
+call the native graph. Document validation and operations that consume scope still prepare
+their observer context before entering the semantic monitor. Pure semantic RPCs also omit native
+focus, observer and transaction routing headers, so authentication does not reconstruct an unused
+perspective before controller dispatch. Capabilities retains caller permissions and cycle identity
+without an observation perspective. The cycle codec shares an immutable configured mapper while
+continuing to decode detached values on every invocation.
+
+Resources candidate discovery has a ten-second supplier budget covering capability negotiation,
+source transfer and legacy fallback together. `klab.resources.candidateTimeoutSeconds` can set
+that budget between one and 300 seconds. An expired request is interrupted, reported as
+incomplete discovery, and retained as a failed supplier snapshot for this attempt; dependency
+queries do not retry it. The next resolution attempt may try the provider again. Supplier calls
+remain concurrent. Candidate filtering computes the requested core and its resolving heads
+once per catalog query, rather than once per model. These changes preserve final admission.
+Generalized heads are expanded lazily: an exact core match needs no expansion, and a quality
+core cannot match a substantial core. Generalized quality candidates, substantial subtype cases
+and unknown type information retain the existing expansion path.
+Within a resolution attempt, source-to-model mapping retains an unadmitted, portable template
+keyed by requesting identity, retained actor/cycle binding, supplier, exact source hash and model
+member. Each consumer receives a detached copy before preparation or admission. Source identity
+is still checked on cache hits. A different source, actor, cycle or attempt requires fresh mapping;
+this cache supplies no admission grant and does not retain consumer preparation mutations.
+
+Queries taking more than one second log `Model query timing` with discovery, mapping, filtering
+and admission/ranking durations, plus supplied/eligible/admitted candidate counts and retained
+semantic call counts/time. The complete resolution attempt also logs its semantic call totals,
+including work outside candidate queries. These counters describe calls on the Resolver thread,
+not downstream RPCs issued by other services.
+Slow Reasoner operations separately log preparation, actor-lock wait, input binding, execution and
+encoding time. Runtime also logs slow cycle admission (queue, semantic preparation and binding)
+and submission preparation, so a gap after observer contextualization can be attributed.
+
+Root transaction post-commit callbacks run after durable publication and transaction cleanup,
+outside the transaction graph monitor, while retaining the cycle driver. This permits temporal
+activation to call services that query the graph without blocking against its own commit.
+Callbacks retain their ordering before consequence notification and membership propagation.
+
+The 4 November live `testregion` run resolved in approximately 100 seconds, then stalled for
+another five minutes before its first SIMULATION activity. Runtime and Reasoner logs identify
+an observer-restoration callback during temporal activation followed by the default HTTP timeout.
+The subsequent rebuilt run executed SIMULATION correctly. Its main resolution still took about
+three minutes, with only 2.6 seconds in supplier discovery across three catalog queries. Warm
+read-only live probes returned individual semantic operations in milliseconds; these do not
+establish cold or end-to-end performance. Prefilter and transport optimizations require a rebuilt
+live timing measurement before claiming that the remaining resolution delay is fixed.
+The next run, still using the previous IDE, recorded 139.6 seconds in the compiler, including
+125.1 seconds across 116 retained semantic calls; Elevation filtering took 55.5 seconds. That run
+does not measure the IDE source-change validation fix. The lazy expansion above removes the
+unnecessary generalized lookup for the example's exact-quality/subject/process catalog, without
+claiming that all of the filtering time was spent executing that lookup rather than waiting.
+
+The rebuilt IDE run reduced compiler time to 44.5 seconds, including 38.9 seconds across 115
+retained semantic calls. Mapping the same candidate sources in three queries cost about 14.4
+seconds. Reasoner logs also show calls waiting behind document validation; background Resources
+catalog reconciliation is a possible contributor, rather than an established attribution for every
+wait. The mapping cache and cooperative catalog scheduling require another rebuilt measurement.
+
+Process existence is recorded by its INITIALIZATION activity, without creating a numerical INIT
+state for the process. New occurrence registrations retain that activity's durable identity in the
+same root commit. Later SIMULATION transactions remain independent commits and link causally to
+that initialization, including after scheduler recovery. Legacy registrations remain executable
+without an inferred historical parent. A missing or mismatched explicitly retained activation
+fails the transition rather than inventing provenance.
+
+The mapping, catalog scheduling and process-provenance increment passed 163 focused tests on
+4 November: common source transport, Resolver mapping/admission, retained Reasoner cycles,
+Resources reconciliation, temporal execution/recovery/inspection, consequence handling and native
+graph guards. All 52 modified Java files matched the isolated test checkout byte for byte.
+No services were restarted; improved live latency remains to be measured after rebuilding.
+
 ## Bounded contextual admission and collective reduction
 
 Observational containment permits a contextual request; it does not discover members or
@@ -571,8 +650,9 @@ source model's true spatial or temporal limits unless other code reconstructs th
 ### 7.2 Ranking: the Prioritizer contract
 
 Prioritization orders model candidates for one `observe` operation. It does not rank observation
-strategies, change their tiers, establish coverage or execute a model. Resources performs candidate
-selection; Resolver ingests the returned models, excludes those without a compatible output,
+strategies, change their tiers, establish coverage or execute a model. Resources supplies authenticated, immutable candidate source snapshots without joining the
+ContextScope graph workflow. The committed Resolver maps them with its retained Reasoner,
+excludes those without a compatible output,
 prepares their ranking and tries them in order. A highly ranked model can still fail to resolve its
 dependencies; subsequent candidates may supply all or part of the required coverage.
 

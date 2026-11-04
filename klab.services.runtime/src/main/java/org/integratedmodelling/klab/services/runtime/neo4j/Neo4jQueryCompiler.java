@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.integratedmodelling.common.services.client.runtime.KnowledgeGraphQuery;
-import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph.Query;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph.QueryException;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
@@ -24,24 +23,25 @@ public final class Neo4jQueryCompiler {
   private String contextParameter;
 
   private static final String OWNERSHIP =
-      java.util.stream.Stream.concat(GraphModel.Relationship.CONTEXTUALIZATION_EFFECTS.stream(),
-          java.util.stream.Stream.of(
-              GraphModel.Relationship.HAS_CHILD,
-              GraphModel.Relationship.HAS_MEMBER,
-              GraphModel.Relationship.HAS_PROVENANCE,
-              GraphModel.Relationship.HAS_DATAFLOW,
-              GraphModel.Relationship.HAS_DATA,
-              GraphModel.Relationship.HAS_GEOMETRY,
-              GraphModel.Relationship.HAS_ACTIVITY,
-              // Nested DigitalTwin transactions attach activities through TRIGGERED, and
-              // execution activities reach observations through their typed effect links.
-              GraphModel.Relationship.TRIGGERED,
-              GraphModel.Relationship.HAS_PLAN,
-              GraphModel.Relationship.CONTEXTUALIZED_BY,
-              GraphModel.Relationship.HAS_AGENT,
-              GraphModel.Relationship.BY_AGENT,
-              GraphModel.Relationship.CREATED,
-              GraphModel.Relationship.RESOLVED))
+      java.util.stream.Stream.concat(
+              GraphModel.Relationship.CONTEXTUALIZATION_EFFECTS.stream(),
+              java.util.stream.Stream.of(
+                  GraphModel.Relationship.HAS_CHILD,
+                  GraphModel.Relationship.HAS_MEMBER,
+                  GraphModel.Relationship.HAS_PROVENANCE,
+                  GraphModel.Relationship.HAS_DATAFLOW,
+                  GraphModel.Relationship.HAS_DATA,
+                  GraphModel.Relationship.HAS_GEOMETRY,
+                  GraphModel.Relationship.HAS_ACTIVITY,
+                  // Nested DigitalTwin transactions attach activities through TRIGGERED, and
+                  // execution activities reach observations through their typed effect links.
+                  GraphModel.Relationship.TRIGGERED,
+                  GraphModel.Relationship.HAS_PLAN,
+                  GraphModel.Relationship.CONTEXTUALIZED_BY,
+                  GraphModel.Relationship.HAS_AGENT,
+                  GraphModel.Relationship.BY_AGENT,
+                  GraphModel.Relationship.CREATED,
+                  GraphModel.Relationship.RESOLVED))
           .map(Enum::name)
           .collect(Collectors.joining("|"));
 
@@ -335,7 +335,11 @@ public final class Neo4jQueryCompiler {
   }
 
   private String visible(String variable) {
-    return "EXISTS { MATCH (root:"
+    return "(NOT "
+        + variable
+        + ":Observation OR coalesce("
+        + variable
+        + ".klabCurrent,true)=true) AND EXISTS { MATCH (root:"
         + Labels.CONTEXT
         + " {"
         + Fields.ID
