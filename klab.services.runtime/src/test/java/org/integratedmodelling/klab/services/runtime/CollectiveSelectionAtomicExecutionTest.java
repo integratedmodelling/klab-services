@@ -231,6 +231,51 @@ class CollectiveSelectionAtomicExecutionTest implements AutoCloseable {
         .noneMatch(o -> q.qualified.getUrn().equals(o.getObservable().getUrn())));
   }
 
+  @Test void selectedInputAssociationRequiresOriginalReceiptAndExactCompiledPort() {
+    q.member(-30, "Unclassified").setUrn("member-original"); q.complete();
+    var selected = CollectiveSelectionExecution.execute(q.f.runtime, plan(), q.request, q.f.scope, new ArrayList<>());
+    var consumer = new ObservationImpl(); consumer.setId(-50);
+    var parent = new ActuatorImpl(); parent.setObservation(consumer);
+    var child = new ActuatorImpl(); child.setActuatorType(Actuator.Type.REFERENCE);
+    child.setObservation(selected); child.setName("selected"); parent.getChildren().add(child);
+    var cohort = q.f.runtime.getCohortFor(selected.getObservable().getSemantics().singular(), q.f.scope, false);
+    var association = SelectedQueryInput.capture(q.f.root, cohort, consumer, selected, parent, 0, q.f.scope);
+    var encoded = association.require(q.f.root, cohort, consumer, q.f.scope);
+    assertSame(selected, SelectedQueryInput.requireBinding(encoded, parent));
+
+    var copy = Observation.forTransport(selected); child.setObservation(copy);
+    assertThrows(IllegalStateException.class,
+        () -> SelectedQueryInput.capture(q.f.root, cohort, consumer, copy, parent, 0, q.f.scope));
+    child.setObservation(selected); child.setName("forged");
+    assertThrows(IllegalStateException.class, () -> SelectedQueryInput.requireBinding(encoded, parent));
+    assertThrows(IllegalStateException.class,
+        () -> association.require(q.f.root, cohort, consumer, q.f.scope));
+    child.setName("selected");
+    var count = selected.getChildrenCount();
+    ((ObservationImpl) selected).setChildrenCount(count + 1);
+    assertThrows(IllegalStateException.class,
+        () -> SelectedQueryInput.capture(q.f.root, cohort, consumer, selected, parent, 0, q.f.scope));
+    ((ObservationImpl) selected).setChildrenCount(count);
+    var second = new ActuatorImpl(); second.setActuatorType(Actuator.Type.REFERENCE);
+    second.setObservation(selected); second.setName("second"); parent.getChildren().add(second);
+    var secondAssociation = SelectedQueryInput.capture(q.f.root, cohort, consumer, selected, parent, 1, q.f.scope);
+    assertNotEquals(encoded, secondAssociation.require(q.f.root, cohort, consumer, q.f.scope));
+    second.setName("selected");
+    assertThrows(IllegalStateException.class,
+        () -> SelectedQueryInput.capture(q.f.root, cohort, consumer, selected, parent, 0, q.f.scope));
+    parent.getChildren().remove(second);
+    var foreign = mock(DigitalTwinImpl.TransactionImpl.class);
+    assertThrows(IllegalStateException.class,
+        () -> association.require(foreign, cohort, consumer, q.f.scope));
+    when(q.f.scope.getCurrentTransaction()).thenReturn(foreign);
+    assertThrows(IllegalStateException.class,
+        () -> SelectedQueryInput.capture(foreign, cohort, consumer, selected, parent, 0, q.f.scope));
+    when(q.f.scope.getCurrentTransaction()).thenReturn(q.f.root);
+    q.f.root.fail(new IllegalStateException("rollback"));
+    assertThrows(IllegalStateException.class,
+        () -> association.require(q.f.root, cohort, consumer, q.f.scope));
+  }
+
   @Test void actualConsumerFailureReceivesSelectedAliasAndRootRollbackDiscardsClassification() throws Exception {
     var member = q.member(-30, "Unclassified"); member.setUrn("member-original");
     q.member(-31, "KnownNonmatching", q.oak, q.mature).setUrn("other-original");

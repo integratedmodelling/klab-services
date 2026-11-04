@@ -115,7 +115,8 @@ final class SemanticExecutionEvidence {
   private static final java.lang.ref.ReferenceQueue<Observation> ISSUED_QUEUE =
       new java.lang.ref.ReferenceQueue<>();
 
-  private record Issued(SemanticEvidenceBinding evidence, String payload, String scope) {}
+  private record Issued(SemanticEvidenceBinding evidence, String payload, String scope,
+      java.lang.ref.WeakReference<org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction> root) {}
 
   private static final Map<IdentityReference, Issued> ISSUED = new HashMap<>();
 
@@ -151,6 +152,11 @@ final class SemanticExecutionEvidence {
       var names = new TreeSet<String>();
       value.fieldNames().forEachRemaining(names::add);
       for (var name : names) {
+        // GeometryImpl.key is a lazily populated hash cache, not support or authority.
+        // Reading geometry.key() must not invalidate otherwise identical issued evidence.
+        // Dimensions, parameters, metadata and every actual geometry field remain compared.
+        if (name.equals("key") && value.path("@CLASS").asText()
+            .equals("org.integratedmodelling.klab.api.geometry.impl.GeometryImpl")) continue;
         var field = value.get(name);
         // Concept.type is a Set; its JSON array order can change through transport. Preserve
         // every value and multiplicity, and all ordering of genuinely ordered payload arrays.
@@ -192,7 +198,8 @@ final class SemanticExecutionEvidence {
   }
 
   static void issue(Observation view, SemanticEvidenceBinding evidence, ServiceContextScope scope) {
-    var snapshot = new Issued(evidence, payload(view), scopePayload(scope));
+    var snapshot = new Issued(evidence, payload(view), scopePayload(scope),
+        new java.lang.ref.WeakReference<>(root(scope)));
     synchronized (ISSUED) {
       java.lang.ref.Reference<? extends Observation> dead;
       while ((dead = ISSUED_QUEUE.poll()) != null) ISSUED.remove(dead);
@@ -202,6 +209,23 @@ final class SemanticExecutionEvidence {
 
   /** Existing exact-object/payload/scope receipt only. Never issue or replay a missing receipt. */
   static SemanticEvidenceBinding issuedForConsequence(Observation view, ServiceContextScope scope) {
+    return issued(view, scope);
+  }
+
+  private static org.integratedmodelling.klab.api.digitaltwin.DigitalTwin.Transaction root(
+      ServiceContextScope scope) {
+    var transaction = scope.getCurrentTransaction();
+    while (transaction != null && transaction.getParent() != null) transaction = transaction.getParent();
+    return transaction;
+  }
+
+  static SemanticEvidenceBinding issuedForSelectedInput(Observation view, ServiceContextScope scope) {
+    var transaction = root(scope);
+    synchronized (ISSUED) {
+      var snapshot = ISSUED.get(new IdentityReference(view, null));
+      if (snapshot == null || transaction == null || transaction.isFailed()
+          || snapshot.root().get() != transaction) return null;
+    }
     return issued(view, scope);
   }
 
