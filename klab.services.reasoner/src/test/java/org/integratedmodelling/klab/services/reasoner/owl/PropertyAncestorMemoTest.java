@@ -72,6 +72,18 @@ class PropertyAncestorMemoTest {
     }
   }
 
+  @Test void duplicateAxiomDoesNotInvalidateUnchangedPropertyClosure() throws Exception {
+    var graph = new Graph();
+    graph.sub("p", "q");
+    try (var memo = new OWLSemanticClauseSupport.BoundPropertyMemo(graph.owl)) {
+      var expected = Set.of(graph.p("p"), graph.p("q"));
+      assertEquals(expected, collect(memo, graph.p("p")));
+      graph.sub("p", "q");
+      memo.verifyUnchanged();
+      assertEquals(expected, collect(memo, graph.p("p")));
+    }
+  }
+
   @Test void scratchRetentionIsBoundedAndLargeClosuresAreNotRetained() throws Exception {
     var graph = new Graph();
     try (var memo = new OWLSemanticClauseSupport.BoundPropertyMemo(graph.owl)) {

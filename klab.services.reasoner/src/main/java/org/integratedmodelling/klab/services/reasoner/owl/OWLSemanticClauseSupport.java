@@ -634,7 +634,10 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
     private final Set<OWLOntology> ontologies = Collections.newSetFromMap(new IdentityHashMap<>());
     private final java.util.concurrent.atomic.AtomicBoolean changed =
         new java.util.concurrent.atomic.AtomicBoolean();
-    private final OWLOntologyChangeListener listener = changes -> changed.set(true);
+    private final OWLOntologyChangeListener listener = changes -> {
+      // OWLAPI also notifies listeners when an idempotent update applies no changes.
+      if (!changes.isEmpty()) changed.set(true);
+    };
     private final Map<OWLObjectPropertyExpression, Set<OWLObjectPropertyExpression>> values =
         new LinkedHashMap<>(32, .75f, true) {
           @Override
