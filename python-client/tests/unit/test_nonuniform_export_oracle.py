@@ -53,3 +53,17 @@ def test_native_point_oracle_is_separate_and_zero_not_null():
     oracle = json.loads((Path(__file__).parents[1] / "fixtures/nonuniform-export.json").read_text())
     assert oracle["native_values"] == [0, 5, None, -.125, 12.5, 16777217.125, 11, None, 41, 0]
     assert oracle["north_first"][3][0] == 0 and oracle["north_first"][0][2] is None
+
+
+def test_native_validator_pins_gtiff_and_rejects_other_encodings(tmp_path, monkeypatch):
+    path = tmp_path / "not-native.tif"
+    path.write_text('<VRTDataset rasterXSize="5" rasterYSize="4"></VRTDataset>')
+    original = rasterio.open
+    calls = []
+    def checked(*args, **kwargs):
+        calls.append(kwargs.get("driver"))
+        return original(*args, **kwargs)
+    monkeypatch.setattr(rasterio, "open", checked)
+    with pytest.raises(rasterio.errors.RasterioIOError):
+        verify(path)
+    assert calls == ["GTiff"]

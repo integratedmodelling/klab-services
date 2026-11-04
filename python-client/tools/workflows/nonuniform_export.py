@@ -9,18 +9,24 @@ from klab_client import ContextOptions, ObservationRequest, RectangularGeometry,
 ORACLE = Path(__file__).resolve().parents[2] / "tests/fixtures/nonuniform-export.json"
 
 
+def digest(path):
+    with Path(path).open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
 def verify(path, *, oracle_path=ORACLE):
     import numpy as np
     import rasterio
     expected = json.loads(oracle_path.read_text(encoding="utf-8"))
-    digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    before = digest(path)
     table = expected["north_first"]
     valid = np.array([[cell is not None for cell in row] for row in table], dtype=bool)
     values = np.array([[float("nan") if cell is None else cell for cell in row] for row in table])
     def require(condition, message):
         if not condition:
             raise AssertionError(message)
-    with rasterio.open(path) as native:
+    with rasterio.Env(GDAL_PAM_ENABLED="NO", GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
+                      GDAL_GEOREF_SOURCES="INTERNAL"), rasterio.open(path, driver="GTiff") as native:
         require((native.height, native.width) == tuple(expected["shape"]) and native.count == 1, "Native dimensions differ")
         require(native.crs is not None and native.crs.to_epsg() == expected["crs_epsg"], "Native CRS differs")
         require(native.dtypes == (expected["dtype"],), "Native precision differs")
@@ -40,9 +46,9 @@ def verify(path, *, oracle_path=ORACLE):
     require(np.array_equal(analysis.dataset.value.values[valid], values[valid]), "Reader values/precision differ")
     require(int((analysis.dataset.valid & (analysis.dataset.value == 0)).sum()) == expected["valid_zero_cells"], "Valid zero count differs")
     require(int((~analysis.dataset.valid).sum()) == expected["missing_cells"], "Missing count differs")
-    require(hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest, "Oracle/reader modified native bytes")
+    require(digest(path) == before, "Oracle/reader modified native bytes")
     return {"cells": int(valid.size), "missing": int((~valid).sum()), "zero": expected["valid_zero_cells"],
-            "sha256": digest, "oracle_sha256": hashlib.sha256(oracle_path.read_bytes()).hexdigest(),
+            "sha256": before, "oracle_sha256": digest(oracle_path),
             "multi_shard": "NOT_PROVEN", "revision_consistency": "UNKNOWN"}
 
 
