@@ -1698,6 +1698,26 @@ public class DigitalTwinImpl implements DigitalTwin {
       }
     }
 
+    /** Selected query bindings carry local issuance authority, never a QUERY_ID source identity. */
+    public void linkSelectedQueryInput(
+        Cohort cohort, Observation consumer,
+        org.integratedmodelling.klab.services.runtime.SelectedQueryInput input) {
+      synchronized (graph) {
+        requireOpen();
+        var encoded = input.require(this, cohort, consumer, scope);
+        graph.addVertex(cohort);
+        graph.addVertex(consumer);
+        graph.addEdge(cohort, consumer, new RelationshipEdge(
+            GraphModel.Relationship.AFFECTS,
+            org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.EDGE_ROLE,
+            org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.PREREQUISITE,
+            org.integratedmodelling.klab.api.digitaltwin.ProcessPlan.COLLECTIVE_COHORT_OBSERVABLE,
+            cohort.getObservable().getUrn(),
+            org.integratedmodelling.klab.services.runtime.SelectedQueryInput.DATA_KEY, encoded));
+        classificationMutationStamp[0]++;
+      }
+    }
+
     public void linkProcessInfluence(
         Observation process, Observation quality, String model, String name) {
       linkProcessInfluence(process, quality, model, name, List.of("AFFECTS"));

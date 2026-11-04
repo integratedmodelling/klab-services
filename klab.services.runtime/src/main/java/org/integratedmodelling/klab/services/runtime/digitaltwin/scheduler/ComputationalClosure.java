@@ -42,6 +42,15 @@ public final class ComputationalClosure {
             "Collective edge disagrees with its certified reduction input");
       MembershipInputChange.requireCohortOperand(
           scope, binding.operand(), cohort.getObservable().getUrn());
+    } else if (edge.properties().containsKey(
+        org.integratedmodelling.klab.services.runtime.SelectedQueryInput.DATA_KEY)) {
+      var child = org.integratedmodelling.klab.services.runtime.SelectedQueryInput.requireBinding(
+          edge.properties().get(org.integratedmodelling.klab.services.runtime.SelectedQueryInput.DATA_KEY), plan);
+      if (!Objects.equals(edge.properties().get(ProcessPlan.COLLECTIVE_COHORT_OBSERVABLE),
+          cohort.getObservable().getUrn()))
+        throw new IllegalStateException("Selected-query cohort header changed");
+      MembershipInputChange.requireCohortOperand(
+          scope, child.getObservable().getUrn(), cohort.getObservable().getUrn());
     } else {
       var original = edge.properties().get(ProcessPlan.COLLECTIVE_SOURCE_OBSERVATION);
       if (!(original instanceof Number id)
