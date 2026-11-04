@@ -67,6 +67,9 @@ jobs:
       - name: Agent one-shot control journal coverage
         run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agent_control.py
         working-directory: python-client
+      - name: Registered agent execution and native AMQP coverage
+        run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_agent_wire.py --new-module src/klab_client/agent_messaging.py --new-module src/klab_client/agent_execution.py
+        working-directory: python-client
       - name: Synthetic Runtime fixture byte-preservation coverage
         run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module tools/prepare_runtime_fixture.py
         working-directory: python-client

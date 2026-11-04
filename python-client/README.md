@@ -9,6 +9,11 @@ For development planning and CLI review, see the
 See the [support matrix and release-evidence policy](docs/support-and-release.md)
 for verified environments, bounded features and remaining acceptance gates.
 
+Opt-in [deferred agent registration and native AMQP control](docs/agent-execution.md)
+adds explicit source-based creation, one-shot start/stop and bounded status reads.
+Its owned Qpid/native-Java wire fixture is not managed-Runtime execution acceptance;
+broker provisioning, incarnation provenance and remote cleanup remain separate gates.
+
 [Read-only source previews](docs/source-previews.md) inspect namespace,
 ontology, strategy-document and behavior source through the existing server parser.
 They are separate from authoring write admission; native DTO compatibility is

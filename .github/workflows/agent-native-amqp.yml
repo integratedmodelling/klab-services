@@ -1,0 +1,35 @@
+name: Agent native AMQP interoperability
+on:
+  pull_request:
+    paths: ['python-client/src/klab_client/agent_*.py', 'python-client/src/klab_client/_agent_wire.py', 'python-client/tools/agent_channel_interop.py', 'klab.core.common/src/main/java/org/integratedmodelling/common/authentication/scope/AMQPChannel.java', 'klab.core.common/src/test/**', 'support/klab.amqp.server/**', '.github/workflows/agent-native-amqp.yml']
+  push:
+    paths: ['python-client/src/klab_client/agent_*.py', 'python-client/src/klab_client/_agent_wire.py', 'python-client/tools/agent_channel_interop.py', 'klab.core.common/src/test/**', 'support/klab.amqp.server/**', '.github/workflows/agent-native-amqp.yml']
+permissions:
+  contents: read
+jobs:
+  native-wire-not-managed-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e './python-client[events]'
+      - run: chmod +x mvnw
+      - name: Real owned Qpid and production Java AMQP wire peer
+        run: ./mvnw -B -pl support/klab.amqp.server -am -Dtest=AgentMessagingWireTest,AgentStatusWireTest,AgentChannelInteropTest -Dsurefire.failIfNoSpecifiedTests=false -Dagent.python="$(command -v python)" test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-native-wire-not-managed-runtime
+          path: |
+            klab.core.common/target/surefire-reports/
+            klab.core.common/target/agent-messaging-wire-actual.json
+            support/klab.amqp.server/target/surefire-reports/
+            support/klab.amqp.server/target/agent-channel-interop-result.json
