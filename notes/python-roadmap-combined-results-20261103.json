@@ -1,0 +1,27 @@
+{
+  "scope": "LOCAL_SOURCE_COMPOSITION_VERIFICATION_NOT_GITHUB_PR_MERGES_OR_RELEASE_ACCEPTANCE",
+  "local_merge_commit": "5ba1652ed741d9dc59c0cb5b1cfaeaab496b3e69",
+  "expected_git_tree": "4e0428626a37eb27a9be46d086423bee4d740b36",
+  "starting_pr136_commit": "f5871f254d1246bf1bdbcb448d54383fb046e7e0",
+  "merge_in_order": [
+    "8928314d542320ef7a182e5985b07019e3610104",
+    "bcf7a4406ea76f60454594a240c248ebd17d69fb",
+    "2d4d44e66747e09462b45bbf4599b2ee9bb6041a"
+  ],
+  "merge_conflicts": 0,
+  "python": "3.12.7",
+  "jdk": "Temurin21.0.12.1+1",
+  "maven": "3.9.5",
+  "full_offline_python_tests": 2359,
+  "python_workflow_commands_passed_with_declared_directories": 16,
+  "coverage_gates_passed": 12,
+  "lint_wheel_sdist": "PASS_NOT_PUBLISHED",
+  "selected_common_java_tests": 6,
+  "selected_common_java_failures_errors_skips": [0, 0, 0],
+  "full_java_reactor": "NOT_CLAIMED_GREEN_KNOWN_DOWNSTREAM_LANGUAGEADAPTER_COMPILATION_PREREQUISITE",
+  "hosted_ci_for_local_merge_commit": "NOT_RUN_LOCAL_COMMIT_NOT_PUSHED",
+  "map_document_and_its_new_tests_included_in_this_tree": false,
+  "genuine_agent_graph_or_scientific_acceptance": false,
+  "remote_scientific_mutations_or_services_launched": 0,
+  "github_prs_merged_or_checks_bypassed": false
+}
