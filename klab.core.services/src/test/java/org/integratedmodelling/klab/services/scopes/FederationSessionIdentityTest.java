@@ -112,6 +112,7 @@ class FederationSessionIdentityTest {
 
   @Test void authenticatedLookupAlwaysChecksTheAclBeforeBindingTheCaller() {
     var runtime = mock(RuntimeService.class);
+    when(runtime.serviceId()).thenReturn("runtime");
     var alice = user("alice", runtime, runtime);
     var bob = user("bob", runtime, runtime);
     alice.setRoles(List.of(Role.ROLE_ADMINISTRATOR));
@@ -120,6 +121,7 @@ class FederationSessionIdentityTest {
     manager.registerScope(bob);
     var session = new ServiceSessionScope(alice);
     session.setId("test_federation");
+    session.setHostServiceId("runtime");
     manager.registerScope(session);
     var authorization = new org.integratedmodelling.klab.services.application.security.EngineAuthorization(
         "hub", "bob", "bob-credential", java.util.Map.of(), List.of(), List.of(Role.ROLE_USER));
@@ -128,7 +130,7 @@ class FederationSessionIdentityTest {
     assertEquals("bob", peer.getIdentity() instanceof UserIdentity u ? u.getUsername() : null);
     assertFalse(peer.isAuthorized(CRUDOperation.ADMINISTER));
     var configuration = DigitalTwin.Configuration.builder().id("test_federation.context")
-        .owner("alice").accessRights(ResourcePrivileges.empty()).build();
+        .serviceId("runtime").owner("alice").accessRights(ResourcePrivileges.empty()).build();
     var context = new ServiceContextScope(session, configuration, alice.getUser());
     manager.registerScope(context);
     assertThrows(org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class,

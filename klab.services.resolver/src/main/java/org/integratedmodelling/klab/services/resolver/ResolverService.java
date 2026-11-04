@@ -11,7 +11,6 @@ import org.integratedmodelling.common.knowledge.KnowledgeRepository;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
-import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -25,9 +24,7 @@ import org.integratedmodelling.klab.api.lang.KlabLanguage;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.*;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -70,6 +67,33 @@ public class ResolverService extends BaseService implements Resolver {
       ResourceSet resourceSet, Scope scope, Class<T> resultClass, boolean loadComponents) {
 
     List<T> ret = new ArrayList<>();
+
+    // Map supplier sources using this Resolver's retained actor, bypassing the global URN cache.
+    if (resultClass == Model.class && resourceSet.getResults().stream().anyMatch(r ->
+        r.getMetadata().containsKey(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE))) {
+      for (var descriptor : resourceSet.getResults()) {
+        if (descriptor.getKnowledgeClass() != KlabAsset.KnowledgeClass.MODEL) continue;
+        try {
+          var model = org.integratedmodelling.common.knowledge.ModelCandidateSources.project(descriptor, scope, source -> {
+            var statement = source.getStatements().stream().filter(KimModel.class::isInstance)
+                .map(KimModel.class::cast).filter(m -> descriptor.getResourceUrn().equals(m.getUrn()))
+                .findFirst().orElseThrow();
+            return loadModel(statement, source, scope);
+          });
+          model.getMetadata().put(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE,
+              descriptor.getMetadata().get(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE));
+          model.getMetadata().put(org.integratedmodelling.common.knowledge.ModelCandidateSources.HASH,
+              descriptor.getMetadata().get(org.integratedmodelling.common.knowledge.ModelCandidateSources.HASH));
+          ret.add(resultClass.cast(model));
+        } catch (RuntimeException invalid) {
+          resourceSet.getNotifications().add(Notification.warning(
+              org.integratedmodelling.common.knowledge.ModelCandidateSources.INCOMPLETE
+                  + ": rejected source snapshot " + descriptor.getResourceUrn()
+                  + " (" + invalid.getClass().getSimpleName() + ")"));
+        }
+      }
+      return ret;
+    }
 
     final Function<KlabAsset, List<KlabAsset>> namespaceTranslator =
         (namespace) -> {
@@ -161,44 +185,99 @@ public class ResolverService extends BaseService implements Resolver {
   public CompletableFuture<Dataflow> resolve(Observation observation, ContextScope contextScope) {
     return CompletableFuture.supplyAsync(
         () -> {
-          var reasoner=contextScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-          var capabilities=reasoner==null?null:reasoner.capabilities(contextScope);
-          var owner=org.integratedmodelling.klab.runtime.ObserverSemanticUse.Owner.of(capabilities);
-          try(var observerUse=org.integratedmodelling.klab.runtime.ObserverSemanticUse.capture(contextScope,owner)) {
-          var compiler = new ResolutionCompiler(this);
-          var ret = compiler.resolve(observation, contextScope);
-          if (!ret.isEmpty()) {
-            var result=new DataflowCompiler(observation, ret, contextScope).compile();
-            var current=reasoner==null?null:reasoner.capabilities(contextScope);
-            org.integratedmodelling.klab.runtime.ObserverSemanticUse.stamp(result,observerUse.summary(contextScope,
-                org.integratedmodelling.klab.runtime.ObserverSemanticUse.Owner.of(current)));
-            return result;
-          }
+          var reasoner =
+              contextScope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+          var capabilities = reasoner == null ? null : reasoner.capabilities(contextScope);
+          var owner =
+              org.integratedmodelling.klab.runtime.ObserverSemanticUse.Owner.of(capabilities);
+          try (var observerUse =
+              org.integratedmodelling.klab.runtime.ObserverSemanticUse.capture(
+                  contextScope, owner)) {
+            var compiler = new ResolutionCompiler(this);
+            var ret = compiler.resolve(observation, contextScope);
+            if (!ret.isEmpty()) {
+              var result = new DataflowCompiler(observation, ret, contextScope).compile();
+              result.getNotifications().addAll(compiler.discoveryNotifications());
+              var current = reasoner == null ? null : reasoner.capabilities(contextScope);
+              org.integratedmodelling.klab.runtime.ObserverSemanticUse.stamp(
+                  result,
+                  observerUse.summary(
+                      contextScope,
+                      org.integratedmodelling.klab.runtime.ObserverSemanticUse.Owner.of(current)));
+              return result;
+            }
 
-          return unresolvedOutcome(observation.getObservable(), compiler.hasNoExplanatoryModel(), ret.getNotifications());
+            if (compiler.isDiscoveryIncomplete()) {
+              var diagnostics = new ArrayList<>(compiler.discoveryNotifications());
+              diagnostics.addAll(ret.getNotifications());
+              return incompleteDiscovery(diagnostics);
+            }
+            return unresolvedOutcome(
+                observation,
+                contextScope,
+                compiler.hasNoExplanatoryModel(),
+                ret.getNotifications());
           }
         },
         resolutionExecutor);
   }
 
-  static Dataflow unresolvedOutcome(org.integratedmodelling.klab.api.knowledge.Observable observable,
-      boolean noModel, java.util.List<org.integratedmodelling.klab.api.services.runtime.Notification> notifications) {
-    boolean acknowledge = observable.getContextualization()
-        == org.integratedmodelling.klab.api.knowledge.Contextualization.ACKNOWLEDGEMENT;
+  /**
+   * A target-specific explanation is an operation purpose, never an optionalized meaning. Only
+   * actual, error-free model absence may complete this detected configuration's request. Source
+   * admission, access and native publication authority remain their ordinary guards.
+   */
+  static Dataflow unresolvedOutcome(
+      Observation observation,
+      ContextScope scope,
+      boolean noModel,
+      java.util.List<org.integratedmodelling.klab.api.services.runtime.Notification>
+          notifications) {
+    if (observation == null || observation.getObservable() == null || scope == null)
+      throw new IllegalArgumentException("Resolution outcome requires an observation and context");
+    if (org.integratedmodelling.klab.runtime.consequence.ConfigurationExplanation.requested(
+        observation, scope))
+      return noModel
+              && !org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(notifications)
+          ? Dataflow.noModel(notifications)
+          : Dataflow.empty(notifications);
+    return unresolvedOutcome(observation.getObservable(), noModel, notifications);
+  }
+
+  static Dataflow incompleteDiscovery(List<Notification> diagnostics) {
+    var result = new org.integratedmodelling.klab.api.services.runtime.impl.EmptyDataflow();
+    result.setResolutionOutcome(Dataflow.ResolutionOutcome.DEFERRED);
+    result.getNotifications().addAll(diagnostics);
+    return result;
+  }
+
+  static Dataflow unresolvedOutcome(
+      org.integratedmodelling.klab.api.knowledge.Observable observable,
+      boolean noModel,
+      java.util.List<org.integratedmodelling.klab.api.services.runtime.Notification>
+          notifications) {
+    boolean acknowledge =
+        observable.getContextualization()
+            == org.integratedmodelling.klab.api.knowledge.Contextualization.ACKNOWLEDGEMENT;
     // Transported/promoted individual concepts may carry an older collective description type.
     // The existence contract is determined by their singular substantial semantics.
     var semantics = observable.getSemantics();
-    acknowledge |= semantics != null && !semantics.isCollective()
-        && semantics.getType() != null && SemanticType.isEnumerableSubstantial(semantics.getType());
-    boolean characterize = observable.getContextualization()
-        == org.integratedmodelling.klab.api.knowledge.Contextualization.CHARACTERIZATION;
+    acknowledge |=
+        semantics != null
+            && !semantics.isCollective()
+            && semantics.getType() != null
+            && SemanticType.isEnumerableSubstantial(semantics.getType());
+    boolean characterize =
+        observable.getContextualization()
+            == org.integratedmodelling.klab.api.knowledge.Contextualization.CHARACTERIZATION;
     // A substantial already exists independently of its optional explanation. An empty,
     // error-free resolution must not undo instantiation, even if discovery did not run or
     // candidate models contributed insufficient coverage. Characterization has a stricter
     // no-model contract; neither case suppresses reported errors or exceptional completion.
     return (acknowledge || ((characterize || observable.isOptional()) && noModel))
-        && !org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(notifications)
-        ? Dataflow.noModel(notifications) : Dataflow.empty(notifications);
+            && !org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(notifications)
+        ? Dataflow.noModel(notifications)
+        : Dataflow.empty(notifications);
   }
 
   @Override
@@ -207,7 +286,8 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   private Model loadModel(KimModel statement, KimNamespace namespace, Scope scope) {
-    return org.integratedmodelling.klab.runtime.language.SourceModelMapper.load(statement, namespace, scope);
+    return org.integratedmodelling.klab.runtime.language.SourceModelMapper.load(
+        statement, namespace, scope);
   }
 
   @Override

@@ -50,6 +50,30 @@ class CandidatePublicationCoordinatorTest {
     assertTrue(latch.await(5, TimeUnit.SECONDS), "test synchronization did not complete");
   }
 
+  @Test void generationWaitReportsTimeoutSupersessionAndBackgroundErrors() throws Exception {
+    var entered = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    try (var coordinator = new CandidatePublicationCoordinator<String, State>((i, c) -> {
+      entered.countDown(); latch(release);
+      return new CandidatePublicationCoordinator.Result<>(null, FAILED, true,
+          List.of("Authority synchronization failed"));
+    }, i -> true)) {
+      long generation = coordinator.submit(input("first"));
+      latch(entered);
+      assertEquals(PENDING, coordinator.awaitGeneration(generation, Duration.ZERO).logicalStatus());
+      coordinator.invalidate();
+      var superseded = coordinator.awaitGeneration(generation, TIMEOUT);
+      assertNotEquals(generation, superseded.inputGeneration());
+      long latest = coordinator.submit(input("second"));
+      release.countDown();
+      var result = coordinator.awaitGeneration(latest, TIMEOUT);
+      assertEquals(FAILED, result.logicalStatus());
+      assertEquals(List.of("Authority synchronization failed"), result.diagnostics());
+    } finally {
+      release.countDown();
+    }
+  }
+
   @Test void beanErrorsScheduleNoBuilderAndLeaveAcceptedStateIntact() throws Exception {
     var builds = new AtomicInteger(); var first = new State("first");
     try (var coordinator = new CandidatePublicationCoordinator<String, State>((i, c) -> {

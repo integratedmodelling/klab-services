@@ -54,4 +54,18 @@ class SemanticExecutionFootprintsTest {
     implementation.method = AuditedBase.class.getMethod("category");
     assertTrue(SemanticExecutionFootprints.exactReceiver(implementation), "A static Method has no virtual receiver dispatch");
   }
+  public static class OtherCease {
+    public static void cease(org.integratedmodelling.klab.api.data.Data.Builder builder,
+        @org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Input(name="target",type=org.integratedmodelling.klab.api.knowledge.Artifact.Type.OBJECT)
+        org.integratedmodelling.klab.api.knowledge.observation.Observation target,
+        org.integratedmodelling.klab.api.scope.ContextScope scope) {}
+  }
+  @Test void cessationFootprintRequiresExactCoreImplementationAndDeclaredInput() throws Exception {
+    var parameters=new Class<?>[]{org.integratedmodelling.klab.api.data.Data.Builder.class,org.integratedmodelling.klab.api.knowledge.observation.Observation.class,org.integratedmodelling.klab.api.scope.ContextScope.class};
+    var actual=org.integratedmodelling.klab.runtime.libraries.NativeTestFixtures.class.getMethod("cease",parameters);
+    var call=mock(org.integratedmodelling.klab.api.lang.ServiceCall.class);when(call.getUrn()).thenReturn("klab.tests.fixtures.cease");var scope=mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    assertTrue(SemanticExecutionFootprints.function(null,actual,null,call,scope));
+    assertFalse(SemanticExecutionFootprints.function(null,OtherCease.class.getMethod("cease",parameters),null,call,scope));
+    when(call.getUrn()).thenReturn("klab.tests.fixtures.empty");assertFalse(SemanticExecutionFootprints.function(null,actual,null,call,scope));
+  }
 }

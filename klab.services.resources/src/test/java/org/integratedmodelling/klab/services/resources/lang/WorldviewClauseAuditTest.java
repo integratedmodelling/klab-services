@@ -20,6 +20,12 @@ import org.junit.jupiter.api.Test;
 
 /** Parser-to-service regression coverage; the report also records intentionally pending clauses. */
 class WorldviewClauseAuditTest {
+  @Test void removedIntegrityFormsAreRejectedByTheServiceParser() {
+    var parser=new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration().getInstance(IParser.class);
+    for(var kind:List.of("attribute","extent"))
+      assertTrue(parser.parse(new StringReader("ontology audit in domain root version 1.0; thing Invalid requires "+kind+" audit:Value;")).hasSyntaxErrors(),kind);
+  }
+
   @Test
   void reportRealParserBeanAndAdapterCoverage() throws Exception {
     var parser = new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration()
@@ -42,8 +48,6 @@ class WorldviewClauseAuditTest {
         attribute Implication implies audit:Entity within audit:Entity;
         thing Required requires identity audit:State;
         thing RequiredRealm requires realm audit:State;
-        thing RequiredExtent requires extent audit:Entity;
-        thing RequiredAttribute requires attribute audit:State;
         identity Authorized requires authority TEST {urn: "test.authority", region: "EU"};
         attribute Described describes audit:Measure as 0 to 10;
         attribute BooleanDescription describes audit:Measure as true;
@@ -85,8 +89,6 @@ class WorldviewClauseAuditTest {
     assertEquals("audit:Entity", statements.get("Connection").getSubjectsLinked().getFirst().getSource().getUrn());
     assertEquals(1, statements.get("Required").getRequiredIdentities().size());
     assertEquals(1, statements.get("RequiredRealm").getRequiredRealms().size());
-    assertEquals(1, statements.get("RequiredExtent").getRequiredExtents().size());
-    assertEquals(1, statements.get("RequiredAttribute").getRequiredAttributes().size());
     assertEquals("TEST", statements.get("Authorized").getAuthorityRequired());
     assertEquals("test.authority", statements.get("Authorized").getAuthorityParameters().get("urn"));
     assertEquals("EU", statements.get("Authorized").getAuthorityParameters().get("region"));

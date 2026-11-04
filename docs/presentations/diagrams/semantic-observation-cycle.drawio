@@ -1,0 +1,72 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="semantic-cycle" name="From a question to an observation">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#FFFFFF" adaptiveColors="auto">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="From a question to an observation" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=40;align=left;verticalAlign=middle;spacing=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="25" width="1520" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="ILLUSTRATIVE EXAMPLE  /  Observe soil erosion in watershed W during 2030" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=23;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="112" width="1520" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="context" value="&lt;b&gt;CONTEXT&lt;/b&gt;  W and its hillslopes · 2030 · monthly steps · 100 m support · land-use scenario · observer: watershed manager" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=21;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="185" width="1520" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="submit" value="&lt;b&gt;1  SUBMISSION&lt;/b&gt;&lt;br&gt;&lt;br&gt;State what should&lt;br&gt;be observed and&lt;br&gt;in which context." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=22;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="300" width="280" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="resolve" value="&lt;b&gt;2  RESOLUTION&lt;/b&gt;&lt;br&gt;&lt;br&gt;Select compatible&lt;br&gt;evidence and methods;&lt;br&gt;resolve dependencies." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=22;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="350" y="300" width="280" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="flow1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=0;" edge="1" source="submit" target="resolve" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="compute" value="&lt;b&gt;3  CONTEXTUALIZATION&lt;/b&gt;&lt;br&gt;&lt;br&gt;Run the selected method:&lt;br&gt;rainfall, terrain, soils&lt;br&gt;and cover → soil loss." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=22;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="660" y="300" width="280" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="flow2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=0;" edge="1" source="resolve" target="compute" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="commit" value="&lt;b&gt;4  DIGITAL-TWIN COMMIT&lt;/b&gt;&lt;br&gt;&lt;br&gt;Record observations,&lt;br&gt;context and provenance.&lt;br&gt;Use results in a report." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=22;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="970" y="300" width="280" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="flow3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=0;" edge="1" source="compute" target="commit" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="consequences" value="&lt;b&gt;5  CONSEQUENCES&lt;/b&gt;&lt;br&gt;&lt;br&gt;Apply relevant rules:&lt;br&gt;attribute roles or request&lt;br&gt;further observations." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFF2D9;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Helvetica;fontSize=22;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="300" width="280" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="flow4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=0;" edge="1" source="commit" target="consequences" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="followup" value="&lt;b&gt;NEW OBSERVATION REQUEST&lt;/b&gt;&lt;br&gt;Return to resolution with the same contextual frame." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFF2D9;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=23;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="350" y="635" width="590" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="new-request" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=1;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" source="consequences" target="followup" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1420" y="692.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="return" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Helvetica;fontSize=19;labelBackgroundColor=#FFFFFF;dashed=1;exitX=0;exitY=0.5;entryX=0.5;entryY=1;" edge="1" source="followup" target="resolve" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="330" y="692.5" />
+              <mxPoint x="330" y="575" />
+              <mxPoint x="490" y="575" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend" value="Dashed arrows: a new observation request. Existing suitable observations may be reused." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=21;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="790" width="1520" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" value="Illustrative methods and rules; no computed result or live execution is claimed." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Helvetica;fontSize=18;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="845" width="1520" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

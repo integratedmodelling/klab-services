@@ -10,6 +10,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class CapturedDocumentationTest {
+  @Test void bootstrapRecordsAbsentTemporaryDocumentationWithoutRequiringItsDirectory() throws Exception {
+    Path state = state();
+    Path absent = directory.resolve("klab.authority.taxa/documentation/absent.md");
+    String uri = absent.toUri().toString();
+    AuthorityBootstrap.captureDocumentation(state, java.util.Map.of(uri, absent));
+    assertEquals(0, CapturedDocumentation.lookup(CapturedDocumentation.read(state), uri).length);
+    assertFalse(Files.exists(absent.getParent()));
+  }
   @TempDir Path directory;
   private final ObjectMapper json = new ObjectMapper();
   private Path state() throws Exception { return Files.createDirectories(directory.resolve("state")); }

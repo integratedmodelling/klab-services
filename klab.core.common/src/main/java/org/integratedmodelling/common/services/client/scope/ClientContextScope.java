@@ -34,6 +34,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   private Observation sourceObservation;
   private Observation targetObservation;
   private String transactionId;
+  private org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding
+      resolutionCycleBinding;
 
   private final Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints =
       new LinkedHashMap<>();
@@ -54,11 +56,16 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       DigitalTwin.Configuration configuration) {
     super(parent, configuration.getName(), runtimeService);
     this.configuration = configuration;
-    if (configuration.getGridAlignment()!=null)
-      getData().put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY,configuration.getGridAlignment());
+    if (configuration.getGridAlignment() != null)
+      getData()
+          .put(
+              org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY,
+              configuration.getGridAlignment());
     this.observer = configuration.getObserver();
-    if (observer != null) resolutionConstraints.put(ResolutionConstraint.Type.Observer,
-        ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
+    if (observer != null)
+      resolutionConstraints.put(
+          ResolutionConstraint.Type.Observer,
+          ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
     this.name = configuration.getName();
     this.shardingStrategy = new Data.ShardingStrategy();
     this.setHostServiceId(runtimeService.serviceId());
@@ -89,13 +96,32 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     shardingStrategy = parent.shardingStrategy;
     this.transaction = parent.transaction;
     this.transactionId = parent.transactionId;
+    this.resolutionCycleBinding = parent.resolutionCycleBinding;
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding
+      getResolutionCycleBinding() {
+    return resolutionCycleBinding;
+  }
+
+  /** Preserve transport metadata on a detached view; server registries still authorize its use. */
+  public ClientContextScope withResolutionCycleBinding(
+      org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding binding) {
+    if (binding != null && !Objects.equals(getId(), binding.contextId()))
+      throw new IllegalArgumentException("Resolution cycle belongs to another context");
+    var ret = new ClientContextScope(this);
+    ret.resolutionCycleBinding = binding;
+    return ret;
   }
 
   @Override
   public org.integratedmodelling.klab.api.collections.Parameters<String> getData() {
-    var data=super.getData();
-    if (configuration!=null && configuration.getGridAlignment()!=null)
-      data.put(org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY,configuration.getGridAlignment());
+    var data = super.getData();
+    if (configuration != null && configuration.getGridAlignment() != null)
+      data.put(
+          org.integratedmodelling.klab.api.digitaltwin.GridAlignment.SCOPE_KEY,
+          configuration.getGridAlignment());
     return data;
   }
 
@@ -105,11 +131,20 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   @Override
+  public Long getObserverId() {
+    return observer == null ? null : observer.getId();
+  }
+
+  @Override
   public Observation getObserver() {
-    if (observer != null && digitalTwin != null
+    if (observer != null
+        && digitalTwin != null
         && digitalTwin.getTransitionHistory().modifies(observer.getId())) {
-      var refreshed=digitalTwin.getKnowledgeGraph().getAsset(observer.getId(),this,Observation.class);
-      if(refreshed==null||refreshed.getObservable()==null||!refreshed.getObservable().is(SemanticType.AGENT))
+      var refreshed =
+          digitalTwin.getKnowledgeGraph().getAsset(observer.getId(), this, Observation.class);
+      if (refreshed == null
+          || refreshed.getObservable() == null
+          || !refreshed.getObservable().is(SemanticType.AGENT))
         throw new IllegalStateException("Selected observer is no longer an accessible Agent");
       return refreshed;
     }
@@ -122,24 +157,31 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   private Observation currentSnapshot(Observation observation) {
-    if(observation!=null && digitalTwin!=null && digitalTwin.getTransitionHistory().modifies(observation.getId())) {
-      var refreshed=digitalTwin.getKnowledgeGraph().getAsset(observation.getId(),this,Observation.class);
-      if(refreshed!=null) return refreshed;
+    if (observation != null
+        && digitalTwin != null
+        && digitalTwin.getTransitionHistory().modifies(observation.getId())) {
+      var refreshed =
+          digitalTwin.getKnowledgeGraph().getAsset(observation.getId(), this, Observation.class);
+      if (refreshed != null) return refreshed;
     }
     return observation;
   }
 
   @Override
   public ContextScope withObserver(Observation observer) {
-    if (observer != null && (observer.getId() <= 0 || observer.getObservable() == null
-        || !observer.getObservable().is(SemanticType.AGENT)))
+    if (observer != null
+        && (observer.getId() <= 0
+            || observer.getObservable() == null
+            || !observer.getObservable().is(SemanticType.AGENT)))
       throw new IllegalArgumentException("An observer must be a persisted agent");
     var ret = childContext(this);
     ret.observer = observer;
     ret.resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
     ret.resolutionConstraints.remove(ResolutionConstraint.Type.ObserverUrn);
-    if (observer != null) ret.resolutionConstraints.put(ResolutionConstraint.Type.Observer,
-        ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
+    if (observer != null)
+      ret.resolutionConstraints.put(
+          ResolutionConstraint.Type.Observer,
+          ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
     return ret;
   }
 
@@ -201,7 +243,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       // keep scenarios and any other config by deriving a new context with ctx = null
       submissionContext = (ClientContextScope) submissionContext.within(null);
     }
-    return runtime.submit(observation,
+    return runtime.submit(
+        observation,
         org.integratedmodelling.common.runtime.ObserverSubmissionPolicy.apply(
             submissionContext, getEngine() == null ? null : getEngine().getSettings()));
   }
@@ -278,8 +321,10 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   @Override
   public Collection<RuntimeAsset> getChildrenOf(RuntimeAsset asset) {
 
-    if (asset instanceof Observation view && view.getId() == Observation.QUERY_ID
-        && view.getObservable() != null && view.getObservable().getSemantics().isCollective()) {
+    if (asset instanceof Observation view
+        && view.getId() == Observation.QUERY_ID
+        && view.getObservable() != null
+        && view.getObservable().getSemantics().isCollective()) {
       return new java.util.ArrayList<>(getService(RuntimeService.class).getMembers(view, this));
     }
 
@@ -334,7 +379,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   @Override
   public Observation getObserverOf(Observation observation) {
-    return org.integratedmodelling.common.runtime.ObserverProvenance.recover(this,observation).observer();
+    return org.integratedmodelling.common.runtime.ObserverProvenance.recover(this, observation)
+        .observer();
   }
 
   //  @Override
@@ -368,10 +414,13 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     if (resolutionConstraints == null) {
       ret.resolutionConstraints.clear();
     } else {
-      var namedObservers = java.util.Arrays.stream(resolutionConstraints)
-          .filter(java.util.Objects::nonNull)
-          .filter(c -> c.getType() == ResolutionConstraint.Type.ObserverUrn && !c.empty())
-          .flatMap(c -> c.payload(String.class).stream()).distinct().toList();
+      var namedObservers =
+          java.util.Arrays.stream(resolutionConstraints)
+              .filter(java.util.Objects::nonNull)
+              .filter(c -> c.getType() == ResolutionConstraint.Type.ObserverUrn && !c.empty())
+              .flatMap(c -> c.payload(String.class).stream())
+              .distinct()
+              .toList();
       if (namedObservers.size() > 1 || namedObservers.stream().anyMatch(String::isBlank))
         throw new IllegalArgumentException("A submission must select one nonblank observer URN");
       for (var constraint : resolutionConstraints) {
@@ -383,14 +432,18 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
         } else if (constraint.getType() == ResolutionConstraint.Type.ObserverUrn) {
           if (ret.getDigitalTwin() == null)
             throw new IllegalArgumentException("Observer selection requires a knowledge graph");
-          var selected = ret.getDigitalTwin().getKnowledgeGraph().getAsset(
-              namedObservers.getFirst(), ret, Observation.class);
+          var selected =
+              ret.getDigitalTwin()
+                  .getKnowledgeGraph()
+                  .getAsset(namedObservers.getFirst(), ret, Observation.class);
           if (selected == null) throw new IllegalArgumentException("Unknown observer");
           ret = (ClientContextScope) ret.withObserver(selected);
         } else if (constraint.getType() == ResolutionConstraint.Type.Observer) {
           if (!namedObservers.isEmpty()) continue;
-          var selected = ret.getDigitalTwin().getKnowledgeGraph().getAsset(
-              constraint.payload(Long.class).getFirst(), ret, Observation.class);
+          var selected =
+              ret.getDigitalTwin()
+                  .getKnowledgeGraph()
+                  .getAsset(constraint.payload(Long.class).getFirst(), ret, Observation.class);
           if (selected == null) throw new IllegalArgumentException("Unknown observer");
           ret = (ClientContextScope) ret.withObserver(selected);
         } else if (constraint.getType().incremental
@@ -494,8 +547,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
   }
 
   public synchronized void createDigitalTwin(String id) {
-    if(digitalTwin!=null) {
-      if(id.equals(digitalTwin.getContextId()) && !digitalTwin.isDisposed()) return;
+    if (digitalTwin != null) {
+      if (id.equals(digitalTwin.getContextId()) && !digitalTwin.isDisposed()) return;
       digitalTwin.dispose();
     }
     this.digitalTwin = new ClientDigitalTwin(this, id);
@@ -543,17 +596,19 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
 
   public void resolveDefaultObserver() {
 
-    if (getFederation() != null
-        && getFederation().getId().equals(Federation.LOCAL_FEDERATION_ID)) {
+    if (getFederation() != null && getFederation().getId().equals(Federation.LOCAL_FEDERATION_ID)) {
       // TODO
     }
     // TODO
   }
 
   public void setFromConfiguration(DigitalTwin.Configuration configuration) {
-    if (configuration == null || configuration.isEmpty()
-        || configuration.getId() == null || configuration.getId().isBlank()) {
-      throw new KlabInternalErrorException("Cannot initialize a client context without a valid runtime configuration");
+    if (configuration == null
+        || configuration.isEmpty()
+        || configuration.getId() == null
+        || configuration.getId().isBlank()) {
+      throw new KlabInternalErrorException(
+          "Cannot initialize a client context without a valid runtime configuration");
     }
     // Keep a private authoritative descriptor: derived scopes subsequently share this snapshot.
     this.configuration = DigitalTwin.Configuration.builder(configuration).build();
@@ -562,7 +617,8 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
       if (descriptor.getServiceUrl() == null) descriptor.setServiceUrl(runtimeService.getUrl());
       if (descriptor.getServiceId() == null) descriptor.setServiceId(runtimeService.serviceId());
       if (descriptor.getUrl() == null) {
-        descriptor.setUrl(Utils.URLs.newURL(descriptor.getServiceUrl() + "/dt/" + descriptor.getId()));
+        descriptor.setUrl(
+            Utils.URLs.newURL(descriptor.getServiceUrl() + "/dt/" + descriptor.getId()));
       }
     }
     setId(configuration.getId());
@@ -571,7 +627,9 @@ public class ClientContextScope extends ClientSessionScope implements ContextSco
     this.shardingStrategy = configuration.getShardingStrategy();
     this.observer = configuration.getObserver();
     resolutionConstraints.remove(ResolutionConstraint.Type.Observer);
-    if (observer != null) resolutionConstraints.put(ResolutionConstraint.Type.Observer,
-        ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
+    if (observer != null)
+      resolutionConstraints.put(
+          ResolutionConstraint.Type.Observer,
+          ResolutionConstraint.of(ResolutionConstraint.Type.Observer, observer.getId()));
   }
 }

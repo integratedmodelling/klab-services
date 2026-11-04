@@ -1,12 +1,40 @@
 package org.integratedmodelling.klab.api.digitaltwin.impl;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class CommitImpl implements KnowledgeGraph.Commit {
+  private java.util.List<org.integratedmodelling.klab.api.data.KnowledgeGraph.ObservationCessation>
+      observationCessations = new java.util.ArrayList<>();
+  private java.util.List<
+          org.integratedmodelling.klab.api.data.KnowledgeGraph.CohortMembershipChange>
+      cohortMembershipChanges = new java.util.ArrayList<>();
+
+  @Override
+  public java.util.List<org.integratedmodelling.klab.api.data.KnowledgeGraph.ObservationCessation>
+      getObservationCessations() {
+    return java.util.List.copyOf(observationCessations);
+  }
+
+  public void setObservationCessations(
+      java.util.List<org.integratedmodelling.klab.api.data.KnowledgeGraph.ObservationCessation>
+          value) {
+    observationCessations = new java.util.ArrayList<>(value);
+  }
+
+  @Override
+  public java.util.List<org.integratedmodelling.klab.api.data.KnowledgeGraph.CohortMembershipChange>
+      getCohortMembershipChanges() {
+    return java.util.List.copyOf(cohortMembershipChanges);
+  }
+
+  public void setCohortMembershipChanges(
+      java.util.List<org.integratedmodelling.klab.api.data.KnowledgeGraph.CohortMembershipChange>
+          value) {
+    cohortMembershipChanges = new java.util.ArrayList<>(value);
+  }
 
   /** Detach a commit before handing it to another thread, handler or message consumer. */
   public static CommitImpl copyOf(KnowledgeGraph.Commit source) {
@@ -20,10 +48,20 @@ public class CommitImpl implements KnowledgeGraph.Commit {
     copy.getAddedCohorts().addAll(source.getAddedCohorts());
     copy.getModifiedAssets().addAll(source.getModifiedAssets());
     copy.getDeletedAssets().addAll(source.getDeletedAssets());
-    source.getAddedLinks().forEach(link -> copy.getAddedLinks().add(
-        Triple.of(link.getFirst(), link.getSecond(), link.getThird())));
-    source.getDeletedLinks().forEach(link -> copy.getDeletedLinks().add(
-        Triple.of(link.getFirst(), link.getSecond(), link.getThird())));
+    copy.setObservationCessations(source.getObservationCessations());
+    copy.setCohortMembershipChanges(source.getCohortMembershipChanges());
+    source
+        .getAddedLinks()
+        .forEach(
+            link ->
+                copy.getAddedLinks()
+                    .add(Triple.of(link.getFirst(), link.getSecond(), link.getThird())));
+    source
+        .getDeletedLinks()
+        .forEach(
+            link ->
+                copy.getDeletedLinks()
+                    .add(Triple.of(link.getFirst(), link.getSecond(), link.getThird())));
     return copy;
   }
 
@@ -44,7 +82,8 @@ public class CommitImpl implements KnowledgeGraph.Commit {
     return consequenceCause;
   }
 
-  public void setConsequenceCause(org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause cause) {
+  public void setConsequenceCause(
+      org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause cause) {
     this.consequenceCause = cause;
   }
 

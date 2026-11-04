@@ -22,6 +22,10 @@ class ObservationAnnotationAdaptationTest {
     var declaration = mock(ConceptDeclarationSyntax.class);
     when(declaration.getName()).thenReturn("Thing");
     when(declaration.getDeclaredType()).thenReturn(SemanticSyntax.Type.SUBJECT);
+    when(declaration.getDeclaredRelationshipNature())
+        .thenReturn(ConceptDeclarationSyntax.RelationshipNature.UNSPECIFIED);
+    when(declaration.getDeclaredRelationshipOrientation())
+        .thenReturn(ConceptDeclarationSyntax.RelationshipOrientation.UNSPECIFIED);
     var annotation = annotation();
     when(declaration.getAnnotations()).thenReturn(List.of(annotation));
     var method = LanguageAdapter.class.getDeclaredMethod("adaptConceptDefinition",

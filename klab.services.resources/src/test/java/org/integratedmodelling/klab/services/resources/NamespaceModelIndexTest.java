@@ -179,6 +179,61 @@ class NamespaceModelIndexTest {
     }
   }
 
+  @Test void foregroundWorkYieldsAndResumesWithoutRemappingCompletedNamespaces() {
+    var first=source("first");var second=source("second");
+    var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);
+    var checks=new java.util.concurrent.atomic.AtomicInteger();
+    index.reconcile(()->new ArrayList<>(sources.values()),catalog,scope,7,0,
+        ()->checks.incrementAndGet()>2);
+    verify(catalog).replaceNamespace(first,scope);
+    verify(catalog,never()).replaceNamespace(second,scope);
+    assertThrows(RuntimeException.class,()->index.queryView(new ArrayList<>(sources.values()),
+        org.integratedmodelling.klab.runtime.language.ModelValidationGate.currentSemanticSnapshot(scope)));
+    index.reconcile(()->new ArrayList<>(sources.values()),catalog,scope,7,10,()->false);
+    verify(catalog,times(1)).replaceNamespace(first,scope);
+    verify(catalog,times(1)).replaceNamespace(second,scope);
+    verify(reasoner,times(2)).validateDocument(any(),any());
+  }
+
+  @Test void semanticDriftAtYieldDiscardsCheckpointAndRequiresFreshAdmission() {
+    var first=source("first");source("second");
+    var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);
+    var checks=new java.util.concurrent.atomic.AtomicInteger();
+    assertThrows(IllegalStateException.class,()->index.reconcile(
+        ()->new ArrayList<>(sources.values()),catalog,scope,7,0,()->{
+          if(checks.incrementAndGet()>2){revision.set(8);return true;}return false;
+        }));
+    verify(catalog).withholdNamespace("first",scope);
+    index.reconcile(()->new ArrayList<>(sources.values()),catalog,scope,8,10,()->false);
+    verify(catalog,times(2)).replaceNamespace(first,scope);
+  }
+
+  @Test void foregroundDeferralHasNoSemanticTrafficAndInactiveSourcesDoNotRetry() {
+    var source=source("inactive");source.setInactive(true);
+    var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);
+    clearInvocations(reasoner);
+    index.reconcile(()->List.of(source),catalog,scope,7,0,()->true);
+    verifyNoInteractions(reasoner,catalog);
+    index.reconcile(List.of(source),catalog,scope,7,0);
+    index.reconcile(List.of(source),catalog,scope,7,100);
+    verify(catalog,times(1)).withholdNamespace("inactive",scope);
+    source.setInactive(false);
+    index.reconcile(List.of(source),catalog,scope,7,101);
+    verify(catalog).replaceNamespace(source,scope);
+  }
+
+  @Test void repeatedTransientFailureBacksOffButSourceChangeRetriesImmediately() {
+    var source=source("pending");statuses.put("pending",SemanticValidationResponse.Status.UNAVAILABLE);
+    var index=new NamespaceModelIndex(5);var catalog=mock(ModelCatalog.class);
+    index.reconcile(List.of(source),catalog,scope,7,0);
+    index.reconcile(List.of(source),catalog,scope,7,5);
+    index.reconcile(List.of(source),catalog,scope,7,10);
+    verify(reasoner,times(2)).validateDocument(any(),any());
+    source.setSourceCode("changed");statuses.clear();
+    index.reconcile(List.of(source),catalog,scope,7,11);
+    verify(catalog).replaceNamespace(source,scope);
+  }
+
   @Test void unchangedReconciliationUsesTwoFreshSemanticSnapshotsRegardlessOfNamespaceCount() {
     for(int i=0;i<20;i++)source("source"+i);
     var catalog=mock(ModelCatalog.class);var index=new NamespaceModelIndex(5);

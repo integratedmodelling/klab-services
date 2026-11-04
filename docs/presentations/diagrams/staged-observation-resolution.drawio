@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="staged-observation-resolution" name="Staged inference: count through successful discovery">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Staged inference: count through successful discovery" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Arial;fontSize=39;align=left;verticalAlign=middle;spacing=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="25" width="1520" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="REQUEST  /  Count trees on one whole-plot support, with time and observer held fixed." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="115" width="1520" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="request" value="&lt;b&gt;REQUEST: COUNT OF TREES&lt;/b&gt;&lt;br&gt;&lt;br&gt;A numeric observation&lt;br&gt;on the stated support." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="215" width="380" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="direct" value="&lt;b&gt;DIRECT ROUTE: OBSERVE&lt;/b&gt;&lt;br&gt;&lt;br&gt;Seek a count model or reuse&lt;br&gt;an eligible count observation." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="610" y="215" width="380" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="done" value="&lt;b&gt;IF SUCCESSFUL&lt;/b&gt;&lt;br&gt;&lt;br&gt;Contextualize or reuse;&lt;br&gt;report the count with provenance." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="215" width="380" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="try" value="try first" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="request" target="direct" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="success" value="supported" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="direct" target="done" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="discover" value="&lt;b&gt;STAGED ROUTE: RESOLVE&lt;/b&gt;&lt;br&gt;&lt;br&gt;Resolve the collective Tree:&lt;br&gt;discover actual individuals." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="610" y="545" width="380" height="195" as="geometry" />
+        </mxCell>
+        <mxCell id="count" value="&lt;b&gt;COUNT AND COMMIT&lt;/b&gt;&lt;br&gt;&lt;br&gt;Require complete discovery;&lt;br&gt;count distinct individuals;&lt;br&gt;commit the scalar count." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=23;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="545" width="380" height="195" as="geometry" />
+        </mxCell>
+        <mxCell id="fallback" value="no direct answer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="direct" target="discover" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="members" value="actual members" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="discover" target="count" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="policy" value="&lt;b&gt;EVIDENCE RULE&lt;/b&gt;&lt;br&gt;&lt;br&gt;Successful empty discovery → 0&lt;br&gt;&lt;br&gt;Partial, failed or unknown&lt;br&gt;discovery → unresolved." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFF2D9;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=23;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="535" width="380" height="215" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="Dashed arrow: consider a staged strategy after unsuccessful direct alternatives." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Arial;fontSize=22;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="800" width="1520" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" value="Same context + observer + required support at every stage. One scalar count; no automatic per-cell redistribution." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Arial;fontSize=20;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="850" width="1520" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

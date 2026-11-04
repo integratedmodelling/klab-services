@@ -9,26 +9,30 @@ import org.integratedmodelling.klab.api.utils.Utils;
 public final class CoreOntologyCatalog {
   private static final java.util.List<String> BUNDLED_DOCUMENTS =
       java.util.List.of("odo.owl", "dc.owl", "klab.owl");
-  // Verified official publication, not a general permission to resolve GitHub URLs.
+  // Compatibility identities for explicitly frozen catalogs without a document locator.
+  // Production imports use OdoImportCapture: the authored remote document is authoritative.
   // Keep the published LF hash and the exact Windows CRLF distribution hash separate;
   // admission never rewrites bytes or treats arbitrary same-version documents as this release.
   private static final String VERIFIED_ODO_RELEASE =
       "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
           + "9cfe20e306e39747a0474bf6754c24e49d99df71/releases/0.1.1/odo.owl";
-  private static final java.util.Set<String> VERIFIED_ODO_HASHES = java.util.Set.of(
-      "d8771dc5456a48e0d1d64f7ba1c92f8e6a9f89ddddfd1fa6cabf1c93e363ea52",
-      "6851a4a34aa66191687232e9c37c2dc12e8b779b73e1a10bdf5abd1dd31ab038");
+  private static final java.util.Set<String> VERIFIED_ODO_HASHES =
+      java.util.Set.of(
+          "d8771dc5456a48e0d1d64f7ba1c92f8e6a9f89ddddfd1fa6cabf1c93e363ea52",
+          "6851a4a34aa66191687232e9c37c2dc12e8b779b73e1a10bdf5abd1dd31ab038");
   // Locally prepared immutable 0.2.0 source; publication is a separate operation.
   private static final String VERIFIED_ODO_020_RELEASE =
       "https://raw.githubusercontent.com/integratedmodelling/odo-im/08e5a29abbbd32ca8c1b933fc157a1762ba3ee5c/releases/0.2.0/odo.owl";
   private static final String VERIFIED_ODO_020_SHA256 =
       "496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57";
+
   private CoreOntologyCatalog() {}
 
   /** Only the distribution's three root documents are protected; extensions remain local. */
   public static boolean isBundledDocument(Path relativeDocument) {
     return relativeDocument.getNameCount() == 1
-        && BUNDLED_DOCUMENTS.stream().anyMatch(name -> name.equalsIgnoreCase(relativeDocument.toString()));
+        && BUNDLED_DOCUMENTS.stream()
+            .anyMatch(name -> name.equalsIgnoreCase(relativeDocument.toString()));
   }
 
   /** Fresh bytes from this reasoner distribution, without installed-catalog overrides. */
@@ -40,7 +44,8 @@ public final class CoreOntologyCatalog {
 
   private static byte[] bundledDocument(String name) throws java.io.IOException {
     try (var input = CoreOntologyCatalog.class.getResourceAsStream("/knowledge/" + name)) {
-      if (input == null) throw new java.io.IOException("Bundled knowledge/" + name + " is unavailable");
+      if (input == null)
+        throw new java.io.IOException("Bundled knowledge/" + name + " is unavailable");
       return input.readAllBytes();
     }
   }
@@ -50,18 +55,24 @@ public final class CoreOntologyCatalog {
     return bundledDocument("odo.owl");
   }
 
-  /** A release locator names captured bytes; neither master nor verified immutable URLs are fetched. */
+  /**
+   * Compatibility for frozen, already supplied bytes. Production capture fetches the authored URL
+   * first.
+   */
   static String odoReleaseIdentity(String locator, String capturedSha256) {
     if (locator == null) return null;
     if (VERIFIED_ODO_020_RELEASE.equals(locator))
       return VERIFIED_ODO_020_SHA256.equals(capturedSha256)
-          ? "http://integratedmodelling.org/odo/0.2.0" : null;
+          ? "http://integratedmodelling.org/odo/0.2.0"
+          : null;
     if (VERIFIED_ODO_RELEASE.equals(locator))
       return capturedSha256 != null && VERIFIED_ODO_HASHES.contains(capturedSha256)
-          ? "http://integratedmodelling.org/odo/0.1.1" : null;
-    var match = java.util.regex.Pattern.compile(
-        "https://raw\\.githubusercontent\\.com/integratedmodelling/odo-im/master/releases/([0-9]+\\.[0-9]+\\.[0-9]+)/odo\\.owl")
-        .matcher(locator);
+          ? "http://integratedmodelling.org/odo/0.1.1"
+          : null;
+    var match =
+        java.util.regex.Pattern.compile(
+                "https://raw\\.githubusercontent\\.com/integratedmodelling/odo-im/master/releases/([0-9]+\\.[0-9]+\\.[0-9]+)/odo\\.owl")
+            .matcher(locator);
     return match.matches() ? "http://integratedmodelling.org/odo/" + match.group(1) : null;
   }
 
@@ -94,6 +105,7 @@ public final class CoreOntologyCatalog {
 
   public static String alias(Path relativeDocument) {
     return StreamSupport.stream(relativeDocument.spliterator(), false)
-        .map(part -> segment(part.toString())).collect(Collectors.joining("."));
+        .map(part -> segment(part.toString()))
+        .collect(Collectors.joining("."));
   }
 }

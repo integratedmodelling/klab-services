@@ -27,6 +27,7 @@ class ProvisionalObservationScopeTest {
     var session = new ServiceSessionScope(new ServiceUserScope(user, runtime));
     var context = new ServiceContextScope(session,
         DigitalTwin.Configuration.builder().id("test.context").name("test").build(), user);
+    context.setId("test.context");
     var twin = mock(DigitalTwin.class);
     when(twin.getKnowledgeGraph()).thenReturn(
         mock(org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j.class));
@@ -42,6 +43,11 @@ class ProvisionalObservationScopeTest {
     context.registerTransaction(root);
     context.registerTransaction(child);
     var candidate = new ObservationImpl();
+    when(twin.getKnowledgeGraph().isObservationCurrent(same(candidate), any())).thenAnswer(call -> {
+      var scope = call.getArgument(1, ContextScope.class);
+      return scope != null && "test.context".equals(scope.getId())
+          && (scope.getCurrentTransaction() == root || scope.getCurrentTransaction() == child);
+    });
     var observable = mock(Observable.class);
     var concept = mock(Concept.class);
     when(observable.getSemantics()).thenReturn(concept);

@@ -48,6 +48,7 @@ class CollectiveCompletionQueryTest {
   ObservationImpl producer, query;
   CohortImpl cohort;
   final Map<Long,RuntimeAsset> staged=new LinkedHashMap<>(), durable=new LinkedHashMap<>();
+  final Set<Long> existing=new HashSet<>();
   final List<List<Object>> stagedLinks=new ArrayList<>(), durableLinks=new ArrayList<>();
   final com.fasterxml.jackson.databind.ObjectMapper mapper=
       org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
@@ -71,6 +72,16 @@ class CollectiveCompletionQueryTest {
     cohort=new CohortImpl(); cohort.setId(-20); cohort.setObservable(observable); cohort.setGeometry(producer.getGeometry());
     root=twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION),scope,RuntimeAsset.PROVENANCE_ASSET);
     when(scope.getCurrentTransaction()).thenReturn(root);
+    when(graph.isObservationCurrent(any(),any())).thenAnswer(call -> {
+      var observation=call.getArgument(0,Observation.class);
+      var requested=call.getArgument(1,org.integratedmodelling.klab.api.scope.ContextScope.class);
+      if(requested==null||!Objects.equals(scope.getId(),requested.getId()))return false;
+      if(requested.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl transaction) {
+        var pending=transaction.currentStatusFor(observation);
+        if(pending.isPresent())return pending.get();
+      }
+      return existing.contains(observation.getId()) || durable.get(observation.getId()) instanceof Observation;
+    });
     root.link(producer,cohort,GraphModel.Relationship.CONTRIBUTED_TO);
     runtime=mock(RuntimeService.class,CALLS_REAL_METHODS);
     doReturn(cohort).when(runtime).getCohortFor(any(),eq(scope),eq(false));
@@ -294,6 +305,7 @@ class CollectiveCompletionQueryTest {
     var other=new ObservationImpl();other.setId(-11);other.setObservable(producer.getObservable());other.setGeometry(right);
     root.link(other,cohort,GraphModel.Relationship.CONTRIBUTED_TO);
     var first=new ObservationImpl();first.setId(41);first.setObservable(memberObservable());first.setGeometry(left);
+    existing.add(first.getId());
     var second=new ObservationImpl();second.setId(-30);second.setObservable(memberObservable());second.setGeometry(right);
     root.link(cohort,first,GraphModel.Relationship.HAS_MEMBER);root.link(cohort,second,GraphModel.Relationship.HAS_MEMBER);
     execution(Activity.Type.INSTANTIATION,producer,left).commit();

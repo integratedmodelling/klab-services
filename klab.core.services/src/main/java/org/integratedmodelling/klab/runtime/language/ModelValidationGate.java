@@ -256,7 +256,7 @@ public final class ModelValidationGate {
           || !java.util.Objects.equals(receipt.semanticFingerprint(),semantic.semanticFingerprint())
           || !java.util.Objects.equals(receipt.semanticSessionId(),semantic.semanticSessionId())) return false;
       if (!receipt.sourceBacked()) return receipt.sourceHash()==null && receipt.sourceVersion()==null;
-      var saved=source(model.getUrn(),model.getNamespace(),scope.getService(ResourcesService.class),scope);
+      var saved=sourceFor(model,scope);
       return saved!=null && java.util.Objects.equals(receipt.sourceVersion(),Long.toString(saved.getLastUpdateTimestamp()))
           && java.util.Objects.equals(receipt.sourceHash(),digest(saved));
     } catch (RuntimeException unavailable) { return false; }
@@ -510,12 +510,21 @@ public final class ModelValidationGate {
 
   private static long validatedCatalogRevision(String name, String namespace, ResourcesService resources,
       Scope scope, Observable requested, boolean inspectInstalled) {
+    boolean frozen=scope instanceof org.integratedmodelling.klab.api.scope.ContextScope context
+        &&context.getResolutionCycleBinding()!=null;
     try {
       var source = source(name, namespace, resources, scope);
-      if (source == null || source.isInactive()
-          || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(source.getNotifications())
-          || Boolean.TRUE.equals(source.getMetadata().get(ResourcesService.VALIDATION_DEFERRED_METADATA))
-          || !inspectInstalled && (source.getSourceCode() == null || source.getSourceCode().isBlank())) return -1;
+      if(source==null) {
+        if(frozen)throw new AdmissionFailure(namespace,null,false);
+        return -1;
+      }
+      if (source.isInactive()
+          || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(source.getNotifications())) return -1;
+      if (Boolean.TRUE.equals(source.getMetadata().get(ResourcesService.VALIDATION_DEFERRED_METADATA))
+          || !inspectInstalled && (source.getSourceCode() == null || source.getSourceCode().isBlank())) {
+        if(frozen)throw new AdmissionFailure(namespace,null,false);
+        return -1;
+      }
       long timestamp = source.getLastUpdateTimestamp();
       String sourceCode = source.getSourceCode();
       var semantic=semanticSnapshot(scope);
@@ -556,12 +565,21 @@ public final class ModelValidationGate {
         return unchanged(source, timestamp, sourceCode) ? boundRevision : -1;
       }
       return unchanged(source, timestamp, sourceCode) ? revision : -1;
-    } catch (RuntimeException unavailable) { return -1; }
+    } catch (RuntimeException unavailable) {
+      if(frozen&&(!(unavailable instanceof AdmissionFailure failure)||failure.retryable()))throw unavailable;
+      return -1;
+    }
   }
 
   public static void require(String name, String namespace, ResourcesService resources, Scope scope) {
     if (!admits(name, namespace, resources, scope))
       throw new KlabValidationException("Model source is not admitted: " + name);
+  }
+
+  private static KimNamespace sourceFor(Model model, Scope scope) {
+    var captured = org.integratedmodelling.common.knowledge.ModelCandidateSources.read(model);
+    if (captured != null) return captured;
+    return source(model.getUrn(),model.getNamespace(),scope.getService(ResourcesService.class),scope);
   }
 
   private static KimNamespace source(String name, String namespace, ResourcesService resources, Scope scope) {
@@ -713,7 +731,7 @@ public final class ModelValidationGate {
       org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse sourceReceipt = null;
       java.util.List<org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.PendingMemberQualityDependency> pendingMembers=java.util.List.of();
       if (model.getNamespace() != null && !model.getNamespace().isBlank()) {
-        saved = source(model.getUrn(), model.getNamespace(), resources, scope);
+        saved = sourceFor(model, scope);
         if (saved == null || saved.isInactive() || saved.getSourceCode()==null || saved.getSourceCode().isBlank()
             || Boolean.TRUE.equals(saved.getMetadata().get(ResourcesService.VALIDATION_DEFERRED_METADATA))
             || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(saved.getNotifications())) return null;
