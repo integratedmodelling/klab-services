@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "request-plan": "tests/functional/test_request_plan.py",
     "partial-refresh": "tests/functional/test_partial_refresh.py",
     "nonuniform-export": "tests/functional/test_nonuniform_export.py",
     "milestone-compatibility-units": "tests/functional/test_connected_semantics.py",

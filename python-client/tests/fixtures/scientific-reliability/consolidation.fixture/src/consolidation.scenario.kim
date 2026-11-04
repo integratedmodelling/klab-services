@@ -1,0 +1,3 @@
+scenario consolidation.scenario;
+// Explicit synthetic scenario alternative, never a replacement of the base field.
+model consolidation:Elevation of consolidation:Region in m set to [234.5];
