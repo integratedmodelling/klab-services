@@ -13,8 +13,14 @@ import org.integratedmodelling.klab.api.services.resources.adapters.Adapter;
 import org.junit.jupiter.api.Test;
 
 class LocalAdapterExecutorTest {
-  @Test void nonQualityAdapterUsesObservationGeometryWithEmptyScannerMap() {
+  private Adapter successfulAdapter() {
     var adapter = mock(Adapter.class);
+    when(adapter.encode(any(), any(), isNull(), any(), nullable(org.integratedmodelling.klab.api.data.Storage.Scanner.class),
+        any(), any(), any(), any(), any())).thenReturn(true);
+    return adapter;
+  }
+  @Test void nonQualityAdapterUsesObservationGeometryWithEmptyScannerMap() {
+    var adapter = successfulAdapter();
     var resource = mock(Resource.class);
     when(resource.getUrn()).thenReturn("test:local:resource:data");
     var observation = new ObservationImpl();
@@ -31,7 +37,7 @@ class LocalAdapterExecutorTest {
         same(observation), same(observation.getObservable()), any(), any(), same(scope));
   }
   @Test void adapterContextualizationAndEncodingReceiveFragmentWithoutChangingProducer() {
-    var adapter = mock(Adapter.class); var resource = mock(Resource.class);
+    var adapter = successfulAdapter(); var resource = mock(Resource.class);
     when(resource.getUrn()).thenReturn("test:local:resource:data");
     var observation = new ObservationImpl();
     var full = Geometry.create("T0(1){ttype=PHYSICAL,tstart=1000,tend=10000}");
@@ -50,7 +56,7 @@ class LocalAdapterExecutorTest {
   }
 
   @Test void outputScannerGeometryStillWinsForAdapterContextualizationAndEncoding() {
-    var adapter = mock(Adapter.class); var resource = mock(Resource.class);
+    var adapter = successfulAdapter(); var resource = mock(Resource.class);
     when(resource.getUrn()).thenReturn("test:local:resource:data");
     var observation = new ObservationImpl(); observation.setGeometry(Geometry.UNIVERSAL);
     observation.setObservable(mock(Observable.class)); var scope = mock(ContextScope.class);

@@ -64,10 +64,16 @@ class ConsequenceEngineTest {
       var user = mock(UserIdentity.class);
       when(user.getUsername()).thenReturn("tester");
       when(user.getId()).thenReturn("tester");
-      scope = new ServiceContextScope(
+      var base = new ServiceContextScope(
           new ServiceSessionScope(new ServiceUserScope(user, mock(RuntimeService.class))),
           DigitalTwin.Configuration.builder().id("context").name("Twin").build(), user);
-      scope.setId("context");
+      base.setId("context");
+      var binding = new org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding(
+          1, "test-cycle", "context", "runtime", true,
+          new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding(
+              "semantic-cycle-v1", "reasoner", "session", 1, "fingerprint", "lease"));
+      scope = base.withResolutionCycle(new org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<>(
+          binding.cycleId(), "context", true, binding, () -> {}), binding);
       scope.onMessage((channel, event) -> events.add(event), Message.Queue.Events);
       engine = new ConsequenceEngine(scope, "context", gracefulCloseMillis, forcedCloseMillis);
       when(twin.getConsequenceEngine()).thenReturn(engine);
@@ -108,7 +114,7 @@ class ConsequenceEngineTest {
       return result;
     }
 
-    @Override public void close() { engine.close(); }
+    @Override public void close() { engine.close(); scope.getResolutionCycle().close(); }
   }
 
   @Test void successfulRootCommitRunsAfterStorageCloseAndIntermediateCommitDoesNotPublish() throws Exception {
@@ -134,6 +140,25 @@ class ConsequenceEngineTest {
       assertEquals(900, cause.triggeringCommitId());
       assertEquals(root.getActivity().getId(), cause.triggeringActivityId());
       assertThrows(IllegalStateException.class, root::commit);
+    }
+  }
+
+  @Test void postCommitActivationAllowsServiceCallbackToAcquireGraphMonitor() throws Exception {
+    try (var f = new Fixture()) {
+      var root = f.transaction(f.scope);
+      var callbacks = new java.util.concurrent.atomic.AtomicInteger();
+      var field = DigitalTwinImpl.TransactionImpl.class.getDeclaredField("graph");
+      field.setAccessible(true);
+      var monitor = field.get(root);
+      root.afterCommit(() -> {
+        assertFalse(Thread.holdsLock(monitor));
+        var callback = java.util.concurrent.CompletableFuture.runAsync(() -> {
+          synchronized (monitor) { callbacks.incrementAndGet(); }
+        });
+        assertDoesNotThrow(() -> callback.get(2, TimeUnit.SECONDS));
+      });
+      assertEquals(900, root.commit());
+      assertEquals(1, callbacks.get());
     }
   }
 
@@ -321,9 +346,11 @@ class ConsequenceEngineTest {
       var closeFailure = new AtomicReference<Throwable>();
       f.engine.register(Consequence.Kind.CONFIGURATION_DETECTION, (cause, changes, scope) -> {
         calls.incrementAndGet();
+        var nested = scope.forConsequence(cause).forConsequence(null);
         entered.countDown();
         try {
-          while (!scope.isInterrupted()) Thread.sleep(1);
+          while (!nested.isInterrupted()) Thread.sleep(1);
+          assertTrue(scope.isInterrupted());
           cancellationSeen.countDown();
           releaseOperation.await(); // an already-running read/atomic operation may finish safely
         } catch (InterruptedException failure) { interrupted.set(true); throw failure; }
@@ -345,6 +372,8 @@ class ConsequenceEngineTest {
       closer.join(5000);
       assertFalse(closer.isAlive());
       assertNull(closeFailure.get());
+      f.scope.getResolutionCycle().close();
+      f.scope.getResolutionCycle().quiescence().toCompletableFuture().get(5, TimeUnit.SECONDS);
       assertFalse(interrupted.get(), "Healthy active operations must drain without driver interruption");
       assertEquals(1, calls.get(), "Queued work and subsequent handlers must not start");
       assertTrue(f.events.isEmpty(), "Closing work must not publish a decision");

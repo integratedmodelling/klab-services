@@ -49,7 +49,9 @@ public class OntologyProjectValidationTest {
       assertEquals("demo.pattern",issue.getLexicalContext().getDocumentUrn());assertEquals("demo",issue.getLexicalContext().getProjectUrn());assertEquals(KlabAsset.KnowledgeClass.ONTOLOGY,issue.getLexicalContext().getDocumentType());assertEquals(0,issue.getLexicalContext().getOffsetInDocument());
       assertSame(f.status,f.runtime.status());
     }
-    verify(f.runtime,never()).validate(any(),any());verify(f.reasoner,never()).loadKnowledge(any(Worldview.class),any(Scope.class));
+    verify(f.runtime,never()).validate(any(),any());
+    verify(f.runtime,never()).validate(any(),any(),any());
+    verify(f.reasoner,never()).loadKnowledge(any(Worldview.class),any(Scope.class));
     verify(f.resources,never()).retrieve(anyString(),eq(Worldview.class),any());verify(f.resources,never()).retrieve("demo.pattern",KimOntology.class,f.scope);
   }
   @Test void diagnosticSurvivesServiceClientJsonEnvelopeWithoutChangingRequestIdentity() throws Exception {
@@ -60,11 +62,12 @@ public class OntologyProjectValidationTest {
   }
   @Test void worldviewDefiningProjectKeepsTheExistingValidationPath() throws Exception {
     var f=new Fixture("imod");var response=f.reasoner.validateDocument(SemanticValidationRequest.of(document("ontology demo.pattern;"),"saved"),f.scope);
-    assertTrue(response.valid());verify(f.runtime).validate(any(),any());
+    assertTrue(response.valid());verify(f.runtime).validate(any(),same(response),same(f.scope));
   }
   @Test void ordinaryKimNamespaceNeverRequiresAWorldviewDefiningProject() throws Exception {
     var f=new Fixture(null);var d=new KimNamespaceImpl();d.setUrn("demo.models");d.setProjectName("demo");d.setSourceCode("namespace demo.models;");
     var response=f.reasoner.validateDocument(SemanticValidationRequest.of(d,"saved"),f.scope);
-    assertTrue(response.valid());verify(f.resources,never()).retrieve(anyString(),eq(Project.class),any());verify(f.runtime).validate(any(),any());
+    assertTrue(response.valid());verify(f.resources,never()).retrieve(anyString(),eq(Project.class),any());
+    verify(f.runtime).validate(any(),same(response),same(f.scope));
   }
 }

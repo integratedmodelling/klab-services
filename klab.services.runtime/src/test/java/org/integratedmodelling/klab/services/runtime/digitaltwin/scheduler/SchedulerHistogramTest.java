@@ -55,6 +55,9 @@ class SchedulerHistogramTest {
     histogram.setBins(List.of(bin));
     when(storage.getHistograms()).thenReturn(Map.of(0L, histogram));
     var scheduler = mock(SchedulerImpl.class, CALLS_REAL_METHODS);
+    var currentGraph=scope.getDigitalTwin().getKnowledgeGraph();
+    when(currentGraph.isObservationCurrent(argThat(o->o!=null&&o.getId()==42),same(scope))).thenReturn(true);
+    var schedulerGraph=SchedulerImpl.class.getDeclaredField("knowledgeGraph");schedulerGraph.setAccessible(true);schedulerGraph.set(scheduler,currentGraph);
     var execute = SchedulerImpl.class.getDeclaredMethod("execute", TriFunction.class,
         Observation.class, Geometry.class, Scheduler.Event.class, ServiceContextScope.class);
     execute.setAccessible(true);
@@ -82,6 +85,7 @@ class SchedulerHistogramTest {
     var scope=mock(ServiceContextScope.class,RETURNS_DEEP_STUBS);when(scope.getConsequenceCause()).thenReturn(null);
     var twin=mock(DigitalTwinImpl.class);var graph=mock(org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j.class);
     when(twin.getKnowledgeGraph()).thenReturn(graph);when(scope.getDigitalTwin()).thenReturn(twin);
+    when(graph.isObservationCurrent(argThat(o->o!=null&&o.getId()==42),same(scope))).thenReturn(true);
     var graphField=DigitalTwinImpl.class.getDeclaredField("knowledgeGraph");graphField.setAccessible(true);graphField.set(twin,graph);
     var transaction=twin.new TransactionImpl(Activity.of(Activity.Type.SUBMISSION),scope,RuntimeAsset.PROVENANCE_ASSET,member);
     when(scope.getCurrentTransaction()).thenReturn(transaction);

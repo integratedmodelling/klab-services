@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.scopes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -59,6 +60,7 @@ class ServiceSessionScopeTest {
     var observation = mock(Observation.class);
 
     when(digitalTwin.getKnowledgeGraph()).thenReturn(knowledgeGraph);
+    when(knowledgeGraph.isObservationCurrent(any(), any())).thenReturn(true);
     instrumented.setDigitalTwin(digitalTwin);
     var child = instrumented.within(mock(Observation.class));
     when(knowledgeGraph.getAsset(42L, child, Observation.class)).thenReturn(observation);
@@ -66,6 +68,11 @@ class ServiceSessionScopeTest {
     assertSame(instrumented.observationCache, child.observationCache);
     assertSame(observation, child.getObservation(42L));
     assertSame(observation, instrumented.getObservation(42L));
+    verify(knowledgeGraph, times(1)).getAsset(42L, child, Observation.class);
+    // A shared cached object must not bypass upstream's current-state check.
+    when(knowledgeGraph.isObservationCurrent(any(), any())).thenReturn(false);
+    assertNull(child.getObservation(42L));
+    assertNull(instrumented.getObservation(42L));
     verify(knowledgeGraph, times(1)).getAsset(42L, child, Observation.class);
   }
 

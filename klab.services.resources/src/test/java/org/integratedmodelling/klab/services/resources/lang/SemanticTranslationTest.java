@@ -196,6 +196,10 @@ class SemanticTranslationTest {
     var declaration = mock(org.integratedmodelling.languages.api.ConceptDeclarationSyntax.class);
     when(declaration.getName()).thenReturn("Child");
     when(declaration.getDeclaredType()).thenReturn(SemanticSyntax.Type.GENERIC_QUALITY);
+    when(declaration.getDeclaredRelationshipNature()).thenReturn(
+        org.integratedmodelling.languages.api.ConceptDeclarationSyntax.RelationshipNature.UNSPECIFIED);
+    when(declaration.getDeclaredRelationshipOrientation()).thenReturn(
+        org.integratedmodelling.languages.api.ConceptDeclarationSyntax.RelationshipOrientation.UNSPECIFIED);
     when(declaration.isGenericQuality()).thenReturn(true);
     when(declaration.getDeclaredParent()).thenReturn(parent);
     var method = LanguageAdapter.class.getDeclaredMethod("adaptConceptDefinition",
@@ -208,6 +212,10 @@ class SemanticTranslationTest {
       var result = (org.integratedmodelling.klab.api.lang.kim.KimConceptStatement)
           method.invoke(LanguageAdapter.INSTANCE, declaration, "test", "project");
       assertEquals(explicitlyAbstract, result.isAbstract());
+      assertEquals(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Nature.UNSPECIFIED,
+          result.getDeclaredRelationshipNature());
+      assertEquals(org.integratedmodelling.klab.api.knowledge.RelationshipAxes.Orientation.UNSPECIFIED,
+          result.getDeclaredRelationshipOrientation());
       for (var flag : List.of(org.integratedmodelling.klab.api.knowledge.SemanticType.ABSTRACT,
           org.integratedmodelling.klab.api.knowledge.SemanticType.SEALED,
           org.integratedmodelling.klab.api.knowledge.SemanticType.SUBJECTIVE)) {

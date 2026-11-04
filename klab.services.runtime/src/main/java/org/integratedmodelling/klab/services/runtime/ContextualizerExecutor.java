@@ -5,7 +5,6 @@ import java.util.Map;
 import org.integratedmodelling.klab.api.data.Data;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.digitaltwin.Scheduler;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -34,18 +33,22 @@ public class ContextualizerExecutor extends AbstractExecutor
 
   private String inputBinding(java.lang.reflect.Parameter parameter) {
     var inputs = callInfo.serviceInfo().serviceInfo.listInputs();
-    if (inputs.stream().noneMatch(input -> input.getName().equals(parameter.getName()))) return null;
+    if (inputs.stream().noneMatch(input -> input.getName().equals(parameter.getName())))
+      return null;
     if (dependencies.containsKey(parameter.getName())) return parameter.getName();
-    var names = dependencies.keySet().stream().filter(name -> !Dataflow.SELF_ID.equals(name)).toList();
+    var names =
+        dependencies.keySet().stream().filter(name -> !Dataflow.SELF_ID.equals(name)).toList();
     return names.size() == 1 ? names.getFirst() : null;
   }
 
   @Override
   protected Class<? extends Storage.Scanner> inputScannerClass(String name) {
     var method = componentRegistry.implementation(callInfo.serviceInfo()).method;
-    if (method != null) for (var parameter : method.getParameters())
-      if (name.equals(inputBinding(parameter)) && Storage.Scanner.class.isAssignableFrom(parameter.getType()))
-        return parameter.getType().asSubclass(Storage.Scanner.class);
+    if (method != null)
+      for (var parameter : method.getParameters())
+        if (name.equals(inputBinding(parameter))
+            && Storage.Scanner.class.isAssignableFrom(parameter.getType()))
+          return parameter.getType().asSubclass(Storage.Scanner.class);
     return Storage.Scanner.class;
   }
 
@@ -59,10 +62,12 @@ public class ContextualizerExecutor extends AbstractExecutor
         for (var scanner : scanners.get(binding))
           adaptObservationArgument(parameter, dependencies.get(binding), scanner);
       else if (callInfo.serviceInfo().serviceInfo.listOutputs().stream()
-          .anyMatch(output -> output.getName().equals(parameter.getName()))
+              .anyMatch(output -> output.getName().equals(parameter.getName()))
           && Storage.Scanner.class.isAssignableFrom(parameter.getType())) {
-        var nativeType = observation.getContextualizationData().getNativeShardingStrategy().getDataType();
-        org.integratedmodelling.klab.api.data.StorageScan.operation(nativeType,
+        var nativeType =
+            observation.getContextualizationData().getNativeShardingStrategy().getDataType();
+        org.integratedmodelling.klab.api.data.StorageScan.operation(
+            nativeType,
             org.integratedmodelling.klab.api.data.StorageScan.type(
                 parameter.getType().asSubclass(Storage.Scanner.class), nativeType),
             org.integratedmodelling.klab.api.data.StorageScan.Precision.ALLOW_FLOAT_NARROWING);
@@ -77,18 +82,22 @@ public class ContextualizerExecutor extends AbstractExecutor
       ContextScope scope,
       RuntimeService.ContextualizationScope contextualizationScope) {
 
-    if(!memberQualityInputs().isEmpty()) {
-      var actual=componentRegistry.implementation(callInfo.serviceInfo());
-      for(var entry:memberQualityInputs().entrySet()) {
-        if(actual==null || !MemberQualityConsumerSupport.supports(actual.method,entry.getKey())
-            || !MemberQualityConsumerSupport.supports(componentRegistry,call,entry.getKey()))
-          throw new IllegalStateException("Installed collection consumer changed before invocation");
-        MemberQualityResolution.requireForConsumption(entry.getValue(),scope);
+    if (!memberQualityInputs().isEmpty()) {
+      var actual = componentRegistry.implementation(callInfo.serviceInfo());
+      for (var entry : memberQualityInputs().entrySet()) {
+        if (actual == null
+            || !MemberQualityConsumerSupport.supports(actual.method, entry.getKey())
+            || !MemberQualityConsumerSupport.supports(componentRegistry, call, entry.getKey()))
+          throw new IllegalStateException(
+              "Installed collection consumer changed before invocation");
+        MemberQualityResolution.requireForConsumption(entry.getValue(), scope);
       }
     }
 
-    var invocationGeometry = contextualizationScope instanceof ContextualizationScopeImpl local
-        ? local.executionGeometry() : null;
+    var invocationGeometry =
+        contextualizationScope instanceof ContextualizationScopeImpl local
+            ? local.executionGeometry()
+            : null;
     var geometry =
         scanners.get(Dataflow.SELF_ID) == null
             ? invocationGeometry == null ? observation.getGeometry() : invocationGeometry
@@ -105,8 +114,9 @@ public class ContextualizerExecutor extends AbstractExecutor
               .anyMatch(Data.Builder.class::isAssignableFrom);
 
       if (needsBuilder) {
-        builder = new org.integratedmodelling.klab.data.DirectDataBuilder(
-            observation.getName(), null, observation, scope, null);
+        builder =
+            new org.integratedmodelling.klab.data.DirectDataBuilder(
+                observation.getName(), null, observation, scope, null);
       }
 
       var arguments =
@@ -146,8 +156,11 @@ public class ContextualizerExecutor extends AbstractExecutor
           if (Boolean.FALSE.equals(context)) return false;
 
         } catch (Exception e) {
-          cause = e instanceof java.lang.reflect.InvocationTargetException invocation
-              && invocation.getCause() != null ? invocation.getCause() : e;
+          cause =
+              e instanceof java.lang.reflect.InvocationTargetException invocation
+                      && invocation.getCause() != null
+                  ? invocation.getCause()
+                  : e;
           return false;
         }
 
@@ -163,15 +176,20 @@ public class ContextualizerExecutor extends AbstractExecutor
                       arguments.toArray());
           if (Boolean.FALSE.equals(context)) return false;
         } catch (Exception e) {
-          cause = e instanceof java.lang.reflect.InvocationTargetException invocation
-              && invocation.getCause() != null ? invocation.getCause() : e;
+          cause =
+              e instanceof java.lang.reflect.InvocationTargetException invocation
+                      && invocation.getCause() != null
+                  ? invocation.getCause()
+                  : e;
           return false;
         }
       }
       if (builder != null) {
         observation.getNotifications().addAll(builder.getNotifications());
-        if (org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(builder.getNotifications()))
-          return false;
+        if (org.integratedmodelling.klab.api.utils.Utils.Notifications.hasErrors(
+            builder.getNotifications())) return false;
+        var cessations = builder.getCessations();
+        if (!cessations.isEmpty()) contextualizationScope.reportCessations(cessations, scope);
         var outcomes = builder.getObjects().stream().map(Data.Builder::getObservation).toList();
         contextualizationScope.getOutcomes().addAll(outcomes);
         // Transactional HAS_CHILD registration owns the cumulative count and rollback.

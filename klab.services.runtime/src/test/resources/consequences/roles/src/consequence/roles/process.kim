@@ -1,0 +1,15 @@
+private namespace consequence.roles.process version 1.0;
+
+model rolefixture:Bearer observing rolefixture:Birth;
+
+@time(step=1.month)
+model rolefixture:Birth
+    observing rolefixture:Input in m named input
+    set input to [input];
+
+private model 0 as rolefixture:Input in m;
+private model 7 as rolefixture:ImpliedValue in m;
+
+// There is deliberately no model for rolefixture:Marked in its bearer. The inherited
+// role and its implied quality must be available before optional characterization.
+

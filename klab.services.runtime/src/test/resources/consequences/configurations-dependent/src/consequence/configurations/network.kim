@@ -1,0 +1,9 @@
+namespace consequence.configurations.dependent version 1.0;
+
+model imod:Bearer observing imod:Height in m, imod:Width in m;
+model 2 as imod:Height in m;
+model 3 as imod:Width in m;
+
+model imod:Pair observing imod:Summary in m;
+model 7 as imod:Summary in m;
+

@@ -39,6 +39,11 @@ public final class BeanIngestionPreflight {
     documents.addAll(worldview.getObservationStrategies());
     var errors = new ArrayList<>(errors(worldview.getNotifications()));
     errors.addAll(errors(documents, List.of(worldview)));
+    return distinctOccurrences(errors);
+  }
+
+  /** Preserve separate source locations while coalescing copied diagnostics from multiple channels. */
+  public static List<Notification> distinctOccurrences(Collection<Notification> errors) {
     record Occurrence(Notification.Level level, String message, String document, String project, int offset, int length) {}
     var unique = new LinkedHashMap<Occurrence, Notification>();
     for (var error : errors) {

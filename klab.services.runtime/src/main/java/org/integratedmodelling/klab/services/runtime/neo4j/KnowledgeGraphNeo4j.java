@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.data.Data;
+import org.integratedmodelling.klab.api.data.KnowledgeGraph;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
@@ -33,7 +34,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
-import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Cohort;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -48,7 +48,6 @@ import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Agent;
 import org.integratedmodelling.klab.api.provenance.Plan;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.provenance.impl.ActivityImpl;
 import org.integratedmodelling.klab.api.provenance.impl.AgentImpl;
 import org.integratedmodelling.klab.api.provenance.impl.PlanImpl;
@@ -58,6 +57,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextInfo;
 import org.integratedmodelling.klab.api.services.runtime.objects.SessionInfo;
@@ -116,6 +116,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           GraphModel.Fields.LONGITUDE);
 
   protected Driver driver;
+
+  private final Object keyAllocationMonitor = new Object();
   protected Agent user;
   protected Agent klab;
   protected String rootContextId;
@@ -192,12 +194,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             + "WITH geometries FOREACH (g IN [g IN geometries WHERE NOT EXISTS { (g)--() }] "
             + "| DELETE g)";
     // An automatic, universal user observer has no spatial allocation and may predate installation.
-    String BLOCKS_GRID = "(NOT coalesce(o.`klab.observer.automatic`,false) "
-        + "OR NOT EXISTS { MATCH (o)-[:HAS_GEOMETRY]->(:Geometry {definition:'*'}) } "
-        + "OR EXISTS { MATCH (o)-[:HAS_DATA]->() })";
-    String GRID_OCCUPIED = "MATCH (ctx:Context {id:$id}) RETURN "
-        + "EXISTS { MATCH (ctx)-[:HAS_CHILD|HAS_MEMBER|HAS_PROVENANCE|HAS_DATAFLOW|HAS_ACTIVITY|CREATED|RESOLVED*1..]->(o:Observation) WHERE " + BLOCKS_GRID + " } "
-        + "OR EXISTS { MATCH (o:Observation) WHERE coalesce(o.ownerContextId,o.`im:context-id`)=$id AND " + BLOCKS_GRID + " } AS occupied";
+    String BLOCKS_GRID =
+        "(NOT coalesce(o.`klab.observer.automatic`,false) "
+            + "OR NOT EXISTS { MATCH (o)-[:HAS_GEOMETRY]->(:Geometry {definition:'*'}) } "
+            + "OR EXISTS { MATCH (o)-[:HAS_DATA]->() })";
+    String GRID_OCCUPIED =
+        "MATCH (ctx:Context {id:$id}) RETURN "
+            + "EXISTS { MATCH (ctx)-[:HAS_CHILD|HAS_MEMBER|HAS_PROVENANCE|HAS_DATAFLOW|HAS_ACTIVITY|CREATED|RESOLVED*1..]->(o:Observation) WHERE "
+            + BLOCKS_GRID
+            + " } "
+            + "OR EXISTS { MATCH (o:Observation) WHERE coalesce(o.ownerContextId,o.`im:context-id`)=$id AND "
+            + BLOCKS_GRID
+            + " } AS occupied";
     String FIND_CONTEXT =
         ("MATCH (ctx:"
             + GraphModel.Labels.CONTEXT
@@ -368,69 +376,1011 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     }
 
     @Override
+    public ContextCohortCatalogue captureContextCohortCatalogue() {
+      if (closed) throw new KlabStorageException("Closed context catalogue transaction");
+      try {
+        return readContextCatalogue();
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("capturing context catalogue", failure);
+      }
+    }
+
+    private ContextCohortCatalogue readContextCatalogue() {
+      var rows =
+          transaction
+              .run(
+                  "MATCH(ctx:Context{id:$context}) OPTIONAL MATCH(ctx)-[r:HAS_CHILD]->(c:Cohort) "
+                      + "RETURN elementId(ctx) AS contextElement,labels(ctx) AS contextLabels,coalesce(ctx.consequenceCatalogueRevision,0) AS revision,"
+                      + "elementId(r) AS edge,properties(r) AS edgeProperties,elementId(c) AS cohortElement,c.id AS cohortId,labels(c) AS cohortLabels,properties(c) AS cohortProperties "
+                      + "ORDER BY cohortId,edge",
+                  Map.of("context", rootContextId))
+              .list();
+      if (rows.isEmpty()) throw new KlabStorageException("Missing context catalogue");
+      var element = rows.getFirst().get("contextElement").asString();
+      long revision = rows.getFirst().get("revision").asLong();
+      var cohorts = new TreeMap<Long, ConsequenceAssetSnapshot>();
+      var edges = new ArrayList<ConsequenceEdgeSnapshot>();
+      for (var row : rows) {
+        if (!element.equals(row.get("contextElement").asString())
+            || revision != row.get("revision").asLong())
+          throw new KlabStorageException("Ambiguous or changing context catalogue");
+        if (row.get("cohortElement").isNull()) continue;
+        if (row.get("cohortId").isNull())
+          throw new KlabStorageException("Unaddressable catalogue cohort");
+        long id = row.get("cohortId").asLong();
+        var properties = row.get("cohortProperties").asMap();
+        var owner = properties.get("ownerContextId");
+        if (owner != null && !rootContextId.equals(owner))
+          throw new KlabStorageException("Foreign owned cohort in context catalogue");
+        var header =
+            new ConsequenceAssetSnapshot(
+                id,
+                row.get("cohortElement").asString(),
+                row.get("cohortLabels").asList(org.neo4j.driver.Value::asString),
+                properties,
+                null,
+                null);
+        var previous = cohorts.putIfAbsent(id, header);
+        if (previous != null && !previous.equals(header))
+          throw new KlabStorageException("Duplicate or changing catalogue cohort identity");
+        edges.add(
+            new ConsequenceEdgeSnapshot(
+                row.get("edge").asString(),
+                new ConsequenceAssetRef(
+                    element,
+                    rootContextId,
+                    row.get("contextLabels").asList(org.neo4j.driver.Value::asString)),
+                new ConsequenceAssetRef(header.elementId(), id, header.labels()),
+                GraphModel.Relationship.HAS_CHILD,
+                row.get("edgeProperties").asMap()));
+      }
+      return new ContextCohortCatalogue(
+          rootContextId, element, revision, List.copyOf(cohorts.values()), edges);
+    }
+
+    @Override
+    public void validateContextCohortCatalogue(ContextCohortCatalogue expected) {
+      if (closed) throw new KlabStorageException("Closed context catalogue transaction");
+      try {
+        if (!rootContextId.equals(expected.contextId()))
+          throw new KlabStorageException("Catalogue belongs to another context");
+        // Constructor already owns the string context lock. Callers must acquire their full
+        // positive union before this step; these idempotent header locks also protect standalone
+        // use.
+        lockConsequenceInputs(expected.cohortIds());
+        if (!expected.equals(readContextCatalogue()))
+          throw new KlabStorageException("Native context cohort catalogue changed");
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("validating context catalogue", failure);
+      }
+    }
+
+    @Override
     public ClassificationReadSet captureClassificationMembers(long cohortId) {
       if (closed) throw new KlabStorageException("Closed classification capture transaction");
       try {
-        var anchors = transaction.run(
-            "MATCH (:Context {id:$context})-[:HAS_CHILD]->(c:Cohort {id:$cohort}) SET c.id=c.id RETURN c.id AS id, c.observable AS observable",
-            Map.of("context",rootContextId,"cohort",cohortId)).list();
-        if (anchors.size()!=1) throw new KlabStorageException("Missing or foreign classification cohort");
+        var anchors =
+            transaction
+                .run(
+                    "MATCH (:Context {id:$context})-[:HAS_CHILD]->(c:Cohort {id:$cohort}) SET c.id=c.id RETURN c.id AS id, c.observable AS observable",
+                    Map.of("context", rootContextId, "cohort", cohortId))
+                .list();
+        if (anchors.size() != 1)
+          throw new KlabStorageException("Missing or foreign classification cohort");
         // Context lock freezes this cohort's membership. Shared members also require their own
         // locks, in the same ascending order as root semantic updates, before reading baselines.
-        var ids = transaction.run(
-            "MATCH (:Cohort {id:$cohort})-[:HAS_MEMBER]->(n:Observation) RETURN DISTINCT n.id AS id ORDER BY id",
-            Map.of("cohort",cohortId)).list();
+        var ids =
+            transaction
+                .run(
+                    "MATCH (:Cohort {id:$cohort})-[:HAS_MEMBER]->(n:Observation) WHERE coalesce(n.klabCurrent,true)=true RETURN DISTINCT n.id AS id ORDER BY id",
+                    Map.of("cohort", cohortId))
+                .list();
         var members = new ArrayList<ClassificationMemberSnapshot>();
         for (var id : ids) {
-          long memberId=id.get("id").asLong();
-          var rows=transaction.run(
-              "MATCH (n:Observation {id:$id}) SET n.id=n.id WITH n "
-                  + "OPTIONAL MATCH (n)-[:HAS_GEOMETRY]->(g:Geometry) "
-                  + "OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(p:Geometry) "
-                  + "RETURN n.observable AS observable, g.definition AS geometry, properties(n) AS properties, "
-                  + "p.definition AS perceived, coalesce(n.semanticRevision,0) AS revision",
-              Map.of("id",memberId)).list();
-          if(rows.size()!=1) throw new KlabStorageException("Ambiguous classification member support");
-          var row=rows.getFirst();
-          members.add(new ClassificationMemberSnapshot(memberId,row.get("observable").asString(),
-              row.get("geometry").asString(null),row.get("revision").asLong(),row.get("properties").asMap(),row.get("perceived").asString(null)));
+          long memberId = id.get("id").asLong();
+          var rows =
+              transaction
+                  .run(
+                      "MATCH (n:Observation {id:$id}) SET n.id=n.id WITH n "
+                          + "OPTIONAL MATCH (n)-[:HAS_GEOMETRY]->(g:Geometry) "
+                          + "OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(p:Geometry) "
+                          + "RETURN n.observable AS observable, g.definition AS geometry, properties(n) AS properties, "
+                          + "p.definition AS perceived, coalesce(n.semanticRevision,0) AS revision",
+                      Map.of("id", memberId))
+                  .list();
+          if (rows.size() != 1)
+            throw new KlabStorageException("Ambiguous classification member support");
+          var row = rows.getFirst();
+          members.add(
+              new ClassificationMemberSnapshot(
+                  memberId,
+                  row.get("observable").asString(),
+                  row.get("geometry").asString(null),
+                  row.get("revision").asLong(),
+                  row.get("properties").asMap(),
+                  row.get("perceived").asString(null)));
         }
-        return new ClassificationReadSet(rootContextId,cohortId,anchors.getFirst().get("observable").asString(null),members);
-      } catch(RuntimeException failure) {
-        closed=true; throw storageFailure("capturing classification input",failure);
+        return new ClassificationReadSet(
+            rootContextId, cohortId, anchors.getFirst().get("observable").asString(null), members);
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("capturing classification input", failure);
+      }
+    }
+
+    @Override
+    public void lockConsequenceInputs(Collection<Long> ids) {
+      if (closed) throw new KlabStorageException("Closed consequence input lock transaction");
+      try {
+        for (long id : new TreeSet<>(ids)) {
+          if (id <= 0)
+            throw new IllegalArgumentException("Only durable consequence inputs have native locks");
+          var rows =
+              transaction
+                  .run(
+                      "MATCH (n {id:$id}) WHERE n:Observation OR n:Cohort OR n:Activity "
+                          + "SET n.id=n.id RETURN n.id AS id",
+                      Map.of("id", id))
+                  .list();
+          if (rows.size() != 1) {
+            if (Boolean.getBoolean("klab.consequences.trace"))
+              try {
+                contextScope.warn(
+                    "CONSEQUENCE_INPUT_LOCK context="
+                        + rootContextId
+                        + " inputId="
+                        + id
+                        + " matches="
+                        + rows.size());
+              } catch (RuntimeException ignored) {
+                /* Preserve the original guarded failure. */
+              }
+            throw new KlabStorageException("Missing or ambiguous consequence input " + id);
+          }
+        }
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("locking consequence inputs", failure);
+      }
+    }
+
+    @Override
+    public ConsequenceReadSet captureConsequenceInputs(
+        Collection<Long> ids, Collection<ConsequenceEdgeSelection> selections) {
+      if (closed) throw new KlabStorageException("Closed consequence capture transaction");
+      try {
+        var orderedIds = new ArrayList<>(new TreeSet<>(ids));
+        var orderedSelections =
+            selections.stream()
+                .distinct()
+                .sorted(
+                    Comparator.comparingLong(ConsequenceEdgeSelection::assetId)
+                        .thenComparing(selection -> selection.relationship().name())
+                        .thenComparing(selection -> selection.direction().name()))
+                .toList();
+        if (orderedSelections.stream()
+            .anyMatch(selection -> !orderedIds.contains(selection.assetId())))
+          throw new IllegalArgumentException(
+              "Consequence edge selections must anchor a requested input");
+        lockConsequenceInputs(orderedIds);
+        return readConsequenceInputs(orderedIds, orderedSelections);
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("capturing consequence inputs", failure);
+      }
+    }
+
+    private ConsequenceReadSet readConsequenceInputs(
+        List<Long> ids, List<ConsequenceEdgeSelection> selections) {
+      // Every native reader, including final publication receipts, uses the same canonical order.
+      ids = new ArrayList<>(new TreeSet<>(ids));
+      selections =
+          selections.stream()
+              .distinct()
+              .sorted(
+                  Comparator.comparingLong(ConsequenceEdgeSelection::assetId)
+                      .thenComparing(selection -> selection.relationship().name())
+                      .thenComparing(selection -> selection.direction().name()))
+              .toList();
+      var assets = new ArrayList<ConsequenceAssetSnapshot>();
+      for (long id : ids) {
+        var rows =
+            transaction
+                .run(
+                    "MATCH (n {id:$id}) WHERE (n:Observation OR n:Cohort OR n:Activity) AND "
+                        + "coalesce(n.ownerContextId,n.`im:context-id`,$context)=$context AND (coalesce(n.ownerContextId,n.`im:context-id`)=$context OR EXISTS { "
+                        + "MATCH (:Context {id:$context})-[:HAS_CHILD|HAS_MEMBER*1..]->(n) } OR (n:Activity AND EXISTS { MATCH (:Context {id:$context})-[:HAS_PROVENANCE]->(:Provenance)-[:HAS_CHILD|TRIGGERED*1..]->(n) })) "
+                        + "WITH n OPTIONAL MATCH (n)-[:HAS_GEOMETRY]->(g:Geometry) "
+                        + "OPTIONAL MATCH (n)-[:PERCEIVES_GEOMETRY]->(p:Geometry) "
+                        + "RETURN elementId(n) AS element,labels(n) AS labels,properties(n) AS properties, "
+                        + "g.definition AS geometry,p.definition AS perceived",
+                    Map.of("id", id, "context", rootContextId))
+                .list();
+        if (rows.size() != 1)
+          throw new KlabStorageException("Missing, foreign or ambiguous consequence input " + id);
+        var row = rows.getFirst();
+        assets.add(
+            new ConsequenceAssetSnapshot(
+                id,
+                row.get("element").asString(),
+                row.get("labels").asList(org.neo4j.driver.Value::asString),
+                row.get("properties").asMap(),
+                row.get("geometry").asString(null),
+                row.get("perceived").asString(null)));
+      }
+      // Input locks freeze the selected neighborhoods against structural writes. Existing
+      // relationships also need their own locks so property-only updates cannot race validation.
+      var edgeIds = new TreeSet<String>();
+      for (var selection : selections) {
+        String relation = selection.relationship().name();
+        String pattern =
+            selection.direction() == GraphModel.Relationship.Direction.OUTGOING
+                ? "(n)-[r:" + relation + "]->()"
+                : "(n)<-[r:" + relation + "]-()";
+        transaction
+            .run(
+                "MATCH " + pattern + " WHERE n.id=$id RETURN DISTINCT elementId(r) AS element",
+                Map.of("id", selection.assetId()))
+            .list()
+            .forEach(row -> edgeIds.add(row.get("element").asString()));
+      }
+      var edges = new ArrayList<ConsequenceEdgeSnapshot>();
+      for (String id : edgeIds) {
+        var rows =
+            transaction
+                .run(
+                    "MATCH (a)-[r]->(b) WHERE elementId(r)=$element SET r.id=r.id "
+                        + "RETURN elementId(a) AS sourceElement,a.id AS sourceId,labels(a) AS sourceLabels, "
+                        + "elementId(b) AS targetElement,b.id AS targetId,labels(b) AS targetLabels, "
+                        + "type(r) AS relationship,properties(r) AS properties",
+                    Map.of("element", id))
+                .list();
+        if (rows.size() != 1)
+          throw new KlabStorageException("Consequence structural edge disappeared");
+        var row = rows.getFirst();
+        var source =
+            new ConsequenceAssetRef(
+                row.get("sourceElement").asString(),
+                row.get("sourceId").asObject(),
+                row.get("sourceLabels").asList(org.neo4j.driver.Value::asString));
+        var target =
+            new ConsequenceAssetRef(
+                row.get("targetElement").asString(),
+                row.get("targetId").asObject(),
+                row.get("targetLabels").asList(org.neo4j.driver.Value::asString));
+        edges.add(
+            new ConsequenceEdgeSnapshot(
+                id,
+                source,
+                target,
+                GraphModel.Relationship.valueOf(row.get("relationship").asString()),
+                row.get("properties").asMap()));
+      }
+      return new ConsequenceReadSet(rootContextId, assets, selections, edges);
+    }
+
+    private void diagnoseConsequenceReadSet(
+        ConsequenceReadSet expected, ConsequenceReadSet actual) {
+      if (!Boolean.getBoolean("klab.diagnostics.configurationRecompute")) return;
+      try {
+        var data = new LinkedHashMap<String, Object>();
+        data.put("nativeTransaction", System.identityHashCode(transaction));
+        data.put("thread", Thread.currentThread().threadId());
+        data.put("differences", ConsequenceReadSetDiagnostics.differences(expected, actual));
+        Logging.INSTANCE.info(
+            "CONSEQUENCE_READSET_DIAGNOSTIC "
+                + org.integratedmodelling.klab.utilities.Utils.Json.asString(data));
+      } catch (RuntimeException ignored) {
+        /* Diagnostics never change validation. */
+      }
+    }
+
+    @Override
+    public void validateConsequenceInputs(ConsequenceReadSet expected) {
+      if (closed) throw new KlabStorageException("Closed consequence validation transaction");
+      try {
+        Objects.requireNonNull(expected, "Missing consequence read set");
+        if (!Objects.equals(rootContextId, expected.contextId()))
+          throw new KlabStorageException("Consequence read set belongs to another context");
+        var actual = captureConsequenceInputs(expected.assetIds(), expected.selections());
+        if (!expected.equals(actual)) {
+          diagnoseConsequenceReadSet(expected, actual);
+          throw new KnowledgeGraph.ConsequenceInputsChangedException();
+        }
+      } catch (KnowledgeGraph.ConsequenceInputsChangedException superseded) {
+        closed = true;
+        throw superseded;
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("validating consequence inputs", failure);
       }
     }
 
     @Override
     public void lockClassificationInputs(Collection<Long> ids) {
-      if(closed) throw new KlabStorageException("Closed classification input lock transaction");
+      if (closed) throw new KlabStorageException("Closed classification input lock transaction");
       try {
-        for(long id: new java.util.TreeSet<>(ids)) {
-          if(id<=0) throw new IllegalArgumentException("Only persisted inputs have native locks");
-          if(transaction.run("MATCH (n:Observation {id:$id}) SET n.id=n.id RETURN n.id AS id",Map.of("id",id)).list().size()!=1)
-            throw new KlabStorageException("Missing classification input "+id);
+        for (long id : new java.util.TreeSet<>(ids)) {
+          if (id <= 0)
+            throw new IllegalArgumentException("Only persisted inputs have native locks");
+          if (transaction
+                  .run(
+                      "MATCH (n:Observation {id:$id}) SET n.id=n.id RETURN n.id AS id",
+                      Map.of("id", id))
+                  .list()
+                  .size()
+              != 1) throw new KlabStorageException("Missing classification input " + id);
         }
-      } catch(RuntimeException failure) { closed=true;throw storageFailure("locking classification inputs",failure); }
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("locking classification inputs", failure);
+      }
     }
 
     @Override
     public void validateClassificationMembers(ClassificationReadSet expected) {
       try {
-      Objects.requireNonNull(expected,"Missing classification snapshot");
-      if(!Objects.equals(rootContextId,expected.contextId())) {
-        closed=true; throw new KlabStorageException("Classification snapshot belongs to another context");
+        Objects.requireNonNull(expected, "Missing classification snapshot");
+        if (!Objects.equals(rootContextId, expected.contextId())) {
+          closed = true;
+          throw new KlabStorageException("Classification snapshot belongs to another context");
+        }
+        // Never acquire a newly added member lock after the caller has locked its global union.
+        var ids =
+            transaction
+                .run(
+                    "MATCH (:Cohort {id:$cohort})-[:HAS_MEMBER]->(n:Observation) WHERE coalesce(n.klabCurrent,true)=true RETURN DISTINCT n.id AS id ORDER BY id",
+                    Map.of("cohort", expected.cohortId()))
+                .list()
+                .stream()
+                .map(row -> row.get("id").asLong())
+                .toList();
+        if (!ids.equals(
+            expected.members().stream().map(ClassificationMemberSnapshot::id).toList())) {
+          closed = true;
+          throw new KlabStorageException("Classification membership changed");
+        }
+        if (!expected.equals(captureClassificationMembers(expected.cohortId()))) {
+          closed = true;
+          throw new KlabStorageException("Classification membership or input changed");
+        }
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("validating classification inputs", failure);
       }
-      // Never acquire a newly added member lock after the caller has locked its global union.
-      var ids=transaction.run("MATCH (:Cohort {id:$cohort})-[:HAS_MEMBER]->(n:Observation) RETURN DISTINCT n.id AS id ORDER BY id",Map.of("cohort",expected.cohortId())).list()
-          .stream().map(row->row.get("id").asLong()).toList();
-      if(!ids.equals(expected.members().stream().map(ClassificationMemberSnapshot::id).toList())) {
-        closed=true;throw new KlabStorageException("Classification membership changed");
+    }
+
+    private record ConfigurationWrite(
+        Observation observation,
+        List<Long> participants,
+        long revision,
+        long previous,
+        String history,
+        Map<String, Object> properties) {}
+
+    @Override
+    public void updateConfiguration(
+        Observation replacement,
+        ConsequenceReadSet expected,
+        List<Long> participants,
+        long revision,
+        String historyJson) {
+      updateConfigurations(
+          List.of(
+              new ConfigurationUpdate(replacement, expected, participants, revision, historyJson)));
+    }
+
+    @Override
+    public RoleSupportCatalogue captureRoleSupportCatalogue(Collection<Long> sourceIds) {
+      if (closed) throw new KlabStorageException("Closed role support catalogue transaction");
+      try {
+        var sources = new ArrayList<>(new TreeSet<>(sourceIds));
+        if (sources.stream().anyMatch(id -> id <= 0))
+          throw new IllegalArgumentException("Durable role-support source required");
+        // Anchor the traversal in the owning context. This is a bounded local property query,
+        // never an enumeration of observations or role rows in other twins.
+        var matches =
+            transaction
+                .run(
+                    "MATCH(ctx:Context{id:$context})-[:HAS_CHILD|HAS_MEMBER*1..64]->(recipient:Observation)<-[r:CLASSIFIED]-(activity:Activity) "
+                        + "WHERE (toString(r.sourceId) IN $sources OR toString(r.observerId) IN $sources OR toString(r.focusId) IN $sources) AND coalesce(recipient.ownerContextId,recipient.`im:context-id`,$context)=$context "
+                        + "RETURN DISTINCT elementId(r) AS edge,properties(r) AS properties,elementId(activity) AS sourceElement,activity.id AS sourceId,labels(activity) AS sourceLabels,"
+                        + "elementId(recipient) AS targetElement,recipient.id AS targetId,labels(recipient) AS targetLabels ORDER BY edge",
+                    Map.of(
+                        "context",
+                        rootContextId,
+                        "sources",
+                        sources.stream().map(String::valueOf).toList()))
+                .list();
+        var ids = new TreeSet<Long>(sources);
+        var recipients = new TreeSet<Long>();
+        var edges = new ArrayList<ConsequenceEdgeSnapshot>();
+        for (var row : matches) {
+          long activity = row.get("sourceId").asLong(), recipient = row.get("targetId").asLong();
+          ids.add(activity);
+          ids.add(recipient);
+          recipients.add(recipient);
+          edges.add(
+              new ConsequenceEdgeSnapshot(
+                  row.get("edge").asString(),
+                  new ConsequenceAssetRef(
+                      row.get("sourceElement").asString(),
+                      activity,
+                      row.get("sourceLabels").asList(org.neo4j.driver.Value::asString)),
+                  new ConsequenceAssetRef(
+                      row.get("targetElement").asString(),
+                      recipient,
+                      row.get("targetLabels").asList(org.neo4j.driver.Value::asString)),
+                  GraphModel.Relationship.CLASSIFIED,
+                  row.get("properties").asMap()));
+        }
+        var selections =
+            recipients.stream()
+                .map(
+                    id ->
+                        new ConsequenceEdgeSelection(
+                            id,
+                            GraphModel.Relationship.CLASSIFIED,
+                            GraphModel.Relationship.Direction.INCOMING))
+                .toList();
+        var preliminary = readConsequenceInputs(new ArrayList<>(ids), selections);
+        for (var edge : preliminary.edges())
+          if (edge.relationship() == GraphModel.Relationship.CLASSIFIED) {
+            if (edge.source().id() instanceof Number id) ids.add(id.longValue());
+            var source = edge.properties().get("sourceId");
+            if (source instanceof Number id && id.longValue() > 0) ids.add(id.longValue());
+            else if (source instanceof String text)
+              try {
+                long id = Long.parseLong(text);
+                if (id > 0) ids.add(id);
+              } catch (NumberFormatException ignored) {
+                /* Ledger validator explicitly rejects ambiguous legacy rows. */
+              }
+            for (var field : List.of("observerId", "focusId")) {
+              var qualifier = edge.properties().get(field);
+              if (qualifier instanceof Number id && id.longValue() > 0) ids.add(id.longValue());
+              else if (qualifier instanceof String text)
+                try {
+                  long id = Long.parseLong(text);
+                  if (id > 0) ids.add(id);
+                } catch (NumberFormatException ignored) {
+                  /* Unsupported legacy qualifier remains explicit to ledger validation. */
+                }
+            }
+          }
+        var inputs = readConsequenceInputs(new ArrayList<>(ids), selections);
+        if (!inputs.edges().containsAll(edges))
+          throw new KlabStorageException(
+              "Role support catalogue changed during provisional capture");
+        return new RoleSupportCatalogue(rootContextId, sources, edges, inputs);
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("capturing source role supports", failure);
       }
-      if(!expected.equals(captureClassificationMembers(expected.cohortId()))) {
-        closed=true;
-        throw new KlabStorageException("Classification membership or input changed");
+    }
+
+    @Override
+    public void validateRoleSupportCatalogue(RoleSupportCatalogue expected) {
+      if (closed) throw new KlabStorageException("Closed role support catalogue transaction");
+      try {
+        if (expected == null || !rootContextId.equals(expected.contextId()))
+          throw new KlabStorageException("Role support catalogue belongs to another context");
+        lockConsequenceInputs(expected.inputs().assetIds());
+        if (!expected.equals(captureRoleSupportCatalogue(expected.sourceIds())))
+          throw new KlabStorageException(
+              "Source role support rows or their complete native proof changed");
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("validating source role supports", failure);
       }
-      } catch(RuntimeException failure) { closed=true;throw storageFailure("validating classification inputs",failure); }
+    }
+
+    private final class PreparedCessationBatch implements CessationPublication {
+      private final TransactionImpl owner = TransactionImpl.this;
+      private final List<ObservationCessation> cessations;
+      private final Map<Long, ConsequenceAssetSnapshot> cohorts;
+      private final Map<Long, List<Long>> originalMembers;
+      private final Set<Long> targets;
+      private boolean used;
+
+      private PreparedCessationBatch(
+          List<ObservationCessation> cessations,
+          Map<Long, ConsequenceAssetSnapshot> cohorts,
+          Map<Long, List<Long>> originalMembers,
+          Set<Long> targets) {
+        this.cessations = List.copyOf(cessations);
+        this.cohorts = Map.copyOf(cohorts);
+        this.originalMembers = Map.copyOf(originalMembers);
+        this.targets = Set.copyOf(targets);
+      }
+    }
+
+    @Override
+    public List<CohortMembershipChange> ceaseObservations(List<ObservationCessation> cessations) {
+      return publishCessations(prepareCessations(cessations));
+    }
+
+    @Override
+    public CessationPublication prepareCessations(List<ObservationCessation> cessations) {
+      if (closed) throw new KlabStorageException("Closed modeled cessation transaction");
+      try {
+        var targets = new TreeSet<Long>();
+        var locks = new TreeSet<Long>();
+        var cohorts = new TreeMap<Long, ConsequenceAssetSnapshot>();
+        var originalMembers = new TreeMap<Long, List<Long>>();
+        var inputReads = new TreeMap<Long, ConsequenceReadSet>();
+        for (var cessation : cessations) {
+          if (!rootContextId.equals(cessation.before().contextId())
+              || !targets.add(cessation.observationId()))
+            throw new KlabStorageException("Cessation identity/context duplicated or changed");
+          locks.addAll(cessation.before().assetIds());
+        }
+        lockConsequenceInputs(locks);
+        // Validate every original proof before any target status or membership revision changes.
+        for (var cessation : cessations) {
+          var before = cessation.before();
+          validateConsequenceInputs(before);
+          var target =
+              before.assets().stream()
+                  .filter(a -> a.id() == cessation.observationId())
+                  .findFirst()
+                  .orElseThrow();
+          if (Boolean.FALSE.equals(target.properties().get(CURRENT_PROPERTY)))
+            throw new KlabStorageException("Observation is already inoperative");
+          for (var type :
+              List.of(
+                  GraphModel.Relationship.HAS_MEMBER,
+                  GraphModel.Relationship.HAS_CHILD,
+                  GraphModel.Relationship.AFFECTS))
+            if (!before
+                .selections()
+                .contains(
+                    new ConsequenceEdgeSelection(
+                        target.id(), type, GraphModel.Relationship.Direction.INCOMING)))
+              throw new KlabStorageException(
+                  "Cessation requires exact incoming placement/dependency evidence");
+          if (!before
+              .selections()
+              .contains(
+                  new ConsequenceEdgeSelection(
+                      target.id(),
+                      GraphModel.Relationship.AFFECTS,
+                      GraphModel.Relationship.Direction.OUTGOING)))
+            throw new KlabStorageException("Cessation requires outgoing dependency evidence");
+          for (var edge : before.edges())
+            if (edge.relationship() == GraphModel.Relationship.HAS_MEMBER
+                && Objects.equals(edge.target().id(), target.id())) {
+              if (!(edge.source().id() instanceof Long id)
+                  || !edge.source().labels().contains(GraphModel.Labels.COHORT))
+                throw new KlabStorageException("Cessation cohort identity unavailable");
+              var cohort =
+                  before.assets().stream()
+                      .filter(a -> a.id() == id && a.labels().contains(GraphModel.Labels.COHORT))
+                      .findFirst()
+                      .orElseThrow();
+              for (var type :
+                  List.of(GraphModel.Relationship.HAS_MEMBER, GraphModel.Relationship.AFFECTS))
+                if (!before
+                    .selections()
+                    .contains(
+                        new ConsequenceEdgeSelection(
+                            id, type, GraphModel.Relationship.Direction.OUTGOING)))
+                  throw new KlabStorageException(
+                      "Complete cohort membership/dependency neighborhood required");
+              var current = new TreeSet<Long>();
+              for (var member : before.edges())
+                if (member.relationship() == GraphModel.Relationship.HAS_MEMBER
+                    && Objects.equals(member.source().id(), id)) {
+                  if (!(member.target().id() instanceof Long memberId))
+                    throw new KlabStorageException("Non-durable cohort member");
+                  var captured =
+                      before.assets().stream()
+                          .filter(
+                              a ->
+                                  a.id() == memberId
+                                      && a.labels().contains(GraphModel.Labels.OBSERVATION))
+                          .findFirst()
+                          .orElseThrow();
+                  if (!Boolean.FALSE.equals(captured.properties().get(CURRENT_PROPERTY)))
+                    current.add(memberId);
+                }
+              if (!current.contains(target.id()))
+                throw new KlabStorageException(
+                    "Cessation target is absent from current cohort membership");
+              var old = cohorts.putIfAbsent(id, cohort);
+              if (old != null && !old.equals(cohort))
+                throw new KlabStorageException("Inconsistent cohort beforeimages");
+              var members = originalMembers.putIfAbsent(id, List.copyOf(current));
+              if (members != null && !members.equals(List.copyOf(current)))
+                throw new KlabStorageException("Inconsistent current cohort set");
+              inputReads.put(id, before);
+            }
+        }
+        return new PreparedCessationBatch(cessations, cohorts, originalMembers, targets);
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("preparing modeled cessation", failure);
+      }
+    }
+
+    @Override
+    public List<CohortMembershipChange> publishCessations(CessationPublication handle) {
+      if (closed) throw new KlabStorageException("Closed modeled cessation transaction");
+      try {
+        if (!(handle instanceof TransactionImpl.PreparedCessationBatch prepared)
+            || prepared.owner != this
+            || prepared.used)
+          throw new KlabStorageException(
+              "Cessation handle belongs to another native transaction or was consumed");
+        prepared.used = true;
+        flushParentIds();
+        // Model writes may add members/dependencies after preparation, but cannot rewrite a
+        // disappearing target's preserved payload in the same transition without an explicit
+        // contract.
+        for (var cessation : prepared.cessations) {
+          var prior =
+              cessation.before().assets().stream()
+                  .filter(a -> a.id() == cessation.observationId())
+                  .findFirst()
+                  .orElseThrow();
+          var actual =
+              readConsequenceInputs(List.of(cessation.observationId()), List.of())
+                  .assets()
+                  .getFirst();
+          if (!actual.equals(prior))
+            throw new KlabStorageException(
+                "Cessation target was also modified after its captured beforeimage");
+          var structural =
+              cessation.before().selections().stream()
+                  .filter(
+                      selection ->
+                          selection.assetId() == cessation.observationId()
+                              && (selection.relationship() == GraphModel.Relationship.HAS_MEMBER
+                                  || selection.relationship() == GraphModel.Relationship.HAS_CHILD
+                                  || selection.relationship()
+                                      == GraphModel.Relationship.HAS_RELATIONSHIP_SOURCE
+                                  || selection.relationship()
+                                      == GraphModel.Relationship.HAS_RELATIONSHIP_TARGET
+                                  || selection.relationship()
+                                      == GraphModel.Relationship.HAS_RELATIONSHIP_PARTICIPANT))
+                  .toList();
+          var current = readConsequenceInputs(List.of(cessation.observationId()), structural);
+          var originalEdges =
+              cessation.before().edges().stream()
+                  .filter(
+                      edge ->
+                          structural.stream()
+                              .anyMatch(
+                                  selection ->
+                                      selection.relationship() == edge.relationship()
+                                          && Objects.equals(
+                                              selection.direction()
+                                                      == GraphModel.Relationship.Direction.INCOMING
+                                                  ? edge.target().id()
+                                                  : edge.source().id(),
+                                              selection.assetId())))
+                  .toList();
+          if (!current.edges().equals(originalEdges))
+            throw new KlabStorageException(
+                "Cessation target acquired a new placement/necessary endpoint after capture; no committed beforeimage exists for that joint change");
+        }
+        for (var cessation : prepared.cessations) {
+          var history = Utils.Json.asString(cessation);
+          var changed =
+              transaction
+                  .run(
+                      "MATCH(n:Observation{id:$id}) WHERE coalesce(n.klabCurrent,true)=true "
+                          + "SET n.klabCessationHistory=coalesce(n.klabCessationHistory,[])+[$history],n.klabCurrent=false,n.klabCeasedAtCommit=$commit RETURN n.id AS id",
+                      Map.of(
+                          "id",
+                          cessation.observationId(),
+                          "history",
+                          history,
+                          "commit",
+                          cessation.commitId()))
+                  .list();
+          if (changed.size() != 1)
+            throw new KlabStorageException("Cessation current-status compare-and-set failed");
+          semanticUpdates.add(cessation.observationId());
+        }
+        var result = new ArrayList<CohortMembershipChange>();
+        for (var entry : prepared.cohorts.entrySet()) {
+          long id = entry.getKey();
+          var header = entry.getValue();
+          var raw = header.properties().get(MEMBERSHIP_REVISION_PROPERTY);
+          long original = raw instanceof Number n ? n.longValue() : 0;
+          var current =
+              transaction
+                  .run(
+                      "MATCH(c:Cohort{id:$id}) RETURN coalesce(c.klabMembershipRevision,0) AS revision,c.observable AS observable,c.geometry AS support",
+                      Map.of("id", id))
+                  .single();
+          long revision = current.get("revision").asLong();
+          if (revision < original
+              || !Objects.equals(
+                  header.properties().get(GraphModel.Fields.OBSERVABLE),
+                  current.get("observable").asString()))
+            throw new KlabStorageException(
+                "Prepared cohort identity or revision changed incompatibly");
+          var members =
+              transaction
+                  .run(
+                      "MATCH(:Cohort{id:$id})-[:HAS_MEMBER]->(n:Observation) RETURN DISTINCT n.id AS id,coalesce(n.klabCurrent,true) AS current ORDER BY id",
+                      Map.of("id", id))
+                  .list();
+          var ids = new TreeSet<Long>();
+          ids.add(id);
+          var after = new ArrayList<Long>();
+          for (var member : members) {
+            long memberId = member.get("id").asLong();
+            ids.add(memberId);
+            if (member.get("current").asBoolean()) after.add(memberId);
+          }
+          var changed =
+              transaction
+                  .run(
+                      "MATCH(c:Cohort{id:$id}) WHERE coalesce(c.klabMembershipRevision,0)=$previous SET c.klabMembershipRevision=$next,c.childrenCount=$size RETURN c.id AS id",
+                      Map.of(
+                          "id",
+                          id,
+                          "previous",
+                          revision,
+                          "next",
+                          revision + 1,
+                          "size",
+                          after.size()))
+                  .list();
+          if (changed.size() != 1)
+            throw new KlabStorageException("Cohort membership revision compare-and-set failed");
+          var selections =
+              List.of(
+                  new ConsequenceEdgeSelection(
+                      id,
+                      GraphModel.Relationship.HAS_MEMBER,
+                      GraphModel.Relationship.Direction.OUTGOING),
+                  new ConsequenceEdgeSelection(
+                      id,
+                      GraphModel.Relationship.AFFECTS,
+                      GraphModel.Relationship.Direction.OUTGOING));
+          var proof = readConsequenceInputs(new ArrayList<>(ids), selections);
+          result.add(
+              new CohortMembershipChange(
+                  rootContextId,
+                  id,
+                  current.get("observable").asString(),
+                  original,
+                  revision + 1,
+                  prepared.originalMembers.get(id),
+                  after,
+                  current.get("support").asString(),
+                  proof));
+          semanticUpdates.add(id);
+        }
+        return List.copyOf(result);
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("publishing modeled cessation", failure);
+      }
+    }
+
+    @Override
+    public void updateConfigurations(List<ConfigurationUpdate> updates) {
+      if (closed) throw new KlabStorageException("Closed configuration transaction");
+      try {
+        updates = List.copyOf(updates);
+        var targets = new HashSet<Long>();
+        var lockIds = new TreeSet<Long>();
+        for (var update : updates) {
+          if (!targets.add(update.replacement().getId()))
+            throw new KlabStorageException("Configuration batch repeats a target identity");
+          lockIds.addAll(update.expected().assetIds());
+          lockIds.add(update.replacement().getId());
+          lockIds.addAll(update.participants());
+        }
+        lockConsequenceInputs(lockIds);
+        var writes = new ArrayList<ConfigurationWrite>();
+        // Complete native validation for the entire original batch precedes every configuration
+        // mutation. Later rows may legitimately read a target updated by an earlier row.
+        for (var update : updates) {
+          var replacement = update.replacement();
+          var expected = update.expected();
+          var participants = update.participants();
+          if (replacement.getId() <= 0
+              || replacement.getObservable() == null
+              || !replacement.getObservable().is(SemanticType.CONFIGURATION)
+              || replacement.getObservable().getSemantics().isCollective()
+              || replacement.getGeometry() == null
+              || (replacement.getGeometry().isEmpty() && !participants.isEmpty())
+              || update.revision() <= 0
+              || update.historyJson().isBlank())
+            throw new KlabStorageException(
+                "Configuration revision requires durable identity, actual support and history");
+          if (participants.stream().anyMatch(id -> id == null || id <= 0)
+              || new HashSet<>(participants).size() != participants.size())
+            throw new KlabStorageException(
+                "Configuration participants must have distinct durable identities");
+          var baseline =
+              expected.assets().stream()
+                  .filter(asset -> asset.id() == replacement.getId())
+                  .findFirst()
+                  .orElseThrow();
+          var prior = baseline.nativeProperties().get("configurationRevision");
+          long previous = prior instanceof Number number ? number.longValue() : 0;
+          if (update.revision() != previous + 1
+              || !Objects.equals(
+                  baseline.nativeProperties().get("observable"),
+                  replacement.getObservable().getUrn())
+              || !expected.assetIds().containsAll(participants)
+              || !expected
+                  .selections()
+                  .contains(
+                      new ConsequenceEdgeSelection(
+                          replacement.getId(),
+                          GraphModel.Relationship.EMERGED_FROM,
+                          GraphModel.Relationship.Direction.OUTGOING)))
+            throw new KlabStorageException(
+                "Configuration identity/revision/participant authority differs from captured baseline");
+          boolean managed =
+              Boolean.TRUE.equals(
+                  replacement.getMetadata().get("klab.configuration.managedInputs"));
+          var rawContext = replacement.getMetadata().get("klab.configuration.applicationContext");
+          long applicationContext = rawContext instanceof Number number ? number.longValue() : 0;
+          var priorContext =
+              baseline.nativeProperties().get("klab.configuration.applicationContext");
+          long previousContext = priorContext instanceof Number number ? number.longValue() : 0;
+          if (rawContext != null
+                  && !(rawContext instanceof Byte
+                      || rawContext instanceof Short
+                      || rawContext instanceof Integer
+                      || rawContext instanceof Long)
+              || applicationContext < 0
+              || applicationContext != previousContext
+              || applicationContext > 0
+                  && expected.assets().stream()
+                      .noneMatch(
+                          asset ->
+                              asset.id() == applicationContext
+                                  && asset.labels().contains(GraphModel.Labels.OBSERVATION)))
+            throw new KlabStorageException(
+                "Configuration application context differs from its captured immutable identity");
+          if (managed
+              && !expected
+                  .selections()
+                  .contains(
+                      new ConsequenceEdgeSelection(
+                          replacement.getId(),
+                          GraphModel.Relationship.AFFECTS,
+                          GraphModel.Relationship.Direction.INCOMING)))
+            throw new KlabStorageException(
+                "Managed configuration dependency absence/change is not captured");
+          validateConsequenceInputs(expected);
+          for (var id : participants)
+            if (expected.assets().stream()
+                .noneMatch(
+                    asset ->
+                        asset.id() == id && asset.labels().contains(GraphModel.Labels.OBSERVATION)))
+              throw new KlabStorageException(
+                  "Configuration participant is not a captured observation");
+          var properties = asParameters(replacement);
+          properties.remove(GraphModel.Fields.ID);
+          properties.remove("configurationHistory");
+          properties.remove("configurationRevision");
+          String history = update.historyJson();
+          if (managed)
+            try {
+              var json =
+                  org.integratedmodelling.common.data.jackson.JacksonConfiguration
+                      .newObjectMapper();
+              var row = json.readTree(history);
+              if (!(row instanceof com.fasterxml.jackson.databind.node.ObjectNode object))
+                throw new IllegalArgumentException("History must be an object");
+              object.set(
+                  "previousManagedDependencies",
+                  json.valueToTree(
+                      expected.edges().stream()
+                          .filter(
+                              e ->
+                                  e.relationship() == GraphModel.Relationship.AFFECTS
+                                      && Objects.equals(e.target().id(), replacement.getId())
+                                      && "configuration-input".equals(e.properties().get("role")))
+                          .toList()));
+              history = json.writeValueAsString(object);
+            } catch (java.io.IOException malformed) {
+              throw new KlabStorageException(malformed);
+            }
+          writes.add(
+              new ConfigurationWrite(
+                  replacement, participants, update.revision(), previous, history, properties));
+        }
+        for (var write : writes) {
+          var replacement = write.observation();
+          var changed =
+              transaction
+                  .run(
+                      "MATCH(n:Observation{id:$id}) WHERE coalesce(n.configurationRevision,0)=$previous AND n.observable=$observable "
+                          + "SET n += $properties, n.configurationRevision=$revision, n.configurationHistory=coalesce(n.configurationHistory,[])+[$history] RETURN n.id AS id",
+                      Map.of(
+                          "id",
+                          replacement.getId(),
+                          "previous",
+                          write.previous(),
+                          "observable",
+                          replacement.getObservable().getUrn(),
+                          "properties",
+                          write.properties(),
+                          "revision",
+                          write.revision(),
+                          "history",
+                          write.history()))
+                  .list();
+          if (changed.size() != 1)
+            throw new KlabStorageException("Configuration revision compare-and-set failed");
+          transaction
+              .run(
+                  "MATCH(n:Observation{id:$id})-[r:EMERGED_FROM]->() DELETE r",
+                  Map.of("id", replacement.getId()))
+              .consume();
+          transaction
+              .run(
+                  "MATCH(n:Observation{id:$id})-[r:HAS_GEOMETRY]->() DELETE r",
+                  Map.of("id", replacement.getId()))
+              .consume();
+          boolean managed =
+              Boolean.TRUE.equals(
+                  replacement.getMetadata().get("klab.configuration.managedInputs"));
+          if (managed)
+            transaction
+                .run(
+                    "MATCH ()-[r:AFFECTS]->(n:Observation{id:$id}) WHERE r.role=$role DELETE r",
+                    Map.of("id", replacement.getId(), "role", "configuration-input"))
+                .consume();
+          // Content-addressed geometry nodes remain intact for historical support.
+          storeGeometry(replacement.getGeometry(), replacement, transaction);
+          var dependencies = new TreeSet<Long>(write.participants());
+          if (replacement.getMetadata().get("klab.configuration.applicationContext")
+                  instanceof Number context
+              && context.longValue() > 0) dependencies.add(context.longValue());
+          for (var id : write.participants()) {
+            var participant =
+                new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+            participant.setId(id);
+            KnowledgeGraphNeo4j.this.link(
+                transaction,
+                replacement,
+                participant,
+                GraphModel.Relationship.EMERGED_FROM,
+                contextScope,
+                "revision",
+                write.revision());
+          }
+          if (managed)
+            for (var id : dependencies) {
+              var dependency =
+                  new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+              dependency.setId(id);
+              KnowledgeGraphNeo4j.this.link(
+                  transaction,
+                  dependency,
+                  replacement,
+                  GraphModel.Relationship.AFFECTS,
+                  contextScope,
+                  "role",
+                  "configuration-input",
+                  "revision",
+                  write.revision(),
+                  "authorities",
+                  replacement.getMetadata().get("klab.configuration.authorities"),
+                  "explanation",
+                  replacement.getMetadata().get("klab.configuration.explanation"));
+            }
+          semanticUpdates.add(replacement.getId());
+        }
+      } catch (RuntimeException failure) {
+        closed = true;
+        throw storageFailure("publishing configuration batch", failure);
+      }
     }
 
     @Override
@@ -617,14 +1567,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
     @Override
     public void updateSemantics(Observation observation, String expectedObservable) {
-      updateSemantics(observation,expectedObservable,0);
+      updateSemantics(observation, expectedObservable, 0);
     }
 
     @Override
-    public void updateSemantics(Observation observation,String expectedObservable,int ownedChildDelta) {
+    public void updateSemantics(
+        Observation observation, String expectedObservable, int ownedChildDelta) {
       if (closed) throw new KlabStorageException("Closed semantic-update transaction");
       try {
-        if(ownedChildDelta<0)throw new IllegalArgumentException("Negative owned child delta");
+        if (ownedChildDelta < 0) throw new IllegalArgumentException("Negative owned child delta");
         // The write acquires the observation lock before reading the baseline. This also
         // serializes classifications of shared observations from different context roots.
         var row =
@@ -632,7 +1583,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 .run(
                     "MATCH (n:Observation {id: $id}) "
                         + "SET n.semanticRevision = coalesce(n.semanticRevision, 0) "
-                        + "RETURN n.observable AS observable",
+                        + "WITH n WHERE coalesce(n.klabCurrent,true)=true RETURN n.observable AS observable",
                     Map.of("id", observation.getId()))
                 .list();
         if (row.size() != 1
@@ -650,8 +1601,16 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             .run(
                 "MATCH (n:Observation {id: $id}) SET n += $semantics, "
                     + "n.semanticRevision = n.semanticRevision + 1"
-                    + (ownedChildDelta==0?"":", n.childrenCount = coalesce(n.childrenCount,0) + $ownedChildDelta"),
-                Map.of("id", observation.getId(), "semantics", semantics,"ownedChildDelta",ownedChildDelta))
+                    + (ownedChildDelta == 0
+                        ? ""
+                        : ", n.childrenCount = coalesce(n.childrenCount,0) + $ownedChildDelta"),
+                Map.of(
+                    "id",
+                    observation.getId(),
+                    "semantics",
+                    semantics,
+                    "ownedChildDelta",
+                    ownedChildDelta))
             .consume();
         semanticUpdates.add(observation.getId());
       } catch (RuntimeException failure) {
@@ -681,10 +1640,15 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
               destination.getId(),
               relationship);
         }
-        if(relationship==GraphModel.Relationship.HAS_MEMBER) {
-          var owner=transaction.run("MATCH (:Context {id:$context})-[:HAS_CHILD]->(c:Cohort {id:$cohort}) SET c.id=c.id RETURN c.id AS id",
-              Map.of("context",rootContextId,"cohort",source.getId())).list();
-          if(owner.size()!=1) throw new KlabStorageException("Membership writes require the owning context cohort");
+        if (relationship == GraphModel.Relationship.HAS_MEMBER) {
+          var owner =
+              transaction
+                  .run(
+                      "MATCH (:Context {id:$context})-[:HAS_CHILD]->(c:Cohort {id:$cohort}) SET c.id=c.id RETURN c.id AS id",
+                      Map.of("context", rootContextId, "cohort", source.getId()))
+                  .list();
+          if (owner.size() != 1)
+            throw new KlabStorageException("Membership writes require the owning context cohort");
         }
         KnowledgeGraphNeo4j.this.link(
             transaction, source, destination, relationship, userScope, additionalProperties);
@@ -713,6 +1677,23 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       closeSession();
     }
 
+    private void flushParentIds() {
+      for (var link : List.copyOf(links)) {
+        var asset = idCache.get(link.getSecond());
+        if (asset != null) {
+          var props = Map.of(GraphModel.Fields.PARENT_ID, link.getFirst());
+          // update parent ID in the asset that gets out of the transaction
+          setParentId(asset, link.getFirst());
+          query(
+              transaction,
+              Queries.UPDATE_PROPERTIES_GENERIC,
+              Map.of(GraphModel.Fields.ID, asset.getId(), GraphModel.Fields.PROPERTIES, props),
+              userScope);
+        }
+      }
+      links.clear();
+    }
+
     @Override
     public void close() throws IOException {
 
@@ -725,20 +1706,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       this.closed = true;
 
       try {
-        // create parent IDs
-        for (var link : links) {
-          var asset = idCache.get(link.getSecond());
-          if (asset != null) {
-            var props = Map.of(GraphModel.Fields.PARENT_ID, link.getFirst());
-            // update parent ID in the asset that gets out of the transaction
-            setParentId(asset, link.getFirst());
-            query(
-                transaction,
-                Queries.UPDATE_PROPERTIES_GENERIC,
-                Map.of(GraphModel.Fields.ID, asset.getId(), GraphModel.Fields.PROPERTIES, props),
-                userScope);
-          }
-        }
+        flushParentIds();
 
         // update time of last successful operation
         var props = Map.of(GraphModel.Fields.LAST_UPDATE, System.currentTimeMillis());
@@ -805,11 +1773,55 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   }
 
   @Override
+  public List<ConsequenceAssetSnapshot> inspectAssetHeaders(Collection<Long> ids, ContextScope scope) {
+    if (scope == null || !Objects.equals(scope.getId(), rootContextId))
+      throw new SecurityException("Native header inspection belongs to another context");
+    var ordered = new ArrayList<>(new TreeSet<>(ids));
+    if (ordered.stream().anyMatch(id -> id <= 0))
+      throw new IllegalArgumentException("Native headers require durable asset IDs");
+    if (ordered.isEmpty()) return List.of();
+    try (var reader = driver.session(); var inspection = reader.beginTransaction()) {
+      var rows = inspection.run(
+          "MATCH (n) WHERE n.id IN $ids AND coalesce(n.ownerContextId,n.`im:context-id`,$context)=$context AND "
+              + "(coalesce(n.ownerContextId,n.`im:context-id`)=$context OR EXISTS { "
+              + "MATCH (:Context {id:$context})-[:HAS_CHILD|HAS_MEMBER*1..]->(n) } "
+              + "OR (n:Activity AND EXISTS { MATCH (:Context {id:$context})-[:HAS_PROVENANCE]"
+              + "->(:Provenance)-[:HAS_CHILD|TRIGGERED*1..]->(n) })) "
+              + "RETURN n.id AS id,elementId(n) AS element,labels(n) AS labels, "
+              + "n.semantictype AS semanticType,n.`klab.transition.commit` AS journal ORDER BY id,element",
+          Map.of("ids", ordered, "context", rootContextId)).list();
+      var result = new ArrayList<ConsequenceAssetSnapshot>();
+      for (var row : rows) {
+        var properties = new LinkedHashMap<String, Object>();
+        if (!row.get("semanticType").isNull())
+          properties.put(GraphModel.Fields.SEMANTICTYPE, row.get("semanticType").asString());
+        if (!row.get("journal").isNull())
+          properties.put(org.integratedmodelling.klab.api.digitaltwin.TransitionCommit.METADATA_KEY,
+              row.get("journal").asString());
+        result.add(new ConsequenceAssetSnapshot(row.get("id").asLong(),row.get("element").asString(),
+            row.get("labels").asList(org.neo4j.driver.Value::asString),properties,null,null));
+      }
+      return List.copyOf(result);
+    }
+  }
+
+  @Override
   public Transaction createTransaction(ContextScope contextScope) {
     return new TransactionImpl(contextScope);
   }
 
   protected synchronized EagerResult query(
+      String query, Map<String, Object> parameters, Scope scope) {
+    return executeStandaloneQuery(query, parameters, scope);
+  }
+
+  // Only nextKey's Statistics queries use this path without the graph monitor. Allocation
+  // retains its own per-instance serialization, independent of observation/native locks.
+  private EagerResult queryStatistics(String query, Map<String, Object> parameters, Scope scope) {
+    return executeStandaloneQuery(query, parameters, scope);
+  }
+
+  private EagerResult executeStandaloneQuery(
       String query, Map<String, Object> parameters, Scope scope) {
     if (isOnline()) {
       try {
@@ -828,26 +1840,46 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     return null;
   }
 
-  protected synchronized Result query(
+  /**
+   * The caller owns the native transaction. Do not take the graph-wide monitor while native locks
+   * are held: standalone callers may hold that monitor while waiting for those locks. Serialize
+   * this passthrough per transaction; result consumption and all other native work still require
+   * normal single-caller transaction ownership.
+   */
+  protected Result query(
       org.neo4j.driver.Transaction transaction,
       String query,
       Map<String, Object> parameters,
       Scope scope) {
-    if (!isOnline()) {
-      throw new KlabStorageException("Knowledge graph is offline");
+    synchronized (transaction) {
+      if (!isOnline()) {
+        throw new KlabStorageException("Knowledge graph is offline");
+      }
+      return transaction.run(query, parameters);
     }
-    return transaction.run(query, parameters);
   }
 
   @Override
-  public void bindWorldview(org.integratedmodelling.klab.api.knowledge.WorldviewCommitment commitment) {
-    try (var session = driver.session(); var transaction = session.beginTransaction()) {
+  public void bindWorldview(
+      org.integratedmodelling.klab.api.knowledge.WorldviewCommitment commitment) {
+    try (var session = driver.session();
+        var transaction = session.beginTransaction()) {
       lockContext(transaction, rootContextId);
-      var node = transaction.run(Queries.FIND_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId)).single().get(0).asNode();
+      var node =
+          transaction
+              .run(Queries.FIND_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId))
+              .single()
+              .get(0)
+              .asNode();
       var existing = node.get("worldviewCommitment");
-      if (!existing.isNull() && !commitment.equals(Utils.Json.parseObject(existing.asString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class)))
+      if (!existing.isNull()
+          && !commitment.equals(
+              Utils.Json.parseObject(
+                  existing.asString(),
+                  org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class)))
         throw new IllegalStateException("Context is committed to a different worldview");
-      transaction.run("MATCH (n) WHERE elementId(n) = $id SET n.worldviewCommitment = $commitment",
+      transaction.run(
+          "MATCH (n) WHERE elementId(n) = $id SET n.worldviewCommitment = $commitment",
           Map.of("id", node.elementId(), "commitment", Utils.Json.asString(commitment)));
       transaction.commit();
     }
@@ -874,13 +1906,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       if (!newContext) {
         lockContext(transaction, configuration.getId());
         var contextNode = result.single().get(0).asNode();
-        restoreGrid(configuration,contextNode.get("gridAlignment"));
+        restoreGrid(configuration, contextNode.get("gridAlignment"));
         var persisted = contextNode.get("worldviewCommitment");
         if (!persisted.isNull()) {
-          var commitment = Utils.Json.parseObject(persisted.asString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class);
-          if (configuration.getWorldviewCommitment() != null && !configuration.getWorldviewCommitment().equals(commitment))
+          var commitment =
+              Utils.Json.parseObject(
+                  persisted.asString(),
+                  org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class);
+          if (configuration.getWorldviewCommitment() != null
+              && !configuration.getWorldviewCommitment().equals(commitment))
             throw new IllegalStateException("Context worldview commitment differs");
-          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl) configuration).setWorldviewCommitment(commitment);
+          ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl) configuration)
+              .setWorldviewCommitment(commitment);
         }
       }
       if (newContext) {
@@ -926,58 +1963,113 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       }
 
       if (newContext && configuration.getSessionFederationId() != null) {
-        transaction.run("MATCH (c:" + GraphModel.Labels.CONTEXT + " {"
-            + GraphModel.Fields.ID + ": $id}) SET c.sessionFederationId = $federation",
-            Map.of("id", configuration.getId(), "federation", configuration.getSessionFederationId())).consume();
+        transaction
+            .run(
+                "MATCH (c:"
+                    + GraphModel.Labels.CONTEXT
+                    + " {"
+                    + GraphModel.Fields.ID
+                    + ": $id}) SET c.sessionFederationId = $federation",
+                Map.of(
+                    "id",
+                    configuration.getId(),
+                    "federation",
+                    configuration.getSessionFederationId()))
+            .consume();
       }
       if (newContext && configuration.getGridUrn() != null) {
-        var grid = configuration.getGridDefinition() == null
-            ? org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.resolve(configuration.getGridUrn(), scope)
-            : org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.decode(configuration.getGridDefinition());
-        transaction.run("MATCH (ctx:Context {id:$id}) SET ctx.gridAlignment=$grid",
-            Map.of("id", configuration.getId(), "grid", Utils.Json.asString(grid))).consume();
-        ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl) configuration).setGridAlignment(grid);
+        var grid =
+            configuration.getGridDefinition() == null
+                ? org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.resolve(
+                    configuration.getGridUrn(), scope)
+                : org.integratedmodelling.klab.runtime.scale.space.GridAlignmentSupport.decode(
+                    configuration.getGridDefinition());
+        transaction
+            .run(
+                "MATCH (ctx:Context {id:$id}) SET ctx.gridAlignment=$grid",
+                Map.of("id", configuration.getId(), "grid", Utils.Json.asString(grid)))
+            .consume();
+        ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl) configuration)
+            .setGridAlignment(grid);
       }
       ensureSpatialLayer(transaction, configuration.getId(), newContext);
       transaction.commit();
     }
   }
 
-  static void restoreGrid(DigitalTwin.Configuration configuration, org.neo4j.driver.Value persisted) {
-    var grid=persisted.isNull() ? null : Utils.Json.parseObject(persisted.asString(),org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
-    if (configuration.getGridUrn()!=null && (grid==null || !configuration.getGridUrn().equals(grid.definitionUrn())))
+  static void restoreGrid(
+      DigitalTwin.Configuration configuration, org.neo4j.driver.Value persisted) {
+    var grid =
+        persisted.isNull()
+            ? null
+            : Utils.Json.parseObject(
+                persisted.asString(),
+                org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
+    if (configuration.getGridUrn() != null
+        && (grid == null || !configuration.getGridUrn().equals(grid.definitionUrn())))
       throw new IllegalStateException("Context grid definition differs from persisted instruction");
-    ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl)configuration).setGridAlignment(grid);
+    ((org.integratedmodelling.klab.api.digitaltwin.impl.ConfigurationImpl) configuration)
+        .setGridAlignment(grid);
   }
 
   /** Registration seals configuration even before the observation is committed, across runtimes. */
   public org.integratedmodelling.klab.api.digitaltwin.GridAlignment sealGrid() {
-    try (var session=driver.session();var tx=session.beginTransaction()) {
-      lockContext(tx,rootContextId);
-      var value=tx.run("MATCH (ctx:Context {id:$id}) SET ctx.gridFrozen=true RETURN ctx.gridAlignment AS grid",
-          Map.of("id",rootContextId)).single().get("grid");
-      var grid=value.isNull() ? null : Utils.Json.parseObject(value.asString(),org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
-      tx.commit();return grid;
+    try (var session = driver.session();
+        var tx = session.beginTransaction()) {
+      lockContext(tx, rootContextId);
+      var value =
+          tx.run(
+                  "MATCH (ctx:Context {id:$id}) SET ctx.gridFrozen=true RETURN ctx.gridAlignment AS grid",
+                  Map.of("id", rootContextId))
+              .single()
+              .get("grid");
+      var grid =
+          value.isNull()
+              ? null
+              : Utils.Json.parseObject(
+                  value.asString(),
+                  org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
+      tx.commit();
+      return grid;
     }
   }
 
-  /** Freeze one definition before observation registration, under the same Context lock as commits. */
+  /**
+   * Freeze one definition before observation registration, under the same Context lock as commits.
+   */
   public org.integratedmodelling.klab.api.digitaltwin.GridAlignment installGrid(
       org.integratedmodelling.klab.api.digitaltwin.GridAlignment grid) {
-    try (var session = driver.session(); var tx = session.beginTransaction()) {
+    try (var session = driver.session();
+        var tx = session.beginTransaction()) {
       lockContext(tx, rootContextId);
-      var node = tx.run(Queries.FIND_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId)).single().get(0).asNode();
+      var node =
+          tx.run(Queries.FIND_CONTEXT, Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId))
+              .single()
+              .get(0)
+              .asNode();
       var persisted = node.get("gridAlignment");
       if (!persisted.isNull()) {
-        var existing = Utils.Json.parseObject(persisted.asString(), org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
-        if (!existing.definitionUrn().equals(grid.definitionUrn())) throw new IllegalStateException("A digital twin supports only one grid instruction");
+        var existing =
+            Utils.Json.parseObject(
+                persisted.asString(),
+                org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class);
+        if (!existing.definitionUrn().equals(grid.definitionUrn()))
+          throw new IllegalStateException("A digital twin supports only one grid instruction");
         tx.commit();
         return existing;
       }
-      if (node.get("gridFrozen").asBoolean(false)) throw new IllegalStateException("Install a grid before making observations");
-      var occupied = tx.run(Queries.GRID_OCCUPIED,Map.of("id",rootContextId)).single().get("occupied").asBoolean();
+      if (node.get("gridFrozen").asBoolean(false))
+        throw new IllegalStateException("Install a grid before making observations");
+      var occupied =
+          tx.run(Queries.GRID_OCCUPIED, Map.of("id", rootContextId))
+              .single()
+              .get("occupied")
+              .asBoolean();
       if (occupied) throw new IllegalStateException("Install a grid before making observations");
-      tx.run("MATCH (ctx:Context {id:$id}) SET ctx.gridAlignment=$grid", Map.of("id",rootContextId,"grid",Utils.Json.asString(grid))).consume();
+      tx.run(
+              "MATCH (ctx:Context {id:$id}) SET ctx.gridAlignment=$grid",
+              Map.of("id", rootContextId, "grid", Utils.Json.asString(grid)))
+          .consume();
       tx.commit();
       return grid;
     }
@@ -1271,7 +2363,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
       } else if (Observation.class.isAssignableFrom(cls)) {
 
-        var instance = restoreObservationProperties(node,scope);
+        var instance = restoreObservationProperties(node, scope);
 
         var gResult =
             query(
@@ -1375,8 +2467,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                 : (ActuatorImpl)
                     Utils.Json.parseObject(node.get("operationPlan").asString(), Actuator.class);
         if (!node.get(GraphModel.Fields.OPERATION_OBSERVABLE).isNull()) {
-          instance.setOperationObservable(scope.getService(Reasoner.class).resolveObservable(
-              node.get(GraphModel.Fields.OPERATION_OBSERVABLE).asString()));
+          instance.setOperationObservable(
+              scope
+                  .getService(Reasoner.class)
+                  .resolveObservable(node.get(GraphModel.Fields.OPERATION_OBSERVABLE).asString()));
         }
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
         instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong(-1));
@@ -1477,8 +2571,14 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         instance.setUrn(node.get(GraphModel.Fields.URN).asString());
         instance.setId(node.get(GraphModel.Fields.ID).asLong());
         instance.setShardCount(node.get(GraphModel.Fields.SHARD_COUNT).asInt());
-        if (!node.get("keyDictionaryHash").isNull()) instance.setKeyDictionaryHash(node.get("keyDictionaryHash").asString());
-        if (!node.get("categoryHistogram").isNull()) instance.setCategoryHistogram(Utils.Json.parseObject(node.get("categoryHistogram").asString(), org.integratedmodelling.klab.api.data.mediation.classification.KeyedData.CategoryHistogram.class));
+        if (!node.get("keyDictionaryHash").isNull())
+          instance.setKeyDictionaryHash(node.get("keyDictionaryHash").asString());
+        if (!node.get("categoryHistogram").isNull())
+          instance.setCategoryHistogram(
+              Utils.Json.parseObject(
+                  node.get("categoryHistogram").asString(),
+                  org.integratedmodelling.klab.api.data.mediation.classification.KeyedData
+                      .CategoryHistogram.class));
         instance.setNativeType(
             Storage.Type.valueOf(node.get(GraphModel.Fields.NATIVE_TYPE).asString()));
         instance.setTimestamp(node.get(GraphModel.Fields.TIMESTAMP).asLong());
@@ -1538,80 +2638,107 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
 
   @SuppressWarnings("unchecked")
   private ObservationImpl restoreObservationProperties(Value node, Scope scope) {
-        var instance = new ObservationImpl();
-        var reasoner = scope.getService(Reasoner.class);
+    var instance = new ObservationImpl();
+    var reasoner = scope.getService(Reasoner.class);
 
-        instance.setName(node.get(GraphModel.Fields.NAME).asString());
-        instance.setObservable(
-            reasoner.resolveObservable(node.get(GraphModel.Fields.OBSERVABLE).asString()));
-        instance.setUrn(node.get(GraphModel.Fields.URN).asString());
-        instance.setId(node.get(GraphModel.Fields.ID).asLong());
-        instance.setChildrenCount(node.get(GraphModel.Fields.CHILDREN_COUNT).asInt());
-        instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong());
-        instance.setEventTimestamps(
-            node.get(GraphModel.Fields.EVENT_TIMESTAMPS).asList(value -> value.asLong()));
-        instance.setSubstantialQuality(node.get(GraphModel.Fields.SUBSTANTIAL).asBoolean(false));
-        // Older records contain no resolution receipt. Missing evidence remains unknown (zero).
-        instance.setResolvedCoverage(node.get(GraphModel.Fields.RESOLVED_COVERAGE).asDouble(0));
-        restoreObservationMetadata(node, instance);
-        restoreObservationAnnotations(node, instance);
-        if (!node.get(GraphModel.Fields.HISTOGRAMS).isNull()) {
-          instance.setHistograms(
-              Utils.Data.deserializeHistogramMap(
-                  node.get(GraphModel.Fields.HISTOGRAMS).asString()));
-        } else if (!node.get(GraphModel.Fields.HISTOGRAM).isNull()) {
-          // Legacy observations stored one aggregate histogram. Its temporal distribution cannot
-          // be recovered, so retain it under the initialization timestamp until the observation is
-          // contextualized again and a true slice map replaces it.
-          instance.setHistograms(
-              Map.of(
-                  0L,
-                  Utils.Json.parseObject(
-                      node.get(GraphModel.Fields.HISTOGRAM).asString(), HistogramImpl.class)));
-        }
-        //        var instanceUrn = node.get(GraphModel.Fields.URN).asString();
-        //        if (instanceUrn != null) {
-        //          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
-        //        }
-        var cData = new ObservationImpl.ContextualizationDataImpl();
-        var service = scope.getService(RuntimeService.class);
-        cData.setServiceUrl(service.getUrl());
-        cData.setServiceId(serviceId);
-        cData.setAdapterId(
-            node.get(GraphModel.Fields.ADAPTER_ID).isNull()
-                ? null
-                : node.get(GraphModel.Fields.ADAPTER_ID).asString());
-        if (!node.get(GraphModel.Fields.ADAPTER_PARAMETERS).isNull()) {
-          var params =
+    instance.setName(node.get(GraphModel.Fields.NAME).asString());
+    instance.setObservable(
+        reasoner.resolveObservable(node.get(GraphModel.Fields.OBSERVABLE).asString()));
+    instance.setUrn(node.get(GraphModel.Fields.URN).asString());
+    instance.setId(node.get(GraphModel.Fields.ID).asLong());
+    instance.setChildrenCount(node.get(GraphModel.Fields.CHILDREN_COUNT).asInt());
+    instance.setParentId(node.get(GraphModel.Fields.PARENT_ID).asLong());
+    instance.setEventTimestamps(
+        node.get(GraphModel.Fields.EVENT_TIMESTAMPS).asList(value -> value.asLong()));
+    instance.setSubstantialQuality(node.get(GraphModel.Fields.SUBSTANTIAL).asBoolean(false));
+    // Older records contain no resolution receipt. Missing evidence remains unknown (zero).
+    instance.setResolvedCoverage(node.get(GraphModel.Fields.RESOLVED_COVERAGE).asDouble(0));
+    restoreObservationMetadata(node, instance);
+    restoreObservationAnnotations(node, instance);
+    if (!node.get(GraphModel.Fields.HISTOGRAMS).isNull()) {
+      instance.setHistograms(
+          Utils.Data.deserializeHistogramMap(node.get(GraphModel.Fields.HISTOGRAMS).asString()));
+    } else if (!node.get(GraphModel.Fields.HISTOGRAM).isNull()) {
+      // Legacy observations stored one aggregate histogram. Its temporal distribution cannot
+      // be recovered, so retain it under the initialization timestamp until the observation is
+      // contextualized again and a true slice map replaces it.
+      instance.setHistograms(
+          Map.of(
+              0L,
               Utils.Json.parseObject(
-                  node.get(GraphModel.Fields.ADAPTER_PARAMETERS).asString(), Parameters.class);
-          cData.getParameters().putAll(params);
-        }
+                  node.get(GraphModel.Fields.HISTOGRAM).asString(), HistogramImpl.class)));
+    }
+    //        var instanceUrn = node.get(GraphModel.Fields.URN).asString();
+    //        if (instanceUrn != null) {
+    //          instance.getMetadata().put(Metadata.IM_FEATURE_URN, instanceUrn);
+    //        }
+    var cData = new ObservationImpl.ContextualizationDataImpl();
+    var service = scope.getService(RuntimeService.class);
+    cData.setServiceUrl(service.getUrl());
+    cData.setServiceId(serviceId);
+    cData.setAdapterId(
+        node.get(GraphModel.Fields.ADAPTER_ID).isNull()
+            ? null
+            : node.get(GraphModel.Fields.ADAPTER_ID).asString());
+    if (!node.get(GraphModel.Fields.ADAPTER_PARAMETERS).isNull()) {
+      var params =
+          Utils.Json.parseObject(
+              node.get(GraphModel.Fields.ADAPTER_PARAMETERS).asString(), Parameters.class);
+      cData.getParameters().putAll(params);
+    }
 
-        // sharding strategy, if any.
-        if (!node.get(GraphModel.Fields.FILL_CURVE).isNull()) {
-          var shardingStrategy = new Data.ShardingStrategy();
-          shardingStrategy.setDataType(
-              Storage.Type.valueOf(node.get(GraphModel.Fields.DATA_TYPE).asString()));
-          shardingStrategy.setCurve(
-              Data.FillCurve.valueOf(node.get(GraphModel.Fields.FILL_CURVE).asString()));
-          shardingStrategy.setSuggestedSplits(node.get(GraphModel.Fields.SUGGESTED_SPLITS).asInt());
-          shardingStrategy.setMaxBufferSize(node.get(GraphModel.Fields.MAX_BUFFER_SIZE).asLong());
-          shardingStrategy.setMinSplitSize(node.get(GraphModel.Fields.MIN_SPLIT_SIZE).asLong());
-          cData.setNativeShardingStrategy(shardingStrategy);
-        }
+    // sharding strategy, if any.
+    if (!node.get(GraphModel.Fields.FILL_CURVE).isNull()) {
+      var shardingStrategy = new Data.ShardingStrategy();
+      shardingStrategy.setDataType(
+          Storage.Type.valueOf(node.get(GraphModel.Fields.DATA_TYPE).asString()));
+      shardingStrategy.setCurve(
+          Data.FillCurve.valueOf(node.get(GraphModel.Fields.FILL_CURVE).asString()));
+      shardingStrategy.setSuggestedSplits(node.get(GraphModel.Fields.SUGGESTED_SPLITS).asInt());
+      shardingStrategy.setMaxBufferSize(node.get(GraphModel.Fields.MAX_BUFFER_SIZE).asLong());
+      shardingStrategy.setMinSplitSize(node.get(GraphModel.Fields.MIN_SPLIT_SIZE).asLong());
+      cData.setNativeShardingStrategy(shardingStrategy);
+    }
 
-        instance.setContextualizationData(cData);
+    instance.setContextualizationData(cData);
 
     return instance;
   }
 
   @Override
-  public Observation materializeClassificationMember(ClassificationMemberSnapshot snapshot, ContextScope scope) {
-    if(snapshot.properties().isEmpty()) throw new KlabStorageException("Missing full captured observation properties");
-    var instance=restoreObservationProperties(org.neo4j.driver.Values.value(snapshot.nativeProperties()),scope);
+  public Observation materializeClassificationMember(
+      ClassificationMemberSnapshot snapshot, ContextScope scope) {
+    if (snapshot.properties().isEmpty())
+      throw new KlabStorageException("Missing full captured observation properties");
+    if (Boolean.FALSE.equals(snapshot.properties().get(CURRENT_PROPERTY)))
+      throw new KlabStorageException(
+          "Captured observation is inoperative; use explicit immutable history");
+    var instance =
+        restoreObservationProperties(
+            org.neo4j.driver.Values.value(snapshot.nativeProperties()), scope);
     instance.setGeometry(Geometry.create(snapshot.geometry()));
-    if(snapshot.perceivedGeometry()!=null) instance.setPerceivedGeometry(Geometry.create(snapshot.perceivedGeometry()));
+    if (snapshot.perceivedGeometry() != null)
+      instance.setPerceivedGeometry(Geometry.create(snapshot.perceivedGeometry()));
+    return instance;
+  }
+
+  @Override
+  public Observation materializeConsequenceObservation(
+      ConsequenceAssetSnapshot snapshot, ContextScope scope) {
+    if (Boolean.FALSE.equals(snapshot.properties().get(CURRENT_PROPERTY)))
+      throw new KlabStorageException(
+          "Captured observation is inoperative; use explicit immutable history");
+    if (!snapshot.labels().contains(GraphModel.Labels.OBSERVATION)
+        || !(snapshot.properties().get(GraphModel.Fields.ID) instanceof Number id)
+        || id.longValue() != snapshot.id())
+      throw new KlabStorageException(
+          "Consequence observation snapshot has an invalid identity/type");
+    var instance =
+        restoreObservationProperties(
+            org.neo4j.driver.Values.value(snapshot.nativeProperties()), scope);
+    instance.setGeometry(Geometry.create(snapshot.geometry()));
+    if (snapshot.perceivedGeometry() != null)
+      instance.setPerceivedGeometry(Geometry.create(snapshot.perceivedGeometry()));
     return instance;
   }
 
@@ -1810,42 +2937,59 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   public List<ContextInfo> getExistingContexts(UserScope scope) {
 
     var ret = new ArrayList<ContextInfo>();
-    var effectiveScope=scope==null ? userScope : scope;
-    var runtime=effectiveScope==null ? null : effectiveScope.getService(RuntimeService.class);
-    var result = query("MATCH (c:Context) WHERE $user IS NULL OR c.user=$user "
-        + "RETURN c.id AS id,c.name AS name,c.user AS user,c.description AS description,"
-        + "c.lastUpdate AS lastUpdate,c.expiration AS expiration,c.created AS startTime,"
-        + "c.worldviewCommitment AS worldviewCommitment,c.gridAlignment AS gridAlignment",
-        java.util.Collections.singletonMap("user",scope==null ? null : scope.getUser().getUsername()),scope);
+    var effectiveScope = scope == null ? userScope : scope;
+    var runtime = effectiveScope == null ? null : effectiveScope.getService(RuntimeService.class);
+    var result =
+        query(
+            "MATCH (c:Context) WHERE $user IS NULL OR c.user=$user "
+                + "RETURN c.id AS id,c.name AS name,c.user AS user,c.description AS description,"
+                + "c.lastUpdate AS lastUpdate,c.expiration AS expiration,c.created AS startTime,"
+                + "c.worldviewCommitment AS worldviewCommitment,c.gridAlignment AS gridAlignment",
+            java.util.Collections.singletonMap(
+                "user", scope == null ? null : scope.getUser().getUsername()),
+            scope);
 
     for (var record : result.records()) {
       ContextInfo info = new ContextInfo();
       info.setCreationTime(record.get(GraphModel.Fields.START_TIME).asLong(0));
       info.setIdleTimeMs(
-          System.currentTimeMillis() - record.get(GraphModel.Fields.LAST_UPDATE).asLong(System.currentTimeMillis()));
+          System.currentTimeMillis()
+              - record.get(GraphModel.Fields.LAST_UPDATE).asLong(System.currentTimeMillis()));
       info.setConfiguration(
           DigitalTwin.Configuration.builder()
               .url(
-                  runtime==null ? null : Utils.URLs.newURL(
-                      runtime.getUrl()
-                          + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
-                              "{id}", record.get(GraphModel.Fields.ID).asString())))
-              .worldviewCommitment(record.get("worldviewCommitment").isNull() ? null : Utils.Json.parseObject(record.get("worldviewCommitment").asString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
-              .gridAlignment(record.get("gridAlignment").isNull() ? null : Utils.Json.parseObject(record.get("gridAlignment").asString(),org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class))
+                  runtime == null
+                      ? null
+                      : Utils.URLs.newURL(
+                          runtime.getUrl()
+                              + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
+                                  "{id}", record.get(GraphModel.Fields.ID).asString())))
+              .worldviewCommitment(
+                  record.get("worldviewCommitment").isNull()
+                      ? null
+                      : Utils.Json.parseObject(
+                          record.get("worldviewCommitment").asString(),
+                          org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
+              .gridAlignment(
+                  record.get("gridAlignment").isNull()
+                      ? null
+                      : Utils.Json.parseObject(
+                          record.get("gridAlignment").asString(),
+                          org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class))
               .id(record.get(GraphModel.Fields.ID).asString())
               .name(record.get(GraphModel.Fields.NAME).asString())
               .serviceId(serviceId)
               .owner(record.get(GraphModel.Fields.USER).asString())
               .description(record.get(GraphModel.Fields.DESCRIPTION).asString())
-              .serverUrl(runtime==null ? null : runtime.getUrl())
+              .serverUrl(runtime == null ? null : runtime.getUrl())
               .persistence(Persistence.valueOf(record.get(GraphModel.Fields.EXPIRATION).asString()))
               .timeout(
-                  runtime==null ? 0 : runtime
-                      .settings()
-                      .get(Setting.DIGITAL_TWIN_TIMEOUT_MINUTES, Integer.class),
+                  runtime == null
+                      ? 0
+                      : runtime.settings().get(Setting.DIGITAL_TWIN_TIMEOUT_MINUTES, Integer.class),
                   TimeUnit.MINUTES)
               .build());
-      if (effectiveScope!=null) info.getConfiguration().validate(effectiveScope);
+      if (effectiveScope != null) info.getConfiguration().validate(effectiveScope);
 
       // TODO something is probably missing
 
@@ -1870,18 +3014,71 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     var result =
         assetClass == RuntimeAsset.class
             ? query(
-                "MATCH (n {" + field + (": $" + GraphModel.Fields.KEY + "}) return n"),
+                "MATCH (n {"
+                    + field
+                    + (": $"
+                        + GraphModel.Fields.KEY
+                        + "}) WHERE NOT n:Observation OR coalesce(n.klabCurrent,true)=true return n"),
                 Map.of(GraphModel.Fields.KEY, key),
                 scope)
             : query(
                 ("MATCH (n:{assetLabel} {"
                         + field
-                        + (": $" + GraphModel.Fields.KEY + "}) return n"))
+                        + (": $"
+                            + GraphModel.Fields.KEY
+                            + "}) WHERE NOT n:Observation OR coalesce(n.klabCurrent,true)=true return n"))
                     .replace("{assetLabel}", getLabel(assetClass)),
                 Map.of(GraphModel.Fields.KEY, key),
                 scope);
     var adapted = adapt(result, assetClass, scope);
     return adapted.isEmpty() ? null : adapted.getFirst();
+  }
+
+  @Override
+  public boolean isObservationCurrent(Observation observation, ContextScope scope) {
+    if (observation == null || scope == null || !Objects.equals(rootContextId, scope.getId()))
+      return false;
+    if (scope.getCurrentTransaction()
+            instanceof
+            org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl
+                    .TransactionImpl
+                transaction
+        && scope.getDigitalTwin() != null
+        && scope.getDigitalTwin().getKnowledgeGraph() == this) {
+      var pending = transaction.currentStatusFor(observation);
+      if (pending.isPresent()) return pending.get();
+    }
+    if (observation.getId() <= 0)
+      return false; // No proof of an owned transient birth; not a blanket negative-ID ban.
+    var rows =
+        query(
+            "MATCH(ctx:Context{id:$context}),(n:Observation{id:$id}) WHERE coalesce(n.klabCurrent,true)=true AND "
+                + "coalesce(n.ownerContextId,n.`im:context-id`,$context)=$context AND (coalesce(n.ownerContextId,n.`im:context-id`)=$context OR EXISTS{MATCH(ctx)-[:HAS_CHILD|HAS_MEMBER*1..]->(n)}) RETURN n.id AS id",
+            Map.of("context", rootContextId, "id", observation.getId()),
+            scope);
+    if (rows == null) throw new KlabStorageException("Current observation status is unavailable");
+    if (rows.records().size() > 1)
+      throw new KlabStorageException("Ambiguous current observation identity");
+    return rows.records().size() == 1;
+  }
+
+  @Override
+  public List<ObservationCessation> getObservationHistory(long id, ContextScope scope) {
+    if (id <= 0 || scope == null || !Objects.equals(rootContextId, scope.getId()))
+      throw new KlabStorageException("History requires its owning durable context");
+    var result =
+        query(
+            "MATCH(ctx:Context{id:$context}),(n:Observation{id:$id}) WHERE coalesce(n.ownerContextId,n.`im:context-id`,$context)=$context AND "
+                + "(coalesce(n.ownerContextId,n.`im:context-id`)=$context OR EXISTS{MATCH(ctx)-[:HAS_CHILD|HAS_MEMBER*1..]->(n)}) RETURN coalesce(n.klabCessationHistory,[]) AS history",
+            Map.of("id", id, "context", rootContextId),
+            scope);
+    if (result.records().isEmpty()) return List.of();
+    if (result.records().size() != 1) throw new KlabStorageException("Ambiguous history identity");
+    return result
+        .records()
+        .getFirst()
+        .get("history")
+        .asList(v -> Utils.Json.parseObject(v.asString(), ObservationCessation.class));
   }
 
   @Override
@@ -2082,6 +3279,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       Scope scope,
       Object... additionalProperties) {
 
+    lockConsequenceStructuralEndpoints(transaction, source, destination, relationship);
+
     // find out if the internal ID or what stored ID should be used
     var sourceQuery = matchAsset(source, "n", GraphModel.Fields.SOURCE_ID);
     var targetQuery = matchAsset(destination, "c", GraphModel.Fields.TARGET_ID);
@@ -2108,6 +3307,55 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             GraphModel.Fields.PROPERTIES,
             props),
         scope);
+    if (source instanceof Cohort
+        && destination instanceof Observation
+        && relationship == GraphModel.Relationship.HAS_MEMBER)
+      transaction
+          .run(
+              "MATCH(c:Cohort{id:$id}) SET c.klabMembershipRevision=coalesce(c.klabMembershipRevision,0)+1",
+              Map.of("id", source.getId()))
+          .consume();
+    if (source.classify() == RuntimeAsset.Type.CONTEXT
+        && destination instanceof Cohort
+        && relationship == GraphModel.Relationship.HAS_CHILD)
+      transaction
+          .run(
+              "MATCH(ctx:Context{id:$context}) SET ctx.consequenceCatalogueRevision=coalesce(ctx.consequenceCatalogueRevision,0)+1",
+              Map.of("context", rootContextId))
+          .consume();
+  }
+
+  private Set<Long> consequenceStructuralEndpoints(
+      RuntimeAsset source, RuntimeAsset destination, GraphModel.Relationship relationship) {
+    var ids = new TreeSet<Long>();
+    if (ConsequenceEdgeSelection.supports(relationship)) {
+      for (var asset : List.of(source, destination))
+        if ((asset instanceof Observation || asset instanceof Cohort || asset instanceof Activity)
+            && asset.getId() > 0) ids.add(asset.getId());
+    }
+    return ids;
+  }
+
+  /**
+   * Dense Neo4j nodes do not take the observation property lock automatically on edge creation. All
+   * participating structural writers must take it explicitly before creating the edge.
+   */
+  private void lockConsequenceStructuralEndpoints(
+      org.neo4j.driver.Transaction transaction,
+      RuntimeAsset source,
+      RuntimeAsset destination,
+      GraphModel.Relationship relationship) {
+    for (long id : consequenceStructuralEndpoints(source, destination, relationship)) {
+      var rows =
+          transaction
+              .run(
+                  "MATCH (n {id:$id}) WHERE n:Observation OR n:Cohort OR n:Activity "
+                      + "SET n.id=n.id RETURN n.id AS id",
+                  Map.of("id", id))
+              .list();
+      if (rows.size() != 1)
+        throw new KlabStorageException("Missing or ambiguous structural endpoint " + id);
+    }
   }
 
   private void storeGeometry(
@@ -2326,6 +3574,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       GraphModel.Relationship relationship,
       Scope scope,
       Object... additionalProperties) {
+
+    if (!consequenceStructuralEndpoints(source, destination, relationship).isEmpty()) {
+      try (var session = driver.session();
+          var transaction =
+              session.beginTransaction(
+                  TransactionConfig.builder().withTimeout(Duration.ZERO).build())) {
+        if (rootContextId != null) lockContext(transaction, rootContextId);
+        link(transaction, source, destination, relationship, scope, additionalProperties);
+        transaction.commit();
+      }
+      return;
+    }
 
     // find out if the internal ID or what stored ID should be used
     var sourceQuery = matchAsset(source, "n", GraphModel.Fields.SOURCE_ID);
@@ -2578,81 +3838,95 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       Object... parameters) {
     var props = asParameters(runtimeAsset, parameters);
     props.remove(GraphModel.Fields.ID);
+    var statement =
+        runtimeAsset instanceof Observation
+            ? "MATCH(n:Observation{id:$id}) SET n.id=n.id WITH n WHERE coalesce(n.klabCurrent,true)=true SET n += $properties RETURN n.id AS id"
+            : Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset));
     var result =
         query(
             transaction,
-            Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
+            statement,
             Map.of(GraphModel.Fields.ID, runtimeAsset.getId(), GraphModel.Fields.PROPERTIES, props),
             scope);
+    if (runtimeAsset instanceof Observation && (result == null || result.list().size() != 1))
+      throw new KlabStorageException("Current observation update target is no longer operative");
   }
 
   //  @Override
   public void update(RuntimeAsset runtimeAsset, Scope scope, Object... parameters) {
     var props = asParameters(runtimeAsset, parameters);
     props.remove(GraphModel.Fields.ID);
+    var statement =
+        runtimeAsset instanceof Observation
+            ? "MATCH(n:Observation{id:$id}) SET n.id=n.id WITH n WHERE coalesce(n.klabCurrent,true)=true SET n += $properties RETURN n.id AS id"
+            : Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset));
     var result =
         query(
-            Queries.UPDATE_PROPERTIES.replace("{type}", getLabel(runtimeAsset)),
+            statement,
             Map.of(GraphModel.Fields.ID, runtimeAsset.getId(), GraphModel.Fields.PROPERTIES, props),
             scope);
+    if (runtimeAsset instanceof Observation && (result == null || result.records().size() != 1))
+      throw new KlabStorageException("Current observation update target is no longer operative");
   }
 
   @Override
-  public synchronized long nextKey() {
-    var ret = -1L;
-    var lastActivity = System.currentTimeMillis();
-    var result =
-        query(
-            ("MATCH (n:"
-                + GraphModel.Labels.STATISTICS
-                + ") return n."
-                + GraphModel.Fields.NEXT_ID),
-            Map.of(),
-            userScope);
-    if (result != null) {
-      if (result.records().isEmpty()) {
-        ret = 1;
-        query(
-            ("CREATE (n:"
-                + GraphModel.Labels.STATISTICS
-                + " {"
-                + GraphModel.Fields.NEXT_ID
-                + ": 1})"),
-            Map.of(),
-            userScope);
-      } else {
-        var id = result.records().getFirst().get(result.keys().getFirst()).asLong();
-        ret = id + 1;
-        query(
-            ("MATCH (n:"
-                    + GraphModel.Labels.STATISTICS
-                    + ") WHERE n."
-                    + GraphModel.Fields.NEXT_ID
-                    + " = $"
-                    + GraphModel.Fields.ID
-                    + " SET n."
-                    + GraphModel.Fields.NEXT_ID
-                    + " = $"
-                    + GraphModel.Fields.NEXT_ID
-                    + ", n."
-                    + GraphModel.Fields.LAST_ACTIVITY
-                    + " = ")
-                + ("$" + GraphModel.Fields.LAST_ACTIVITY),
-            Map.of(
-                GraphModel.Fields.ID,
-                id,
-                GraphModel.Fields.NEXT_ID,
-                ret,
-                GraphModel.Fields.LAST_ACTIVITY,
-                lastActivity),
-            userScope);
+  public long nextKey() {
+    synchronized (keyAllocationMonitor) {
+      var ret = -1L;
+      var lastActivity = System.currentTimeMillis();
+      var result =
+          queryStatistics(
+              ("MATCH (n:"
+                  + GraphModel.Labels.STATISTICS
+                  + ") return n."
+                  + GraphModel.Fields.NEXT_ID),
+              Map.of(),
+              userScope);
+      if (result != null) {
+        if (result.records().isEmpty()) {
+          ret = 1;
+          queryStatistics(
+              ("CREATE (n:"
+                  + GraphModel.Labels.STATISTICS
+                  + " {"
+                  + GraphModel.Fields.NEXT_ID
+                  + ": 1})"),
+              Map.of(),
+              userScope);
+        } else {
+          var id = result.records().getFirst().get(result.keys().getFirst()).asLong();
+          ret = id + 1;
+          queryStatistics(
+              ("MATCH (n:"
+                      + GraphModel.Labels.STATISTICS
+                      + ") WHERE n."
+                      + GraphModel.Fields.NEXT_ID
+                      + " = $"
+                      + GraphModel.Fields.ID
+                      + " SET n."
+                      + GraphModel.Fields.NEXT_ID
+                      + " = $"
+                      + GraphModel.Fields.NEXT_ID
+                      + ", n."
+                      + GraphModel.Fields.LAST_ACTIVITY
+                      + " = ")
+                  + ("$" + GraphModel.Fields.LAST_ACTIVITY),
+              Map.of(
+                  GraphModel.Fields.ID,
+                  id,
+                  GraphModel.Fields.NEXT_ID,
+                  ret,
+                  GraphModel.Fields.LAST_ACTIVITY,
+                  lastActivity),
+              userScope);
+        }
       }
+      // KLAB-DEBUG-GUARD: -1 means next-key allocation failed; preserve the existing return value.
+      if (ret == 0) {
+        Logging.INSTANCE.warn("KLAB-DEBUG-GUARD: KG nextKey() returned unassigned key: {}", ret);
+      }
+      return ret;
     }
-    // KLAB-DEBUG-GUARD: -1 means next-key allocation failed; preserve the existing return value.
-    if (ret == 0) {
-      Logging.INSTANCE.warn("KLAB-DEBUG-GUARD: KG nextKey() returned unassigned key: {}", ret);
-    }
-    return ret;
   }
 
   private List<Activity> getActivity(ContextScope scope, Object... queriables) {
@@ -2943,7 +4217,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
     List<ContextInfo> contextInfos = new ArrayList<>();
     for (var context : adapt(contexts, Map.class, scope)) {
 
-      if (scope instanceof UserScope requester && !authorizesPersistedContext(context, requester)) continue;
+      if (scope instanceof UserScope requester && !authorizesPersistedContext(context, requester))
+        continue;
 
       ContextInfo contextInfo = new ContextInfo();
       //      contextInfo.setId(context.get(GraphModel.Fields.ID).toString());
@@ -2963,8 +4238,18 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                       scope.getService(RuntimeService.class).getUrl()
                           + ServicesAPI.RUNTIME.DIGITAL_TWIN.replace(
                               "{id}", context.get(GraphModel.Fields.ID).toString())))
-              .worldviewCommitment(context.get("worldviewCommitment") == null ? null : Utils.Json.parseObject(context.get("worldviewCommitment").toString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
-              .gridAlignment(context.get("gridAlignment")==null ? null : Utils.Json.parseObject(context.get("gridAlignment").toString(),org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class))
+              .worldviewCommitment(
+                  context.get("worldviewCommitment") == null
+                      ? null
+                      : Utils.Json.parseObject(
+                          context.get("worldviewCommitment").toString(),
+                          org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
+              .gridAlignment(
+                  context.get("gridAlignment") == null
+                      ? null
+                      : Utils.Json.parseObject(
+                          context.get("gridAlignment").toString(),
+                          org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class))
               .id(context.get(GraphModel.Fields.ID).toString())
               .name(context.get(GraphModel.Fields.NAME).toString())
               .serviceId(serviceId)
@@ -3016,37 +4301,68 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
   static ResourcePrivileges persistedContextRights(Map<?, ?> context) {
     var encoded = context.get(GraphModel.Fields.RIGHTS);
     if (encoded == null) return ResourcePrivileges.empty();
-    if (!(encoded instanceof String rights)) throw new KlabStorageException("Invalid persisted context permissions");
+    if (!(encoded instanceof String rights))
+      throw new KlabStorageException("Invalid persisted context permissions");
     return ResourcePrivileges.create(rights);
   }
 
   static boolean authorizesPersistedContext(Map<?, ?> context, UserScope requester) {
-    if (requester == null || requester.getUser() == null || requester.getUser().getUsername() == null) return false;
+    if (requester == null
+        || requester.getUser() == null
+        || requester.getUser().getUsername() == null) return false;
     var owner = context.get(GraphModel.Fields.USER);
-    return owner instanceof String username && !username.isBlank()
+    return owner instanceof String username
+        && !username.isBlank()
         && (username.equals(requester.getUser().getUsername())
-            || persistedContextRights(context).checkAuthorization(requester.getUser().getUsername(), requester.getUser().getGroups()));
+            || persistedContextRights(context)
+                .checkAuthorization(
+                    requester.getUser().getUsername(), requester.getUser().getGroups()));
   }
 
   /** Reload authority from storage rather than trusting a client's reconnect descriptor. */
-  public DigitalTwin.Configuration getAuthorizedConfiguration(String contextId, UserScope requester) {
+  public DigitalTwin.Configuration getAuthorizedConfiguration(
+      String contextId, UserScope requester) {
     if (contextId == null || requester == null) return null;
-    var rows = adapt(query("MATCH (c:" + GraphModel.Labels.CONTEXT + " {"
-        + GraphModel.Fields.ID + ": $contextId}) RETURN c", Map.of("contextId", contextId), requester), Map.class, requester);
+    var rows =
+        adapt(
+            query(
+                "MATCH (c:"
+                    + GraphModel.Labels.CONTEXT
+                    + " {"
+                    + GraphModel.Fields.ID
+                    + ": $contextId}) RETURN c",
+                Map.of("contextId", contextId),
+                requester),
+            Map.class,
+            requester);
     for (var row : rows) {
       if (!authorizesPersistedContext(row, requester)) {
-        throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("Context is not accessible to the requesting user");
+        throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+            "Context is not accessible to the requesting user");
       }
-      return DigitalTwin.Configuration.builder().id(contextId)
+      return DigitalTwin.Configuration.builder()
+          .id(contextId)
           .name(Objects.toString(row.get(GraphModel.Fields.NAME), contextId))
-          .owner(row.get(GraphModel.Fields.USER).toString()).accessRights(persistedContextRights(row))
+          .owner(row.get(GraphModel.Fields.USER).toString())
+          .accessRights(persistedContextRights(row))
           .sessionFederationId(Objects.toString(row.get("sessionFederationId"), null))
           .serviceId(serviceId)
           .description(Objects.toString(row.get(GraphModel.Fields.DESCRIPTION), ""))
           .persistence(Persistence.valueOf(row.get(GraphModel.Fields.EXPIRATION).toString()))
-          .worldviewCommitment(row.get("worldviewCommitment") == null ? null : Utils.Json.parseObject(row.get("worldviewCommitment").toString(), org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
-          .gridAlignment(row.get("gridAlignment") == null ? null : Utils.Json.parseObject(row.get("gridAlignment").toString(), org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class))
-          .build().validate(requester);
+          .worldviewCommitment(
+              row.get("worldviewCommitment") == null
+                  ? null
+                  : Utils.Json.parseObject(
+                      row.get("worldviewCommitment").toString(),
+                      org.integratedmodelling.klab.api.knowledge.WorldviewCommitment.class))
+          .gridAlignment(
+              row.get("gridAlignment") == null
+                  ? null
+                  : Utils.Json.parseObject(
+                      row.get("gridAlignment").toString(),
+                      org.integratedmodelling.klab.api.digitaltwin.GridAlignment.class))
+          .build()
+          .validate(requester);
     }
     return null;
   }
@@ -3059,6 +4375,105 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
         return query(this, resultClass, scope);
       }
     };
+  }
+
+  @Override
+  public List<String> getConfigurationHistory(Observation configuration, ContextScope scope) {
+    if (scope == null
+        || !Objects.equals(rootContextId, scope.getId())
+        || scope.getCurrentTransaction() != null)
+      throw new IllegalArgumentException(
+          "Committed configuration history requires its owning context without a transaction");
+    if (configuration == null
+        || configuration.getId() <= 0
+        || configuration.getObservable() == null
+        || !configuration.getObservable().is(SemanticType.CONFIGURATION))
+      throw new IllegalArgumentException("A committed configuration is required");
+    var selected = new KnowledgeGraphQuery<Observation>(KnowledgeGraphQuery.AssetType.OBSERVATION);
+    selected.where(
+        GraphModel.Fields.ID, KnowledgeGraph.Query.Operator.EQUALS, configuration.getId());
+    var statement = Neo4jQueryCompiler.compile(selected, rootContextId);
+    if (!isOnline()) throw new KlabStorageException("Knowledge graph is unavailable");
+    long observer = scope.getObserverId() == null ? 0 : scope.getObserverId();
+    var focus = scope.getContextObservation();
+    long focused = focus == null ? 0 : focus.getId();
+    if (observer < 0 || focused < 0)
+      throw new SecurityException("Configuration perspective is not durable");
+    if (observer > 0) {
+      var agent = scope.getObserver();
+      if (agent == null
+          || agent.getId() != observer
+          || agent.getObservable() == null
+          || !agent.getObservable().is(SemanticType.AGENT)
+          || agent.getObservable().getSemantics().isCollective())
+        throw new SecurityException("Selected observer is no longer accessible");
+    }
+    // Same context ownership visibility as normal graph queries, with explicit read routing.
+    // No native write transaction, ID lock or receipt issuer is used by this diagnostic API.
+    try (var session =
+        driver.session(
+            org.neo4j.driver.SessionConfig.builder()
+                .withDefaultAccessMode(org.neo4j.driver.AccessMode.READ)
+                .build())) {
+      return session.executeRead(
+          tx -> {
+            var rows = tx.run(statement.cypher(), statement.parameters()).list();
+            if (rows.size() != 1)
+              throw new KlabStorageException("Configuration is missing, foreign or ambiguous");
+            var node = rows.getFirst().get("n").asNode();
+            if (configurationHistoryInteger(node.get(GraphModel.Fields.ID).asObject())
+                != configuration.getId())
+              throw new KlabStorageException("Configuration native identity is malformed");
+            var owner = node.get(Queries.OWNER_CONTEXT).asString(null);
+            if (owner != null && !rootContextId.equals(owner))
+              throw new SecurityException("Configuration has another native owner");
+            if (!Objects.equals(
+                node.get(GraphModel.Fields.OBSERVABLE).asString(null),
+                configuration.getObservable().getUrn()))
+              throw new SecurityException(
+                  "Configuration meaning differs from the committed observation");
+            var metadata =
+                Utils.Json.parseObject(node.get(GraphModel.Fields.METADATA).asString(), Map.class);
+            var perspective = metadata.get("klab.configuration.perspective");
+            if (!(perspective instanceof String encoded))
+              throw new KlabStorageException("Configuration perspective is unavailable");
+            var recorded = Utils.Json.parseObject(encoded, Map.class);
+            if (observer < 0
+                || focused < 0
+                || !Objects.equals(recorded.get("contextId"), scope.getId())
+                || configurationHistoryInteger(recorded.get("observerId")) != observer
+                || configurationHistoryInteger(recorded.get("focusId")) != focused)
+              throw new SecurityException(
+                  "Configuration belongs to another observation perspective");
+            var current = metadata.get("klab.configuration.current");
+            if (!(current instanceof String text))
+              throw new KlabStorageException("Configuration revision is unavailable");
+            var revision = Utils.Json.parseObject(text, Map.class);
+            if (configurationHistoryInteger(revision.get("observationId")) != configuration.getId()
+                || configurationHistoryInteger(revision.get("number")) < 1)
+              throw new KlabStorageException("Configuration revision targets another observation");
+            var history = node.get("configurationHistory");
+            if (history.isNull()) return List.<String>of();
+            var values =
+                history.asList(
+                    value -> {
+                      if (!(value.asObject() instanceof String))
+                        throw new KlabStorageException("Malformed configuration history row");
+                      return value.asString();
+                    });
+            return List.copyOf(values);
+          });
+    }
+  }
+
+  private static long configurationHistoryInteger(Object value) {
+    if (!(value instanceof Byte
+        || value instanceof Short
+        || value instanceof Integer
+        || value instanceof Long))
+      throw new KlabStorageException(
+          "Configuration history identity requires an exact integral value");
+    return ((Number) value).longValue();
   }
 
   @Override
@@ -3294,7 +4709,7 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     + ") ")
                 + ("WHERE o.`"
                     + GraphModel.Fields.SCHEDULER_REGISTERED
-                    + "` = true RETURN DISTINCT o"),
+                    + "` = true AND coalesce(o.klabCurrent,true)=true RETURN DISTINCT o"),
             Map.of(GraphModel.Fields.CONTEXT_ID, rootContextId),
             scope);
     if (result == null) {
@@ -3311,6 +4726,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       GraphModel.Relationship... relationship) {
 
     List<Link> ret = new ArrayList<>();
+    if (asset instanceof Observation observation && !isObservationCurrent(observation, scope))
+      return ret;
 
     if (scope.getCurrentTransaction() != null
         && scope.getCurrentTransaction().assets().contains(asset)) {
@@ -3323,7 +4740,17 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           (direction == GraphModel.Relationship.Direction.OUTGOING
                   ? scope.getCurrentTransaction().outgoing(asset)
                   : scope.getCurrentTransaction().incoming(asset))
-              .stream().filter(edge -> types.isEmpty() || types.contains(edge.type())).toList());
+              .stream()
+                  .filter(edge -> types.isEmpty() || types.contains(edge.type()))
+                  .filter(
+                      edge ->
+                          !(edge.source() instanceof Observation source)
+                              || isObservationCurrent(source, scope))
+                  .filter(
+                      edge ->
+                          !(edge.target() instanceof Observation target)
+                              || isObservationCurrent(target, scope))
+                  .toList());
     }
 
     if (asset.getId() == -1) {
@@ -3351,9 +4778,23 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
             ? (relTypeFilter == null ? "(n)-[r]->(m)" : "(n)-[r:" + relTypeFilter + "]->(m)")
             : (relTypeFilter == null ? "(n)<-[r]-(m)" : "(n)<-[r:" + relTypeFilter + "]-(m)");
 
+    var replaced =
+        scope.getCurrentTransaction() == null
+            ? Set.<Long>of()
+            : scope.getCurrentTransaction().configurationParticipantReplacements();
+    String replacementFilter =
+        " WHERE (NOT n:Observation OR coalesce(n.klabCurrent,true)=true) AND (NOT m:Observation OR coalesce(m.klabCurrent,true)=true) "
+            + (replaced.isEmpty()
+                ? ""
+                : " AND NOT((type(r)='EMERGED_FROM' AND "
+                    + (direction == GraphModel.Relationship.Direction.OUTGOING ? "n" : "m")
+                    + ".id IN $configurationReplacements) OR (type(r)='AFFECTS' AND r.role='configuration-input' AND "
+                    + (direction == GraphModel.Relationship.Direction.OUTGOING ? "m" : "n")
+                    + ".id IN $configurationReplacements)) ");
     String query =
         (("MATCH (n:{label} {" + GraphModel.Fields.ID + ": $" + GraphModel.Fields.ID + "}) MATCH ")
                 + pattern
+                + replacementFilter
                 + (" RETURN type(r) AS "
                     + GraphModel.Fields.RTYPE
                     + ", properties(r) AS "
@@ -3364,7 +4805,10 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
                     + GraphModel.Fields.MID))
             .replace("{label}", sourceLabel);
 
-    var result = query(query, Map.of(GraphModel.Fields.ID, idValue), scope);
+    var parameters = new HashMap<String, Object>();
+    parameters.put(GraphModel.Fields.ID, idValue);
+    if (!replaced.isEmpty()) parameters.put("configurationReplacements", List.copyOf(replaced));
+    var result = query(query, parameters, scope);
     if (result == null || result.records().isEmpty()) {
       return ret;
     }

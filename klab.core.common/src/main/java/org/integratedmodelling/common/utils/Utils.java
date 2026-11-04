@@ -1249,11 +1249,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       private static final String AUTHENTICATION_HEADER = "Authentication";
       private final GetFailureReports getFailureReports;
 
-      private record GetRequest(String url, String authorization, Map<String, String> headers,
-                                String accept, Class<?> resultClass) {}
+      private record GetRequest(
+          String url,
+          String authorization,
+          Map<String, String> headers,
+          String accept,
+          Class<?> resultClass) {}
+
       private record GetFailure(Class<?> type, int status, Class<?> cause) {
         static GetFailure of(Throwable failure) {
-          return new GetFailure(failure.getClass(),
+          return new GetFailure(
+              failure.getClass(),
               failure instanceof RequestFailure response ? response.getStatus() : 0,
               failure.getCause() == null ? null : failure.getCause().getClass());
         }
@@ -1262,6 +1268,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       /** One report per unchanged failure episode, shared by the client's scoped copies. */
       private static final class GetFailureReports {
         private final Map<GetRequest, GetFailure> failures = new LinkedHashMap<>(16, 0.75f, true);
+
         synchronized boolean shouldReport(GetRequest request, Throwable failure) {
           var signature = GetFailure.of(failure);
           var previous = failures.put(request, signature);
@@ -1269,7 +1276,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           if (failures.size() > 256) failures.remove(failures.keySet().iterator().next());
           return !signature.equals(previous);
         }
-        synchronized void recovered(GetRequest request) { failures.remove(request); }
+
+        synchronized void recovered(GetRequest request) {
+          failures.remove(request);
+        }
       }
 
       public void setAuthorization(String token) {
@@ -1373,9 +1383,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         // TODO
       }
 
-      private Client() { this.getFailureReports = new GetFailureReports(); }
+      private Client() {
+        this.getFailureReports = new GetFailureReports();
+      }
 
       private Client(Client other) {
+        this.timeoutSeconds = other.timeoutSeconds;
         this.getFailureReports = other.getFailureReports;
         this.client = other.client;
         this.uri = other.uri;
@@ -1454,6 +1467,19 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
        * @param scope
        * @return
        */
+      public Client withResourceSupplierScope(Scope scope) {
+        var ret = withScope(scope);
+        // Preserve the verified user/federation and credential, but do not delegate a workflow
+        // or require this provider to call a possibly non-public originating Runtime.
+        ret = new Client(ret);
+        for (var header : List.of(ServicesAPI.SCOPE_HEADER, ServicesAPI.SERVICE_ID_HEADER,
+            ServicesAPI.TRANSACTION_ID_HEADER, ServicesAPI.CONSEQUENCE_HEADER,
+            ServicesAPI.RESOLUTION_CYCLE_HEADER, ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER,
+            ServicesAPI.SOURCE_OBSERVATION_ID_HEADER, ServicesAPI.TARGET_OBSERVATION_ID_HEADER))
+          ret.headers.remove(header);
+        return ret;
+      }
+
       public Client withScope(Scope scope) {
         if (scope == null) {
           return this;
@@ -1461,19 +1487,29 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         var ret = new Client(this);
         ret.scope = scope;
         // Do not retain another request's actor or contextual focus on a reused client.
-        for (var header : List.of(ServicesAPI.SCOPE_HEADER, ServicesAPI.SERVICE_ID_HEADER,
-            ServicesAPI.USERNAME_HEADER, ServicesAPI.FEDERATION_HEADER, ServicesAPI.TRANSACTION_ID_HEADER,
-            ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER, ServicesAPI.SOURCE_OBSERVATION_ID_HEADER,
-            ServicesAPI.TARGET_OBSERVATION_ID_HEADER, ServicesAPI.CONSEQUENCE_HEADER)) ret.headers.remove(header);
+        for (var header :
+            List.of(
+                ServicesAPI.SCOPE_HEADER,
+                ServicesAPI.SERVICE_ID_HEADER,
+                ServicesAPI.USERNAME_HEADER,
+                ServicesAPI.FEDERATION_HEADER,
+                ServicesAPI.TRANSACTION_ID_HEADER,
+                ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER,
+                ServicesAPI.SOURCE_OBSERVATION_ID_HEADER,
+                ServicesAPI.TARGET_OBSERVATION_ID_HEADER,
+                ServicesAPI.CONSEQUENCE_HEADER,
+                ServicesAPI.RESOLUTION_CYCLE_HEADER)) ret.headers.remove(header);
         if (scope instanceof org.integratedmodelling.klab.api.scope.UserScope userScope
             && userScope.getUser() != null) {
           var user = userScope.getUser();
           ret.authorization = user.getId();
           // Anonymous local calls may intentionally be resolved as the privileged service owner.
           if (!user.isAnonymous() && !"anonymous".equals(user.getUsername())) {
-            if (user.getUsername() != null) ret.headers.put(ServicesAPI.USERNAME_HEADER, user.getUsername());
+            if (user.getUsername() != null)
+              ret.headers.put(ServicesAPI.USERNAME_HEADER, user.getUsername());
             var federation = org.integratedmodelling.klab.api.Klab.INSTANCE.getFederationData(user);
-            if (federation != null) ret.headers.put(ServicesAPI.FEDERATION_HEADER, federation.getId());
+            if (federation != null)
+              ret.headers.put(ServicesAPI.FEDERATION_HEADER, federation.getId());
           }
         }
         if (scope instanceof ContextScope contextScope) {
@@ -1483,8 +1519,20 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             ret.headers.put(ServicesAPI.TRANSACTION_ID_HEADER, contextScope.getTransactionId());
           }
           if (contextScope.getConsequenceCause() != null) {
-            ret.headers.put(ServicesAPI.CONSEQUENCE_HEADER, java.util.Base64.getEncoder().encodeToString(
-                Json.asString(contextScope.getConsequenceCause()).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            ret.headers.put(
+                ServicesAPI.CONSEQUENCE_HEADER,
+                java.util.Base64.getEncoder()
+                    .encodeToString(
+                        Json.asString(contextScope.getConsequenceCause())
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+          }
+          if (contextScope.getResolutionCycleBinding() != null) {
+            ret.headers.put(
+                ServicesAPI.RESOLUTION_CYCLE_HEADER,
+                java.util.Base64.getEncoder()
+                    .encodeToString(
+                        Json.asString(contextScope.getResolutionCycleBinding())
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8)));
           }
           if (contextScope.getContextObservation() != null) {
             ret.headers.put(
@@ -1603,10 +1651,16 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                   }
                 }
               }
-              throw new RequestFailure(status, "Download failed (HTTP " + status + "): "
-                  + Objects.toString(detail, "").lines().findFirst().orElse(""), null);
+              throw new RequestFailure(
+                  status,
+                  "Download failed (HTTP "
+                      + status
+                      + "): "
+                      + Objects.toString(detail, "").lines().findFirst().orElse(""),
+                  null);
             }
-            if (entity == null) throw new RequestFailure(status, "Download returned no content", null);
+            if (entity == null)
+              throw new RequestFailure(status, "Download returned no content", null);
             var ret = File.createTempFile("klab", "." + fileExtension);
             try {
               try (var output = new FileOutputStream(ret)) {
@@ -1681,7 +1735,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           }
         } catch (Throwable e) {
           if (scope != null) {
-            scope.error(Logging.safeFailure(e), "HTTP request failed",
+            scope.error(
+                Logging.safeFailure(e),
+                "HTTP request failed",
                 options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else if (!options.silent) {
             Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
@@ -1792,26 +1848,54 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         return post(true, false, true, apiRequest, payload, resultClass, parameters);
       }
 
+      /** Source catalogs use ordinary resource response sizes, with typed payload-free failures. */
+      public <T> T postResourceSnapshot(
+          String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+        return post(true, false, true, false, apiRequest, payload, resultClass, parameters);
+      }
+
       private static HttpResponse.BodySubscriber<byte[]> diagnosticBody() {
-        var delegate=HttpResponse.BodySubscribers.ofByteArray();
+        var delegate = HttpResponse.BodySubscribers.ofByteArray();
         return new HttpResponse.BodySubscriber<>() {
           private java.util.concurrent.Flow.Subscription subscription;
           private long received;
           private boolean done;
-          public java.util.concurrent.CompletionStage<byte[]> getBody() {return delegate.getBody();}
+
+          public java.util.concurrent.CompletionStage<byte[]> getBody() {
+            return delegate.getBody();
+          }
+
           public void onSubscribe(java.util.concurrent.Flow.Subscription subscription) {
-            this.subscription=subscription;delegate.onSubscribe(subscription);
+            this.subscription = subscription;
+            delegate.onSubscribe(subscription);
           }
+
           public void onNext(java.util.List<java.nio.ByteBuffer> buffers) {
-            if(done)return;
-            long count=buffers.stream().mapToLong(java.nio.ByteBuffer::remaining).sum();
-            if(received+count>1024*1024) {
-              done=true;subscription.cancel();
+            if (done) return;
+            long count = buffers.stream().mapToLong(java.nio.ByteBuffer::remaining).sum();
+            if (received + count > 1024 * 1024) {
+              done = true;
+              subscription.cancel();
               delegate.onError(new java.io.IOException("Diagnostic response exceeds byte limit"));
-            } else {received+=count;delegate.onNext(buffers);}
+            } else {
+              received += count;
+              delegate.onNext(buffers);
+            }
           }
-          public void onError(Throwable failure) {if(!done){done=true;delegate.onError(failure);}}
-          public void onComplete() {if(!done){done=true;delegate.onComplete();}}
+
+          public void onError(Throwable failure) {
+            if (!done) {
+              done = true;
+              delegate.onError(failure);
+            }
+          }
+
+          public void onComplete() {
+            if (!done) {
+              done = true;
+              delegate.onComplete();
+            }
+          }
         };
       }
 
@@ -1822,11 +1906,24 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           Object payload,
           Class<T> resultClass,
           Object... parameters) {
-        return post(propagateFailure,reportFailure,false,apiRequest,payload,resultClass,parameters);
+        return post(
+            propagateFailure, reportFailure, false, apiRequest, payload, resultClass, parameters);
       }
 
       private <T> T post(
-          boolean propagateFailure, boolean reportFailure, boolean typedStatus,
+          boolean propagateFailure,
+          boolean reportFailure,
+          boolean typedStatus,
+          String apiRequest,
+          Object payload,
+          Class<T> resultClass,
+          Object... parameters) {
+        return post(propagateFailure, reportFailure, typedStatus, typedStatus,
+            apiRequest, payload, resultClass, parameters);
+      }
+
+      private <T> T post(
+          boolean propagateFailure, boolean reportFailure, boolean typedStatus, boolean boundedDiagnosticBody,
           String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 
         var options = new Options();
@@ -1879,26 +1976,39 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           var request =
               requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
 
-          var response = client.send(request, typedStatus
-              ? info -> diagnosticBody() : HttpResponse.BodyHandlers.ofByteArray());
+          var response =
+              client.send(
+                  request,
+                  boundedDiagnosticBody ? info -> diagnosticBody() : HttpResponse.BodyHandlers.ofByteArray());
 
-          if (response != null && (typedStatus
-              ? response.statusCode() >= 200 && response.statusCode() < 300
-              : HttpStatus.valueOf(response.statusCode()).is2xxSuccessful())) {
+          if (response != null
+              && (typedStatus
+                  ? response.statusCode() >= 200 && response.statusCode() < 300
+                  : HttpStatus.valueOf(response.statusCode()).is2xxSuccessful())) {
             parseHeaders(response);
-            return resultClass == byte[].class ? resultClass.cast(response.body())
-                : parseResponse(new String(response.body(), java.nio.charset.StandardCharsets.UTF_8), resultClass);
+            return resultClass == byte[].class
+                ? resultClass.cast(response.body())
+                : parseResponse(
+                    new String(response.body(), java.nio.charset.StandardCharsets.UTF_8),
+                    resultClass);
           } else {
-            if (typedStatus) throw new RequestFailure(response == null ? 0 : response.statusCode(),
-                "Diagnostic request failed", null);
-            var failure = "POST " + apiCall + " failed with HTTP "
-                + (response == null ? 0 : response.statusCode());
+            if (typedStatus)
+              throw new RequestFailure(
+                  response == null ? 0 : response.statusCode(),
+                  boundedDiagnosticBody ? "Diagnostic request failed" : "Resource snapshot request failed", null);
+            var failure =
+                "POST "
+                    + apiCall
+                    + " failed with HTTP "
+                    + (response == null ? 0 : response.statusCode());
             if (propagateFailure) {
               throw new KlabServiceAccessException(failure);
             }
             if (reportFailure && !options.silent) {
-              Logging.INSTANCE.error("HTTP POST failed (status "
-                  + (response == null ? 0 : response.statusCode()) + ")");
+              Logging.INSTANCE.error(
+                  "HTTP POST failed (status "
+                      + (response == null ? 0 : response.statusCode())
+                      + ")");
             }
           }
 
@@ -1906,17 +2016,22 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           // An obsolete search is deliberately interrupted by its caller. Preserve the
           // cancellation signal without publishing a service-error notification.
           Thread.currentThread().interrupt();
-          if (typedStatus) throw new RequestFailure(0,"Diagnostic request interrupted",Logging.safeFailure(cancelled));
+          if (typedStatus)
+            throw new RequestFailure(
+                0, "Diagnostic request interrupted", Logging.safeFailure(cancelled));
           if (propagateFailure) throw new KlabServiceAccessException(cancelled);
           return null;
         } catch (Throwable e) {
           if (typedStatus) {
-            if(e instanceof RequestFailure failure) throw failure;
-            throw new RequestFailure(0,"Diagnostic transport or decoding failed",Logging.safeFailure(e));
+            if (e instanceof RequestFailure failure) throw failure;
+            throw new RequestFailure(
+                0, "Diagnostic transport or decoding failed", Logging.safeFailure(e));
           }
           if (reportFailure) {
             if (scope != null) {
-              scope.error(Logging.safeFailure(e), "HTTP POST failed",
+              scope.error(
+                  Logging.safeFailure(e),
+                  "HTTP POST failed",
                   options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
             } else if (!options.silent) {
               Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP POST failed");
@@ -2015,7 +2130,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           if (JacksonConfiguration.isLocalViewSerializationFailure(e))
             throw new KlabServiceAccessException(e);
           if (scope != null) {
-            scope.error(Logging.safeFailure(e), "HTTP request failed",
+            scope.error(
+                Logging.safeFailure(e),
+                "HTTP request failed",
                 options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else if (!options.silent) {
             Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
@@ -2044,6 +2161,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         try {
           var payloadText = payload instanceof String ? (String) payload : Json.asString(payload);
+          if (payload
+              instanceof
+              org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest request)
+            org.integratedmodelling.common.services.client.ResolverRequestSizeDiagnostics.report(
+                apiRequest, request, scope, payloadText);
 
           var uriBuilder = new URIBuilder(uri + apiCall);
           for (String key : params.keySet()) {
@@ -2121,26 +2243,39 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
       public static class RequestFailure extends RuntimeException {
         private final int status;
+
         public RequestFailure(int status, String message, Throwable cause) {
           super(message, cause);
           this.status = status;
         }
-        public int getStatus() { return status; }
+
+        public int getStatus() {
+          return status;
+        }
+
         static String collectionFailureDetail(String body) {
-          if(body!=null && body.length()<=16384) try {
-            var problem=new ObjectMapper().readValue(body,Map.class);
-            if(problem.get("body") instanceof Map nested) problem=nested;
-            if(problem.get("detail") instanceof String detail && !detail.isBlank()) {
-              var firstLine=detail.lines().findFirst().orElse("").replace('\t',' ');
-              return "Collection request failed: "+firstLine.substring(0,Math.min(512,firstLine.length()));
+          if (body != null && body.length() <= 16384)
+            try {
+              var problem = new ObjectMapper().readValue(body, Map.class);
+              if (problem.get("body") instanceof Map nested) problem = nested;
+              if (problem.get("detail") instanceof String detail && !detail.isBlank()) {
+                var firstLine = detail.lines().findFirst().orElse("").replace('\t', ' ');
+                return "Collection request failed: "
+                    + firstLine.substring(0, Math.min(512, firstLine.length()));
+              }
+            } catch (Exception ignored) {
+              /* Not a structured problem response. */
             }
-          } catch(Exception ignored) { /* Not a structured problem response. */ }
           return "Collection request failed";
         }
       }
 
       private <T> List<T> postCollectionInternal(
-          String apiRequest, Object payload, Class<T> resultClass, boolean strict, Object... parameters) {
+          String apiRequest,
+          Object payload,
+          Class<T> resultClass,
+          boolean strict,
+          Object... parameters) {
 
         var options = new Options();
         var params = makeKeyMap(options, parameters);
@@ -2189,8 +2324,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             parseHeaders(response);
             return parseResponseList(response.body(), resultClass);
           }
-          if (strict) throw new RequestFailure(response == null ? 0 : response.statusCode(),
-              RequestFailure.collectionFailureDetail(response==null ? null : response.body()), null);
+          if (strict)
+            throw new RequestFailure(
+                response == null ? 0 : response.statusCode(),
+                RequestFailure.collectionFailureDetail(response == null ? null : response.body()),
+                null);
 
         } catch (Throwable e) {
           if (JacksonConfiguration.isLocalViewSerializationFailure(e))
@@ -2201,7 +2339,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             throw new RequestFailure(0, "Collection request failed", e);
           }
           if (scope != null) {
-            scope.error(Logging.safeFailure(e), "HTTP request failed",
+            scope.error(
+                Logging.safeFailure(e),
+                "HTTP request failed",
                 options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else if (!options.silent) {
             Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
@@ -2223,7 +2363,11 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
 
       private <T> List<T> putCollectionInternal(
-          String apiRequest, Object payload, Class<T> resultClass, boolean strict, Object... parameters) {
+          String apiRequest,
+          Object payload,
+          Class<T> resultClass,
+          boolean strict,
+          Object... parameters) {
 
         var options = new Options();
         var params = makeKeyMap(options, parameters);
@@ -2273,8 +2417,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return parseResponseList(response.body(), resultClass);
           }
 
-          if (strict) throw new RequestFailure(response == null ? 0 : response.statusCode(),
-              "PUT " + apiCall + " failed (HTTP " + (response == null ? "no response" : response.statusCode()) + ")", null);
+          if (strict)
+            throw new RequestFailure(
+                response == null ? 0 : response.statusCode(),
+                "PUT "
+                    + apiCall
+                    + " failed (HTTP "
+                    + (response == null ? "no response" : response.statusCode())
+                    + ")",
+                null);
 
         } catch (Throwable e) {
           if (JacksonConfiguration.isLocalViewSerializationFailure(e))
@@ -2282,10 +2433,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           if (strict) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             if (e instanceof RequestFailure failure) throw failure;
-            throw new RequestFailure(0, "PUT " + apiCall + " failed: " + e.getClass().getSimpleName(), e);
+            throw new RequestFailure(
+                0, "PUT " + apiCall + " failed: " + e.getClass().getSimpleName(), e);
           }
           if (scope != null) {
-            scope.error(Logging.safeFailure(e), "HTTP request failed",
+            scope.error(
+                Logging.safeFailure(e),
+                "HTTP request failed",
                 options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else if (!options.silent) {
             Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
@@ -2379,9 +2533,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       public boolean isAlive() {
 
         var host = this.uri.getHost();
-        var port = this.uri.getPort() == -1
-            ? ("https".equalsIgnoreCase(this.uri.getScheme()) ? 443 : 80)
-            : this.uri.getPort();
+        var port =
+            this.uri.getPort() == -1
+                ? ("https".equalsIgnoreCase(this.uri.getScheme()) ? 443 : 80)
+                : this.uri.getPort();
         try (var socket = new Socket()) {
           socket.connect(new InetSocketAddress(host, port), 1000);
           return true;
@@ -2390,14 +2545,19 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
       }
 
-      /** GET binary content using the same authentication, scope headers and timeout as JSON requests. */
+      /**
+       * GET binary content using the same authentication, scope headers and timeout as JSON
+       * requests.
+       */
       public byte[] getBytes(String apiRequest, Object... parameters) {
         var options = new Options();
         var params = makeKeyMap(options, parameters);
         var apiCall = substituteTemplateParameters(apiRequest, params);
-        var request = HttpRequest.newBuilder().GET()
-            .uri(URI.create(uri + apiCall + encodeParameters(params)))
-            .timeout(Duration.ofSeconds(timeoutSeconds));
+        var request =
+            HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                .timeout(Duration.ofSeconds(timeoutSeconds));
         if (authorization != null) request.header(HttpHeaders.AUTHORIZATION, authorization);
         headers.forEach(request::header);
         if (forcedAcceptHeader != null) request.header(HttpHeaders.ACCEPT, forcedAcceptHeader);
@@ -2407,7 +2567,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           parseHeaders(response);
           if (response.statusCode() == 404) return null;
           if (response.statusCode() < 200 || response.statusCode() >= 300)
-            throw new KlabServiceAccessException("Binary request failed (HTTP " + response.statusCode() + ")");
+            throw new KlabServiceAccessException(
+                "Binary request failed (HTTP " + response.statusCode() + ")");
           return response.body();
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
@@ -2438,8 +2599,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         try {
           var requestUrl = uri + apiCall + encodeParameters(params);
-          requestIdentity = new GetRequest(requestUrl, authorization,
-              java.util.Collections.unmodifiableMap(new HashMap<>(headers)), forcedAcceptHeader, resultClass);
+          requestIdentity =
+              new GetRequest(
+                  requestUrl,
+                  authorization,
+                  java.util.Collections.unmodifiableMap(new HashMap<>(headers)),
+                  forcedAcceptHeader,
+                  resultClass);
           var requestBuilder = HttpRequest.newBuilder().GET();
           if (authorization != null) {
             requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
@@ -2467,15 +2633,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
               getFailureReports.recovered(requestIdentity);
               return result;
             }
-            throw new RequestFailure(response == null ? 0 : response.statusCode(),
-                "HTTP GET returned an unsuccessful status", null);
+            throw new RequestFailure(
+                response == null ? 0 : response.statusCode(),
+                "HTTP GET returned an unsuccessful status",
+                null);
           } else {
-            var response = client.send(
-                requestBuilder.uri(URI.create(requestUrl))
-                    .timeout(Duration.ofSeconds(timeoutSeconds)).build(),
-                HttpResponse.BodyHandlers.discarding());
+            var response =
+                client.send(
+                    requestBuilder
+                        .uri(URI.create(requestUrl))
+                        .timeout(Duration.ofSeconds(timeoutSeconds))
+                        .build(),
+                    HttpResponse.BodyHandlers.discarding());
             if (response.statusCode() < 200 || response.statusCode() >= 300)
-              throw new RequestFailure(response.statusCode(), "HTTP GET returned an unsuccessful status", null);
+              throw new RequestFailure(
+                  response.statusCode(), "HTTP GET returned an unsuccessful status", null);
             getFailureReports.recovered(requestIdentity);
           }
 
@@ -2483,13 +2655,25 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
           if (e instanceof InterruptedException) Thread.currentThread().interrupt();
           // Silent requests must not consume the first normal report. Failures still return
           // null and every polling call still reaches the service; only repeat reporting changes.
-          if (!options.silent && requestIdentity != null && !getFailureReports.shouldReport(requestIdentity, e)) return null;
+          if (!options.silent
+              && requestIdentity != null
+              && !getFailureReports.shouldReport(requestIdentity, e)) return null;
           var failure = Logging.safeFailure(e);
           if (scope != null) {
-            scope.error(failure, "HTTP GET failed" + (e instanceof RequestFailure rf ? " (status " + rf.getStatus() + ")" : " (transport or decoding)"),
+            scope.error(
+                failure,
+                "HTTP GET failed"
+                    + (e instanceof RequestFailure rf
+                        ? " (status " + rf.getStatus() + ")"
+                        : " (transport or decoding)"),
                 options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else if (!options.silent) {
-            Logging.INSTANCE.error(failure, "HTTP GET failed" + (e instanceof RequestFailure rf ? " (status " + rf.getStatus() + ")" : " (transport or decoding)"));
+            Logging.INSTANCE.error(
+                failure,
+                "HTTP GET failed"
+                    + (e instanceof RequestFailure rf
+                        ? " (status " + rf.getStatus() + ")"
+                        : " (transport or decoding)"));
           }
         }
         return null;
@@ -2550,7 +2734,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         } catch (Throwable e) {
           if (scope != null) {
-            scope.error(Logging.safeFailure(e), "HTTP request failed",
+            scope.error(
+                Logging.safeFailure(e),
+                "HTTP request failed",
                 options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else if (!options.silent) {
             Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
@@ -2604,10 +2790,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return parseResponseList(response.body(), resultClass);
           }
 
-          if (strict) throw new RequestFailure(response == null ? 0 : response.statusCode(),
-              RequestFailure.collectionFailureDetail(response == null ? null : response.body()), null);
-          throw new RequestFailure(response == null ? 0 : response.statusCode(),
-              "HTTP collection GET returned an unsuccessful status", null);
+          if (strict)
+            throw new RequestFailure(
+                response == null ? 0 : response.statusCode(),
+                RequestFailure.collectionFailureDetail(response == null ? null : response.body()),
+                null);
+          throw new RequestFailure(
+              response == null ? 0 : response.statusCode(),
+              "HTTP collection GET returned an unsuccessful status",
+              null);
         } catch (Throwable e) {
           if (strict) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
@@ -2615,9 +2806,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             throw new RequestFailure(0, "Collection request failed", e);
           }
           if (scope != null) {
-            scope.error(Logging.safeFailure(e), "HTTP collection GET failed" + (e instanceof RequestFailure rf ? " (status " + rf.getStatus() + ")" : " (transport or decoding)"), options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+            scope.error(
+                Logging.safeFailure(e),
+                "HTTP collection GET failed"
+                    + (e instanceof RequestFailure rf
+                        ? " (status " + rf.getStatus() + ")"
+                        : " (transport or decoding)"),
+                options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else {
-            if (!options.silent) Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP collection GET failed" + (e instanceof RequestFailure rf ? " (status " + rf.getStatus() + ")" : " (transport or decoding)"));
+            if (!options.silent)
+              Logging.INSTANCE.error(
+                  Logging.safeFailure(e),
+                  "HTTP collection GET failed"
+                      + (e instanceof RequestFailure rf
+                          ? " (status " + rf.getStatus() + ")"
+                          : " (transport or decoding)"));
           }
         }
 
@@ -2658,8 +2861,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return parseResponseList(response.body(), resultClass);
           }
 
-          throw new RequestFailure(response == null ? 0 : response.statusCode(),
-              RequestFailure.collectionFailureDetail(response == null ? null : response.body()), null);
+          throw new RequestFailure(
+              response == null ? 0 : response.statusCode(),
+              RequestFailure.collectionFailureDetail(response == null ? null : response.body()),
+              null);
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
           throw new RequestFailure(0, "Delete request interrupted", e);
@@ -2710,7 +2915,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         } catch (Throwable e) {
           if (scope != null) {
-            scope.error(Logging.safeFailure(e), "HTTP request failed",
+            scope.error(
+                Logging.safeFailure(e),
+                "HTTP request failed",
                 options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else if (!options.silent) {
             Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");
@@ -2759,7 +2966,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         } catch (Throwable e) {
           if (scope != null) {
-            scope.error(Logging.safeFailure(e), "HTTP request failed",
+            scope.error(
+                Logging.safeFailure(e),
+                "HTTP request failed",
                 options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
           } else if (!options.silent) {
             Logging.INSTANCE.error(Logging.safeFailure(e), "HTTP request failed");

@@ -11,6 +11,60 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class CachedAuthorityTest {
+  @Test void restartRegeneratesMissingTemporaryDocumentationBeforeReturningCachedIdentity() throws Exception {
+    var provider = new Provider();
+    provider.document = directory.resolve("temporary/documentation/taxon.md");
+    var first = new CachedAuthority(provider, directory.resolve("cache"), true);
+    var firstId = first.configure(request());
+    first.resolveIdentity(firstId, "alias");
+    first.releaseConfiguration(firstId);
+    Files.delete(provider.document);
+    Files.delete(provider.document.getParent());
+
+    var restarted = new CachedAuthority(provider, directory.resolve("cache"), true);
+    var id = restarted.configure(request());
+    var identity = restarted.resolveIdentity(id, "alias", Authority.ResolutionMode.FULL_HIERARCHY);
+    assertEquals("A", identity.getId());
+    assertEquals("provider documentation", Files.readString(Path.of(identity.getDocumentation().get("text/markdown").toURI())));
+    assertEquals(2, provider.lookups, "missing documentation must trigger provider materialization");
+    restarted.resolveIdentity(id, "A");
+    assertEquals(2, provider.lookups, "restored documentation must keep canonical aliases cacheable");
+  }
+  @Test void validIdentityWithOptionalDocumentationWarningsStillSurvivesProviderOutage() {
+    var firstProvider = new Provider(); firstProvider.warnings = true;
+    var first = new CachedAuthority(firstProvider, directory, true);
+    var firstId = first.configure(request());
+    assertEquals(Notification.Level.Warning, first.resolveIdentity(firstId, "A").getNotifications().getFirst().getLevel());
+    first.releaseConfiguration(firstId);
+    var unavailable = new Provider(); unavailable.fail = true;
+    var restored = new CachedAuthority(unavailable, directory, true);
+    var id = restored.configure(request());
+    assertEquals("A", restored.resolveIdentity(id, "A").getId());
+    assertEquals(0, unavailable.lookups);
+  }
+  @Test void durableIdentityAndAncestryAreCacheFirstAcrossRestartsAndExpireOnlyWithConfiguration() {
+    var clock = new Time();
+    var firstProvider = new Provider();
+    var first = new CachedAuthority(firstProvider, directory, clock, true);
+    var firstId = first.configure(request());
+    first.resolveIdentity(firstId, "alias");
+    first.resolveIdentity(firstId, "Parent", Authority.ResolutionMode.FULL_HIERARCHY);
+    assertEquals(2, firstProvider.lookups);
+    first.releaseConfiguration(firstId);
+
+    clock.millis += java.time.Duration.ofDays(3650).toMillis();
+    var unavailable = new Provider(); unavailable.fail = true;
+    var restarted = new CachedAuthority(unavailable, directory, clock, true);
+    var id = restarted.configure(request());
+    assertEquals("A", restarted.resolveIdentity(id, "alias", Authority.ResolutionMode.FULL_HIERARCHY).getId());
+    assertEquals("Parent", restarted.resolveIdentity(id, "Parent").getId());
+    assertEquals(0, unavailable.lookups);
+    assertThrows(IllegalStateException.class, () -> restarted.resolveIdentity(id, "unseen"));
+
+    var changed = new CachedAuthority(unavailable, directory, clock, true);
+    var changedId = changed.configure(request("wv", "TAXA", "bio:Root", 124));
+    assertThrows(IllegalStateException.class, () -> changed.resolveIdentity(changedId, "alias"));
+  }
   @TempDir Path directory;
 
   private static java.net.URL documentationUrl() {
@@ -74,7 +128,8 @@ class CachedAuthorityTest {
   }
   private static final class Provider implements Authority {
     int configurations, lookups, searches, matches, releases;
-    boolean fail, diagnostics;
+    boolean fail, diagnostics, warnings;
+    Path document;
     String codelistConfiguration;
     CachePolicy policy = new CachePolicy("1", 10, 10, 10);
     ConfigurationRequest request;
@@ -84,10 +139,16 @@ class CachedAuthorityTest {
     @Override public void releaseConfiguration(String id) { releases++; }
     private Identity identity(String id) {
       if (fail) throw new IllegalStateException("HTTP 429");
+      java.net.URL documentation = documentationUrl();
+      if (document != null) try {
+        Files.createDirectories(document.getParent());
+        Files.writeString(document, "provider documentation");
+        documentation = document.toUri().toURL();
+      } catch (java.io.IOException e) { throw new IllegalStateException(e); }
       var result = new CachedAuthority.StoredIdentity(id.equals("alias") ? "A" : id, "Concept", request.name(),
           request.rootIdentity(), List.of("Parent"), List.of(), "Description", "Label", 1, request.name()+":"+id,
-          Map.of("text/markdown", documentationUrl()));
-      if (!diagnostics) return result;
+          Map.of("text/markdown", documentation));
+      if (!diagnostics && !warnings) return result;
       return new Identity() {
         @Override public String getId() { return result.getId(); }
         @Override public String getConceptName() { return result.getConceptName(); }
@@ -99,7 +160,9 @@ class CachedAuthorityTest {
         @Override public String getLabel() { return result.getLabel(); }
         @Override public float getScore() { return result.getScore(); }
         @Override public String getLocator() { return result.getLocator(); }
-        @Override public List<Notification> getNotifications() { return List.of(Notification.error("Unavailable")); }
+        @Override public List<Notification> getNotifications() {
+          return List.of(warnings ? Notification.warning("Optional documentation unavailable") : Notification.error("Unavailable"));
+        }
       };
     }
     @Override public Set<String> getSemanticBoundaries() { return Set.of("SPECIES"); }

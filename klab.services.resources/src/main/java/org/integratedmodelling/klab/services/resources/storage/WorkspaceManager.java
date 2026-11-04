@@ -409,6 +409,30 @@ public class WorkspaceManager {
 
   public List<ResourceSet> manageRepository(
       String projectName, RepositoryState.Operation operation, String[] arguments) {
+    return manageRepository(projectName, operation, arguments, false);
+  }
+
+  /** Administrative action: reset each managed Git project, retaining per-project failures. */
+  public synchronized Map<String, Object> resetAllGitProjects() {
+    Map<String, List<ResourceSet>> results = new LinkedHashMap<>();
+    for (var name : new TreeSet<>(projectDescriptors.keySet())) {
+      var descriptor = projectDescriptors.get(name);
+      if (descriptor.storage instanceof FileProjectStorage storage && storage.isTracked()) {
+        try {
+          results.put(name, manageRepository(name, RepositoryState.Operation.GET_LATEST, null, true));
+        } catch (RuntimeException e) {
+          results.put(name, List.of(ResourceSet.empty(Notification.error(e))));
+        }
+      }
+    }
+    boolean success = results.values().stream().flatMap(Collection::stream)
+        .noneMatch(result -> Utils.Notifications.hasErrors(result.getNotifications()));
+    return Map.of("result", success, "projects", results);
+  }
+
+  private List<ResourceSet> manageRepository(
+      String projectName, RepositoryState.Operation operation, String[] arguments,
+      boolean resetToOrigin) {
 
     List<ResourceSet> ret = new ArrayList<>();
     List<Notification> notifications = new ArrayList<>();
@@ -446,7 +470,9 @@ public class WorkspaceManager {
                         ? "Committed by k.LAB resources " + "service"
                         : arguments[0],
                     scope);
-            case GET_LATEST -> Utils.Git.fetchAndMerge(fileProjectStorage.getRootFolder(), scope);
+            case GET_LATEST -> resetToOrigin
+                ? Utils.Git.resetToOriginAndFetch(fileProjectStorage.getRootFolder(), scope)
+                : Utils.Git.fetchAndMerge(fileProjectStorage.getRootFolder(), scope);
             case SAVE_CHANGES ->
                 Utils.Git.commitChanges(
                     fileProjectStorage.getRootFolder(),
@@ -468,7 +494,7 @@ public class WorkspaceManager {
 
         notifications.addAll(mods.getNotifications());
 
-        if (!Utils.Notifications.hasErrors(mods.getNotifications())) {
+        if (resetToOrigin || !Utils.Notifications.hasErrors(mods.getNotifications())) {
 
           for (var path : mods.getRemovedPaths()) {
             addRepositoryPathChange(
