@@ -4,7 +4,7 @@ import json
 from .api.runtime import GeometryImpl
 from .client import ScientificData, ScientificDataOrigin
 from .dto import decode_cell
-from .errors import ConfigurationError, InvalidRequestError
+from .errors import ConfigurationError, InvalidRequestError, UnsupportedOperationError
 from .tables import _validated_metadata
 
 _FIELDS = frozenset(("observation_id", "observable", "units", "geometry", "curve", "slice",
@@ -69,6 +69,8 @@ def loads(text, *, max_bytes):
         metadata = payload["metadata"]
         if not isinstance(metadata, dict) or set(metadata) != _FIELDS:
             raise ValueError("Invalid snapshot metadata")
+        if metadata["artifact_type"] not in ("NUMBER", "BOOLEAN", "TEXT"):
+            raise UnsupportedOperationError("Scientific snapshots require declared NUMBER, BOOLEAN or TEXT cells")
         if (not isinstance(payload["offsets"], list) or not isinstance(payload["text"], list)
                 or not 1 <= len(payload["offsets"]) <= 256
                 or len(payload["text"]) != len(payload["offsets"])

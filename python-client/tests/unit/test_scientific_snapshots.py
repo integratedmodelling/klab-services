@@ -150,6 +150,14 @@ def test_metadata_keys_are_not_silently_coerced_or_collapsed(metadata):
         sample(slice=metadata).dumps()
 
 
+def test_unknown_primitive_diagnostic_does_not_echo_supplied_metadata():
+    payload = json.loads(sample().dumps())
+    payload["metadata"]["artifact_type"] = "PRIVATE_SUPPLIED_VALUE"
+    with pytest.raises(UnsupportedOperationError) as error:
+        ScientificData.loads(json.dumps(payload))
+    assert "PRIVATE_SUPPLIED_VALUE" not in str(error.value)
+
+
 def test_reconciliation_has_unique_requirements_and_one_primary_status():
     path = Path(__file__).resolve().parents[3] / "docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md"
     rows = re.findall(r"^\| ((?:RC-|CAP-)[\w.-]+) \|.*$", path.read_text(encoding="utf-8"), re.M)
