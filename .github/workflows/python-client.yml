@@ -40,6 +40,9 @@ jobs:
       - name: Scientific table adapter coverage
         run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/tables.py
         working-directory: python-client
+      - name: Offline scientific snapshot coverage
+        run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_scientific_snapshot.py
+        working-directory: python-client
       - name: Typed graph browser coverage
         run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/graph.py
         working-directory: python-client
@@ -108,4 +111,5 @@ jobs:
               pass
           handle = Handle('observation', 'home', 'https://runtime.invalid/runtime', 's.c', 's.c', observation_id=42)
           assert Handle.loads(handle.dumps()) == handle
+          assert ScientificData.loads(data.dumps()).values == (0,)
           PY

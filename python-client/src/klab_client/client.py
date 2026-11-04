@@ -94,6 +94,17 @@ class ScientificData:
         from .tables import to_dataframe
         return to_dataframe(self, max_rows=max_rows, max_metadata_bytes=max_metadata_bytes)
 
+    def dumps(self, *, max_bytes=1024 * 1024):
+        """Encode a bounded local read snapshot, not a remote handle or revision."""
+        from ._scientific_snapshot import dumps
+        return dumps(self, max_bytes=max_bytes)
+
+    @classmethod
+    def loads(cls, text, *, max_bytes=1024 * 1024):
+        """Inspect a saved read offline; never connect, authorize or replay work."""
+        from ._scientific_snapshot import loads
+        return loads(text, max_bytes=max_bytes)
+
 
 class Job:
     def __init__(self, client, id: int, scope, *, service="runtime", decoder=None, result_kind=None):

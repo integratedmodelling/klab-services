@@ -9,12 +9,8 @@ from .dto import decode_cell
 from .errors import InvalidRequestError, ProtocolError, UnsupportedOperationError
 
 
-def to_dataframe(data, *, max_rows=256, max_metadata_bytes=1024 * 1024):
-    """Preserve explicit offsets and scalar objects; do not infer world coordinates.
-
-    `wire_missing` is the explicit null-cell flag, not pandas' NaN coercion or an
-    inferred scientific validity mask. Metadata are descriptive, not authority.
-    """
+def _validated_metadata(data, *, max_rows=256, max_metadata_bytes=1024 * 1024):
+    """Shared indexed-read validation; deliberately independent of pandas."""
     if not isinstance(data, ScientificData):
         raise InvalidRequestError("A scientific table requires a ScientificData indexed read")
     if type(max_rows) is not int or not 1 <= max_rows <= 256:
@@ -71,6 +67,15 @@ def to_dataframe(data, *, max_rows=256, max_metadata_bytes=1024 * 1024):
         metadata = json.loads(encoded)
     except (ValueError, TypeError, RecursionError):
         raise InvalidRequestError("Scientific table metadata must be finite JSON data") from None
+    return metadata
+
+
+def to_dataframe(data, *, max_rows=256, max_metadata_bytes=1024 * 1024):
+    """Preserve offsets and scalar objects, without inferring world coordinates.
+
+    wire_missing marks explicit null cells, not pandas NaN or scientific validity.
+    """
+    metadata = _validated_metadata(data, max_rows=max_rows, max_metadata_bytes=max_metadata_bytes)
     try:
         import pandas as pd
     except ImportError:

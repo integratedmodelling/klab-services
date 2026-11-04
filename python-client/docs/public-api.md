@@ -79,6 +79,11 @@ Indexed tabular views: `ScientificDataOrigin`, `to_dataframe` and
 reads retain declared primitive/contextualization and origin metadata; unknown
 fields remain unknown. See [precision, masks, metadata and categorical limits](scientific-tables.md).
 
+Offline indexed-read snapshots: `ScientificData.dumps` and `ScientificData.loads`
+use bounded versioned JSON and existing scalar decoders, without scientific extras,
+network access, remote restoration or operation replay. See
+[snapshot scope and reproducible example](scientific-tables.md#offline-indexed-read-snapshots).
+
 Bounded experiments: `Experiment`, `OwnedContextPolicy`, `ExperimentRunner`,
 `ExperimentOutcome`, `ExperimentBatch`, `BatchInterrupted`, `WaitCancelled`.
 See [ownership and cancellation semantics](bounded-experiments.md).
