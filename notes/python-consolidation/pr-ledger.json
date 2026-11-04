@@ -1,5 +1,5 @@
 {
-  "recorded_at_utc": "2026-11-04T18:59:25.770465+00:00",
+  "recorded_at_utc": "2026-11-04T19:55:03.833698+00:00",
   "delivery_sha": "e09a7de7cac6b48526fd8b7ac72879abb36a77a3",
   "develop_sha": "196bb9dc142eafc92f4456c5073933fa98ad1c42",
   "baseline_archive": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-consolidation-baseline-20261104",
@@ -6120,6 +6120,6 @@
       "repository": "integratedmodelling/klab.component.geospatial"
     }
   ],
-  "current_raw_archive": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\live-ledger-20261104T185925Z",
+  "current_raw_archive": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\live-ledger-20261104T195503Z",
   "reconciliation": "LIVE_VERIFIED; final milestone decision in CLOSEOUT_SUMMARY.md"
 }

@@ -1,5 +1,35 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Consolidation update — 4 November 2026
+
+The dated inventory below is retained as historical roadmap evidence, not the
+current PR/build census. All nine original PRs **#133–#141 are now merged**, as
+are backend/dependency prerequisites #191/#192/#194/#195. Accepted delivery is
+`87ef80ff589428f7c088ba60abcb7cf2b88276eb`; exact reviewed heads, bases, checks and
+merge commits are in [the consolidation PR ledger](../notes/python-consolidation/PR_LEDGER.md).
+The old EXTENT/ATTRIBUTE build failure and receipt-association error are not
+current blockers on that integrated source.
+
+The installed source-matched client passed **2,772 offline tests**, **225 selected
+Java tests**, and a genuine Java synthetic workflow: independently checked
+**123.25 m in 20 valid cells**, actual 5×4 EPSG:3857 bounds, partial execution/
+provenance inspection, separate-client authorized restoration and verified owned
+scope/process/listener cleanup. Genuine managed Runtime registration and
+**READY → RUNNING → STOPPED** also pass using a dedicated isolated broker.
+Publication remains **UNCONFIRMED**, remote-agent cleanup and durable-root proof
+remain **UNKNOWN**. These bounded results do not complete P1–P5 or release support;
+the remaining broader criteria and historical failures below are not waived.
+
+See [scientific acceptance](../notes/python-consolidation/SCIENTIFIC_ACCEPTANCE.md),
+[managed-agent acceptance](../notes/python-consolidation/MANAGED_AGENT_ACCEPTANCE.md)
+and [the closeout summary](../notes/python-consolidation/CLOSEOUT_SUMMARY.md).
+Component [PR #11](https://github.com/integratedmodelling/klab.component.geospatial/pull/11)
+is the sole unresolved consolidation PR: its HM0.12/host compatibility gates pass,
+but an upstream writer must merge it or grant permission. The milestone remains
+**MILESTONE_INCOMPLETE**, not an unmerged Python backlog or missing scientific run.
+
+## Historical roadmap inventory and remaining broader criteria
+
 **The roadmap is not complete, and remaining work is not external-only.** This
 inventory covers all22 phase acceptance statements/scenarios and both continuous
 release paragraphs in [the original roadmap](PYTHON_CLIENT_ROADMAP.md). It does

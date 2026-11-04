@@ -9,6 +9,14 @@ or grant the necessary permission. It is ready, not draft, at
 `90f425e0cb6e39e704d96cccf4f52b3b980b0ad6`; the account has `push=false`.
 There is no authority to bypass permissions or declare it silently superseded.
 
+Fresh readback on 2026-11-04 at 19:55 UTC confirms the same accepted services
+delivery, component head/base/artifact, 13 merged services contributions and
+read-only component permission. All2,452 previously indexed evidence files still
+match their hashes; all53 retired paths remain absent, worktree counts remain11/2,
+and no owned test listener is open. No source/dependency drift justifies repeating
+the accepted scientific runs. Current evidence is
+`.consolidation-evidence/live-ledger-20261104T195503Z/resume-verification.json`.
+
 ## Verified outcome
 
 | Gate | Result |
@@ -55,6 +63,20 @@ otherwise rerun affected gates. Update final ledgers and only then reconsider
 COMPLETE. No Maven publication or shared deployment was performed or authorized.
 
 ## Preserved limitations and failures
+
+### Current open PR and issue census
+
+- Services open PRs: **none**. Component open PRs: **#11 only**, blocked by the
+  upstream merge permission above, not by a demonstrated compatibility failure.
+- Services open issues: **#89, #123, #124, #125, #126, #127, #129, #130, #144,
+  #193**. #193 retains the frozen-fixture incompatibility. The others retain
+  broader identity/access, scan/revision, federation, agent cleanup, durable replay,
+  worker SDK, release/support and scientific-reference requirements. Their full
+  roadmap criteria are not certified or silently closed by this bounded milestone.
+  Exact current titles/URLs are preserved with the readback; applicability is mapped
+  in `ISSUE_ACCEPTANCE_MAP.md` and `docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md`.
+
+### Boundaries retained
 
 - Original frozen ODO/large-worldview incompatibility remains unchanged in
   [issue#193](https://github.com/integratedmodelling/klab-services/issues/193).

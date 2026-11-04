@@ -67,12 +67,14 @@
     }
   },
   "status": "MILESTONE_INCOMPLETE",
+  "resume_verification": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/live-ledger-20261104T195503Z/resume-verification.json",
+  "current_open_issues": [89, 123, 124, 125, 126, 127, 129, 130, 144, 193],
   "final_reconciliation": "Internal implementation/acceptance/merge/cleanup complete; only external component11 upstream merge permission remains. Notes commit/push verification recorded in chat.",
   "gate_timestamps_note": "Individual recorded_at fields preserve original gate-entry creation; final statuses reconciled after the final source/test/cleanup evidence listed below.",
-  "final_evidence_index_sha256": "e7916bc9dcc0165d54a509af21956a616cebb087d425b9c5ba31b8ea71f98c5a",
+  "final_evidence_index_sha256": "8edf7ff71d4f23d3532837a60e84bd23ad6fa255393638a069b1f1c3c30afb84",
   "final_source_reconciliation": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/final-source-reconciliation-20261104/reconciliation.json",
   "final_cleanup_verification": "C:/Users/lumsd/Downloads/k1/.consolidation-evidence/final-cleanup-verification-20261104/result.json",
-  "recorded_at_utc": "2026-11-04T18:59:25.770465+00:00",
+  "recorded_at_utc": "2026-11-04T19:55:03.833698+00:00",
   "repository": "integratedmodelling/klab-services",
   "integration_base_sha": "e09a7de7cac6b48526fd8b7ac72879abb36a77a3",
   "final_candidate_sha": "4757e33d93a3d758df4d9392359d9f6d0b928c2a",
@@ -174,5 +176,5 @@
     }
   ],
   "next_milestone": "python-roadmap-reassessment",
-  "current_github_snapshot": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\live-ledger-20261104T185925Z\\github-current.json"
+  "current_github_snapshot": "C:\\Users\\lumsd\\Downloads\\k1\\.consolidation-evidence\\live-ledger-20261104T195503Z\\github-current.json"
 }

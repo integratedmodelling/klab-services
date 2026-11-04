@@ -1,6 +1,6 @@
 # Evidence index
 
-Reconciled 2026-11-04T19:04:34.189131+00:00. **Milestone incomplete**.
+Reconciled 2026-11-04T19:57:45.416645+00:00. **Milestone incomplete**.
 
 Raw service logs, private arguments, signed identities and recovery archives remain local; no raw credentials are published.
 Machine-readable SHA256/size records are in `evidence-index.json`. Earlier failures and baseline entries remain retained.
@@ -87,3 +87,7 @@ Machine-readable SHA256/size records are in `evidence-index.json`. Earlier failu
 - `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\merged-pr-retirement-coverage-20261104` — 1 indexed files
 - `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-tooling-validation-20261104\lint` — 5 indexed files
 - `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\final-tooling-validation-20261104\unit` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\live-ledger-20261104T195503Z` — 9 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\live-ledger-20261104T195503Z\documentation-tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\live-ledger-20261104T195503Z\evidence-tool-tests` — 5 indexed files
+- `C:\Users\lumsd\Downloads\k1\.consolidation-evidence\live-ledger-20261104T195503Z\tool-lint` — 5 indexed files

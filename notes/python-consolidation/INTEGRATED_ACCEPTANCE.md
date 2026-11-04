@@ -1,5 +1,28 @@
 # Integrated acceptance — INCOMPLETE checkpoint
 
+## Targeted closeout readback — 19:55 UTC
+
+Reviewed against milestone commit `d3801094548c4535efb1ffa6a1b83abb833ac379` using
+the contributor guide. Product source, accepted delivery, component proposal and
+flattened artifact are unchanged; all2,452 indexed evidence files still match.
+No Java/scientific rerun is warranted. Thirteen services PRs remain merged and
+services have no open PR; component11 remains ready/open with `push=false`.
+
+Only documentation and ledger-output encoding changed: the acceptance map now
+labels its historical PR/build claims and links accepted bounded workflows without
+closing broader criteria; explicit UTF-8 output prevents the reproduced PR-ledger
+decode failure on Windows. Prior raw ledger bytes were archived before regeneration.
+Review recommendation: **Ready for maintainer review** for this narrow record
+correction; no demonstrated blocking defect, no maintainer approval implied.
+No scientific, authorization, mutation/replay or deployment code changed.
+
+Validation on this documentation/tooling delta: **11 map/handoff tests pass**,
+**6 evidence-tool tests pass**, Ruff passes, and all supporting top-level records
+decode as UTF-8. Commands, dirty/source identities, current issue/PR census and
+readback results are preserved under
+`.consolidation-evidence/live-ledger-20261104T195503Z/`.
+The milestone remains incomplete only for the external component merge action.
+
 ## Final execution reconciliation (supersedes status, not historical failures below)
 
 All original PRs#133–#141 are merged, including #138 at

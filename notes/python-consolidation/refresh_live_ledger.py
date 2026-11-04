@@ -26,7 +26,7 @@ def main():
         return result
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         records = list(pool.map(fetch, targets))
-    (archive / 'github-current.json').write_text(json.dumps(records, indent=2))
+    (archive / 'github-current.json').write_text(json.dumps(records, indent=2), encoding='utf-8')
     by_number = {p['number']: p for p in records if p['repository'].endswith('/klab-services')}
     for row in ledger['in_scope']:
         current = by_number[row['number']]
@@ -39,7 +39,7 @@ def main():
                    blockers=[] if current['state'] == 'MERGED' else ['Verify exact-head hosted checks and normal merge requirements; genuine managed lifecycle passed in managed-agent-owned-v5-bounded-read-20261104'])
     ledger.update(recorded_at_utc=timestamp.isoformat(), current_remote_records=records,
                   current_raw_archive=str(archive), reconciliation='LIVE_VERIFIED; final milestone decision in CLOSEOUT_SUMMARY.md')
-    (notes / 'pr-ledger.json').write_text(json.dumps(ledger, indent=2) + '\n')
+    (notes / 'pr-ledger.json').write_text(json.dumps(ledger, indent=2) + '\n', encoding='utf-8')
     lines = ['# PR ledger', '', f'Live reconciliation {timestamp.isoformat()}; **milestone incomplete**.', '',
              'Original baseline/history remains in JSON and private immutable evidence. Normal merges only; no approval/protection bypass.', '',
              '| PR | State | Exact head | Merge commit |', '|---|---|---|---|']
@@ -52,7 +52,7 @@ def main():
               '- Component #11: compatibility/science gates pass; account has no upstream push/merge permission. An upstream writer must merge or grant permission.',
               '- Issue #193 preserves original frozen ODO assertion and large-worldview incompatibility, not relabelled scientific success.',
               '- Final source/package/test reconciliation and cleanup are recorded in CLOSEOUT_SUMMARY.md and their referenced evidence; completion still requires the component upstream merge.']
-    (notes / 'PR_LEDGER.md').write_text('\n'.join(lines) + '\n')
+    (notes / 'PR_LEDGER.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     progress = json.loads((notes / 'progress-ledger.json').read_text())
     progress.update(recorded_at_utc=timestamp.isoformat(), prs_merged=[p['url'] for p in records if p['state'] == 'MERGED'],
                     prs_unresolved=[p['url'] for p in records if p['state'] != 'MERGED'],
@@ -60,7 +60,7 @@ def main():
     progress['resume_pass']['broker_configuration'] = {'pr': 195, 'head': by_number[195]['headRefOid'],
         'local_reactor': '224 tests PASS, no failures/errors/skips',
         'managed_acceptance': 'PASS: genuine Runtime READY/RUNNING/STOPPED; start/stop publication UNCONFIRMED; remote cleanup UNKNOWN'}
-    (notes / 'progress-ledger.json').write_text(json.dumps(progress, indent=2) + '\n')
+    (notes / 'progress-ledger.json').write_text(json.dumps(progress, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({'archive': str(archive), 'merged': len(progress['prs_merged']), 'unresolved': progress['prs_unresolved']}))
 
 

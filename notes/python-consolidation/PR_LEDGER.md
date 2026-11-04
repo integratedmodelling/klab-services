@@ -1,6 +1,6 @@
 # PR ledger
 
-Live reconciliation 2026-11-04T18:59:25.770465+00:00; **milestone incomplete**.
+Live reconciliation 2026-11-04T19:55:03.833698+00:00; **milestone incomplete**.
 
 Original baseline/history remains in JSON and private immutable evidence. Normal merges only; no approval/protection bypass.
 
@@ -19,7 +19,7 @@ Original baseline/history remains in JSON and private immutable evidence. Normal
 | [#192](https://github.com/integratedmodelling/klab-services/pull/192) | MERGED | `88ede39374b0c7d2a47b7d5e234588e7e02f4e62` | `fda27fb2ab976eab65b2cd5b5dd96847f8016920` |
 | [#194](https://github.com/integratedmodelling/klab-services/pull/194) | MERGED | `c4ee5fd47d274e46cdbace54f14f5a013eca9aa1` | `c0644045f4fa1a0ff37601a30e5952655672ce96` |
 | [#195](https://github.com/integratedmodelling/klab-services/pull/195) | MERGED | `54defe14fe44d83723c70f7e0333fc933d127471` | `ac01e37976fe7b297b7dcfdc94a6494063728d80` |
-| [component #11](https://github.com/integratedmodelling/klab.component.geospatial/pull/11) | OPEN | `90f425e0cb6e39e704d96cccf4f52b3b980b0ad6` | `—` |
+| [component #11](https://github.com/integratedmodelling/klab.component.geospatial/pull/11) | OPEN | `90f425e0cb6e39e704d96cccf4f52b3b980b0ad6` | `-` |
 
 ## Remaining work
 
@@ -27,4 +27,4 @@ Original baseline/history remains in JSON and private immutable evidence. Normal
 - #195: explicit operator-owned broker configuration; see live state above. Local224-test reactor and hosted checks pass.
 - Component #11: compatibility/science gates pass; account has no upstream push/merge permission. An upstream writer must merge or grant permission.
 - Issue #193 preserves original frozen ODO assertion and large-worldview incompatibility, not relabelled scientific success.
-- Finish dependency identity manifests, evidence indexing, source reconciliation and post-merge cleanup before final closeout.
+- Final source/package/test reconciliation and cleanup are recorded in CLOSEOUT_SUMMARY.md and their referenced evidence; completion still requires the component upstream merge.
