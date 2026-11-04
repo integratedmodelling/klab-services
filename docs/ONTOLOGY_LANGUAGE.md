@@ -604,13 +604,13 @@ validation and Reasoner behavior.
 
 ### 7.9. `requires`
 
-The predicate requirement forms are:
+`requires` records integrity constraints. It does not schedule actionable consequences;
+`implies`, `confers` and `emerges from` describe that separate semantic category.
+The retained predicate requirement forms are:
 
 ```kwv
 requires identity <concept-ref> [, ...]
 requires realm <concept-ref> [, ...]
-requires extent <concept-ref> [, ...]
-requires attribute <concept-ref> [, ...]
 ```
 
 For a dependent quality or process, `requires identity` targets the effective bearer.
@@ -626,8 +626,10 @@ For example, Height requiring `(Areal or Volumetric)` may have a nonabstract chi
 whose Region bearer proves Areal. A Location bearer without either proof remains
 unresolved. A Region specializing Location satisfies a Location applicability bound;
 unknown membership and provably incompatible bearers must receive distinct diagnostics.
-These identity rules do not claim equivalent implementation for every other
-`requires` dimension. A realm requirement retains the containment contract above.
+`requires attribute` and `requires extent` have been removed. Attributes are optional;
+extent-related integrity constraints must be authored through identities rather than
+translated automatically from an old clause. Realm and authority clauses retain their
+existing contracts.
 See [identity requirements](IDENTITY_REQUIREMENTS.md) for boolean and witness rules.
 
 An authority requirement belongs to an identity concept, uses an uppercase local name, and

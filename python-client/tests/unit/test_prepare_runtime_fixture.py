@@ -179,8 +179,13 @@ def test_external_byte_changes_do_not_receive_success_receipt(fixture, monkeypat
     assert collect(source, len(files)) == files
 
 
-def test_write_failure_preserves_partial_output_and_original_inputs(fixture, monkeypatch):
+@pytest.mark.parametrize("reverse", [False, True])
+def test_write_failure_preserves_partial_output_and_original_inputs(fixture, monkeypatch, reverse):
     source, destination, contract, files = fixture
+    collect = module._collect
+    def ordered(*args, **kwargs):
+        return dict(sorted(collect(*args, **kwargs).items(), reverse=reverse))
+    monkeypatch.setattr(module, "_collect", ordered)
     original = Path.open
     def failing(self, mode="r", *args, **kwargs):
         if self == destination / "imod/earth.kwv" and mode == "xb":

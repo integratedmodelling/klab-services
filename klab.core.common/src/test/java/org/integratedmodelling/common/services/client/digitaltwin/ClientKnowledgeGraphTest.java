@@ -46,6 +46,19 @@ class ClientKnowledgeGraphTest {
   }
 
   @Test
+  void planningAdmissionDoesNotCertifyRemoteCurrentness() {
+    when(scope.getId()).thenReturn("context");
+    when(scope.getTransactionId()).thenReturn("owned-transaction");
+    var candidate = observation(-4, null);
+    when(runtime.getObservationForAdmission(-4, scope)).thenReturn(candidate);
+
+    assertSame(candidate, graph.getObservationForAdmission(-4, scope));
+    org.junit.jupiter.api.Assertions.assertFalse(graph.isObservationCurrent(candidate, scope));
+    verify(runtime).getObservationForAdmission(-4, scope);
+    verify(runtime).getAsset(-4, RuntimeAsset.class, scope);
+  }
+
+  @Test
   void pendingEventsStayHiddenUntilTheStartCommitInvalidatesTheirSnapshot() {
     when(scope.getId()).thenReturn("context");
     var pending = observation(42, null);

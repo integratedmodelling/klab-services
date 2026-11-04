@@ -22,6 +22,7 @@ from klab_client.api.services import (
 from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData, ScientificDataOrigin
 from klab_client.tables import to_dataframe
 from klab_client.graph import GraphBrowser, GraphPage
+from klab_client.graph_projection import GraphProjection, GraphProjectionView, ProjectedGraphPage
 from klab_client.authoring import Authoring, AuthoringReceipt, ParsedSource
 from klab_client.agents import AgentPreviews, AgentSourcePreview
 from klab_client.agent_status import AgentStatusSnapshot, decode_agent_status
@@ -59,6 +60,7 @@ __all__ = [
     "AgentStatusSnapshot", "decode_agent_status",
     "AgentControlBinding", "AgentControlJournal", "AgentControlView",
     "GraphBrowser", "GraphPage",
+    "GraphProjection", "GraphProjectionView", "ProjectedGraphPage",
     "ScientificDataOrigin", "to_dataframe",
     "AsyncClient", "AsyncContext", "AsyncSession", "AsyncJob",
     "WaitCancelled",

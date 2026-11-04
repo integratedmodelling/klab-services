@@ -36,7 +36,9 @@ public abstract class LocalInstanceImpl implements LocalInstance {
 //    "-Dklab.reasoner.traceCandidate=true"
   };
   protected static final String[] RESOLVER_SERVICE_JVM_ARGUMENTS = {};
-  protected static final String[] RUNTIME_SERVICE_JVM_ARGUMENTS = {};
+  protected static final String[] RUNTIME_SERVICE_JVM_ARGUMENTS = {
+//          "-Dklab.diagnostics.submissionOutcome=true"
+  };
   protected static final String[] LANGUAGE_SERVER_JVM_ARGUMENTS = {};
   protected static final String[] DATABASE_SERVER_JVM_ARGUMENTS = {};
   protected static final String[] AMQP_BROKER_JVM_ARGUMENTS = {};

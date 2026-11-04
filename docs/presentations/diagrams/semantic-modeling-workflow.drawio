@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="semantic-modeling-workflow" name="Semantic modeling builds a connected body of observations">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Semantic modeling builds a connected body of observations" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Arial;fontSize=39;align=left;verticalAlign=middle;spacing=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="25" width="1520" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="A query requests an observation; the resulting graph supports reuse and further questions." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="115" width="1520" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="observer" value="&lt;b&gt;1  OBSERVER + CONTEXT&lt;/b&gt;&lt;br&gt;&lt;br&gt;Perspective, entities, place,&lt;br&gt;time, scale and scenario." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="220" width="360" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="request" value="&lt;b&gt;2  SEMANTIC QUERY&lt;/b&gt;&lt;br&gt;&lt;br&gt;Observe the biomass&lt;br&gt;of this identified tree." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="620" y="220" width="360" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="resolver" value="&lt;b&gt;3  RESOLVER → PLAN&lt;/b&gt;&lt;br&gt;&lt;br&gt;Select strategies and models;&lt;br&gt;resolve required inputs." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAF1FB;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="220" width="360" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="execution" value="&lt;b&gt;4  CONTEXTUALIZATION&lt;/b&gt;&lt;br&gt;&lt;br&gt;Execute the selected method&lt;br&gt;and commit the observation." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="590" width="360" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="graph" value="&lt;b&gt;5  OBSERVATION GRAPH&lt;/b&gt;&lt;br&gt;&lt;br&gt;Tree T17 and its biomass;&lt;br&gt;bearer, dependency and&lt;br&gt;provenance links." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="620" y="590" width="360" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="report" value="&lt;b&gt;6  REPORT + EXPLORE&lt;/b&gt;&lt;br&gt;&lt;br&gt;Inspect meaningful results&lt;br&gt;and ask further questions." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=24;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="590" width="360" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="asks" value="frames" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="observer" target="request" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="plans" value="requests" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=0;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="request" target="resolver" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="runs" value="executes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=0;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="resolver" target="execution" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="commits" value="records" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=0;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="execution" target="graph" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reads" value="reports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=0;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" source="graph" target="report" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reuse" value="reuse / next query" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#52667A;strokeWidth=3;endArrow=block;endFill=1;fontColor=#18334B;fontFamily=Arial;fontSize=20;labelBackgroundColor=#FFFFFF;dashed=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" source="graph" target="request" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ontology" value="&lt;b&gt;WORLDVIEW: meanings and constraints&lt;/b&gt;&lt;br&gt;Guides the work; definitions remain distinct&lt;br&gt;from contextual observations." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFF2D9;strokeColor=#C4D2DB;fontColor=#18334B;fontFamily=Arial;fontSize=22;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="440" width="560" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="Dashed arrow: the committed graph supplies context and evidence for another semantic query." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Arial;fontSize=22;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="805" width="1520" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" value="Illustrative workflow. The resolver assembles a plan from declared strategies and admissible methods." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#18334B;fontFamily=Arial;fontSize=19;align=left;verticalAlign=middle;spacing=20;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="855" width="1520" height="35" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

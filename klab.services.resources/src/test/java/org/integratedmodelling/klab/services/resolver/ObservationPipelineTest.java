@@ -31,10 +31,12 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.objects.MemberQualityConsumerInspection;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
 import org.integratedmodelling.klab.services.reasoner.ObservationReasoner;
 import org.integratedmodelling.klab.runtime.language.LanguageAdapter;
+import org.integratedmodelling.klab.runtime.language.ModelValidationGate;
 import org.integratedmodelling.languages.ObservationStandaloneSetup;
 import org.integratedmodelling.languages.ObservationSyntaxAdapter;
 import org.integratedmodelling.languages.api.*;
@@ -170,9 +172,41 @@ class ObservationPipelineTest {
     var graph = fixture.resolve();
     assertTrue(graph.isEmpty());
     assertTrue(fixture.warnings.stream().anyMatch(message ->
-        message.contains("No observation strategy for dependency test:Elevation (abstract=true)")));
+        message.contains("No observation strategy for dependency test:Elevation (abstract=true)")), fixture.warnings.toString());
     assertTrue(fixture.warnings.stream().anyMatch(message ->
         message.contains("mandatory dependency test:Elevation")));
+  }
+
+  @Test void unavailableInstalledInputContractCannotProduceAnExecutablePipeline() throws Exception {
+    var fixture = new DependencyContextFixture(false, false);
+    when(fixture.runtime.inspectMemberQualityInputs(any(), any())).thenReturn(
+        MemberQualityConsumerInspection.unavailable());
+    assertTrue(fixture.resolve().isEmpty());
+    verify(fixture.runtime, never()).resolveContextualizables(any(), any());
+  }
+
+  private static void installedFixtureComputation(RuntimeService runtime) {
+    when(runtime.inspectMemberQualityInputs(
+        argThat(call -> call != null && "test.compute".equals(call.getUrn())), any()))
+        .thenReturn(MemberQualityConsumerInspection.known(Set.of()));
+  }
+
+  /** Keep real admission receipts when replacing only the model-catalog query boundary. */
+  private abstract static class PipelineCompiler extends ResolutionCompiler {
+    private final Map<Model, ModelValidationGate.AdmissionReceipt> admissions = new IdentityHashMap<>();
+
+    PipelineCompiler() { super(mock(ResolverService.class)); }
+
+    List<Model> admitted(Model model, ContextScope scope, Observable requested) {
+      var receipt = ModelValidationGate.validatedPreparableAdmission(model, scope, requested);
+      if (receipt == null) return List.of();
+      admissions.put(model, receipt);
+      return List.of(model);
+    }
+
+    @Override ModelValidationGate.AdmissionReceipt admissionReceipt(Model model) {
+      return admissions.get(model);
+    }
   }
 
   /** Scope doubles derive immutable context/constraint snapshots, just as service scopes do. */
@@ -199,11 +233,13 @@ class ObservationPipelineTest {
 
     DependencyContextFixture(boolean collective, boolean nested, Geometry geometry) throws Exception {
       this.geometry = geometry;
+      installedFixtureComputation(runtime);
       owner = named(SemanticType.SUBJECT, collective, "Region");
       requested = observation(owner, -2, geometry);
       outer = nested ? observation(named(SemanticType.SUBJECT, false, "Outer"), 25, geometry) : null;
       initial = scope(outer, Map.of(ResolutionConstraint.Type.Scenarios,
           ResolutionConstraint.of(ResolutionConstraint.Type.Scenarios, "baseline")));
+      ModelAdmissionFixtures.prepare(initial, reasoner);
       var key = ResolverService.class.getDeclaredField("RESOLUTION_GRAPH_KEY");
       key.setAccessible(true);
       data.put((String) key.get(null), ResolutionGraph.create(initial));
@@ -296,7 +332,7 @@ class ObservationPipelineTest {
     }
 
     ResolutionGraph resolve() {
-      var compiler = new ResolutionCompiler(mock(ResolverService.class)) {
+      var compiler = new PipelineCompiler() {
         @Override public List<Model> queryModels(Observable o, Concept context, ContextScope s, Scale scale) {
           assertConstraint(s, ResolutionConstraint.Type.Scenarios, "baseline");
           assertTrue(s.getResolutionConstraints().stream().anyMatch(c -> c.getType() == ResolutionConstraint.Type.Geometry));
@@ -309,8 +345,7 @@ class ObservationPipelineTest {
           var candidate = models.get(o.getUrn());
           var resources = ModelAdmissionFixtures.prepare(s, reasoner);
           ModelAdmissionFixtures.saved(resources, candidate, s);
-          return org.integratedmodelling.klab.runtime.language.ModelValidationGate.admits(candidate, s, o)
-              ? List.of(candidate) : List.of();
+          return admitted(candidate, s, o);
         }
         @Override QueryMatch query(Observable o, Scale scale, ContextScope s) {
           return new QueryMatch(null, null, scale, null, Coverage.create(scale, 0));
@@ -321,7 +356,7 @@ class ObservationPipelineTest {
 
     void run() {
       var graph = resolve();
-      assertFalse(graph.isEmpty());
+      assertFalse(graph.isEmpty(), warnings.toString());
       assertTrue(graph.getCoverage().isComplete());
       assertEquals(2, Collections.frequency(selected, "dependent.direct"));
       var flow = new DataflowCompiler(requested, graph, initial).compile();
@@ -413,12 +448,14 @@ class ObservationPipelineTest {
     when(reasoner.computeObservationStrategies(any(), eq(scope))).thenAnswer(invocation ->
         mapper.readValue(mapper.writerFor(listType).writeValueAsString(
             strategyReasoner.computeMatchingStrategies(invocation.getArgument(0), scope, true)), listType));
+    ModelAdmissionFixtures.prepare(scope, reasoner);
     var root = ResolutionGraph.create(scope);
     // Bind by the actual key used by the service, without assuming its private string value.
     var key = ResolverService.class.getDeclaredField("RESOLUTION_GRAPH_KEY");
     key.setAccessible(true);
     when(scope.getData()).thenReturn(Parameters.create((String) key.get(null), root));
     var runtime = mock(RuntimeService.class);
+    installedFixtureComputation(runtime);
     when(scope.getService(RuntimeService.class)).thenReturn(runtime);
     var requirements = new ResourceSet(); requirements.setEmpty(false);
     when(runtime.resolveContextualizables(any(), eq(scope))).thenReturn(requirements);
@@ -440,14 +477,13 @@ class ObservationPipelineTest {
     when(endpointModel.getDependencies()).thenReturn(List.of());
     when(endpointModel.getAnnotations()).thenReturn(List.of());
     when(endpointModel.getComputation()).thenReturn(List.of(computation));
-    var compiler = new ResolutionCompiler(mock(ResolverService.class)) {
+    var compiler = new PipelineCompiler() {
       @Override public List<Model> queryModels(Observable o, Concept context, ContextScope s, Scale requestedScale) {
         if (!modelAvailable) return List.of();
         var candidate = o.getUrn().equals(observable.getUrn()) ? model : endpointModel;
         when(candidate.getObservables()).thenReturn(List.of(o));
         ModelAdmissionFixtures.prepare(s, reasoner);
-        return org.integratedmodelling.klab.runtime.language.ModelValidationGate.admits(candidate, s, o)
-            ? List.of(candidate) : List.of();
+        return admitted(candidate, s, o);
       }
       @Override QueryMatch query(Observable o, Scale requestedScale, ContextScope s) {
         if (o.getUrn().equals(observable.getUrn()) || !endpointsExist)
@@ -457,7 +493,10 @@ class ObservationPipelineTest {
       }
     };
     var graph = compiler.resolve(requested, scope);
-    assertEquals(!modelAvailable, graph.isEmpty(), kind + " pipeline model availability");
+    assertEquals(!modelAvailable, graph.isEmpty(), kind + " pipeline model availability: "
+        + mockingDetails(scope).getInvocations().stream()
+            .filter(i -> List.of("warn", "error").contains(i.getMethod().getName()))
+            .map(i -> Arrays.deepToString(i.getRawArguments())).toList());
     if (!modelAvailable) return null;
     assertTrue(graph.getCoverage().isComplete());
     Dataflow dataflow = new DataflowCompiler(requested, graph, scope).compile();
