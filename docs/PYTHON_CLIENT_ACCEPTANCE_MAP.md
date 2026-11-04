@@ -57,7 +57,7 @@ rows do not revoke their separately accepted subcapabilities.
 | RC-P1.2 | A fresh-process restoration without disposal | PARTIAL | handles/client; #86/#139; saved-handles tests; S separate Client restore | Full fresh-process retained Job/restart chain and retention contract #89; P1 |
 | RC-P1.3 | A collaborator reads, forbidden writes and expiry diagnosis | PARTIAL | transport/context ACLs; connection-access tests and historical controlled positive controls | Current integrated private-parent/stale-vs-forbidden matrix #89; P1 |
 | RC-P1.4 | A actionable readiness/trust diagnostics | PARTIAL | connection/catalog origin guards; connection HTTP tests | Supported-deployment provider outage/recovery and mixed capabilities; #129; P1 |
-| RC-P1.5 | A requested options visible in actual plan | PARTIAL | requests/evidence; #85 and plan tests; S partial plans | Complete option-to-served-plan matrix, observer/model/lexical constraints; existing Java contracts; P1 |
+| RC-P1.5 | A requested options visible in actual plan | PARTIAL | #200 installed actual-Java baseline/namespace/scenario model URNs and independent executed values, actual geometry/focus, normalized grid configuration and zero-HTTP unsupported/conflicting rejections pass | Full observer/project/material-dependency and executed-grid matrix remains unproven; forced model explicitly unsupported; no complete-lineage claim; P1 |
 | RC-P2.1 | A nonuniform multi-shard scientific export | PARTIAL | #197 portable actual-Java single-shard oracle:20 asymmetric cells/two missing/zero/negative/float64/units/coordinates pass with pinned corrected exporter; published exporter failure preserved | Full multi-shard served fixture remains unproven; Boolean/category/time/revision claims not inferred; public exporter issue#10; P1 |
 | RC-P2.2 | A time/window selection, precision, revision and masks | PARTIAL | explicit point slice/geometry and raster descriptors | Remote selection/revision contract #123 plus adapter; not internal scan API; P1 |
 | RC-P2.3 | A independent real-provider accuracy | BLOCKED_EXTERNAL | provider-reference runner exists; historical failures retained | Frozen admitted model/data/datum/tolerance references #130 absent; obtain artifacts then run unchanged scientific query; P1 |
@@ -192,8 +192,8 @@ single queue progress ledger; detailed evidence belongs in existing review paths
 | F1 nonuniform export | MERGED_BOUNDED | Base10bf4b616; head dabe5d700; [PR197](https://github.com/integratedmodelling/klab-services/pull/197); merge c9bf30abc7a726db9d290b89b448fd9a77a63e9f | Installed named actual-Java fixture passes20 cells/two missing/one zero, float64/units/axes/masks and owned cleanup using separately pinned corrected exporter98441476.. (HM0.11.3, not #11); published archive fails strict oracle; full multi-shard/time/revision gate unproven. All final-head hosted checks pass; postmerge19 tests and installed native-file demo pass; feature branch retired locally/remotely; [review](../python-client/docs/reviews/nonuniform-export-oracle.md) |
 | F2 stream reliability | MERGED_BOUNDED | Base4a54145de; head728f7a998; [PR198](https://github.com/integratedmodelling/klab-services/pull/198); merge597c47c309044af672831833783d4449484815e9 | Actual-socket64MiB bytes and buffered control, six failure/cleanup paths and one export attempt pass;2839 installed tests/16 gates and all hosted checks pass; postmerge70 tests pass; branch retired locally/remotely; [review](../python-client/docs/reviews/export-stream-reliability.md). No Java/provider capacity claim |
 | F3 partial refresh | MERGED_BOUNDED | Base3746edd97; head5ce00c842; [PR199](https://github.com/integratedmodelling/klab-services/pull/199); merge564d27f166b5a908240b0533bfa7c4b4b55dbd4d | Installed genuine Runtime outage/restart/one-page refresh and separate signed-actor attach/release denials pass;2847 tests/16 gates/all hosted checks; postmerge40 tests pass; branch retired locally/remotely. RC-P3.2 bounded criterion accepted; CAP-10/11 and #126 broader limits remain; [review](../python-client/docs/reviews/partial-refresh-acceptance.md) |
-| F4 served request plan | ACTIVE | Basea40da56be; feature/python-request-plan-acceptance; no PR yet | Real served namespace/scenario model charts and independent executed values, geometry/focus/config-grid controls; rejected unsupported/conflicting options; observer/project material-plan evidence remains unproven |
-| F5 concurrent notebook (optional) | NOT_STARTED | — | Evaluate only after F1–F4 dispositions; no active dependency stacking |
+| F4 served request plan | MERGED_BOUNDED | Basea40da56be; head26df19d5a; [PR200](https://github.com/integratedmodelling/klab-services/pull/200); mergef96f49d938cfed7e0f917669524711c099a93762 | Installed real baseline/namespace/scenario charts and independent values, geometry/focus/grid configuration and rejection controls pass;2850 tests/16 gates/all hosted checks; postmerge195 tests pass; branch retired locally/remotely. RC-P1.5 remains PARTIAL; [review](../python-client/docs/reviews/request-plan-acceptance.md) |
+| F5 concurrent notebook (optional) | NOT_STARTED | Evaluated after all four verified merges; not selected | No new concurrency claim; optional stretch is not needed for mandatory queue disposition; no external blocker invented |
 
 F1 contract: an asymmetric5×4 EPSG:3857 field with positive/negative values,
 valid zero, two missing cells and float64 precision. A separate hand-authored
@@ -218,6 +218,51 @@ Measure incremental tracemalloc and process RSS with a streamed path and an eage
 buffered positive control. No universal RSS/capacity/soak claim; real-deployment
 RC-P2.4 acceptance remains separate. CI uses8MiB to test the same protocol/fault
 paths economically; the standalone installed demonstration uses64MiB.
+
+### Queue closeout — QUEUE_COMPLETE (bounded deliveries)
+
+All four mandatory features have independently justified normal merged
+dispositions; no mandatory feature is merely blocked. Final implementation merge
+`f96f49d938cfed7e0f917669524711c099a93762`, integration branch
+`feature/python-experiment-runner`; the final ledger-only readback follows it.
+Initial queue integration head was `10bf4b6161350ac4b17d5836adfea09afae13209`;
+the original milestone checkout `ef289f4fa5dc90e1eab978258192d526a5ca494b`
+remains preserved. All four remote merge commits are verified integration ancestors.
+Every feature's final head passed Python3.11–3.13/core/Windows/build and all reported
+checks; merges used normal checks and exact-head matching, never admin/bypass.
+Contributor reviews are explicitly author reviews, not human approval claims.
+
+Scientists can now reproduce native nonuniform scientific-byte/reader verification,
+measure atomic stream interruption/memory behavior, reproduce honest retained-page
+states across a genuine owned Runtime outage, and independently verify selected
+typed choices against real served model plans and executed values. This is not
+whole-roadmap, original-study, production-deployment or public-package acceptance.
+
+Final installed suite:2850 offline tests,16 coverage gates, lint/wheel/sdist pass;
+postmerge195 focused tests pass. Failed published-exporter bytes, aborted outer
+harness startup and corrected grid-expectation failures remain preserved. Full
+multi-shard fixture gate is **BLOCKED/unprovisioned**, RC-P2.1 remains PARTIAL;
+RC-P2.4 real-provider/soak remains IMPLEMENTED_UNVERIFIED; RC-P1.5 full supported
+observer/project/material-plan matrix remains PARTIAL. RC-P3.2's bounded explicit
+disconnect/partial-refresh criterion is accepted, not durable #126 convergence.
+
+Java production is unchanged from87ef80ff5; GT34.4/JTS1.20/Jackson2.19/H2 1.4.197/
+H2GIS1.5, distinct Graphdb Jackson2.18.3 and exact corrected exporter98441476…
+(packaged HM0.11.3) remain pinned. Published exporter c5192eec… still fails the
+scientific oracle. HortonMachine#11 remains OPEN at90f425e0…, not adopted or needed
+for these deliveries. #123/#126/#129/#130 remain open for their original contracts;
+no broad criterion or publication gate is silently closed.
+
+Private evidence index:
+`C:/Users/lumsd/AppData/Local/Temp/opencode/scientific-reliability-queue-20261104/evidence-index.json`.
+`final-verification.json`/`final-worktrees.txt` preserve remote ancestry and hygiene:
+zero new registered worktrees (existing11 preserved), all four feature branches
+retired locally/remotely, no captured owned live process, visible window or listener.
+No unrelated terminal/service/worktree/cache was removed; the inherited
+`notes/python-consolidation/__pycache__/` remains untouched. One isolated component
+build sandbox and private acceptance artifacts remain as pinned evidence, not active
+services or unfinished feature work. Optional fifth was evaluated after the four
+merges and not selected; no new concurrency acceptance claim is made.
 
 ## Historical inventory — retained verbatim below
 
