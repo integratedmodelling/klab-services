@@ -141,7 +141,7 @@ def case(directory, mode, size):
                     "published_bytes": size if mode == "success" else 0, "peak_python_bytes": peak_python,
                     "rss_before": baseline, "sampled_peak_rss": peak_rss[0], "rss_growth": peak_rss[0] - baseline,
                     "seconds": elapsed, "original_preserved": mode != "success", "temporary_files": 0,
-                    "export_requests": 1, "response_handler_closed": True, "scientific_or_java_acceptance": False}
+                    "export_requests": 1, "response_body_handler_finished": True, "scientific_or_java_acceptance": False}
     finally:
         release.set(); stop.set()
         if sampler.is_alive():
