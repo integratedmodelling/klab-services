@@ -1,0 +1,4 @@
+namespace consolidation.lexical;
+// Private alternative is admitted only through the explicit lexical constraint.
+// Synthetic acceptance value, not measured elevation or an algorithm correction.
+private model consolidation:Elevation of consolidation:Region in m set to [66.5];

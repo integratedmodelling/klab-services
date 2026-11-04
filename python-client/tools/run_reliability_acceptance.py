@@ -225,7 +225,9 @@ def run(args):
                     _, alive = psutil.wait_procs(alive, timeout=20)
                     if alive:
                         raise RuntimeError("Owned functional descendant cleanup unconfirmed")
-        result["science"] = json.loads((state / ("partial-refresh.json" if args.scenario == "partial-refresh" else "nonuniform-science.json")).read_text())
+        result_file = {"partial-refresh": "partial-refresh.json", "request-plan": "request-plan.json",
+            "nonuniform-export": "nonuniform-science.json"}[args.scenario]
+        result["science"] = json.loads((state / result_file).read_text())
         result["passed"] = True
     except Exception as error:
         result["error_type"] = type(error).__name__  # Private service/credential text is not echoed.
@@ -260,7 +262,7 @@ if __name__ == "__main__":
     parser.add_argument("--java", type=Path)
     parser.add_argument("--components", type=Path, help="JSON list of exactly two explicit {path,sha256} archives")
     parser.add_argument("--state-dir", type=Path, required=True)
-    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh"), default="nonuniform-export")
+    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh", "request-plan"), default="nonuniform-export")
     args = parser.parse_args()
     if args.authority:
         fixture_hub.SERVICES = PORTS
