@@ -1143,7 +1143,7 @@ class SelectedModelClassifierSubmissionTest {
 
   @Test void nativeFamilyInventoryRetainsSharedSourcesOptionalAbsenceAndSuccessfulEmpty() throws Exception {
     try(var f=new Fixture(true);var nativeGraph=new org.integratedmodelling.klab.services.runtime.neo4j.NativeFamilyRecovery()) {
-      f.crops("Wheat","Maize");var result=f.submit().get(30,TimeUnit.SECONDS);assertFalse(result.isEmpty());f.prepareColdFamilySyntax();
+      f.crops("Wheat","Maize");var result=f.submit().get(30,TimeUnit.SECONDS);assertFalse(result.isEmpty(),()->result.getNotifications()+" "+f.failures());f.prepareColdFamilySyntax();
       var first=f.classifier.consumedInputs.getFirst();var base=first.family();var duplicate=new DependencyFamily.Branch("second-binding",first.branch().observable(),first.branch().requested(),true,DependencyFamily.Outcome.RESOLVED);
       var absent=new DependencyFamily.Branch("absent-binding",first.branch().observable(),first.branch().requested(),true,DependencyFamily.Outcome.OPTIONAL_NO_MODEL);
       var family=new DependencyFamily(base.id(),base.rootAttempt(),base.modelUrn(),base.dependencyIndex(),base.localName(),base.sourceObservable(),base.occurrences(),List.of(first.branch(),duplicate,absent));
