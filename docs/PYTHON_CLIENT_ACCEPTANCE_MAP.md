@@ -92,7 +92,7 @@ rows do not revoke their separately accepted subcapabilities.
 | CAP-09 | A scientific exports/descriptors, time/space/units/categories | PARTIAL | exports/analysis/tables; reader/oracle/stream tests | RC-P2.1/2/5; preserve native bytes and unknown revision, no Python mediation guess; P1 |
 | CAP-10 | A/B typed partial twin graph, stale markers, refresh | PARTIAL | graph/projection/provenance; #136 tests; S | Authoritative versions and integrated disconnect/refresh verification; RC-P3.1/2; P1 |
 | CAP-11 | A/B best-effort scoped events and resync | PARTIAL | notifications; #136; controlled activity records | Bounded notification accepted portions do not establish durable cursors/retention #126; P2 |
-| CAP-12 | A offline snapshot inspection, never queued replay | IMPLEMENTED_UNVERIFIED | ScientificData.dumps/loads, shared table validation, versioned fixture and fresh-process demo in this PR | Implemented candidate; normal merge and final installed/CI acceptance pending; local-only format, no Java changes; P1 |
+| CAP-12 | A offline snapshot inspection, never queued replay | ACCEPTED | ScientificData.dumps/loads; #196 merged240d1a1f4; 2818 installed tests/16 coverage gates and fresh-process core-only demo pass; review below | Bounded local NUMBER/BOOLEAN/TEXT inspection only; no remote revision/authentication or graph snapshot claim; no Java dependency |
 | CAP-13 | B resources/models read/query/dependency inspection | PARTIAL | inspection/services; resource-inspector tests and controlled records | Full supported dependency/routing/export schema matrix; RC-P4.1/3/4; P2 |
 | CAP-14 | B authoring/behaviors actual authorized operations | PARTIAL | authoring/agents/agent_execution; #138/#141; M | RC-P4.2–5 contracts/validation, no compiler or scheduler port; P2 |
 | CAP-15 | A optional NumPy/pandas/xarray/raster/vector and notebooks | PARTIAL | analysis/tables; #106; reader/scalar precision tests | General vectors/time/categories and verified notebook presentation; optional extras remain optional; P2 |
@@ -134,6 +134,46 @@ negative/budget tests, existing regressions/coverage/CI, contributor-guide revie
 installed-package demonstration and normal merge. One PR from
 `feature/python-scientific-read-snapshots` to `feature/python-experiment-runner`.
 No second feature begins before this contribution merges.
+
+### Delivered increment and hygiene — verified after merge
+
+[PR #196](https://github.com/integratedmodelling/klab-services/pull/196) merged
+normally at **`240d1a1f4574b8248f2002b194004c690930d21c`** on
+`feature/python-experiment-runner`, 4 November 20:46 UTC. Reviewed head
+`1eb3c4142a36efd79d50bf66e03643e7d4c26b7e` is an actual ancestor. Final-head
+Python3.11/3.12/3.13, core-only, Windows fixture, Maven packaging and Jenkins checks
+all pass; no approval/protection/check bypass. Maven's packaging job skips tests;
+it is not a new full-Java-suite result. Product source is unchanged from tested
+`351ef3a789ef4ddd798183ba910bfa1e411a419b`.
+
+[Contributor review and exact package/commands](../python-client/docs/reviews/scientific-snapshots.md):
+**2818 installed offline tests**, one retained Rasterio warning, all16 unexcluded
+coverage gates, lint, wheel/sdist and core-only fresh-process demo pass. All43
+installed modules match the merge's Git blobs using the repository's newline
+filters. The installed demo was rerun **after merge**, with socket connections
+forbidden in its inspection process; it checks independently specified exact
+integer/Decimal/zero/null/order/origin/units and schema failure. This is a local
+representation demonstration, not new Java computation or a published study.
+Reproduce from the installed wheel with
+`python -I python-client/examples/offline_scientific_read.py`.
+
+Feature branch `feature/python-scientific-read-snapshots` was retired locally and
+remotely after merge verification. **No worktree was created or removed**; existing
+work and original milestone checkout are preserved. No services or consoles were
+launched for a live deployment. Process checks found no remaining feature Python
+child outside the active verification process ancestry; none was killed. Retained
+evidence: `C:/Users/lumsd/AppData/Local/Temp/opencode/scientific-snapshot-evidence-20261104/`,
+including earlier failures, corrected source/package identities, hosted checks and
+`merged-verification.json`. The final acceptance-map-only readback changes no product
+code. No second feature was started.
+
+**MILESTONE_COMPLETE for this one increment, not for A/B or the full roadmap.**
+CAP-12 is accepted; RC-P3.2 still requires actual disconnect/partial-refresh
+verification, and durable graph recovery is not implied. Next recommended milestone:
+RC-P2.1's portable nonuniform served-export oracle, with explicit zero/missingness
+and independently specified coordinates, after pinning the actual exporter.
+HortonMachine component #11 remains a separate unmerged dependency, not a blocker
+or an adoption claim for this completed local feature.
 
 ## Historical inventory — retained verbatim below
 
