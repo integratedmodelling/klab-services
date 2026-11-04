@@ -1,5 +1,5 @@
 {
-  "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00",
+  "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00",
   "shared_raw_logs": false,
   "entries": [
     {
@@ -473,6 +473,11 @@
       "kind": "private_archive",
       "files": [
         {
+          "path": "report-scope.json",
+          "sha256": "a5dbeb7bc9447f64bcd5eab7c31f2bd5e8f64dcdc9747543754cb5fd281d297b",
+          "size": 1623
+        },
+        {
           "path": "run.json",
           "sha256": "c72bca32078bc9776a60cbd9c0ddb0c9894ca80721543c7019b9071c205f4503",
           "size": 2814
@@ -594,6 +599,36 @@
         },
         {
           "path": "reports/TEST-org.integratedmodelling.common.services.client.scope.NativeReconnectParentTest.xml",
+          "sha256": "3c1fa984c29424565ebd220b7153bbe5dbba8724230f318e0a96c91e4af73108",
+          "size": 38815
+        },
+        {
+          "path": "selected-reports/TEST-org.integratedmodelling.common.authentication.scope.AgentMessagingWireTest.xml",
+          "sha256": "1750ef978f862ccc6a0e39229363bfcf8fba042557c31da7870f3fe461fb846e",
+          "size": 34698
+        },
+        {
+          "path": "selected-reports/TEST-org.integratedmodelling.common.data.jackson.AgentStatusWireTest.xml",
+          "sha256": "332d49651fcdbefab189d7ac73f3d015167c97f06bd324dd39b9b8f08c50201a",
+          "size": 34670
+        },
+        {
+          "path": "selected-reports/TEST-org.integratedmodelling.common.data.jackson.ModelTransportSerializationTest.xml",
+          "sha256": "53259ea1c2caf9286fd835c2b9ec5a0f0779d73d1de9b53db5a4695d72ca480f",
+          "size": 35430
+        },
+        {
+          "path": "selected-reports/TEST-org.integratedmodelling.common.data.jackson.SourcePreviewWireTest.xml",
+          "sha256": "c9c0e60d8e46b13e673d70a1da9cdabd053dda6d3723f72677329f5d270618ab",
+          "size": 34683
+        },
+        {
+          "path": "selected-reports/TEST-org.integratedmodelling.common.services.client.digitaltwin.RemoteObservationCurrentnessTest.xml",
+          "sha256": "6bd6f6e45009c3d8b4fcb725159c4015b12234a7173cb9eb5a566d93cc8ec91c",
+          "size": 36410
+        },
+        {
+          "path": "selected-reports/TEST-org.integratedmodelling.common.services.client.scope.NativeReconnectParentTest.xml",
           "sha256": "3c1fa984c29424565ebd220b7153bbe5dbba8724230f318e0a96c91e4af73108",
           "size": 38815
         }

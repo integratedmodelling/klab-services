@@ -1,6 +1,6 @@
 # Evidence index
 
-Checkpoint recorded 2026-11-04T16:37:31.889428+00:00. **MILESTONE_INCOMPLETE**.
+Checkpoint recorded 2026-11-04T16:38:36.686943+00:00. **MILESTONE_INCOMPLETE**.
 
 Raw logs, settings, process details and recoverable bundles remain local. Do not publish them without redaction.
 All listed files have SHA256 entries in `evidence-index.json`; run records include exact commands, revisions, dirty digests and times.
@@ -23,7 +23,7 @@ All listed files have SHA256 entries in `evidence-index.json`; run records inclu
 - `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-wheel-20261104` — 3 indexed files
 - `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-wheel-build-20261104` — 5 indexed files
 - `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-wheel-install-20261104` — 5 indexed files
-- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-wire-java-20261104` — 25 indexed files
+- `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-combined-wire-java-20261104` — 32 indexed files
 - `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-dependencies-before-20261104` — 5 indexed files
 - `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-dependencies-before-retry-20261104` — 5 indexed files
 - `C:\Users\lumsd\AppData\Local\Temp\opencode\klab-component-dependency-tree-20261104` — 5 indexed files

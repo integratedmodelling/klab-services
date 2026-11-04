@@ -89,9 +89,11 @@ def main():
               {'owner': 'implementing CLI / operator', 'action': 'Run exact installed combined client against an authorized nonconflicting owned Java stack; do not reuse or stop Modeler-owned services'},
               {'owner': 'implementing CLI', 'action': 'Finish worktree purpose/ignored-evidence/lock classification, dry-run safe removals, final verification and complete live census'}]
     current=git('rev-parse','HEAD')
+    tested_product = load(evidence/'klab-combined-python-offline-20261104/run.json')['candidate_sha']
     record={'milestone': 'dependency-closeout-repository-consolidation', 'status': 'MILESTONE_INCOMPLETE',
             'recorded_at_utc': timestamp, 'repository': 'integratedmodelling/klab-services',
-            'integration_base_sha': prs['delivery_sha'], 'final_candidate_sha': current, 'final_candidate_verified': False,
+            'integration_base_sha': prs['delivery_sha'], 'final_candidate_sha': tested_product, 'final_candidate_verified': False,
+            'checkout_head_at_recording': current,
             'java_tested_candidate_sha': '52197c41b01213628e1fbf4e5290933eb9350f2b',
             'dependency_manifest': {'path': str(evidence/'klab-dependency-artifacts-before-20261104.json'), 'sha256': sha(evidence/'klab-dependency-artifacts-before-20261104.json'), 'final': False},
             'pr_baseline_count': 9, 'pr_in_scope_count': 9, 'prs_unresolved': [p['url'] for p in sorted(prs['in_scope'],key=lambda x:x['number'])],

@@ -1,11 +1,12 @@
 {
   "milestone": "dependency-closeout-repository-consolidation",
   "status": "MILESTONE_INCOMPLETE",
-  "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00",
+  "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00",
   "repository": "integratedmodelling/klab-services",
   "integration_base_sha": "e09a7de7cac6b48526fd8b7ac72879abb36a77a3",
   "final_candidate_sha": "53f925bd1e886e887ecb65149f44e4b7f3c496c4",
   "final_candidate_verified": false,
+  "checkout_head_at_recording": "f56197be4b6fc7593cb4eeb1bdad41a864e1e623",
   "java_tested_candidate_sha": "52197c41b01213628e1fbf4e5290933eb9350f2b",
   "dependency_manifest": {
     "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\klab-dependency-artifacts-before-20261104.json",
@@ -63,52 +64,52 @@
     {
       "id": "baseline",
       "status": "PASSED",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "dependency_audit",
       "status": "IN_PROGRESS",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "pr_issue_acceptance_audit",
       "status": "IN_PROGRESS",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "unique_commit_dirty_file_preservation",
       "status": "PASSED",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "raw_scientific_evidence_rescue",
       "status": "IN_PROGRESS",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "worktree_retirement",
       "status": "BLOCKED",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "per_pr_review_tests_merges",
       "status": "BLOCKED",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "combined_java_acceptance",
       "status": "FAILED",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "installed_python_real_java_science",
       "status": "BLOCKED",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     },
     {
       "id": "final_remote_reconciliation",
       "status": "IN_PROGRESS",
-      "recorded_at_utc": "2026-11-04T16:37:31.889428+00:00"
+      "recorded_at_utc": "2026-11-04T16:38:36.686943+00:00"
     }
   ],
   "next_milestone": "python-roadmap-reassessment"
