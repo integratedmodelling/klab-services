@@ -187,7 +187,7 @@ single queue progress ledger; detailed evidence belongs in existing review paths
 
 | Feature | Disposition | Base / head / PR / merge | Scope, evidence and remaining proof |
 |---|---|---|---|
-| F1 nonuniform export | ACTIVE | Base10bf4b616; branch feature/python-nonuniform-export-oracle; no PR yet | Separate synthetic single-shard Java field, independent JSON oracle, installed native export and reader validation; no full multi-shard acceptance claim |
+| F1 nonuniform export | ACTIVE | Base10bf4b616; tested03c4a25c5; branch feature/python-nonuniform-export-oracle; PR/merge pending | Installed named actual-Java fixture passes20 cells/two missing/one zero, float64/units/axes/masks and owned cleanup using separately pinned corrected exporter98441476.. (HM0.11.3, not #11); published archive fails strict oracle; full multi-shard/time/revision gate unproven |
 | F2 stream reliability | NOT_STARTED | — | Atomic transport interruption/cancellation and measured bounded workload |
 | F3 partial refresh | NOT_STARTED | — | Honest disconnect/unavailable/auth/refetch states, not durable convergence |
 | F4 served request plan | NOT_STARTED | — | Actual supported typed-option-to-Java-plan subset, no algorithm change |
