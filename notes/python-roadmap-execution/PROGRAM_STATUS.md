@@ -1,5 +1,49 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q8b local acceptance
+
+f04fe0a0f LOCAL_ACCEPTED_BOUNDED:3,013installed/17gates/lint/build/parity+
+8focusedPASS;actualJava notebookPASS threeorderedcells/top-levelawait/exactinstalled
+kernel-SDKsourceidentity/20cells/originalJob-focus/ownwait/access/readerclose.
+Outputcredentialguards/kernelshutdown-PIDgone/privatekernelspeccleanup/creator
+context-sessionrelease/ownedservice-listenercleanupPASS,existingJavaunchanged.
+Wheel148d5c8dfeb824bb4bef945b3dd0445615c0890502dc46f3e6f2c61f8a9983bf;
+notebook2fbac8279872710ada7a0b898fa8752d41fc3b31320bd0fe1a1f0124baa5b81c.
+Authorreviewcomplete;normalQ8bPR/CI/eligiblemergeNEXT. Q7hierarchyunresolved830a141cd;
+asyncsavedhandle/managedagents/events/support/fullA/B/studiesincomplete. No sleepcondition.
+
+## Latest Q8b installed pass / first actual notebook run
+
+f04fe0a0f:3,013installed/17gates/lint/build/parity+8focusedPASS;wheel
+148d5c8dfeb824bb4bef945b3dd0445615c0890502dc46f3e6f2c61f8a9983bf.
+q8b-async-notebook-liveACTIVE:realexactinstalledIPythonkernel/top-levelawait
+acceptedJavaownwaitscenario,not local-smoke surrogate. Exactkernel/source/newPID,
+20cells/focus/access/lifecycle,outputcredentials andkernel/servicecleanup remain
+required beforeacceptance. NoQ8bPRyet. Q7hierarchyunresolved830a141cd;fullQ8/
+agent-event/release/A/B/studiesincomplete. Sleepnotrequestedwhileactionableworkremains.
+
+## Latest Q8b notebook implementation
+
+Acceptedbasea83d9643d; freshfeature/python-async-notebook-acceptance implements
+exactinstalledinterpreter/privateIPythonkernel/top-levelawait acceptedasyncscenario.
+EightfocusedtestsPASS including actualkernelsmoke/shutdown; this is NOTscientific
+acceptance. Outputcredential/JWT/error/budget/execution-order guards; explicit
+WindowsCREATE_NO_WINDOW. Installedgatesactive; actualJavaNOT_RUN,noPRyet.
+No new SDK/model/Java/worldview. Q7hierarchy830a141cdunresolved; otherQ8/Q9/
+studygates remain separate. Programincomplete;sleepnotrequestedwhileworkremains.
+
+## Latest Q8a delivery / Q8b fresh contract
+
+PR210 MERGED_BOUNDED a83d9643dd776a3df3cba87d026800feb390565b,reviewed
+061b363b730f6cb58917b55449add8f59f9c8195;allhostedchecksPASS,normalmerge/
+ancestry/sourceequalityverified;postmerge14focusedPASS,ownedbranchretired.
+Accepted3,004installed/17gates+correctedactualJavaownwait/access/cleanup evidence
+retained. Q8b freshfeature/python-async-notebook-acceptance fromacceptedmerge:
+contractbeforecode,realexactinterpreterkernel/top-levelawait/acceptedscenario,
+outputcredentialguards/kernel+servicecleanup. Q7failedbranch830a141cdretained;
+asyncsaved-handle restoration/fullagents-events/support remainseparate.
+Program/A/B/studiesincomplete;SleepNOT_REQUESTED whileactionableworkremains.
+
 ## Latest Q8a local acceptance
 
 744a37f03 LOCAL_ACCEPTED_BOUNDED:3,004installed/17gates/lint/parity+9focusedPASS;

@@ -1,5 +1,11 @@
 # Functional workflows and test organization
 
+`async-notebook` executes the accepted own-wait scientific journey once with
+top-level await in a private exact-interpreter IPython kernel. It verifies installed
+SDK identity, actual Java cells/lifecycle, credential-free outputs and kernel/owned
+service cleanup. Local kernel smoke alone is not scientific acceptance. See
+[notebook contract and limits](async-notebook-acceptance.md).
+
 `async-own-wait` checks two local waits on the same actual native Java Job, one
 task cancellation without remote cancel/replay/disposal, original20scenario cells,
 concurrent readbacks, foreign-principal denial and creator-only cleanup. See

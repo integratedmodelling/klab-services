@@ -1,5 +1,15 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Latest bounded Q8b notebook checkpoint — 5 November 2026
+
+Q8aPR210mergednormallya83d9643d;allchecks/ancestry/postmerge14PASS. Q8b locally
+acceptedf04fe0a0f:3,013installed/17gates+actualJava exactinstalledkernel/top-level
+await/3orderedcells/originalJob-focus-20cells/ownwait/access/outputcredentials/
+kernel+creator+servicecleanupPASS;normalPR/CI/mergepending. This closes onebounded
+notebookjourney only,not GUI/kernelprofile support,asyncsavedhandle,agents/events or
+fullRC-P3.5/Q8. Q7hierarchyfailed/unresolved830a141cd remainsseparate. No whole-row
+promotion;A/B/studiesremainincomplete.
+
 ## Latest bounded Q8a checkpoint — 5 November 2026
 
 Q6PR209mergedb41016737/allchecks/ancestry/postmerge131PASS. Q8a locallyaccepted
