@@ -1,5 +1,20 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Current delivery / native offset-domain correction
+
+PR225 mergedc178e390ee7ec5b9f301b92edbe5debfdf1b88f2, reviewed5aec13362/
+tested7c33ab67f. All hostedchecks/normalexactheadmerge/ancestry/source equality and
+133exactsourcepostmerge tests PASS; branchretired. Bounded shared-reader acceptance
+does not close fullissue89/RC-P1.2/CAP-04. Earlier pending notes below are historical.
+Current independent offset-domain fix rejects >signedlong values before sync/async
+HTTP;6redtests,154focused/3,249installed/17gates on pre225base and unchangedJava
+Point constructor/JSONprobePASS. Combined accepted225 tree installedvalidationACTIVE.
+Combinedaaa2e35d9 now3,259installed/all17gates/lint/build/parityPASS; SDK committed
+blobs unchanged, raw lineending hash transition retained and explicitly verified.
+[Contract](../python-client/docs/indexed-offset-long-bounds.md)/
+[review](../python-client/docs/reviews/indexed-offset-long-bounds.md). No giant-cell
+existence/scientific execution/Java repair claim or wholeRC-P2.2 promotion.
+
 ## Authorized shared-context readers — bounded candidate PASS
 
 7c33ab67f on PR224/597b2fed:3,251installed/all17gates/122focused and corrected

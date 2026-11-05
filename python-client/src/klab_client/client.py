@@ -322,8 +322,8 @@ class Context(ContextScopeImpl):
             offsets = tuple(islice(offsets, 257))
         except TypeError:
             raise InvalidRequestError("Read 1–256 explicit cell offsets from an iterable") from None
-        if not offsets or len(offsets) > 256 or any(type(i) is not int or i < 0 for i in offsets):
-            raise InvalidRequestError("Read 1–256 explicit nonnegative cell offsets per call")
+        if not offsets or len(offsets) > 256 or any(type(i) is not int or not 0 <= i <= 2**63 - 1 for i in offsets):
+            raise InvalidRequestError("Read 1–256 explicit nonnegative Java-long cell offsets per call")
         curves = {"UNSPECIFIED", "D1_LINEAR", "D2_XY", "D2_YX", "D2_XInvY", "D3_XYZ", "D3_ZYX", "D2_HILBERT", "D3_HILBERT"}
         if curve not in curves:
             raise InvalidRequestError("Unknown fill curve")
