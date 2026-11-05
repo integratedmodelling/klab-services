@@ -25,3 +25,10 @@ refusal. Existing syncsuite must staygreen. Installedgates and one actualJava4fa
 parse/invalidcontrols workflow after user-scope preparation; no scientific job or
 authoring writes. Exactcandidate/privacy/cleanup+guide review/normalPR/CI/eligible
 merge/postmerge required; fullRC-P4.2/A/B and allstudy gates remain open.
+
+Initial2ef2fed06:117focused/3,281installed/all17gates/lint/build/sourceparityPASS.
+Thisbase excludes PR227asyncinspection/nullasset additions; itsacceptedmerge6af50a1dc
+must be integrated andcombinedtree revalidated before one actualfourfamilyparserrun.
+Wheel1bc76e6fb75266d942c2d61840fe6b61889d0b7d468144efa130208048cb045c;
+sdistd06ea87bda4f5a414ce8bf5417955c92701a5b9aee78ec87de7666305cd3eaee.
+No new liveparserPASS claimed from historical syncresults.
