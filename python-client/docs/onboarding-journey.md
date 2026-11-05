@@ -8,8 +8,9 @@ APIs, not a new bootstrap layer. Existing older connection acceptance is retaine
 but does not validate this current Java/component/synthetic-worldview tuple.
 
 Required controlled TEST demonstration: both native ENGINE certificate exchange and
-issued-token connection select the actual four ready services; compute independent
-nonuniform20-cell Java field; close creator transport; separately authenticate in
+issued-token connection select the actual four ready services; compute one independent
+nonuniform20-cell Java field through the certificate route, then independently read
+that same original field through the token route; close creator transport; separately authenticate in
 a fresh installed process and export the original saved region observation without
 scientific replay; preserve original geometry/identity; cleanup only creator work.
 Use the existing native export/fresh-process connection workflow rather than
@@ -25,3 +26,11 @@ Controlled TEST authority is never presented as production Hub onboarding.
 No current shared Modeler/services, authentic research artifacts or contributor
 resources are modified. Actual owned cleanup and final installed/live/review/CI
 evidence remain required; implementation and acceptance pending at this checkpoint.
+
+Source-preflight refinement: the original single-use Java fixture deliberately
+refuses a second computation. Initial ab69eee3c would execute once per provider;
+that harness defect was found before any live run. The corrected contract above
+computes once and requires genuine independent token readback plus two separately
+authenticated fresh-process exports of the original observation before cleanup.
+The fixture is not reset, weakened or rewritten; no second computation or broader
+recovery/production capability is claimed. No user A/B requirement is removed.

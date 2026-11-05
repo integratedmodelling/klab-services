@@ -75,8 +75,8 @@ def test_recovery_refuses_non_observation(tmp_path, monkeypatch):
 
 def test_journey_requires_fresh_worker_receipt(tmp_path, monkeypatch):
     monkeypatch.setattr(workflow, "native_export", lambda *args, **kwargs: {"observation_id": 11})
-    with pytest.raises(AssertionError, match="one fresh-process"):
-        workflow.journey(tmp_path, "token")
+    with pytest.raises(AssertionError, match="two fresh-process"):
+        workflow.journey(tmp_path)
 
 
 @pytest.mark.parametrize("leak", [None, "profile", "handle", "report"])
@@ -84,11 +84,16 @@ def test_final_report_and_saved_artifacts_are_secret_free(tmp_path, monkeypatch,
     config = {"token": "PRIVATE_TEST_OWNER", "other_token": "PRIVATE_TEST_OTHER"}
     (tmp_path / "scientist.json").write_text(json.dumps(config))
     (tmp_path / "connection-profile.json").write_text(config["token"] if leak == "profile" else "{}")
+    (tmp_path / "onboarding-scalar.json").write_text("{}")
     directory = tmp_path / "geojson-export-test"
     directory.mkdir()
     (directory / "native-observation.json").write_text(config["other_token"] if leak == "handle" else "{}")
-    monkeypatch.setattr(workflow, "journey", lambda state, provider: {"provider": provider,
-        "public": config["token"] if leak == "report" else "metadata"})
+    calls = []
+    def journey(state):
+        calls.append(state)
+        return [{"provider": provider, "public": config["token"] if leak == "report" else "metadata"}
+                for provider in ("certificate", "token")]
+    monkeypatch.setattr(workflow, "journey", journey)
     monkeypatch.setattr(workflow, "access", lambda state: {"owner_positive": True})
     if leak:
         with pytest.raises(AssertionError, match="credential material"):
@@ -98,3 +103,4 @@ def test_final_report_and_saved_artifacts_are_secret_free(tmp_path, monkeypatch,
         report = workflow.run(tmp_path)
         assert report["production_hub"] == "NOT_RUN" and report["secret_free_profiles_handles"]
         assert len(report["journeys"]) == 2
+        assert calls == [tmp_path]

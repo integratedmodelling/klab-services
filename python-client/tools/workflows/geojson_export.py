@@ -50,7 +50,7 @@ def validate_reference(payload, observation):
 
 
 def run(state, *, client_factory=None, recovery_command=None, scientific_check=None, before_recovery=None,
-        region_observable="earth:Region"):
+        region_observable="earth:Region", after_recovery=None):
     """Export actual GeoJSON and verify a fresh-process export of the same result."""
     state = Path(state)
     config = json.loads((state / "scientist.json").read_text())
@@ -103,6 +103,8 @@ def run(state, *, client_factory=None, recovery_command=None, scientific_check=N
             require(process.returncode == 0, client.transport.redact(process.stderr))
             example = json.loads(example_path.read_bytes())
             validate_reference(example, observation)
+            if after_recovery:
+                after_recovery(reference, output, observation)
             return {"scientific_check": scientific, "schema_id": result.schema_id,
                 "media_type": result.media_type, "bytes": result.bytes_written,
                 "observation_id": observation.id, "geometry": feature["geometry"],

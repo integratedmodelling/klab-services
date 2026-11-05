@@ -2,12 +2,13 @@
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 
 from klab_client import load_handle
 from .completed_recovery import allowed_request, expected_values
 from .connection import access, connected_client
-from .geojson_export import run as native_export
+from .geojson_export import run as native_export, validate_reference
 from .scientific_checks import require
 
 
@@ -40,8 +41,12 @@ def recover(state, provider, handle, destination, report_path):
     return report
 
 
-def journey(state, provider):
-    connections, selected, workers = [], [], []
+def journey(state):
+    # The independent Java writer is deliberately single-use. Compute once, then
+    # both credential routes must read/recover the same original scientific work.
+    connections, selected, workers, token_reports, redactors = [], [], [], [], []
+    scalar = {}
+    scalar_handle = state / "onboarding-scalar.json"
     worker = Path(__file__).parents[1] / "recover_onboarding.py"
     def capture_connection(connection):
         require(set(connection.selected) == {"runtime", "reasoner", "resources", "resolver"},
@@ -50,9 +55,10 @@ def journey(state, provider):
         selected.append({kind: {"url": entry.reference.url, "service_id": entry.service_id}
             for kind, entry in connection.selected.items()})
         connections.append(connection)
-    def recovery(handle, destination):
+        redactors.append(connection.client.transport.redact)
+    def recovery(handle, destination, provider="certificate"):
         report = destination.with_suffix(".recovery.json")
-        workers.append(report)
+        workers.append((provider, report))
         return [sys.executable, str(worker), "--state-dir", str(state), "--provider", provider,
                 "--report", str(report), str(handle), str(destination)]
     def scientific(client, context, region):
@@ -61,27 +67,58 @@ def journey(state, provider):
         require(observation.units == "m", "Served observation unit differs from the requested native unit")
         require(observation.fetch_data(range(20), curve="D2_YX").values == expected_values(),
             "Connection computation differs from independent nonuniform cells")
-        return {"job_id": job.id, "observation_id": observation.id, "verified_cells": 20, "units": observation.units}
-    report = native_export(state, client_factory=lambda: connected_client(state, provider, on_connect=capture_connection),
+        observation.to_handle().save(scalar_handle)
+        scalar.update(job_id=job.id, observation_id=observation.id, verified_cells=20, units=observation.units)
+        return dict(scalar)
+    def token_phase(handle, directory, region):
+        with connected_client(state, "token", on_connect=capture_connection) as client:
+            original = client.restore_handle(load_handle(scalar_handle))
+            require(original.id == scalar["observation_id"] and original.units == "m" and
+                original.fetch_data(range(20), curve="D2_YX").values == expected_values(),
+                "Token connection did not read the same original scientific cells")
+        destination = directory / "token-region.geojson"
+        command = recovery(handle, destination, "token")
+        env = {key: value for key, value in os.environ.items() if not key.startswith("KLAB_")}
+        process = subprocess.run(command, env=env, capture_output=True, timeout=120,
+            **({"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}))
+        (directory / "token-worker.stdout").write_bytes(process.stdout)
+        (directory / "token-worker.stderr").write_bytes(process.stderr)
+        require(process.returncode == 0, "Token fresh-process recovery failed; inspect private evidence")
+        feature = validate_reference(json.loads(destination.read_bytes()), region)
+        token_reports.append({"provider": "token", "observation_id": region.id, "geometry": feature["geometry"],
+            "scientific_check": dict(scalar), "original_cells_independently_read": True,
+            "new_scientific_submissions": 0})
+    report = native_export(state, client_factory=lambda: connected_client(state, "certificate", on_connect=capture_connection),
         recovery_command=recovery, scientific_check=scientific, before_recovery=lambda: connections[-1].close(),
-        region_observable="consolidation:Region")
-    require(len(workers) == 1, "Expected one fresh-process authenticated recovery")
-    recovered = json.loads(workers[0].read_text())
-    require(recovered["passed"] and recovered["pid"] != os.getpid() and
-        recovered["observation_id"] == report["observation_id"] and recovered["local_close_only"] and
-        recovered["scientific_submissions"] == 0 and recovered["owned"] is False,
-        "Fresh authenticated process did not preserve original observation/lifecycle")
+        region_observable="consolidation:Region", after_recovery=token_phase)
+    require(len(workers) == 2 and len(token_reports) == 1, "Expected two fresh-process authenticated recoveries")
+    reports = [report | {"provider": "certificate"}, token_reports[0]]
+    for result, (provider, path) in zip(reports, workers):
+        recovered = json.loads(path.read_text())
+        require(recovered["passed"] and recovered["pid"] != os.getpid() and recovered["provider"] == provider and
+            recovered["observation_id"] == report["observation_id"] and recovered["local_close_only"] and
+            recovered["scientific_submissions"] == 0 and recovered["owned"] is False,
+            "Fresh authenticated process did not preserve original observation/lifecycle")
+        result.update(recovery=recovered, creator_transport_closed=True,
+            authentication_evidence="controlled TEST only, not production Hub")
     require(all(snapshot == selected[0] for snapshot in selected), "Cleanup connection changed selected service identity")
-    return report | {"provider": provider, "selected": selected[0], "recovery": recovered,
-        "creator_transport_closed": True, "authentication_evidence": "controlled TEST only, not production Hub"}
+    for result in reports:
+        result["selected"] = selected[0]
+    texts = [json.dumps(reports), scalar_handle.read_text(),
+             (state / "connection-profile.json").read_text(),
+             *(path.read_text() for path in state.glob("geojson-export-*/native-observation.json"))]
+    require(all(redact(text) == text for redact in redactors for text in texts),
+        "Connection report/profile/handle contains acquired credential material")
+    return reports
 
 
 def run(state):
     state = Path(state)
-    reports = [journey(state, provider) for provider in ("certificate", "token")]
+    reports = journey(state)
     security = access(state)
     config = json.loads((state / "scientist.json").read_text())
-    for path in (state / "connection-profile.json", *state.glob("geojson-export-*/native-observation.json")):
+    for path in (state / "connection-profile.json", state / "onboarding-scalar.json",
+                 *state.glob("geojson-export-*/native-observation.json")):
         text = path.read_text()
         require(all(token not in text for token in (config["token"], config["other_token"])),
             "Saved profile/handle contains credential material")
