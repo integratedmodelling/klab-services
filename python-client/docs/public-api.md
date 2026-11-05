@@ -1,5 +1,12 @@
 # Existing public scaffold method inventory
 
+`AsyncSemanticExplorer(AsyncClient, scope=None)` provides awaited concept/observable
+resolution, parents/children, is_a/satisfiable, authority search, selected-candidate
+resolution and documentation descriptors. It shares checked immutable views with
+`SemanticExplorer` on sync clients; no thread wrapper/local inference. Candidate
+selection is explicit, unknown revision remains unknown and URLs are never followed.
+See [native async semantics](native-async-semantic-exploration.md).
+
 `Client.resources.retrieve(urn, "CODELIST")` and its native awaited async equivalent
 retrieve the existing Java codebook asset as `KlabAsset` with full retained wire DTO.
 CODELIST list/resolve remain unsupported. Numeric/string codes, order/preferences

@@ -33,3 +33,15 @@ Exact source/install/harness/live/privacy/cleanup, guide review, normal PR/CI/el
 merge/postmerge required. Full semantic/revision/production-authority/A+B/study gates
 stay open. Inspect enabled Python criteria and demonstrated defect before any Java
 work; none is currently requested or justified.
+
+## Initial package validation
+
+`1c4a6bad6`:160 focused /3,404 installed/all17gates/build/lint/source parity PASS.
+Initial expanded test command had159PASS/1FAIL because mock json= rejected deliberate
+NaN before SDK decoding; raw response bytes corrected that test setup, not production.
+This package excludes pending #230 source-ID tests/fix. Parent now merged
+`1af1e4935ee4c3c3cd9a260af3151a7837ab6bcb`; exact209postmerge/integration and
+combined validation required before one actual semantic read-only Java run.
+
+- Wheel: `8862dc29e2c568a6599ecabfa045afd2ce9cb5457b04ae839e51f53131e5c166`
+- Sdist: `9b978fd0ce4d7a68d5bee23fb9dba5ced4d4e721945ff41514bd65b9e098b624`
