@@ -37,7 +37,12 @@ public final class ChangeProcessHandler implements ConsequenceEngine.Handler {
       return result(Consequence.Outcome.NO_ACTION, "The context has no observed occurrence", List.of());
 
     var changed = new java.util.HashSet<>(changes.getAddedObservations());
-    changed.addAll(changes.getModifiedAssets());
+    var modified = new java.util.HashSet<>(changes.getModifiedAssets());
+    // Publishing a CHANGE child increments its bearer's child count and refreshes the observer's
+    // perceived support. Those synchronization writes are not new modeled occurrence or quality
+    // changes. Preserve explicit payload updates even when that same root also did bookkeeping.
+    modified.removeAll(changes.getBookkeepingOnlyAssets());
+    changed.addAll(modified);
     // An arriving occurrence enables discovery for existing qualities. A CHANGE result is
     // itself an occurrence, but must not turn its own follow-up commit into another full scan.
     // Still allow a CHANGE to establish the very first occurrence in a previously static twin.

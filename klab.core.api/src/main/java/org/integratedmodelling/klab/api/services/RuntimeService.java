@@ -215,6 +215,9 @@ public interface RuntimeService extends KlabService {
         getResolutionConstraints(Observation outcome) {
       return List.of();
     }
+
+    default org.integratedmodelling.klab.api.knowledge.InstantiationResolution.Contribution
+        getInstantiationResolution(Observation outcome) { return null; }
   }
 
   /**

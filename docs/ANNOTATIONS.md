@@ -17,6 +17,7 @@ An annotation may specify the boolean parameter `override=true` to take preceden
 | Annotation | Context and interpretation |
 | --- | --- |
 | `@colormap` | Observation visualization; generalized color ramps and exact value colors, specified below. |
+| `@resolution(none\|collective\|individual)` | Secondary explanation of instantiated individuals; `individual` is the default. An originating observation policy overrides producer policies. See [the instantiation contract](INSTANTIATION_RESOLUTION.md). |
 | `@test` | k.Actors action participating in testcase execution. |
 | `@override` | k.Actors action explicitly replacing an inherited action. |
 | `@handle(CONSTANT)` / `@handle(class=CONSTANT)` | k.Actors message handler. Ordinary action parameters receive payload and scope bindings. |
@@ -27,6 +28,10 @@ An annotation may specify the boolean parameter `override=true` to take preceden
 | `@split`, `@maxsize`, `@minsplitsize`, `@fillcurve` | Validated lowercase sharding annotations; positional and named `value` work. Runtime consumer mediation is staged. See the authoritative [storage annotation contract](STORAGE.md#kim-sharding-annotations) before use. |
 
 See [the k.Actors reference](AGENTS.md) for action signatures, inheritance, and compiler restrictions. The same annotation name can have different meanings in different declaration contexts.
+
+`Observation.Builder.withAnnotation(...)` contributes request annotations at explicit-definition
+priority. An originating `@resolution` therefore applies across the instantiator contributions
+in that observation's explanation, including mixed producers.
 
 ## `@colormap`
 

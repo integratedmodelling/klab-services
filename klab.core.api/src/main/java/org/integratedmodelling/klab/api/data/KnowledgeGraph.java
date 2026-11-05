@@ -135,6 +135,16 @@ public interface KnowledgeGraph {
 
     Set<Long> getModifiedAssets();
 
+    /**
+     * Modified assets whose only writes were automatic child counters or observer perception
+     * bookkeeping. They still require client synchronization, but do not alone trigger CHANGE
+     * discovery. Explicit payload updates in the same root must not appear here. Older producers
+     * conservatively report no exclusions.
+     */
+    default Set<Long> getBookkeepingOnlyAssets() {
+      return Set.of();
+    }
+
     String getOwner();
 
     /** Non-null for background commits caused by a consequence decision; never implies UI focus. */

@@ -44,6 +44,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   private boolean query = false;
   private List<Annotation> annotations = new ArrayList<>();
   private List<Annotation> conceptAnnotations = new ArrayList<>();
+  private final List<Annotation> requestAnnotations = new ArrayList<>();
   private int annotationPriority = ObservationImpl.MODEL_ANNOTATIONS;
 
   private final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
@@ -85,6 +86,14 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
   }
 
   protected ObservationBuilderImpl() {}
+
+  @Override
+  public Observation.Builder withAnnotation(Annotation annotation) {
+    if (annotation != null) {
+      requestAnnotations.add(annotation);
+    }
+    return this;
+  }
 
   public ObservationBuilderImpl query() {
     this.query = true;
@@ -316,6 +325,7 @@ public abstract class ObservationBuilderImpl implements Observation.Builder {
     }
     ret.mergeAnnotations(conceptAnnotations, ObservationImpl.CONCEPT_ANNOTATIONS);
     ret.mergeAnnotations(annotations, annotationPriority);
+    ret.mergeAnnotations(requestAnnotations, ObservationImpl.DEFINITION_ANNOTATIONS);
     ret.setValue(defaultValue);
     ret.setContextualizationData(contextualizationData);
     ret.setName(name);

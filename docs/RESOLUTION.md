@@ -172,6 +172,14 @@ transaction/provenance and other constraints remain inherited; the parent scope 
 When several instantiators contribute members, each member uses its own producer's policy.
 Absent producer bindings inherit the execution scope; unrelated model metadata cannot select it.
 
+Members default to individual secondary resolution. The
+[`@resolution` instantiation policy](INSTANTIATION_RESOLUTION.md) also supports existence-only
+acknowledgment (`none`) and one explanatory selection over the full contextualized producer
+support (`collective`). Shared planning retains independent child binding, coverage checks,
+execution and atomic publication. An originating observation annotation, supplied by its builder
+or k.IM `define`, overrides producer policies across all instantiations in its explanation.
+Without that override, policies remain local to each producing computation and its outcomes.
+
 
 The namespace policy map is a portable bean property using the existing Jackson interface mapping.
 Current source adaptation does not yet populate it from a namespace ranking declaration; the
@@ -509,6 +517,14 @@ memoization inside OWL bounds evaluation is checked against the same ontology/re
 Resources catalog reconciliation cooperates with active semantic cycles. Namespace validation is
 driven by source or semantic validity changes; opening an unchanged IDE workspace is not a reason
 to validate every namespace again. Runtime admission still validates its applicable receipt.
+
+The resolution graph retains each selected producer's original admission evidence. Dataflow
+compilation checks its model identity, namespace, executable digest and retained semantic
+binding, then carries the same receipt and producing-model snapshot into Runtime. The
+observer-contribution branch uses that original revision rather than admitting the model
+again after planning. Later source/semantic publications do not replace the admitted view;
+an incompatible or missing original proof requires a new plan. Execution binding, coverage,
+native read guards and publication checks remain separate obligations.
 
 Pure semantic RPCs omit unused focus/observer/transaction routing; capabilities retains caller
 permissions and semantic-cycle identity. Scope-consuming operations retain the full required

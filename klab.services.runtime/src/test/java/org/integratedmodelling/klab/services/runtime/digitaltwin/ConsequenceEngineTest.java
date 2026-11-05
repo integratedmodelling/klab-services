@@ -143,6 +143,29 @@ class ConsequenceEngineTest {
     }
   }
 
+  @Test void rootCommitCarriesChildBookkeepingExclusionsThroughTheQueuedSnapshot() throws Exception {
+    try (var f = new Fixture()) {
+      var parent = new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+      parent.setId(10);
+      var child = new org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl();
+      child.setId(11);
+      var received = new AtomicReference<KnowledgeGraph.Commit>();
+      f.engine.register(Consequence.Kind.CHANGE_PROCESS, (cause, changes, scope) -> {
+        received.set(changes);
+        return new ConsequenceEngine.Result(Consequence.Outcome.NO_ACTION, "Checked", List.of());
+      });
+      var root = f.transaction(f.scope);
+      var nested = root.getChild(Activity.of(Activity.Type.RESOLUTION), f.scope);
+      nested.link(parent, child, org.integratedmodelling.klab.api.digitaltwin.GraphModel.Relationship.HAS_CHILD);
+      nested.commit();
+      assertEquals(900, root.commit());
+      f.messages(5);
+      assertNotNull(received.get());
+      assertTrue(received.get().getModifiedAssets().contains(10L));
+      assertEquals(Set.of(10L), received.get().getBookkeepingOnlyAssets());
+    }
+  }
+
   @Test void postCommitActivationAllowsServiceCallbackToAcquireGraphMonitor() throws Exception {
     try (var f = new Fixture()) {
       var root = f.transaction(f.scope);

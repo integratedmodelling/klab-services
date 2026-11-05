@@ -437,6 +437,9 @@ public class DataflowCompiler {
       Model model,
       String localName) {
 
+    var instantiationResolution =
+        org.integratedmodelling.klab.api.knowledge.InstantiationResolution.declaration(model);
+
     var priorModels = observationActuator.getData().get(Actuator.PRODUCING_MODELS_KEY);
     var contributions = new ArrayList<String>();
     if (priorModels != null) {
@@ -448,18 +451,23 @@ public class DataflowCompiler {
     // Unknown/ad-hoc models may execute normally, but their contribution prevents source
     // coalescing.
     boolean sourced = model.getNamespace() != null && !model.getNamespace().isBlank();
+    var admission = sourced ? resolutionGraph.admission(model) : null;
     contributions.add(sourced ? Objects.toString(model.getUrn(), "") : "");
     observationActuator.getData().put(Actuator.PRODUCING_MODELS_KEY, List.copyOf(contributions));
     if (sourced) {
       resolutionGraph.requireSemanticSnapshot(scope);
-      var receipt = resolutionGraph.admission(model);
+      var receipt = admission;
       if (receipt == null
+          || !Objects.equals(receipt.modelUrn(), model.getUrn())
+          || !Objects.equals(receipt.namespace(), model.getNamespace())
           || !Objects.equals(
               receipt.executableHash(),
               org.integratedmodelling.klab.runtime.language.ModelValidationGate.executableHash(
                   model))
           || receipt.knowledgeRevision() != resolutionGraph.semanticRevision()
-          || !Objects.equals(receipt.reasonerId(), resolutionGraph.semanticReasonerId()))
+          || !Objects.equals(receipt.reasonerId(), resolutionGraph.semanticReasonerId())
+          || !Objects.equals(receipt.semanticFingerprint(), resolutionGraph.semanticFingerprint())
+          || !Objects.equals(receipt.semanticSessionId(), resolutionGraph.semanticSessionId()))
         throw new KlabIllegalStateException("Missing or changed original model admission receipt");
       var receipts = new ArrayList<String>();
       var previousAdmissions =
@@ -528,8 +536,12 @@ public class DataflowCompiler {
                 .anyMatch(candidate -> candidate.getObserverSemantics() != null))
         && (observation.getObservable().is(SemanticType.QUALITY)
             || observation.getObservable().is(SemanticType.PROCESS))) {
-      long revision =
-          org.integratedmodelling.klab.runtime.language.ModelValidationGate
+      // Compilation consumes the selected producer's original evidence. Re-admitting here
+      // discards the planning snapshot and repeats document validation once per observer-aware
+      // output, after ResolutionCompiler's validation session has already closed. Ad-hoc models
+      // have no source-backed graph receipt and retain their ordinary admission path.
+      long revision = admission != null ? admission.knowledgeRevision()
+          : org.integratedmodelling.klab.runtime.language.ModelValidationGate
               .validatedPreparableRevision(model, scope, observation.getObservable());
       var output =
           model.getObservables().stream()
@@ -723,6 +735,11 @@ public class DataflowCompiler {
       observationActuator
           .getComputationConstraints()
           .put(observationActuator.getComputation().size(), lexicalConstraints);
+      if (instantiationResolution != null)
+        observationActuator.getData().put(
+            org.integratedmodelling.klab.api.knowledge.InstantiationResolution.DATA_PREFIX
+                + observationActuator.getComputation().size(),
+            org.integratedmodelling.klab.utilities.Utils.Json.asString(instantiationResolution));
       if (occurrenceSchedule != null) {
         observationActuator
             .getOccurrenceSchedules()

@@ -118,6 +118,9 @@ public interface Observation extends Knowledge, Artifact, Resolvable, RuntimeAss
    */
   interface Builder {
 
+    /** Add a request annotation with the same precedence as an originating k.IM define. */
+    Builder withAnnotation(org.integratedmodelling.klab.api.lang.Annotation annotation);
+
     /** Set the two substantial participants of an individual relationship or bond. */
     Builder between(Observation source, Observation target);
 

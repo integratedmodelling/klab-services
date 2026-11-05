@@ -1606,6 +1606,17 @@ public class CompiledDataflow {
       actuatorObservations.put(rootActuator, rootObservation);
     Map<Long, Observation> observationMap = new HashMap<>();
     requireObservation(rootActuator, observationMap);
+    var originatingPolicy = org.integratedmodelling.klab.api.knowledge.InstantiationResolution
+        .annotation(rootObservation == null ? List.of() : rootObservation.getAnnotations());
+    if (originatingPolicy != null && rootObservation instanceof ObservationImpl origin
+        && origin.getAnnotationPriorities().getOrDefault(
+            org.integratedmodelling.klab.api.knowledge.InstantiationResolution.ANNOTATION,
+            ObservationImpl.DEFINITION_ANNOTATIONS) >= ObservationImpl.DEFINITION_ANNOTATIONS) {
+      for (var bound : actuatorObservations.values())
+        if (bound instanceof ObservationImpl instantiator
+            && bound.getObservable().getContextualization() == Contextualization.INSTANTIATION)
+          instantiator.mergeAnnotations(List.of(originatingPolicy), ObservationImpl.DEFINITION_ANNOTATIONS);
+    }
     // References carry transport copies. Bind aliases to the actual producer object so
     // both ports see its assigned identity and completed contextualization state.
     bindLocalReferences(rootActuator, observationMap);
@@ -2192,6 +2203,7 @@ public class CompiledDataflow {
               || actuator.getExecutionRole() == Actuator.ExecutionRole.EVENT)
           && (!actuator.getComputation().isEmpty()
               || collectiveReduction(actuator) != null
+              || Boolean.TRUE.equals(actuator.getData().get(InstantiationPlanning.ACKNOWLEDGMENT))
               || !actuator.getChildren().isEmpty())
           && snapshotSupported(actuator)) {
         var observation = actuatorObservations.get(actuator);
@@ -2218,6 +2230,7 @@ public class CompiledDataflow {
       }
       if (!actuator.getComputation().isEmpty()
           || collectiveReduction(actuator) != null
+          || Boolean.TRUE.equals(actuator.getData().get(InstantiationPlanning.ACKNOWLEDGMENT))
           || actuator.getChildren().stream()
               .anyMatch(child -> child.getActuatorType() == Actuator.Type.UPDATE)) {
         transaction.add(actuator);
@@ -2478,6 +2491,7 @@ public class CompiledDataflow {
             ContextualExecutor,
             List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>>
         executorConstraints = new java.util.IdentityHashMap<>();
+    private final Map<ContextualExecutor, Integer> executorIndices = new java.util.IdentityHashMap<>();
     private final boolean operational;
     private final List<ServiceCall> serviceCalls = new ArrayList<>();
     private final List<ServiceCall> processAssignments = new ArrayList<>();
@@ -2646,8 +2660,10 @@ public class CompiledDataflow {
                   runtimeService.shardExecution()));
         }
         // Scalar batches do not instantiate members; bind each non-scalar producing executor.
-        for (int i = firstExecutor; i < executors.size(); i++)
+        for (int i = firstExecutor; i < executors.size(); i++) {
           executorConstraints.put(executors.get(i), lexicalConstraints);
+          executorIndices.put(executors.get(i), computationIndex - 1);
+        }
       }
 
       if (scalarBuilder != null) {
@@ -2971,6 +2987,12 @@ public class CompiledDataflow {
         }
         contextualizationScope.bindOutcomes(
             firstOutcome, executorConstraints.getOrDefault(executor, List.of()));
+        var index = executorIndices.get(executor);
+        var policy = index == null ? null : actuator.getData().get(
+            org.integratedmodelling.klab.api.knowledge.InstantiationResolution.DATA_PREFIX + index);
+        if (policy != null) contextualizationScope.bindResolution(firstOutcome, index,
+            org.integratedmodelling.klab.utilities.Utils.Json.parseObject(policy.toString(),
+                org.integratedmodelling.klab.api.knowledge.InstantiationResolution.Declaration.class));
       }
 
       if (actuator.getContextBinding() != null

@@ -27,6 +27,7 @@ class ConsequenceTransportTest {
     var commit = new CommitImpl(); commit.setId(2);
     commit.setConsequenceCause(cause("context"));
     commit.getModifiedAssets().add(10L);
+    commit.getBookkeepingOnlyAssets().add(10L);
     commit.getAddedAssets().add(11L);
     commit.getAddedObservations().add(11L);
     commit.getAddedLinks().add(Triple.of(10L, 11L, "HAS_CHILD"));
@@ -48,6 +49,7 @@ class ConsequenceTransportTest {
     assertEquals(cause("context"), payload.commit().getConsequenceCause());
     assertEquals(commit().getAddedLinks(), payload.commit().getAddedLinks());
     assertEquals(commit().getModifiedAssets(), payload.commit().getModifiedAssets());
+    assertEquals(commit().getBookkeepingOnlyAssets(), payload.commit().getBookkeepingOnlyAssets());
   }
 
   @Test void twoClientsApplyConsequenceChangesBeforeConsumerNotificationAndShareCommitDeduplication() {

@@ -604,6 +604,31 @@ class TemporalProcessIntegrationTest {
     }
   }
 
+  @Test void noExplanationEventRetainsStartEndAtomicRetryAndRestartWithoutNumericalEffects() throws Exception {
+    try(var f=new Fixture("elevation - 10")) {
+      var event=observation("unexplained-event",SemanticType.EVENT,102);
+      long start=date("2014-02-01"),end=date("2016-01-01");
+      event.setGeometry(Geometry.create("T0(1){ttype=PHYSICAL,tstart="+start+",tend="+end+"}S2(1,1){proj=EPSG:4326,bbox=[1 2 0 1]}"));
+      event.setParentId(999);event.getMetadata().put(ObservedEvent.PENDING,true);
+      event.getMetadata().put("klab.instantiation.resolution.mode","none");
+      var plan=InstantiationPolicyTestSupport.acknowledgment(event);
+      assertEquals(Actuator.ExecutionRole.EVENT,plan.getExecutionRole());assertTrue(plan.getComputation().isEmpty());
+      event.getMetadata().put(Scheduler.PLAN_METADATA_KEY,Utils.Json.asString(plan));
+      f.observations.put(event.getId(),event);f.recordInitialSelection(event);
+      when(f.graph.getScheduledObservations(f.root)).thenReturn(List.of(event));f.restart();
+      assertTrue(f.scheduler.advanceTo(start-1));assertTrue(f.journals.isEmpty());
+      f.failCommit=true;assertFalse(f.scheduler.advanceTo(start));assertTrue(ObservedEvent.pending(event));
+      f.failCommit=false;assertTrue(f.scheduler.advanceTo(start),f::failureDescription);
+      assertFalse(ObservedEvent.pending(event));assertEquals(1,f.journals.size());
+      assertArrayEquals(new double[]{100,200,350},f.values(start));
+      f.restart();assertTrue(f.scheduler.advanceTo(end),f::failureDescription);
+      assertEquals(2,f.journals.size());
+      assertEquals(Scheduler.Event.Boundary.END,f.journals.getLast().observedEvent().boundary());
+      assertArrayEquals(new double[]{100,200,350},f.values(end));
+      f.restart();assertTrue(f.scheduler.advanceTo(end));assertEquals(2,f.journals.size());
+    }
+  }
+
   @Test void javaEventBindingsUseOneCellAndGrantWritesOnlyForAffectedQualities() throws Exception {
     for (boolean affected : new boolean[] {false, true}) {
       try (var f = new Fixture("elevation")) {

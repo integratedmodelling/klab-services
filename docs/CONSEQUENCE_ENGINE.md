@@ -342,6 +342,14 @@ resolved separately in their own native bearer scopes. No mutable "became occurr
 flag is needed, so newly observed qualities and previously existing qualities are both
 considered after occurrence becomes available, including after restart on the next commit.
 
+Commits distinguish bookkeeping-only modifications from explicit payload updates. Adding
+a CHANGE child increments the bearer's child count and updates the observer's perceived
+support; those synchronization writes do not trigger another assessment of the qualities.
+They remain in `modifiedAssets` for clients and are also identified by `bookkeepingOnlyAssets`.
+An explicit payload update in the same atomic root overrides that exclusion. Optional
+NO_MODEL ends the attempt for the triggering quality; it does not install a permanent
+negative cache against later substantive changes.
+
 For each concrete quality with positive resolved coverage, the handler obtains its
 durable `HAS_CHILD` bearer, groups qualities by bearer and requests `change in Quality`
 through `Observable.Builder.as(CHANGE)` and the ordinary context observation builder's

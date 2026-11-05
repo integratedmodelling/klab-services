@@ -37,6 +37,28 @@ public class ContextualizationScopeImpl
       outcomeConstraints.put(outcomes.get(i), List.copyOf(constraints));
   }
 
+  private final java.util.Map<Observation,
+      org.integratedmodelling.klab.api.knowledge.InstantiationResolution.Contribution>
+      outcomeResolution = new java.util.IdentityHashMap<>();
+
+  public void bindResolution(int first, int computation,
+      org.integratedmodelling.klab.api.knowledge.InstantiationResolution.Declaration declaration) {
+    if (declaration == null) return;
+    var support = target.getGeometry() == null ? executionGeometry : target.getGeometry();
+    if (support != null && declaration.support() != null)
+      support = org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.scale(support).merge(
+          org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.scale(
+              org.integratedmodelling.klab.api.geometry.Geometry.create(declaration.support())),
+          org.integratedmodelling.klab.api.lang.LogicalConnector.INTERSECTION);
+    var contribution = new org.integratedmodelling.klab.api.knowledge.InstantiationResolution.Contribution(
+        declaration, computation,
+        support == null ? null : org.integratedmodelling.klab.api.geometry.Geometry.forTransport(support).encode());
+    for (int i = first; i < outcomes.size(); i++) outcomeResolution.put(outcomes.get(i), contribution);
+  }
+
+  @Override public org.integratedmodelling.klab.api.knowledge.InstantiationResolution.Contribution
+      getInstantiationResolution(Observation outcome) { return outcomeResolution.get(outcome); }
+
   @Override
   public List<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>
       getResolutionConstraints(Observation outcome) {

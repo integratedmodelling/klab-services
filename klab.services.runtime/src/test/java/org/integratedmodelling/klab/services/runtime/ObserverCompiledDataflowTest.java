@@ -93,6 +93,21 @@ class ObserverCompiledDataflowTest {
     assertNull(f.requested.getObserverSemantics()); assertSame(f.requested, f.plan.getOperationObservable());
     assertTrue(f.root.getMetadata().containsKey("im:observer-contributions"));
   }
+
+  @Test void originatingPolicyReachesInstantiatorsNestedInAnOrdinaryExplanation() {
+    var f=new Fixture();
+    f.root.mergeAnnotations(List.of(InstantiationPolicyTest.annotation("none")),ObservationImpl.DEFINITION_ANNOTATIONS);
+    var members=InstantiationPolicyTest.observation(-3,"roads",true,Geometry.create("1"));
+    members.mergeAnnotations(List.of(InstantiationPolicyTest.annotation("collective")),ObservationImpl.MODEL_ANNOTATIONS);
+    var child=new ActuatorImpl();child.setId(-3);child.setName("roads");child.setObservation(members);
+    child.setActuatorType(Actuator.Type.OBSERVE);child.setOperationObservable(members.getObservable());
+    f.plan.getChildren().add(child);
+    assertTrue(f.compiler().compile(f.plan));
+    assertEquals(org.integratedmodelling.klab.api.knowledge.InstantiationResolution.Mode.NONE,
+        org.integratedmodelling.klab.api.knowledge.InstantiationResolution.mode(
+            org.integratedmodelling.klab.api.knowledge.InstantiationResolution.annotation(child.getObservation().getAnnotations())));
+    assertEquals(ObservationImpl.DEFINITION_ANNOTATIONS,((ObservationImpl)child.getObservation()).getAnnotationPriorities().get("resolution"));
+  }
   @Test void changedRevisionOrMissingProducingEvidenceCannotRefineRootMeaning() {
     var f = new Fixture(); f.refine();
     f.plan.getData().put("modelAdmissionRevision",8L);

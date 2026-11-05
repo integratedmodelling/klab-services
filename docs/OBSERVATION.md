@@ -48,7 +48,7 @@ The observable determines the activity; strategies choose explanations within th
 | Meaning | Contextualization and required follow-up |
 | --- | --- |
 | Individual substantial | ACKNOWLEDGEMENT; an error-free explicit NO_MODEL decision can acknowledge existence without inventing computation |
-| `each S`, for countable substantial S | INSTANTIATION; acknowledge and resolve the produced individuals |
+| `each S`, for countable substantial S | INSTANTIATION; acknowledge produced individuals and apply their secondary resolution policy |
 | Collective event | Scheduled instantiation at interval start; prepare produced individuals, then contextualize them at START and END |
 | Collective relationship | CONNECTION; validate endpoints, then acknowledge the produced relationships |
 | Physical, numeric, monetary, categorical or Boolean quality | MEASURE, QUANTIFICATION, VALUATION, CATEGORIZATION or VERIFICATION, as selected by the effective semantics |
@@ -62,6 +62,11 @@ Classification and characterization are updates to existing observations. Their 
 do not acquire observation IDs, storage or independent scheduling entries. They travel as
 typed UPDATE actuators in the same Dataflow contract used for other contextualizations.
 See [Classification and characterization](CLASSIFICATION.md).
+
+Instantiated individuals default to independent explanation. The
+[`@resolution` policy](INSTANTIATION_RESOLUTION.md) can request acknowledgment without explanation
+or one shared selection with separate child binding and execution. An annotation on the
+originating observation, from its builder or `define`, applies across all producer contributions.
 
 Models do not instantiate configurations. `model Configuration` can explain an emerged
 configuration; `model each Configuration` is invalid. Placement and multi-bearer limitations

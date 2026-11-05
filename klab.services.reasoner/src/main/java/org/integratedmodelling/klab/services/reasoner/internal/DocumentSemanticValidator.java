@@ -239,6 +239,13 @@ public class DocumentSemanticValidator
   @Override
   public List<Notification> validateModel(KimModel model, KimObservableVisitor.Context context) {
     var result = validateDependencies(model, context);
+    try {
+      var annotation = org.integratedmodelling.klab.api.knowledge.InstantiationResolution.annotation(model.getAnnotations());
+      if (annotation != null && (model.getObservables().isEmpty()
+          || model.getObservables().getFirst().getSemantics() == null
+          || !model.getObservables().getFirst().getSemantics().isCollective()))
+        throw new IllegalArgumentException("@resolution requires an each instantiator model");
+    } catch (RuntimeException invalid) { result.add(error(invalid, model, context)); }
     for (var contextualizable : model.getContextualization()) {
       if (!org.integratedmodelling.klab.runtime.language.ConfigurationTerminationValidation
           .termination(contextualizable)) continue;

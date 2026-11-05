@@ -19,6 +19,51 @@ import org.junit.jupiter.api.Test;
 class DigitalTwinCommitTest {
 
   @Test
+  void childCounterWritesRemainVisibleButDoNotBecomeChangeInputs() throws Exception {
+    var twin = org.mockito.Mockito.mock(DigitalTwinImpl.class);
+    var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+    var activity = org.integratedmodelling.klab.api.provenance.Activity.of(
+        org.integratedmodelling.klab.api.provenance.Activity.Type.SUBMISSION);
+    var parent = new ObservationImpl(); parent.setId(10);
+    var child = new ObservationImpl(); child.setId(11);
+    var transaction = twin.new TransactionImpl(activity, scope, RuntimeAsset.PROVENANCE_ASSET);
+    var nested = transaction.getChild(
+        org.integratedmodelling.klab.api.provenance.Activity.of(
+            org.integratedmodelling.klab.api.provenance.Activity.Type.RESOLUTION), scope);
+    nested.link(parent, child, GraphModel.Relationship.HAS_CHILD);
+    var commit = DigitalTwinImpl.TransactionImpl.createCommit(
+        100, "tester", List.of(child), Set.of(parent), List.of());
+    transaction.decorateBookkeepingCommit(commit);
+    assertEquals(1, parent.getChildrenCount());
+    assertTrue(commit.getModifiedAssets().contains(10L));
+    assertEquals(Set.of(10L), commit.getBookkeepingOnlyAssets());
+    var copy = org.integratedmodelling.klab.api.digitaltwin.impl.CommitImpl.copyOf(commit);
+    commit.getBookkeepingOnlyAssets().clear();
+    assertEquals(Set.of(10L), copy.getBookkeepingOnlyAssets());
+  }
+
+  @Test
+  void explicitPayloadUpdateWinsOverChildCounterBookkeepingInEitherOrder() {
+    for (boolean payloadFirst : List.of(false, true)) {
+      var twin = org.mockito.Mockito.mock(DigitalTwinImpl.class);
+      var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);
+      var activity = org.integratedmodelling.klab.api.provenance.Activity.of(
+          org.integratedmodelling.klab.api.provenance.Activity.Type.SUBMISSION);
+      var parent = new ObservationImpl(); parent.setId(10);
+      var child = new ObservationImpl(); child.setId(11);
+      var transaction = twin.new TransactionImpl(activity, scope, RuntimeAsset.PROVENANCE_ASSET);
+      if (payloadFirst) transaction.update(parent);
+      transaction.link(parent, child, GraphModel.Relationship.HAS_CHILD);
+      if (!payloadFirst) transaction.update(parent);
+      var commit = DigitalTwinImpl.TransactionImpl.createCommit(
+          100, "tester", List.of(child), Set.of(parent), List.of());
+      transaction.decorateBookkeepingCommit(commit);
+      assertTrue(commit.getModifiedAssets().contains(10L));
+      assertTrue(commit.getBookkeepingOnlyAssets().isEmpty());
+    }
+  }
+
+  @Test
   void dataflowDoesNotOverwriteResolutionDescription() {
     var twin = org.mockito.Mockito.mock(DigitalTwinImpl.class);
     var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.services.scopes.ServiceContextScope.class);

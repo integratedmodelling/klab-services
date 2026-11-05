@@ -573,6 +573,11 @@ public class RuntimeService extends BaseService
 
   private CompletableFuture<Observation> submitWithObserver(
       Observation submitted, ContextScope scope) {
+    return submitWithObserver(submitted, scope, null);
+  }
+
+  private CompletableFuture<Observation> submitWithObserver(
+      Observation submitted, ContextScope scope, InstantiationPlanning.Planner planner) {
 
     if (scope instanceof ServiceContextScope context
         && context.getConsequenceCause() != null
@@ -659,7 +664,7 @@ public class RuntimeService extends BaseService
       // Expose the request's own future as a cooperative signal to all derived execution scopes.
       var result = new CompletableFuture<Observation>();
       var requestScope = serviceScope.withCancellation(result::isCancelled);
-      submitInternal(submitted, requestScope)
+      submitInternal(submitted, requestScope, planner)
           .thenApply(
               observation -> {
                 checkSubmissionCancellation(requestScope);
@@ -677,11 +682,11 @@ public class RuntimeService extends BaseService
     // Coalesced work is shared: cancelling one subscriber must only detach that subscriber.
     var future =
         submissionIdentity == null
-            ? submitInternal(submitted, submissionScope)
+            ? submitInternal(submitted, submissionScope, planner)
             : coalesce(
                 inFlightSubmissions,
                 submissionIdentity,
-                () -> submitInternal(submitted, submissionScope));
+                () -> submitInternal(submitted, submissionScope, planner));
     return future.thenApply(
         result ->
             result != submitted
@@ -901,6 +906,16 @@ public class RuntimeService extends BaseService
   }
 
   private CompletableFuture<Observation> submitInternal(Observation submitted, ContextScope scope) {
+    return submitInternal(submitted, scope, null);
+  }
+
+  CompletableFuture<Observation> submitInstantiated(Observation child, ContextScope scope,
+      InstantiationPlanning.Planner planner) {
+    return withinResolutionCycle(child, scope, admitted -> submitWithObserver(child, admitted, planner));
+  }
+
+  private CompletableFuture<Observation> submitInternal(Observation submitted, ContextScope scope,
+      InstantiationPlanning.Planner planner) {
     long preparationStarted = System.nanoTime();
 
     if (ConnectionSupport.isIndividual(submitted)
@@ -911,7 +926,7 @@ public class RuntimeService extends BaseService
           || scope.getTargetObservation() == null
           || scope.getSourceObservation().getId() != participants.get(0).getId()
           || scope.getTargetObservation().getId() != participants.get(1).getId()) {
-        return submitInternal(submitted, scope.between(participants.get(0), participants.get(1)));
+        return submitInternal(submitted, scope.between(participants.get(0), participants.get(1)), planner);
       }
     }
 
@@ -1249,6 +1264,11 @@ public class RuntimeService extends BaseService
       resolution
           .getMetadata()
           .put("constraints", Utils.Json.asString(resolutionScope.getResolutionConstraints()));
+      if (planner != null) {
+        resolution.getMetadata().put("instantiationResolution", planner.mode().name());
+        resolution.setDescription((planner.mode() == org.integratedmodelling.klab.api.knowledge.InstantiationResolution.Mode.NONE
+            ? "Acknowledgment of " : "Binding shared explanation for ") + observation);
+      }
 
       // Remote generation/source checks run outside native transaction commit locks. Local
       // exact member/result read-set guards remain on that commit transaction.
@@ -1261,6 +1281,7 @@ public class RuntimeService extends BaseService
       var selectionFinalizers = new java.util.concurrent.CopyOnWriteArrayList<Runnable>();
       return (predefinedContextualization != null
               ? createPredefinedDataflow(predefinedContextualization, observation, scope)
+              : planner != null ? planner.plan(observation, resolutionScope)
               : resolver
                   /* resolve asynchronously. If there are contextualization data the resolver will compile them in. */
                   .resolve(observation, resolutionScope))
@@ -4784,16 +4805,24 @@ public class RuntimeService extends BaseService
                 .put(org.integratedmodelling.klab.api.digitaltwin.ObservedEvent.PENDING, true);
           }
         }
+        var planners = InstantiationPlanning.prepare(scope, contextScope);
         for (var child : scope.getOutcomes()) {
           var memberScope =
               instantiationScope.withResolutionConstraints(
                   scope.getResolutionConstraints(child).toArray(ResolutionConstraint[]::new));
           // Retain collective registration and all unrelated constraints, replacing lexical scope
           // with the producing instantiation model's namespace/project for this member only.
-          tasks.add(
-              memberScope
-                  .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
-                  .submit(child, memberScope));
+          var planner = planners.get(child);
+          try {
+            tasks.add(planner != null ? submitInstantiated(child, memberScope, planner) :
+                memberScope
+                    .getService(org.integratedmodelling.klab.api.services.RuntimeService.class)
+                    .submit(child, memberScope));
+          } catch (RuntimeException failure) {
+            // Keep ownership of earlier asynchronous children until they have drained.
+            tasks.add(CompletableFuture.failedFuture(failure));
+            break;
+          }
         }
 
       } else if (scope.getTarget().getObservable().getContextualization()

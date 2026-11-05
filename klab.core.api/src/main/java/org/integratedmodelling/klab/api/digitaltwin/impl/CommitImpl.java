@@ -47,6 +47,7 @@ public class CommitImpl implements KnowledgeGraph.Commit {
     copy.getAddedObservations().addAll(source.getAddedObservations());
     copy.getAddedCohorts().addAll(source.getAddedCohorts());
     copy.getModifiedAssets().addAll(source.getModifiedAssets());
+    copy.getBookkeepingOnlyAssets().addAll(source.getBookkeepingOnlyAssets());
     copy.getDeletedAssets().addAll(source.getDeletedAssets());
     copy.setObservationCessations(source.getObservationCessations());
     copy.setCohortMembershipChanges(source.getCohortMembershipChanges());
@@ -74,9 +75,18 @@ public class CommitImpl implements KnowledgeGraph.Commit {
   private Set<Long> addedObservations = new HashSet<>();
   private Set<Long> addedCohorts = new HashSet<>();
   private Set<Long> modifiedAssets = new HashSet<>();
+  private Set<Long> bookkeepingOnlyAssets = new HashSet<>();
   private String owner;
   private org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause consequenceCause;
 
+  @Override
+  public Set<Long> getBookkeepingOnlyAssets() {
+    return bookkeepingOnlyAssets;
+  }
+
+  public void setBookkeepingOnlyAssets(Set<Long> value) {
+    bookkeepingOnlyAssets = new HashSet<>(value);
+  }
   @Override
   public org.integratedmodelling.klab.api.digitaltwin.Consequence.Cause getConsequenceCause() {
     return consequenceCause;

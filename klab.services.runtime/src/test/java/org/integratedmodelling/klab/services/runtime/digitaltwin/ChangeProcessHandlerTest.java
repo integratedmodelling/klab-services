@@ -231,6 +231,37 @@ class ChangeProcessHandlerTest {
     assertEquals(Consequence.Outcome.APPLIED, f.evaluate().outcome());
   }
 
+  @Test void optionalChangeChildrenDoNotRetriggerEitherQualityThroughTheirBearerOrObserver() throws Exception {
+    var f = new Fixture(); f.bearer.setGeometry(GRID);
+    f.commit.getAddedObservations().add(f.bearer.getId());
+    var absent = org.integratedmodelling.common.runtime.ResolutionOutcomeReceipt.terminal(Observation.empty(),
+        org.integratedmodelling.klab.api.services.runtime.Dataflow.ResolutionOutcome.NO_MODEL);
+    when(f.first.submit()).thenReturn(CompletableFuture.completedFuture(absent));
+    when(f.second.submit()).thenReturn(CompletableFuture.completedFuture(absent));
+    assertEquals(Consequence.Outcome.NO_ACTION, f.evaluate().outcome());
+    verify(f.first).submit(); verify(f.second).submit();
+    var observer = observation(40, SemanticType.AGENT, PHYSICAL);
+    observer.setPerceivedGeometry(GRID);
+    f.observations.add(observer);
+    for (long id : List.of(30L, 32L)) {
+      var child = observation(id, SemanticType.PROCESS, GRID);
+      when(child.getObservable().is(SemanticType.CHANGE)).thenReturn(true);
+      child.setResolvedCoverage(0);
+      f.observations.add(child);
+      f.commit.setId(id);
+      f.commit.getAddedObservations().clear(); f.commit.getAddedObservations().add(id);
+      f.commit.getModifiedAssets().addAll(List.of(f.bearer.getId(), observer.getId()));
+      f.commit.getBookkeepingOnlyAssets().addAll(List.of(f.bearer.getId(), observer.getId()));
+      assertEquals(Consequence.Outcome.NO_ACTION, f.evaluate().outcome());
+    }
+    verify(f.first, times(1)).submit(); verify(f.second, times(1)).submit();
+    // A later actual quality update remains eligible: optional absence is not a negative cache.
+    f.commit.getAddedObservations().clear();
+    f.commit.getModifiedAssets().add(f.quality.getId());
+    f.evaluate();
+    verify(f.first, times(2)).submit(); verify(f.second, times(1)).submit();
+  }
+
   @Test void unprovedChangeResultsNeverCountAsApplied() throws Exception {
     for (int variant = 0; variant < 8; variant++) {
       var f = new Fixture(); f.observations.add(f.event);

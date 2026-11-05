@@ -50,12 +50,20 @@ Unknown discovery, partial support and failed execution cannot justify an exhaus
 5. **Resolve dependencies.** Mandatory dependencies require relevant coverage. Entering another
    model-native context can require preparation/admission there. Deferred classifier/member-
    quality obligations must be discharged by their supported execution continuations.
+   The accepted graph retains the original producer AdmissionReceipt for compilation.
+   Compilation, including observer-contribution metadata, consumes that receipt without
+   repeating document validation or replacing it with a later source/semantic publication.
+   Model identity, namespace, executable digest and the full retained semantic binding must
+   still match the graph. Missing or changed evidence rejects compilation; it does not cause
+   a fresh admission to overwrite the planned proof.
 6. **Recheck and execute.** Runtime verifies the producing-model proof and the actual bound
    inputs, executes the required work, and validates the root attempt before publication.
 
 PREPARABLE discovery intentionally includes candidates whose prerequisites can be prepared.
-It is not an installed-method or execution certificate. A source edit, executable change,
-semantic-generation mismatch or changed scope witness invalidates applicable reuse.
+It is not an installed-method or execution certificate. Source or semantic changes invalidate
+applicable reuse in subsequent attempts. An already admitted attempt retains its captured
+source and semantic view. Changing its executable model, proof or scope witness is not
+authorized by that snapshot; Runtime still checks the actual bindings before execution.
 
 ## Receipts and semantic cycles
 
@@ -181,6 +189,13 @@ NO_MODEL is nonfatal; unknown or partial completion remains deferred. Duplicate 
 waive recomputation, source, cycle or native-input guards.
 
 ## Scheduled event acceptance
+
+The [`@resolution` instantiation policy](INSTANTIATION_RESOLUTION.md) changes secondary
+explanatory selection, not native acceptance. `none` acknowledges existence without numerical
+proof; `collective` retains one frozen selection and admission snapshot while independently
+binding and checking every child's support and inputs. An originating observation policy
+overrides producer declarations. All modes retain ordinary transaction ownership and atomic
+publication of the produced batch.
 
 An event instantiator's schedule/plan admission and an individual event's start/end execution
 are separate gates. Instantiators execute on accepted temporal intervals, never as temporal

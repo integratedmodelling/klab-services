@@ -1016,6 +1016,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     // Only increments performed by this root's link() bookkeeping may be projected through a
     // frozen classification read. Arbitrary setters and all other payload changes still fail.
     private Map<Observation, Integer> classificationChildDeltas = new IdentityHashMap<>();
+    private Set<RuntimeAsset> bookkeepingUpdates = new HashSet<>();
+    private Set<RuntimeAsset> payloadUpdates = new HashSet<>();
     private List<SchedulerWrite> classificationSchedulerWrites = new ArrayList<>();
 
     /** Record the scheduler's exact initialization marker before exposing it. */
@@ -2079,6 +2081,8 @@ public class DigitalTwinImpl implements DigitalTwin {
       this.classificationLocalGuards = parent.classificationLocalGuards;
       this.classificationMutationStamp = parent.classificationMutationStamp;
       this.classificationChildDeltas = parent.classificationChildDeltas;
+      this.bookkeepingUpdates = parent.bookkeepingUpdates;
+      this.payloadUpdates = parent.payloadUpdates;
       this.classificationSchedulerWrites = parent.classificationSchedulerWrites;
       this.afterCommitActions = parent.afterCommitActions;
       this.rollbackActions = parent.rollbackActions;
@@ -2262,13 +2266,13 @@ public class DigitalTwinImpl implements DigitalTwin {
                 () ->
                     replacement.setChildrenCount(Math.max(0, replacement.getChildrenCount() - 1)));
           }
-          update(sourceObs);
+          markBookkeepingModified(sourceObs);
           targetObs.setParentTransientId(sourceObs.getTransientId());
         } else if (source instanceof CohortImpl sourceCohort
             && destination instanceof ObservationImpl targetObs
             && relationship == GraphModel.Relationship.HAS_MEMBER) {
           sourceCohort.setChildrenCount(sourceCohort.getChildrenCount() + 1);
-          update(sourceCohort);
+          markBookkeepingModified(sourceCohort);
           targetObs.setParentTransientId(sourceCohort.getTransientId());
         }
       }
@@ -2279,8 +2283,26 @@ public class DigitalTwinImpl implements DigitalTwin {
       synchronized (graph) {
         requireOpen();
         classificationMutationStamp[0]++;
-        modified.add(checkPresentAsset(asset));
+        markPayloadModified(checkPresentAsset(asset));
       }
+    }
+
+    private void markPayloadModified(RuntimeAsset asset) {
+      modified.add(asset);
+      payloadUpdates.add(asset);
+    }
+
+    private void markBookkeepingModified(RuntimeAsset asset) {
+      modified.add(asset);
+      bookkeepingUpdates.add(asset);
+    }
+
+    void decorateBookkeepingCommit(CommitImpl commit) {
+      bookkeepingUpdates.stream()
+          .filter(asset -> !payloadUpdates.contains(asset))
+          .map(RuntimeAsset::getId)
+          .filter(id -> id > 0 && commit.getModifiedAssets().contains(id))
+          .forEach(commit.getBookkeepingOnlyAssets()::add);
     }
 
     /** All members are validated and copied before any staged state becomes visible. */
@@ -2535,7 +2557,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                     original,
                     prepared.families(),
                     prepared.snapshots()));
-            if (prepared.member().getId() > 0) modified.add(prepared.member());
+            if (prepared.member().getId() > 0) markPayloadModified(prepared.member());
           }
           for (var item : audit) {
             item.put("authority", authority);
@@ -2952,7 +2974,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                 data.toArray());
             classificationAuditBindings.add(
                 new ClassificationAuditBinding(activity, item, attribution.original()));
-            if (attribution.original().getId() > 0) modified.add(attribution.original());
+            if (attribution.original().getId() > 0) markPayloadModified(attribution.original());
           }
           attributions.putAll(stagedBatch);
           var previousAudit = activity.getMetadata().get(Metadata.IM_ATTRIBUTIONS);
@@ -3190,7 +3212,7 @@ public class DigitalTwinImpl implements DigitalTwin {
           configurationRevisions.put(
               observation,
               new ConfigurationAttribution(observation, replacement, update, nativeRead));
-          modified.add(observation);
+          markPayloadModified(observation);
           link(
               activity,
               observation,
@@ -3451,7 +3473,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                                 birth.lineageJson(),
                                 "catalogues",
                                 birth.catalogues())));
-                modified.add(observation);
+                markPayloadModified(observation);
                 modified.add(activity);
               });
           guardConsequenceCommitAdmission(admission);
@@ -3966,7 +3988,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                   && activeObserver.getId() != target.getId()) {
                 if (schedulerJournal.isEmpty()) {
                   kgTransaction.perceive(activeObserver, target.getGeometry());
-                  modified.add(activeObserver);
+                  markBookkeepingModified(activeObserver);
                 } else
                   for (var journal : schedulerJournal) {
                     if (journal.publicationPending()
@@ -3975,7 +3997,7 @@ public class DigitalTwinImpl implements DigitalTwin {
                           activeObserver,
                           org.integratedmodelling.klab.api.geometry.Geometry.create(
                               journal.support()));
-                      modified.add(activeObserver);
+                      markBookkeepingModified(activeObserver);
                     }
                   }
               }
@@ -3987,6 +4009,7 @@ public class DigitalTwinImpl implements DigitalTwin {
               if (!schedulerJournal.isEmpty()) {
                 var snapshot =
                     createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
+                decorateBookkeepingCommit(snapshot);
                 decorateConfigurationCommit(snapshot);
                 decorateCessationCommit(snapshot);
                 snapshot.setConsequenceCause(scope.getConsequenceCause());
@@ -4049,6 +4072,7 @@ public class DigitalTwinImpl implements DigitalTwin {
         }
         var commit =
             createCommit(commitId, scope.getUser().getUsername(), stored, modified, linked);
+        decorateBookkeepingCommit(commit);
         decorateConfigurationCommit(commit);
         decorateCessationCommit(commit);
         commit.setConsequenceCause(scope.getConsequenceCause());
@@ -4332,7 +4356,7 @@ public class DigitalTwinImpl implements DigitalTwin {
       if (cohort instanceof CohortImpl cohortImpl && geometry != null) {
         cohortImpl.setGeometry(GeometryRepository.INSTANCE.geometry(geometry));
         synchronized (graph) {
-          modified.add(cohortImpl);
+          markPayloadModified(cohortImpl);
         }
       }
     }
