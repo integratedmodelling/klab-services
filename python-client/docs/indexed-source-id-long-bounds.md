@@ -49,3 +49,22 @@ before delivery. No scientific live run or source-existence claim.
 
 - Wheel: `0b29affe26ffa22c3e67720588418ee81020949a45fb66e804bac40c844a0186`
 - Sdist: `aa01bd035095e34326aa4e7fff9e9ca9dce1a3dbbb681d6d7928d3eddee4bb1a`
+
+#229 merged `e92b8be52e21f81acafcd9436a962d77d5fa7dbf`, all hosted checks,
+ancestry/tree equality and145 exact-source postmerge passed; branch retired.
+Accepted parent integrated `d9f76fea2`; only adjacent public-api Markdown additions
+conflicted, both retained. Combined installed validation active; prior counts are
+not presented as combined-tree results. Production source-ID fix remains unchanged.
+
+## Combined candidate verified
+
+`d9f76fea2b7f98c96b94c916be1ceb2276eab98b` includes accepted #229. Fresh
+3,385 installed tests/all 17 gates/build/lint/source parity passed. Exact source/
+installed/raw-harness/artifact identity, unchanged committed SDK blob and current
+LF-normalized worktree parity verified; native constructor/JSON probe retained.
+
+- Wheel: `739fcbe8db83ea2c947a683078bde211f6004476240b0ba0fd11115ccb388ad7`
+- Sdist: `e891cdb9f26624e51f3b24e0c689e5c81716bb481ae1a7c9389690481a6c2ba8`
+
+No scientific live run, actual max-ID source or Java production claim. Final focused
+checks/normal PR/hosted CI/eligible merge/postmerge remain required.

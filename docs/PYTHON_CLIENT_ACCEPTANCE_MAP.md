@@ -1,5 +1,26 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Source-ID wire-domain correction: combined candidate PASS
+
+`d9f76fea2` includes accepted #229; 3,385 installed tests/all17gates/build/lint/
+source parity and exact source/install/harness/artifact binding passed. Four red
+cases before fix; shared point-read preflight rejects source IDs above native
+positive-long range as ProtocolError before HTTP. Native constructor/JSON domain
+probe passed, not actual source existence or scientific computation. Existing
+source-zero/detached behavior preserved. Final focused/PR/CI/merge pending; full
+RC-P2.2/A+B/scientific provenance gates remain open.
+
+## Current delivery / source identity wire-domain correction
+
+#229 merged `e92b8be52e21f81acafcd9436a962d77d5fa7dbf`, all checks/ancestry/tree
+equality/145 exact-source postmerge passed; branch retired. Earlier pending CODELIST
+notes are historical; acceptance remains empty metadata only, not a study dictionary.
+Current source-ID correction rejects IDs outside native positive-long domain before
+sync/async read HTTP. Four before-fix failures and preintegration176focused/3,362
+installed/17gates/native constructorJSON probe PASS. Accepted #229 integrated normally;
+combined installed validation active. No source existence/general-ID migration/Java
+repair/scientific execution claim; full RC-P2.2/A+B/studies remain incomplete.
+
 ## CODELIST retrieval-only candidate: local acceptance PASS
 
 `2f94029fb` includes accepted #228: 3,369 installed tests/all 17 gates/134 focused
