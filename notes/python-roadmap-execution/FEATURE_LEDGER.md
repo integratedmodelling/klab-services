@@ -4,8 +4,9 @@
 |---|---|---|
 | Q10 | PR202 MERGED_BOUNDED, `6305e1e78` | CI bootstrap only; all checks/18-module packaging PASS; branch retired |
 | Q5 | PR201 MERGED_BOUNDED, `76b4d28a4`, reviewed `10ddd25bb` | Fresh four-family Java parsers/cleanup and 2,862 installed tests/16 gates PASS; postmerge73 tests PASS; branch retired; fullP4.2 PARTIAL |
-| Q1 | Integrated candidate `91adcaba4`, PR pending | 2,886 installed tests/16 gates and fresh integrated Java recovery/identity/20cells/denials/creator cleanup PASS; prior failures retained; normal CI/merge remain |
-| Q2/Q3/Q4/Q6/Q7/Q8/Q9 | Pending independent queue | Contracts, boundaries and complete crosswalk below; A/B incomplete |
+| Q1 | PR203 MERGED_BOUNDED `597ecb0ae`, reviewed53b3b53e0 | 2,886 installed tests/16 gates and fresh integrated Java recovery/identity/20cells/denials/cleanup PASS; all hosted checks/ancestry/postmerge39 tests PASS; branch retired; fullP1.2/P3.3 PARTIAL |
+| Q3 | feature/python-vector-analysis; base597ecb0ae | Contract in python-client/docs/vector-analysis.md; local native GeoJSON adapter, no exporter/scientific inference; implementation/acceptance pending |
+| Q2/Q4/Q6/Q7/Q8/Q9 | Pending independent queue | Contracts, boundaries and complete crosswalk below; A/B incomplete |
 
 Both inherited branch checkpoints below are historical evidence. This table and
 the latest delivery section supersede their stale pending/build-blocked states.
