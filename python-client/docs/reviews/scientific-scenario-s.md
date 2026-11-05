@@ -61,3 +61,17 @@ final sanitized evidence index and full installed candidate validation remain.
 The new oracle's byte-hash is preserved via an exact .gitattributes entry; existing
 worldview/model/research fixture bytes are not rewritten or normalized. This is
 artifact integrity, not permission to change scientific input or expectation.
+
+## Corroborating implemented Java contract review
+
+At accepted937c758b6, `ModelVisibility.java:61–85` admits explicit namespace/active
+scenario while retaining private/project-private gates; `PrioritizerImpl.java:224–228`
+scores active scenario lexical scope100, selected namespace75, same project50.
+This corroborates, not replaces, the pre-run source-model/language expectation;
+other ranking criteria and complete explanations are not invented.
+`RuntimeService.java:4960–4971,5032–5062` obtains authorized configuration before
+reconstruction/observer connection and throws for a non-admitted principal. Thus
+the actual denied attach has a source-backed no-scientific-submission boundary.
+Final62db4e3bc installed3420tests/all17gates/build/lint PASS; actual20d3bc368 code
+unchanged except reviewed oracle byte policy/documentation. Recommendation now
+**Needs normal hosted delivery evidence**, not a demonstrated backend blocker.
