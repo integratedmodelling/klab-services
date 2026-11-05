@@ -99,3 +99,25 @@ directly, and add public async small-complete exports with and without length.
 No bytes/expectations/limits/thresholds/exclusions changed. Preserve failed hosted
 logs; require fresh exact installed gates, actual Java and final-head hosted checks
 before reusing acceptance. No failed scientificrun or blind rerun is concealed.
+
+Corrected executable33db19a29: `run_gates.py --repo <checkout>
+--label ab-native-async-export-size-final` PASS:3,162installedtests/all17gates/lint/
+build/sourceparity;150focusedtestsPASS. NoneditableWindowsPython3.12.7, inherited
+Rasterio warning retained. Wheel3c51fcc9b439d5c4c38f7e838d88b8b517e6b836f8c1806aecd91a5befef4ff4;
+sdist25a0ad8bedd4be21273873061b0dd80eb82d2777e2a83e940771283b7adef661.
+One corrected freshJava runnative-async-export-size-liveACTIVE; no resultpredeclared.
+PR219 cannot merge until exactcorrectedlive evidence and allfinalhostedchecksPASS.
+
+Corrected exactlivecandidate33db19a29da57a5a6b0068c7b5787fbe065a853e PASS:
+GeoJSONidentity/rectangle/coordinates, native1,048,576cells/validity/unit/dtype/CRS/
+transform/bounds,8,390,163bytes/129chunks/max64KiB; both injectedreadinterruptions
+preserve destinations/close responses/remove staging; creatorcontext/session and
+ownedservice/listenercleanupPASS,unrelatedJavaunchanged. RawSDK/sharedsync/harness/
+installed/liveidentity/private reportprivacy/nativebytehash reverified. Corrected
+nativebytes equal original candidate; no scientificexpectations orlimits changed.
+Private native-async-export-size-final-validation.json binds exact correctedreceipt.
+
+Finalreview reaffirms boundedreadiness for maintainerPRreview only;150focused/
+3,162installed/all17gates and correctedactualJavaPASS. Initialhostedcoveragefailure
+remains a failure, not waived. All finalhead hostedchecks/protections/normaleligible
+merge stillrequired. Broadermatrices/fullA-B/studies/release notpromoted.

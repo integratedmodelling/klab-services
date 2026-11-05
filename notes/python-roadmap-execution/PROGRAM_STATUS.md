@@ -1,5 +1,24 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest corrected PR219 actual validation pass / final hosted checks next
+
+33db19a29 LOCAL_ACCEPTED_BOUNDED:3,162installed/all17gates/lint/parity+150focused;
+correctedactualJavaGeoJSON/native1,048,576cells/metadata/129chunks/interruption/
+creator-servicecleanupPASS. ExactSDK-sharedsync-harness-installed-live/nativehash/
+privacy reverified; rasterbytes equaloriginalcandidate. Initialhostedcoveragefailure
+retained,notwaived; no predicate/threshold/exclusion/oracle change. Pushfinaldocs/
+correctedhead toPR219,next finalhostedchecks,normaleligiblemerge onlyafterallPASS.
+Fullformat/provider/time/revision/A-B/studies incomplete;nosleepconditionwhileworkremains.
+
+## Latest PR219 correction installed pass / new exact Java validation
+
+33db19a29:3,162installed/all17gates/lint/parity+150focusedPASS. Sharedpure final
+bytepredicate/directtests unchangedsemantics;coverage thresholds/exclusionsunchanged.
+Onefreshnative-async-export-size-liveACTIVE;actualGeoJSON/nativecells/streamfault/
+cleanupnotpredeclaredPASS. Originalhostedcoveragefailure retained;PR219OPENoldhead
+19a92f020/unmerged. NewexactJavaidentity/review/finalhostedchecksrequiredbeforemerge.
+No wholeA/B/study promotion;nosleepconditionwhileactionableworkremains.
+
 ## Latest PR219 hosted failure / bounded validation correction
 
 PR219 OPEN19a92f020,NOTeligible: hostedUbuntu3.11–3.13 tests passed but changed-

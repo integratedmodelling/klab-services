@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## PR219 corrected candidate validation
+
+PR219OPEN;correctedtested33db19a29 afterhostedcoveragefailure(old19a92f020 retained).
+Unchangedfinalsizepredicate sharedpure/directtested; no thresholds/exclusions changed.
+3,162installed/all17gates+150focused+correctedactualJavaGeoJSON/millioncellnative/
+129chunks/interruption/cleanupPASS;nativebytes identical,exactSDK-harness-livepins
+verified. Finalpush/hostedchecks/normalmergepending. Wheel
+3c51fcc9b439d5c4c38f7e838d88b8b517e6b836f8c1806aecd91a5befef4ff4.
+No wholematrix/A-B/study/releasepromotion.
+
 ## Native async export local acceptance
 
 feature/python-native-async-export;basea3e8949c5;tested4dd0ef841;PR/mergepending.

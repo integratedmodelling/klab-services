@@ -86,3 +86,17 @@ localWindows recorded. No merge. Shared pure completed-size validator and direct
 publiccomplete-stream tests preserve the exact predicate;150focused testsPASS.
 No weakened thresholds/exclusions. Fresh installed/live/hosted validation required;
 prior passing scientific receipt stays bound to4dd0ef841, not a corrected candidate.
+
+Corrected executable33db19a29: freshfullinstalled3,162tests/all17gates/lint/build/
+sourceparityPASS;150focusedtestsPASS. No threshold/exclusion/bytepredicate change.
+Wheel `3c51fcc9b439d5c4c38f7e838d88b8b517e6b836f8c1806aecd91a5befef4ff4`;
+sdist `25a0ad8bedd4be21273873061b0dd80eb82d2777e2a83e940771283b7adef661`.
+Freshnative-async-export-size-liveACTIVE; finalJava/hosted acceptance pending.
+
+Corrected exact-candidate Java run PASS at33db19a29da57a5a6b0068c7b5787fbe065a853e:
+same nativeGeoJSONidentity/coordinates,1,048,576rastercells/metadata,8,390,163bytes/
+129chunks/max64KiB, interruptednew/overwrite preservation and creator/servicecleanup.
+NativeSHA256 remains45ab2c5acdb3fad439fea7d3c75112dd8e122a3798ef84ed5474104f1fd1f23f.
+RawSDK/sharedsync/harness/installed/live identity and private reportcredentialabsence
+verified. Originalhostedfailure remainsretained; correctedfinal-head hostedchecks
+must succeed before normalmerge. No coverageexclusion, oracle orscientificchange.
