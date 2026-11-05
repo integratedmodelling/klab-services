@@ -5,6 +5,7 @@ from pathlib import Path
 
 from klab_client import AsyncClient, Endpoint, ObservationOptions, ObservationRequest, RectangularGeometry
 from klab_client.errors import AuthorizationError, MissingAssetError, SubmissionOutcomeUnknown
+from klab_client.client import scope_token
 from .scientific_checks import require
 
 
@@ -80,7 +81,8 @@ async def scenario(state):
             original_id = job.id
             observation, wait_calls = await cancel_own_wait(job, owner.transport._http, calls)
             reference = job.to_handle()
-            require(job.id == original_id and reference.job_id == original_id and reference.context_id == context.id,
+            require(job.id == original_id and reference.job_id == original_id and reference.context_id == context.id and
+                reference.scope == scope_token(focused) == scope_token(observation._context),
                 "Local cancellation changed original Job/context identity")
             data = await observation.fetch_data(range(20), curve="D2_YX")
             require(observation.units == data.units == "m" and data.values == (234.5,) * 20,
