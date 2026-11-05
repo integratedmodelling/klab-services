@@ -1,5 +1,28 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest delivery — direct CI prerequisite Q12
+
+PR208 MERGED_BOUNDED `079bb15bfe3fa29fbe8528b4569572123f8c4cd4`, reviewed
+`6dda63cd0dbdaba46a84ca192e2b7fd76936c223`. Exact accepted PR202 official plugin
+bootstrap applied to routing workflow; YAML/pin/nonpersistent credentials and
+unchanged routing/coverage steps verified. All hosted checks including both routing
+jobs PASS; normal merge/ancestry/source equality verified; owned branch retired.
+Product/wheel/science N/A. PR207 incorporates accepted integration; its own final-head
+checks and focused Maven counts remain required. Q6 remains contract-only pending Q11.
+
+## Latest direct prerequisite
+
+Q11 fix/resource-access-forbidden; base554b5e30b9433300610ff66c4f79f6d564018827;
+tested9a39e8a39cd33f29a199fb9087e10b6c925b7f53; PR/mergepending. Java-only,
+wheelN/A; existingPythonSDKunchanged. Baselinecompiledexceptionrouting→500reproduced;
+twoexplicitprojectgrantguardsnowuseexistingtypeddenial,withoutchanginggrantlogic
+orremappinggenericresourcefailures. Isolatedcompile+9focusedJUnit/SpringMockMvcPASS,
+0skips;108PythonregressionsPASS;YAML/pin/oldpackagingcommandretained;sharedtarget
+classhashesunchangedandnoownedJava/cmdprocessremains. Review
+python-client/docs/reviews/resource-access-forbidden.md. Hostedfullpackaging+
+focuseddeclaredMaventests/normalprotectionrequired. Q6contract-onlylocalbranch
+b4cdb8f33retainedindependently;noactualsourceauthoring/scientificexecutionyet.
+
 | Item | Current delivery | Evidence and remaining boundary |
 |---|---|---|
 | Q10 | PR202 MERGED_BOUNDED, `6305e1e78` | CI bootstrap only; all checks/18-module packaging PASS; branch retired |
