@@ -30,3 +30,5 @@ jobs:
         ./mvnw -B --no-transfer-progress -f .ci/klab-product/pom.xml install
     - name: Build with maven
       run: ./mvnw -B -U clean package -DskipTests
+    - name: Project authorization HTTP regression
+      run: ./mvnw -B -pl klab.services.resources -am -Dtest=KlabErrorHandlerTest,ResourceCreationAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false test
