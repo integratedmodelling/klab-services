@@ -1,3 +1,15 @@
+# Current feature ledger — 2026-11-05 UTC
+
+| Item | Current delivery | Evidence and remaining boundary |
+|---|---|---|
+| Q10 | PR202 MERGED_BOUNDED, `6305e1e78` | CI bootstrap only; all checks/18-module packaging PASS; branch retired |
+| Q5 | PR201 MERGED_BOUNDED, `76b4d28a4`, reviewed `10ddd25bb` | Fresh four-family Java parsers/cleanup and 2,862 installed tests/16 gates PASS; postmerge73 tests PASS; branch retired; fullP4.2 PARTIAL |
+| Q1 | Integrated candidate `91adcaba4`, PR pending | 2,886 installed tests/16 gates and fresh integrated Java recovery/identity/20cells/denials/creator cleanup PASS; prior failures retained; normal CI/merge remain |
+| Q2/Q3/Q4/Q6/Q7/Q8/Q9 | Pending independent queue | Contracts, boundaries and complete crosswalk below; A/B incomplete |
+
+Both inherited branch checkpoints below are historical evidence. This table and
+the latest delivery section supersede their stale pending/build-blocked states.
+
 ## Preserved Q1 planning/crosswalk checkpoint (historical)
 # Stable feature queue and complete requirement crosswalk
 

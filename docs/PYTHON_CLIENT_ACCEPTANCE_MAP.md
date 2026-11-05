@@ -1,6 +1,6 @@
 # Python roadmap acceptance map — 3 November 2026
 
-## A+B / three-study master program — 5 November 2026
+## Historical Q1 master-program checkpoint — 5 November 2026
 
 The supplied master specification now authorizes an ordered multi-feature queue;
 earlier one-increment stopping rules below are historical. No previous bounded

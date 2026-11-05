@@ -109,3 +109,37 @@ historical science, worldviews, Java product code or dependencyversions changed.
 Java work, preserving identities, exact values and explicit creator-only cleanup.”
 Ready to propose only when final exact-candidate live/negative checks pass. Full
 RC-P1.2/P3.3 and all other A/B scenarios remain visible and incomplete.
+
+## Integrated candidate review and acceptance
+
+Reviewed base `76b4d28a4fb87c7a4325fce5138344b3ac09ef25`, executable candidate
+`91adcaba4d465e91f1c000a0e8a4aca6bcf5139b`; author/CLI review only. Complete
+feature diff and six conflict resolutions inspected. Both parser and recovery
+suite/scenario entries are retained; no production SDK/Java changes. Earlier
+packaging blocker is resolved by accepted PR202, not waived.
+
+No new blocking or important defect found within this bounded slice. Existing
+findings/limits above remain: method/path audit is harness instrumentation, not
+a substitute for server authorization; completed same-incarnation work only.
+Scientific fidelity uses independent 20-cell Decimal oracle (zero, negative,
+missingness and float64 precision). Identity, permissions, local-close lifecycle,
+state association, bounded child waits, owned cleanup, private evidence and
+maintainability were rechecked. No public API duplication or concurrent contributor
+ownership claim; no reviewers assigned. Scale/production/retained-history support
+are outside scope, not proved by this run.
+
+| Check | Exact candidate/environment | Result and boundary |
+|---|---|---|
+| `run_gates.py --repo <checkout> --label ab-q1-integrated` | 91adcaba4, noneditable Python3.12.7 | PASS: 2,886 tests,16 established gates,lint/build/install/source parity; retained Rasterio warning |
+| Focused recovery/parser/map tests | Integrated conflict resolution | PASS:39 tests |
+| `run_reliability_acceptance.py --server-repo <checkout> --java <Temurin21> --components <corrected-components.json> --state-dir <q1-integrated-live> --scenario completed-recovery` | 91adcaba4, same pinned Java/core/components and synthetic consolidation worldview | PASS: original Job2/observation15/focus restored in distinct PID,20 cells each,zero child submissions/disposal,foreign/deleted refusals,creator releases |
+| Owned processes/listeners and existing Java | q1-integrated-live/result.json | PASS: owned closed, unrelated Java unchanged |
+| Hosted checks/normal merge | Final documentation head | Pending; required before eligible merge |
+
+Wheel SHA256 `9a03a4e48e1641d2ea622238c543276b6ec8d790dd27e199912c2cf52ff9430c`;
+sdist `0bc5fba4891433cf843295336c6e709f6054421af37e7bb7fcffec47d9960a82`.
+Evidence roots remain external `ab-q1-integrated/identity.json` and
+`q1-integrated-live/result.json`; earlier failures retained. Subsequent edits are
+documentation only and must be verified as such before reusing this evidence.
+**Ready for bounded maintainer review**; no independent human approval, whole-row
+acceptance, upstream release or historical replication claim.
