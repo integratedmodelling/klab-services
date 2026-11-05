@@ -1,5 +1,21 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Native scan slice candidate — Python-only bounded PASS
+
+feature/python-native-scan-slices from accepted PR222/c10555ebf; contract12cbd9516,
+executableba7773abd. Existing Java Slice type/interval schema enables shared typed/
+dict sync/async validation; INPUT_CHANGE support, no Java production change.
+135focused/3,229installed/17gates/lint/build/parity, actualJava constructor/JSON and
+20cell234.5m initialization reads PASS. Exact source/install/harness/live binding,
+privacy/creator-service cleanup verified. Positive temporal execution NOT_RUN,
+revision lease NOT_CLAIMED. Normal PR/CI/merge pending; fullRC-P2.2/A-B remain open.
+
+Research access changed: three original publisher-linked Kaduna CSVs and Nigeria/
+carbon manifests recovered and hashed. CSV evidence retains formatting/total
+differences; no normalization, fused-map or Java reproduction claim. Carbon2018
+WCS description/summary/legend recovered; WCS unit conflict retained. Full original
+raster download active from exact publisher-listed URL; no unverified stage promotion.
+
 ## Model source authoring bounded local PASS
 
 feature/python-model-source-authoring from PR221/6cc5bd769; tested2087dd716.
