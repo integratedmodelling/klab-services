@@ -7,7 +7,7 @@ import pytest
 import rasterio
 from rasterio.transform import Affine
 
-from workflows.nonuniform_export import verify
+from workflows.nonuniform_export import verify, negative_metadata, digest
 
 
 def write(tmp_path, *, change=None, units="m", **options):
@@ -67,3 +67,12 @@ def test_native_validator_pins_gtiff_and_rejects_other_encodings(tmp_path, monke
     with pytest.raises(rasterio.errors.RasterioIOError):
         verify(path)
     assert calls == ["GTiff"]
+
+
+def test_controlled_metadata_negatives_preserve_original_native_bytes(tmp_path):
+    path = write(tmp_path)
+    before = digest(path)
+    report = negative_metadata(path, tmp_path)
+    assert report == {"tier": "L2", "rejected": ["missing-units", "wrong-units", "bad-crs", "missing-nodata"],
+        "original_unchanged": True}
+    assert digest(path) == before
