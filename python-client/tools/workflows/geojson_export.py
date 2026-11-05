@@ -49,7 +49,8 @@ def validate_reference(payload, observation):
     return feature
 
 
-def run(state, *, client_factory=None, recovery_command=None, scientific_check=None, before_recovery=None):
+def run(state, *, client_factory=None, recovery_command=None, scientific_check=None, before_recovery=None,
+        region_observable="earth:Region"):
     """Export actual GeoJSON and verify a fresh-process export of the same result."""
     state = Path(state)
     config = json.loads((state / "scientist.json").read_text())
@@ -67,7 +68,7 @@ def run(state, *, client_factory=None, recovery_command=None, scientific_check=N
         failure = None
         try:
             context = session.create_context()
-            observation = context.observe(ObservationRequest("earth:Region", geometry=RectangularGeometry(
+            observation = context.observe(ObservationRequest(region_observable, geometry=RectangularGeometry(
                 200000, 200500, 6000000, 6000400, 5, 4))).result(120)
             scientific = scientific_check(client, context, observation) if scientific_check else None
             require(any(item.media_type == "application/geo+json" for item in client.export_formats(observation)),
@@ -97,7 +98,8 @@ def run(state, *, client_factory=None, recovery_command=None, scientific_check=N
                 # The worker obtains credentials from the explicitly selected provider,
                 # not inherited direct-Client environment settings.
                 env = {key: val for key, val in env.items() if not key.startswith("KLAB_")}
-            process = subprocess.run(command, env=env, capture_output=True, text=True, timeout=120)
+            process = subprocess.run(command, env=env, capture_output=True, text=True, timeout=120,
+                **({"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}))
             require(process.returncode == 0, client.transport.redact(process.stderr))
             example = json.loads(example_path.read_bytes())
             validate_reference(example, observation)

@@ -1,5 +1,11 @@
 # Functional workflows and test organization
 
+`onboarding-journey` reuses the existing Connection facade on the current isolated
+tuple: native TEST ENGINE certificate and token providers, ready-service selection,
+nonuniform scientific cells, audited fresh-process native recovery, known expired
+token and private-context controls. See [controlled onboarding boundaries](onboarding-journey.md).
+This is not genuine production Hub/license acceptance.
+
 `vector-analysis` verifies the optional local GeoDataFrame adapter using actual
 advertised Java native GeoJSON and independent geographic corners. See
 [bounded vector interpretation](vector-analysis.md); no raster-to-vector conversion

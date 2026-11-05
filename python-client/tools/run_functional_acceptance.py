@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "onboarding-journey": "tests/functional/test_onboarding_journey.py",
     "vector-analysis": "tests/functional/test_vector_analysis.py",
     "completed-recovery": "tests/functional/test_completed_recovery.py",
     "parser-preview": "tests/functional/test_parser_preview.py",
