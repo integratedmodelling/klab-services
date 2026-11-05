@@ -5,8 +5,9 @@
 | Q10 | PR202 MERGED_BOUNDED, `6305e1e78` | CI bootstrap only; all checks/18-module packaging PASS; branch retired |
 | Q5 | PR201 MERGED_BOUNDED, `76b4d28a4`, reviewed `10ddd25bb` | Fresh four-family Java parsers/cleanup and 2,862 installed tests/16 gates PASS; postmerge73 tests PASS; branch retired; fullP4.2 PARTIAL |
 | Q1 | PR203 MERGED_BOUNDED `597ecb0ae`, reviewed53b3b53e0 | 2,886 installed tests/16 gates and fresh integrated Java recovery/identity/20cells/denials/cleanup PASS; all hosted checks/ancestry/postmerge39 tests PASS; branch retired; fullP1.2/P3.3 PARTIAL |
-| Q3 | feature/python-vector-analysis; base597ecb0ae; testedf62f6bd42; PR/mergepending | LOCAL_ACCEPTED_BOUNDED:2,943installed/17gates/lint/parity;actualJava nativeGeoJSON independentcorners/identity/coordinates/CRS84/digest+cleanupPASS; wheel3b44da35a00de5415c225dbd7d4d3714464d15a5d822fb1f8bceb90519bdc849;authorreviewcomplete;fullRC-P2.5/CAP09/15PARTIAL |
-| Q2/Q4/Q6/Q7/Q8/Q9 | Pending independent queue | Contracts, boundaries and complete crosswalk below; A/B incomplete |
+| Q3 | PR204 MERGED_BOUNDED d92dbdbde; base597ecb0ae; testedf62f6bd42; reviewede3b944ec3 | 2,943installed/17gates/lint/parity;actualJava nativeGeoJSON independentcorners/identity/coordinates/CRS84/digest+cleanupPASS; wheel3b44da35a00de5415c225dbd7d4d3714464d15a5d822fb1f8bceb90519bdc849;allhostedchecks/ancestry/postmerge61testsPASS;branchretired;fullRC-P2.5/CAP09/15PARTIAL |
+| Q2 | feature/python-onboarding-journey; based92dbdbde | Controlled TEST current-tuple certificate/token/science/fresh-process/access contract in python-client/docs/onboarding-journey.md; implementation/acceptance pending; genuine Hub external |
+| Q4/Q6/Q7/Q8/Q9 | Pending independent queue | Contracts, boundaries and complete crosswalk below; A/B incomplete |
 
 Both inherited branch checkpoints below are historical evidence. This table and
 the latest delivery section supersede their stale pending/build-blocked states.
