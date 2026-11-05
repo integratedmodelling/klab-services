@@ -1,5 +1,17 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest diagnostic delivery / canonical hierarchy contract
+
+PR215 MERGED_BOUNDEDb79c86dd89ccf656b76418cbfb367524bf8fc8fd,reviewed
+62afae6424e416393020eb8c51bf058f890888e8;allfinalchecksSUCCESS;normalmerge/
+ancestry/sourceequality/postmerge16PASS,ownedbranchretired. Capturedactualcanonical
+aliases explain literalURNfailure;no backend/scientificsourcefix. Originalfailed
+830a141cd untouched. Freshfeature/python-canonical-hierarchy-acceptance frommerge:
+contractbeforecode uses independentlyauthoredcanonicaltargets/opaqueworldviewID,
+retains snapshots/sourcecommitment/generation/warnings. Onefreshacceptance after
+installedgates;no semanticmigration/fullQ7promotion. Managedcleanup/Qualitywarning/
+studies/otherA-B gates remainopen;nosleepconditionwhileactionableworkremains.
+
 ## Latest Q7 bounded diagnosis — literal alias mismatch identified
 
 Singleq7-hierarchy-snapshot-livecapturePASS,20records/noreadfailures/noscientific-
