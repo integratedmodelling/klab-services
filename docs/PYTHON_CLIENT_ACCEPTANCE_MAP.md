@@ -1,5 +1,32 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Scientific acceptance architecture — executed N/S, milestone not merged
+
+Accepted remote937c758b6/#231 unchanged; no milestone PR merged. Independent N
+source9c3d14878 and S20d3bc368 each executed once with real Java and passed their
+bounded L4 oracle plus lifecycle. Exact wheel/source/build/model/component identities,
+per-check/five-axis outcomes and cleanup are bound by the
+[evidence index](../notes/python-roadmap-execution/evidence/scientific-acceptance-index-20261105.json)
+and [standalone report](../notes/python-roadmap-execution/SCIENTIFIC_ACCEPTANCE_ARCHITECTURE_REPORT.md).
+This is local acceptance, not hosted delivery, production support or published science.
+Normal ref creation recovered for the genuinely new milestone contributions:
+PR232contract/PR234N/PR233S are open,CI pending. Older provenance ref was not
+retried/renamed, and no rule/protection workaround was used.
+
+| Affected rows | Python / Java / independent verification | Remaining gates and next owner |
+|---|---|---|
+|RC-P2.1/P2.5;CAP08/09/15|Existing implementation retained. N:L4 PASS synthetic20cell values/CRS/centres/orientation/units/mask/selectedplan; L2metadata rejection explicit|Corrected unpublished exporter;single-shard only;provider/time/category/trueaccuracy unverified. Backend/provider supplies genuine tuple/oracle|
+|RC-P1.5;CAP05/06|Existing requests/partialplans retained. S:L4 PASS source-justified lexical66.5m/scenario234.5m outputs and actual associatedmodels|Complete ranking/lineage/rootcommit not served; union contract separatelyBLOCKED. Resolver/semantic owners supply contracts,not Python reasoning|
+|RC-P1.3;CAP18|S real valid-principal private attach AuthorizationError/no scientific mutation and ownedcleanup PASS|Not wholeproductionACL/Hub matrix;operator supplies authorized deployment roles/license|
+|RC-P0/R1;CAP16|Source-family inventory/validator/feedbackselector measured; existing full CI/17gates retained|Normal CI/approval/merge/postmerge pending;scheduledL4worker absent;maintainer/operator provisioning needed|
+
+L1/L2 validation is not L3/L4 acceptance; missing checks remainNOT_RUN. No primary
+row is promoted:23in-scopecriteria1accepted/20partial/1missing/1blocked,+TargetCexcluded;
+18CAP4accepted/13partial/1excluded. Historical study numbering remains separate:
+allthree L3PARTIAL/L4BLOCKED/L5–L7NOT_RUN; newL5replication not executed.
+MILESTONE_INCOMPLETE until qualified delivery and remaining gates pass. No Java,
+ontology,model/component/scientificinput edits,union rerun or power action.
+
 ## Native async semantic inspection: exact-candidate local acceptance PASS
 
 `c84317576` includes accepted #230:3,420 installed/all17gates/160focused and actual
