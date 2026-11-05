@@ -6,9 +6,9 @@ Initial implementation06c6eef53; installed/live gates remain separate.
 
 ## Recommendation
 
-**Needs fixes / validation**, not merge-ready. The feature is a useful missing
-scientific-user slice, not a new exporter or remote algorithm. Required guards and
-final actual-Java/export validation must be demonstrated before proposing a PR.
+**Ready for bounded maintainer review** after the corrections and final installed/
+actual-Java checks below. This is author/CLI recommendation, not human approval or
+release acceptance. Normal final-head hosted checks/protections remain required.
 
 ## Capability and architecture
 
@@ -37,7 +37,13 @@ redaction helper (which would drop legitimate source property names).
 
 - Initial55 focused tests PASS, unexcluded100%lines/branches for vector.py; lintPASS.
 - Core import probe PASS: no scientific libraries imported through package facade.
-- Installed full gates active; actual Java native rectangle workflow not yet run.
+- Final corrected f62f6bd42 installed full gates PASS:2,943tests/17coveragegates,
+  lint/build/install/sourceparity. Actual Java native rectangle workflow now PASS
+  (separate final receipt below). Final wheel
+  `3b44da35a00de5415c225dbd7d4d3714464d15a5d822fb1f8bceb90519bdc849`.
+- Installed core facade probe PASS: optional scientific libraries remain unloaded.
+  Python3.12.7; GeoPandas1.2.0/Shapely2.2.0/pyproj3.8.0/pyogrio0.13.0,
+  pandas3.1.1/NumPy2.5.4; noJava dependency/source changes.
 - Native multipart/hole production is NOT claimed by a rectangle. Independent
   local fixtures cover those adapter semantics only. Artifact digest is not a
   shared server/provenance revision. Area/unit/category inference is absent.
@@ -59,3 +65,29 @@ release/support and geospatial publication remain separate; the current developm
 component is pinned, not promoted to supported release. Correct coordinate precision
 guard, run final installed/coverage/core gates and actual Java comparison/cleanup,
 then re-review exact candidate and require normal hosted CI/protections.
+
+## Final exact-candidate acceptance
+
+Executable candidate `f62f6bd42`, base597ecb0ae; later changes are Markdown only,
+to be verified before evidence reuse. Full feature diff and current Java exporter
+source reviewed for usefulness/fit/contracts/science/identity/lifecycle/state/
+performance/contributor fit/maintainability. No remaining demonstrated blocking or
+important defect in this bounded contract. Geometry/feature budgets are not a
+representative-provider performance claim; unsupported release contracts remain.
+
+| Check / exact command | Environment / evidence | Result and boundary |
+|---|---|---|
+| `run_gates.py --repo <checkout> --label ab-q3-vector-final` | Installed noneditable Python3.12.7, f62f6bd42 | PASS:2,943tests/17coveragegates/lint/build/sourceparity; one existing Rasterio warning |
+| Focused `pytest tests/unit/test_vector_analysis.py --cov=klab_client.vector --cov-branch` | f62f6bd42 | PASS:56tests,unexcluded100%line/branch |
+| `run_reliability_acceptance.py --server-repo <checkout> --java <Temurin21> --components <corrected-components.json> --state-dir <q3-vector-live> --scenario vector-analysis` | Same pinned Java/core/components; synthetic consolidation worldview | PASS:actual advertisedgeospatial.io.geojson,onepolygon/fivepositions,independentcornerswithin1e-6degrees,originalID/URN/positions/CRS84/digestpreserved |
+| Owned cleanup / existing Java | q3-vector-live/result.json | PASS:ownedprocesses/listenersclosed,existingJavaunchanged |
+
+Actual native artifact SHA256
+`e55d912527a0956e403fb448cf34e7be92b8fe6d833058599b390ac9f08d895d`.
+Local multipart/hole/null fixtures are not substituted for Java producer evidence.
+No historical replication, raster-value/class/area/vertical-unit interpretation or
+server revision/consistent provenance snapshot is claimed. Evidence roots external
+`ab-q3-vector-final/identity.json`, `q3-vector-live/result.json`; precision finding
+and initial installed run retained. Suggested PR: bounded native vector analysis
+with explicit scientific/identity/optional-dependency/budget boundaries, these
+commands and remaining limitations. Smallest next action: normal hosted checks.

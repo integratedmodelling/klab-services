@@ -47,6 +47,9 @@ Explicit2D/3D coordinates are preserved; no vertical datum/height units inferred
 Coordinates use GEOS doubles. Integer ordinates with magnitude above2**53 are
 explicitly unsupported rather than silently rounded; original property/feature
 ID integers are not subject to that geometry-storage restriction.
+Topology checks use GEOS's planar representation. There is no antimeridian splitting,
+geodesic interpretation, datum transformation or area calculation; callers must not
+interpret longitude/latitude degree areas as scientific ground-area measurements.
 
 IDs, feature order and every source property are preserved in `features`; duplicate
 IDs are not deduplicated. Dataframe properties use object dtype; absent and null
@@ -58,4 +61,9 @@ The `vector-analysis` owned reliability scenario uses actual advertised Java nat
 GeoJSON and compares its original rectangle against independent Mercator-to-lon/lat
 corners. Multipart/hole/null contracts are independently specified local fixtures,
 not a claim that this live rectangle exercises arbitrary Java multipart producers.
-Implementation exists; installed/live acceptance and review remain separate gates.
+Verified2026-11-05 atf62f6bd42:2,943installedtests/17gates/lint/sourceparity and
+the actualJava native rectangle workflow PASS. Native digest
+`e55d912527a0956e403fb448cf34e7be92b8fe6d833058599b390ac9f08d895d`;
+ownedprocess/listenercleanupPASS,unrelatedJavaunchanged. Normal hosted/merge and
+upstreamrelease/support remain separate gates. See author/CLI
+[contributor review](reviews/vector-analysis.md).
