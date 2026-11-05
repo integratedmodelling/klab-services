@@ -1,5 +1,29 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Native async source preview — integrated candidate PASS
+
+859670c97 includes acceptedPR227/6af50a1dc;3,346installed/17gates/117focused and
+actualJava4familyvalid-invalid/sourcehash/serviceidentity/explicittrim/blank0HTTP
+PASS.20auditedcapabilityGET/parserPOSTonly;0authoringwrites/0scientificsubmissions,
+localreader/ownedservices/listeners cleanup andexactidentity/privacyPASS. Existing
+SourcePreview, never ParsedSource authoringadmission. NoJava/grammar/semanticrevision/
+publication/compilation/execution/reproduction claim. Finalfocused/normalPR/CI/merge
+pending; fullRC-P4.2/CAP-08/A-B/studies remain open. Earlierpending checkpoints
+below retained historically, superseded only for this bounded actualparserPASS.
+
+## PR227 delivered / native async parser preview candidate
+
+PR227merged6af50a1dc83459a17ed065030ca6960addda9b11, reviewed4abf95395/
+testedcdf28153b; allhostedchecks/normalexactheadmerge/ancestry/source and293exact
+sourcepostmergePASS; branchretired. Nativeasyncmetadata/native-null compatibility
+accepted only in bounded scope, not fullRC-P4.1/CAP-06/A-B or scientificreplication.
+Current AsyncSourcePreviews shares source/secret/binding/DTO/hash checks with sync;
+initial2ef2fed06 passed117focused/3,281installed/17gates beforeparent227 integration.
+Accepted227 normallymerged; bothrunnerentries preserved/checked, combinedpackage
+validationACTIVE/livepending. [Contract](../python-client/docs/native-async-source-previews.md)/
+[review](../python-client/docs/reviews/native-async-source-previews.md). NoJava/grammar/
+authoring/compilation/execution/revisionvalidity promise; RC-P4.2 remainsPARTIAL.
+
 ## Native async inspection / nullasset compatibility — candidate PASS
 
 cdf28153b includes acceptedPR226/21750594e;3,324installed/all17gates/282focused

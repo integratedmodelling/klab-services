@@ -2,7 +2,7 @@
 
 ## Recommendation
 
-Needs contract/coordination evidence for actualJava parser claim; contributor/CLI
+Ready for maintainer review for bounded native async read-only parser receipts. Contributor/CLI
 review under KLAB_CLI_Contribution_Review.md, not human approval. Existing parser
 routes are supported. Native awaited facade shares checks rather than porting a
 grammar or treating parser success as authoring/semantic validity.
@@ -41,6 +41,9 @@ Fullpackage/integrated/live evidence remains required, not an exhaustive proof.
 |Expandedsource+asyncclient/fullinstalled17gates|candidate|Running|No predeclaredresult or gatechanges|
 |Initial expanded/package result|2ef2fed06|Passed:117focused/3,281installed/all17gates|Lint/build/install/parity beforePR227parentintegration; no coveragegatechanges|
 |ActualJava4family parserworkflow|freshownedfixture|Notrun|Required positive/invalid/sourcehash/serviceidentity/noauthoring audit; not semanticvalidity/science|
+|Combinedaccepted227 package|859670c97|Passed:3,346installed/all17gates|Source/install/harness parity/build/lint; bothrunnerentries preserved; no coveragethreshold changes|
+|IntegratedactualJava parserworkflow|859670c97|Running|Onefreshownedrun; no historical synclive result substituted|
+|IntegratedactualJava finalresult|859670c97|Passed|4valid/4invalidfamilies, sourcehash/serviceidentity/explicitbehaviortrim, blank0HTTP;20auditedGET/parserPOST/0authoring/0science/cleanup|
 
 ## Scientific and lifecycle evidence
 
@@ -51,6 +54,15 @@ a SourcePreview. Blank/local policy failures must make zeroHTTP. Auditafterstand
 user-scopepreparation allows only capabilityGET/parserPOST, no submission/persistence/
 compilation/runtimeexecution. Exactcandidate/privacy/ownedcleanup stillpending.
 
+ActualintegratedJavaPASS confirms fourfamilies with existing fixtures and independent
+callerhashes/servicebinding; behaviortrim recorded explicitly, invalidsource produced
+no receipt, blanksource0HTTP.20GET/parserPOSTonly afterscopeadvertisement;0authoring/
+scientificsubmissions. Localreader/ownedprocess/listener cleanupPASS; unrelatedJava
+unchanged. ExactSDK/install/rawharness/liveidentity and private reporthash/credential
+absence verified in async-source-previews-final-validation.json. No important/blocking
+defect demonstrated in boundedscope after validation; not exhaustiveproof/human
+acceptance, revisionvalidity, compilation/execution or historicalreplication.
+
 ## Contributor coordination
 
 No language/compiler/Java/component/NiFi work or publication. FourclassDTO map
@@ -59,9 +71,9 @@ authoring and studies remain open. Failedpeer/categorical/originalresearch prese
 
 ## Smallest next actions
 
-Finish currentgate, exact227postmerge/normalparentintegration then combinedgates,
-one actualfourfamily parserrun, exactidentity/privacy/cleanup, finalguide review/
-normalPR/CI/eligiblemerge/postmerge; continue independentqueue.
+Finish finalfocused/map checks, normal exactheadPR/hostedCI/eligiblemerge/ancestry/
+postmerge. Accepted227/sourcechecks/package/live/privacy/cleanup verified; no further
+unchanged live run or Java repair needed. Broader A/B/research gates stay open.
 
 ## Suggested PR description
 

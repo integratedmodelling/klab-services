@@ -32,3 +32,25 @@ must be integrated andcombinedtree revalidated before one actualfourfamilyparser
 Wheel1bc76e6fb75266d942c2d61840fe6b61889d0b7d468144efa130208048cb045c;
 sdistd06ea87bda4f5a414ce8bf5417955c92701a5b9aee78ec87de7666305cd3eaee.
 No new liveparserPASS claimed from historical syncresults.
+
+AcceptedPR227/6af50a1dc now integrated859670c97, exact293postmergePASS andbranch
+retired. Bothaccepted/newrunnerentries preserved through runner-only conflict
+resolution andASTcomparison; ruff/117focusedPASS. Integrated3,346installed/all17
+gates/lint/build/sourceparityPASS. Wheel
+f646b3a286cfb31032cc8b5bec61ee1c3b9b30c2984bb91c42012779ce48ca36;
+sdist aeb582db0b34ad57dbb1180a74651ac50cca75a7f1ce2f9911fbdb7f264ae000.
+One fresh async-source-previews-live run ACTIVE on thatexactcombinedcandidate;
+no syntax/semantic/scientific/livePASS predeclared.
+
+## Exact integrated actual parser outcome
+
+859670c97879e5fa9197fd91db38d3f6293a7b8b actualJavaPASS: namespace/ontology/
+strategy-document/behavior validreceipts with exactsourcehash/serviceidentity;
+behavior edge-trim explicitlyrecorded with bothhashes. Invalidinput rejected for
+eachfamily (checked ServerError/ProtocolError, no SourcePreview), blanksource0HTTP.
+Auditafterstandard user-scopepreparation:20capabilityGET/parserPOSTcalls only,
+0authoringwrites/0scientificsubmissions. Localreader/ownedprocess/listener cleanup
+PASS; unrelatedJava unchanged. ExactSDK/install/rawharness/liveidentity, reporthash
+andcredentialabsence verified. Semantic knowledge revision NOT_ESTABLISHED;
+publication/compilation/scientificexecution NOT_RUN. No historicalstudy compatibility
+or reproduction claim. Finalfocused/normalPR/hostedCI/eligiblemerge/postmerge pending.

@@ -67,6 +67,14 @@ bytes. Only that exact JSON-mode retrieve route is recognized as MissingAssetErr
 success statuses remain protocolerrors. This does not turn arbitrary failures into
 absence or change authorization/ambiguous-write behavior.
 
+Read-only parser receipts: `SourcePreviews(Client).parse` and awaited
+`AsyncSourcePreviews(AsyncClient).parse` admit the existing namespace/ontology/
+strategy-document/behavior families. Both return immutable `SourcePreview`, never
+authoring `ParsedSource`, and preserve input/parser hashes under explicit
+`allow_edge_trimming` policy. Shared byte/secret/DTO/binding checks do not establish
+semantic revision validity, persistence, compilation or execution. See
+[native async previews](native-async-source-previews.md).
+
 Shared readers use the same saved-handle API with independently configured clients:
 the server must admit the second principal through its existing context ACL. A handle
 does not grant access, change credentials or confer creator ownership. Closing a
