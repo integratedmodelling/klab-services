@@ -33,3 +33,35 @@ or authorization change unless a separately demonstrated defect requires its own
 prerequisite. Contract/unit/fullinstalled/actualJava/review/normalPR/CI/merge gates
 remain separate. Existingcomponentpins/resourcespermissionguards unchanged; use
 actualcompiled acceptedResources source, not an untracked replacement provider.
+
+## Verified actual outcome and bounded acceptance
+
+Executable2087dd716b22b67b579f9e3bf2bdb88fac45abe9 actual Java PASS. Exact authored
+namespace source, parsed/stored canonical model identity and advertised Resources
+model namespace/project identity matched. Invalid source was refused; unchanged
+ordinary READ-only scientist document/project writes were denied. Successful
+same-family listings with surviving positive controls proved denied assets absent
+and the owned namespace/model removed after cleanup. Owned project/workspace and
+all launched services/listeners closed; unrelated Java remained unchanged.
+
+Distinct signed TEST ROLE_ADMINISTRATOR was explicitly authorized for owned work.
+Resources classes came from accepted source compiled in the owned worktree; no
+overlay, permission guard, shared artifact or Java source changes. Exact installed/
+raw harness/live/source-literal identity, report hash and credential absence checked.
+Private receipt: model-source-authoring-final-validation.json. The source literal
+91.75 is an unexecuted synthetic draft, not scientific or original-study evidence.
+Served version is null; dependency completeness remains unknown/listed metadata only.
+Scientific execution NOT_RUN; publication NOT_CLAIMED. Normal final-head PR/CI and
+eligible merge remain required. No full B2/A/B/edit/import/publish/release claim.
+
+## Installed checkpoint
+
+Executable2087dd716: fresh `ab-model-source-authoring` PASS:3,195installedtests/
+all17coveragegates/lint/build/sourceparity;14focusedidentity/overclaim/evidence tests.
+ExactnoneditableWindowsPython3.12.7, inheritedRasterio warning retained. Wheel
+`e666d89d7831dc92494ee4ab2e7a019e07c2b096d7f91d638680bf1b15107c7d`;
+sdist `be8941d817d44b67f6f1f1e6f63771b90bd25654f2cedacc7f0267be72131112`.
+One ownedJava actualattempt `model-source-authoring-live` ACTIVE with explicit
+allow-owned-authoring; actualsource/modelindex/denials/absence/cleanup notpredeclared.
+No newPR, scientificexecution or publication acceptance. Peerfailedbranch remains
+separate/preserved; candidatecategoricalJAR not substituted into livecomponentpins.

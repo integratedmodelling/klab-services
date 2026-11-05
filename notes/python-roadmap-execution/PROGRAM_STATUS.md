@@ -1,5 +1,20 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Model-containing source authoring local acceptance
+
+Accepted base PR221/6cc5bd769; executable2087dd716. Installed3,195tests/17gates,
+14focused/lint/build/source parity and actual owned Java PASS. Exact source and
+advertised model identity; invalid-source refusal; unchanged ordinary user denials;
+positive-controlled absence; model/project/workspace/service cleanup verified.
+Exact installed/raw harness/live/source literal identity, owned accepted Resources
+class origins, private report hash and credential absence checked. No overlay,
+Java/SDK/permissions/shared artifact changes. Version null/dependencies partial;
+execution NOT_RUN/publication NOT_CLAIMED. Final documentation and focused map tests
+precede normal PR/CI/eligible merge/postmerge checks. PROGRAM_IN_PROGRESS,
+A_INCOMPLETE/B_INCOMPLETE; no whole criterion or study promotion. Failed peer branch
+8e785aa7f retained without third scientific retry; component publication restriction
+still requires confirmation. Original research preserved; no owned services remain.
+
 ## Latest deleted-state local acceptance
 
 9807a97d5 LOCAL_ACCEPTED_BOUNDED:3,180installed/all17gates/lint/parity+17focused;
