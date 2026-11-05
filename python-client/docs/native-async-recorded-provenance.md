@@ -32,3 +32,18 @@ is necessary for provenance. It is not any original-study rerun or new scientifi
 accuracy benchmark. Exactidentity/privacy/cleanup+guide review/normalPR/CI/eligible
 merge/postmerge required. NoJava/worker/provider registration, publication or rights
 expansion; fullA/B/study/history/revision gates remain open.
+
+## Initial package checkpoint
+
+`dcb513069cf77d26fb57a378da86fd35bb9d6925`:149 focused/3,419 installed/all17gates/
+build/lint/source parity PASS; exact source/install/raw-harness/artifact identity
+verified. Initial109PASS/1test expectation failure corrected to existing specific
+HandleIdentityError for wrong membership ID; no production error-type remap.
+This package excludes pending semantic #231 additions; accepted-parent integration
+and combined validation must precede actual Java provenance acceptance.
+
+- Wheel: `fa043e910264b0ea74564854e1679042c2a9834eb49db0837ea54b822cb86ca5`
+- Sdist: `02d24cc4e4ce8a9e7e2979a33a953a821d498ec3d0ec8be806f001c96f1b02a3`
+
+No original-study run, full graph or revision-pinned lineage established by these
+offline tests; actual engineering observation/current recorded links still required.

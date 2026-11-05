@@ -1,5 +1,12 @@
 # Existing public scaffold method inventory
 
+`await async_fetch_provenance(async_observation, limit=64, offset=0)` explicitly
+refreshes one bounded recorded neighborhood using native async membership/query
+requests. Synchronous observations retain `fetch_provenance`. Both return immutable
+partial views; empty pages do not prove absent lineage, planned links are not
+execution evidence, and no shared export/provenance revision is implied. See
+[native async recorded provenance](native-async-recorded-provenance.md).
+
 Indexed reads require observation source IDs to be exact positive integers in the
 Java signed-long domain (1..2**63-1). Out-of-domain observation identities raise
 ProtocolError before read HTTP; they are not coerced or clamped. Source-zero and
