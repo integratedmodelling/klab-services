@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest model-plan local acceptance
+
+feature/python-current-model-plan-acceptance;base4e4df955b;tested7eb7f3637;
+PR/mergepending.3,090installed/17gates+20focused+correctedactualJava canonicalmodel
+advertisement/retrieve→originalsuccessfulplan→20exact234.5m cells/creatorcleanupPASS.
+SDKDecimal encodedexacttext,unknownversion/emptylists preserved,evidencepartial.
+Firstserializationfailure retained,Qualitywarning unresolved,fullmatrices notpromoted.
+Wheel976019902b0d97aaf639729be4f371f595186498af9df8c92c727392dfa58393.
+NormalPR/CI/mergeNEXT;no wholeQ7/A-B/study/releaseclaim.
+
 ## Latest canonical delivery / next model-plan slice
 
 PR216merged4e4df955b,reviewedd5952a964;allCI/normalmerge/ancestry/sourceequal/

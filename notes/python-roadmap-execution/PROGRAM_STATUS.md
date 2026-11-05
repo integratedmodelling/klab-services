@@ -1,5 +1,25 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest corrected model-plan local acceptance
+
+7eb7f3637 LOCAL_ACCEPTED_BOUNDED:3,090installed/17gates/lint/parity+20focusedPASS;
+correctedactualJava canonicalMODEL list/retrieve/origin/advertisedmetadata→original
+successfulservedplan→20exact234.5m cellsPASS. ExactURN/unknownversion/emptylists
+preserved;recordedevidencepartial. Creatorcontext/sessionrelease+ownedprocess/
+listenercleanupPASS,unrelatedJavaunchanged. Exactinstalled/live/rawharness and
+credentialabsence verified;laterdeltaMarkdownonly. FirstDecimalserializationfailure
+retained;no SDK/fixture/meaningchange. Qualitywarning/fullQ7matrices/managedcleanup/
+studies remainopen. NormalPR/CI/mergeNEXT;A/Bincomplete,nosleepcondition.
+
+## Latest corrected model-plan installed pass / one fresh live attempt
+
+7eb7f3637:3,090installed/17gates/lint/build/parity+20focusedPASS;wheel
+976019902b0d97aaf639729be4f371f595186498af9df8c92c727392dfa58393.
+ExactDecimaltext/nonfinite/errorpreservation testsPASS;no SDK/fixture/meaningchange.
+Oneq7-model-plan-decimal-liveACTIVE. Firstfailedserializationreport retained;
+newcandidate-model/servedplan/20cells/creatorcleanup notyetaccepted,noPRyet.
+FullQ7matrices/Qualitywarning/managedcleanup/studies remainseparate;A/Bincomplete.
+
 ## Latest model-plan live failure / evidence-only correction
 
 Firstq7-current-model-plan-liveFAILED on SDKDecimal JSON serialization after

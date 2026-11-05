@@ -60,3 +60,42 @@ attach a type-only note to an existing primary failure rather than mask it; clea
 failure likewise remains primary. No SDK/model/fixture/semantic/expected-value change.
 Preserve original failure, run corrected installed gates then one fresh corrected
 owned attempt; any furthergatefailure is retained before independentwork.
+
+Corrected executable7eb7f3637: `ab-q7-model-plan-decimal-final` PASS:
+3,090installedtests/17gates/lint/build/sourceparity;20focused testsPASS, including
+actualSDKDecimal representation, precision/nonfinite guards and primary-error
+preservation. Wheel
+`976019902b0d97aaf639729be4f371f595186498af9df8c92c727392dfa58393`;
+sdist `c9d3cffc0a3494299d782e0c88437d389112339d0743b5ea1c30a1d0e6a5c349`.
+One correctedfreshJava runq7-model-plan-decimal-liveACTIVE,notpredeclaredPASS.
+No numericalfixture or scientificexpectation changed; firstfailedrun retained.
+
+## Final exact-candidate recommendation
+
+**Ready for bounded maintainer review**, author/CLI not human approval. Tested
+7eb7f3637 onaccepted4e4df955b; laterMarkdown-onlydelta/rawinstalled-live-harness
+identity verified. Full diff reviewed for usefulness/architecture/contracts/
+scientificmeaning/identity/privacy/lifecycle/state/performance/maintainability.
+No remaining demonstrated important/blocking defect in this model/result slice.
+
+| Check | Verified result / boundary |
+|---|---|
+| Corrected installed command above | PASS:3,090tests/17gates/lint/build/parity;20focused tests |
+| One corrected owned Java attempt | PASS:canonicalcandidate list/retrieve/origin/metadata, exactURN in originalsuccessfulresolutionplan,20exact234.5m cells |
+| Cleanup and identity | PASS:creatorcontext/session release;ownedprocesses/listenersclosed,unrelatedJavaunchanged;rawSDK/tool/functional and installedartifact identity verified;private report checked for actual credentials |
+| Final-head hostedCI/protections/normalmerge | Pending; required before merge |
+
+ActualcanonicalURN `consolidation.scenario.elevation_of region-quantifier` is
+retained verbatim; unknownversion and explicit emptydependency/resource lists not
+filled from assumptions. Recorded evidence remainspartial. No negativeACL/provider/
+versionfreshness/fullclosure/worldviewconsistency orhistoricalstudy guarantee.
+Quality warning retained, not resolved. FirstfailedDecimalreport/run retained;
+parentcleanupsuccess never retroactively proves that failedrun's creatorrelease.
+
+Privateq7-model-plan-decimal-live/result.json/current-model-plan.json and
+q7-model-plan-final-validation.json bind testedcandidate/installed/harness/actual
+model-plan/numeric/cleanup evidence. Finalwheel/sdist above. No SDK/Java/model/
+worldview/dependencychange,no scalaroracle reset or scientificwrite replay.
+No contributor/reviewer assignment/release/support authorization inferred.
+Next normalPR/CI/exact-headmerge/ancestry/postmerge/ownedbranchretirement. FullQ7/
+A/B/studies remainincomplete; originalfailed830a141cd preserved.
