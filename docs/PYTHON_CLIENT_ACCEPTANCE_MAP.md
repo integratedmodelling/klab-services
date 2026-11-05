@@ -1,5 +1,17 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Master-program continuation — 5 November 2026
+
+The supplied A+B/three-study master specification supersedes old one-increment
+stopping rules, not original requirements or failed evidence. See the current
+[program checkpoint](../notes/python-roadmap-execution/PROGRAM_STATUS.md) and
+[42-row scenario-family crosswalk/dependency queue](../notes/python-roadmap-execution/FEATURE_LEDGER.md).
+Accepted integration remainsfe46ddc5ec3c188f62cd1d0b0703c6e54a4b9241;196–200
+merge ancestry verified. Q1localfresh-processacceptance failed internal harness
+guards and is preserved unmerged; known sourcegroundedfix not liveaccepted.
+Q5actualparserpreviewacceptance is next independently selected. No RC/CAP status
+is promoted by planning, offline tests or a written blocker. A/B remain incomplete.
+
 ## Current reconciliation — 4 November 2026
 
 This section supersedes status claims below, not the historical requirements or
