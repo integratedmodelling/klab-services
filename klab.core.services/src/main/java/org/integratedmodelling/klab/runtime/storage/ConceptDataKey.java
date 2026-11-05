@@ -136,6 +136,11 @@ final class ConceptDataKey implements DataKey {
     return new KeyedData.Dictionary(1, worldview, target.getUrn(), entries);
   }
 
+  @Override
+  public synchronized Optional<KeyedData.Dictionary> dictionarySnapshot() {
+    return Optional.of(snapshot());
+  }
+
   public synchronized int size() {
     return entries.size() + 1;
   }
@@ -185,6 +190,11 @@ final class ConceptDataKey implements DataKey {
     for (int i = 0; i < snapshot.entries().size(); i++)
       byDefinition.put(snapshot.entries().get(i).definition(), i + 1);
     return new DataKey() {
+      @Override
+      public Optional<KeyedData.Dictionary> dictionarySnapshot() {
+        return Optional.of(snapshot);
+      }
+
       public int size() {
         return snapshot.entries().size() + 1;
       }
