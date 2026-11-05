@@ -34,3 +34,20 @@ before creator cleanup, with independent token20cellreadback. Reports/profile/
 handles are checked using actual acquired-credential redactors as well as known
 fixture tokens. Final corrected installed/live/permission/secret-free/cleanup/
 author-review/hosted evidence remains required.
+
+## First actual attempt and bounded correction
+
+`q2-onboarding-live` FAILED before scientific computation: Connection correctly
+refused Reasoner status `available=False,operational=True`. Owned processes and
+listeners closed; unrelated Java unchanged. This is not an accepted journey.
+
+Evidence-led diagnosis: the owned runner restarts Resources for component reindex
+immediately before launching the functional suite. ServiceInstance380–424 polls
+essential services and sets maintenance/available on its scheduler; Reasoner logged
+a capabilities NPE during that owned restart. An open HTTP port is not readiness.
+This supports a transient post-reindex readiness hypothesis, not a Java defect
+conclusion. Add a bounded60s public-status preflight for the Q2 scenario only;
+preserve every observed available/operational snapshot. It does not alter status,
+weaken selection or replay a scientific write. One corrected fresh owned run is
+required; if genuine readiness stays false, classify its exact blocker and continue
+independent work rather than a fixture-repair loop.

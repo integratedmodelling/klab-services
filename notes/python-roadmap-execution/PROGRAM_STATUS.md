@@ -16,6 +16,14 @@
   existing facade/owned workflows, no production Hub or new bootstrap claim.
   Q4/Q6/Q7/Q8/Q9 remain queued.
 
+Q2 implementationab69eee3c initialinstalled2,963tests/17gates/lint/build/parityPASS,
+but source-preflight found its two-computation plan would exhaust the deliberately
+single-use Java fixture. No live attempt made and Java fixture NOTchanged/reset.
+Corrected08f1ddf3a computesonce through certificate onboarding, independently reads
+same20cells via token facade, then audits both providers'fresh-process original
+native-export recovery before creatorcleanup. 196focusedtests/lintPASS; corrected
+installedgatesactive, actualJavaQ2NOT_RUN, noPRyet. GenuineproductionHubstillseparate.
+
 Q3 implementation06c6eef53 initially passes2,942installedtests/17coveragegates/
 lint/build/parity, wheel8c7eb033d733d47dcd4fe9fd89622727ae169cd1b0f096f3cc4367aa4a286a2b.
 Authorreview reproduced aGEOS lossy3D integerordinate and corrected it atf62f6bd42;

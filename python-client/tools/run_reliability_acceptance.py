@@ -80,6 +80,29 @@ def runtime_control(state, launches, spawn, actions):
         (state / (action + "-runtime.done")).write_text("confirmed")
 
 
+def wait_onboarding_ready(state, *, timeout=60):
+    """Observe genuine readiness after owned Resources reindex; never override it."""
+    deadline = time.monotonic() + timeout
+    snapshots = []
+    with httpx.Client(trust_env=False, timeout=5) as client:
+        while time.monotonic() < deadline:
+            snapshot = {}
+            for name, port in PORTS.items():
+                try:
+                    response = client.get(f"http://127.0.0.1:{port}/{name}/public/status")
+                    response.raise_for_status()
+                    payload = response.json()
+                    snapshot[name] = {key: payload.get(key) for key in ("serviceId", "available", "operational")}
+                except (httpx.HTTPError, ValueError):
+                    snapshot[name] = {"available": None, "operational": None}
+            snapshots.append(snapshot)
+            (state / "onboarding-readiness.json").write_text(json.dumps(snapshots, indent=2))
+            if all(row.get("available") is True and row.get("operational") is True for row in snapshot.values()):
+                return
+            time.sleep(.5)
+    raise RuntimeError("Owned onboarding deployment did not report available+operational; do not weaken selection")
+
+
 def run(args):
     import klab_client
     state, repo = args.state_dir.resolve(), args.server_repo.resolve()
@@ -193,6 +216,8 @@ def run(args):
             process = spawn("resources-reindexed", command, cwd); ready(PORTS["resources"], route, process)
         fixture_hub.SERVICES = PORTS
         fixture_hub.issue(state, key)
+        if args.scenario == "onboarding-journey":
+            wait_onboarding_ready(state)
         with (state / "functional-private.log").open("xb") as log:
             functional = subprocess.Popen([sys.executable, str(PACKAGE / "tools/run_functional_acceptance.py"),
                 "--suite", args.scenario, "--state-dir", str(state), "--report", str(state / "functional.xml")],
