@@ -43,7 +43,7 @@ from klab_client.analysis import (AnalysisArtifact, RasterDescriptor, RasterAnal
     export_for_analysis, open_raster, trace_analysis)
 from klab_client.provenance import ProvenanceNode, ProvenanceLink, ProvenanceView, fetch_provenance
 from klab_client.vector import VectorAnalysis, open_vector
-from klab_client.semantics import (SemanticExplorer, SemanticResult, KnowledgeState,
+from klab_client.semantics import (SemanticExplorer, AsyncSemanticExplorer, SemanticResult, KnowledgeState,
     AuthorityCandidate, AuthoritySearch, StaleKnowledgeError)
 from klab_client.inspection import (ResourceInspector, AsyncResourceInspector, AssetInspection, InspectionOrigin,
     AdvertisedObservable, ResourceReference, ResourceResolution)
@@ -78,7 +78,7 @@ __all__ = [
     "ChartNode", "ChartPort", "ChartLink", "FlowChartEvidence", "ActuatorEvidence", "DataflowEvidence",
     "ActivityEvidence", "ExecutionEvidence", "decode_flowchart", "decode_dataflow", "fetch_execution_evidence",
     "ResourceInspector", "AsyncResourceInspector", "AssetInspection", "InspectionOrigin", "AdvertisedObservable", "ResourceReference", "ResourceResolution",
-    "SemanticExplorer", "SemanticResult", "KnowledgeState", "AuthorityCandidate", "AuthoritySearch", "StaleKnowledgeError",
+    "SemanticExplorer", "AsyncSemanticExplorer", "SemanticResult", "KnowledgeState", "AuthorityCandidate", "AuthoritySearch", "StaleKnowledgeError",
     "Connection", "SelectionPolicy", "connect", "DeploymentProfile", "ConnectionIdentity", "ServiceReference",
     "ServiceCatalog", "CatalogEntry", "CredentialExpiredError", "ConnectionIdentityError", "ServiceSelectionError",
     "ReadinessError", "ProfileIOError", "CredentialProvider", "CredentialGrant", "IssuedTokenProvider",
