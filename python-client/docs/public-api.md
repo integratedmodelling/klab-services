@@ -1,5 +1,12 @@
 # Existing public scaffold method inventory
 
+`await async_fetch_provenance(async_observation, limit=64, offset=0)` explicitly
+refreshes one bounded recorded neighborhood using native async membership/query
+requests. Synchronous observations retain `fetch_provenance`. Both return immutable
+partial views; empty pages do not prove absent lineage, planned links are not
+execution evidence, and no shared export/provenance revision is implied. See
+[native async recorded provenance](native-async-recorded-provenance.md).
+
 `AsyncSemanticExplorer(AsyncClient, scope=None)` provides awaited concept/observable
 resolution, parents/children, is_a/satisfiable, authority search, selected-candidate
 resolution and documentation descriptors. It shares checked immutable views with

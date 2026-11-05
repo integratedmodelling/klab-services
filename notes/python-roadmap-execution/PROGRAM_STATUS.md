@@ -1,5 +1,39 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Async provenance exact-candidate local acceptance
+
+`12bcec7cd`:3,454installed/17gates/149focused+actualJava original15/handle15/current
+membership/6incidentlinks/partialpagination/read-onlyaudit/privacy/cleanup PASS.
+Plans distinguished from recorded relationships; partial/unknown shared revision
+retained. Two engineering submissions before provenance phase, six queryPOST/zero
+submissions or mutations during it. Context/session/process/listener cleanup PASS,
+unrelated Java unchanged. ExactSDK/install/harness/live/reportprivacy verified.
+Finalfocused/normalPR/CI/merge pending; integration`937c758b6`,31queuePRsmerged/0open
+untilsubmission. No full/historical/revision-pinned lineage; CAP06 bounded acceptance
+unchanged/complete lineageRC-P3.4 stillpartial. Broader requirements/studies unchanged.
+
+## PR #231 delivered / native async provenance integrated
+
+Combined`12bcec7cd`:3,454installed/all17gates/build/lint/parityPASS; exactSDK/
+install/raw-harness/artifacts verified. Onefreshowned original-engineering Java
+provenance run active; no historical/full/revision-pinned lineage or live success
+predeclared. Capability-label clarification: semanticsearchCAP-05PARTIAL, bounded
+plans-vs-executionCAP-06 remainsACCEPTED; older narrative mislabels do not change
+authoritative table/counts or RC-P3.4 complete-lineage gaps.
+
+Integration`feature/python-experiment-runner@937c758b62743a0ab68e48792870a9261cf7cc87`.
+31queuePRsmerged/0open. #231 allhostedchecks/normalmerge/ancestry/tree equality/
+209exact-sourcepostmergePASS; branch retired. Bounded semantic inspection only,
+real authority positive/atomiclease/whole-worldview/studies notclaimed.
+Current provenancecontract`4d2be1993`,initial`dcb513069`:149focused/3,419installed/
+17gates/build/lint/parityPASS. Parent integrated`12bcec7cd`; only adjacent Markdown/
+runner-entry conflicts, both retained; AST parent mapping checks/ruff/149focusedPASS.
+Combinedpackage active; actual original-engineering recorded-link acceptance pending.
+No full/historical/revision-pinned lineage or Java/rights expansion. Requirements23
+in-scope=1accepted/20partial/1missing/1blocked,+1TargetCexcluded; capabilities4accepted/
+13partial/1excluded. Seven dependencies/peerfixture/componentauthorization/all3study
+L3PARTIAL/L4BLOCKED/L5–L7NOT_RUN unchanged. PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE.
+
 ## Async semantic exact-candidate local acceptance
 
 `c84317576`:3,420 installed/all17gates/160focused and actual Java known resolution/

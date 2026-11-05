@@ -1,5 +1,44 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Next milestone W2-1 — current reconciliation, not historical evidence reuse
+
+Existing native async provenance candidate is reconciled onto acceptedf099ffffa
+(W1 PR238 merged). Both prior candidate and scientific-milestone evidence below
+are preserved. Original branch identity retained; no renamed/protection workaround.
+New exact installed and actual Java acceptance are required before normal delivery;
+historical12bcec7cd receipts are not current validation. Primary statuses unchanged.
+
+## Native async recorded neighborhood: exact-candidate local acceptance PASS
+
+`12bcec7cd`:3,454installed/all17gates/149focused+actualJava original15/handle15/
+membership/6incidentlinks/partialpagination/audit/privacy/cleanup PASS. CREATED and
+MEASURED recorded relationships kept distinct from planned CONTEXTUALIZED_BY/
+RESOLVED. Two declared engineering submissions before provenance phase; six query
+POSTs/zero submissions or mutations during it. No full/revision-pinned/historical
+lineage. Finalfocused/normalPR/CI/merge pending; authoritative complete lineage
+RC-P3.4 remains partial, CAP-06 bounded plans/execution remains ACCEPTED unchanged.
+FullA+B/all3studies incomplete; no source/provenance revision or research promotion.
+
+## Capability-label clarification (counts and acceptance unchanged)
+
+The authoritative table below assigns semantic search/predicates/revision objects
+to **CAP-05 (PARTIAL)**. **CAP-06 remains ACCEPTED** for bounded typed plans versus
+execution; RC-P3.4 separately owns complete lineage/replay gaps. Earlier narrative
+semantic/metadata notes saying CAP-06 was incomplete are mislabeled historical
+commentary, not changes to the table or acceptance. No promotion/demotion or new
+scope: capability totals remain4 accepted/13 partial/1 excluded. Native async
+recorded neighborhoods do not establish full or original-study lineage.
+
+## Current delivery / native async provenance candidate
+
+#231merged`937c758b62743a0ab68e48792870a9261cf7cc87`,allchecks/ancestry/tree/
+209exact-sourcepostmergePASS; branchretired. Prior pending semantic notes historical.
+Native async provenance shares currentmembership/query/immutable partial-view checks;
+initial149focused/3,419installed/17gatesPASS, parentintegrated normally/runner entries
+preserved andASTverified. Combinedpackage active, actual Java original engineering
+recorded neighborhood stillrequired. No full/historical/revisionpinned lineage,
+Java/scientific reconstruction or whole-requirement/capability/A+B/study promotion.
+
 ## Scientific acceptance architecture — N/S PASS, implementation and binding correction merged
 
 All four implementation PRs232/233/234/235 and bounded TA-2 correction237 normally

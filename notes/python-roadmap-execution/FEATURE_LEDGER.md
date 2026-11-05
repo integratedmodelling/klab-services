@@ -1,5 +1,22 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Async provenance candidate verified
+
+`12bcec7cd`:3,454installed/17gates/149focused+actualoriginal15/handle15/6partial
+links/pagination/plan-vs-recorded/queryaudit/privacy/cleanup PASS. Two engineering
+submissions explicitly outside provenance phase, zero during it. No full/historical/
+revision-pinned lineage; broader acceptance unchanged. Finalfocused/normalPR/CI/merge
+pending;31queuePRsmerged/0open untilsubmission. NoJava/scientific reconstruction.
+
+## PR #231 delivered / async provenance combined candidate
+
+#231merged`937c758b62743a0ab68e48792870a9261cf7cc87`,allchecks/ancestry/tree/
+209exactpostmergePASS; branchretired.31queuePRsmerged/0open. Provenancecontract
+`4d2be1993`,initial`dcb513069`149focused/3,419installed/17gatesPASS. Acceptedparent
+integrated`12bcec7cd`, bothMarkdown/runner additions retained andASTverified,ruff/
+149focusedPASS. Combinedinstalledgates active; actualpartialrecorded-link proof
+pending. NoJava/historical-lineage/science claim; broader gates unchanged.
+
 ## Async semantic candidate verified
 
 `c84317576`:3,420installed/17gates/160focused+actualJava known resolution/canonical

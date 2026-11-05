@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "async-recorded-provenance": "tests/functional/test_async_recorded_provenance.py",
     "async-semantic-exploration": "tests/functional/test_async_semantic_exploration.py",
     "native-codelist-retrieval": "tests/functional/test_native_codelist_retrieval.py",
     "async-source-previews": "tests/functional/test_async_source_previews.py",
