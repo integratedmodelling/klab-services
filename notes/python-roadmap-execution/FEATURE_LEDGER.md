@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q8a delivery / Q8b active contract
+
+Q8aPR210 MERGED_BOUNDEDa83d9643d,reviewed061b363b7;allchecks/normalmerge/
+ancestry/sourceequality/postmerge14PASS;branchretired. Prior3,004installed/
+17gates+actualJavaownwait/access/creatorcleanupPASS retained; notfullQ8.
+Q8bfeature/python-async-notebook-acceptance;basea83d9643d;contract
+python-client/docs/async-notebook-acceptance.md beforecode. Realexactinterpreter
+kernel/top-levelawait ofacceptedscenario,credentialoutputguards/kernelcleanup;
+no browser/support/asyncsavedhandle/agents/events/Q7promotion.
+
 ## Latest Q8a local acceptance
 
 feature/python-async-own-wait-acceptance;baseb41016737;tested744a37f03;PR/mergepending.

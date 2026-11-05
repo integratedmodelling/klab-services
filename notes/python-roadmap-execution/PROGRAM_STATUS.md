@@ -1,5 +1,17 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q8a delivery / Q8b fresh contract
+
+PR210 MERGED_BOUNDED a83d9643dd776a3df3cba87d026800feb390565b,reviewed
+061b363b730f6cb58917b55449add8f59f9c8195;allhostedchecksPASS,normalmerge/
+ancestry/sourceequalityverified;postmerge14focusedPASS,ownedbranchretired.
+Accepted3,004installed/17gates+correctedactualJavaownwait/access/cleanup evidence
+retained. Q8b freshfeature/python-async-notebook-acceptance fromacceptedmerge:
+contractbeforecode,realexactinterpreterkernel/top-levelawait/acceptedscenario,
+outputcredentialguards/kernel+servicecleanup. Q7failedbranch830a141cdretained;
+asyncsaved-handle restoration/fullagents-events/support remainseparate.
+Program/A/B/studiesincomplete;SleepNOT_REQUESTED whileactionableworkremains.
+
 ## Latest Q8a local acceptance
 
 744a37f03 LOCAL_ACCEPTED_BOUNDED:3,004installed/17gates/lint/parity+9focusedPASS;
