@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "n-nonuniform",
+  "name": "Does Java preserve nonuniform physical values, missingness and geographic placement?",
+  "claim_level": "L4",
+  "capabilities": ["RC-P2.1", "RC-P2.5", "CAP-08", "CAP-09", "CAP-15"],
+  "source": {
+    "publication_or_contract": "Existing independent synthetic north-first oracle from #197; test producer stored separately in klab.services.runtime/src/test/java/org/integratedmodelling/klab/services/runtime/testing/NonuniformExportFixture.java. Not measured terrain or a publication.",
+    "source_revision": "937c758b62743a0ab68e48792870a9261cf7cc87"
+  },
+  "fixture": {
+    "input_files": [
+      {"path": "tests/fixtures/nonuniform-export.json", "sha256": "f0848f723b485547c4b37f725e0e1aed63db1c29c49280481e7bcd0439ac9213"},
+      {"path": "tests/fixtures/scientific-reliability/consolidation.fixture/src/consolidation.fixture.kim", "sha256": "a8419bc56f701513366865d752b714cb15d374c90871c8c0831bacd1b1f607b0"},
+      {"path": "tests/fixtures/scientific-reliability/consolidation/src/consolidation.kwv", "sha256": "cbcd93ff3055f4af4937dbac743582d00d0bc2f1aef2db7d53abf8cb1062dd05"},
+      {"path": "tests/fixtures/scientific-reliability/consolidation/strategies/observations.obs", "sha256": "4cf65cce34ccc9235508e6e1a74d60a485f7e51715fbe86fa2d1e7773ccfa24d"}
+    ],
+    "oracle_file": "tests/fixtures/nonuniform-export.json",
+    "oracle_origin": "independently-authored-reference",
+    "expected_units": "m",
+    "crs": "EPSG:3857; 5 columns x 4 rows; 100m; edges200000,200500,6000000,6000400; north-first export, south-to-north native columns",
+    "temporal_domain": "initialization only; no revision lease or temporal computation"
+  },
+  "stack": {"java_revision": "runtime-recorded", "worldview_component_ids": "runtime-recorded", "python_wheel_sha256": "runtime-recorded"},
+  "execution": {"operation": "nonuniform-export", "side_effect_policy": "owned-resources-only", "max_seconds": 1800, "max_contexts": 1, "max_jobs": 2, "max_bytes": 2097152},
+  "checks": [
+    {"expectation_id": "n-values", "type": "numerical", "tolerance_basis": "Exact binary-representable fractions in float64 and Decimal sparse reads; zero differs from null"},
+    {"expectation_id": "n-geography", "type": "geographic", "tolerance_basis": "Exact integer-metre affine edges/centres and independently authored north-first matrix; exact mask and float64"},
+    {"expectation_id": "n-model-input", "type": "semantic", "tolerance_basis": "Successful recorded baseline namespace model and exact observation handle; source/class hashes, no fabricated complete lineage"},
+    {"expectation_id": "n-metadata-negative", "type": "metadata", "tolerance_basis": "L2 local controlled copies must reject wrong/missing units, CRS or nodata; original artifact unchanged"},
+    {"expectation_id": "n-cleanup", "type": "lifecycle", "tolerance_basis": "True owned-scope release and harness owned process/listener cleanup; unknown submissions never replay"}
+  ],
+  "limits": "Single-shard synthetic engineering L4, corrected unpublished exporter9844147666bbb53071dfcd54db284aef48be9c79315b73415e74af8c1d70126f; not component#11 adoption, measured terrain, general GeoTIFF provider accuracy or published replication"
+}
