@@ -43,3 +43,9 @@ worldview/admissiontuple beforeD1/D2;do not rewriteJava/worldview/modelsemantics
 No reviewers assigned or externalworker/permissions changed. Historicalresearch
 remainsL3PARTIAL/L4BLOCKED/L5–L7NOT_RUN. FinalnormalCI/docsmerge/postmergeproof then
 truthfulcheckpoint;no other independentlyexecutable item remains in fixedbatch.
+
+Final evidence-curation pass replaces repeated bulky compiled/source/command maps
+with exact manifest hashes and external sidecar references; actual scenario IDs,
+checks, fixture/oracle/component/wheel hashes and scoped outputs remain readable.
+Original full manifests/commands are retained privately, not erased or re-executed.
+328focusedfinalchecks and all42ID/link assertions passed; no productsource change.
