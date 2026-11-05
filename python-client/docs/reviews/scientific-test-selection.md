@@ -41,3 +41,13 @@ not a reason to weaken link tests. Copied the verified generated index/report to
 their canonical contribution paths; rerun required. Existing CI YAML parsed with
 already-installed Anaconda PyYAML6.0.1 (not added as dependency); all17coverage and
 Pythonversion/core-only/Windows/build checks retained. No SDK/Java/scientific edits.
+
+## Final corrected installed result
+
+892286e3a:3434installed/all17gates/build/install/lint PASS after canonical report/
+index assembly; no link-test weakening. Validation wheel
+972fa2d26184f1a840b96ac6eb377988371707407166bc4e17357c31dbef4a23, distinct from
+actual N/S wheel.14selector tests and all4measured sample runs passed. Recommendation:
+**Needs hosted delivery and scheduled L4 provisioning evidence**. No further
+important local defect demonstrated by bounded review; external approvals/gates not
+invented. Authoritative map retains every primary status; no universal support claim.

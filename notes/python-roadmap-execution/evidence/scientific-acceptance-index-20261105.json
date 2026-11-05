@@ -11,6 +11,12 @@
     "sha256": "7830cc635017a4a3bc365cd7fc845865cc44421996ea9b75d3a206b4b79766eb",
     "windows": "Owned processes launched with existing CREATE_NO_WINDOW; no matching owned PID/window can remain. No unrelated terminals closed."
   },
+  "delivery": {
+    "N_pr": 234,
+    "S_pr": 233,
+    "contract_pr": 232,
+    "normal_new_ref_creation": "PASS; no old provenance retry or rules workaround"
+  },
   "flaky_reruns": 0,
   "measurements": {
     "comparison": "Same source/interpreter, serial runs, no coverage in either baseline or subset; mandatory coverage CI unaffected",
@@ -308,7 +314,7 @@
   },
   "real_java_scenario_executions": 2,
   "real_java_scenario_passes": 2,
-  "reason": "Normal implementation PR merges remain blocked; scheduled L4 worker unprovisioned",
+  "reason": "Normal implementation PR CI/merges pending; scheduled L4 worker unprovisioned",
   "scenario_runs": [
     {
       "actual": {

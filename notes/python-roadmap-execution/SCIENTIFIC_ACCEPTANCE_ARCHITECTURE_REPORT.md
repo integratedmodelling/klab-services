@@ -4,9 +4,9 @@
 
 **N and S each executed once against real Java and passed their bounded independent
 oracles**, including N's numerical/geographic checks and S's actual private-principal
-negative. The milestone is **not complete**: implementation contributions are
-unpublished/unmerged under the preserved GitHub ref/rules blocker, and scheduled
-L4 execution needs an authorized pinned Java worker. Existing full offline CI is
+negative. The milestone is **not complete**: normal implementation CI/merges are
+in progress, and scheduled L4 execution needs an authorized pinned Java worker.
+Normal publication recovered for these genuinely new contributions. Existing full offline CI is
 retained, not replaced by the feedback selector. No A+B or study completion claimed.
 
 A scientist can demonstrate an asymmetric synthetic field's physical values,
@@ -22,13 +22,13 @@ seven prior local A+B candidates/union failures preserved. No reset or broad cle
 
 | Coherent contribution | Independent base / branch | Tested state / delivery |
 |---|---|---|
-| TA-1/2 inventory, contract/adapter |937c758b6 / feature/python-scientific-scenario-contract|Initial5af6668b1:3461installed/all17gates; laterc7bdc97fa:3462installed/all17gates; corrected6fdf97e28:43focusedPASS; corrected final installed run pending|
-| TA-3 numerical N |937c758b6 / feature/python-scientific-scenario-n|Executed9c3d14878, docs95793070b;18focused,3421installed/all17gates and actualN PASS|
-| TA-4 model-selection S |937c758b6 / feature/python-scientific-scenario-s|Executed20d3bc368, current62db4e3bc;167focused,3420installed/all17gates and actualS PASS|
-| TA-5/6/7 selection/effectiveness/integration |937c758b6 / feature/python-scientific-test-selection|5049ae65f;14focused plus4measured suites PASS; local linked-artifact assembly failure corrected, final installed rerun pending|
+| TA-1/2 inventory, contract/adapter |937c758b6 / feature/python-scientific-scenario-contract|PR232,d1de24d9f; corrected6fdf97e28:3463installed/all17gates/43focusedPASS; hosted CI pending|
+| TA-3 numerical N |937c758b6 / feature/python-scientific-scenario-n|PR234,836f5904f; executed9c3d14878;18focused,3421installed/all17gates and actualN PASS|
+| TA-4 model-selection S |937c758b6 / feature/python-scientific-scenario-s|PR233,a8bda3318; executed20d3bc368;167focused,3420installed/all17gates and actualS PASS|
+| TA-5/6/7 selection/effectiveness/integration |937c758b6 / feature/python-scientific-test-selection|892286e3a:3434installed/all17gates;14focused plus4measured suites PASS; local linked-artifact assembly defect corrected; publication next|
 
 All four have contributor-guide self-reviews, not invented human approvals. None
-is published/merged or approved superseded. No cascading PR stack: N/S reuse the
+is merged or approved superseded at this report revision. No cascading PR stack: N/S reuse the
 adapter from its independent worktree, with explicit source/workflow selection.
 
 Actual N/S installed noneditable wheel SHA256
@@ -82,6 +82,7 @@ test source/class and model/fixture/build hashes retained.20cells/two missing/
 one valid zero; native TIFF691bytes, SHA256
 `fc442366732cb8fe47b050c76e7e4c53739a8d754527a0aeaca430f18f41fba0`.
 All5checks PASS; five ownership axes PASS within the bounded tuple.
+Recorded elapsed98.697492seconds includes the fresh owned stack and cleanup.
 
 L2 controlled copies with missing/wrong units, bad CRS and missing nodata were
 rejected; original native bytes unchanged. These are not Java-side negative
@@ -99,6 +100,12 @@ Expectations come from sources, not response/client behavior or a fabricated
 ontology. Oracle hash
 `cac9ade5cabef8b20ca5931659f4a9fda9ead39b1bbf9599fa3fa6cef05bf4c8`.
 Contributor attestation is explicit; no forged maintainer/cryptographic signature.
+Accepted Java corroboration: Resources `ModelVisibility.java:61–85` retains private
+visibility gates while admitting active scenario/namespace; Resolver
+`PrioritizerImpl.java:224–228` gives scenario lexical score100/namespace75. Runtime
+`RuntimeService.java:4960–4971,5032–5062` checks authorized configuration before
+reconstruction/observer preparation. These are implemented-contract references,
+not Python surrogate selection or a claim that all ranking criteria were served.
 
 Fresh `ta-s-live-01`, executed20d3bc368. Baseline observation15 retained original
 nonuniform offsets; lexical33 returned66.5m for20cells and scenario51 returned234.5m
@@ -113,6 +120,8 @@ forced-model/conflicting-option negatives and grid-normalization check retained.
 All4expectations/five axes PASS; owned scopes/processes/listeners closed, unrelated
 Java unchanged. No forced-selection API or hidden reasoning. The Region/Scientist
 union failure is separate **BLOCKED contract**, preserved and not rerun/relaxed.
+Recorded elapsed95.942613seconds includes the fresh owned stack and cleanup;
+no integrated-pipeline speed benchmark is inferred from these separate runs.
 
 ## Failure ownership and evidence integrity
 
@@ -137,10 +146,12 @@ hashes. Supplemental workflow projection was built from original retained bytes,
 **not a rerun**. N/S loaded adapter753b7629b; later reporting improvements are not
 retroactively attributed to those runs. Known fixture tokens checked absent.
 
-GitHub environment blocker: two preserved provenance-ref creation rejections,
+Historical GitHub environment blocker: two preserved provenance-ref creation rejections,
 InternalServerError then `commit_refs_rules`, exact ref/PR absent on readback.
-No third unchanged push, renamed-branch bypass, rule/protection edit or invented
-merge. Need restored normal evaluation or an explicitly authorized remedy.
+Normal ref creation **succeeded for the genuinely new contract contribution**, then
+N/S; PR232/233/234 opened without rule/protection edits or old-provenance retries.
+This is fresh delivery evidence for these contributions, not proof that the older
+provenance-specific ref has been fixed. No renamed-branch bypass or invented merge.
 Scheduled L4 worker/artifact provisioning is also unavailable; not a fake skipped
 test or a reason to block independent local work.
 
@@ -188,13 +199,13 @@ Owned core retains compiled outputs on S branch; separate lightweight contract,
 N and selector worktrees preserve their independent candidates. No branch retirement
 before eligible merge/postmerge proof. Cleanup verified14owned process identities
 absent; no services/kernel/windows/power helper created for ongoing work. No unrelated
-terminal/service stopped. Final installed per-candidate runs are in progress at
-this report revision; no success predeclared. Final merge gate remains BLOCKED.
+terminal/service stopped. All4contributions passed their full installed suites and
+all17gates. Final normal CI/merge/postmerge acceptance remains pending.
 
 ## Five prioritized next steps
 
-1. Restore normal repository ref/rules evaluation or authorize a specific remedy;
-   publish four qualified contributions and verify required checks/merges/ancestry.
+1. Finish normal CI/approval/eligible merges for the four qualified contributions
+   and verify exact accepted ancestry/postmerge; do not infer older ref repair.
 2. Provision an authorized pinned scheduled Java worker/artifact tuple; run N/S as
    a real periodic gate, retaining failures/unknown states and cleanup evidence.
 3. Extend independent provider/multishard/time/category oracles only with genuine
