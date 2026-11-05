@@ -127,13 +127,39 @@ def execute(args):
     return int(receipt["status"] != "PASS")
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("manifest", "wheel", "server-repo", "java", "components", "state-dir"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--workflow-package", type=Path,
                         help="Explicit python-client directory in server checkout for independent accepted-base scenario branches")
-    return execute(parser.parse_args())
+    args = parser.parse_args(argv)
+    started = now()
+    try:
+        return execute(args)
+    except (ValueError, OSError, RuntimeError) as error:
+        # Local validation/adapter errors are FAIL, not absent-external-prerequisite
+        # excuses. Do not invent runtime identities for a run that never reached them.
+        state = args.state_dir.resolve()
+        axes = {axis: outcome("NOT_RUN", "Runtime verification did not complete") for axis in AXES}
+        axes["python"] = outcome("FAIL", "Local preflight/adapter error; inspect exception type")
+        failure = {"schema_version": 1, "record_kind": "incomplete-execution",
+            "scenario_id": "NOT_VALIDATED", "status": "FAIL", "error_type": type(error).__name__,
+            "started": started, "ended": now(), "axes": axes, "identities": None,
+            "identity_reason": "Runtime identity attestation unavailable; no scientific acceptance inferred",
+            "cleanup": outcome("NOT_RUN", "No cleanup claim without owned harness receipt")}
+        if (state / "result.json").is_file():
+            raw = load(state / "result.json")
+            cleaned = all(raw.get(k) is True for k in ("owned_processes_closed", "existing_java_unchanged", "listeners_closed"))
+            failure["cleanup"] = outcome("PASS" if cleaned else "FAIL", "Captured owned harness cleanup flags")
+            failure["harness_result_sha256"] = sha(state / "result.json")
+        if state.exists() or state.parent.is_dir():
+            state.mkdir(exist_ok=True)
+            target = state / "scientific-incomplete-execution.json"
+            if not target.exists():
+                target.write_text(json.dumps(failure, sort_keys=True, indent=2), encoding="utf-8")
+        print(json.dumps(failure, sort_keys=True))
+        return 1
 
 
 if __name__ == "__main__":

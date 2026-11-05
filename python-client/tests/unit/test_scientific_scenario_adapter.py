@@ -72,3 +72,20 @@ def test_wheel_identity_is_source_and_installed_bytes_not_filename(tmp_path, mon
             adapter.installed_wheel(wheel)
     else:
         assert len(adapter.installed_wheel(wheel)) == 64
+
+
+def test_cli_preflight_failure_retains_typed_unknown_identity_without_acceptance(tmp_path, monkeypatch, capsys):
+    manifest = tmp_path / "bad.json"
+    manifest.write_text('{"schema_version":false}')
+    state = tmp_path / "state"
+    monkeypatch.setattr(adapter, "PACKAGE", tmp_path)
+    args = []
+    for name, value in (("manifest", manifest), ("state-dir", state), ("wheel", tmp_path / "missing.whl"),
+        ("server-repo", tmp_path), ("java", tmp_path / "java.exe"), ("components", tmp_path / "components.json")):
+        args.extend(["--" + name, str(value)])
+    assert adapter.main(args) == 1
+    report = json.loads((state / "scientific-incomplete-execution.json").read_text())
+    assert report["status"] == "FAIL" and report["identities"] is None
+    assert report["axes"]["scientific"]["status"] == "NOT_RUN"
+    assert report["cleanup"]["status"] == "NOT_RUN"
+    assert str(tmp_path) not in capsys.readouterr().out

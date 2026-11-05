@@ -95,6 +95,15 @@ BLOCKED. Original N/S receipts have all required axes/checks PASS, so their actu
 scientific assertions are unaffected; no Java rerun justified. Final contract suite
 must be rerun on this corrected candidate; older full-suite receipts are historical.
 
+### Preflight failure artifact completion
+
+Added a typed incomplete-execution receipt for local validation/adapter exceptions
+before runtime attestation: FAIL Python, scientific NOT_RUN, null identities with
+reason, no fabricated cleanup claim. Generic stdout excludes source paths/credentials;
+an existing raw harness receipt may substantiate cleanup. Never overwrites an
+existing incomplete receipt.44focused tests/Ruff PASS; final installed regression
+for this small reporting delta required before updating PR232. Actual N/S unaffected.
+
 ## Validation and compatibility
 
 Command: installed WindowsPython3.12 `pytest -q tests/unit/test_scientific_scenario.py`:
