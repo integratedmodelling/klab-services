@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "s-model-selection",
+  "name": "Does Java select the active applicable model and compute its independently specified result?",
+  "claim_level": "L4",
+  "capabilities": ["RC-P1.5", "RC-P1.3", "CAP-05", "CAP-06", "CAP-09"],
+  "source": {"publication_or_contract": "Reviewed existing docs/KIM.md namespace/scenario activation semantics and model literals; historical #200 request-to-plan. Contributor attestation, not fabricated maintainer signature.", "source_revision": "937c758b62743a0ab68e48792870a9261cf7cc87"},
+  "fixture": {
+    "input_files": [
+      {"path": "tests/acceptance/scenarios/s-selection-oracle.json", "sha256": "cac9ade5cabef8b20ca5931659f4a9fda9ead39b1bbf9599fa3fa6cef05bf4c8"},
+      {"path": "tests/fixtures/nonuniform-export.json", "sha256": "f0848f723b485547c4b37f725e0e1aed63db1c29c49280481e7bcd0439ac9213"},
+      {"path": "tests/fixtures/scientific-reliability/consolidation.fixture/src/consolidation.scenario.kim", "sha256": "d452c3f823a6feaf9b523825475a8c2a65c47bf92c01042984c4cbd08debfd31"},
+      {"path": "tests/fixtures/scientific-reliability/consolidation.fixture/src/consolidation.lexical.kim", "sha256": "ae3315db9f346017f2f4cfa3a144ad1bc48ad63f8b5f72804e44b965f041412b"},
+      {"path": "tests/fixtures/scientific-reliability/consolidation/src/consolidation.kwv", "sha256": "cbcd93ff3055f4af4937dbac743582d00d0bc2f1aef2db7d53abf8cb1062dd05"}
+    ],
+    "oracle_file": "tests/acceptance/scenarios/s-selection-oracle.json",
+    "oracle_origin": "independently-authored-reference",
+    "expected_units": "m", "crs": "EPSG:3857; 5x4 grid; bbox200000,200500,6000000,6000400",
+    "temporal_domain": "initialization only; no temporal computation or revision lease"
+  },
+  "stack": {"java_revision": "runtime-recorded", "worldview_component_ids": "runtime-recorded", "python_wheel_sha256": "runtime-recorded"},
+  "execution": {"operation": "request-plan", "side_effect_policy": "owned-resources-only", "max_seconds": 1800, "max_contexts": 4, "max_jobs": 6, "max_bytes": 2097152},
+  "checks": [
+    {"expectation_id": "s-plan-output", "type": "semantic", "tolerance_basis": "Source literal66.5/234.5 exactly representable;20cells and actual successful selected-model namespace, same original observation/context/focus; partial lineage explicit"},
+    {"expectation_id": "s-private-denial", "type": "security", "tolerance_basis": "Existing private ACL: valid signed distinct principal denied attach; positive own session succeeds; audited no scientific mutation"},
+    {"expectation_id": "s-local-negative", "type": "semantic", "tolerance_basis": "Existing unsupported forced-model and conflicting constraint refusals before HTTP are L1, not actual authorization"},
+    {"expectation_id": "s-cleanup", "type": "lifecycle", "tolerance_basis": "Owner-only contexts/session released; distinct principal positive session released; unknown mutation never replayed"}
+  ],
+  "limits": "Existing synthetic model applicability/partial plans only. No forced selection, surrogate reasoning, full ranking explanation or historical replication. Region/Scientist union diagnostic remains separately BLOCKED and unexecuted. Hashes pin exact current Windows fixture bytes; changed platform bytes fail rather than normalize silently."
+}

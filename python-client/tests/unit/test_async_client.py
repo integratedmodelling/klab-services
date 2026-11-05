@@ -159,6 +159,30 @@ def test_zero_wait_timeout_preserves_known_job_without_any_http():
     asyncio.run(scenario())
 
 
+def test_transport_failure_after_wait_deadline_deterministically_retains_job(monkeypatch):
+    from types import SimpleNamespace
+    import klab_client.async_client as module
+
+    clock = [100.0]
+    monkeypatch.setattr(module, "time", SimpleNamespace(monotonic=lambda: clock[0]))
+
+    async def scenario():
+        async with client(lambda request: pytest.fail("Controlled status failure must not issue HTTP")) as api:
+            job = AsyncContext(api, {"id": "s.c"}).job(7)
+
+            async def expired_status(self, *, timeout, _deadline):
+                assert self is job and timeout == 1 and _deadline == 101
+                clock[0] = 102.0
+                raise TransportError("Controlled transport failure after deadline")
+
+            monkeypatch.setattr(AsyncJob, "status", expired_status)
+            with pytest.raises(WaitTimeout) as caught:
+                await job.result(1)
+            assert caught.value.job is job
+
+    asyncio.run(scenario())
+
+
 @pytest.mark.parametrize("payload", [{"empty": True}, {"notifications": [{"level": "Error", "message": "failure"}]}])
 def test_failed_result_notifications_stay_failures(payload):
     async def scenario():
