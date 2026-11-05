@@ -1,0 +1,66 @@
+# TA-1/TA-2 contribution review — initial development pass
+
+Guide: `docs/contributor-guides/KLAB_CLI_Contribution_Review.md`.
+Contributor self-review, not independent maintainer sign-off.
+
+**Recommendation: Needs bounded implementation correction / validation.**
+Base937c758b62743a0ab68e48792870a9261cf7cc87; independent branch
+`feature/python-scientific-scenario-contract`. No PR/merge created. Recorded GitHub
+ref/rules creation blocker remains unresolved; no workaround attempted.
+
+## Scope and scientific boundaries
+
+Retain the existing pytest families, owned Windows harness, N verifier and S plan
+extractor. Add repository-only JSON validation/receipt functions and a thin adapter
+to that harness. No SDK/Java/ontology/model/component changes, new dependencies,
+scientific inference, deployment abstraction or public API. Source-derived selection
+claims cannot turn mocks into L3 or pass a scientific check that did not run.
+Existing synthetic matrix and scenario constant are selected, not reauthored.
+
+## Findings / unfinished work
+
+- 35 focused L1 tests pass, including hash tampering, missing source/input, traversal,
+  duplicate/nonfinite JSON, unsafe combinations, L5 source refusal, incomplete or
+  credential-shaped receipts, separate unknown/failed axes and42-ID preservation.
+- Runner still needs fixture-level tests for its wheel/source identity check,
+  failure-time receipt path and sanitized evidence projection. Its budget declarations
+  must be demonstrably consistent with existing workflow limits before live use.
+- Family matrix preserves conservative test-boundary defaults and gaps, but detailed
+  module discovery/current measured durations remain to be captured. Historical
+  D6/D7 durations explicitly are not comparative effectiveness measurements.
+- Current N and S workflows do not yet emit explicit expectation/axis records.
+  Adapter intentionally marks missing checks NOT_RUN, never L4 PASS from harness exit0.
+- Startup failure before scientist issuance needs an honest unavailable-identity
+  record; unavailable fields must not support passing scientific acceptance.
+
+These are local engineering obligations, not external blockers. Do not call TA-2
+complete or stop independent work because they are unfinished. No new Java run
+performed in this pass. Real N/S acceptance, selection, integration and report remain.
+
+### Second bounded pass
+
+41 focused tests now pass, including controlled adapter projection, missing-input
+preflight, absent-check NOT_RUN instead of L4 promotion, unclassified harness-failure
+receipt, and exact wheel/installed/source-byte matching. Ruff clean. Context/job
+budgets below the existing adapter's requirements are refused; actual elapsed time
+is recorded and an over-budget run fails after existing bounded harness cleanup.
+The harness retains its own startup/import/functional deadlines; no second service
+or process manager was introduced. This is not a new hard overall watchdog.
+Remaining validation: installed suite/coverage, detailed discovery inventory, live
+N/S explicit expectations and failure receipts on actual unavailable prerequisites.
+
+## Validation and compatibility
+
+Command: installed WindowsPython3.12 `pytest -q tests/unit/test_scientific_scenario.py`:
+35passed; Ruff E9/F63/F7/F82 clean. No hosted CI, installed full-suite or merge
+acceptance inferred. Existing coverage, version matrix, core-only and Windows gates
+unchanged. Credential-shaped output refusal complements—not replaces—known-secret
+checks; raw service logs stay private and only their hashes enter sanitized summaries.
+
+## Next actions
+
+Test/fix the adapter within scope, capture inventory discovery and bounded durations,
+pin input/oracle references, run installed gates. Then normally publish/review/merge
+if repository ref evaluation is restored; otherwise preserve this independent
+candidate and execute N/S changes on separate accepted-base branches, associating
+their receipts without a cascading PR stack. No branch protection/permission edits.

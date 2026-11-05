@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "accepted_base": "937c758b62743a0ab68e48792870a9261cf7cc87",
+  "authority": "docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md",
+  "historical_crosswalk": "notes/python-roadmap-execution/FEATURE_LEDGER.md",
+  "coverage_ids": ["RC-P0", "RC-P1.1", "RC-P1.2", "RC-P1.3", "RC-P1.4", "RC-P1.5", "RC-P2.1", "RC-P2.2", "RC-P2.3", "RC-P2.4", "RC-P2.5", "RC-P3.1", "RC-P3.2", "RC-P3.3", "RC-P3.4", "RC-P3.5", "RC-P4.1", "RC-P4.2", "RC-P4.3", "RC-P4.4", "RC-P4.5", "RC-P5", "RC-R1", "RC-R2", "CAP-01", "CAP-02", "CAP-03", "CAP-04", "CAP-05", "CAP-06", "CAP-07", "CAP-08", "CAP-09", "CAP-10", "CAP-11", "CAP-12", "CAP-13", "CAP-14", "CAP-15", "CAP-16", "CAP-17", "CAP-18"],
+  "family_defaults": {
+    "tests/unit/test_*.py": {"tier": "L1", "boundary": "mock/local controlled; filename functional does not mean Java", "oracle": "implementation/service-contract/local fixture; module-specific exceptions below", "duration_seconds": null, "status": "NOT_RUN", "owner": "Python client contributors", "coverage": ["positive", "negative"], "flakiness": "NOT_MEASURED"},
+    "tests/integration/test_*.py": {"tier": "L2", "boundary": "Python modules, loopback HTTP, files, child interpreters and private kernels; not Java", "oracle": "controlled fixture/service contract", "duration_seconds": null, "status": "NOT_RUN", "owner": "Python client contributors", "coverage": ["positive", "negative", "lifecycle"], "flakiness": "NOT_MEASURED"},
+    "tests/functional/test_*.py": {"tier": "L3 candidate; not demonstrated by collection", "boundary": "explicit live deployment, varies by named runner", "oracle": "module-specific service or synthetic fixture", "duration_seconds": null, "status": "NOT_RUN", "owner": "fixture/deployment operator and service owner", "coverage": ["positive"], "flakiness": "environment-dependent; no unchanged retry"}
+  },
+  "families": [
+    {"id": "identity-transport", "patterns": ["*connection*", "*transport*", "*foundation*", "*runtime_binding*", "*job_binding*", "*onboarding*"], "capabilities": ["CAP-01", "CAP-02", "CAP-03", "CAP-18", "RC-P1.1", "RC-P1.4"], "critical_negatives": "origin, expiry, credentials, private principal and readiness; TEST is not production Hub"},
+    {"id": "requests-jobs", "patterns": ["*client*", "*typed_requests*", "*own_wait*", "*recovery*", "*saved_handle*", "*experiment*"], "capabilities": ["CAP-04", "CAP-07", "CAP-12", "RC-P1.2", "RC-P3.3"], "critical_negatives": "no replay, ambiguity, task cancellation, foreign/deleted identity, creator-only disposal"},
+    {"id": "scientific-values", "patterns": ["*scientific*", "*nonuniform*", "*offset*", "*source_id*", "*scan_slice*", "*vector*", "*export*", "*stream*", "*geotiff*"], "capabilities": ["CAP-08", "CAP-09", "CAP-15", "RC-P2.1", "RC-P2.2", "RC-P2.4", "RC-P2.5"], "critical_negatives": "zero versus missing, precision, metadata/units/CRS, unsupported axes, interrupted atomic output"},
+    {"id": "semantic-plan", "patterns": ["*semantic*", "*request_plan*", "*model_plan*", "*hierarchy*", "*execution_evidence*", "*provenance*"], "capabilities": ["CAP-05", "CAP-06", "CAP-13", "RC-P1.5", "RC-P3.4", "RC-P4.1", "RC-P4.2"], "critical_negatives": "stale/foreign association, unsupported forced-model selection; disputed union separately blocked"},
+    {"id": "graph-events", "patterns": ["*graph*", "*notification*", "*refresh*"], "capabilities": ["CAP-10", "CAP-11", "RC-P3.1", "RC-P3.2"], "critical_negatives": "partial pages, no revision lease, invalidation not durable replay"},
+    {"id": "resources-authoring-agents", "patterns": ["*resource*", "*codelist*", "*authoring*", "*source_preview*", "*agent*", "*parser*"], "capabilities": ["CAP-13", "CAP-14", "RC-P4.2", "RC-P4.3", "RC-P4.4", "RC-P4.5"], "critical_negatives": "metadata not import, ADD-only ownership, private assets, STOP sent not confirmed cleanup"},
+    {"id": "collaboration-notebook", "patterns": ["*shared*", "*notebook*", "*permission*", "*read_semantics*"], "capabilities": ["CAP-07", "CAP-15", "RC-P1.3", "RC-P3.5"], "critical_negatives": "private context denial, no foreign disposal, private kernel identity/cleanup"},
+    {"id": "packaging-harness", "patterns": ["*"], "capabilities": ["CAP-16", "CAP-18", "RC-P0", "RC-R1", "RC-R2"], "critical_negatives": "conservative catch-all until finer attribution; guards/packaging/tool errors are not external blockers"}
+  ],
+  "independent_oracles": [
+    {"files": ["tests/unit/test_nonuniform_export_oracle.py", "tests/functional/test_nonuniform_export.py"], "oracle": "tests/fixtures/nonuniform-export.json", "origin": "pre-existing separately authored synthetic north-first matrix, not derived from exported TIFF", "historical": "#197 accepted bounded numerical export; new milestone execution NOT_RUN", "limitations": "single-shard, unchanged TEST Java value producer, corrected unpublished exporter"},
+    {"files": ["tests/unit/test_request_plan_acceptance.py", "tests/functional/test_request_plan.py"], "oracle": "existing scenario model literal234.5 and lexical66.5; docs/KIM.md scenario activation contract", "origin": "reviewed existing model source and language rule, not served response", "historical": "#200 accepted request/options-to-plan; new milestone execution NOT_RUN", "limitations": "partial plan, root commit unknown; local option negatives do not prove actual authorization"}
+  ],
+  "excluded_or_unproven": [
+    {"ids": ["RC-P2.3"], "status": "BLOCKED", "reason": "no complete authenticated provider accuracy tuple/oracle"},
+    {"ids": ["RC-P4.3"], "status": "NOT_RUN", "reason": "no supported import schema end-to-end; metadata tests are not import acceptance"},
+    {"ids": ["RC-P5", "CAP-17"], "status": "NOT_APPLICABLE", "reason": "Target C explicitly excluded"},
+    {"ids": ["CAP-05"], "status": "BLOCKED", "reason": "Region/Scientist union semantic subcase disputed; preserved failure, no rerun"},
+    {"ids": ["RC-R1"], "status": "NOT_RUN", "reason": "L5 published-study replication excluded; historical three-study levels remain separate"}
+  ]
+}
