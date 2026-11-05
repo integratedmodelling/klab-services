@@ -7,7 +7,7 @@ from uuid import uuid4
 from klab_client import Authoring, Client, Endpoint
 from klab_client.dto import check_notifications
 from klab_client.evidence import _plain
-from klab_client.errors import AuthorizationError, MissingAssetError, ProtocolError, ServerError, SubmissionOutcomeUnknown
+from klab_client.errors import AuthorizationError, MissingAssetError, ProtocolError, ServerError, SubmissionOutcomeUnknown, TransportError
 from .scientific_checks import require
 
 KIND = "OBSERVATION_STRATEGY_DOCUMENT"
@@ -32,6 +32,17 @@ def require_missing(api, urn, kind):
     except MissingAssetError:
         return
     raise AssertionError("Denied asset unexpectedly exists")
+
+
+def require_write_denied(api, kind, name, body):
+    try:
+        api.transport.request("resources", "PUT", f"/api/v1/submit/{kind}/ADD",
+            params={"urn": name}, text=json.dumps(body), ambiguous=True, max_response_bytes=2 * 1024 * 1024)
+    except AuthorizationError:
+        return
+    except (ProtocolError, ServerError, TransportError):
+        raise SubmissionOutcomeUnknown("Denied-write control outcome unknown; do not replay or issue dependent deletes") from None
+    raise AssertionError("Ordinary READ-only project/document write was not explicitly denied")
 
 
 def run(state):
@@ -79,13 +90,7 @@ def run(state):
                 payload["projectName"] = project_name
                 for kind, name, body in (("PROJECT", workspace_name + "/" + denied_project,
                         {"urn": workspace_name + "/" + denied_project}), (KIND, denied_urn, payload)):
-                    try:
-                        ordinary.transport.request("resources", "PUT", f"/api/v1/submit/{kind}/ADD",
-                            params={"urn": name}, text=json.dumps(body), ambiguous=True, max_response_bytes=2 * 1024 * 1024)
-                    except AuthorizationError:
-                        pass
-                    else:
-                        raise AssertionError("Ordinary READ-only project/document write was not explicitly denied")
+                    require_write_denied(ordinary, kind, name, body)
                 require_missing(api, denied_project, "PROJECT")
                 require_missing(api, denied_urn, KIND)
             report.update(passed=True, kind=KIND, urn=urn, service_id=receipt.service_id,

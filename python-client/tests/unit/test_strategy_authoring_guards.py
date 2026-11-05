@@ -8,6 +8,7 @@ import pytest
 import run_reliability_acceptance as runner
 from workflows import strategy_authoring as workflow
 from klab_client.errors import MissingAssetError
+from klab_client.errors import AuthorizationError, ServerError, TransportError, ProtocolError, SubmissionOutcomeUnknown
 
 
 @pytest.mark.parametrize("mutation", [None, "test", "algorithm", "extra", "hash", "source", "wrongclass"])
@@ -67,3 +68,20 @@ def test_cleanup_does_not_accept_empty_acknowledgement():
     api = SimpleNamespace(transport=SimpleNamespace(request=lambda *args, **kwargs: []))
     with pytest.raises(AssertionError):
         workflow.cleanup(api, "PROJECT", "owned")
+
+
+@pytest.mark.parametrize("error", [AuthorizationError, ServerError, TransportError, ProtocolError, None])
+def test_negative_write_requires_typed_denial_and_never_replays(error):
+    calls = []
+    def request(*args, **kwargs):
+        calls.append((args, kwargs))
+        if error:
+            raise error("controlled")
+        return []
+    api = SimpleNamespace(transport=SimpleNamespace(request=request))
+    if error is AuthorizationError:
+        workflow.require_write_denied(api, "PROJECT", "workspace/new", {"urn": "workspace/new"})
+    else:
+        with pytest.raises(SubmissionOutcomeUnknown if error else AssertionError):
+            workflow.require_write_denied(api, "PROJECT", "workspace/new", {"urn": "workspace/new"})
+    assert len(calls) == 1 and calls[0][1]["ambiguous"] is True
