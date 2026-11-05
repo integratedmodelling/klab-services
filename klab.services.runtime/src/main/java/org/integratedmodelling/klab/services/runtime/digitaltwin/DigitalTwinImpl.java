@@ -1701,10 +1701,13 @@ public class DigitalTwinImpl implements DigitalTwin {
     /** Selected query bindings carry local issuance authority, never a QUERY_ID source identity. */
     public void linkSelectedQueryInput(
         Cohort cohort, Observation consumer,
-        org.integratedmodelling.klab.services.runtime.SelectedQueryInput input) {
+        org.integratedmodelling.klab.services.runtime.SelectedQueryInput input,
+        ServiceContextScope executionScope) {
       synchronized (graph) {
         requireOpen();
-        var encoded = input.require(this, cohort, consumer, scope);
+        // Child transactions share their parent's storage scope, while compilation uses the
+        // child's execution scope. Validate the capability against that exact active child.
+        var encoded = input.require(this, cohort, consumer, executionScope);
         graph.addVertex(cohort);
         graph.addVertex(consumer);
         graph.addEdge(cohort, consumer, new RelationshipEdge(

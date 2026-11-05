@@ -556,7 +556,7 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
                   source,
                   property,
                   expression,
-                  semantic && property.equals(owl.getProperty(entry.getValue()).getOWLEntity())));
+                  semantic && property.equals(semanticProperty(entry.getValue()).getOWLEntity())));
       if (matchesProperty(properties, NS.APPLIES_TO_PROPERTY))
         result.add(
             new Bound(
@@ -568,8 +568,8 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
                 property,
                 expression,
                 semantic
-                    && property.equals(owl.getProperty(NS.APPLIES_TO_PROPERTY).getOWLEntity())));
-      var inherent = owl.getProperty(NS.IS_INHERENT_TO_PROPERTY);
+                    && property.equals(semanticProperty(NS.APPLIES_TO_PROPERTY).getOWLEntity())));
+      var inherent = semanticProperty(NS.IS_INHERENT_TO_PROPERTY);
       if (expression instanceof OWLObjectAllValuesFrom
           && inherent != null
           && !matchesProperty(properties, NS.IS_INHERENT_TO_PROPERTY)
@@ -647,6 +647,12 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
           }
         };
     private boolean closed;
+    private final Map<String, Optional<Property>> named = new LinkedHashMap<>(16, .75f, true) {
+      @Override
+      protected boolean removeEldestEntry(Map.Entry<String, Optional<Property>> entry) {
+        return size() > CAPACITY;
+      }
+    };
 
     BoundPropertyMemo(OWL owl) {
       this.owl = owl;
@@ -664,6 +670,14 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
       } finally {
         if (!initialized) manager.removeOntologyChangeListener(listener);
       }
+    }
+
+    Property property(String name) {
+      if (closed) throw new IllegalStateException("Property memo is closed");
+      // These names recur for every restriction visited. Cache missing properties too, within
+      // the same verified ontology/reasoner lease as the superproperty closures.
+      return named.computeIfAbsent(name, key -> Optional.ofNullable(owl.getProperty(key)))
+          .orElse(null);
     }
 
     void collect(
@@ -709,14 +723,20 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
       } finally {
         manager.removeOntologyChangeListener(listener);
         values.clear();
+        named.clear();
         closed = true;
       }
     }
   }
 
   private boolean matchesProperty(Set<OWLObjectPropertyExpression> properties, String name) {
-    var semanticProperty = owl.getProperty(name);
+    var semanticProperty = semanticProperty(name);
     return semanticProperty != null && properties.contains(semanticProperty.getOWLEntity());
+  }
+
+  private Property semanticProperty(String name) {
+    var memo = propertyMemos.get();
+    return memo == null ? owl.getProperty(name) : memo.property(name);
   }
 
   @Override

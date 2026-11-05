@@ -337,7 +337,7 @@ the resolver deliberately does not construct partial-quality plans.
 
 - collective classification dependencies execute through UPDATE nodes with atomic staged
   attributions and runtime-owned individual characterization; see
-  [the resolution contract](../docs/RESOLUTION.md#17-semantic-update-contextualizations);
+  [the resolution contract](../docs/RESOLUTION.md#semantic-update-contextualizations);
 - connection follow-up remains incomplete;
 - relationship source/target persistence and relationship-specific post-processing contain
   explicit TODOs;

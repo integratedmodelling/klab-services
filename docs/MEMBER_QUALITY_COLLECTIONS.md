@@ -1,7 +1,7 @@
-# Native member-quality collections — isolated candidate
+# Native member-quality collections
 
-This document describes an isolated implementation candidate. It has not been merged,
-published or accepted through a live stack. The current test receipt must accompany it.
+This reference describes the bounded native collection contract and its execution limits.
+See [Admission](ADMISSION.md) for the surrounding supplier, preparation and execution gates.
 
 ## Three distinct bindings
 
@@ -69,9 +69,9 @@ ports absent from source. Catalogue/model admission compares that set with the e
 pending source descriptors before distance/ranking. An authenticated UserScope suffices
 for this pure method inspection; it does not bind an invocation container. Known empty
 and unavailable inspection are distinct, and HTTP/decoding failures remain unavailable.
-The inspection itself does not load or invoke components. The Resolver explicitly requests preparable catalog candidates and runs the existing
-on-demand component/resource prerequisite path before this installed proof and ranking,
-as described below. Default direct catalog queries retain executable matching.
+The inspection itself does not load or invoke components. The owning Resolver maps parsed
+supplier beans to live models and runs the authorized component/resource prerequisite path
+before this installed proof and ranking, as described below.
 
 Member support must match the actual native support within the container. A bounded
 normalization recognizes only a singleton nonregular physical time interval whose
@@ -89,11 +89,11 @@ result for the selected observer or an absolute fallback under the existing obse
 contract; only observer refinement may differ, and the actual returned perspective is
 preserved. Selected Agent observation identity is provenance, distinct from its class.
 
-## Deliberately unfinished
+## Execution limits
 
 Generic Height/MEASURE collection mediation, direct-view Tier-0 outputs, arbitrary
 MemberPlan bodies, temporal process updates and general regional redistribution remain
-outside this slice. Regional Elevation/Slope sampling for the original gradient model
+outside this contract. Regional Elevation/Slope sampling for the original gradient model
 has no implicit bridge: it must resolve through an explicitly supported operation or
 fail before allocation. The original `degree_angle` declaration and formula are not
 validated by adding canonical unity metadata.
@@ -102,21 +102,29 @@ A Region-wide result needs an explicitly selected contextualizer. A test-only ma
 over two native scalar values demonstrates that boundary; it is not a default ecological
 mapping, sampling, overlap, gap, rasterization or aggregation policy.
 
-## Compatibility and later rollout
+## Service compatibility
 
-The new Runtime operations, client methods, validation response fields and typed
-Actuator input map require matching Services API/client artifacts. The separately
-published unit-only `f88e9570` change does not contain these ABI changes. A future
-deployment must coordinate those artifacts and clients; this candidate does not
-authorize publication, deployment, IDE updates or a service restart. Isolated mapper,
-controller and execution tests are not live/deployed acceptance.
+Runtime operations, client methods, validation response fields and typed Actuator input maps
+require compatible API/client artifacts. Parser, mapper, controller and execution tests
+exercise different boundaries from deployed public-service acceptance.
 
 
 ## Prerequisite preparation and discovery modes
 
-Catalog queries default to `EXECUTABLE`, retaining installed-consumer validation and semantic matching. Resolver requests `PREPARABLE` explicitly: these results retain source, native-bearer, exact pending occurrence and catalog visibility/type/coverage checks, but are candidate listings rather than executable grants or ranked matches. The Resolver captures an immutable source/executable/reasoner preparation snapshot, invokes the existing authorized Runtime contextualizer/resource prerequisite path under the candidate's namespace/project constraints, then rechecks that original snapshot and proves installed typed-port completeness before semantic distance and ranking. Inspection itself never loads or invokes a component. Missing/disabled/failed preparation, unavailable inspection, stale source, changed executable or changed semantic generation fails closed.
+Resolver requests `PREPARABLE` discovery. In the supplier workflow, Resources exports parsed
+beans under authenticated source and lexical visibility rules; it does not prove eligibility
+against the requesting twin. The owning Resolver maps the beans with its retained Reasoner,
+checks semantic/contextual eligibility and captures an immutable source/executable/reasoner
+preparation snapshot. It invokes the authorized Runtime contextualizer/resource prerequisite
+path under the candidate's namespace/project constraints, then rechecks that snapshot and
+proves installed typed-port completeness before semantic distance and ranking. Inspection
+itself never loads or invokes a component. Missing/disabled/failed preparation, unavailable
+inspection, stale source, changed executable or changed semantic generation fails closed.
+See [Admission](ADMISSION.md#receipts-and-semantic-cycles) for supplier boundaries and
+requests without lexical selectors. Direct executable catalog queries retain their own
+installed-consumer validation contract.
 
-Prepared ResourceSets are cached only within the resolution compiler and exact invocation scope/context/observer/constraint witness; chosen model resolution reuses them and attaches only the selected requirements to provenance. This ordering can prepare more coarse candidates and resource prerequisites than the former selected-model-only path. It continues to use existing component-load settings and authorization; no live installation is exercised by the isolated tests. Known ordinary overload sets retain the existing executor's selection behavior when every installed implementation is inspectable and has no collection parameter. Typed or mixed overload ambiguity remains ineligible.
+Prepared ResourceSets are cached only within the resolution compiler and exact invocation scope/context/observer/constraint witness; chosen model resolution reuses them and attaches only the selected requirements to provenance. This ordering can prepare multiple coarse candidates and their prerequisites. It continues to use existing component-load settings and authorization; controlled tests do not establish live component installation. Known ordinary overload sets retain the existing executor's selection behavior when every installed implementation is inspectable and has no collection parameter. Typed or mixed overload ambiguity remains ineligible.
 
 
 Preparation cache keys use model and scope identity plus immutable context, observer and constraint witnesses. Successful same-key preparation is atomic per key; there is no service-global preparation lock. Changing a context or observer requires independent proof/preparation. The existing root-Subject/Agent path selects in the requesting context and then enters the explained subject for computation. That intentional transition retains the original selection snapshot, independently prepares scope-sensitive resource prerequisites in the actual computation scope, and requires full re-admission against the same source/executable/reasoner snapshot before using those requirements; it does not transfer the container's contextual proof.

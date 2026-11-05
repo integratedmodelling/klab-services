@@ -136,7 +136,8 @@ public class DataflowCompiler {
                   nativeObservation,
                   GeometryRepository.INSTANCE.scale(nativeObservation.getGeometry()),
                   null,
-                  "native"));
+                  "native",
+                  true));
     } else
       throw new KlabIllegalStateException(
           "Selection has no native observation or completed reference");
@@ -196,6 +197,12 @@ public class DataflowCompiler {
    */
   List<Actuator> compileObservation(
       Observation observation, Geometry coverage, ObservationStrategy strategy, String localName) {
+    return compileObservation(observation, coverage, strategy, localName, false);
+  }
+
+  private List<Actuator> compileObservation(
+      Observation observation, Geometry coverage, ObservationStrategy strategy, String localName,
+      boolean selectionContributions) {
 
     var selection = resolutionGraph.selectionDependencies.get(observation);
     if (selection != null) {
@@ -290,7 +297,10 @@ public class DataflowCompiler {
       }
     }
 
-    if (ret.isEmpty()) {
+    if (ret.isEmpty() || selectionContributions) {
+      // Completed native fragments already contribute to the selection's cohort. They are
+      // separately checked by the selection executor, not inputs to the missing-fragment
+      // producer. In particular, a composed query has no durable source observation ID.
       ret.addAll(references);
     } else {
       for (var actuator : ret) {

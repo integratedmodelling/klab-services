@@ -45,6 +45,23 @@ class CollectiveSelectionSubmissionScopeTest {
     doCallRealMethod().when(f.graph).materializeClassificationMember(any(),any());
   }
 
+  private org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j nativeEmptyCatalogue(
+      SelectedModelClassifierSubmissionTest.Fixture f,
+      org.integratedmodelling.klab.services.runtime.neo4j.NativeFamilyRecovery backend) throws Exception {
+    f.remember(f.observable(f.semantic.register(f.semantic.named("Region"))));
+    var graph=backend.initializeRoot(f.scope);
+    when(f.twin.getKnowledgeGraph()).thenReturn(graph);
+    SelectedModelClassifierSubmissionTest.field(f.twin,
+        org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl.class,"knowledgeGraph",graph);
+    f.cohort.setId(-1);f.region.setId(-1);
+    try(var tx=graph.createTransaction(f.scope)) {
+      tx.store(f.cohort);tx.store(f.region);
+      tx.link(org.integratedmodelling.klab.api.data.RuntimeAsset.CONTEXT_ASSET,f.cohort,GraphModel.Relationship.HAS_CHILD);
+      // The context has no authored discovery provenance and is independent of this catalogue.
+    }
+    return graph;
+  }
+
   @Test void explicitSelectionGeometryRetainsOriginalNativeFocus() throws Exception {
     try(var f=new SelectedModelClassifierSubmissionTest.Fixture()) {
       var request=selection(f,true);
@@ -100,6 +117,63 @@ class CollectiveSelectionSubmissionScopeTest {
       assertNotNull(proof.context(),"The public boundary must not erase the native focus");
       assertEquals(CollectiveSelectionBinding.context(f.scope),proof.context());
       assertTrue(proof.selectedIds().contains(f.region.getId()));assertTrue(f.rootCommits.get()>0);
+    }
+  }
+
+  @Test void publicConsumerExecutesItsSelectedAliasAcrossResolutionAndInitializationTransactions() throws Exception {
+    try(var f=new SelectedModelClassifierSubmissionTest.Fixture();var permit=f.useGatedEmptyProducer();
+        var backend=new org.integratedmodelling.klab.services.runtime.neo4j.NativeFamilyRecovery()) {
+      nativeEmptyCatalogue(f,backend);
+      var requested=selection(f,true);
+      var selected=f.observables.get(requested.getObservable().getUrn());
+      var parsed=(org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl)selected;
+      parsed.setFormalName("selected");parsed.setUrn(parsed.getUrn()+" named selected");
+      f.remember(parsed);
+      var parent=(org.integratedmodelling.klab.api.lang.kim.KimModel)f.sources.values().stream()
+          .filter(namespace->namespace.getSourceCode().equals("parent"))
+          .findFirst().orElseThrow().getStatements().getFirst();
+      parent.getDependencies().clear();parent.getDependencies().add(selected);
+      parent.getContextualization().clear();parent.getContextualization().add(f.expression("selected.childrenCount + 7"));
+      var path=java.nio.file.Files.createTempDirectory("klab-selected-consumer-");
+      var storage=SelectedModelClassifierSubmissionTest.diskStorage(f.scope,path,"live");
+      when(f.twin.getStorageManager()).thenReturn(storage);
+      try {
+        var result=f.submit().get(45,TimeUnit.SECONDS);
+        assertFalse(result.isEmpty(),result.getNotifications()+" "+f.failures());
+        assertTrue(result.getId()>0);
+        var input=org.integratedmodelling.klab.runtime.libraries.ObservationInspector.selectionInput(f.scope,result,"selected");
+        assertNotNull(input);
+        try(var read=org.integratedmodelling.klab.runtime.storage.StorageReads.open(result,f.scope,null,
+            org.integratedmodelling.klab.api.data.Data.FillCurve.D1_LINEAR,
+            org.integratedmodelling.klab.api.data.Storage.DoubleScanner.class)) {
+          assertEquals(input.getChildrenCount()+7,read.scanners().getFirst().get(),1e-9);
+        }
+      } finally {storage.close();}
+    }
+  }
+
+  @Test void publicSelectionCompletesPartialNativeDiscoveryWithoutConsumingItsQueryAsAProducerInput() throws Exception {
+    try(var f=new SelectedModelClassifierSubmissionTest.Fixture();var permit=f.useGatedEmptyProducer();
+        var backend=new org.integratedmodelling.klab.services.runtime.neo4j.NativeFamilyRecovery()) {
+      // Two submissions need actual persisted activities, links and member snapshots. The
+      // single-attempt fixture deliberately does not retain historical provenance.
+      var graph=nativeEmptyCatalogue(f,backend);
+      try(var tx=graph.createTransaction(f.scope)) {
+        assertEquals(f.cohort.getObservable().getUrn(),
+            tx.captureClassificationMembers(f.cohort.getId()).cohortObservable());
+      }
+      var first=selection(f,true);
+      first.setGeometry(Geometry.create("T1(1){ttype=PHYSICAL,tstart=1000,tend=5000,tscope=4.0,tunit=SECOND}"));
+      var partial=f.runtime.submit(first,f.scope).get(45,TimeUnit.SECONDS);
+      assertFalse(partial.isEmpty(),partial.getNotifications()+" "+f.failures());
+      var before=Utils.Json.parseObject(partial.getMetadata().get(CollectiveSelectionView.DATA_KEY).toString(),CollectiveSelectionView.class).sourceIds();
+      var full=f.runtime.submit(selection(f,true),f.scope).get(45,TimeUnit.SECONDS);
+      assertFalse(full.isEmpty(),full.getNotifications()+" "+f.failures());
+      assertEquals(Observation.QUERY_ID,full.getId());
+      assertEquals(1,full.getResolvedCoverage(),1e-9);
+      assertFalse(before.isEmpty());
+      for(var id:before)assertNotNull(graph.getAsset(id,f.scope,Observation.class),
+          "Completion must preserve earlier discovery identities");
     }
   }
 

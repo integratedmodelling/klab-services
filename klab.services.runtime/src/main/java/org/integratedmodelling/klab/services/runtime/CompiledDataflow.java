@@ -2002,7 +2002,7 @@ public class CompiledDataflow {
                     org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.DATA_KEY)) {
               var binding = SelectedQueryInput.capture(transaction, cohort, consumer, producer,
                   entry.getKey(), entry.getKey().getChildren().indexOf(child), scope);
-              transaction.linkSelectedQueryInput(cohort, consumer, binding);
+              transaction.linkSelectedQueryInput(cohort, consumer, binding, scope);
             } else transaction.linkCollectiveInput(cohort, consumer, producer, null);
           }
         }

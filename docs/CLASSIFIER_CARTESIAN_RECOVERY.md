@@ -1,11 +1,11 @@
 # Automatic independent predicate products and native family recovery
 
-This isolated increment extends the preserved [family milestone](CLASSIFIER_DEPENDENCY_FAMILIES.md).
+This contract extends [single-occurrence dependency families](CLASSIFIER_DEPENDENCY_FAMILIES.md).
 It supports multiple direct positive abstract ATTRIBUTE occurrences on one quality dependency of
 one selected INIT model, in the same explicit named native domain. One graph-reading contextualizer
 executes after the independent concrete dependencies. It supplies its own authored calculation.
 Other deferred dependencies, mixed/inherent multi-occurrence domains and shared-binding syntax
-remain explicitly unsupported. Existing single-occurrence routes retain their earlier contract.
+remain explicitly unsupported. Existing single-occurrence routes retain their own contract.
 
 ## Independent occurrences and one live discovery domain
 
@@ -82,9 +82,9 @@ This verifies a real native family persistence/recovery boundary. It does not cl
 original ordinary-submission root commit itself used embedded Neo4j, that numeric storage bytes
 were restarted, or that producer completion can be replayed. Persistent membership invalidation,
 external datastore certification, outer-context composition and dimensional/FX mediation remain
-outside this increment. See external verification/review receipts for the actual Maven result.
+outside this contract. See external verification/review receipts for the actual Maven result.
 
-The subsequent [native-root verification](CLASSIFIER_NATIVE_ROOT_RECOVERY.md) installs the real
-embedded graph and numeric storage before ordinary submission, then cold-reloads its own committed
-results. It separately documents the counter/shard persistence repairs, exact test boundaries and
-remaining infrastructure limits; the historical milestone above remains independently preserved.
+[Native-root recovery](CLASSIFIER_NATIVE_ROOT_RECOVERY.md) installs the embedded production
+graph and numerical storage before public submission and cold-reloads the committed result.
+Its contract distinguishes root publication, shard/value persistence and recovery from the
+family-only persistence bridge described here. Each test must state which boundary it uses.

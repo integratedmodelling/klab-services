@@ -1,11 +1,10 @@
 # Selected-model classifier dependency families
 
-This isolated increment extends the verified INIT singleton route in
-[CLASSIFIER_DEPENDENCY_SUBMISSION.md](CLASSIFIER_DEPENDENCY_SUBMISSION.md). It implements the
-owner-approved consumption contract: one selected model executes once after its independent
-concrete dependency observations complete. Its contextualizer retrieves their prerequisite
-bindings from the knowledge graph and performs an explicitly authored calculation. Expansion
-itself neither aggregates values nor supplies a scientific reducer.
+A selected model executes after its independent concrete dependency observations complete.
+Its contextualizer retrieves exact prerequisite bindings from the knowledge graph and performs
+an authored calculation. Expansion itself neither aggregates values nor supplies a reducer.
+See [classifier continuation](CLASSIFIER_DEPENDENCY_SUBMISSION.md) for its singleton binding
+and [independent products](CLASSIFIER_CARTESIAN_RECOVERY.md) for multiple occurrences.
 
 ## Conditional admission remains a type proof
 
@@ -95,7 +94,7 @@ Maize yields one concrete child and 22, although the Wheat ontology/model remain
 Thus the observed classifications, not the ontology descendant list, drive expansion.
 
 Prices/quantities are authored test assumptions. These results do not verify dimensional price
-mediation, price discovery or FX. The necessary currency construction repair delegates the String
+mediation, price discovery or FX. Currency construction delegates the String
 builder overload to its existing value overload and gives `CurrencyImpl` a deterministic definition
 string. Source guards compare portable semantic snapshots, not currency object identity. No rate
 or currency validation policy is introduced.
@@ -105,14 +104,9 @@ when any crop valuation is absent. Runtime expansion fabricates neither choice. 
 classifications, Tier-0 priority, source/member mutation, failure/cancellation and separate cached
 binding contracts are covered by the associated tests and evidence receipts.
 
-The current automatic route is INIT, one deferred dependency and one abstract occurrence per
-selected model, with any supported number of concrete closure branches. Pure syntax/keyed-outcome
-machinery already supports multiple predicate products, but ordinary multi-occurrence planning,
-shared classifier-producer/domain binding and general parent input families remain future stages.
-Unsupported shapes fail explicitly. No complete recursive runtime or persistent invalidation
-policy is claimed.
-
-
-The subsequent isolated [independent product and native recovery increment](CLASSIFIER_CARTESIAN_RECOVERY.md)
-extends the preserved single-occurrence family milestone. Its exact admission, producer identity,
-characterization, embedded persistence and verification boundaries are documented separately.
+The single-occurrence form described here supports an INIT model with concrete closure
+branches. The [independent product and native recovery contract](CLASSIFIER_CARTESIAN_RECOVERY.md)
+also supports multiple independent direct ATTRIBUTE occurrences in its explicit named native
+domain. Shared classifier/domain binding, general parent input families and unsupported
+cross-context shapes require their own contracts. No general recursive sampler or persistent
+invalidation policy is implied.

@@ -1,0 +1,64 @@
+<mxfile host="app.diagrams.net" version="29.0.0">
+  <diagram id="collective-selection" name="Native discovery, selection and model consumption">
+    <mxGraphModel adaptiveColors="auto" dx="1200" dy="860" grid="1" gridSize="10" page="1" pageWidth="1200" pageHeight="860" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Native discovery, selection and model consumption" style="text;html=1;align=left;fontSize=26;fontStyle=1;fontColor=#172D45;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="35" y="20" width="1120" height="38" />
+        </mxCell>
+        <mxCell id="subtitle" value="A qualified collection is a view over native identities. Its consumer and prerequisites share one atomic root attempt." style="text;html=1;align=left;fontSize=15;fontColor=#526376;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="35" y="66" width="1120" height="40" />
+        </mxCell>
+        <mxCell id="request" value="&lt;b&gt;Qualified request&lt;/b&gt;&lt;br&gt;Try an eligible full-observable model before automatic selection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF4FF;strokeColor=#386CB0;strokeWidth=2;fontColor=#172D45;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="135" width="250" height="120" />
+        </mxCell>
+        <mxCell id="reuse" value="&lt;b&gt;Reuse native fragments&lt;/b&gt;&lt;br&gt;Verify successful discovery and its actual invocation support" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF4FF;strokeColor=#386CB0;strokeWidth=2;fontColor=#172D45;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="450" y="135" width="250" height="120" />
+        </mxCell>
+        <mxCell id="discover" value="&lt;b&gt;Complete discovery&lt;/b&gt;&lt;br&gt;Execute missing support; retain earlier contributions and identities" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#237C68;strokeWidth=2;fontColor=#172D45;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="850" y="135" width="250" height="120" />
+        </mxCell>
+        <mxCell id="classify" value="&lt;b&gt;Classify and characterize&lt;/b&gt;&lt;br&gt;Observed members; concrete family results; mandatory follow-ups" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#237C68;strokeWidth=2;fontColor=#172D45;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="850" y="335" width="250" height="120" />
+        </mxCell>
+        <mxCell id="seal" value="&lt;b&gt;Refresh and seal&lt;/b&gt;&lt;br&gt;Fresh native queries; fixed source, member, scope and semantic proof" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3D7;strokeColor=#A67417;strokeWidth=2;fontColor=#172D45;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="450" y="335" width="250" height="120" />
+        </mxCell>
+        <mxCell id="view" value="&lt;b&gt;Issued selected view&lt;/b&gt;&lt;br&gt;QUERY_ID, source-backed receipt; no second native instantiator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDF4FF;strokeColor=#386CB0;strokeWidth=2;fontColor=#172D45;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="335" width="250" height="120" />
+        </mxCell>
+        <mxCell id="consumer" value="&lt;b&gt;Ordinary model input&lt;/b&gt;&lt;br&gt;Original issued view at its exact local alias and active child scope" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F4F0;strokeColor=#237C68;strokeWidth=2;fontColor=#172D45;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="250" y="565" width="250" height="120" />
+        </mxCell>
+        <mxCell id="commit" value="&lt;b&gt;Publish consumer&lt;/b&gt;&lt;br&gt;Persist alias receipt and values; rollback uncommitted work on failure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3D7;strokeColor=#A67417;strokeWidth=2;fontColor=#172D45;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="750" y="565" width="250" height="120" />
+        </mxCell>
+        <mxCell id="edge0" value="automatic route" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#5B6E80;strokeWidth=2;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" source="request" target="reuse" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#5B6E80;strokeWidth=2;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" source="reuse" target="discover" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge2" value="complete cohort" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#5B6E80;strokeWidth=2;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" source="discover" target="classify" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#5B6E80;strokeWidth=2;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" source="classify" target="seal" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#5B6E80;strokeWidth=2;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" source="seal" target="view" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge5" value="selected alias" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#5B6E80;strokeWidth=2;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" source="view" target="consumer" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="edge6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#5B6E80;strokeWidth=2;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" source="consumer" target="commit" parent="1">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="notes" value="Completed fragments are separate contributions, not inputs to the missing-support producer.&lt;br&gt;Successful empty discovery is valid. Missing, stale or partial discovery cannot prove an empty selection.&lt;br&gt;A parent storage scope cannot substitute for the active child execution scope.&lt;br&gt;Transported bytes do not recreate issuance. Committed reads revalidate the recorded view." style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;fontSize=14;fontColor=#526376;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="35" y="737" width="1120" height="92" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -153,13 +153,27 @@ its authenticated namespace listing directly,
 with the same source capture and visibility filtering. No shared Reasoner lease, Runtime callback,
 or provider executable-admission grant is needed. The owning Resolver maps and checks candidate
 sources against its retained semantic actor before ordinary prerequisite and executable admission.
-The first implementation exports broad source candidates rather than using a provider Reasoner to
+Resources returns parsed k.IM beans with retained source; Resolver constructs the live Model objects.
+The supplier exports broad source candidates rather than using a provider Reasoner to
 exclude possibly suitable local candidates. This may transfer more data than semantic catalog search.
 
 Supplier failures retain diagnostics and mark discovery incomplete while successful suppliers remain
 usable. Missing candidates under incomplete discovery cannot certify model absence. See
 [admission](ADMISSION.md#receipts-and-semantic-cycles) for source retention, admission and terminal
 outcome boundaries.
+
+### Source changes and validation
+
+Opening an unchanged workspace does not require validating every namespace again. Source and
+semantic validity changes drive validation and invalidate affected receipts/index entries.
+Service-side parsed assets can retain their applicable validation evidence; the owning Resolver
+still checks source and semantic snapshot applicability at admission. A cached validation result
+is not an installed-method or scientific-completion grant.
+
+Candidate transfer is bounded and shared within the requesting attempt. Background catalog
+reconciliation cooperates with active semantic cycles, and retry/backoff prevents a failing
+provider or stale index from repeatedly blocking interactive resolution. See
+[latency and cycle ownership](RESOLUTION.md#cycle-observer-and-discovery-latency).
 
 ### Info
 

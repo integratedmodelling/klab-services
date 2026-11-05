@@ -4,7 +4,7 @@ Observational containment is a permission to request observations, not spatial e
 parthood, inherency or a coverage guarantee. A count/presence request does not need a
 Tree-contained-in-Region axiom: its requested geometry binds contextual discovery.
 
-This implementation slice adds a built-in rank-one route for count/presence of a concrete
+The built-in rank-one route supports count/presence of a concrete
 Subject or Agent. The existing Resolver tries successful Tier-0 strategies first. Only
 outstanding work may resolve the corresponding collective, execute an instantiator or reuse
 an existing completed cohort, enumerate actual members, and reduce them to one scalar.
@@ -75,8 +75,8 @@ native bearer restrictions or abstractness/identity obligations.
 
 Focused tests exercise production OWL unary construction, strategy generation, Resolver,
 Dataflow transport, collective completion/query/member enumeration, Groovy scalar compilation
-and scalar storage with controlled catalog/graph/service I/O. They are not a live-stack or
-cotechino end-to-end acceptance result. No consequence-engine inference is added.
+and scalar storage with controlled catalog/graph/service I/O. Live acceptance must separately verify public submission, scientific values and deployment.
+The reducer itself does not perform consequence-engine inference.
 
 
 ## Whole-support transport witness and execution proof

@@ -1,18 +1,15 @@
 # Consequence engine — contracts and implementation
 
-This document specifies the implemented consequence contracts and their verification
-boundary. Intrinsic conferral followed by implication has passed a complete live cycle
-without a characterization model. Dependent configuration birth and same-identity,
-current-time explanatory recomputation have passed a bounded live scenario. These
-results do not establish every relationship, network or cessation path.
+The consequence engine assesses relevant changes after successful observation/knowledge root
+commits. It retains the requesting cycle's observer, semantic actor and causal chain, and uses
+normal admitted resolution and guarded scientific execution for justified work.
 
-See [implementation status and continuation prompts](CONSEQUENCE_ENGINE_STATUS.md)
-for exact verified scenarios, controlled-only coverage, unsupported cases and remaining
-blockers. Parsing, OWL declarations and a successful helper test alone do not prove a
-Runtime consequence or scientific model executed.
+See [capabilities and limits](CONSEQUENCE_ENGINE_STATUS.md) and
+[consequence admission and acceptance](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md).
 
-The [admission follow-up audit and staged repair prompts](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md)
-cover CHANGE repetition, recomputation evidence, birth identities and nested cancellation.
+![Commit assessment and causal cycle drain](diagrams/consequence-cycle.drawio.png)
+
+[Editable diagram](diagrams/consequence-cycle.drawio).
 
 Here, a **commit** means an observation/knowledge transaction commit in a digital
 twin, not a Git commit. Consequences operate on observations and their scientific
@@ -25,7 +22,7 @@ remains active: legal identity qualification discharges requirement-induced abst
 while explicitly authored abstractness remains. The unsupported `requires attribute`
 and `requires extent` forms are removed. `implies`, `confers` and `emerges from` record
 actionable consequences under the contracts below.
-## Agreed semantic contract
+## Semantic contract
 
 The engine runs after each observation/knowledge commit. Its responsibilities are:
 
@@ -42,7 +39,7 @@ them. The design is not a single pass. Existing resolution idempotency and reuse
 are the primary mechanisms for avoiding duplicate work; the engine should not
 introduce a separate competing resolution state machine.
 
-### Agreed effective-head interpretation of `of`
+### Effective-head interpretation of `of`
 
 Interpret binary `of` by the effective head kind after alias resolution and unary
 derivation:
@@ -76,7 +73,7 @@ Placement depends on the kind of detected ingredients:
 - Relationship emergence yields Network configurations. Resolving an emerged Network
   creates the scientific network model, a distinct step from detecting its existence.
 
-Different-bearer dependent ingredients need an explicit design decision. This draft
+Different-bearer dependent ingredients need an explicit design decision. The implementation
 does not merge bearers, pick one arbitrarily, discard ingredients or infer a new
 inherency relationship to make detection possible.
 
@@ -116,14 +113,14 @@ fixed-point or work-queue algorithm is mandated by this document.
 
 ## Current support and implementation boundary
 
-| Path | Implemented behavior | Verification limit |
+| Path | Implemented behavior | Boundary |
 | --- | --- | --- |
-| Rule source and transport | Normalized authored conferral, implication and emergence evidence with source spans, accepted-generation indexing and retained semantic-cycle binding | Syntax/source evidence is not execution authority |
-| Roles and implications | Guarded intrinsic role attribution before optional characterization; ordinary optional resolution for implied targets | Process→role→quality is live verified; relationship endpoints and independent alternative supports lack equivalent full-stack acceptance |
-| Configuration discovery | Incremental candidates, positive Boolean matching, guarded native capture, detection placement and prepared single-root explanatory execution | Simple dependent birth/recomputation is live verified; disconnected/cross-cohort and split/merge paths have controlled coverage |
-| Cycles and settings | Per-twin explicit-cycle serialization; frozen enablement and semantic view through recursive drain | In-memory ownership is not durable recovery or an authority-dataset snapshot |
-| Modeled cessation | Local Data.Builder output intent, execution-bound validation, atomic native deactivation/history, current-view and scheduler exclusion, cohort affects propagation | Controlled native COUNT1→0 is verified; full service-side cessation acceptance remains blocked before testcase start |
-| Change processes | Existing resolved semantic writer avoids a redundant change request only with valid perspective/support evidence | General resolve-once and per-timestep model reuse policy remain deferred |
+| Rule source and transport | Normalized conferral, implication and emergence evidence; accepted-generation indexing and retained cycle binding | Source evidence is not execution authority |
+| Roles and implications | Guarded intrinsic attribution, optional characterization and normal resolution of implied targets | Recipient, support and currentness checks remain required |
+| Configuration discovery | Positive matching, guarded native captures, placement and prepared single-root explanation | Multi-root, mixed-bearer and unsupported negative patterns do not acquire inferred semantics |
+| Cycles and settings | Per-twin explicit-cycle admission and frozen enablement/semantics through causal drain | In-memory ownership does not imply durable recovery or an authority-data snapshot |
+| Modeled cessation | Local execution-bound output intent, atomic deactivation/history and current-view/scheduler exclusion | Remote intent and complete application scenarios require their own supported contract |
+| Change processes | Recognize current compatible semantic writers before submitting additional work | General resolve-once/per-timestep reuse is a separate policy |
 
 The legacy `emergentResolvables` stub is not the runtime discovery implementation.
 The active rule API is `Reasoner.consequenceRules`, consumed through retained semantic
@@ -180,7 +177,7 @@ not observation reuse or a new resolver state machine. Shutdown/disposal interru
 the worker and drops queued work before storage can be closed/deleted; a handler that
 does not stop within five seconds prevents that disposal. There is no durable outbox,
 restart replay, retry policy, backpressure policy or exactly-once delivery guarantee.
-These remain prerequisites before enabling potentially expansive semantic handlers.
+These boundaries constrain supported handler scheduling and application acceptance.
 
 ### Scope, causality and client messages
 
@@ -336,7 +333,7 @@ observer selection never inherits an unrelated perspective from the causal ances
 ### Automatic change resolution
 
 [ChangeProcessHandler](../klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/ChangeProcessHandler.java)
-runs for commits containing added observations or modified assets. Initially it scans
+runs for commits containing added observations or modified assets. It scans
 the committed observation catalog visible in the requesting context. The digital twin
 is treated as occurrent if any committed observation has GRID/REAL occupied time, an
 agent has GRID/REAL perceived time, or an individual event/process is present. PHYSICAL time alone and a collective event
@@ -360,7 +357,7 @@ does not. The handler also checks normal observation reuse for the exact change 
 retaining the resolver's observer-specific preference over absolute fallback. It checks
 again for every quality so a joint process installed by the first request can satisfy
 later qualities without another submission. Partial results remain subject to normal
-coverage-aware resolution. No-model/unresolved results are deferred; errors are failed;
+coverage-aware resolution. Typed optional NO_MODEL is nonfatal; unresolved or incomplete results are deferred; errors are failed;
 shutdown cancels an outstanding submitted future. Decision evidence lists the qualities
 whose change submissions returned successfully.
 
@@ -416,12 +413,10 @@ The [status report](CONSEQUENCE_ENGINE_STATUS.md) distinguishes the actual depen
 birth/recomputation acceptance from controlled network/lifecycle tests. Multi-root
 explanations and configuration termination are explicitly unsupported.
 
-## Role conferral and implication contract (November 1)
+## Role conferral and implication contract
 
-These contracts supersede the earlier model-mediated conferral design. Their runtime
-handlers require the corresponding evidence, attribution and cycle paths; missing or
-unsupported evidence remains explicitly deferred. Verification by scenario is listed in the status report;
-a parser hook alone does not execute them.
+Runtime handlers require the corresponding evidence, attribution and cycle paths. Missing or
+unsupported evidence remains explicitly deferred; parsing alone does not execute a consequence.
 
 ### Conferral
 
@@ -512,7 +507,7 @@ no direct computation. Scheduler still traverses ordinary prerequisites; their c
 knowledge and existing initialization/reuse rules are preserved. This does not claim
 that every upstream model is refreshed for each input revision. General resolution
 reuse remains a separate policy discussion. Multiple explanatory roots are explicitly
-unsupported in this initial implementation.
+unsupported by this contract.
 
 Modeled cessation requires authentic execution-bound output and retained native beforeimage.
 Local components may call `Data.Builder.cease(target)`; the builder records intent, not
@@ -634,26 +629,12 @@ restart/replay ownership, optional-uncertainty policy and negative/absence detec
 remain separate work. Mixed dependent emergence needs complete common-bearer evidence;
 unsupported or incomplete evidence must defer rather than manufacture a configuration.
 
-## Questions for collaborators
+## Open contracts
 
-- Split/merge continuity uses a deterministic economic identity choice. A split retains
-  one existing identity and creates additional components; a merge retains one continuing
-  identity while preserving other configurations and their history, including empty ones.
-  Identity choice has no additional semantic meaning. Configuration termination models
-  remain explicitly unsupported.
-- Which negative/absence patterns are supported beyond positive Boolean emergence?
-  Incomplete evidence defers; modeled participant cessation recomputes the existing
-  configuration rather than causing generic structural retraction.
-- What common-bearer rule is justified when dependent ingredients have different
-  bearers, including inherited or specialized bearer types?
-- Which identity/scope/revision guarantees bound distinct consequence work, and
-  which tests demonstrate finiteness for recursive model-generated consequences?
-- What is atomic with the triggering commit, and what is a separately retryable
-  consequence? How are failure, cancellation and no-model outcomes exposed?
-- Who selects optional uncertainty resolution, and what prevents uncertainty or
-  change-process requests from generating repeated equivalent work?
-- How should provenance and explanations present conferral, implication and
-  detection decisions to users?
+Optional uncertainty selection, negative/absence emergence, mixed-bearer emergence,
+configuration termination and durable crash replay require explicit policies and verification.
+Split/merge identity continuity retains one economic identity and preserves other histories;
+that choice does not imply additional semantic meaning or automatic termination.
 
 ## Native validation captures and durable audit references
 
@@ -682,26 +663,6 @@ escaping; it is not a geometry expansion or a Java object cycle. The audit proje
 prevents this feedback without changing parser limits, global observation transport,
 semantic admission or native concurrency guards.
 
-## Candidate worldview migration and verification
-
-Earlier source used configuration `of` both for emergence ingredients and for
-application targets. Applying the agreed rule requires explicit migration of the
-latter, rather than silently changing their meaning. Network ingredients normalize
-to `emergesFrom`; profile and Terrain application targets use `applies to`.
-
-The private candidate introduces two named applicability specializations for nested
-description targets: `geography:TerrestrialSurfaceArrangement` applies to terrestrial
-Region without a Crust restriction, and `geography:LocatedBathymetry` applies to
-Location. Elevation's nested spatial-arrangement target uses the former. The nested
-`Bathymetry of Location` occurrence belongs to **BathymetricSlope**, whose target uses
-the latter; BathymetricDepth's native `Height of Location` remains unchanged.
-
-These are private candidate migration choices; their exact compiler/reasoner evidence
-belongs to the implementation report. This design draft does not establish live
-detection, contextualization or deployment success. Explicit `emerges from` and `applies to` retain distinct
-semantic roles despite the readable configuration `of` shorthand.
-
 Related references: [observables](OBSERVABLES.md), [observation strategies](OBSERVATION.md),
 [worldview clauses](ONTOLOGY_LANGUAGE.md#77-emerges-from-and-implies),
-[resolution](RESOLUTION.md), [knowledge graph](KNOWLEDGE_GRAPH.md) and the
-[agent context pack](../llm/DOMAIN_CONTEXT_PACK.md).
+[resolution](RESOLUTION.md) and [knowledge graph](KNOWLEDGE_GRAPH.md).

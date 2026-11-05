@@ -1,157 +1,64 @@
-# Consequence engine status — 4 November 2026
+# Consequence engine capabilities and limits
 
-This is a publication checkpoint, not a claim that the complete consequence engine has
-passed a production suite. The implementation contract is in [CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md).
-No new general resolver-reuse policy, named-event generation or termination semantics is included.
+This is a current capability reference. [Consequence contracts](CONSEQUENCE_ENGINE.md) describe
+the implementation; [admission and acceptance checks](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md)
+define the evidence required at its boundaries.
 
-The [admission follow-up audit](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md) records five additional
-findings and a staged repair plan. Its 4 November repair checkpoint records local fixes for A1–A5
-and their verification boundary. The original failing baseline and the new controlled regression
-results are separate from the historical live acceptance results below; no fresh deployment or
-live acceptance is implied.
+## Supported workflow
 
-## Verified results
+Successful root commits enter a per-twin asynchronous queue. Native relevance checks precede
+semantic assessment. Handlers retain the cycle's observer, semantic actor, enablement and causal
+chain, use normal admitted optional resolution and publish effects through new guarded commits.
+Causal commits can enqueue more work. A later explicit request waits for the cycle to drain.
 
-| Scenario | Evidence and boundary |
-| --- | --- |
-| Read-only trigger inspection and lazy discovery | Follow-up live run used the previous IDE: compiler 139.6s, 116 semantic calls taking 125.1s, Elevation filtering 55.5s. Exact candidate cores now avoid generalized-head expansion; generalized and subtype candidates retain it. Prefilter inspection now uses a graph-level read session, avoiding both context-write construction and the guarded input API's rejection of actuator/data IDs. Unattributed storage changes remain unknown. Isolated reactor **95/95**, zero failures/errors/skips, including inspection while another transaction holds the context/input locks. Slow actor, cycle-admission and submission-preparation timings added. Fixed-IDE end-to-end comparison remains unverified |
-| Native relevance and semantic transport follow-up | User verified live Erosion SIMULATION and correct suppression of CHANGE for its affected Elevation. Native-header filters now skip UNCERTAINTY without changed qualities and CHANGE for new-substantial-only triggers, with journal-only quality updates and unknown evidence preserved. Pure semantic/capabilities RPCs omit unused native perspective; codec mapper reuse preserves detached values. Superseded configuration capture reports DEFERRED. Isolated reactor **100/100**, zero failures/errors/skips, including native read-set validation. Remaining end-to-end latency improvement requires rebuilt live verification; query/attempt logs now include semantic RPC counts/time |
-| Temporal activation and resolution latency follow-up | 4 November live `testregion`: approximately 100 seconds resolution, then a five-minute observer callback timeout before SIMULATION. Post-commit activation now releases the graph monitor; cycle observers remain fixed and scope-free semantic calls avoid graph callbacks. Supplier discovery has a ten-second total deadline and attempt-local failure retention. Requested-core lookup is shared per catalog query; slow queries log phase timings. Byte-identical isolated reactor **100/100**, zero failures/errors/skips. Rebuilt live scheduling and wall-clock improvement remain to be verified |
-| Resources supplier boundary | ContextScope's committed Runtime/Resolver retain graph and admission ownership; Resources supplies authenticated captured sources without graph callbacks. Concept-only requests need no namespace/project. Final byte-identical isolated reactor **170/170**, no failures/errors/skips; legacy remote source listing verified read-only, no deployment or scientific live rerun |
-| Admission audit A1–A5 repairs | 4 November local Maven **150/150**, no failures/errors/skips; CHANGE relevance and scientific completion, real transaction allocation/native encoding, receipt restoration and cleanup, nested cancellation/drain, admission and collective-input compatibility. Prepared recomputation **23/23**. No new live/deployed acceptance; exact command and remaining gaps are in the admission audit |
-| Process birth → intrinsic role → implied quality | Actual Runtime acceptance21:8/8, recursive cycle drain and next explicit request; optional characterization reaches genuine NO_MODEL and the role remains |
-| Dependent configuration birth and recomputation | Actual acceptance30:20/20, real explanatory execution, changed input, same configuration ID, atomic second revision, current modeled time and immutable earlier history; raw wrapper FAILED on a stale log association; correct Runtime-log corroboration and focused association regressions are retained, without claiming a fresh full harness rerun |
-| Modeled cessation and COUNT | Controlled real compiled/native path: current COUNT1→0, prior INIT1 unchanged, actual membership callback APPLIED and next cycle drain; controlled Reasoner/model admission collaborators, not live semantic services |
-| Component cessation output | 24 unique focused boundary controls across M94/M95, including typed and adapter failure, shared child errors, exact owner/transaction/input identity, foreign/copy/inactive rejection and serialization metadata negatives |
-| Finite emitter | M97 normal Maven21/21: NativeTestFixturesTest15, SemanticExecutionFootprintsTest4, ModeledMembershipCountTest2. Actual stored compiled emitter, real input initialization and unexecuted-input rejection; no Runtime output interception |
-| Publication check | M98 normal Maven43/43, no failures/errors/skips, with all four server dependency closures compiled on the exact publication checkout. The five temporary language dependencies were restored. This is not a full test-suite result |
-| Syntax/package check | Normal Tycho verifies16 consequence/requirement tests plus3 numeric-head tests and packages all five grammar modules. The numeric test uses Java17 list access; the coherent reactor explicitly includes its Observable/Kim providers. Earlier reduced-reactor old-bundle failure is retained as a failed check. Declaration legality does not prove model execution |
-| IDE compatibility | Normal Maven compiles178 production and85 test sources, with2 observer/cycle-wrapper regressions passing. All9 temporary dependencies restored; no new Conveyor/distribution or GUI acceptance claim |
+Process/relationship conferral, implication, positive configuration detection and guarded
+single-root explanatory recomputation have Runtime paths. CHANGE checks current semantic process
+writers before submitting redundant work. Local modeled cessation is execution-bound and retains
+native history; it is not arbitrary asset deletion. Currentness, source/admission, support and
+original native capture checks remain necessary in every path.
 
-The bounded Maven command for M97 is:
+## Capability boundaries
 
-```text
-mvn -o -B -pl klab.services.resources.server,klab.services.reasoner.server,klab.services.resolver.server,klab.services.runtime.server -am -Dtest=NativeTestFixturesTest,SemanticExecutionFootprintsTest,ModeledMembershipCountTest -Dsurefire.failIfNoSpecifiedTests=false test
-```
+| Area | Supported contract | Limit |
+| --- | --- | --- |
+| Cycles | Per-twin frozen logical view and observer through recursive drain | No immutable external mutable-authority dataset snapshot |
+| Queue | In-memory work ownership, local duplicate suppression and cooperative shutdown | No durable outbox, crash replay, exactly-once or general backpressure/retry guarantee |
+| Intrinsic roles | Guarded support, attribution and optional characterization; normal resolution for implied targets | Independent-support withdrawal/reacquisition requires complete scenario-specific verification |
+| Configuration detection | Supported positive matching, guarded ingredients/placement and same-identity recomputation | Arbitrary mixed-bearer/negative emergence, multi-root explanation and termination are unsupported |
+| Relationships/networks | Explicit endpoint semantics and supported structural/component handling | Full scenarios must verify recipient rules, disconnected components, identity/history and observer filtering |
+| Cessation | Local Data.Builder intent bound to actual execution and owned inputs | Remote/Avro cease output has no accepted authority envelope |
+| Scientific completion | Typed resolution/reuse evidence plus current native support and effects | Positive IDs and duplicate metadata do not certify APPLIED |
+| Uncertainty | Quality-specific optional consequence route | No universal automatic uncertainty policy for all observations |
+| Client integration | Typed decision/commit messages and graph invalidation | Reconnect/history and viewer navigation require their own integration checks |
 
-Historical test groups overlap; their counts must not be added into a purported total.
-The final publication diff/check inventory is supplied separately with the release approval.
+## Verification requirements
 
-## Remaining blockers and continuation prompts
+Acceptance follows the claim being made: parsing and source validation, portable transport,
+admitted planning, actual native execution, atomic publication, committed inspection, recovery
+and full service deployment are separate boundaries. A test suite covering selected models does
+not imply coverage of every network, cessation or external authority configuration.
 
-Each prompt is a bounded handoff. Preserve admission, ownership, scientific receipts,
-full native read sets, currentness checks and immutable history. Do not replace an
-unverified branch with fabricated proof or weaken assertions to claim completion.
+Use ordinary public APIs with matching deployed contracts. For scientific scenarios verify actual
+method invocation, correct values/effects, current support and observer, and immutable provenance.
+For rollback, fail after work has actually begun. For independent role supports, remove one real
+support and prove that another retains the role before testing final-support withdrawal.
 
-### C1 — Full service-side cessation acceptance
+Relationship/network checks include omitted-versus-explicit recipients, native bearer placement,
+cross-cohort components, stable identities, split/merge continuity, empty persistence and supported
+current-time execution. Cessation checks include affected dependents/relationships, current lookup
+and scheduler exclusion, surviving assets and current COUNT with preserved initialization history.
 
-The attempted local case stopped before testcase execution: its initial concrete Link
-declaration lacked relationship axes. Corrected source parses/adapts as STRUCTURAL/DIRECTED,
-but the running source-ingestion path retained the initial unspecified-axis rejection.
-No live cessation/COUNT assertion passed or failed. This does not establish a lifecycle defect.
+Native scalar convenience reads and explicit requested-support reads must preserve the same
+scalar/distribution guard. Client checks verify accessible new observations and quiet background
+refresh without changing focus, observer, expansion or scroll position.
 
-**Continuation prompt:** Cold-start an isolated owned stack with the already corrected finite
-cessation fixture. First verify the actual served ontology source/axes and accepted generation.
-Run one admitted process→Data.Builder.cease scenario without Runtime interception. Require
-dependent/incident-relationship deactivation, current lookup/reference and scheduler exclusion,
-survivor access, COUNT1→0/INIT1 preservation, no extra time advance and complete cycle drain.
-Capture the first causal failure, restore exact original launches and do not run a broad suite.
+## Operating and extending the implementation
 
+Deploy compatible API, language, Runtime, Resolver and Reasoner contracts. Suppliers can negotiate
+their supported candidate protocol independently. Opt-in fixture packs must remain isolated from
+the working worldview. Evidence from controlled components must be identified as such.
 
-Before another live switch, preflight cleanup for an inoperative peer as well as a healthy
-stack. The previous discovery-based shutdown helper issued no requests when it could not
-enumerate every exact peer; a direct local-key Runtime shutdown returned HTTP403. Do not
-retry that rejected request through another route without new applicable authorization or
-correct authenticated-owner evidence. Use the established authenticated client contract;
-if OS-level cleanup is separately authorized, restrict it to reverified owned PID/creation/
-command identities. Preserve graph, broker, unrelated processes and exact original launches.
-
-### C2 — Independent role supports
-
-An unrelated surviving relationship is not proof that an independently supported intrinsic
-role survives withdrawal of one support. The bookkeeping/withdrawal drafts and tests remain
-separate evidence; complete publication/reacquisition is not accepted end to end.
-
-**Continuation prompt:** Trace the current intrinsic-role support ledger and publication path.
-Create two authentic independent supports for one role, cease/withdraw one through a legitimate
-modeled path, and verify the remaining role, implications, characterization ownership and
-immutable provenance. Add negative controls for stale/foreign support and prove the final-support
-case under the established contract before changing behavior.
-
-### C3 — Remote component cessation transport
-
-Local direct output supports cessation; remote/Avro builders explicitly reject cease(). Arbitrary
-metadata cannot authorize removal, and no wire schema extension has been accepted here.
-
-**Continuation prompt:** Design a backward-compatible remote cessation-intent envelope with
-explicit capability/version negotiation. Bind it at the Runtime boundary to actual execution,
-declared owned inputs, scope and transaction. Test replay/copy/foreign/failed-output rejection.
-Do not make serialized intent or metadata an execution-authority token.
-
-### C4 — Relationship and network full-stack coverage
-
-Endpoint conferral, relationship implications, cross-cohort disconnected networks, split/merge,
-empty persistence, observer filtering and several lifecycle paths have focused/controlled
-coverage, not the same complete service-side acceptance as the simple dependent configuration.
-
-**Continuation prompt:** Pick one relationship conferral/network scenario with actual admitted
-receipts and source strategies. Verify omitted recipient means both endpoints, explicit source/
-target selection, within on the substantial context, disconnected instances, own configuration
-cohort, stable identity/history and current-time explanatory execution. Run only the chosen
-scenario and retain explicit multi-root/configuration-termination rejection.
-
-### C5 — Authored-worldview logical validation
-
-The SocialGroup/Community cleanup removes unsupported direct subject emergence and adds @review
-notes for explicit configuration-first structure plus model-produced subject instantiation.
-Its26 source/parser/declaration checks pass; full authority-backed logical validation remains
-blocked. The user selected committing imod to worldview/strawman-2026 first, then merging
-to master; the test project commits directly to master. Software targets develop.
-
-**Continuation prompt:** Preserve authored chemistry/CandidateTrace work and all configured
-authority/provider evidence. Validate the exact cleanup source hashes through the proper frozen
-authority-catalog path, capture the first genuine logical/admission error and correct only a
-demonstrated cause. Do not fabricate authority acceptance. After the required logical checks pass, obtain action-time approval and publish the
-reviewed strawman commit before its master merge. Test publication targets master; do
-not create or retarget develop merely by assumption.
-
-### C6 — Read projection convenience and client integration
-
-The controlled COUNT proof reads through public StorageReads.request using the original admitted
-whole support from the stored plan. Generic convenience reads from a native-encoded T1 whole
-scalar remain a separate limitation. IDE quiet-background consequence navigation is a documented
-contract; these Runtime results do not prove all viewer focus/expansion behavior.
-
-**Continuation prompt:** Reproduce the whole-scalar convenience read with an actual admitted COUNT
-and compare stored requested support to native geometry without weakening scalar/distribution
-guards. Separately verify consequence commit/decision delivery and quiet IDE refresh with visible
-observations and unchanged focus, selection, expansion, scroll and observer.
-
-### C7 — Explicitly unsupported or deferred semantics
-
-Multi-root configuration explanation, configuration termination, named cessation events,
-on-termination model behavior, negative/absence and mixed-bearer emergence, optional uncertainty
-policy, durable crash replay and a general resolve-once/per-timestep reuse policy remain separate
-work. A retained semantic cycle is not an immutable external authority dataset.
-
-**Continuation prompt:** Discuss one of these contracts before implementing it. Preserve existing
-explicit unsupported/deferred diagnostics and do not infer semantics from an empty result or an
-unimplemented syntax hook. Do not restart generic reasoner optimization as part of this handoff.
-
-## Rebuild and fixture use
-
-Build/install klab-languages first, then Services, then the IDE against the matching API.
-Use the opt-in isolated fixture packs in the test project's resources/consequences directory;
-their self-contained imod vocabulary must not replace the user's working worldview. The canonical
-suite has not been rerun. No component or authority rebuild is implied solely by the local
-Data.Builder default method, although independently changed components require their normal build.
-
-## Temporary-service restoration
-
-The owned acceptance candidates are stopped and original service commands/working directories
-were restored with exact-ID operational verification. Six preserved process identities match.
-836 of837 original configuration/artifact files are byte-identical. The generated Resources
-component catalog changed bytes after restart; its exact beforeimage was not retained, so
-array-order-only equivalence is not claimed. Its current bytes and before hash are preserved,
-and the live catalog was not overwritten. This operational drift is separate from semantic
-acceptance and does not establish a synchronization cause.
+Extensions must preserve native ownership/read sets, semantic/source admission, causal cycle
+lifetime, actual scientific completion and immutable history. Unsupported semantics require a
+defined contract before implementation. Documentation and source-control history serve different
+purposes: this reference describes behavior and limits, not completed implementation stages.

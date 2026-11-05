@@ -276,14 +276,48 @@ class CollectiveSelectionAtomicExecutionTest implements AutoCloseable {
         () -> association.require(q.f.root, cohort, consumer, q.f.scope));
   }
 
+  @Test void selectedInputStorageUsesTheActiveChildScopeRatherThanItsRootsStorageScope() {
+    q.member(-30, "Unclassified").setUrn("member-original"); q.complete();
+    var selected = CollectiveSelectionExecution.execute(q.f.runtime, plan(), q.request, q.f.scope, new ArrayList<>());
+    var consumer = new ObservationImpl(); consumer.setId(-50); q.f.root.add(consumer);
+    var parent = new ActuatorImpl(); parent.setObservation(consumer);
+    var reference = new ActuatorImpl(); reference.setActuatorType(Actuator.Type.REFERENCE);
+    reference.setObservation(selected); reference.setName("selected"); parent.getChildren().add(reference);
+    var cohort = q.f.runtime.getCohortFor(selected.getObservable().getSemantics().singular(), q.f.scope, false);
+    var execution = child(Activity.of(Activity.Type.RESOLUTION));
+    var transaction = (DigitalTwinImpl.TransactionImpl) execution.getCurrentTransaction();
+    assertSame(q.f.root, q.f.scope.getCurrentTransaction());
+    assertNotSame(q.f.root, transaction);
+    var input = SelectedQueryInput.capture(transaction, cohort, consumer, selected, parent, 0, execution);
+    assertThrows(IllegalStateException.class,
+        () -> transaction.linkSelectedQueryInput(cohort, consumer, input, q.f.scope));
+    assertDoesNotThrow(() -> transaction.linkSelectedQueryInput(cohort, consumer, input, execution));
+    assertTrue(q.f.root.outgoing(cohort).stream().anyMatch(link ->
+        link.target() == consumer && link.type() == GraphModel.Relationship.AFFECTS));
+    var other = child(Activity.of(Activity.Type.RESOLUTION));
+    assertThrows(IllegalStateException.class, () ->
+        ((DigitalTwinImpl.TransactionImpl) other.getCurrentTransaction())
+            .linkSelectedQueryInput(cohort, consumer, input, other));
+    q.f.root.fail(new IllegalStateException("rollback"));
+    assertThrows(IllegalStateException.class,
+        () -> transaction.linkSelectedQueryInput(cohort, consumer, input, execution));
+  }
+
   @Test void actualConsumerFailureReceivesSelectedAliasAndRootRollbackDiscardsClassification() throws Exception {
     var member = q.member(-30, "Unclassified"); member.setUrn("member-original");
     q.member(-31, "KnownNonmatching", q.oak, q.mature).setUrn("other-original");
+    q.f.producer.setUrn("native-focus");
+    when(q.f.scope.getContextObservation()).thenReturn(q.f.producer);
     q.complete();
     var before = member.getObservable();
     var selected = CollectiveSelectionExecution.execute(q.f.runtime, plan(), q.request, q.f.scope, new ArrayList<>());
     var parent = new ObservationImpl(); parent.setId(-50); parent.setUrn("consumer");
     parent.setObservable(q.observable("test:Consumer", false)); parent.setGeometry(q.request.getGeometry()); q.f.root.add(parent);
+    // Public submission stages the consumer after its selected prerequisites have completed.
+    // This increments the enclosing focus's child count without changing the selection context.
+    int focusChildren = q.f.producer.getChildrenCount();
+    q.f.root.link(q.f.producer, parent, GraphModel.Relationship.HAS_CHILD);
+    assertEquals(focusChildren + 1, q.f.producer.getChildrenCount());
     var root = new ActuatorImpl(); root.setActuatorType(Actuator.Type.OBSERVE); root.setObservation(parent); root.setId(parent.getId());
     root.getComputation().add(new ServiceCallImpl("test.consumer"));
     var input = new ActuatorImpl(); input.setActuatorType(Actuator.Type.REFERENCE); input.setObservation(selected); input.setId(Observation.QUERY_ID); input.setName("selected"); root.getChildren().add(input);

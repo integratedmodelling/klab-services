@@ -1,213 +1,228 @@
 # Model and observation admission
 
-Admission is the set of checks made before a discovered model or an incoming scope can be
-used. There are several independent decisions: permission to see a model, validity of its
-source, availability of its implementation, ownership of a planning focus, and permission
-to execute against current observations. Passing one does not imply the others.
+Admission establishes whether a candidate, request, scope or execution may cross a particular
+boundary. Access, parsed-source validity, semantic compatibility, installed implementation,
+native ownership and scientific completion are separate checks. Passing one does not imply
+the others.
 
-This document describes the implementation in this repository. See also
-[resolver internals](RESOLUTION.md), [observation strategies](OBSERVATION.md), and
-[conditional model contexts](CONDITIONAL_MODEL_CONTEXT.md).
+Read [Observations](OBSERVATION.md) for meanings and activities, [Resolution](RESOLUTION.md)
+for planning/execution, and [Consequence admission](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md)
+for post-commit operations.
 
-Post-commit CHANGE submission follows the same distinction between existence and scientific
-completion: a positive result ID alone cannot justify APPLIED. The handler requires typed
-RESOLVED evidence or separately loaded complete native reuse evidence, current native lifecycle,
-compatible CHANGE/observer semantics and complete resolved support. Optional typed NO_MODEL is
-nonfatal; absent or partial completion remains deferred. Recomputations retain native/cycle/source
-admission even when duplicate receipt metadata is present. See the [admission audit repair checkpoint](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md)
-for local verification and the remaining live acceptance boundary.
+## Admission through the lifecycle
+
+![Parsed candidates and owning-workflow admission gates](diagrams/model-admission.drawio.png)
+
+[Editable diagram](diagrams/model-admission.drawio).
+
+| Gate | Required evidence | Result |
+| --- | --- | --- |
+| Source visibility | Authenticated user/federation, supplier READ permission and lexical visibility | Candidate beans may be supplied |
+| Source preparation | Active parsed namespace, no blocking diagnostics, stable source/model digest and retained semantic actor | Controlled prerequisite preparation is allowed |
+| Implementation admission | Prepared resources/components, installed methods and checked model obligations | Candidate may participate in executable planning |
+| Context and dependency resolution | Correct native bearer/observer, required context and relevant mandatory-input coverage | A typed contextual plan can be constructed |
+| Runtime binding | Exact owned target, compiled ports, current inputs, source/semantic proofs and supported plan | Executable work may be staged |
+| Publication | Successful required work, native read guards, lifecycle, cancellation and atomic-root checks | Accepted changes become durable |
+| Scientific acceptance | Operation-specific completion/reuse evidence and required support | The result may justify the requested conclusion |
+
+Neither a planned RESOLVED outcome nor a positive observation ID alone proves scientific
+completion. An individual can exist through acknowledgment without a numerical computation.
+An error-free NO_MODEL decision is acceptable only under the corresponding lifecycle policy.
+Unknown discovery, partial support and failed execution cannot justify an exhaustive empty result.
 
 ## The model path
 
-1. **Discover visible candidates.** Resources exports source candidates under user/project READ
-   permissions and lexical model/scenario visibility. The committed Resolver checks coarse
-   semantic and spatial suitability with its retained actor. A private model
-   requires the matching `ResolutionNamespace`; project-private models require the matching
-   `ResolutionProject`. These constraints express lexical visibility, not transaction ownership.
-2. **Prove the source snapshot.** The Resolver asks `ModelValidationGate` for a
-   `PreparationReceipt` through `validatedSourcePreparation`. The saved namespace must be
-   present, active, and free of blocking parser diagnostics. Source semantics are checked against
-   the owning workflow's retained actor. Admission binds the source
-   timestamp and digest, executable model digest, and Reasoner semantic snapshot. A matching
-   publication receipt may be reused; otherwise the source is validated against the selected
-   semantic snapshot. A preparation receipt permits prerequisite preparation, not execution.
-3. **Prepare prerequisites.** `ResolutionCompiler.prepareCandidate` asks Runtime to resolve
-   the candidate's contextualizers, components, and resources under the model's namespace
-   and project. Missing prerequisites or error notifications reject the candidate. The
-   preparation cache includes the model and its scope witness; it is not a global model grant.
-4. **Validate the installed implementation.** `validatedPreparableAdmission` checks the
-   executable model with installed methods available. It returns an `AdmissionReceipt`,
-   including any retained semantic obligations. The Resolver checks that preparation and
-   installed admission describe the same source/production snapshot before ranking.
-5. **Resolve dependencies and compile.** Mandatory dependencies must themselves obtain
-   relevant coverage. Entering an explained subject changes the context, so the Resolver
-   prepares and validates again where needed. Context-dependent obligations and pending
-   classifier/member-quality proofs still have to be discharged by their corresponding
-   resolution paths. A catalog hit or a pending obligation alone cannot authorize execution.
-6. **Execute and commit.** Runtime verifies the applicable model proof and actual inputs.
-   Operative lifecycle checks and transaction ownership remain necessary. Only successful
-   work selected for the dataflow is staged and committed.
+1. **Discover visible candidates.** Resources returns parsed k.IM language beans with their
+   retained source, provider identity and immutable namespace snapshot. The owning Resolver
+   constructs live Model objects using its retained Reasoner. Private models require the
+   matching ResolutionNamespace; project-private models require ResolutionProject. A concept-
+   only request can use public models without either selector.
+2. **Prove source preparation.** `ModelValidationGate.validatedSourcePreparation` checks the
+   captured active namespace, parser diagnostics, source timestamp/digest, executable digest
+   and semantic snapshot. Matching publication evidence may be reused; otherwise validation
+   uses the owning retained actor. The PreparationReceipt does not authorize execution.
+3. **Prepare prerequisites.** Runtime resolves components, resources and contextualizers in
+   the model's lexical namespace/project. Missing requirements or error diagnostics reject
+   the candidate. Preparation caching includes the model and its scope witness.
+4. **Admit the installed implementation.** `validatedPreparableAdmission` checks installed
+   methods and retained semantic obligations. Preparation and AdmissionReceipt must describe
+   the same source/production snapshot. Compatibility and admission precede ranking.
+5. **Resolve dependencies.** Mandatory dependencies require relevant coverage. Entering another
+   model-native context can require preparation/admission there. Deferred classifier/member-
+   quality obligations must be discharged by their supported execution continuations.
+6. **Recheck and execute.** Runtime verifies the producing-model proof and the actual bound
+   inputs, executes the required work, and validates the root attempt before publication.
 
-`PREPARABLE` catalog discovery deliberately includes candidates whose prerequisites can
-be prepared. It does not certify them as installed or executable. Compatibility/admission
-precedes semantic distance and ranking.
+PREPARABLE discovery intentionally includes candidates whose prerequisites can be prepared.
+It is not an installed-method or execution certificate. A source edit, executable change,
+semantic-generation mismatch or changed scope witness invalidates applicable reuse.
 
 ## Receipts and semantic cycles
 
-A ContextScope commits to one Runtime and one Resolver. “Local” means this owning workflow,
-not a hostname or loopback address. Runtime and Resolver need access to the same knowledge graph.
-Other services may reconstruct the requesting scopes, but cannot assume that graph queries back
-to a non-public originating service will succeed.
+A ContextScope commits to one Runtime and one Resolver. “Local” identifies their owning
+workflow, not a hostname. Both need knowledge-graph access. Resources can reconstruct the
+requester but is not assumed able to query a non-public originating service.
 
-Resources therefore supplies candidate source snapshots rather than joining the resolution
-workflow. Candidate requests authenticate the user and federation and carry optional lexical
-namespace/project/scenario selectors. They carry no graph focus, transaction, consequence or
-resolution-cycle headers. A concept-only request in the selected context needs no resolution
-namespace or project: accessible public candidates remain eligible. Private and project-private
-models still require the corresponding explicit lexical selection and supplier READ permission.
+Resources supplies parsed `KimNamespace`, `KimModel` and observable beans, including source
+retained by their contract. It is a provider of potential candidates, not a graph-dependent
+participant in this resolution workflow. Candidate/source reads carry authentication and
+optional lexical selectors without focus, transaction, consequence or cycle callbacks.
 
-The candidate endpoint exports authorized syntactic namespace snapshots with provider identity,
-version, timestamp and content digest. The public capability `modelCandidateProtocol=1` selects the new endpoint. Older suppliers
-(default protocol 0) use the authenticated namespace-list endpoint directly; this compatibility
-path never falls back to a context-bound semantic query or probes an unadvertised route. Provider
-publication receipts and deferred semantic-index status do not grant or withhold local admission;
-parser diagnostics and explicit inactive sources remain relevant. The committed Resolver maps the
-captured syntax using its retained Reasoner, performs coarse core matching locally, then follows
-the ordinary source, prerequisite, installed-method, semantic and native execution gates. Captured
-models bypass the process-global URN/version cache, and source admission checks the captured
-namespace rather than fetching a potentially different provider version. Source/artifact and
-component inspection requests also use the supplier boundary.
+`modelCandidateProtocol=1` selects candidate export; protocol 0 uses authenticated namespace
+listing. The owning Resolver captures the response, maps it with its retained Reasoner and
+checks local eligibility. Provider publication/index status does not substitute for local
+admission. Explicit inactivity and blocking parser diagnostics remain relevant.
 
-One supplier response per provider and lexical selection is detached and retained within the
-Resolver attempt, including across concurrent fan-out and dependency queries. A later attempt
-can fetch a newer source. This is not a durable catalog lease or crash-replay protocol. Candidate
-export currently favors a broad authorized source catalog over filtering with a potentially
-incompatible provider Reasoner; semantic filtering and ranking take place in the owning workflow.
+One detached response per provider/lexical selection is shared within an attempt, including
+concurrent dependency queries. Mapping templates are detached again before consumer-specific
+preparation. Neither cache is a global model grant, durable catalog lease or crash-replay
+protocol. Broad authorized candidate export avoids filtering with a supplier's different
+semantic actor; local filtering/ranking selects the applicable meanings.
 
-A failed supplier is reported as incomplete discovery without discarding successful candidates.
-A successful executable explanation may proceed with that diagnostic. If resolution remains
-unexplained after incomplete discovery, the terminal outcome is DEFERRED, including for optional
-requests; an unavailable catalog cannot certify NO_MODEL or justify conclusions based on absence.
-A successful empty catalog is distinct from an unavailable provider.
+Supplier failure/timeout leaves discovery incomplete while retaining successful suppliers.
+An executable explanation can proceed with that diagnostic. If no explanation is available,
+incomplete discovery yields DEFERRED, including for optional requests; it cannot prove NO_MODEL.
+An available empty catalog and an unavailable catalog have different meanings.
 
-| Evidence | What it establishes | What it does not establish |
+| Evidence | Establishes | Does not establish |
 | --- | --- | --- |
-| Namespace/source validation | Source semantics against a particular Reasoner snapshot | Installed methods, context suitability, or execution success |
-| `PreparationReceipt` | Stable source/model snapshot for controlled prerequisite preparation | Execution permission |
-| `AdmissionReceipt` | Executable model validation and its retained obligations | Completion of unresolved dependencies or pending proofs |
-| Resolution-cycle binding | Runtime, context, cycle, and retained semantic binding | Ownership of an arbitrary observation supplied by a caller |
+| Namespace validation | Parsed/source semantics against a particular actor | Installed implementation, contextual suitability or execution |
+| PreparationReceipt | Source/model snapshot for prerequisite preparation | Execution authority |
+| AdmissionReceipt | Executable validation and retained obligations | Completed dependencies, pending proofs or output values |
+| Resolution-cycle binding | Owning Runtime/context/cycle and retained semantic actor | Ownership of an arbitrary supplied observation |
+| Semantic dependency witness | Checked semantic obligations and relevant authority evidence | Native membership, source execution or stored scientific values |
+| Native execution/selection receipt | The exact guarded operation/view under its supported contract | Transferable authority in a serialized copy |
 
-`ModelValidationGate.matches` rechecks receipts against the model and semantic snapshot.
-`sameSnapshot` compares the preparation and executable contracts. A source edit, executable
-change, or semantic-generation mismatch invalidates reuse. Entering another legitimate
-context is handled by checking each receipt in its own scope, rather than treating a receipt
-as transferable authority.
+`matches` rechecks receipt applicability; `sameSnapshot` compares preparation and executable
+contracts. The cycle-bound Reasoner facade uses the retained actor for capabilities and
+semantic operations. A missing retained actor fails explicitly rather than falling back to
+current semantics. A semantic receipt is not an authentication credential, and a retained
+logical actor does not freeze an external mutable authority dataset.
 
-The cycle-bound Reasoner facade sends semantic operations, including capabilities used by
-admission, to the retained semantic actor. It propagates the authenticated context, transaction,
-focus, and cycle. It must not silently substitute a current-generation Reasoner when the
-retained actor is unavailable. A semantic receipt is not an authentication credential.
+The observer is fixed through the cycle and its consequences. A later explicit request in
+the same twin waits for causal work to drain; causal children retain the parent's cycle and
+must not wait behind it. Independent twins are not serialized by this rule.
 
 ## Planning ownership and operative lifecycle are different
 
-| Observation state | Where its identity is held | Permitted use |
+| State | Identity/authority | Permitted use |
 | --- | --- | --- |
-| Unassigned (`-1`) or query sentinel (`0`) | No owned observation identity | Cannot be an admitted scope focus |
-| Registered planning candidate (ID below `-1`) | Root transaction's provisional registry | Planning and semantic admission within that owned transaction |
-| Staged birth | Canonical object in the transaction graph | Native lifecycle checks can recognize the owning transaction's new asset |
-| Committed observation | Durable knowledge graph | Use only while authoritative lifecycle status is current |
-| Failed/closed transaction candidate | No active registration authority | Cannot be restored as a planning focus |
+| Unassigned (`-1`) or query sentinel (`0`) | No owned observation identity | Cannot become an admitted observation focus |
+| Registered planning candidate (below `-1`) | Active root transaction's provisional registry | Planning and admission in that owned attempt |
+| Staged birth | Canonical transaction-graph object | Native lifecycle checks recognize the owning new asset |
+| Committed observation | Durable graph | Use while authoritative lifecycle and operation-specific completion are current |
+| Failed or closed candidate | No active provisional authority | Cannot be restored as a planning focus |
 
-`RuntimeService.register` allocates a temporary ID and registers a candidate without putting
-it in the transaction graph. This is intentional: candidates can be rejected during model
-selection, and rejection must not leave durable observations behind. The provisional registry
-is shared by scopes and child attempts belonging to the same root and is removed when that
-root transaction is unregistered.
+`RuntimeService.register` allocates a provisional identity without staging a graph vertex.
+Rejected candidates therefore leave no durable observation behind. The registry is root-shared
+and is released when that root completes. Staged canonical assets take precedence once present.
 
-`ServiceContextScope.getObservationForAdmission` can retrieve such a candidate from an active,
-registered, non-failed transaction. `getObservation` continues to require operative lifecycle
-status. In particular, planning registration alone does not make
-`KnowledgeGraph.isObservationCurrent` true, create a staged birth, or authorize scheduling.
+`getObservationForAdmission` can retrieve a registered candidate from its active non-failed
+owner. `getObservation` retains operative currentness checks. Planning registration alone
+does not create a staged birth, make `isObservationCurrent` true, or authorize scheduling.
+
+Child transactions share graph/commit state and original read guards with their root. They
+have distinct execution scopes. Checks requiring the active child must receive that scope;
+the storage scope inherited from a parent is not a substitute.
+
+## Selected query inputs
+
+An ordinary model can consume a concrete-predicate collective through a named dependency.
+Runtime completes the deferred selection within the consumer's root attempt and binds the
+original issued view to that exact compiled port. `SelectedQueryInput` binds transaction,
+consumer, cohort, plan and local alias by server-held identity.
+
+Capture/storage reject a missing or changed receipt, copied view, wrong cohort, changed alias,
+different consumer, parent/sibling transaction and failed owner. Storage validates the actual
+compiler execution scope. Increasing the enclosing scope observation's child count during
+consumer staging does not change its semantic identity; the selected view's own count and
+full checked payload remain bound.
+
+Retained/transported input references undergo read-only revalidation before execution. Committed
+consumers retain JSON alias-to-selection metadata for inspection. Serialization is an audit/read
+contract and cannot recreate the private issuance capability. Consumer failure rolls back newly
+staged discovery, classification and outputs with the uncommitted attempt.
+
+For partial discovery, completed native fragments and newly executing producers remain separate
+contributions. After prerequisites finish, native fragment references receive fresh issued
+queries before sealing. This preserves completion checks when the successful contributor set
+changes. See [Collective completion](COLLECTIVE_COMPLETION.md).
 
 ## Restoring a scope across HTTP
 
-The receiving service authenticates the request and resolves its context. `ScopeManager`
-restores the cycle binding, transaction, observation path, observer, and focus from transport
-headers. A negative planning focus is not included in the durable observation path.
+The receiver authenticates the user and resolves the context before restoring cycle, transaction,
+observation path, observer and focus. Provisional focuses do not appear as durable path elements.
+The Runtime planning lookup is `GET /api/v1/asset/{id}/admission`, under its service context path.
 
-For a prospective focus, the receiving service asks the owning Runtime through
-`GET /api/v1/asset/{id}/admission` (under the Runtime service's context path). Runtime checks:
+Runtime requires an active registered non-failed transaction, its server-held execution scope,
+matching authenticated user/context/observer/cycle, and an identity actually retrievable under
+that owner's admission scope. The detached response, request headers and numeric ID do not
+create ownership. Missing ownership fails rather than using a client cache.
 
-- An active transaction is attached, registered by object identity, and not failed.
-- The transaction exposes its server-held execution scope.
-- Authenticated user, context, observer, and resolution-cycle binding match that owner.
-- The requested identity is actually retrievable in that transaction's admission scope.
+Ordinary `GET /api/v1/asset/{id}` reads retain lifecycle validation and are used for currentness
+checks. Planning admission cannot certify current execution. Service authentication, even for
+local/anonymous operation, establishes an identity but does not waive these ownership checks.
 
-The response is a detached transport observation. Its ID, headers, or body cannot create
-ownership. Missing or foreign ownership fails rather than using a client cache.
+Runtime, Resolver and retained semantic operations must deploy compatible scope/receipt contracts.
+Supplier-only Resources requests use their separate source-export contract and need no callback
+to the planning lookup. See [Resources candidate supply](RESOURCES.md#candidate-source-supply).
 
-Ordinary `GET /api/v1/asset/{id}` reads retain lifecycle validation. Client currentness checks
-use that ordinary endpoint, never the planning-admission endpoint. This separation prevents
-a successful planning lookup from certifying a candidate as executable.
+## Publication and consequence acceptance
 
-The admission endpoint and its client must be deployed together. Rebuild the shared API,
-common, and core-services libraries and restart the services using them, including Runtime,
-Reasoner, Resources, and Resolver. An older Runtime cannot serve the new planning lookup;
-clients must not work around that by accepting a cached observation or bypassing ownership.
+Before a root commit, validate the actual native read sets, source/semantic proofs, target and
+input identity, current lifecycle, required support and cancellation. Do not replace a full native
+capture with its audit projection. Child completion and allocated identities are not publication.
 
-Anonymous/local operation follows the same ownership checks using the identity established
-by service authentication. A single available service per type does not waive them. Neither
-additional services nor authenticated network credentials are a remedy for missing
-transaction-owned planning identity.
+Consequences start after a successful root commit and retain the admitted cycle and observer.
+Their source relevance, ownership and scientific completion must be checked independently.
+For CHANGE, require applicable RESOLVED evidence or separately loaded complete native reuse
+evidence, correct bearer/observer and complete required support before APPLIED. Optional typed
+NO_MODEL is nonfatal; unknown or partial completion remains deferred. Duplicate metadata cannot
+waive recomputation, source, cycle or native-input guards.
 
-## The cotechino regression
+## Scheduled event acceptance
 
-The November 3, 2026 live trace found both `staging.vxii.basic.terrestrial-region-explainer`
-and `staging.vxii.basic.each--freshwater-region-instantiator`. Discovery and private-namespace
-visibility worked. During dependency admission, the Reasoner tried to restore temporary
-focus `-4` (then `-5`). Runtime found a registered planning candidate but passed it through
-operative lifecycle validation. The candidate was not yet a graph vertex, so it disappeared
-from the lookup.
+An event instantiator's schedule/plan admission and an individual event's start/end execution
+are separate gates. Instantiators execute on accepted temporal intervals, never as temporal
+work under INIT. Validate the full produced batch and complete required individual resolution
+before publishing it. Individual periods must be bounded, positive and atomic, with starts
+consistent with the logical instantiation time.
 
-The resulting HTTP failure became `no stable source admission`, then a mandatory-dependency
-failure, and finally `NO_MODEL`. Those messages described the downstream consequences,
-not the absence of a source model. The repair separates owned planning lookup from current
-asset lookup. It does not stage rejected candidates or relax lifecycle validation.
+Preparing an individual plan does not prove START/END execution. Each boundary uses current
+owned inputs and a fresh transaction, and publishes actual effects with its completion flag.
+Check start/end values, pending visibility, rollback/retry and durable history independently
+of successful instantiator registration. Complete dedicated event acceptance remains unverified;
+see [event checks](OCCURRENCE.md#event-acceptance-requirements).
 
-The next live attempt exposed a separate initialization failure: `Collective consumer has no
-actual input plan`. The terrestrial explainer has dependencies but no computation of its own,
-so it has no executor from which the scheduler can obtain its input bindings. A committed
-portable plan also cannot serve initialization before durable IDs have been allocated.
-`CompiledDataflow.store` therefore registers the actual input plan in the transaction even
-for dependency-only consumers. The scheduler validates cohort edges against that plan during
-initialization; portable snapshots retain the same bindings after ID allocation. Cohort edges
-carry the temporary producer identity initially and are rebound to its durable identity before
-commit. Registering an input plan does not invent a contextualizer or bypass cohort validation;
-failure clears the transaction's plans and rolls back the saved snapshot metadata.
+## Acceptance checks
 
-When diagnosing similar failures, start with Resources' actual candidate query, then follow
-the first admission/HTTP exception across Resolver, Reasoner, and Runtime logs. A client
-submission-success message is insufficient evidence of explanatory coverage: inspect the
-resolution outcome and resolved coverage as well.
+Verification must exercise the same boundary as the claim being made:
 
-## Implementation map and regression checks
+| Claim | Required check |
+| --- | --- |
+| Language accepted | Real parser, adapter and populated interface transport |
+| Candidate visible | Supplier authorization/lexical rules, including absent namespace/project selectors |
+| Candidate admitted | Captured source, retained actor, preparation/install checks, context and negative controls |
+| Plan correct | Dependency order, actual ports, relevant coverage and supported deferred obligations |
+| Consumer executable | Distinct root/child scopes, original issued input, actual contextualizer invocation and value assertion |
+| Work atomic | Genuine failure after earlier effects; unchanged native observations, attributions, storage and history after rollback |
+| Result inspectable | Committed provenance/selection metadata through public retrieval and inspector APIs |
+| Reuse/recovery valid | Persisted activities and full native captures, restored semantic inputs and supported replay/recovery contract |
+| Live workflow valid | Matching deployed services, public submission APIs, completed activities and scientific outputs |
 
-- `ModelValidationGate` in `klab.core.services`: source, installed-method validation, receipts,
-  semantic snapshots, and receipt comparison.
-- `ResolutionCompiler` in `klab.services.resolver`: preparation, ranking, dependencies, and
-  scope propagation.
-- `ModelVisibility` in `klab.services.resources`: permission and lexical visibility checks.
-- `ServiceContextScope` and `ScopeManager` in `klab.core.services`: provisional ownership,
-  lifecycle lookup, and incoming scope restoration.
-- `RuntimeServerController` in `klab.services.runtime.server`: authenticated asset/admission
-  endpoints and transaction-owner validation.
-- `ClientKnowledgeGraph` and `RuntimeClient` in `klab.core.common`: separate remote planning
-  and current-asset reads.
-- `DigitalTwinImpl.TransactionImpl.currentStatusFor` and `KnowledgeGraphNeo4j` in
-  `klab.services.runtime`: canonical staged births and authoritative lifecycle status.
+A non-null response (`inspector.present`) is insufficient to establish success. Negative cases
+check the failure response, verify the intended consumer/producer actually ran, and compare native
+state. Numeric assertions should distinguish execution from default-initialized storage.
+Fixtures checking committed inspection must retain historical provenance; fixtures checking native
+members must make all read paths describe the same catalog. Parser or helper success alone does
+not establish scientific execution, complete service integration or production-wide performance.
 
-`ProspectiveFocusTransportTest` exercises the pinned HTTP scope headers and Runtime
-admission, including rejection for foreign users, contexts, observers, cycles, missing IDs,
-and missing, failed, or unregistered transactions. It also checks that planning admission
-does not make a candidate current or add it to transaction assets. Lifecycle and client
-currentness tests separately protect ordinary asset reads.
+## Implementation map
+
+- `ModelValidationGate`, `SourceModelMapper`, `ModelCandidateSources`: captured source and executable admission.
+- `ResolutionCompiler.prepareCandidate`, `PrioritizerImpl`: scoped preparation, eligibility and ordering.
+- `ServiceContextScope`, `ScopeManager`, `RuntimeService`: identity, scope restoration and submission.
+- `CompiledDataflow`, `SelectedQueryInput`: actual compiled target/input association and execution binding.
+- `CollectiveSelectionContinuation`, `CollectiveSelectionExecution`, `SemanticExecutionEvidence`: deferred views and semantic/native evidence.
+- `DigitalTwinImpl.TransactionImpl`, `KnowledgeGraphNeo4j`: provisional ownership, full read guards and atomic publication.
+- `ResolutionCycles`, scheduler and consequence handlers: cycle lifetime, causal scheduling and post-commit acceptance.

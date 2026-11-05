@@ -193,8 +193,19 @@ final class SemanticExecutionEvidence {
     return Utils.Json.asString(
         Arrays.asList(
             scope.getId(),
-            observer == null ? null : payload(observer),
-            focus == null ? null : payload(focus)));
+            observer == null ? null : scopeObservationPayload(observer),
+            focus == null ? null : scopeObservationPayload(focus)));
+  }
+
+  private static String scopeObservationPayload(Observation observation) {
+    var mapper = org.integratedmodelling.common.data.jackson.JacksonConfiguration.newObjectMapper();
+    var value = (com.fasterxml.jackson.databind.node.ObjectNode)
+        canonicalPayload(mapper.valueToTree(Observation.forTransport(observation)));
+    // A consuming submission is linked to its focus after selected prerequisites finish.
+    // HAS_CHILD updates this counter; it does not change the focus's identity or meaning.
+    // Only scope observations omit it: the selected view's full payload remains immutable.
+    value.remove("childrenCount");
+    return value.toString();
   }
 
   static void issue(Observation view, SemanticEvidenceBinding evidence, ServiceContextScope scope) {

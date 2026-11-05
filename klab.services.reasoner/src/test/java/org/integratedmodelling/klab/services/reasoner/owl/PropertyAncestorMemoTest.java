@@ -72,6 +72,28 @@ class PropertyAncestorMemoTest {
     }
   }
 
+  @Test void repeatedSemanticPropertyNamesIncludingMissingOnesAreResolvedOncePerLease() throws Exception {
+    var graph = new Graph();
+    var owl = spy(graph.owl);
+    var property = mock(Property.class);
+    doReturn(property).when(owl).getProperty("odo:describes");
+    doReturn(null).when(owl).getProperty("odo:missing");
+    var memo = new OWLSemanticClauseSupport.BoundPropertyMemo(owl);
+    try {
+      for (int i = 0; i < 1000; i++) {
+        assertSame(property, memo.property("odo:describes"));
+        assertNull(memo.property("odo:missing"));
+      }
+      verify(owl, times(1)).getProperty("odo:describes");
+      verify(owl, times(1)).getProperty("odo:missing");
+      memo.verifyUnchanged();
+      graph.sub("p", "q");
+      assertThrows(ConcurrentModificationException.class, memo::verifyUnchanged);
+      assertThrows(ConcurrentModificationException.class, memo::close);
+      assertThrows(IllegalStateException.class, () -> memo.property("odo:describes"));
+    } finally { memo.close(); }
+  }
+
   @Test void duplicateAxiomDoesNotInvalidateUnchangedPropertyClosure() throws Exception {
     var graph = new Graph();
     graph.sub("p", "q");

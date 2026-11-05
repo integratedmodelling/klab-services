@@ -215,7 +215,7 @@ resolved before the producing transaction commits, with one atomic period of pos
 Its start cannot be in the past relative to instantiation; its end may extend beyond that schedule.
 The individual contextualizer runs once at START and once at END. Clients expose the event at
 START and retain its full duration and semantic type for timeline history. Single-cell spatial
-support is valid. See [OCCURRENCE.md](OCCURRENCE.md#s6--event-production-and-feedback).
+support is valid. See [OCCURRENCE.md](OCCURRENCE.md#individual-event-production-and-boundaries).
 
 A quality can inhere to a process as well as to an event: for example, an erosion intensity may
 describe the erosion process itself, while elevation describes its region. For quality dependencies
@@ -270,7 +270,7 @@ dependency with a resolved classifier; inconsistency never means optional absenc
 
 Attributions and their explanations share the enclosing transaction. Semantics and typed
 provenance become durable together; a later failure cannot leave only part of the classification
-batch applied. See [resolution workflows](RESOLUTION.md#17-semantic-update-contextualizations) and
+batch applied. See [resolution workflows](RESOLUTION.md#semantic-update-contextualizations) and
 [semantic attribution transactions](KNOWLEDGE_GRAPH.md#semantic-attribution-transactions).
 
 ### 1.5 Choosing a characterization model
@@ -896,12 +896,10 @@ policies for those combinations remain separate. Runtime evaluation uses resolve
 atomic declaration status and projects the result onto returned concepts and
 observables without changing canonical declarations.
 
-This describes the current shared grammar. The
-[observation-strategy proposal](OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)
-recommends moving structural patterns, captures, and variable-based construction into the
-Observation language, with a delimited `pattern { … }` form and typed constructors. Ordinary
-observables remain valid strategy matches. That proposal has not changed the grammar; ordinary
-selectors, logical observables, and semantic literals retain their meanings. Pattern-level
+The shared observable grammar supplies selectors, logical observables and semantic literals.
+The [observation pattern language](OBSERVATION.md#names-setup-and-matching) adds structural
+patterns, captures and strategy-local construction in delimited `pattern { … }` forms.
+Ordinary observables remain valid strategy matches. Pattern-level
 boolean tests must be distinguished from `and`/`or` in the observable itself.
 
 ### 7.3 Directed refinement of positive attribute expressions

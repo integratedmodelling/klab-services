@@ -165,7 +165,8 @@ class CollectiveSelectionPlanningTest {
       // checks the claimed complement and deliberately reuses the complete request instead.
       assertEquals(0,time.getStart().getMilliseconds());assertEquals(10,time.getEnd().getMilliseconds());
     }
-    var prefix=nativeRoot.getChildren().stream().filter(a->a.getActuatorType()==Actuator.Type.REFERENCE && a.getId()==42).findFirst().orElseThrow();
+    var prefix=flow.getComputation().stream().filter(a->a.getActuatorType()==Actuator.Type.REFERENCE && a.getId()==42).findFirst().orElseThrow();
+    assertFalse(nativeRoot.getChildren().contains(prefix));
     var prefixTime=org.integratedmodelling.common.knowledge.GeometryRepository.INSTANCE.scale(prefix.getCoverage()).getTime();
     assertEquals(0,prefixTime.getStart().getMilliseconds());assertEquals(5,prefixTime.getEnd().getMilliseconds());
     assertEquals(10,f.scale.getTime().getEnd().getMilliseconds());
@@ -180,7 +181,8 @@ class CollectiveSelectionPlanningTest {
         binding.reasonerId(),binding.revision(),org.integratedmodelling.klab.api.geometry.Geometry.forTransport(full).encode(),
         null,null,f.scope.getId(),CollectiveSelectionBinding.context(f.scope),null);
     selection.setCollectiveSelection(spatialBinding);
-    var existing=f.observation(42,"existing-spatial-native",f.trees);existing.setGeometry(half);
+    var existing=f.observation(org.integratedmodelling.klab.api.knowledge.observation.Observation.QUERY_ID,"existing-spatial-native",f.trees);existing.setGeometry(half);
+    existing.getMetadata().put(org.integratedmodelling.klab.api.data.Metadata.IM_QUERY_SOURCE_IDS,List.of(42L,43L));
     doAnswer(call->{
       var target=call.getArgument(0,Observable.class);
       var requested=call.getArgument(1,org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.class);
@@ -203,7 +205,8 @@ class CollectiveSelectionPlanningTest {
       assertEquals(5,envelope.getMinX(),1e-9);assertEquals(10,envelope.getMaxX(),1e-9);
       assertEquals(0,envelope.getMinY(),1e-9);assertEquals(10,envelope.getMaxY(),1e-9);
     }
-    var prefix=nativeRoot.getChildren().stream().filter(a->a.getActuatorType()==Actuator.Type.REFERENCE && a.getId()==42).findFirst().orElseThrow();
+    var prefix=flow.getComputation().stream().filter(a->a.getActuatorType()==Actuator.Type.REFERENCE && a.getId()==existing.getId()).findFirst().orElseThrow();
+    assertFalse(nativeRoot.getChildren().contains(prefix));
     var prefixEnvelope=repository.scale(prefix.getCoverage()).getSpace().getGeometricShape().getEnvelope();
     assertEquals(0,prefixEnvelope.getMinX(),1e-9);assertEquals(5,prefixEnvelope.getMaxX(),1e-9);
     assertEquals(2,flow.getCollectiveSelection().classificationOperations().size());

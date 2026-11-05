@@ -1,138 +1,126 @@
-# Collective query completion
+# Collective completion and selected inputs
 
-This increment is a foundation for recursive resolution, not an executable contextual
-route. It repairs the collective catalog-query boundary using existing execution
-Activities and transaction state. Containment still legalizes a request independently
-of this query: Tier-0 precomputed fulfillment does not need member discovery.
+A collective query must distinguish completed discovery from a plan, a registered producer
+and an unknown collection. Successful zero-member discovery is positive evidence of an empty
+collection; an empty failure sentinel is not. See [Observation semantics](OBSERVATION.md),
+[Resolution](RESOLUTION.md) and [Admission](ADMISSION.md).
 
-## Focus at the concrete-selection submission boundary
+## Completion evidence
 
-The bounded positive concrete-predicate Subject/Agent selection route preserves an explicit native
-focus before planning, so its receipt and replay remain bound to that context. Missing support or
-invalid focus fails before effects; clearing the focus is not a fallback. Ordinary independent
-substantial reset and nested ownership rules remain in place. A successful full-observable Tier-0
-model retains priority and produces a committed observation, while the automatic selection result
-is a virtual view. See [the context submit contract](AGENTS_REFERENCE.md#corecontext).
+CONTRIBUTED_TO is recorded during registration/compilation. It does not prove execution.
+Completed discovery requires:
 
-## Evidence required by the collective query
+- A successful typed activity for the actual producer: INSTANTIATION/INSTANTIATED or
+  CONNECTION/CONNECTED, including the required individual lifecycle work.
+- The invocation's actual `im:execution-geometry`, clipped to producer support, rather than
+  an assumption that the registered extent was executed.
+- A current native lifecycle, matching observer/context and applicable semantic/source evidence.
+- For staged work, a non-failed owning attempt. Later sibling/root failure invalidates that
+  uncommitted success. Durable reuse reads actual committed activities and effects.
 
-`CONTRIBUTED_TO` is recorded during registration/compilation. Its presence, a positive
-observation ID, planned resolved coverage, commit metadata or registered geometry is
-not evidence that discovery executed. The query now requires:
+Positive IDs, commit metadata, resolved fractions and registered geometry do not independently
+establish these facts. Existing observations without sufficient completion evidence require
+normal revalidation/resolution; inspection does not manufacture a receipt.
 
-- A correctly typed successful execution Activity targeting that producer:
-  `INSTANTIATION` through `INSTANTIATED`, or `CONNECTION` through `CONNECTED`.
-- The support of that invocation, encoded in the Activity's
-  `Metadata.IM_EXECUTION_GEOMETRY` (`im:execution-geometry`). `CompiledDataflow` records
-  the geometry passed to the invocation, rather than assuming the producer's entire
-  registered extent was executed. The evidence is clipped to the producer's support.
-- For transaction-local work, an attempt tree that has not failed. The new read-only
-  `Transaction.isFailed()` exposes the existing failure state; it adds no lifecycle
-  state machine. A later sibling/root failure invalidates reuse of earlier child
-  success. Durable lookup reads the typed Activity from the committed knowledge graph.
+## Support and multiple contributors
 
-Successful zero-member execution supplies discovery support without creating members,
-native bearers or quality values. Pending, failed, cancelled or wrong-kind activities
-do not supply that evidence. Failure during durable close cannot become successful
-emptiness even if IDs or commit metadata were assigned before close.
+Invocation, producer and request must have compatible dimension types. Intersections do not
+broadcast a missing spatial or temporal dimension. Query coverage describes discovery support,
+not member-footprint union or environmental-field coverage.
 
-Legacy contributions missing successful typed execution or invocation support remain
-unproven. This increment does not infer completion from old metadata or migrate old
-graphs. They may require a new resolution rather than catalog reuse.
+The query first chooses a proven successful fragment. It can certify a complete multi-source
+cover through the supported slab proof: spatial pieces must cover the requested shape while
+fully covering its other dimensions, or contiguous temporal intervals must cover the requested
+period while fully covering the other dimensions. Diagonal space-time fragments cannot be
+replaced with their Cartesian hull. Gaps, unsupported geometry and failed difference operations
+do not establish completeness; retain an actual proven fragment instead.
 
-## Conservative support boundary
+The result's source IDs identify the actual selected contributor(s). A single-fragment view
+retains its producer's reported children count; a composed native view enumerates membership.
+Scientific reductions and qualified selections independently use their guarded member set.
+An arbitrary native view's `childrenCount` is not a general clipped COUNT implementation.
 
-One geometry cannot express every union of invocation supports. Current time union can
-fill gaps between periods; merging dimensions independently can invent space-time
-combinations. The collective query therefore returns **one actual successful support
-fragment**, choosing the fragment with greatest coverage of the requested support.
-Its metadata names only that producer. A fully covering single invocation can answer
-completely; disjoint or complementary invocations are not promoted to complete coverage.
-This may underuse valid existing knowledge until exact multi-support composition is
-implemented. It is a catalog reuse limit, not a scientific aggregation or merge policy.
-Invocation, producer and requested support must have the same dimension types; this
-guard does not broadcast a missing spatial or temporal dimension through intersection.
+## Completing partial discovery
 
-`IM_QUERY_COVERAGE` describes discovery support, not environmental-field coverage or
-member-footprint union. `childrenCount` retains the selected producer's reported count;
-it is not a fresh enumeration/count of members clipped to the query fragment.
+Reuse completed support and resolve the representable missing part. If exclusion cannot
+represent a remainder, use a conservatively sufficient domain. Keep the completed fragments
+as separate native contributions; do not attach their query views as inputs to the producer
+executing the remaining discovery.
 
-## Verification and remaining work
+After discovery/classification work, refresh native reference roots with newly issued completed
+queries before sealing the selection. Contributor choice can change when another valid producer
+arrives. A transported pre-completion view cannot certify that new state by itself. Preserve
+earlier member/source identities and validate the original native read sets through commit.
 
-Canonical reuse fixtures must compare discovery and selection with identical context,
-observer and support constraints. An unqualified substantial submitted as an independent
-root retains the existing focus-reset contract; a qualified collective selection preserves
-its explicit focus. Their completion receipts are deliberately incompatible when those
-contexts differ. The canonical suite therefore tests bare-native reuse without focus and
-focused qualified discovery/reuse separately. Partial-support completion also checks that
-the original member IDs remain present in the expanded cohort.
+![Native completion and selected model input](diagrams/collective-selection.drawio.png)
 
-Inspector mutation checks distinguish the actual requested predicate from its lexical
-family through `classificationcheckfor(context, before, requested, family)`.
-Selection itself executes family-root directives, so its classification audits name those
-families; the final concrete selection filter is not the operation's audit request. Use
-the family-root `classificationcheck` for those audits and `classificationcheckfor` for
-a direct concrete classification operation.
-Failure cases use `failed(response)` rather than the non-null-only `present` check, followed by execution
-counters and `nativeunchanged`; an explicit failure response alone does not prove rollback.
-These fixture/oracle corrections require a fresh live run. Their presence is not live or restart acceptance evidence.
+[Editable diagram](diagrams/collective-selection.drawio).
 
-`CollectiveCompletionQueryTest` exercises the production query and real transaction
-state/commit logic, with an atomic test persistence boundary and recovered JSON objects.
-It covers empty/nonempty success, pending/cancelled/wrong activity, later sibling failure,
-durable-close failure, legacy evidence, single-period support, disjoint periods/producers
-and space-time fragments. Production Activity property encoding/recovery and embedded
-Neo4j typed-effect ownership queries have separate regression tests. The ordinary Maven
-reactor compiles and runs these alongside the admission, resolver and runtime suites.
+## Concrete selection
 
-This is not full public-submit/live replay acceptance. Exact discovery-policy, observer,
-source/strategy revision and invalidation keys are not added. `getMembers` still has its
-existing enumeration contract; this increment does not turn an arbitrary direct call into
-a verified discovery binding or define snapshot identity across replay. Recursive
-context/member execution, cycles/progress limits, native domains extending outside query
-support, sampling and typed composition remain future stages. No scientific gap/overlap,
-identity coalescing or directional/volume reducer policy is selected here.
+The positive concrete-predicate Subject/Agent route retains an explicit native focus and the
+request's support. It first allows an eligible complete-observable model. The automatic route
+then completes bare native discovery, establishes required predicate families on those same
+members, and filters a virtual view. Existing valid classifications need no reinvocation.
+Attribution preserves identity, geometry and native cohort; new predicates require normal
+individual characterization.
 
-## Scoped semantic evidence
+The view has QUERY_ID and a versioned `CollectiveSelectionView` receipt. Source, cohort and
+member identities, predicate/family meanings, geometry, context, observer and scoped semantic
+evidence remain bound. The view does not create another qualified instantiator or a persistent
+observation. Unknown discovery or a failed classifier cannot be returned as an empty selection.
 
-Version-3 selection receipts compose the exact actual execution signature with a
-`semantic-dependency-v1` Reasoner witness under `semantic-content-v2`. Static identity covers
-accepted sources and semantic configuration; process-local generation and owner session remain
-active execution fences. Each authenticated remote request fetches the observations named in
-its scope token from the owning Runtime before capturing its focus; asynchronous commit delivery
-is not a freshness proof. This targeted fetch does not rewrite earlier planning snapshots or
-clear unrelated caches. Cold revalidation reconstructs canonical Concept expressions through
-the accepted compiler before checking their dependency closure. During reconstruction, authority
-access is restricted to captured responses or configured snapshots; a missing mutable answer
-cannot be fetched or treated as independence. Durable reuse recomputes the scoped proof and checks the existing
-source/member, observer, scope, geometry and support constraints. Equal numeric generations
-alone are never proof; unchanged semantic content and relevant authority proofs may survive a
-restart. The stable worldview namespace (root ontology URN) remains part of content identity;
-the generated Resources worldview instance ID does not. That instance ID still participates in
-its separate commitment/admission checks. Reconstructing an identical namespace and typed
-semantic inputs therefore preserves content identity, while a namespace, source, strategy,
-compiler, authority recipe or published codelist change requires revalidation. Receipts made by
-a different fingerprint calculation are not relabeled. Legacy receipts retain their observations
-but are not stamped or certified by inspection.
+## Consumption by an ordinary model
 
-An authority-independent complete signature can be certified despite unrelated mutable providers.
-A relevant deterministic configured snapshot contributes its immutable digest. Relevant legacy
-unversioned answers require revalidation and cannot certify an exhaustive selection; unknown
-execution footprints likewise cannot become successful empty results. The current protocol does
-not implement provider refresh/retraction or claim that cached ancestry is a fresh response.
-Opaque adapters/functions remain usable through their existing routes, but cannot provide a
-complete scoped selection certificate without an audited semantic input/output contract.
+The Resolver retains a selected dependency's deferred plan and local alias. Runtime completes
+it in the consumer's root attempt and attaches its original issued view to the exact compiled
+port. `SelectedQueryInput` is a server-held capability bound to the transaction, cohort,
+consumer and plan; it is not reconstructed from receipt bytes.
 
-Actual scalar computations are attested through their private compiled engine, processed closed
-arithmetic grammar, builder revision and original bound observation identities. Source text alone
-is insufficient. Transported query inputs re-enter the ordinary Runtime query and preserve all
-payload guards; only proof-equivalent historical audit counters may differ after revalidation.
+Capture/storage reject changed payloads, aliases, consumers or cohorts, foreign/parent/sibling
+transactions, failed owners and copied issuance. Storage receives the compiler's active child
+execution scope even though transaction storage state is root-shared. The enclosing focus's
+child counter can change during staging without changing its semantic identity; the selected
+view's own payload and count remain exact.
 
-Classification captures its consumed input signature before applying attributions, then adds
-post-effect results and characterization evidence through the same private, generation-pinned
-collector. A successful already-known family still binds the completed native view before
-skipping execution. Read-only QUERY_ID submissions retain the caller's context. Native replay
-uses its declared support, preserving promoted temporal defaults without changing the original
-view; final payload/source/member/observer checks still reject changed support or results.
-Concept type-set order is normalized for transport comparisons; ordered arrays and all type
-contents remain guarded.
+Execution revalidates retained/transported references read-only. A committed consumer stores
+JSON alias-to-selection metadata for inspection. Its numerical output must be verified separately
+from that receipt. Consumer failure rolls back newly staged discovery, attribution and outputs.
+See [selected-input admission](ADMISSION.md#selected-query-inputs).
+
+## Scoped semantic evidence and reuse
+
+Selection receipts compose actual execution signatures with a `semantic-dependency-v1` witness
+under `semantic-content-v2`. Accepted source/strategy/compiler configuration and relevant
+authority evidence participate in semantic identity. Process-local generations and actor sessions
+remain active execution fences; equal counters alone prove neither unchanged semantics nor reuse.
+
+Durable revalidation reconstructs canonical semantic inputs with the accepted compiler and checks
+their dependency closure. Authority access uses captured responses or configured snapshots where
+required. Missing mutable answers and unknown execution footprints cannot be treated as semantic
+independence. A retained actor does not freeze an external mutable authority dataset.
+
+An authority-independent complete signature can remain valid despite unrelated mutable providers.
+A relevant deterministic snapshot contributes its immutable digest. Changed relevant semantics,
+source, strategy or authority content requires revalidation. Legacy receipts are not relabeled or
+certified merely because their observations still exist. Provider refresh/retraction and a general
+external authority snapshot protocol are separate contracts.
+
+## Verification
+
+Compare discovery/replay with identical context, observer and support. An independent unqualified
+substantial resets focus; a qualified selection preserves its explicit focus. Their receipts are
+not interchangeable when those contexts differ.
+
+Partial-completion checks retain earlier native identities. Selected-input checks retrieve the
+committed consumer's persisted receipt through the public inspector and compare numerical output
+with the captured membership. Failure checks establish that the intended producer/consumer ran,
+then verify native state and immutable history after rollback. Distinct root and child execution
+scopes and real persisted activities are essential when testing those boundaries.
+
+`CollectiveCompletionQueryTest`, `CollectiveSelectionExecutionTest`,
+`CollectiveSelectionPlanningTest`, `CollectiveSelectionAtomicExecutionTest`,
+`CollectiveSelectionContinuationTest` and `CollectiveSelectionSubmissionScopeTest` cover these
+boundaries with controlled collaborators or embedded production graph/storage as appropriate.
+General scientific sampling, arbitrary member/region redistribution and unspecialized graph
+composition remain outside this contract.

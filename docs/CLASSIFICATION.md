@@ -1,8 +1,7 @@
 # Classification and characterization
 
-Status: **CLASSIFICATION is complete and accepted**, confirmed by the maintainer on
-2026-09-19. The implementation includes mandatory individual characterization after each new
-attribution. The classification staging plan and continuation prompts have been retired.
+Classification attributes concrete predicates to observed substantial members and requires
+individual characterization after each new attribution.
 
 This reference describes the implemented contract. See [observable semantics](OBSERVABLES.md),
 [observation strategies](OBSERVATION.md), [resolution](RESOLUTION.md), and
@@ -39,7 +38,6 @@ strategy 0 named classification.members
       inherent = capture members as node { collective = true; };
     }
   }
-  ensure context.exists()
   resolve $members to cohort
   observe $this with inputs(members = cohort);
 
@@ -48,6 +46,10 @@ strategy 0 named characterization.direct
   ensure context.exists()
   observe $this;
 ```
+
+The collection must have concrete requested support. A singular focus is not a universal
+classification prerequisite: support can be explicit or supplied by the selected observer.
+A worldview can deliberately add a context guard to a more restricted strategy.
 
 The classifier model explains the full predicate-of-each-substantial directive. Abstract predicate
 requests are intentional and must not be rejected by a `request.fully_specified` guard.

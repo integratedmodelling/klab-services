@@ -1,653 +1,122 @@
 # Observation resolution in k.LAB
 
-For the admission stages, receipt meanings, transaction ownership, and HTTP focus restoration,
-see [model and observation admission](ADMISSION.md).
+Resolution constructs an explanation for an observation request in its selected context.
+It returns a portable contextual Dataflow; Runtime validates and executes that plan and
+publishes the resulting knowledge. Finding a model, planning coverage and producing values
+are distinct facts.
 
-## Cycle observer and discovery latency
+See [Observation semantics and strategies](OBSERVATION.md), [Admission](ADMISSION.md),
+[Observers](OBSERVERS.md) and [Dataflow reconstruction](DATAFLOW.md).
 
-The observer selected on entry to a resolution cycle remains fixed through its consequences.
-Derived server scopes retain that snapshot; native graph revisions during the cycle do not
-refresh it. Outside a cycle, observer access still checks the current graph revision.
-Retained Reasoner operations without a scope argument do not reconstruct the observer or
-call the native graph. Document validation and operations that consume scope still prepare
-their observer context before entering the semantic monitor. Pure semantic RPCs also omit native
-focus, observer and transaction routing headers, so authentication does not reconstruct an unused
-perspective before controller dispatch. Capabilities retains caller permissions and cycle identity
-without an observation perspective. The cycle codec shares an immutable configured mapper while
-continuing to decode detached values on every invocation.
+## Resolution, contextualization and acceptance
 
-Resources candidate discovery has a ten-second supplier budget covering capability negotiation,
-source transfer and legacy fallback together. `klab.resources.candidateTimeoutSeconds` can set
-that budget between one and 300 seconds. An expired request is interrupted, reported as
-incomplete discovery, and retained as a failed supplier snapshot for this attempt; dependency
-queries do not retry it. The next resolution attempt may try the provider again. Supplier calls
-remain concurrent. Candidate filtering computes the requested core and its resolving heads
-once per catalog query, rather than once per model. These changes preserve final admission.
-Generalized heads are expanded lazily: an exact core match needs no expansion, and a quality
-core cannot match a substantial core. Generalized quality candidates, substantial subtype cases
-and unknown type information retain the existing expansion path.
-Within a resolution attempt, source-to-model mapping retains an unadmitted, portable template
-keyed by requesting identity, retained actor/cycle binding, supplier, exact source hash and model
-member. Each consumer receives a detached copy before preparation or admission. Source identity
-is still checked on cache hits. A different source, actor, cycle or attempt requires fresh mapping;
-this cache supplies no admission grant and does not retain consumer preparation mutations.
+![Submission lifecycle and its publication boundary](diagrams/observation-lifecycle.drawio.png)
 
-Queries taking more than one second log `Model query timing` with discovery, mapping, filtering
-and admission/ranking durations, plus supplied/eligible/admitted candidate counts and retained
-semantic call counts/time. The complete resolution attempt also logs its semantic call totals,
-including work outside candidate queries. These counters describe calls on the Resolver thread,
-not downstream RPCs issued by other services.
-Slow Reasoner operations separately log preparation, actor-lock wait, input binding, execution and
-encoding time. Runtime also logs slow cycle admission (queue, semantic preparation and binding)
-and submission preparation, so a gap after observer contextualization can be attributed.
+[Editable diagram](diagrams/observation-lifecycle.drawio).
 
-Root transaction post-commit callbacks run after durable publication and transaction cleanup,
-outside the transaction graph monitor, while retaining the cycle driver. This permits temporal
-activation to call services that query the graph without blocking against its own commit.
-Callbacks retain their ordering before consequence notification and membership propagation.
+1. **Establish the request.** Runtime resolves the observable and effective scope, establishes
+   support and observer, and admits the resolution cycle. An application may submit a concept
+   URN without specifying a model namespace or project.
+2. **Register planning identities.** Unresolved observations receive provisional identities
+   owned by the active root transaction. Registration supports planning; rejected candidates
+   do not thereby enter the commit graph.
+3. **Resolve.** The committed Resolver queries current observations, obtains applicable
+   strategies, discovers parsed model candidates, admits them, and resolves dependencies and
+   coverage. Direct whole-observable alternatives precede automatic recursive routes.
+4. **Compile the Dataflow.** The Resolver emits typed actuators, bindings and computations.
+   Runtime checks their source, semantic, context and native-input contracts, discharges
+   supported deferred prerequisites, and constructs executors and storage.
+5. **Contextualize.** The scheduler initializes prerequisites and executes the scientific
+   activities required by the observable. A dependency-only consumer still retains its actual
+   input plan. Successful child work can remain staged in the root attempt.
+6. **Validate and publish.** Runtime checks cancellation, model/input proofs and native read
+   guards before root commit. A successful root commit publishes identities, effects, values,
+   plans and provenance atomically. A failed attempt cannot certify discovery or selected inputs.
+7. **Continue the cycle.** Post-commit activation and automatic consequences run outside the
+   transaction graph monitor. Scheduled process simulation, event instantiation/individual boundaries and consequence
+   work use their own guarded commits. The next explicit cycle begins after causal work in the current cycle drains.
 
-The 4 November live `testregion` run resolved in approximately 100 seconds, then stalled for
-another five minutes before its first SIMULATION activity. Runtime and Reasoner logs identify
-an observer-restoration callback during temporal activation followed by the default HTTP timeout.
-The subsequent rebuilt run executed SIMULATION correctly. Its main resolution still took about
-three minutes, with only 2.6 seconds in supplier discovery across three catalog queries. Warm
-read-only live probes returned individual semantic operations in milliseconds; these do not
-establish cold or end-to-end performance. Prefilter and transport optimizations require a rebuilt
-live timing measurement before claiming that the remaining resolution delay is fixed.
-The next run, still using the previous IDE, recorded 139.6 seconds in the compiler, including
-125.1 seconds across 116 retained semantic calls; Elevation filtering took 55.5 seconds. That run
-does not measure the IDE source-change validation fix. The lazy expansion above removes the
-unnecessary generalized lookup for the example's exact-quality/subject/process catalog, without
-claiming that all of the filtering time was spent executing that lookup rather than waiting.
+An internal resolution commit may be a child commit. It does not imply that the enclosing
+submission has published or contextualization succeeded. Conversely, a subsequent background
+failure cannot retroactively undo a successful triggering commit.
 
-The rebuilt IDE run reduced compiler time to 44.5 seconds, including 38.9 seconds across 115
-retained semantic calls. Mapping the same candidate sources in three queries cost about 14.4
-seconds. Reasoner logs also show calls waiting behind document validation; background Resources
-catalog reconciliation is a possible contributor, rather than an established attribution for every
-wait. The mapping cache and cooperative catalog scheduling require another rebuilt measurement.
+## Service ownership and candidate supply
 
-Process existence is recorded by its INITIALIZATION activity, without creating a numerical INIT
-state for the process. New occurrence registrations retain that activity's durable identity in the
-same root commit. Later SIMULATION transactions remain independent commits and link causally to
-that initialization, including after scheduler recovery. Legacy registrations remain executable
-without an inferred historical parent. A missing or mismatched explicitly retained activation
-fails the transition rather than inventing provenance.
+A ContextScope commits to one Runtime and one Resolver. They share access to its knowledge
+graph. “Local” identifies this owning workflow, independently of hostnames or deployment sites.
+Resources may reconstruct the requester but cannot assume it can query a non-public Runtime.
 
-The mapping, catalog scheduling and process-provenance increment passed 163 focused tests on
-4 November: common source transport, Resolver mapping/admission, retained Reasoner cycles,
-Resources reconciliation, temporal execution/recovery/inspection, consequence handling and native
-graph guards. All 52 modified Java files matched the isolated test checkout byte for byte.
-No services were restarted; improved live latency remains to be measured after rebuilding.
+Resources therefore acts as a supplier during model discovery. It returns parsed k.IM beans,
+including namespace/model/observable structure and the source retained by their contract.
+The Resolver constructs live `Model` objects using its retained Reasoner; it does not ask a
+remote Resources service to perform the owning workflow's graph-dependent admission.
 
-## Bounded contextual admission and collective reduction
+![Candidate supply and the owning admission workflow](diagrams/model-admission.drawio.png)
 
-Observational containment permits a contextual request; it does not discover members or
-reassign a quality's native bearer. A model with cross-bearer dependencies must prove its
-complete required-context obligation against the actual observed context before ranking and
-again before execution. A pending source-validation obligation is not an executable receipt.
-See [conditional model contexts](CONDITIONAL_MODEL_CONTEXT.md).
+[Editable diagram](diagrams/model-admission.drawio).
 
-The isolated [Tier-1 collective reduction increment](TIER1_COLLECTIVE_REDUCTIONS.md) adds
-whole-support count/presence after successful collective discovery. A successful Tier-0 model
-wins first. Only explicitly nondistributed scalar support and initialization are supported;
-this does not broadcast a regional count into cells. Successful empty discovery permits zero
-or false; unknown, failed, stale or partially covered discovery does not. Membership is
-enumerated from the visible cohort, rather than copied from a producer's `childrenCount`.
+Candidate and source/artifact requests carry user/federation authentication and optional lexical
+namespace/project/scenario selection, without graph, focus, transaction or cycle callbacks.
+Public candidates require no namespace/project selection. Private/project-private visibility
+and supplier READ permission still apply. An omitted selector is not an access grant.
 
-The request's context, selected observer and semantic revision remain bound through planning
-and execution. Explicit observer-clause derivation and observer-specific substantial discovery
-are outside this new reducer's bounded support; existing direct model paths retain their rules.
-General per-member native-quality resolution, geometry-aware redistribution and mixed partial
-composition remain later stages. These isolated changes require their own integration and
-live acceptance; passing tests do not establish deployed behavior.
+The `modelCandidateProtocol=1` capability selects the candidate endpoint. A protocol-0 provider
+uses authenticated namespace listing. It is not probed for an unadvertised route and does not
+fall back to a context-bound semantic query. See [Resources](RESOURCES.md#candidate-source-supply).
 
-### Typed native collection inputs under validation
+## Scope, identity and operation binding
 
-The next isolated candidate prepares a native member-quality collection before allocating
-its consuming model's output storage. It requires an exact named authored `of` dependency,
-an immutable source admission receipt and an installed method accepting the exact named
-`@KlabFunction.Input` as `MemberQualityCollection`. Inferred native inherency, an untyped
-parameter or a matching function name alone cannot authorize this route. Source preparation
-records an unbound obligation; only actual invocation context and revision can bind it.
-
-Catalogue eligibility, ranking and runtime retain the source occurrence, index, alias,
-original spelling and receipt. Recheck the saved source and selected installed method before
-discovery, then the visible native identities, observer, revision, full support and completion
-before consuming results. An implicit observer request may retain a compatible observer-specific
-result or an absolute fallback under the existing observer contract; actual Agent identity
-remains distinct from its semantic class. Explicit observer-clause dependencies are outside
-this bounded collection route.
-
-Successful compatible ordinary Tier-0 models retain precedence. This candidate has no direct-view
-model-output ABI: an ordinary Observation, field or single quality does not satisfy a
-complete-member collection port. That port uses complete discovery followed by ordinary
-native per-member resolution/reuse. A selected contextualizer must define any regional result;
-there is no implicit averaging, rasterization, sampling, gap or overlap policy. The full
-source-to-compiled-parent execution gate remains pending; this section is not a release receipt.
-
-## Observer-aware resolution contract
-
-**Agreed target behavior, not fully implemented.** Observer semantics are defined in
-[Observable expressions](OBSERVABLES.md#observer-perspective-contract). An explicit `observed as X`
-query and a query with only a session/context observer are different requests even when their
-effective observer class is the same.
-
-Select the effective observer by precedence: an observer URN in the submission resolution
-constraints overrides the session/context observer; otherwise use the session observer, including
-null. The override applies only to that submission and does not mutate the session default.
-The selected observation may be any eligible Agent in the knowledge graph, not only the
-session observer created with the context. Preserve the selected observation/URN separately from
-its semantic Agent class and from whether the query explicitly contains `observed as`. A selection
-constraint alone does not introduce that clause, so it does not turn prioritization into a hard
-observer compatibility requirement. Validation, access and graph-membership checks remain required.
-
-| Query | Eligibility with respect to observer | Selection/fallback |
-|---|---|---|
-| Explicit `observed as X` | Require compatible explicit observer semantics under normal clause specialization. Absolute/null candidates are ineligible. | Compare only eligible candidates; no absolute fallback, even if specific dependencies fail. |
-| No explicit observer clause; context observer X | Compatible observer-specific and absolute/null candidates remain eligible. Other incompatibilities still reject a candidate. | Prefer compatible candidates specific to current observer X; if their resolution fails, including unresolved dependencies, try absolute candidates. Mere catalog availability does not suppress a usable fallback. |
-| No explicit observer clause; null context default | Absolute/null candidates remain observer-eligible; do not manufacture an observer class. | Detailed ordering of specific candidates without a current observer is not settled here. |
-
-Compatibility/admission precedes semantic distance and prioritization. Specificity is a preference
-among compatible candidates, never permission to ignore a query clause. Preserve this ordering for
-both **observation reuse** and **model discovery/ranking**: reusing an absolute observation must not
-prematurely suppress an available compatible specific resolution, while a failing specific model
-must not block allowed absolute fallback. Existing coverage and partial-fulfillment semantics still
-apply; this contract does not turn observer selection into a new coverage guarantee.
-
-A modeled Agent observation can supply the observer, and multiple perspectives can coexist in one
-knowledge graph. Store explicit observer meaning separately from session interpretation of null.
-Identity/reuse and positive/negative resolution caches must account for query explicitness, relevant
-observer semantics and scoped observer identity, applicable semantic/knowledge/model revisions and
-access context. A default-observer change must not reuse an incompatible prior ranking or failure;
-the same applies to a submission constraint selecting a different observer observation, even when
-its Agent class equals that of another observer. Do not equate instance identity with class identity.
-Observer selection also must not relabel globally stored absolute observations. Verify these requirements against
-existing identity, scope and revision mechanisms rather than invent a second cache system.
-
-Positive example: an implicit query with context observer X prefers a compatible X-specific model;
-if its dependencies cannot resolve, a compatible absolute model can be tried. Negative examples:
-an explicit `observed as X` query cannot use that absolute model; an unrelated observer Y is not made
-eligible by a better numeric score. Names X/Y are schematic, not worldview declarations.
-
-The implementation preserves full observable wrappers through the revision-bound HTTP distance
-route, checks explicit observer compatibility before scoring, and partitions eligible model choices
-by the implicit observer preference within each existing strategy phase. A successful Tier-0 answer
-still precedes expensive Tier-1+ recursive discovery. A committed absolute quality/process result
-is deferred while compatible specific planning is attempted; planning dependency failure can fall
-back to that result without executing an otherwise unnecessary absolute model or recursive route.
-Specific models may satisfy coverage through the existing model-planning path. If they cannot
-complete the request, a complete eligible absolute source remains a terminal fallback. The observer
-path does not join a partial specific model to an absolute reference and falsely claim filled values:
-a reference input or provenance receipt is not an output value-copy operator.
-The current one-result lookup chooses a complete eligible occurrence before an incomplete one:
-a narrow specific occurrence cannot hide a complete absolute fallback. With no complete match,
-its measured partial support is retained for planning. This lookup does not yet compose several
-already committed perspectives into one new dependent aggregate; that requires an explicit
-value-composition path, not multiple reference roots mislabeled as a computed result.
-Mixed observer-specific model/reference output composition is likewise unfinished and rejected
-without such an operator. Its future implementation must define native support, overlap precedence,
-value mediation and contribution provenance. Existing temporal complement limitations also remain;
-no exact residual interval is inferred when exclusion cannot represent it.
-
-The original operation/query remains implicit when a verified producing output refines the result's
-observer meaning. Rebinding execution targets does not overwrite that operation. Terminal reference
-reuse preserves the committed source's identity and metadata, skips computation/storage creation,
-and records source ID/URN in activity provenance rather than staging the source as a newly committed
-observation. Submission coalescing retains the selected observer ID and full observable identity.
-
-Both model catalog backends use the full stored observable wrapper, not the indexed base Concept,
-for revision-bound compatibility after source admission. Named secondary output descriptors preserve
-the observer clause through required inherency specialization. Server observer selection from
-submission constraints and contextualization headers uses owning-context queries before attaching
-request transactions. Ordinary actuator storage preserves the original operation observable for
-cold reconstruction independently of the resolved result.
-
-Submission, contextualization and autonomous simulation activities record the selected Agent ID
-and its provenance edge, or explicit known-null. Autonomous scheduler replay recovers the actual
-Agent through creation/activity provenance before execution, inside its failure boundary; it never
-substitutes the semantic observer class. Each creator branch must independently establish the same
-selection. Unknown legacy records, conflicting branches, cycles without an authoritative selection,
-corrupt markers and inaccessible Agents reject recovery with an actionable resubmission diagnostic.
-Known-null is valid and clears the recovered execution observer. Today's default and a parent's
-selection must not fill missing historical evidence. Explicit dependency execution keeps its supplied
-request scope.
-
-Perspective enumeration is separate from resolution eligibility and preference.
-`getPerspectives(observable)` returns all existing observation records visible at the querying
-scope's knowledge-graph insertion point with the same canonical semantics after removing only
-the `observed as` restriction. It does not apply arbitrary subtype compatibility, selected-observer
-ranking, best-support selection, aggregation or model resolution. Preserve every other semantic
-clause, including portable mediator definitions and distribution flags. Enumeration performs no
-unit/currency conversion. Absolute/no-clause observations use the same equality rule. Multiple records by one actual
-Agent, including different supports or occurrences, must all remain in the result; actual Agent
-identity must not be substituted for the semantic observer restriction. Scope visibility remains
-mandatory. Qualities are the intended primary use; substantial perspectives remain legal for now.
-None of this weakens the explicit observer compatibility constraint on a new resolution request.
-
-The fallback guarantee here covers ordinary dependency resolution during planning. Deferred
-executable classifier prerequisites run after model selection and may affect a shared transaction;
-a failure there is not yet a safe alternative-model retry. No rollback/retry policy after stateful
-execution is implied. Tests of pending transaction graphs and stubbed commit I/O do not demonstrate
-durable storage or live-stack acceptance. Null-context ordering of observer-specific candidates also
-remains unspecified. These boundaries must remain visible when extending classifier or recursive
-execution, rather than silently broadening observer fallback.
-
-This document describes the observation-resolution path implemented by `ResolverService`, starting
-at `ResolverService.resolve(Observation, ContextScope)`. It records the current behavior, the
-contracts at the resolver/runtime boundary, the state that survives between calls, and known gaps.
-It is intended as a baseline for changes to resolution logic, dataflow encoding, inter-resolution
-state, and reentrancy.
-
-The existing resolution API returns a contextual **Dataflow** describing work within the current
-knowledge graph. All runtime mutations must result from executing such a resolved plan; new
-contextualization kinds extend Dataflow/Actuator contracts, not a separate mutation endpoint.
-This differs from the **graph-reproduction dataflow** extracted from provenance to reconstruct
-contents from scratch. See [the two contracts](DATAFLOW.md#two-distinct-dataflow-contracts).
-
-The companion [Observation strategies](OBSERVATION.md) defines strategy syntax, matching,
-setup and graph composition. [Observable expressions](OBSERVABLES.md#12-from-observable-meaning-to-contextualization-type)
-defines the semantic activities that strategies serve. This guide describes their Resolver and
-Runtime contracts; explicitly identified limitations are not implied capabilities.
-
-## 1. Executive summary
-
-Resolution is a planning phase between runtime observation registration and runtime
-contextualization:
-
-A root substantial submission clears inherited client observation focus before reuse lookup,
-registration, resolution and execution. The observer and resolution constraints remain in scope.
-Nested instantiated-member submissions retain their collective focus for membership registration;
-their independent resolution subsequently clears it. Quality submissions retain their bearer.
-
-Registered provisional observations are retrievable by their negative IDs within the owning root
-transaction, including callbacks from the Resolver that carry a context-observation header.
-Registration retains them in a temporary lookup registry, not the commit graph: unsuccessful
-model candidates must not become persisted observations. Transaction graph assets take precedence
-once compilation adds the selected candidates. The temporary registry is discarded when the root
-transaction commits or fails, and is not visible to unrelated transactions.
-
-Dataflow carries an explicit `ResolutionOutcome`: `RESOLVED`, `NO_MODEL`, or `FAILED`.
-Acknowledgment accepts an error-free empty resolution as `NO_MODEL`: a substantial exists even
-when no strategy or candidate contributes an executable explanation. Runtime-owned characterization
-requires successful discovery with no matching model to accept `NO_MODEL`; a matching but
-unresolvable characterization model still fails. Reported resolution errors and execution failures
-are not suppressed. A no-model plan contains no computation; its
-`isEmpty()` is false, including after interface-based JSON transport. Individual substantial
-semantics also select acknowledgment when a transported observable carries a stale collective
-description type. `ConceptImpl.singular()` changes INSTANTIATION/CONNECTION to ACKNOWLEDGEMENT;
-the inverse collective conversion restores the corresponding creation type without modifying
-the original concept. This prevents newly instantiated members from being treated as requests
-to instantiate another collective.
-
-The no-model plan's
-successful Resolution Activity records the decision. Actual characterization executes a member-bound
-UPDATE plan before classification/root commit and records CHARACTERIZED only after success.
-
-1. `RuntimeService` registers an unresolved observation and opens submission/resolution
-   transactions.
-2. It calls `Resolver.resolve(...)`, locally or through `ResolverClient`.
-3. `ResolverService` asynchronously creates a fresh `ResolutionCompiler`.
-4. `ResolutionCompiler` queries existing runtime knowledge, asks the reasoner for observation
-   strategies, asks resource services for candidate models, validates contextualizers with the
-   runtime, and builds a `ResolutionGraph`.
-5. `DataflowCompiler` turns the successful graph into nested `Actuator` objects and `ServiceCall`
-   computations.
-6. The runtime compiles those actuators into executors, commits the resolution transaction, runs
-   contextualization, and commits the submission transaction.
-
-Two different graphs are involved and must not be confused:
-
-- `ResolutionCompiler.resolutionCache` is a per-call graph of runtime assets used to record
-  parent/child registration during one compilation. It currently has no read side.
-- `ResolutionGraph` is the resolver's semantic proof/plan: observations, strategies, models, and
-  references connected by coverage-bearing edges. A root instance is stored in the context scope,
-  but its intended cross-call catalog is not implemented.
-
-The dataflow produced by one resolution is an incremental plan against the knowledge graph as it
-exists at that moment. A separate runtime workflow must eventually assemble those fragments,
-explicitly encode submitted inputs, close internal references, and export a reconstruction
-dataflow that can recreate an entire selected knowledge graph without resolving each observation
-again. The extraction and external-execution APIs for that workflow currently exist only as
-stubs.
-
-The runtime HTTP exchange currently uses Jackson polymorphic JSON for the executable `Dataflow`.
-The architectural persistence format is instead the **observation language** defined by
-`../klab-languages/org.integratedmodelling.languages.observation/src/org/integratedmodelling/languages/Observation.xtext`.
-The text currently saved in activity metadata is only a
-demonstrational, incomplete encoding of that language; the runtime does not yet rebuild and
-re-execute a dataflow from it.
-
-## 2. Main classes and responsibilities
-
-| Class | Current responsibility |
+| Identity | Meaning |
 | --- | --- |
-| `ResolverService` | Service lifecycle, asynchronous root entry point, context instrumentation, model ingestion, submitted-resource handling, and an incomplete observation-language encoder |
-| `ResolutionCompiler` | Recursive resolution policy: runtime query, strategies, models, dependencies, coverage, and runtime requirement checks |
-| `ResolutionGraph` | Mutable intermediate graph and shared context-level resolver state |
-| `PrioritizerImpl` | Orders models using service defaults overridden by the scope namespace |
-| `DataflowCompiler` | Converts a successful `ResolutionGraph` into `DataflowImpl` and nested actuators |
-| `ResolverClient` / `ResolverController` | Remote request construction and asynchronous job transport |
-| `RuntimeService` | Owns observation registration, transactions, resolver invocation, executable compilation, contextualization, and commit/failure handling |
-| `CompiledDataflow` | Runtime-side validation, observation binding, storage creation, dependency ordering, and executor construction |
-| `DataflowGraph` | Planned server-side extraction and adaptation of a cumulative provenance/dataflow graph; currently a stub |
-| `DataflowEncoder` | Produces the current demonstrational observation-language representation stored for diagnostics/provenance |
-
-Important contracts are in `Resolver`, `Dataflow`, `Actuator`, `ContextScope`,
-`ResolutionConstraint`, and `Coverage`.
-
-## 3. Entry conditions established by the runtime
-
-The normal caller is `RuntimeService.submit(...)`, not application code calling the resolver
-directly.
-
-Before calling the resolver, the runtime:
-
-- validates or registers the submitted observation;
-- establishes submission and resolution activities and transactions;
-- links the observation, context, observer, cohort, and activities in the pending knowledge-graph
-  transaction;
-- creates a resolution scope with `executing(...).contextualizeFor(observation)`;
-- serializes the active resolution constraints into resolution-activity metadata;
-- handles predefined `Observation.ContextualizationData` itself when the adapter is available,
-  bypassing `ResolverService.resolve(...)`.
-
-Observation IDs are semantically significant:
-
-- `id > 0`: an existing, resolved runtime observation;
-- `id == Observation.QUERY_ID` (`0`): a transient query or query result, never a stored graph
-  asset;
-- `id < 0`: a registered but unresolved observation;
-- `id == Observation.UNASSIGNED_ID` (`-1`): not registered and illegal for normal submission.
-
-The resolver assumes that `declareContextScope(...)` has already instrumented the context with a
-root `ResolutionGraph`. Calling `resolve(...)`, `submitResource(...)`, or
-`getSubmittedResources(...)` without that declaration currently leads to a null dereference.
-
-## 4. Root method: `ResolverService.resolve`
-
-`ResolverService.resolve(observation, contextScope)` returns a `CompletableFuture<Dataflow>` built
-with `CompletableFuture.supplyAsync(...)`.
-
-No executor is supplied, so work runs on Java's default asynchronous executor (normally the common
-fork-join pool). Each call constructs:
-
-```text
-new ResolutionCompiler(service)
-    -> resolve(observation, scope)
-    -> ResolutionGraph
-    -> new DataflowCompiler(observation, graph, scope).compile()
-    -> Dataflow
-```
-
-If the returned graph is empty, the fallback is exact:
-
-- an error-free ACKNOWLEDGEMENT receives a non-empty, computation-free
-  Dataflow with `NO_MODEL`, meaning its unexplained existence is accepted;
-- characterization receives `NO_MODEL` only after successful discovery finds no model;
-- other unresolved mandatory requests receive `Dataflow.empty(...)`, meaning resolution failed.
-
-This is an acknowledgement lifecycle rule for substantials, not a SUBJECT-only exemption.
-
-Exceptions are not converted to resolver notifications here. They complete the future
-exceptionally. In the normal runtime path, `RuntimeService` catches that exceptional completion,
-fails the resolution scope, and substitutes an empty dataflow with an error notification.
-
-### Reentrancy consequence
-
-The compiler and mutable resolution graph are now per attempt. The context-level graph acts only
-as a thread-safe catalog from which each attempt snapshots submitted resources. Calls still run
-concurrently, but do not share their JGraphT graph, dependencies, service prototypes, observations,
-or synthetic IDs. Section 11 describes the remaining catalog-commit limitation.
-
-## 5. ResolutionCompiler: root observation path
-
-### 5.1 Per-call initialization
-
-A fresh compiler creates a directed `resolutionCache`, inserts `RuntimeAsset.CONTEXT_ASSET`, and
-keeps a reference to the resolver service. This graph is populated by `getObservationGeometry(...)`
-and `requireObservation(...)`, but no code consults it to detect recursion, duplicate work, or
-cycles. It is currently write-only bookkeeping.
-
-The compiler also declares a local minimum worthwhile contribution of `0.15`. A second static
-field with the same value exists in `ResolverService` but is unused.
-
-### 5.2 Obtaining the parent graph
-
-The public compiler entry point calls:
-
-```text
-resolve(observation, scope, ResolverService.getResolutionGraph(scope))
-```
-
-The retrieved object is the root graph installed in `declareContextScope(...)`. Recursive work
-usually happens in child `ResolutionGraph` instances, which share selected maps/lists with that
-root.
-
-### 5.3 Positive-ID short circuit
-
-The first recursive observation check is:
-
-```text
-if observation.id > 0: return parentGraph
-```
-
-At the root this produces a valid non-empty dataflow with no computation. Inside other branches,
-positive observations are normally handled earlier as references, so this short circuit is mostly
-a root “nothing to resolve” path.
-
-### 5.4 Geometry selection
-
-`getObservationGeometry(...)`:
-
-1. records a parent-to-observation edge in the per-call `resolutionCache`;
-2. starts from `observation.getGeometry()`;
-3. if geometry is null and the semantics are dependent and a context observation exists, inherits
-   the context observation's geometry;
-4. returns null otherwise.
-
-A null or empty geometry makes resolution return an empty graph without adding an explanatory
-notification.
-
-The geometry becomes a worldview-bound `Scale` through `GeometryRepository.scale(geometry,
-scope)`.
-
-Persisted observations take the inverse path in `KnowledgeGraphNeo4j.adapt(...)`: their encoded
-geometry definition is decoded through `GeometryRepository.get(...)`. The repository uses
-Caffeine caches for canonical geometry/scale pairs and merged scales. Scale construction is
-intentionally performed outside a cache mapping function because `Scale.create(...)` calls the
-configured geometry promoter, which reentrantly publishes the same pair through
-`GeometryRepository.put(...)`. Loading through `Cache.get(key, mappingFunction)` would therefore
-attempt a same-key recursive cache update and abort observation adaptation before identity lookup.
-After construction, `putIfAbsent` converges concurrent creators on the first published canonical
-pair, and alternate geometry keys are registered only after the primary load completes.
-
-### 5.5 Querying knowledge that already exists
-
-Before model resolution, `query(...)` asks the runtime for existing knowledge only for:
-
-- contextual qualities, using direct positive-ID lookup; and
-- enumerable collective substantials: subjects, agents, events, and relationships.
-
-Other semantics receive a synthetic zero-coverage `QueryMatch` without a runtime call.
-
-For a quality, the compiler builds a probe with the requested observable and scale, then calls
-`scope.getObservation(probe)`. A match is treated as complete by definition and becomes the
-positive-ID reference. Quality presence is not estimated by intersecting geometries.
-
-For an enumerable collective, the detached query is:
-
-```text
-scope.observation(observable)
-    .geometry(requestedScale)
-    .query()
-    .submit()
-    .join()
-```
-
-Although the outer resolver API is asynchronous, this step blocks the resolver worker until the
-runtime query future completes.
-
-The result is normalized into:
-
-- the returned query observation;
-- the observation to reference in the dataflow;
-- requested and covered scales;
-- a `Coverage` measured by unioning the covered scale into a zero-initialized requested scale.
-
-A collective query view may remain an ID-0 reference; `ResolutionGraph` assigns it a synthetic
-negative key for the duration of graph compilation.
-
-Complete existing coverage creates a reference-only child graph and stops semantic resolution.
-
-Partial coverage is retained as a reference and resolution continues for `missingScale(...)`.
-Scale exclusion is not universally representable because a `Scale` is a Cartesian product of
-extents and not all extents implement exclusion. The compiler checks the proportions of the
-computed complement. If they do not add up, it deliberately resolves the full requested scale
-again instead of risking under-resolution.
-
-### 5.6 Reuse from previous resolutions
-
-After the runtime query, the compiler calls:
-
-```text
-parentGraph.getResolving(observable, scale)
-```
-
-It would accept cached resolvables whose gain is at least `0.15`, unioning contributions until
-coverage is complete.
-
-**Incomplete:** `ResolutionGraph.getResolving(...)` always returns an empty list and
-`ResolutionGraph.accept(...)` does nothing. No previous semantic plan is reused.
-
-### 5.7 Root strategy loop
-
-The compiler adds a k.LAB provenance constraint to a derived scope, then asks:
-
-```text
-Reasoner.computeObservationStrategies(observation, scope)
-```
-
-Strategies are tried in returned order. Each is resolved into its own child graph. Irrelevant
-coverage is discarded. Accepted results are merged before checking cumulative observation coverage.
-The loop stops when that coverage is complete. If the request remains incomplete, it returns an empty graph, discarding the
-partially built graph and its query reference from the result.
-
-`Observation.ContextualizationData` branches remain in this method but are TODOs. In the standard
-runtime submission path, direct predefined contextualization is intercepted before calling the
-resolver, so these TODOs primarily affect alternative/direct resolver use.
-
-## 6. Strategy operations
-
-For strategy selection, functor behavior, matching gaps, and the replacement composition design,
-see [OBSERVATION.md](OBSERVATION.md), especially the current S3c record (Section 2 is historical). In particular, current
-`ResolutionGraph.merge` assembles graph structure and coverage; it is not the proposed typed
-binary `merge` language operation. Operational `id` fields now identify producer graphs; `inputs`
-maps consumer ports to earlier producer names. Legacy transformation-target strings are retained
-for old consumers but the new Reasoner does not lower merges to that convention.
-
-The [running strategy comparison](OBSERVATION_STRATEGIES_EXAMPLE.md) preserves the currently
-used eight-strategy document and translates its intended behavior into the proposed contracts.
-Comma-separated match alternatives are disjunctions in the revised adapter and matcher. The comparison also makes endpoint
-prerequisites, no-model acknowledgement, and boolean/categorical composition explicit review gates.
-
-Each `ObservationStrategy` creates a child graph initialized at zero coverage. Operations are
-processed in declaration order.
-
-### 6.1 `RESOLVE`
-
-`RESOLVE` means resolve another observable:
-
-1. `contextualizeScope(...)` validates that a dependent has a context observation, reporting a
-   scope error if it does not.
-2. It adds a `Geometry` resolution constraint containing the requested scale.
-3. The observable is queried against runtime knowledge.
-4. If needed, an unresolved observation is registered for the missing geometry.
-5. That observation is recursively resolved.
-6. Complete prerequisite results are kept under the operation ID in a strategy-local graph table.
-   They contribute output coverage only if selected as the final producer. Legacy unnamed plans
-   retain their earlier immediate-merge behavior.
-
-`contextualizeScope(...)` currently does not alter the scale for collective semantics or use the
-`resolutionSoFar` argument.
-
-### 6.2 `OBSERVE`
-
-`OBSERVE` searches for models that can produce the operation's observable:
-
-1. contextualize the scope;
-2. call `ResourcesService.resolveModels(observable, scope)`;
-3. ingest returned namespace documents into runtime `Model` objects;
-4. rank models with `PrioritizerImpl`;
-5. try models in sorted order;
-6. attach named prerequisite graphs by input port, intersecting model coverage;
-7. merge each relevant model before testing cumulative output completeness.
-
-The initial named-plan subset requires observe to be the final producer. Endpoint coverage cannot
-complete its output in the absence of a model. Input edges retain port names through DataflowCompiler,
-including parallel ports referencing the same observation. Full model-input type validation and
-candidate rollback remain pending; see S3c's continuation prompt.
-
-The notifications carried by the `ResourceSet` are currently not copied into resolver output.
-
-**Context propagation correction (2026-09-09):** strategy selection and model lookup retain the
-requesting scope. When the selected model explains the requested substantial, its computation and
-dependencies run in a derived scope `within(explainedObservation)`. This includes collective
-substantials as contexts for their shared dependency plan; it does not implement per-member plans.
-Quality/process models retain their existing context. Model resolution receives the producer's
-geometry-constrained scope and then adds the model's namespace/project constraints. A collective
-dependency's registration clears context only in its derived scope, so subsequent qualities still
-refer to the original substantial and its explanatory model's lexical constraints.
-
-This fixes the case where a Region model's Elevation/Slope dependencies failed the new
-`context.exists()` guard. The guard remains necessary; the Resolver must supply the context.
-
-### 6.3 `APPLY`
-
-`APPLY` sends all operation contextualizables to
-`RuntimeService.resolveContextualizables(...)`. An empty requirement set rejects the strategy.
-Otherwise, service prototypes are fetched as needed, and the external requirements are accumulated
-in the root resolution graph.
-
-**Incomplete:** the accepted APPLY contextualizables are not emitted by `DataflowCompiler`.
-`compileStrategy(...)` ends with a TODO to add APPLY work to the observation actuator. A strategy
-can therefore pass capability validation and contribute dependencies without producing the
-corresponding computation.
-
-## 7. Model resolution and ranking
-
-Collective catalog queries now require successful typed execution provenance and the
-recorded invocation support. Registration/compilation links and registered extents alone
-are insufficient. Failed attempt trees cannot reuse earlier local child success. The
-query returns one proven support fragment; exact composition across separate invocation
-supports remains future work. See [Collective query completion](COLLECTIVE_COMPLETION.md)
-for the implemented boundary, legacy behavior and verification limits.
-
-Contextual request legality is checked by `ReasonerService.computeObservationStrategies`
-before matching strategies. Quality/process requests may use a directly compatible
-context or an authored observational-containment contract; this does not alter native
-bearers, semantic distance or model dependency proofs. See
-[observational containment](OBSERVABLES.md#observational-containment-declarations).
-Observation alternatives are sorted by ascending strategy rank at the Resolver boundary,
-then tried only until complete coverage. A successful Tier-0 precomputed alternative
-therefore performs no later recursive domain discovery. Context/member runtime bindings,
-sampling and composition remain future work; containment supplies no coverage proof.
-
-### 7.1 Ingesting model documents
-
-`ResolverService.loadModel(...)` adapts `KimModel` into `ModelImpl`:
-
-- resolves output observables and dependencies with the reasoner;
-- copies annotations and metadata;
-- records namespace, project, scope, and scenario status;
-- converts model resource URNs into a contextualizable;
-- appends declared contextualization;
-- assigns `Coverage.universal()`.
-
-Actual namespace/model coverage, learners, annotation processing, and processed symbol metadata are
-TODOs. Assigning universal coverage means model coverage filtering cannot currently express the
-source model's true spatial or temporal limits unless other code reconstructs them.
-
-### 7.2 Ranking: the Prioritizer contract
+| `Observation.UNASSIGNED_ID` (`-1`) | An unregistered request; Runtime registers it before Resolver planning |
+| ID below `-1` | A provisional identity owned by the active root transaction |
+| `Observation.QUERY_ID` (`0`) | A transient query/view; never a stored observation identity |
+| Positive ID | A durable identity; currentness, completion and permitted reuse still need checking |
+
+The owning provisional registry is separate from transaction graph assets and is discarded at
+root completion/failure. Planning lookups and current-asset lookups enforce different contracts;
+see [Planning ownership](ADMISSION.md#planning-ownership-and-operative-lifecycle-are-different).
+
+An ordinary independent substantial submission resets inherited observation focus, preserving
+observer and resolution constraints. Quality submissions retain their bearer. Concrete collective
+selection retains its explicit native focus. Nested member registration retains the producing
+collective's ownership, while independent member resolution follows its own scope rule.
+
+Model dependencies use the model's lexical namespace/project without mutating the parent scope.
+Instantiation outcomes carry the producing model's computation constraints into individual
+submissions. A provisional substantial selected as a model context is retrievable through the
+owning transaction's admission lookup, including across Runtime/Resolver/Reasoner HTTP boundaries.
+
+Operations on existing observations use `OperationTarget` and UPDATE actuators. Their identity
+is a plan-node identity, not an observation allocated for the directive. Execution targets,
+operation observable, support and member bindings remain explicit through transport and recovery.
+
+## Strategy search and model resolution
+
+`ResolverService.resolve` creates a compiler for the attempt. `ResolutionCompiler` first queries
+current Runtime knowledge with the complete observable, support, scope and observer contract.
+A valid reference can fulfil the obligation without new computation. Mere identity or planned
+geometry is not a current completion certificate.
+
+Strategies are tried by ascending rank until the required coverage is satisfied. Within a
+strategy, RESOLVE recursively explains an observable; OBSERVE searches for models of it.
+Required inputs must resolve in their own relevant support. Optional inputs can be absent only
+under their explicit policy; their absence cannot certify unknown discovery as NO_MODEL.
+
+For a model candidate:
+
+1. Capture and map its authorized provider source snapshot with the retained Reasoner.
+2. Prove a source `PreparationReceipt` before allowing prerequisite preparation.
+3. Resolve installed components/resources/contextualizers under its lexical scope.
+4. Obtain executable admission and retained obligations; compare source/executable snapshots.
+5. Enforce observer and required-context compatibility, then rank eligible candidates.
+6. Resolve mandatory dependencies, retain named bindings, and merge their relevant coverage.
+7. Recheck proofs where entering a different modeled context changes the applicable contract.
+
+Preparation is scoped to the model and its scope witness. A catalog hit, a cache hit, a pending
+context obligation or a high ranking never independently authorizes execution.
+
+### Model ranking
 
 Prioritization orders model candidates for one `observe` operation. It does not rank observation
 strategies, change their tiers, establish coverage or execute a model. Resources supplies authenticated, immutable candidate source snapshots without joining the
@@ -762,7 +231,7 @@ when contained by the model interval and specificity 100 only for the same model
 these point scores are zero. Coherency remains unavailable because sampling resolution is not the
 same as interval overlap.
 
-Model ingestion currently assigns universal coverage in paths described in section 7.1. Ranking
+Model ingestion currently assigns universal coverage in source-to-model mapping. Ranking
 cannot recover a model's true spatial or temporal limits from that placeholder. Coverage scores
 therefore describe the supplied model contract, not a proof of executable resource availability.
 
@@ -773,972 +242,309 @@ sources and scales before activating those criteria. Specify cross-dimension agg
 spatial/temporal resolution fidelity before implementing coherency or combined scale scores.
 Neither deterministic ordering nor a high score substitutes for eligibility constraints such as
 blacklists, whitelists or `UsingModel`; their enforcement belongs to discovery/resolution.
-
-### 7.3 Resolving one model
-
-For each model:
-
-1. add `ResolutionNamespace` and `ResolutionProject` constraints;
-2. ask the runtime to resolve/validate all model contextualizers;
-3. reject the model if requirements are empty;
-4. cache runtime `ServiceInfo` prototypes used later to bind tagged inputs;
-5. merge external requirements into the root graph;
-6. recursively resolve every model dependency;
-7. ignore unresolved optional dependencies and reject the model on unresolved mandatory ones;
-8. merge successful dependencies with their stated names.
-
-Geometry/semantic constraints returned with runtime requirements are not filtered here.
-
-## 8. ResolutionGraph semantics
-
-### 8.1 Nodes and edges
-
-Nodes are `Resolvable` objects:
-
-- `Observation`;
-- `Observable` reference targets;
-- `ObservationStrategy`;
-- `Model`.
-
-Edges point from a target to what resolves it. Each `ResolutionEdge` contains:
-
-- coverage;
-- a local name used to bind model/strategy inputs;
-- an observation lookup ID for reference edges.
-
-The graph uses JGraphT `DefaultDirectedGraph`, which does not allow parallel edges.
-
-**Risk:** the same node cannot be connected twice to the same parent with different local names or
-coverage records. Repeated use of one semantic/model object can silently lose edge-specific
-binding information unless distinct node identities are guaranteed.
-
-### 8.2 Coverage algebra
-
-A child graph starts:
-
-- at coverage `1.0` for a `Model`, because all mandatory dependencies intersect its validity;
-- at coverage `0.0` for observations, observables, and strategies, because alternatives union
-  their contributions.
-
-The target's native model/observation coverage is then intersected into the initial coverage when
-available.
-
-Merging a child:
-
-1. copies all child vertices and edges;
-2. adds an edge from the parent target to the child target;
-3. assigns either the child's resolved reference ID or a synthetic internal ID;
-4. intersects coverage for a model parent or unions it otherwise.
-
-The graph reports proportional coverage through `getResolvedCoverage()` and the complete
-`Coverage` object through `getCoverage()`.
-
-### 8.3 Shared versus child-local state
-
-Child graphs share these objects with their parent:
-
-- `observations`, used to recover referenced observations by edge ID;
-- `localResources`;
-- `serviceInfos`;
-- `rootScope`.
-
-Dependencies are held only on the root graph and accessed through `rootGraph()`.
-
-Each child has its own JGraphT graph, target, coverage, notification list, and parent pointer.
-
-### 8.4 What actually survives between calls
-
-`ResolverService.declareContextScope(...)` stores one root `ResolutionGraph` under the private
-`__RESOLUTION_GRAPH__` scope-data key. It also reloads persistent submitted resources into that
-graph's `localResources`.
-
-What survives between attempts is the context catalog of submitted local resources. Each
-`createAttempt()` snapshots that catalog and owns fresh observation/service-info maps,
-dependencies, graph structure, and synthetic IDs. Child graphs share metadata within that attempt;
-they do not publish it back to the context catalog.
-
-What does not currently become reusable resolution state:
-
-- successful child graph vertices and edges are never merged back into the stored root graph;
-- `getResolving(...)` is a stub;
-- `accept(...)` is a stub;
-- the per-call `resolutionCache` is discarded;
-- no completed dataflow catalog is supplied to `DataflowCompiler`;
-- local submitted resources are stored but not converted into immediate models.
-
-Consequently, the current implementation effectively resolves afresh on each call, apart from
-runtime knowledge queries and the submitted-resource catalog. Candidate branches within one
-attempt still share metadata and requirements; candidate-level acceptance/rollback is a separate
-requirement in [the strategy proposal](OBSERVATION.md#52-coverage-fallback-and-speculative-state).
-
-## 9. Dataflow compilation
-
-`DataflowCompiler.compile()` now copies the following resolution output into `DataflowImpl`:
-
-- a context-specific name;
-- a transport-safe `Geometry` projection of the requested coverage;
-- proportional `resolvedCoverage`;
-- accumulated `ResourceSet` requirements;
-- root actuator computation;
-- resolver notifications.
-
-Each actual root node returned by `ResolutionGraph.rootNodes()` is compiled. A non-observation root
-is rejected as an illegal state.
-
-### 9.1 Observation compilation
-
-An observation becomes a reference actuator when:
-
-- its ID is positive; or
-- its ID is already in the compiler's per-dataflow catalog.
-
-Otherwise the compiler walks outgoing resolution edges:
-
-- `ObservationStrategy` creates an `OBSERVE` actuator and recursively compiles strategy content;
-- `Observable` creates a `REFERENCE` actuator from the graph's observation lookup.
-
-When strategies and existing references both contribute, references become children of every
-strategy actuator. When there are only references, they become the returned root actuators.
-
-### 9.2 Strategy and model compilation
-
-A strategy compiles:
-
-- model children through `compileModel(...)`;
-- observation children through recursive `compileObservation(...)`.
-
-A model:
-
-- compiles dependent observations/references as children of the observation actuator;
-- adapts its contextualizers into runtime `ServiceCall`s;
-- uses cached `ServiceInfo` input tags/local names to override a call parameter with an
-  `Identifier`;
-- builds quality sharding hints from `@type`, `@split`, `@maxSize`, `@minSplitSize`, and
-  `@fillCurve` annotations.
-
-Contextualizable adaptation supports:
-
-- direct service calls;
-- resource URNs;
-- according-to/classification/lookup tables;
-- expressions;
-- literals;
-- target metadata (`_target`, `_targetId`).
-
-**Risk:** an unsupported or structurally empty contextualizable produces `null`, which is added to
-the actuator computation. Failure then occurs later and less clearly during encoding or runtime
-compilation.
-
-**Incomplete:** strategy APPLY computations, transformation-target internal IDs, explicit actuator
-dependency links, inherited parent dataflow catalogs, and several contextualizable metadata fields
-remain TODO.
-
-### 9.3 Fixed while producing this document
-
-Three circumscribed issues were corrected:
-
-1. compilation used to iterate each graph root but repeatedly compile the original requested
-   observation; it now compiles the actual root node and its geometry;
-2. resolver requirements and coverage were dropped when constructing `DataflowImpl`; requirements,
-   a plain `Geometry` projection, and proportional coverage are now copied;
-3. unconditional debug/profane `System.out` output was removed from the graph/compiler.
-
-`Coverage` is resolver-local state and must not cross a service boundary. An initial version of fix
-2 assigned the live `CoverageImpl` to `DataflowImpl`. Remote JSON decoding then failed because the
-polymorphic decoder attempted to instantiate that runtime implementation. `DataflowImpl` and
-`EmptyDataflow` now type their coverage property as `Geometry`, matching the `Dataflow` interface,
-and `DataflowCompiler` explicitly calls `coverage.as(Geometry.class)`. The numeric fraction remains
-available separately as `resolvedCoverage`.
-
-This also establishes a broader DTO rule for resolution work: transported DTOs and their nested
-values should be ordinary mutable POJOs with no live resolver/runtime implementation state. Records
-are deliberately avoided in this implementation.
-
-These fixes are covered by `DataflowCompilerTest` and `DataflowCoverageSerializationTest`.
-
-### 9.4 Incremental resolver output versus context reconstruction
-
-The dataflow returned by one call to the resolver is **incremental**. It is compiled for the
-current runtime context and may contain `REFERENCE` actuators pointing to observations that already
-exist in the runtime knowledge graph. Re-executing that fragment in an empty digital twin is not
-expected to reconstruct its prerequisites.
-
-This is also reflected in the `ContextScope.getDataflow()` contract: a scope-level view may be a
-subgraph focused on one observation and may reuse information available in upstream scopes. The
-same contract also anticipates a root context dataflow assembled from all incremental resolutions,
-capable of recreating the context when run again. That assembly path is not implemented yet.
-
-Future code must keep these two artifacts explicit:
-
-- **incremental resolution dataflow:** the minimal delta needed to resolve one request against a
-  particular knowledge-graph state;
-- **reconstruction dataflow:** an assembled, self-sufficient plan (plus declared external
-  prerequisites) that can reconstruct an entire selected knowledge graph without repeating the
-  original sequence of incremental resolution decisions.
-
-Conflating them would either make ordinary resolutions unnecessarily large or produce persisted
-dataflows with dangling references that only work in the original runtime.
-
-## 10. Transport, encoding, and decoding
-
-### 10.1 Executable service transport
-
-For a remote resolver:
-
-1. `ResolverClient` creates a `ResolutionRequest` containing the observation and all scope
-   resolution constraints.
-2. If the context observation is unresolved, it adds an
-   `UnresolvedContextObservation` constraint because the remote resolver cannot retrieve it from
-   the runtime knowledge graph.
-3. The controller restores constraints into the authorized service context and submits the
-   resolver future to the context job manager.
-4. The client job protocol ultimately decodes the result as `Dataflow.class`.
-
-`JacksonConfiguration` registers polymorphic serializers/deserializers for `Dataflow`, `Actuator`,
-`Observation`, `ServiceCall`, `Geometry`, and their nested assets. This JSON representation is the
-current service wire format. Resolver `Coverage` objects are not DTOs and cannot cross this
-boundary; only their plain geometry projection and scalar resolved fraction can. The JSON form is
-not the intended durable, editable, or resource-level representation of a dataflow.
-
-`DataflowSerializationTest` pins name, requirements, and scalar resolver coverage through a JSON
-round-trip. `DataflowCoverageSerializationTest` additionally pins the non-null geometry projection
-and verifies that no `Coverage` implementation leaks onto the wire. These are only seed contracts;
-actuator trees, calls, geometries, identifiers, notifications, and all subtype variants need
-broader coverage.
-
-Scope propagation also depends on one runtime invariant: all child `ServiceContextScope` instances
-share one observation cache, but a cache miss must load through the child that made the request.
-The cache therefore stores values only and does not retain a loader bound to the scope constructor.
-This matters when identity adjustment creates a copy before the digital twin is instrumented. The
-runtime now creates and assigns the digital twin before publishing the root scope in `ScopeManager`;
-remote creation still declares the server-side scope first, applies the returned configuration to
-the client peer, and then instruments/registers that peer in its owning service.
-
-### 10.2 Observation language: architectural role
-
-References to k.DL as the dataflow language are obsolete. Dataflows are represented in the
-**observation language**, whose grammar is:
-
-```text
-grammar org.integratedmodelling.languages.Observation
-```
-
-The top-level grammar deliberately hosts two closely related document forms:
-
-```text
-strategies <preamble> <observation-strategy definitions>
-dataflow   <preamble> <definitions and actuators>
-```
-
-This is not merely a shared parser implementation. Observation strategies are a key architectural
-element: they express how semantic observations and identifications are obtained, and their
-syntactic definitions use the same observation language that represents the resolved executable
-plan. Strategy knowledge can be extended together with semantic ontologies, allowing a worldview
-or project to add new resolution behavior without hard-coding it into the resolver.
-
-The coordinated proposal in [OBSERVATION.md, Section 7.1](OBSERVATION.md#71-observation-language-as-planning-and-execution-source)
-retains these two forms with distinct ASTs and validators. Strategy-local patterns and model search
-belong to `strategies`; selected executable computations and submitted-object definitions belong
-to `dataflow`. Replacing implicit strategy `apply` does not remove dataflow `apply`: the latter
-must retain explicitly bound contextualizer calls. The proposed dedicated pattern language in
-[Section 4.5](OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)
-is owned by Observation, preserving ordinary observable matches and simplifying the shared grammar.
-
-The grammar already gives a dataflow document explicit slots for:
-
-- name, documentation, imports, and version;
-- worldview, resource, component, and namespace requirements;
-- metadata and coverage;
-- definitions;
-- nested `reference`, `resolve`, and `observe` actuators;
-- the observation strategy used by an actuator;
-- child actuators and applied computations.
-
-The intended end state is a lossless bidirectional path:
-
-```text
-resolution graph
-    -> compiled Dataflow/Actuator model
-    -> observation-language source
-    -> parsed and validated dataflow
-    -> rebuilt executable dataflow
-    -> runtime compilation and re-execution
-```
-
-Compiled dataflows will be persistable as k.LAB `Resource` objects. Once resource-backed, they can
-be catalogued, versioned, transported with their requirements, and annotated or otherwise reused
-from k.IM like other k.LAB resources. This closes an important architectural loop: a dynamic
-resolution can become curated knowledge, and k.IM can add semantics and annotations to the
-persisted executable plan.
-
-The observation-language source must therefore preserve semantics, references, local names,
-strategy identity, coverage, requirements, computation order, and every value needed to rebuild
-the same executable behavior. Human readability is useful, but reliable reconstruction and
-re-execution are the governing contract.
-
-### 10.3 Reconstruction export and external execution
-
-The runtime must eventually be able to extract the provenance/dataflow subgraph for a context,
-assemble its incremental resolution fragments, close references over the selected knowledge graph,
-and serialize the result in the observation language. This workflow must bypass semantic
-resolution when replayed: it reconstructs the already chosen plan and graph rather than asking the
-resolver to discover those choices again. This is the proposed **strict replay** mode. A reusable
-**adaptive** plan may instead retain explicitly declared context-bound continuations that invoke
-resolution later; that is a different contract and must never be selected silently during replay.
-See [OBSERVATION.md, Section 7.4](OBSERVATION.md#74-replay-versus-a-reusable-adaptive-plan).
-
-The proposed implementation uses a snapshot-scoped builder: select knowledge-graph roots, scan
-committed observation/activity provenance, assemble incremental fragments, close references,
-validate executable bindings and submitted definitions, and build portable Dataflow beans before
-serializing source. It must fail explicitly when provenance cannot supply a required computation
-or input. The existing `DataflowGraph` stub is an access point, not an implemented builder.
-The full contract and Resource packaging path are in
-[OBSERVATION.md, Sections 7.2–7.3](OBSERVATION.md#72-provenance-to-dataflow-builder).
-
-Reference closure needs an explicit rule:
-
-- a reference to an observation inside the exported graph becomes part of the reconstruction
-  document;
-- a reference intentionally supplied by the target knowledge graph remains external, but must be
-  declared as a prerequisite with a stable identity and validity requirement;
-- any unresolved reference makes the exported dataflow invalid.
-
-#### Explicitly submitted values
-
-Computed observations can be recreated by re-running their actuators. Objects explicitly submitted
-to the knowledge graph have no producing actuator, so their values are inputs to reconstruction
-and must be encoded as such. This includes root observations and any other submitted objects,
-preserving at least:
-
-- semantic observable;
-- geometry;
-- metadata;
-- identity and relationships required by downstream references;
-- the submitted value or a lossless resource-backed representation of it.
-
-The proposed reconstruction source uses dataflow `define` statements for these explicitly
-submitted objects, including roots. The observation grammar already has a
-`DefinitionBody`/`define ... as ...` facility, making it the natural integration point. Keep required
-definitions in the dataflow package, with explicit versioned imports where needed; a sibling k.IM
-document must not be an implicit prerequisite. k.IM may annotate or expose the persisted Resource.
-S1 must define the supported typed object records. The encoder/adaptor contract must ensure that the
-definition carries enough information to rebuild the runtime object. Large or externally stored
-values may be represented through resource references, but the exported artifact must still be
-complete: it must carry or declare every value needed for reconstruction.
-
-#### Validity envelope
-
-A replayable dataflow must also say where and when it is valid. These constraints may live in the
-dataflow preamble or in a tightly versioned sibling manifest/document, but they must be
-machine-readable and validated before execution. At minimum the envelope must be able to constrain:
-
-- worldview and semantic ontology versions;
-- required namespaces, components, services, adapters, and resources;
-- spatial, temporal, and other coverage;
-- required existing observations or knowledge-graph identities;
-- contextual assumptions, parameters, and resolution constraints that affect behavior;
-- compatible observation-language and runtime versions.
-
-Validity is different from availability: loading all named resources is not sufficient if the
-target graph, geometry, worldview, or versions do not satisfy the conditions under which the plan
-was compiled.
-
-#### Current stubs
-
-The API already sketches this workflow:
-
-- `ContextScope.getDataflow()` promises a scope-focused view of the cumulative context dataflow;
-- `DigitalTwin.getDataflowGraph(context)` promises extraction from provenance;
-- `DigitalTwinImpl.getDataflowGraph(...)` constructs a server-side `DataflowGraph`;
-- `DataflowGraph.adapt()` is intended to produce a serializable `DataflowImpl`;
-- `ClientDigitalTwin.getDataflowGraph(...)` is the client-side access point;
-- `RuntimeService.runDataflow(...)` and the dataflow-taking `CompiledDataflow` constructor sketch
-  independent/external execution.
-
-The implementation is presently empty or demonstrational:
-
-- `DataflowGraph` returns null requirements and coverage, an empty computation, and null from
-  `adapt()`;
-- `DigitalTwinImpl.getDataflowGraph(context)` currently ignores the requested context and always
-  passes the root scope;
-- `ClientDigitalTwin.getDataflowGraph(...)` returns null;
-- the independent `CompiledDataflow` constructor is marked unused;
-- `RuntimeService.runDataflow(...)` compiles root actuators but does not execute them and returns
-  null.
-
-These are parts of one architectural feature: extract, close, assemble, encode, persist, validate,
-load, bind to an existing or empty knowledge graph, and execute.
-
-### 10.4 Current demonstrational encoding
-
-The runtime stores:
-
-```text
-Utils.Dataflows.encode(dataflow, resolutionScope)
-```
-
-in resolution activity metadata. That uses
-`org.integratedmodelling.common.services.client.resolver.DataflowEncoder`, which writes:
-
-- a `dataflow <sanitized-name>;` preamble;
-- nested actuator type, target/observable, alias, strategy, children, and apply calls.
-
-This output resembles the `dataflow` branch of `Observation.xtext`, but it is incomplete.
-Definitions and most preamble fields are TODO, and computations are currently asked to encode with
-`KlabLanguage.KIM` rather than consistently using the observation-language context.
-
-Although the sibling language repository defines and parses the grammar, the current resolver and
-runtime do not provide an end-to-end source-to-`Dataflow` adaptation, validation, reference
-relinking, and execution path. Current output must not yet be treated as a durable replay artifact.
-
-### 10.5 Competing incomplete APIs
-
-There are currently multiple divergent encoding surfaces:
-
-- `ResolverService.encodeDataflow(...)` is an older incomplete encoder intended for this purpose
-  but not aligned with the current observation-language grammar;
-- `ResolverClient.encodeDataflow(...)` returns `null`;
-- `ResolverService.retrieveAsset(...)` returns `null`;
-- `DataflowEncoder` is the encoder actually used by the runtime for metadata;
-- Jackson JSON is the format actually used for service execution transport.
-
-These should converge on one canonical observation-language codec backed by the grammar in
-`klab-languages`. A safe decoder must reject unsupported versions or required constructs, validate
-requirements and references before execution, preserve observation/reference identity, and never
-rely on Java object identity surviving a round-trip. JSON may remain an internal service transport,
-but it must not become a second, semantically divergent persistence contract.
-
-## 11. Reentrancy and concurrency risks
-
-The public API promises asynchronous work, and independent calls can run concurrently. Resolution
-attempts now use isolated graphs created from a snapshot of the resolver-side context resource
-catalog. The remaining shared context catalog is limited to thread-safe resource publication;
-successful semantic-plan reuse is still unimplemented.
-
-### 11.1 Resolution-attempt isolation
-
-Each call creates an attempt graph with its own:
-
-- observation and service-prototype maps;
-- dependency set;
-- atomic synthetic-ID sequence;
-- mutable JGraphT graph.
-
-Child graphs within that attempt share these objects because they are one compilation workspace.
-Concurrent root attempts do not. Context resources are maintained in a copy-on-write catalog and
-snapshotted when an attempt begins, so a resource submitted concurrently is visible either to the
-whole attempt or to the next one, never partially.
-
-The runtime also coalesces concurrent submissions of the same singular substantial identity within
-one runtime/context. With the current default strategy the key is context + cohort semantics + URN.
-Only the owner performs resolution and commit; other callers receive independent future views of
-the same result, so cancellation by one waiter does not cancel shared work. This is process-local;
-multi-runtime deployments will require a knowledge-graph uniqueness constraint or distributed
-admission protocol when they permit concurrent writes to the same context.
-
-For persisted identity checks, the submitted URN is the logical `namespace:name` identity
-(for example, `test.tanzania:ruaha`). Neo4j stores that observation under the context-local catalog
-URN `<context-id>:individuals:<namespace:name>`. The default identification strategy compares the
-logical URNs after removing only that catalog wrapper. A match returned by `register(...)` is a
-terminal submission result: its already resolved positive-ID observation is returned without
-creating resolution, provenance, or knowledge-graph state again.
-
-Cohort eligibility is based on the fundamental enumerable substantial types—subject, agent, event,
-and relationship, which normally also carry `COUNTABLE`. `Reasoner.baseSubstantialType(...)` removes
-non-identifying traits, roles, and modifiers to produce the common cohort observable. A null,
-`owl:Nothing`, or non-substantial reasoner result is invalid and falls back to the original singular
-semantics. Registration always requests creation of a missing cohort, including the first root
-submission where no observation transaction exists yet. Cohorts are durable context-catalog assets:
-creation uses a short independent knowledge-graph transaction that atomically stores the cohort and
-its `Context -HAS_CHILD-> Cohort` link. Therefore a later failed observation submission legitimately
-leaves an empty cohort in the graph. Creation is serialized and rechecked per local knowledge-graph
-instance; cross-runtime uniqueness still requires the graph-level constraint mentioned above. Later
-submissions must find the cohort before applying the identification strategy. If an older Reasoner
-stored a cohort using decorated rather than canonical semantics, lookup re-normalizes existing cohort
-observables and reuses the semantic match instead of creating a parallel cohort.
-
-Instantiators return individual observations while contextualizing a collective. The runtime must
-submit each outcome in `executionScope.within(collective)`: registration then records both the
-durable cohort membership and the structural `collective -HAS_CHILD-> individual` relationship,
-while `contextualizeFor(individual)` removes the collective focus before resolving the independent
-countable observation. The random generator currently assigns identities of the form
-`random:<KSUID>`; these are valid, distinct logical URNs. They are intentionally ephemeral, so a
-reproducible generator should eventually derive stable identities from identifying source data,
-but the current URNs do not prevent persistence or commit membership.
-
-All nested runtime transactions form one atomic transition. They share not only the transaction
-graph, ID allocation, cohort geometry, and contextualizers, but also the `added`, `modified`, and
-`failures` collections used to assemble the root commit. This is essential after cohorts became
-durable independently of observation submission: a generated individual is an added observation,
-its pre-existing cohort is a modified asset, and the `HAS_MEMBER`/`HAS_CHILD` edges are added links
-in the same root commit. The cohort must not be mislabeled as an added cohort. The final commit ID
-is attached to every newly stored observation, including secondary submissions that returned an
-intermediate commit result before the root commit existed.
-
-The cohort's durable ownership link is context-local. `KnowledgeGraphNeo4j` translates the
-`CONTEXT_ASSET` sentinel to the contextualized graph's `rootContextId`, so both cohort lookup and
-the independent `Context -HAS_CHILD-> Cohort` write address one specific digital twin even when the
-same database hosts several contexts. Because that link is created before the observation
-transaction, the root commit also asserts it whenever the cohort is modified. The assertion does
-not write a duplicate Neo4j relationship; it closes the synchronization gap for a client that had
-already loaded the Context adjacency before the cohort existed. `ClientKnowledgeGraph` applies the
-asserted link idempotently, making the cohort visible as a Context child without a full graph
-reload.
-
-Knowledge-graph transaction operations are fail-fast. A failed node creation, invalid allocated
-ID, update, or link rolls back the graph transaction and makes the enclosing contextualization
-fail; it must never be logged and swallowed while activities and a commit are reported as
-successful.
-
-### 11.2 Service boundary and blocking
-
-The resolver still blocks on runtime query `.join()`, but now uses a virtual-thread-per-task
-executor so that wait no longer occupies the common fork-join pool. The runtime/resolver exchange
-remains one serialized
-`ResolutionRequest` followed by one serialized `Dataflow`; duplicate in-flight runtime submissions
-are coalesced before issuing that request.
-
-`Scale` and `Coverage` are service-local runtime objects and must never cross this boundary.
-Request observations, geometry constraints, unresolved context observations, dataflow coverage,
-actuator observations, actuator coverage, and resolved actuator geometry are projected to plain
-`Geometry` instances at the producing boundary. Projection also recursively sanitizes geometry
-values in metadata, adapter parameters, resolution constraints, and contextualizer service-call
-parameters.
-
-### 11.3 No committed resolution catalog
-
-The runtime has graph transactions and each resolver attempt now owns all speculative mutable
-state, so rejected strategies and failed attempts cannot contaminate another call. The resolver
-still has no atomic commit step for publishing a successful semantic plan into a reusable context
-catalog; currently only explicitly submitted resources survive between attempts.
-
-### 11.4 Recommended state model
-
-A reentrant design should distinguish:
-
-- **immutable request snapshot:** observation, effective constraints, context/observer IDs,
-  requested geometry, service catalog/version;
-- **per-attempt workspace:** recursion stack, query results, candidate graphs, notifications,
-  requirements, synthetic reference IDs;
-- **committed context catalog:** immutable or copy-on-write entries from successful resolutions,
-  keyed by semantic identity plus geometry, constraints, worldview, and service/resource versions;
-- **runtime references:** stable observation IDs/URNs, never live object identity;
-- **commit protocol:** atomically publish a successful catalog delta or discard the entire attempt.
-
-A future cache key must include every input capable of changing model eligibility or ranking.
-Observable equality alone is insufficient.
-
-## 12. Known weaknesses and vulnerable spots
-
-| Priority | Area | Current weakness | Consequence |
-| --- | --- | --- | --- |
-| Critical | Strategy compilation | APPLY operations are validated but not emitted | A “successful” plan may omit intended computation |
-| Critical | Inter-resolution state | Cache lookup/accept are stubs and successful graphs are not committed | No semantic reuse; future partial cache changes could be inconsistent |
-| High | Distributed admission | Submission coalescing is process-local | Two runtime instances writing one context still need graph-level uniqueness or distributed admission |
-| Critical | Reconstruction export | `DataflowGraph` extraction/adaptation is empty | No whole-context dataflow can be assembled from incremental resolutions |
-| High | Encoding | Observation-language output is not grammar-complete or round-trippable | Persisted source cannot yet rebuild and replay a resolution |
-| High | External execution | `runDataflow(...)` compiles partially but never executes and returns null | Persisted or external plans cannot run against a knowledge graph |
-| High | Submitted inputs | Explicitly submitted objects have no encoded `define` values | Whole-graph replay loses root/input observations and their data |
-| High | Validity | No executable validity envelope is enforced | A plan may run with incompatible graph state, geometry, semantics, or resources |
-| High | Failure reporting | Many empty-graph exits carry no notification | Runtime reports only generic “empty dataflow” |
-| High | Graph representation | No parallel edges | Repeated bindings to the same node can lose local-name/coverage information |
-| High | Cycle handling | Per-call resolution cache is never consulted | Recursive semantic/model dependencies can recurse indefinitely |
-| High | Model fidelity | Ingested models receive universal coverage | Ranking/coverage can accept geographically or temporally invalid models |
-| High | Constraint enforcement | Many constraint types are not enforced | Caller intent may be serialized but ignored |
-| Extension | Ranking configuration | Namespace bean policies are supported; source declaration adaptation is pending | Service defaults apply until namespace overrides are supplied |
-| Medium | Async execution | A virtual thread blocks on runtime query `.join()` | No carrier starvation, but reciprocal service latency and cancellation still need end-to-end deadlines |
-| Medium | Notifications | ResourceSet notifications are discarded | Missing diagnostics for model/resource failures |
-| Medium | Contextualizables | Unsupported form compiles to null | Delayed null failure rather than resolver diagnostic |
-| Medium | Geometry | Dependent-without-context logs an error but continues | Work may continue with an invalid semantic context |
-| Medium | Thresholds | Duplicate hard-coded `0.15`; service copy unused | Scope configuration cannot tune contribution policy |
-| Medium | Scope lifecycle | Resolver graph presence is assumed | Direct/misordered calls fail with null dereference |
-| Low | Compiler catalog | Unused local `Map<Observable,String>` shadows the ID catalog concept | Confusing maintenance surface |
-| Low | Observation-language encoders | Service/client encoders diverge or return null | Public encoding behavior depends on implementation |
-
-The first implementation phase should add diagnostics and tests before filling cache or APPLY
-behavior, because both affect the semantic contract of generated plans.
-
-## 13. Testing strategy
-
-### 13.1 Layer 1: deterministic unit contracts
-
-Test `ResolutionGraph` without services:
-
-- model coverage intersects while alternatives union;
-- complete/empty/relevant thresholds;
-- reference lookup for positive IDs and multiple ID-0 query views;
-- synthetic IDs are unique within one attempt;
-- child merge preserves local name and coverage;
-- repeated source/target pairs have a defined policy;
-- notifications and requirements follow accepted graphs only;
-- failed candidate graphs leave no committed state.
-
-Test `DataflowCompiler` with small hand-built graphs:
-
-- actual root nodes are compiled exactly once;
-- existing references are attached to each contributing strategy;
-- model dependencies retain their stated local names;
-- transformation targets bind the intended inputs;
-- every contextualizable variant becomes the correct runtime functor;
-- unsupported contextualizables fail with a specific notification;
-- APPLY operations appear in the final actuator;
-- sharding annotations are validated and propagated;
-- requirements, coverage, proportional coverage, and notifications survive compilation.
-
-Test `PrioritizerImpl`:
-
-- comparator antisymmetry and transitivity over models with different custom criteria;
-- deterministic tie handling;
-- scenario/namespace/project precedence;
-- every enabled criterion has a non-placeholder score;
-- constraints blacklist, whitelist, and force models as specified.
-
-### 13.2 Layer 2: resolver orchestration with service fakes
-
-Use controlled fake `Reasoner`, `ResourcesService`, and `RuntimeService` implementations:
-
-- no geometry;
-- dependent without context;
-- complete direct contextual quality reference;
-- absent contextual quality proceeding to semantic resolution;
-- collective ID-0 query view with multiple contributors;
-- rejection of detached quality and non-enumerable ID-0 queries;
-- temporal union across collective events and functional relationships;
-- absence of temporal cohort bounds for continuant substantials;
-- one complete strategy;
-- several incomplete model contributions whose union completes;
-- optional versus mandatory dependencies;
-- unsupported service requirements;
-- recursive/cyclic model dependencies;
-- predefined contextualization and direct resolver invocation;
-- exception and cancellation propagation.
-
-Assertions should cover both graph/dataflow shape and notifications, not only `isEmpty()`.
-
-### 13.3 Layer 3: codec compatibility
-
-Create a versioned golden corpus of dataflows containing:
-
-- every actuator type;
-- nested children and repeated references;
-- every `ServiceCall` parameter value supported by Jackson;
-- coverage and resolved geometry;
-- requirements with all resource classes and services;
-- annotations, identifiers, expressions, lookup tables, and classifications;
-- info/warning/error notifications;
-- unknown optional and required fields.
-
-For JSON transport, assert semantic equality after encode/decode and compatibility with at least
-the previous released schema.
-
-For observation-language persistence, use grammar-valid golden sources covering both the
-`strategies` and `dataflow` document forms. Require:
-
-```text
-compile Dataflow
-    -> encode observation-language source
-    -> parse
-    -> adapt and validate
-    -> rebuild Dataflow
-    -> compile for runtime execution
-```
-
-The rebuilt dataflow must preserve actuator/reference identity, strategy URNs, local bindings,
-execution order, requirements, metadata, and coverage. Re-encoding the rebuilt form should be
-semantically idempotent. Persisting it as a `Resource`, retrieving it, and annotating/referencing it
-from k.IM should be covered by integration tests.
-
-Maintain separate golden cases for:
-
-- one incremental resolution fragment whose references are deliberately external;
-- one whole-context reconstruction export with every internal reference closed;
-- submitted root and non-root objects encoded through `define`, including values, semantics,
-  geometry, and metadata;
-- a reconstruction artifact with external prerequisites and a validity envelope;
-- rejection caused by an unresolved reference or invalid worldview/resource/coverage constraint.
-
-### 13.4 Layer 4: runtime integration
-
-Run `RuntimeService.submit(...)` against an in-memory/test digital twin:
-
-- resolution and submission transactions commit in order;
-- failure rolls back observations, executors, storage, provenance, and resolver catalog deltas;
-- query ID-0 observations are never persisted;
-- positive references retain the correct knowledge-graph links;
-- child submissions complete before parent transaction commit;
-- contextualization uses the intended geometry and storage;
-- activity metadata records a decodable dataflow or is explicitly diagnostic-only.
-- extracting a root-context dataflow, clearing the target digital twin, and replaying it recreates
-  the same selected observations, links, metadata, and computable values;
-- a reconstruction export does not call semantic resolution during replay;
-- an external dataflow binds declared prerequisites in an existing graph and rejects missing or
-  incompatible bindings without partially mutating the graph;
-- explicitly submitted values survive export, resource persistence, reload, and replay.
-
-Existing `RuntimeServiceQueryTest` is the starting point for query identity, coverage, and
-contributor geometry. `ResolutionCompilerQueryTest` protects direct quality reuse and
-`CohortGeometryTest` protects the occurrent/continuant temporal-boundary distinction.
-
-### 13.5 Layer 5: concurrency and reentrancy
-
-Use barriers rather than sleeps:
-
-- resolve two unrelated observations in one context concurrently;
-- resolve the same observable/geometry concurrently and define deduplication behavior;
-- resolve overlapping geometries concurrently;
-- submit a local resource while resolution reads the scenario catalog;
-- cancel one waiter while another shares work;
-- inject failure immediately before catalog commit;
-- reconnect a remote resolver during a request;
-- stress synthetic reference IDs and requirement merges.
-
-Verify deterministic results, no collection exceptions, no cross-request edges, and an atomic
-committed catalog.
-
-### 13.6 Property and mutation testing
-
-Coverage and graph composition are suitable for generative tests:
-
-- union is monotonic;
-- intersection is non-increasing;
-- coverage remains in `[0, 1]`;
-- accepted contributions never reduce non-model coverage;
-- reordering independent candidates does not change the final semantic coverage;
-- encode/decode is idempotent modulo transient IDs;
-- a completed dataflow has no dangling reference ID.
-
-Mutation tests should target branch conditions around completeness/relevance, optional
-dependencies, query IDs, and graph merge direction.
-
-## 14. Tests added with this trace
-
-- `klab.services.resolver/.../DataflowCompilerTest`
-  - proves the actual graph root is compiled rather than the original request;
-  - proves projected geometry, proportional coverage, and requirements reach `DataflowImpl`.
-- `klab.services.resolver/.../DataflowCoverageSerializationTest`
-  - reproduces the remote-boundary failure caused by transporting `CoverageImpl`;
-  - proves the plain geometry projection survives a polymorphic JSON round-trip and is not a
-    `Coverage` implementation.
-- `klab.services.resolver/.../ResolverTransportSerializationTest`
-  - proves request observations, direct constraints, and nested parameter values project both
-    `Scale` and `Coverage` to plain geometry before and after JSON serialization.
-- `klab.services.resolver/.../ResolutionGraphConcurrencyTest`
-  - proves concurrent attempts receive independent mutable graphs and consistent resource
-    snapshots.
-- `klab.services.runtime/.../RuntimeServiceQueryTest`
-  - proves same-identity submissions execute once, expose cancellation-independent future views,
-    and release their in-flight admission entry.
-- `klab.core.common/.../DataflowSerializationTest`
-  - proves dataflow name, requirements, and proportional resolver coverage survive polymorphic
-    Jackson serialization through the `Dataflow` interface.
-
-Focused verification commands:
-
-```powershell
-.\mvnw.cmd -q -pl klab.services.resolver -am "-Dtest=DataflowCompilerTest,DataflowCoverageSerializationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
-.\mvnw.cmd -q -pl klab.core.common -am "-Dtest=DataflowSerializationTest" "-Dsurefire.failIfNoSpecifiedTests=false" test
-```
-
-## 15. Suggested improvement sequence
-
-The strategy-specific sequence is now maintained in
-[OBSERVATION.md, Section 9](OBSERVATION.md#9-progressive-implementation-ledger-and-continuation-prompts),
-including review, matching/setup fixes, typed graph plans, coverage and candidate isolation,
-Dataflow lowering, lifecycle follow-ups, scoped member resolution, logical operations, and
-contextual aggregation. Use that ledger for strategy implementation; the broader recommendations
-below also cover resolver state and transport work.
-
-1. Define invariant-rich test fixtures for graphs, coverage, and actuator trees.
-2. Make all failure exits produce structured resolver notifications.
-3. Complete strategy APPLY and transformation/local-name compilation.
-4. Add explicit recursion/cycle detection.
-5. Define an atomic context-catalog commit for successful isolated attempts.
-6. Implement cache keys and invalidation before implementing `getResolving(...)`.
-7. Add propagated deadlines and cancellation to the explicit resolver executor/runtime query.
-8. Implement provenance-to-`DataflowGraph` extraction, incremental-fragment assembly, reference
-   closure, submitted-value definitions, and validity-envelope generation.
-9. Complete the observation-language codec defined by `Observation.xtext`, including strict
-   source-to-dataflow validation, resource persistence, re-execution, and compatibility tests.
-10. Complete transactional external dataflow execution against empty and existing knowledge
-    graphs.
-11. Enforce all advertised resolution constraints and define source declaration and adaptation for
-    namespace ranking policies.
-12. Add multi-service integration tests and graph-level uniqueness before enabling distributed
-    shared-work deduplication.
-
-## 16. Trace map
-
-Start future investigations at these methods:
-
-- `ResolverService.resolve`
-- `ResolverService.declareContextScope`
-- `ResolutionCompiler.resolve(Observation, ContextScope)`
-- `ResolutionCompiler.query`
-- `ResolutionCompiler.resolve(ObservationStrategy, ...)`
-- `ResolutionCompiler.resolve(Model, ...)`
-- `ResolutionCompiler.resolve(Observable, ...)`
-- `ResolutionGraph.merge`, `addReference`, `getResolving`, and `accept`
-- `DataflowCompiler.compile`, `compileObservation`, `compileStrategy`, and `compileModel`
-- `PrioritizerImpl.compare` and `computeCriteria`
-- `ResolverClient.resolve` and `ResolverController.resolveObservation`
-- `RuntimeService.submit`, `compile`, and `createPredefinedDataflow`
-- `RuntimeService.runDataflow`
-- `CompiledDataflow.compile`, `requireObservations`, `store`, and executor ordering
-- `ContextScope.getDataflow`
-- `DigitalTwin.getDataflowGraph` and `DigitalTwinImpl.getDataflowGraph`
-- `DataflowGraph.adapt`
-- `ClientDigitalTwin.getDataflowGraph`
-- `DataflowEncoder.encode`
-- `JacksonConfiguration.configureObjectMapperForKlabTypes`
-- `../klab-languages/org.integratedmodelling.languages.observation/src/org/integratedmodelling/languages/Observation.xtext`
-- observation-strategy parsing/adaptation in `WorkspaceManager` and `LanguageAdapter`
-
-When changing one layer, trace the change through all subsequent layers. In particular, a new graph
-edge or actuator field is incomplete until its JSON service representation,
-observation-language syntax and adaptation, runtime compiler, `Resource` persistence, k.IM reuse,
-provenance behavior, and failure rollback are all defined and tested.
-
-
-## 17. Semantic-update contextualizations
-
-An observation request can describe an operation on existing observations. For predicate
-X and substantial Y, `X of each Y` requests classification of Y members; it does not request a new
-observation whose observable is the classification directive. `Z of Y` requests
-characterization within Y regardless of abstraction. Collective inherence alone chooses classification
-and its member acquisition. Neither follows merely from an executor's Java return type.
-
-### Planning and member support
-
-The Tier-0 classifier strategy resolves `each Y`, then observes the classifier directive with
-that graph bound as its `members` input. Member acquisition is an intrinsic prerequisite, so this
-is a direct strategy even though it includes recursive resolution. The classifier model is selected
-in the requesting scope with its lexical/model constraints retained. Recursive member work must
-retain those constraints while focusing context on the appropriate observation.
-
-The Resolver represents the directive as an operation target before observation allocation. It
-returns the existing portable Dataflow, with UPDATE actuators carrying `effect = SEMANTIC_UPDATE`,
-`operationObservable`, `contextualization`, `requestedSupport`, coverage and typed target bindings.
-The node has no result observation; its transient node identity distinguishes it from other UPDATE
-nodes. `COHORT_MEMBERS` bindings name prerequisite producers; `OBSERVATION` bindings identify the
-existing member for individual characterization. These are execution bindings, not scalar
-contextualizer arguments. Interface mappings in JacksonConfiguration preserve the plan across
-services without annotations or Jackson dependencies in semantic beans.
-
-Complete cached cohort support is reused. Partial support requires resolution of missing support;
-if subtraction cannot represent the remainder, planning conservatively resolves full support.
-Requested support, producer coverage and completed attribution are separate facts. Runtime awaits
-producer execution and each new substantial's acknowledgement, then enumerates durable and
-transaction-local members within the requested/producer support intersection. Bindings deduplicate
-members. A completed empty cohort succeeds; a missing prerequisite does not.
-
-### Predicate model discovery and precedence
-
-ModelKbox's observable index expands predicate heads through the Reasoner's resolving closure,
-including concrete and abstract ancestors. The full candidate observable then passes directional
-semantic-distance validation, including its bearer and contextualization. A model's predicate may
-subsume the requested predicate; the reverse does not suffice. Other observable heads must remain
-equal. `PrioritizerImpl` evaluates semantic distance for every observable, including inherence and other
-clauses for non-predicates. `SEMANTIC_DISTANCE` (`im:semantic-concordance`) uses the minimum
-nonnegative candidate-output-to-request distance; smaller is better, with no score cap that would
-collapse distinct distances. Incompatible candidates are excluded. The configured criterion order
-applies (by default lexical scope precedes semantic distance); within equal higher-priority criteria,
-exact and nearer explanations precede broader ones. Classification and characterization remain
-distinct operations. `Reasoner.resolves(request, candidate, context)` uses this same direction.
-
-### Semantic identity across service boundaries
-
-Abstraction and collectivity are operational semantics, not display hints. Adapted observable URNs
-must agree with the semantic concept tree, including `each` inside an inherence restriction.
-Projecting the inherent of `X of each Y` must return `each Y`; silently returning singular Y changes
-instantiation into acknowledgement and changes which strategies match. Ontological ancestry can
-use Y's singular OWL class, but model-discovery reconstruction must preserve the requested arity.
-
-Concept and observable builders cross the Reasoner boundary as portable semantic operations.
-Removing inherence for validation or building concrete Z-of-Y for characterization must work with
-a remote Reasoner as well as a local instance. These operations construct semantics only; they do
-not mutate runtime observations. Scope, context focus and lexical resolution constraints remain
-part of the resolution request through recursive and remote calls.
-
-### Invocation, validation and follow-up
-
-A classifier receives the full operation Observable unchanged, the member when requested by its
-signature, and a scope contextualized to that member. Component code chooses any semantic
-projection it needs: a classifier selecting descendants of X removes inherence itself before
-requesting X's closure. Runtime independently extracts X to validate the result. Semantic closure
-excludes the entire OWL bottom-equivalence node, including named unsatisfiable classes; filtering
-only literal `owl:Nothing` would admit invalid candidates.
-
-A result must be a satisfiable, concrete predicate equal to or specializing X. A concrete X is
-a valid result even if it has no descendants. NOTHING is always an error. A null result is permitted only when the operation
-originates in a model dependency and that original dependency is optional, after a classifier has
-been found and linked. Optionality does not excuse invalid concepts or execution failures.
-A member already bearing a valid concrete specialization of X (including X itself) satisfies the request.
-Runtime skips classifier invocation and produces no pending attribution or repeated characterization
-for that member, regardless of how the predicate was acquired. Invalid same-family attributions
-remain errors; this reuse does not authorize replacement of an existing classification. Valid results become pending attributions, then detached semantic replacements; they do
-not become new observations.
-
-Runtime resolves concrete `Z of singular Y` in the staged member's scope after attribution. It
-awaits this characterization before completing classification and the root transaction, without
-resubmitting the entire member or invoking classification again. Executor/lifecycle bookkeeping
-prevents repeated scheduler visits from repeating the same work for a root transaction, event and
-support. Successful discovery with no characterization model yields `NO_MODEL`; actual resolution
-or execution failure propagates and rolls back the enclosing semantic updates. No-model success
-creates no CHARACTERIZED effect. Successful executed characterization links to the existing member.
-
-The individual characterizer executor supports local public contextualizers returning `void` or
-primitive `boolean` (`false` fails), and dependency-only models. Remote/adaptor characterizers and
-other unsupported semantic-update forms fail explicitly. Collective classification dependencies
-and runtime-owned individual characterization do not imply support for arbitrary root directives,
-additional independent operation-submission entry points. Singular predicate inherence is
-characterization; distributed predicate inherence is classification.
-
-### Outcomes and durable effects
-
-| Resolution outcome | Meaning | Execution convention |
+Not every ResolutionConstraint variant has an implemented enforcement path. Serializing a
+constraint alone does not prove it is enforced; each additional policy requires an explicit
+discovery/resolution contract and negative controls.
+
+## Coverage and references
+
+`Geometry` describes support; `Coverage` additionally records how much of the requested domain
+an explanation fulfils. Resolver Coverage implementations do not cross service transport: use a
+portable geometry projection and resolved fraction. Scalar, universal and empty domains retain
+their separate meanings; see [Geometry](OBSERVATION.md#geometry-and-scale-contract).
+
+Union accepted alternative coverage without double-counting overlap. Intersect required input
+coverage with the result obligation; a dependent graph cannot compensate for a missing input.
+Preserve measured partial support when complete fulfilment is unavailable. Missing or
+unrepresentable support must not become a success claim.
+
+A reference identifies knowledge already available to the requesting scope. It does not copy
+values into an output or provide an implicit resampling, redistribution or overlap policy.
+Mixed model/reference outputs requiring value composition must have an explicit supported
+operator. Temporal exclusion that cannot represent an exact complement uses a conservative
+domain; it does not invent an interval gap.
+
+The `ResolutionGraph` is an intermediate semantic explanation containing observations,
+strategies, models, operation targets and coverage-bearing edges. Its context object and
+attempt-local state do not constitute a durable reuse catalog. Runtime's authoritative graph
+and completion receipts govern cross-request reuse.
+
+## Portable Dataflow and runtime compilation
+
+`DataflowCompiler` translates accepted graph contributions into Actuator trees with local
+names, requested/resolved support, computations, target bindings, producing-model admission
+and deferred prerequisites. `CompiledDataflow` checks and binds these to actual Runtime assets.
+The submitted root retains its identity, native parent and support. Transport copies must
+not allocate a duplicate root or replace a bound target silently.
+
+`computationConstraints` bind produced outcomes to the correct lexical model scope. Runtime
+retains input plans even for consumers without computation, since scheduler initialization
+must validate their computational prerequisites independently of executor presence.
+
+Jackson interface mappings carry Dataflow, Actuator, observations, calls, geometry and nested
+bindings. Source beans remain portable API objects. JSON bytes are neither execution authority
+nor a whole-context reproduction document. [FlowCharts](FLOWCHARTS.md) expose the chosen
+resolution graph and execution plan as separate views.
+
+## Semantic-update contextualizations
+
+CLASSIFICATION resolves members before executing a classifier for the full predicate-of-each-
+substantial directive. Runtime binds observed members to the operation, validates concrete,
+satisfiable results and stages attribution on those same identities. New attributions require
+CHARACTERIZATION; actual characterization records CHARACTERIZED effects, while a legitimate
+no-model decision records resolution without an invented execution effect.
+
+UPDATE actuators carry `effect = SEMANTIC_UPDATE`, `operationObservable`, contextualization,
+requested support and typed `COHORT_MEMBERS` or `OBSERVATION` bindings. They do not allocate
+directive observations, value storage or independent scheduler entries. Required ordinary
+model and member-quality dependencies execute in order before their consumer.
+
+The Runtime validates both durable and transaction-local native members, including ancestor
+transaction contributions. A sibling/root failure invalidates uncommitted success. Enumeration
+deduplicates identities and respects actual support. Completed empty discovery is successful;
+missing discovery is not. See [Classification](CLASSIFICATION.md),
+[Member-quality collections](MEMBER_QUALITY_COLLECTIONS.md) and
+[Dependency families](CLASSIFIER_DEPENDENCY_FAMILIES.md).
+
+## Collective selection and consumer continuation
+
+![Collective selection and its transaction-bound consumer](diagrams/collective-selection.drawio.png)
+
+The automatic positive concrete-predicate selection route is used after eligible full-observable
+models. It completes native discovery, executes required family classifiers, and returns a
+virtual selected view with scoped semantic/native evidence. A selected ordinary-model dependency
+is retained as a deferred reference and expanded within the consumer's root attempt.
+
+Partial discovery contributes completed fragments alongside newly executed producers. The old
+fragments are not producer inputs. Before sealing, native reference roots are refreshed from
+current completed queries because the successful contributors may have changed during the attempt.
+Classification/member/support checks remain mandatory for the full requested collection.
+
+The original issued selected view is attached to its exact compiled local port. Its private
+capability binds consumer, cohort, transaction and plan. Storage uses the compiler's execution
+scope, including an active child transaction; a root storage scope is not interchangeable with
+that child. Scope child-count bookkeeping is excluded from scope identity, while the selected
+view's own count and payload remain exact. Serialized copies cannot manufacture issuance.
+
+At execution, retained/transported selected references are read-only revalidated before use.
+Successful consumers persist their alias-to-selection receipts as JSON. Consumer failure rolls
+back newly discovered members, classifications and consumer outputs in the uncommitted attempt.
+See [Collective completion](COLLECTIVE_COMPLETION.md) and
+[Selected-input admission](ADMISSION.md#selected-query-inputs).
+
+## Outcomes and result acceptance
+
+| Dataflow outcome | Meaning |
+| --- | --- |
+| `RESOLVED` | A plan is available; evaluate its coverage and subsequently execute/validate it |
+| `DEFERRED` | Evidence/work is incomplete; supported deferred classifier/selection prerequisites may be resumed, while unavailable supplier evidence cannot certify absence |
+| `NO_MODEL` | An affirmative no-explanation decision after complete applicable discovery; permitted lifecycle uses do not invent computation |
+| `FAILED` | Resolution failed; it is not an empty successful result |
+
+Acknowledgment can accept an error-free explicit NO_MODEL decision. Optional characterization
+can accept genuine absence of a model, while a matching but unresolvable model is a failure.
+A no-model Dataflow is a valid, non-empty decision with no computation. An empty observation
+failure sentinel is a different object and must not be used as scientific evidence.
+
+Scientific acceptance additionally checks current lifecycle, correct meaning/bearer/observer,
+required support, actual successful execution or certified reuse, and publication. Consequence
+handlers require their operation-specific completion evidence. A positive ID proves neither
+values nor execution, and a non-null response alone does not prove a successful submission.
+
+## Transactions, scheduling and provenance
+
+Submission, resolution, prerequisite and contextualization activities can form a shared root
+attempt. Child commits retain staged changes and validation state. Root publication allocates
+durable identities, checks the original native read sets and makes accepted changes visible.
+Cancellation or failure stops new work and prevents publication of the uncommitted attempt;
+already published independent commits remain part of history.
+
+Process initialization records existence and occurrence registration without manufacturing an
+initial numerical process state. Later SIMULATION activities are independent transactions,
+causally linked to the retained initialization where available, including scheduler recovery.
+The absence of a separate numerical INIT contextualizer on the process is not a missing
+scientific computation. Explicitly retained mismatched activation evidence fails recovery.
+
+Collective event instantiators use the same temporal scheduling machinery, dispatching at
+interval starts. Each produced individual event is validated and resolved/prepared through
+ordinary child submission in the producing transaction. Its computation is then scheduled at
+its separate START and END timepoints. Boundary execution uses the accepted individual plan
+and a fresh guarded scope; pending/start/end state and actual effects commit atomically.
+Process cadence defaults to context geometry, while event-instantiator cadence defaults to the
+selected observer's perceived geometry. See [Occurrence scheduling](OCCURRENCE.md).
+The event implementation's complete public-path acceptance remains a separate unverified boundary.
+
+Post-commit callbacks run after transaction cleanup, outside the graph monitor, while the cycle
+driver remains held. Consequence commits are separate from the triggering commit and use their
+own cause and client messages. See [Provenance](PROVENANCE.md) and
+[Consequence cycles](CONSEQUENCE_ENGINE.md#frozen-resolutioncontextualization-cycles).
+
+## Observer-aware resolution contract
+
+**Agreed target behavior, not fully implemented.** Observer semantics are defined in
+[Observable expressions](OBSERVABLES.md#observer-perspective-contract). An explicit `observed as X`
+query and a query with only a session/context observer are different requests even when their
+effective observer class is the same.
+
+Select the effective observer by precedence: an observer URN in the submission resolution
+constraints overrides the session/context observer; otherwise use the session observer, including
+null. The override applies only to that submission and does not mutate the session default.
+The selected observation may be any eligible Agent in the knowledge graph, not only the
+session observer created with the context. Preserve the selected observation/URN separately from
+its semantic Agent class and from whether the query explicitly contains `observed as`. A selection
+constraint alone does not introduce that clause, so it does not turn prioritization into a hard
+observer compatibility requirement. Validation, access and graph-membership checks remain required.
+
+| Query | Eligibility with respect to observer | Selection/fallback |
 |---|---|---|
-| `RESOLVED` | A contextual plan was obtained | Execute the plan and its prerequisites |
-| `NO_MODEL` | Successful absence of executable explanation for an eligible lifecycle request | No effective actuators; `isEmpty()` is false |
-| `FAILED` | Resolution failed | `isEmpty()` marks failure; do not treat it as acknowledgement |
+| Explicit `observed as X` | Require compatible explicit observer semantics under normal clause specialization. Absolute/null candidates are ineligible. | Compare only eligible candidates; no absolute fallback, even if specific dependencies fail. |
+| No explicit observer clause; context observer X | Compatible observer-specific and absolute/null candidates remain eligible. Other incompatibilities still reject a candidate. | Prefer compatible candidates specific to current observer X; if their resolution fails, including unresolved dependencies, try absolute candidates. Mere catalog availability does not suppress a usable fallback. |
+| No explicit observer clause; null context default | Absolute/null candidates remain observer-eligible; do not manufacture an observer class. | Detailed ordering of specific candidates without a current observer is not settled here. |
 
-For ACKNOWLEDGEMENT, an error-free resolution with no significant explanation preserves a
-substantial's existence, including when no strategy applies. Characterization's no-model outcome
-requires successful model discovery with no candidate. Neither path suppresses service errors or
-failed contextualizers. Resolution completion is distinct from execution completion, and a child
-ActivityFinished is distinct from durable root commit.
+Compatibility/admission precedes semantic distance and prioritization. Specificity is a preference
+among compatible candidates, never permission to ignore a query clause. Preserve this ordering for
+both **observation reuse** and **model discovery/ranking**: reusing an absolute observation must not
+prematurely suppress an available compatible specific resolution, while a failing specific model
+must not block allowed absolute fallback. Existing coverage and partial-fulfillment semantics still
+apply; this contract does not turn observer selection into a new coverage guarantee.
 
-The [knowledge-graph contract](KNOWLEDGE_GRAPH.md#semantic-attribution-transactions) defines atomic
-semantic updates, before/after provenance, commit propagation and cache invalidation. Execution
-activities carry their actual contextualization type and link to affected observations through
-its typed effect. [FlowCharts](FLOWCHARTS.md#resolution-diagnostics) carry the accepted resolution
-graph under `Metadata.IM_RESOLUTION_GRAPH` on the completed Resolution Activity. Execution
-activities carry the contextual plan under `Metadata.IM_DATAFLOW_GRAPH` from creation through
-completion, including failures. Descriptions are optional human-readable text, not serialized plans;
-clients use activity type, identity and triggering hierarchy for cataloguing.
+A modeled Agent observation can supply the observer, and multiple perspectives can coexist in one
+knowledge graph. Store explicit observer meaning separately from session interpretation of null.
+Identity/reuse and positive/negative resolution caches must account for query explicitness, relevant
+observer semantics and scoped observer identity, applicable semantic/knowledge/model revisions and
+access context. A default-observer change must not reuse an incompatible prior ranking or failure;
+the same applies to a submission constraint selecting a different observer observation, even when
+its Agent class equals that of another observer. Do not equate instance identity with class identity.
+Observer selection also must not relabel globally stored absolute observations. Verify these requirements against
+existing identity, scope and revision mechanisms rather than invent a second cache system.
 
-These diagrams audit contextual planning and execution. Neither is the separate
-[provenance-extracted graph-reproduction dataflow](DATAFLOW.md#two-distinct-dataflow-contracts).
+Positive example: an implicit query with context observer X prefers a compatible X-specific model;
+if its dependencies cannot resolve, a compatible absolute model can be tried. Negative examples:
+an explicit `observed as X` query cannot use that absolute model; an unrelated observer Y is not made
+eligible by a better numeric score. Names X/Y are schematic, not worldview declarations.
 
+The implementation preserves full observable wrappers through the revision-bound HTTP distance
+route, checks explicit observer compatibility before scoring, and partitions eligible model choices
+by the implicit observer preference within each existing strategy phase. A successful Tier-0 answer
+still precedes expensive Tier-1+ recursive discovery. A committed absolute quality/process result
+is deferred while compatible specific planning is attempted; planning dependency failure can fall
+back to that result without executing an otherwise unnecessary absolute model or recursive route.
+Specific models may satisfy coverage through the existing model-planning path. If they cannot
+complete the request, a complete eligible absolute source remains a terminal fallback. The observer
+path does not join a partial specific model to an absolute reference and falsely claim filled values:
+a reference input or provenance receipt is not an output value-copy operator.
+The current one-result lookup chooses a complete eligible occurrence before an incomplete one:
+a narrow specific occurrence cannot hide a complete absolute fallback. With no complete match,
+its measured partial support is retained for planning. This lookup does not yet compose several
+already committed perspectives into one new dependent aggregate; that requires an explicit
+value-composition path, not multiple reference roots mislabeled as a computed result.
+Mixed observer-specific model/reference output composition is likewise unfinished and rejected
+without such an operator. Its future implementation must define native support, overlap precedence,
+value mediation and contribution provenance. Existing temporal complement limitations also remain;
+no exact residual interval is inferred when exclusion cannot represent it.
 
-## Bounded singular binding capability - 2026-10-21
+The original operation/query remains implicit when a verified producing output refines the result's
+observer meaning. Rebinding execution targets does not overwrite that operation. Terminal reference
+reuse preserves the committed source's identity and metadata, skips computation/storage creation,
+and records source ID/URN in activity provenance rather than staging the source as a newly committed
+observation. Submission coalescing retains the selected observer ID and full observable identity.
 
-The isolated S7a candidate implements one explicit current-context reference and one
-native quality OBSERVE child, with typed identity/revision transport and lazy Tier-1
-admission. It requires the identical result obligation and full native context support.
-Same-obligation RESOLVE, other context/result bindings, member iteration, discovery and
-composition remain unavailable. See [the capability contract](SINGULAR_CONTEXT_BINDING.md).
+Both model catalog backends use the full stored observable wrapper, not the indexed base Concept,
+for revision-bound compatibility after source admission. Named secondary output descriptors preserve
+the observer clause through required inherency specialization. Server observer selection from
+submission constraints and contextualization headers uses owning-context queries before attaching
+request transactions. Ordinary actuator storage preserves the original operation observable for
+cold reconstruction independently of the resolved result.
 
+Submission, contextualization and autonomous simulation activities record the selected Agent ID
+and its provenance edge, or explicit known-null. Autonomous scheduler replay recovers the actual
+Agent through creation/activity provenance before execution, inside its failure boundary; it never
+substitutes the semantic observer class. Each creator branch must independently establish the same
+selection. Unknown legacy records, conflicting branches, cycles without an authoritative selection,
+corrupt markers and inaccessible Agents reject recovery with an actionable resubmission diagnostic.
+Known-null is valid and clears the recovered execution observer. The current default and a parent's
+selection must not fill missing historical evidence. Explicit dependency execution keeps its supplied
+request scope.
 
-## Prepared predicate-dependency expansion boundary - 2026-10-21
+Perspective enumeration is separate from resolution eligibility and preference.
+`getPerspectives(observable)` returns all existing observation records visible at the querying
+scope's knowledge-graph insertion point with the same canonical semantics after removing only
+the `observed as` restriction. It does not apply arbitrary subtype compatibility, selected-observer
+ranking, best-support selection, aggregation or model resolution. Preserve every other semantic
+clause, including portable mediator definitions and distribution flags. Enumeration performs no
+unit/currency conversion. Absolute/no-clause observations use the same equality rule. Multiple records by one actual
+Agent, including different supports or occurrences, must all remain in the result; actual Agent
+identity must not be substituted for the semantic observer restriction. Scope visibility remains
+mandatory. Qualities are the intended primary use; substantial perspectives remain legal for now.
+None of this weakens the explicit observer compatibility constraint on a new resolution request.
 
-The isolated P0 candidate freezes source/declaration/occurrence identities once and applies
-keyed completed outcomes, including nonblocking CompletionStage composition. This preserves
-positional Cartesian choices across asynchronous completion without supplying classifier
-completion certificates, member snapshots or production Resolver wiring. Generated syntax
-still requires redeclaration and eligibility validation before distance/execution. See
-[the precise boundary and remaining integration seam](PREDICATE_DEPENDENCY_EXPANSION.md).
+The fallback guarantee here covers ordinary dependency resolution during planning. Deferred
+executable classifier prerequisites run after model selection and may affect a shared transaction;
+a failure there is not yet a safe alternative-model retry. No rollback/retry policy after stateful
+execution is implied. Tests of pending transaction graphs and stubbed commit I/O do not demonstrate
+durable storage or live-stack acceptance. Null-context ordering of observer-specific candidates also
+remains unspecified. These boundaries must remain visible when extending classifier or recursive
+execution, rather than silently broadening observer fallback.
 
+## Cycle observer and discovery latency
 
-The subsequent isolated [independent product and native recovery increment](CLASSIFIER_CARTESIAN_RECOVERY.md)
-extends the preserved single-occurrence family milestone. Its exact admission, producer identity,
-characterization, embedded persistence and verification boundaries are documented separately.
+The selected observer and retained semantic actor stay fixed through the admitted cycle and
+its consequences. Native graph revisions do not reconstruct that observer inside the cycle.
+Explicit requests in the same twin wait for the active cycle to drain; causal children inherit
+it and must not queue behind their own parent. Unrelated twins are independent.
+
+Supplier calls run concurrently with a total per-supplier budget covering negotiation, transfer
+and compatibility fallback. The default is ten seconds; `klab.resources.candidateTimeoutSeconds`
+accepts values from one to 300 seconds. Timeout/failure is retained for the attempt, including
+concurrent dependency queries. A subsequent attempt may retry the provider.
+
+One detached supplier response is retained per provider and lexical selection in an attempt.
+Mapped templates are keyed by requesting identity, retained actor/cycle, supplier, source hash
+and model member. Each consumer receives a detached copy before preparation. Requested-core
+filtering and resolving-head expansion avoid repeated semantic work; caches supply no admission
+grant and do not cross their declared revision/attempt boundaries.
+
+Reasoner resolving-closure caches are bounded and revision/refinement-scoped. Property and axiom
+memoization inside OWL bounds evaluation is checked against the same ontology/reasoner lease.
+Resources catalog reconciliation cooperates with active semantic cycles. Namespace validation is
+driven by source or semantic validity changes; opening an unchanged IDE workspace is not a reason
+to validate every namespace again. Runtime admission still validates its applicable receipt.
+
+Pure semantic RPCs omit unused focus/observer/transaction routing; capabilities retains caller
+permissions and semantic-cycle identity. Scope-consuming operations retain the full required
+context. These distinctions prevent unnecessary native callbacks without weakening ownership.
+
+Use the `Model query timing`, resolution-attempt semantic totals, slow Reasoner phase timings,
+cycle admission and submission-preparation logs to locate delays. Distinguish provider wait,
+actor-lock contention, source mapping, document validation, planning and execution. Cache warmth,
+selected models and actual schedules affect timings; fixed wall-clock targets are not part of
+the acceptance contract.
+
+## Reconstruction and current limits
+
+The contextual response is incremental. General export of a selected graph, observation-language
+source generation, import and strict/adaptive replay are separate from ordinary resolution and
+from scheduler recovery. See [Dataflow reconstruction](DATAFLOW.md).
+
+Other explicit boundaries include general typed graph merges and context/member composition,
+arbitrary native-to-regional resampling, mixed perspective value composition, and unsupported
+ranking/coherency criteria. A grammar production or an API placeholder does not authorize a
+partial implementation to claim success. Missing supplier evidence remains DEFERRED; unknown
+completion remains unknown. Preserve those boundaries when adding a new execution route.
+
+## Implementation map and verification
+
+| Responsibility | Implementation |
+| --- | --- |
+| Recursive planning | `ResolverService`, `ResolutionCompiler`, `ResolutionGraph` |
+| Parsed candidate mapping and admission | `SourceModelMapper`, `ModelCandidateSources`, `ModelValidationGate`, `PrioritizerImpl` |
+| Portable plan construction | `DataflowCompiler` |
+| Owned registration, submission and publication | `RuntimeService`, `ServiceContextScope`, `DigitalTwinImpl.TransactionImpl` |
+| Executable binding | `CompiledDataflow`, `SelectedQueryInput` |
+| Prerequisite continuations | `CollectiveSelectionContinuation`, `SelectedModelClassifierContinuation`, `ClassifierDependencyContinuation` |
+| Native evidence and scheduling | `SemanticExecutionEvidence`, `KnowledgeGraphNeo4j`, `SchedulerImpl`, `ResolutionCycles` |
+
+Use source/transport tests for bean and header invariants, planning tests for coverage and
+bindings, and native execution tests for effects, storage, rollback and recovery. Public submission
+regressions must keep root and child scopes distinct and retain real historical provenance when
+checking committed replay/inspection. See [Acceptance checks](ADMISSION.md#acceptance-checks).

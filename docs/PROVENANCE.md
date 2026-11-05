@@ -43,7 +43,7 @@ persistence from an intermediate completion message. Detached FlowCharts on reso
 execution activities document the accepted resolution graph and contextual plan, respectively;
 optional descriptions remain human-readable text. See [FlowCharts](FLOWCHARTS.md).
 
-The proposed [provenance-to-dataflow builder](OBSERVATION.md#72-provenance-to-dataflow-builder)
+The proposed [provenance-to-dataflow builder](OBSERVATION.md#provenance-to-dataflow-builder)
 selects a committed knowledge-graph snapshot, follows executable dependencies, assembles the
 recorded computation fragments, closes references, and creates a validated portable Dataflow.
 Submitted objects without producing computations become typed `define` inputs. The resulting
@@ -57,4 +57,36 @@ timestamps cannot replace that evidence. Missing provenance must yield an explic
 export rather than an invented method. Strict replay fixes recorded choices; an adaptive plan
 explicitly permits later resolution and records the new choices as additional provenance.
 
-## How to add provenance for resources
+## Process initialization and simulation
+
+A process initialization records existence and occurrence activation without inventing a
+numerical process INIT state. Occurrence registration retains that initialization's durable
+identity in the same root commit. Scheduled SIMULATION activities execute in independent
+transactions and link causally to it, including after supported scheduler recovery. A separate
+numerical contextualizer node on the process is not required for that causal link.
+
+The selected Agent identity or known-null is retained in creation/execution provenance. Recovery
+uses that evidence rather than the current default observer. Conflicting, inaccessible or
+explicitly mismatched activation evidence fails rather than inventing a parent or perspective.
+
+## Event instantiation and individual boundaries
+
+Event instantiators have scheduled interval executions and batch-production provenance.
+Produced individuals have their own resolution/preparation and START/END execution records.
+Their positive-duration period is not the same as either instantaneous boundary notification.
+Start/end completion flags and observed-event journals are distinct from the instantiator's
+interval progress. See [Occurrence scheduling](OCCURRENCE.md).
+
+## Consequence provenance
+
+Consequence work starts after its triggering commit. CONSEQUENCE_SUBMISSION distinguishes its
+root attempt while scientific activities retain their actual types. Cause metadata and TRIGGERED
+links connect the new commit to its trigger. Authorization remains with the requesting user;
+automatic work is attributed to k.LAB. A failed later consequence leaves committed history intact.
+See [Consequence engine](CONSEQUENCE_ENGINE.md).
+
+## Resource provenance
+
+Resource lineage belongs to the resource/adapter contract and must be carried into actual
+execution provenance. A resource URN or declared method alone cannot certify that its data were
+used successfully in a particular observation, support or semantic context.

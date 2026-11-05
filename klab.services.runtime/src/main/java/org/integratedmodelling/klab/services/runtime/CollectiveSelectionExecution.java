@@ -136,6 +136,21 @@ final class CollectiveSelectionExecution {
     // This captures durable and transaction-overlay read sets and guards them through root commit.
     var members = deferSeal ? runtime.classificationMembers(nativeView, requested.getGeometry(), scope)
         : runtime.classificationMembersForCheck(nativeView, requested.getGeometry(), scope);
+    // Completing discovery can change which contributors certify a reused fragment. Bind
+    // native root references to fresh issued views after every producer/classifier effect;
+    // their transported pre-completion snapshots are not execution capabilities.
+    for (var root : plan.getComputation()) {
+      if (root.getActuatorType() != Actuator.Type.REFERENCE) continue;
+      var fragment = root.getCoverage() == null
+          ? root.getObservation().getGeometry() : root.getCoverage();
+      var fragmentRequest = new Observation.NaiveBuilder(descriptor.nativeMembers(), scope)
+          .geometry(fragment).query().build();
+      var refreshed = nativeQuery(runtime, fragmentRequest, binding, scope);
+      if (refreshed.isEmpty() || refreshed.getResolvedCoverage() < 1.0 - 1.0e-9)
+        throw new IllegalStateException("Selection native fragment no longer has completed support");
+      ((ActuatorImpl) root).setObservation(refreshed);
+      ((ActuatorImpl) root).setId(Observation.QUERY_ID);
+    }
     return result(runtime, requested, binding, nativeView, members, scope, !deferSeal, plan);
   }
 

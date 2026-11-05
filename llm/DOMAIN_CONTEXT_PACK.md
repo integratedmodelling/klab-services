@@ -793,7 +793,7 @@ existing/new members' semantics without creating a classification-result observa
 their identity/cohort. Runtime then attempts concrete characterization per member; no explanatory
 model is a valid outcome. Member resolution is part of the Tier-0 classification strategy.
 Collective classification dependencies execute as semantic-update Dataflow nodes, followed by
-Runtime-owned individual characterization. Classifier and characterizer models are not interchangeable. See [the resolution contract](../docs/RESOLUTION.md#17-semantic-update-contextualizations).
+Runtime-owned individual characterization. Classifier and characterizer models are not interchangeable. See [the resolution contract](../docs/RESOLUTION.md#semantic-update-contextualizations).
 
 When analysing a domain, distinguish existence, attribution and explanation. An acknowledged
 substantial need not have an explanatory model. A classified substantial retains its identity,

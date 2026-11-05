@@ -1,6 +1,6 @@
 # A semantic commons for meaningful computation
 
-Presentation material · working draft · 4 November 2026
+Presentation material · working draft · revised 5 November 2026
 
 ## Editorial brief
 
@@ -11,21 +11,21 @@ names belong in source notes, not in the slide narrative.
 
 The opening four slides introduce the rationale, context and semantic cycle. Slides 5–17
 develop **specifying computable semantics**: the ODO-IM contract, linguistic composition,
-semantic modeling, contextualization and staged resolution. Slides 18–22 introduce
-**the worldview**: composable ontologies, integrity and inference clauses, prefix
-operators, consequence clauses and value operators. Slides 23–31 develop **authorities**:
+semantic modeling, contextualization and staged resolution. Slides 18–26 introduce
+**the worldview**: composable ontologies, integrity and inference clauses,
+infix and prefix operators, consequence clauses and value operators. Slides 27–35 develop **authorities**:
 the identity contract, filtering and reconciliation, two kinds of deferred analysis,
 and examples of reusing community classifications. LAND receives three slides: its
 semantic mediation purpose, the comparison mechanism, and initial source-entry adoption.
-Slides 32–38 describe **live observations in digital twins**: the three components,
+Slides 36–42 describe **live observations in digital twins**: the three components,
 models, individual identity, submission, transactions, consequences and future composition.
-Slides 39–41 introduce **behavioral agency with k.Actors**: agent-bound behavior, an
+Slides 43–45 introduce **behavioral agency with k.Actors**: agent-bound behavior, an
 illustrative response cycle, and applications including digital-twin web interfaces.
-Slide 42 closes with the semantic-commons proposition and its requirement for a
+Slide 46 closes with the semantic-commons proposition and its requirement for a
 collaboratively developed, broadly community-owned worldview.
 
 For Slides: use **On-slide copy** as visible text and **Speaker notes** as narration.
-Use the diagram as the main visual on slides 3–4, 11, 16, 32, 35 and 38; avoid repeating its contents in
+Use the diagram as the main visual on slides 3–4, 11, 16, 36, 39 and 42; avoid repeating its contents in
 additional text boxes. Source and editorial notes are not slides. Each diagram is a
 native, editable Draw.io source; its PNG companion is a preview for placement.
 
@@ -737,13 +737,185 @@ the declared contract. Explicit abstractness is separate. Current `requires` for
 identity and realm requirements; the removed `requires attribute` and `requires extent`
 forms should not be introduced.
 
-The language also provides `inherits` for predicate commitments, `describes`, `marks`,
-`classifies`, and qualitative `increases with` / `decreases with` relations. These guide
-interpretation and inference where their contracts apply. Qualitative dependence is not
-a numerical equation. `creates` and `affects` declare semantic potential; they do not
-execute a process or bypass a quality's native inherency.
+The next slide expands predicate commitments, descriptive links, qualitative dependence
+and process-effect contracts, which deserve explicit treatment before the infix operators.
 
-## Slide 20 — Worldview expressions II: prefix operators change what is observed
+## Slide 20 — Semantic contracts: qualification, description and effects
+
+### Takeaway
+
+The worldview can state what qualifies an observable, what describes it and what can change it.
+
+### On-slide copy
+
+| Clause | Semantic commitment |
+| --- | --- |
+| `inherits` | Attach predicate commitments; use `is` separately for taxonomic parentage |
+| `describes` | Relate a descriptive observable to what it describes, optionally with a value constraint |
+| `marks` | Associate a deniable marker with a nonzero or satisfied quality |
+| `classifies` | Relate a classification to the quality it classifies |
+| `increases with` / `decreases with` | Express direct or inverse qualitative dependence |
+| `creates` | Declare observables that may be produced |
+| `affects` | Declare observables whose state may be modified |
+
+**These contracts guide interpretation and inference. Methods supply the computation.**
+
+### Speaker notes
+
+`inherits` supplies predicate-like commitments rather than an alternative spelling of
+subclassing. The guide's schematic Snow identity inherits Solid and Frozen predicates;
+its taxonomic parents would be stated separately using `is`.
+
+Description clauses establish different kinds of semantic connection. `describes` can
+include a numeric range, concept or Boolean constraint. `marks` identifies a deniable
+marker of a quality; it is not a display label. `classifies` relates a classification
+to a quality, while `discretizes`, illustrated on the preceding slide, adds ordering or
+discretization of a quantitative quality. Declaring these links is distinct from executing
+classification or measuring a value in a particular observation.
+
+`increases with` and `decreases with` express qualitative proportionality. They supply
+neither a numerical equation nor coefficients, and do not themselves establish a causal
+mechanism. Type compatibility and the applicable inference rules still have to hold.
+
+The guide's examples distinguish Precipitation creating WaterVolume from Heating affecting
+AtmosphericTemperature. These declare semantic potential; a model must provide the
+scientific computation. Passive `created by` and `affected by` forms express the same
+source-to-target relationships when declared on the target. They do not introduce a
+different causal direction.
+
+Effects and inherency remain independent: a process affecting a region's temperature
+does not become that temperature's native bearer. Nor does an effect clause waive identity,
+context, support or evidence requirements. These contracts make contributions interpretable
+and constrain suitable work without pretending that ontology declarations perform it.
+
+## Slide 21 — Inherency: `of` determines the native bearer
+
+### Takeaway
+
+Contextualization must preserve what a quality or process belongs to.
+
+### On-slide copy
+
+**`Biomass of Tree`: observe the tree's biomass, even when working within a forest or region.**
+
+| Effective head | Meaning of binary `of` | Illustrative request |
+| --- | --- | --- |
+| **Quality or process** | Native inherency: identify its bearer | `Biomass of Tree`; `Erosion of Region` |
+| **Predicate** | Applicability: identify what is classified or characterized | `Species of each Tree` |
+| **Configuration** | Emergence: identify its ingredients | `Network of Connection` |
+
+**`of each Tree` distributes work over trees; it does not transfer biomass to their container.**
+
+### Speaker notes
+
+These are schematic names and compositions, assuming compatible worldview declarations.
+The effective head determines how binary `of` is interpreted, including after aliases or
+prefix derivations have been resolved. In the native-inherency case, the bearer is part
+of the observable meaning. Choosing a larger query context cannot silently replace it.
+
+`Biomass of each Tree` requires observations on actual individual trees. A regional total
+or field is not the same observation and requires its own justified aggregation or mapping.
+Processes also have native bearers under their declared constraints. Dependency inputs,
+causal influences and the place from which data were obtained are separate relationships.
+
+For predicates, distributed substantial applicability selects classification and individual
+applicability selects characterization; applicability to a quality selects transformation.
+For configurations, `of` expresses emergence, not native inherency. The application target
+of a configuration is declared separately using `applies to`.
+
+Independent subject, agent and event heads cannot acquire a native bearer through binary
+`of`: `Tree of Region` is invalid. Unary operators such as `count of Tree` and `presence of
+Tree` derive new qualities and are not this binary operator. The next slides separate
+containment and other semantic relationships from these native commitments.
+
+## Slide 22 — Containment: `within` does not replace `of`
+
+### Takeaway
+
+An observational container can make a request admissible while preserving its native bearer.
+
+### On-slide copy
+
+**Example: observe a stream's gradient while working in a regional context.**
+
+| Commitment | What it establishes |
+| --- | --- |
+| `StreambedGradient of Stream` | The quality belongs to a stream |
+| `Region contains Stream` | A declared observational container/type relationship |
+| `Stream is Watercourse within Region` | Worldview shorthand for the containment contract, retaining parentage |
+
+**Containment permits an observational route; it does not create streams, move their qualities or prove coverage.**
+
+### Speaker notes
+
+The names above are schematic. `Region contains Stream` and `Stream contained into Region`
+declare the same additive observational contract. Worldview `Child is Parent within
+Container` is shorthand for that container-to-child contract, while retaining the child's
+specialization of Parent. It does not declare native inherency.
+
+Observational containment is distinct from polygon enclosure, physical parthood, realm
+membership and generic computation context. It does not assert that members exist, impose
+an exhaustive list of member types or license arbitrary transitive containment. Successful
+discovery can produce an empty collection; failed or unresolved discovery cannot prove emptiness.
+
+The documented bounded route allows an independent precomputed stream-gradient model to
+answer a request made in a declared Region container while retaining Stream as the native
+bearer. It does not prove that streams were discovered, that a regional field was sampled
+onto them or that their gradients cover the region. Recursive discovery, per-member binding
+and redistribution each require their own supported strategy and scientific method.
+
+Syntax depends on the host language: `within` is not a clause in a standalone observable
+statement. Hosts can admit contextualized expressions, and the worldview declaration has
+the explicit shorthand described here. Runtime scope selection is another operation.
+Do not present `Quality within Subject` as a replacement for `Quality of Subject`, or
+confuse the declaration with the separate `contained in` / `containing` expression modifiers.
+
+## Slide 23 — Other infix clauses: make semantic relationships explicit
+
+### Takeaway
+
+Infix clauses qualify a meaning through declared relations to other meanings.
+
+### On-slide copy
+
+| Clause | Description |
+| --- | --- |
+| `causing X` / `caused by X` | Causal direction: what causes or is caused by X |
+| `for X` | Goal or beneficiary |
+| `adjacent to X` | Adjacency to X |
+| `with X` | Compresence with X |
+| `during X` | Temporal co-occurrence with X |
+| `contained in X` / `containing X` | Containment qualification within the observable expression |
+| `and X` / `or X` | Intersection or union of meanings |
+
+**A semantic relationship constrains the question; it does not itself provide a computation.**
+
+### Speaker notes
+
+These clauses belong to the shared concept-expression language. The table omits namespace
+prefixes for readability; for example, the documented expression
+`hydrology:WaterFlow caused by climate:Precipitation` qualifies the flow's meaning rather
+than prescribing a rainfall-runoff algorithm. The operands must satisfy the worldview's
+type and relationship constraints.
+
+Other documented readings include habitat suitability for a species, a road adjacent to
+a river, a flood event during an annual period and a tree contained in a forest.
+
+Several modifiers allow `each` on the related operand. Distribution and grouping remain
+significant: use parentheses to make scope explicit. Composing a legally parsed expression
+does not establish its semantic consistency, data availability or an executable strategy.
+In particular, an `or` expression is not a guarantee that all alternative computations exist.
+
+The expression modifiers `contained in` and `containing` are distinct from worldview
+`contains` / `contained into` declarations and their `within` shorthand. Their presence
+does not silently create a declared observational permission, a native bearer or coverage.
+
+Relationship observables can additionally specify participants using `linking Source to
+Target`. Observer perspective can be stated using the observable's `observed as` clause;
+it is a statement qualification rather than one of the binary modifiers in this table.
+These remain distinct from causal roles, native inherency and the context's selected observer.
+
+## Slide 24 — Worldview expressions II: prefix operators change what is observed
 
 ### Takeaway
 
@@ -776,7 +948,7 @@ interpretation, rather than a promise that every model supplies uncertainty auto
 Prefix operators act on meaning. The value operators introduced later act on values,
 conditions or selection within a meaning. Their distinction is operational.
 
-## Slide 21 — Worldview clauses III: confers, implies, emerges from
+## Slide 25 — Worldview clauses III: confers, implies, emerges from
 
 ### Takeaway
 
@@ -808,7 +980,7 @@ context and provenance through the cycle; reuse satisfied observations where val
 Unsupported evidence and unavailable methods remain explicit. OWL declarations alone
 do not establish execution or unrestricted termination and completeness.
 
-## Slide 22 — Worldview expressions IV: value operators refine the question
+## Slide 26 — Worldview expressions IV: value operators refine the question
 
 ### Takeaway
 
@@ -843,7 +1015,7 @@ strategies for every combination. A standalone observable need not express its e
 context, even though it can include semantic conditions relevant to that context. Complex
 inference remains subject to the activity, coverage and evidence contracts already described.
 
-## Slide 23 — Authorities: build on meanings communities already maintain
+## Slide 27 — Authorities: build on meanings communities already maintain
 
 ### Takeaway
 
@@ -882,7 +1054,7 @@ registry. Reproducibility depends on retaining that configuration and source pro
 as well as the code. The five providers below illustrate different source structures;
 their search filters, reconciliation rules and deferral capabilities are not identical.
 
-## Slide 24 — Admit an identity now; expand its meaning when justified
+## Slide 28 — Admit an identity now; expand its meaning when justified
 
 ### Takeaway
 
@@ -924,7 +1096,7 @@ compatible, incompatible, unknown and unsupported relationships. Similarity alon
 prove that a candidate meets a requested meaning. Other observable and context constraints
 still apply even when an identity comparison succeeds.
 
-## Slide 25 — TAXA: reuse a community taxonomy without losing its identity policy
+## Slide 29 — TAXA: reuse a community taxonomy without losing its identity policy
 
 ### Takeaway
 
@@ -965,7 +1137,7 @@ This makes existing taxonomic expertise reusable while retaining source decision
 release provenance. Discovering organisms, estimating abundance or observing ecological
 roles still requires contextualization and scientific evidence.
 
-## Slide 26 — PubChem and ChEBI: molecular identity and chemical families
+## Slide 30 — PubChem and ChEBI: molecular identity and chemical families
 
 ### Takeaway
 
@@ -1005,7 +1177,7 @@ mapped to a CID belongs to the Compound boundary even if found through a ChEBI s
 The identity can qualify a chemical observation; concentration, exposure and toxicity remain
 separate observables requiring methods and context.
 
-## Slide 27 — LAND: mediate meanings across independent classifications
+## Slide 31 — LAND: mediate meanings across independent classifications
 
 ### Takeaway
 
@@ -1058,7 +1230,7 @@ The compositional and mediation machinery has bounded implementations and experi
 fixtures. Current source-entry use cases do not yet exercise the full intended semantic
 bridge. That adoption boundary should not obscure the reason LAND exists.
 
-## Slide 28 — LAND mediation: overlap is evidence, not permission to substitute
+## Slide 32 — LAND mediation: overlap is evidence, not permission to substitute
 
 ### Takeaway
 
@@ -1121,7 +1293,7 @@ mappings, full scientific evidence integration and generated observation classif
 remain further work. The intended outcome is an explainable bridge between independently
 maintained meanings, without inventing equivalences or concealing contradictions.
 
-## Slide 29 — LAND: source-entry matching as the initial adoption path
+## Slide 33 — LAND: source-entry matching as the initial adoption path
 
 ### Takeaway
 
@@ -1164,7 +1336,7 @@ semantics richer than a practical enumerated class tree, but it is not an automa
 implementation of CORINE, IGBP, GET or EUNIS. No deferred-ancestry boundary is advertised.
 Pattern/rule hosting needs explicit semantic integration; entry-only hosting is a distinct mode.
 
-## Slide 30 — WRB: a structured soil name carries computable distinctions
+## Slide 34 — WRB: a structured soil name carries computable distinctions
 
 ### Takeaway
 
@@ -1205,7 +1377,7 @@ ancestry directly rather than using deferred-ancestry boundaries.
 A valid name does not prove diagnostic horizons, laboratory measurements or complete
 profile classification. Those remain the source classifier's scientific responsibility.
 
-## Slide 31 — UN: reuse statistical classifications while preserving scope
+## Slide 35 — UN: reuse statistical classifications while preserving scope
 
 ### Takeaway
 
@@ -1250,7 +1422,7 @@ Europe remains a geographical identity, not a Country through this mapping. Full
 can be requested later. The provider also preserves necessary out-of-scheme ancestry as
 support without admitting those ancestors as searchable members of the selected scheme.
 
-## Slide 32 — Live observations: the digital twin
+## Slide 36 — Live observations: the digital twin
 
 ### Takeaway
 
@@ -1285,7 +1457,7 @@ component. Provenance is part of the graph, not a separate competing history.
 Current persistence supports bounded restoration, not a general guarantee of autonomous
 clock resumption or recovery of every interrupted activity.
 
-## Slide 33 — Models: reusable methods for observing meaning
+## Slide 37 — Models: reusable methods for observing meaning
 
 ### Takeaway
 
@@ -1319,7 +1491,7 @@ search is not execution, and execution without required evidence is not a comple
 scientific result. Models can update observations over time where the selected lifecycle
 supports it; behavioral reactions and scheduling remain separate concerns.
 
-## Slide 34 — Individuals are the anchors of the twin
+## Slide 38 — Individuals are the anchors of the twin
 
 ### Takeaway
 
@@ -1353,7 +1525,7 @@ concerns a particular participant in a particular context. The same discipline a
 future composition: observations retain their source identities rather than being merged
 merely because their meanings or local numerical identifiers coincide.
 
-## Slide 35 — Submission: from pending work to accepted knowledge
+## Slide 39 — Submission: from pending work to accepted knowledge
 
 ### Takeaway
 
@@ -1390,7 +1562,7 @@ observation. Diagnostics explain the unresolved or failed obligation. The alread
 knowledge remains the basis for subsequent work. A legitimate no-model acknowledgement
 of an individual is distinct from failure of a scientific computation that was required.
 
-## Slide 36 — Transactions protect semantic integrity
+## Slide 40 — Transactions protect semantic integrity
 
 ### Takeaway
 
@@ -1431,7 +1603,7 @@ After acceptance, a consequence is separate follow-up work. Its failure does not
 already committed parent observation. A long evolving twin therefore has a history of
 coherent commitments, not one transaction encompassing its entire lifetime.
 
-## Slide 37 — The consequence engine keeps committed meaning actionable
+## Slide 41 — The consequence engine keeps committed meaning actionable
 
 ### Takeaway
 
@@ -1471,7 +1643,7 @@ does not establish every possible rule, lifecycle or recovery path. The engine a
 scheduler cooperate but do different jobs: one identifies semantic follow-ups, the other
 coordinates execution and time.
 
-## Slide 38 — Future: compose twins into larger living contexts
+## Slide 42 — Future: compose twins into larger living contexts
 
 ### Takeaway
 
@@ -1519,7 +1691,7 @@ does not imply a single simultaneous, globally atomic commit across all institut
 The diagram's arrows are all proposed links; implementation, synchronization and recovery
 remain future development.
 
-## Slide 39 — k.Actors: give observed agents complex behavior
+## Slide 43 — k.Actors: give observed agents complex behavior
 
 ### Takeaway
 
@@ -1559,7 +1731,7 @@ Graph changes still pass through the twin's observation and transaction contract
 behaviors bind to agent observations; non-agent observations can host restricted tasks
 for monitoring or post-processing instead.
 
-## Slide 40 — An agent response combines state, evidence and coordination
+## Slide 44 — An agent response combines state, evidence and coordination
 
 ### Takeaway
 
@@ -1602,7 +1774,7 @@ The example concerns represented decisions and simulated responses. It establish
 physical actuation, generic optimal planning or automatic scientific policy validation.
 It shows the complementary role of authored agency within a semantically grounded twin.
 
-## Slide 41 — One behavioral language, many uses—including twin web UIs
+## Slide 45 — One behavioral language, many uses—including twin web UIs
 
 ### Takeaway
 
@@ -1646,7 +1818,7 @@ and permissions. The presentation remains about computable semantics: behavior a
 make that approach usable and interactive, while meanings, methods and committed evidence
 remain the observational foundation.
 
-## Slide 42 — A semantic commons: meaning as the key to knowledge
+## Slide 46 — A semantic commons: meaning as the key to knowledge
 
 ### Takeaway
 
@@ -1723,28 +1895,32 @@ The repository documentation grounds the narrative; it is not the presentation's
 | ODO-IM backbone and arity | [ODO-IM](../ODO_IM.md), observable analysis, predicates and Description sections | Slides 5–8: perspectives and dependence matrix |
 | Semantic modeling workflow | [Semantic modeling](../SEMANTIC_MODELING.md), conceptual introduction; [Observers](../OBSERVERS.md); [Digital twins](../DIGITALTWINS.md) | Slide 11 observer and graph; older example syntax is not used as authority |
 | Current activity selection | [Observable expressions](../OBSERVABLES.md), sections 1–1.6; [Contextualization contract](../../klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Contextualization.java) | Slides 8 and 12–14, including mandatory follow-ups |
-| Linguistic composition and operators | [Observable expressions](../OBSERVABLES.md), sections 2–6 | Slides 9–10, 20 and 22: expressions and scope distinctions |
+| Linguistic composition and operators | [Observable expressions](../OBSERVABLES.md), sections 2–6 | Slides 9–10, 24 and 26: expressions and scope distinctions |
 | Strategy operations | [Observation strategies](../OBSERVATION.md), purpose/lifecycle and two levels of control | Slides 15–17: model lookup, recursive planning and coverage; the compound filter is conceptual |
 | Bounded staged-count evidence | [Collective reductions](../TIER1_COLLECTIVE_REDUCTIONS.md) | Slide 16 whole-support count and zero/unknown distinction |
-| Worldview declarations | [Ontology language](../ONTOLOGY_LANGUAGE.md), sections 5–7 | Slides 18–21: kinds, integrity, inference and emergence |
-| Authority identity and boundary contract | [Authorities](../AUTHORITIES.md), names/ownership and semantic boundaries; [Authority distance](../AUTHORITY_DISTANCE.md) | Slides 23–24: identity-only attachment, reconciliation, deferred ancestry and directional comparison |
-| TAXA source and examples | [TAXA README](../../../klab.authority.taxa/README.md), taxonomy policy, search, reconciliation and semantic boundaries | Slide 25: pinned release, name hints, accepted usages and rank boundaries |
-| Chemical source and examples | [PubChem README](../../../klab.authority.pubchem/README.md), canonicalization, search, reconciliation and boundaries | Slide 26: water, hydrocarbons, verified structure reconciliation and filtered parent relations |
-| LAND source-entry contract | [LAND README](../../../klab.authority.land/README.md); [Entry identities](../../../klab.authority.land/docs/ENTRY_IDENTITIES.md); [Entry-only hosting](../../../klab.authority.land/docs/ENTRY_ONLY_HOSTING.md) | Slides 24 and 27–29: annotation versus interpretation, explicit class inclusion and separate pattern/rule route |
-| LAND semantic dimensions and cross-classification rationale | [Typed rules](../../../klab.authority.land/docs/TYPED_RULES.md); [Ecosystem interoperability](../../../klab.authority.land/docs/ECOSYSTEM_INTEROPERABILITY.md) | Slide 27: compositional meaning, participant-bound criteria, independent schemes and the intended mediation relationships |
-| LAND mediation mechanism and worked example | [Mediation specification](../../../klab.authority.land/docs/MEDIATION.md); [LAND README](../../../klab.authority.land/README.md), fuzzy mediation | Slide 28: joint feasibility, full containment, default versus operational admission, invented 3:1/4:1 fixture and bounded support |
-| LAND example evidence | [IGBP draft review](../../../klab.authority.land/docs/IGBP_DRAFT.md); [Configured catalog](../../../klab.authority.land/src/main/resources/catalogs/igbp_modis61_draft.yaml) | Slide 29: exact source codes 6/7, readable aliases and documented draft collision |
-| Soil classification source and examples | [WRB README](../../../klab.authority.wrb/README.md), naming, dataset annotation, subsumption and validation scope | Slide 30: canonical Luvisol expressions, qualifier evidence and comparison direction |
-| Statistical classification source and examples | [UN README](../../../klab.authority.un/README.md), countries, configurations and identity/hierarchy | Slide 31: Rye URI, Spain ambiguity, selected-scheme membership and country boundary |
-| Twin components and observation identity | [Digital twins](../DIGITALTWINS.md), conceptual introduction and component contract; [Knowledge graph](../KNOWLEDGE_GRAPH.md), identity and assets | Slides 32 and 34: graph, storage, scheduler and distinct individuals |
-| Reusable models | [Modeling language](../KIM.md), purpose, minimal namespace and contextualization actions | Slide 33: data-backed and computational methods; tree allometry remains schematic |
-| Submission and transactional acceptance | [Admission](../ADMISSION.md), model path; [Knowledge graph](../KNOWLEDGE_GRAPH.md), semantic attribution transactions and commit visibility; [Provenance](../PROVENANCE.md) | Slides 35–36: pending versus accepted state, provenance and graph transaction boundaries |
-| Runtime consequences | [Consequence contracts](../CONSEQUENCE_ENGINE.md); [Consequence status](../CONSEQUENCE_ENGINE_STATUS.md) | Slide 37: post-commit follow-ups and bounded verification |
-| Persistence and temporal limits | [Persistent twins](../PERSISTENT_TWINS.md), scheduler registry and checkpoint requirements | Slides 32 and 37: bounded restoration is distinct from general autonomous restart |
-| Future composition | [Connected twins proposal](../DISTRIBUTED_TWINS.md), required outcome and first-version decisions | Slide 38: independent ownership, origin identity, pinned input versions, local outputs and future scaling |
-| Observation behaviors and other actor uses | [k.Actors guide](../AGENTS.md), sections 1, 4, 7 and 10; [Model behavior binding](../KIM.md), section 11 | Slides 39–41: agent-only behavior peers, state, messages, traits, apps, scripts, tasks and testcases |
-| Web application contract | [Application UI](../UI.md), status, application/rendering model and server state/reconnect | Slide 41: browser rendering, server-owned state, reconnect and capability boundaries |
-| Closing semantic-commons proposition | [Technical rationale](../KLAB.md), executable semantic commons and shared-worldview governance sections | Slide 42: discovery and production by meaning, retained identifiers and community ownership as a requirement |
+| Worldview declarations | [Ontology language](../ONTOLOGY_LANGUAGE.md), sections 5–7 | Slides 18–25: kinds, integrity, inference and emergence |
+| Predicate, description and effect contracts | [Ontology language](../ONTOLOGY_LANGUAGE.md), sections 7.3, 7.6 and 7.8 | Slide 20: inherits, describes, marks, classifies, qualitative dependence, creates and affects |
+| Infix inherency and effective-head interpretation | [Observable expressions](../OBSERVABLES.md), binary `of` and contextualization sections | Slide 21: native bearer, predicate applicability, configuration emergence and distribution |
+| Observational containment and `within` | [Observable expressions](../OBSERVABLES.md), contextualized expressions and observational containment; [Ontology language](../ONTOLOGY_LANGUAGE.md), additive containment; [Bounded containment acceptance](../CONTAINMENT_ACCEPTANCE.md) | Slide 22: declaration shorthand, context admission, native-bearer preservation and separate execution obligations |
+| Other infix clauses and statement qualifications | [Observable expressions](../OBSERVABLES.md), sections 3, 5 and 10 | Slide 23: causal, goal, adjacency, compresence, temporal, containment and logical clauses; separate endpoints and observer qualifications |
+| Authority identity and boundary contract | [Authorities](../AUTHORITIES.md), names/ownership and semantic boundaries; [Authority distance](../AUTHORITY_DISTANCE.md) | Slides 27–28: identity-only attachment, reconciliation, deferred ancestry and directional comparison |
+| TAXA source and examples | [TAXA README](../../../klab.authority.taxa/README.md), taxonomy policy, search, reconciliation and semantic boundaries | Slide 29: pinned release, name hints, accepted usages and rank boundaries |
+| Chemical source and examples | [PubChem README](../../../klab.authority.pubchem/README.md), canonicalization, search, reconciliation and boundaries | Slide 30: water, hydrocarbons, verified structure reconciliation and filtered parent relations |
+| LAND source-entry contract | [LAND README](../../../klab.authority.land/README.md); [Entry identities](../../../klab.authority.land/docs/ENTRY_IDENTITIES.md); [Entry-only hosting](../../../klab.authority.land/docs/ENTRY_ONLY_HOSTING.md) | Slides 28 and 31–33: annotation versus interpretation, explicit class inclusion and separate pattern/rule route |
+| LAND semantic dimensions and cross-classification rationale | [Typed rules](../../../klab.authority.land/docs/TYPED_RULES.md); [Ecosystem interoperability](../../../klab.authority.land/docs/ECOSYSTEM_INTEROPERABILITY.md) | Slide 31: compositional meaning, participant-bound criteria, independent schemes and the intended mediation relationships |
+| LAND mediation mechanism and worked example | [Mediation specification](../../../klab.authority.land/docs/MEDIATION.md); [LAND README](../../../klab.authority.land/README.md), fuzzy mediation | Slide 32: joint feasibility, full containment, default versus operational admission, invented 3:1/4:1 fixture and bounded support |
+| LAND example evidence | [IGBP draft review](../../../klab.authority.land/docs/IGBP_DRAFT.md); [Configured catalog](../../../klab.authority.land/src/main/resources/catalogs/igbp_modis61_draft.yaml) | Slide 33: exact source codes 6/7, readable aliases and documented draft collision |
+| Soil classification source and examples | [WRB README](../../../klab.authority.wrb/README.md), naming, dataset annotation, subsumption and validation scope | Slide 34: canonical Luvisol expressions, qualifier evidence and comparison direction |
+| Statistical classification source and examples | [UN README](../../../klab.authority.un/README.md), countries, configurations and identity/hierarchy | Slide 35: Rye URI, Spain ambiguity, selected-scheme membership and country boundary |
+| Twin components and observation identity | [Digital twins](../DIGITALTWINS.md), conceptual introduction and component contract; [Knowledge graph](../KNOWLEDGE_GRAPH.md), identity and assets | Slides 36 and 38: graph, storage, scheduler and distinct individuals |
+| Reusable models | [Modeling language](../KIM.md), purpose, minimal namespace and contextualization actions | Slide 37: data-backed and computational methods; tree allometry remains schematic |
+| Submission and transactional acceptance | [Admission](../ADMISSION.md), model path; [Knowledge graph](../KNOWLEDGE_GRAPH.md), semantic attribution transactions and commit visibility; [Provenance](../PROVENANCE.md) | Slides 39–40: pending versus accepted state, provenance and graph transaction boundaries |
+| Runtime consequences | [Consequence contracts](../CONSEQUENCE_ENGINE.md); [Consequence status](../CONSEQUENCE_ENGINE_STATUS.md) | Slide 41: post-commit follow-ups and bounded verification |
+| Persistence and temporal limits | [Persistent twins](../PERSISTENT_TWINS.md), scheduler registry and checkpoint requirements | Slides 36 and 41: bounded restoration is distinct from general autonomous restart |
+| Future composition | [Connected twins proposal](../DISTRIBUTED_TWINS.md), required outcome and first-version decisions | Slide 42: independent ownership, origin identity, pinned input versions, local outputs and future scaling |
+| Observation behaviors and other actor uses | [k.Actors guide](../AGENTS.md), sections 1, 4, 7 and 10; [Model behavior binding](../KIM.md), section 11 | Slides 43–45: agent-only behavior peers, state, messages, traits, apps, scripts, tasks and testcases |
+| Web application contract | [Application UI](../UI.md), status, application/rendering model and server state/reconnect | Slide 45: browser rendering, server-owned state, reconnect and capability boundaries |
+| Closing semantic-commons proposition | [Technical rationale](../KLAB.md), executable semantic commons and shared-worldview governance sections | Slide 46: discovery and production by meaning, retained identifiers and community ownership as a requirement |
 | Current verification limits | [Consequence status](../CONSEQUENCE_ENGINE_STATUS.md) | Editorial boundary: selected live paths exist; broader coverage is not implied |
 
 Authority slides were checked against the five sibling projects' local documentation
@@ -1776,6 +1952,12 @@ an Event bearer. The strategy guide mixes accepted contracts, historical source 
 and proposals; the accepted lifecycle and dedicated collective-reduction guide ground the
 bounded staged example. No automatic regional-to-grid redistribution, arbitrary strategy
 language or general value-operator execution is claimed.
+
+The infix slides follow the current effective-head interpretation of binary `of` and the
+explicit observational-containment contract. Their schematic examples do not declare
+additional worldview concepts. `within` is shown in its supported worldview/host context,
+not invented as a standalone observable clause. The bounded precomputed containment route
+does not establish discovery, sampling, per-member computation or regional redistribution.
 
 The twin guide contains an older implementation review; only its conceptual definition
 and component contract are used here. Current graph/admission/provenance documents ground

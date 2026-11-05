@@ -1,74 +1,72 @@
-# Observation strategies: language guide and accepted baseline
+# Observations, strategies and contextualization
 
-The isolated [whole-support count/presence increment](TIER1_COLLECTIVE_REDUCTIONS.md) is a
-bounded executable subset, not completion of general S7/S9 context bridges. It discovers a
-collective only after unsuccessful Tier-0 alternatives, proves successful full-support
-completion, enumerates visible members and writes a scalar count/boolean. Explicit
-nondistributed support, initialization, observer/revision binding and failure distinctions
-are required. See [conditional source model obligations](CONDITIONAL_MODEL_CONTEXT.md) for
-separate cross-bearer model admission. General quality redistribution still needs typed
-native-member result composition; containment declarations alone do not provide it.
+An **observable** states a meaning to be observed. A **model** supplies a method. An
+**observation** realizes that meaning in a digital twin, with identity, context, support,
+provenance and, where applicable, values. An unresolved observation is a request, not evidence
+that the requested phenomenon or values have been observed.
 
-## Native member-quality collection candidate
+This guide describes observation semantics and the executable strategy language. Read
+[Resolution](RESOLUTION.md) for planning and execution, [Admission](ADMISSION.md) for the
+checks at each boundary, and [Observable expressions](OBSERVABLES.md) for semantic syntax.
 
-The next isolated increment is under validation, not deployed. It keeps three bindings
-separate: invocation container, actual native member and each quality's support. A Region
-may request a collection of Stream-native results without becoming their bearer. The view
-is keyed by actual member identity; it is not a new Observation, group, scalar or regional
-field. Successful complete discovery with no members produces an empty collection. Failed,
-partial, stale or unknown discovery does not; no-data does not imply zero or absence.
+## From request to committed observation
 
-Existing MemberPlan syntax has a restricted explicit typed `resolveMemberPlan` API path:
-one collective resolve, one native-quality resolve within each member and yields. This is
-not general MemberPlan execution in the existing single-Observation strategy compiler.
-Ordinary native submissions can reuse existing observations and models. Cancellation stops
-new scheduling and cancels the active child cooperatively, without rollback of committed work.
+![Observation lifecycle: request, planning, execution and publication](diagrams/observation-lifecycle.drawio.png)
 
-A regional model must select a contextualizer that explicitly consumes the native collection
-and defines any regional mapping. The test maximum is an example selected by a test model,
-not an automatic reduction or redistribution policy. Regional Elevation/Slope sampling for
-the original StreambedGradient model, generic Height mediation and arbitrary strategy bodies
-remain outside this bounded candidate.
+[Editable diagram](diagrams/observation-lifecycle.drawio).
 
-## Relationship nature and orientation
+Resolution selects an explanation and constructs a contextual Dataflow. Runtime binds that
+plan to actual observations and implementations, executes the required contextualizations,
+validates the pending changes and publishes a root commit. A resolution activity or successful
+child activity can precede publication; neither makes pending work durable.
 
-A relationship has two independent semantic axes. Its nature is `structural` or
-`functional`; its orientation is `directed relationship` (ordered source and target)
-or `bond` (unordered participants). Plain `relationship` does not select either axis.
-Functional does not mean an OWL functional property, and a bond does not assert
-transitivity or create a general symmetric property axiom.
+Acceptance depends on the requested operation. An acknowledged individual may exist without
+an explanatory model. A computed quality requires successful execution or certified current
+reuse over the required support. A collective requires completed discovery, including the
+legitimate zero-member case. A selected collective is a certified virtual view over native
+members, rather than a second instantiator. A process records its existence at initialization
+and executes SIMULATION on its schedule. Event instantiators likewise execute on an accepted
+cadence; their individual events have separate start/end contextualizations.
 
-An abstract declaration may leave either axis unspecified. A descendant inherits
-settled choices and may fill an unspecified choice; repeating the same choice is
-legal, contradicting an inherited choice is an error even on an abstract descendant.
-A concrete effective relationship must have both axes determined. Omission never
-defaults to directed or bond. Independent intersection parents combine constraints;
-union parents supply only choices shared by every alternative. An alias cannot
-refine its canonical target by adding a previously unspecified choice.
+Automatic consequences follow successful commits. They use new guarded transactions and can
+produce further commits. Failure of a later consequence does not undo the triggering commit.
+See [Consequence engine](CONSEQUENCE_ENGINE.md).
 
-```kim
-abstract relationship Connection;
-abstract functional relationship Interaction is Connection;
-functional directed relationship FeedingConnection is Interaction;
-structural bond Association is Connection;
-```
+## Context and semantic lifecycle
 
-These are schematic declarations illustrating the axes, not production ecology
-terms. `structural relationship Incomplete;` is invalid because its concrete
-orientation is unspecified. A bond descendant of a directed relationship is invalid.
-Raw authored choices remain distinct from inherited effective choices through API
-and workspace transport. Exported OWL class annotations preserve both; known nature
-also uses the existing ODO structural/functional relationship class. No ODO release
-or core pin change is required by these annotations. Runtime connection operations
-reject unknown or conflicting effective axes; swapping bond participants preserves
-identity, whereas swapping directed endpoints changes their ordered meaning.
+The requesting scope supplies the context observation, geometry, time, observer, constraints
+and owning Runtime/Resolver. An explicit concept-URN request is sufficient: a namespace and
+project are optional lexical selectors, not prerequisites for resolution.
 
+The observer is a resolver-context dimension. Its selected identity remains fixed during a
+resolution/contextualization cycle and its consequences. Observer selection and an explicit
+`observed as` clause have different meanings; see the
+[observer contract](RESOLUTION.md#observer-aware-resolution-contract).
 
-This is the running design document for observation strategies in k.LAB. It connects the
-semantic observation process to strategy selection, graph construction, dataflow compilation,
-and execution. Read [Observable expressions, Section 1](OBSERVABLES.md#1-observable-observation-and-model)
-for contextualization categories and [Resolution](RESOLUTION.md) for the broader Resolver trace,
-transport, transactions, and existing tests.
+The observable determines the activity; strategies choose explanations within that activity.
+
+| Meaning | Contextualization and required follow-up |
+| --- | --- |
+| Individual substantial | ACKNOWLEDGEMENT; an error-free explicit NO_MODEL decision can acknowledge existence without inventing computation |
+| `each S`, for countable substantial S | INSTANTIATION; acknowledge and resolve the produced individuals |
+| Collective event | Scheduled instantiation at interval start; prepare produced individuals, then contextualize them at START and END |
+| Collective relationship | CONNECTION; validate endpoints, then acknowledge the produced relationships |
+| Physical, numeric, monetary, categorical or Boolean quality | MEASURE, QUANTIFICATION, VALUATION, CATEGORIZATION or VERIFICATION, as selected by the effective semantics |
+| `P of each S`, for predicate P and substantial S | CLASSIFICATION of observed members; characterize newly attributed predicates |
+| `P of S` | CHARACTERIZATION of an individual substantial, independently of predicate abstraction |
+| Predicate of a quality | TRANSFORMATION of that quality |
+| Process | Initialize existence and occurrence registration; execute SIMULATION at scheduled transitions |
+| Configuration | DETECTION from supported emergence evidence; a model may explain the detected observation |
+
+Classification and characterization are updates to existing observations. Their directives
+do not acquire observation IDs, storage or independent scheduling entries. They travel as
+typed UPDATE actuators in the same Dataflow contract used for other contextualizations.
+See [Classification and characterization](CLASSIFICATION.md).
+
+Models do not instantiate configurations. `model Configuration` can explain an emerged
+configuration; `model each Configuration` is invalid. Placement and multi-bearer limitations
+are described in the [configuration lifecycle](CONSEQUENCE_ENGINE.md#configuration-lifecycle).
+
 
 ## Geometry and Scale contract
 
@@ -132,122 +130,40 @@ domain. Geometry defaults do not replace semantic resolution or its authorizatio
 See [Default observers](OBSERVERS.md) for selection, connection notifications, graph maintenance,
 editing, and the boundary between implemented behavior and future semantic perception policies.
 `GeometryAndCurvesTest`, `GeometryRepositoryTest`, `DefaultObserverPreparationTest`, and
-`ObserverUniversalGeometryTest` cover the encoding and initial-perception invariants. These
-checks are distinct from a live resolver-to-graph-to-IDE acceptance test.
+`ObserverUniversalGeometryTest` cover the encoding and initial-perception invariants. Encoding checks and complete service execution exercise different contracts.
 
-## Classification and characterization branch
+## Relationship nature and orientation
 
-The [classification implementation guide](CLASSIFICATION.md) documents the completed and accepted
-semantic-update contract, classifier invocation, atomic persistence, and provenance.
-Collective classification dependencies and runtime-owned individual characterization
-execute through portable update plans without registering directive observations.
+A relationship has two independent semantic axes. Its nature is `structural` or
+`functional`; its orientation is `directed relationship` (ordered source and target)
+or `bond` (unordered participants). Plain `relationship` does not select either axis.
+Functional does not mean an OWL functional property, and a bond does not assert
+transitivity or create a general symmetric property axiom.
 
-The existing resolution API returns a contextual **Dataflow** describing work within the current
-knowledge graph. All runtime mutations must result from executing such a resolved plan; new
-contextualization kinds extend Dataflow/Actuator contracts, not a separate mutation endpoint.
-This differs from the **graph-reproduction dataflow** extracted from provenance to reconstruct
-contents from scratch. See [the two contracts](DATAFLOW.md#two-distinct-dataflow-contracts).
+An abstract declaration may leave either axis unspecified. A descendant inherits
+settled choices and may fill an unspecified choice; repeating the same choice is
+legal, contradicting an inherited choice is an error even on an abstract descendant.
+A concrete effective relationship must have both axes determined. Omission never
+defaults to directed or bond. Independent intersection parents combine constraints;
+union parents supply only choices shared by every alternative. An alias cannot
+refine its canonical target by adding a previously unspecified choice.
 
-## Accepted baseline
-
-The maintainer confirmed on **2026-09-09** that the revised implementation is feature-equal with
-the previous working version, including the corrected context propagation for dependent models.
-This is the accepted starting point for `develop` in `klab-services` and `klab-languages`.
-The decisions embodied by this baseline are accepted, not awaiting another S1 approval. New work
-extends this baseline; it must preserve its working examples and interface-based JSON contracts.
-
-Acceptance does not mean that every construct in the grammar already executes. In particular,
-general typed merges, scoped plans, operator decomposition and persisted dataflow reconstruction
-remain extension work. The maintainer's live confirmation covers previous working behavior;
-agent-run tests cover the cases recorded in S3c and its context-propagation follow-up.
-The acceptance check passed 13 focused tests in the Resources/Reasoner/Resolver reactor, including
-the language guide's ordinary unary patterns, projected operator syntax and explicit `yield`
-(`ObservationStrategyAdaptationTest.languageGuideUnaryPatternsAndExplicitYieldAdapt`). These
-syntax checks do not claim operator-projection execution. The check used:
-
-```powershell
-mvn -o -pl klab.services.resources -am '-Dtest=ObservationPipelineTest,ObservationStrategyAdaptationTest,ResolutionCompilerQueryTest,ResolverTransportSerializationTest,DataflowCompilerTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+```kim
+abstract relationship Connection;
+abstract functional relationship Interaction is Connection;
+functional directed relationship FeedingConnection is Interaction;
+structural bond Association is Connection;
 ```
 
-The following guide describes the implemented language first. Sections 1–8 retain the architecture,
-historical source audit and extension designs; Section 9 tracks implementation. Where older audit
-text differs from this guide or S3c, the accepted baseline takes precedence. An unimplemented
-design is explicitly identified below; its presence in the grammar is not an execution guarantee.
-
-## Tier 1 predicate transformation: initial executable subset
-
-The `quality.split.predicate` strategy now has an initial compilation path. Previously its
-`node { kind = quality; predicates = contains(any); }` pattern could match, but setup threw
-`UnsupportedOperationException` for `predicates.split_first`; the selection loop caught it and
-returned no compiled strategy. Even bypassing setup encountered unsupported `inherent` construction
-and `GraphMerge` lowering. Availability warnings now identify selection, setup or lowering.
-
-The path for `data:Normalized geography:Elevation` is:
-
-| Stage | Decision or result |
-|---|---|
-| Selection | Requires a quality and at least one direct trait. Roles have their own pattern field. |
-| Setup | `predicates.split_first` chooses a direct trait by canonical URN order and removes it using the observable builder, preserving the observable wrapper. An unchanged remainder is rejected to prevent recursion without progress. |
-| Guards | Requires an existing context, a concrete predicate and a concrete quality base. `transform.applicable` checks semantic category eligibility; it does not search for models or promise runtime availability. |
-| Producers | Recursively resolve the unqualified quality; directly look for a model of the predicate inhering in that quality. The inherited requesting context and lexical constraints continue into both paths. |
-| Composition | Validate `resolve base`, `observe transformer`, then a terminal `merge base, transformer using transform yielding $this`. Check contextualization, inherent, graph identities and reconstruction of the requested observable. |
-| Resolver | Require the base and transformer to resolve independently. Base coverage cannot substitute for a missing transformer. Require one service-call contextualizer with exactly one base input tagged `INPUT` or named for the base graph. Missing/ambiguous ports reject that model. |
-| Dataflow | Bind the transformer input to the named base child, including a reference to an already-observed base. |
-
-This is a bounded lowering into the existing compiled operation's `transformationTarget` field,
-not a general graph-merge interpreter. The source retains the explicit two-graph merge; the portable
-compiled plan contains RESOLVE and OBSERVE with their linkage. The existing interface-based Jackson
-configuration remains the transport contract. Named merge results, chained merges, other merge
-operators and multi-contextualizer transformer pipelines remain pending. This does not complete S5's
-runtime/numerical acceptance criteria.
-
-For the staging normalization example, the transformer must also be available to the Runtime and
-advertise its base input. WCS access, model discovery in a live worldview, and numerical normalization
-need integration testing; the regression suite uses service and ontology doubles.
-
-Verification (2026-09-09): 13 tests passed across `PredicateTransformationTest`,
-`ObservationPipelineTest`, `DataflowCompilerTest` and `ResolverTransportSerializationTest`.
-They cover rank-zero-first fallback, source adaptation and JSON transport, fresh and existing
-base observations, missing transformers, missing contexts, reversed merge inputs and ambiguous
-or missing input ports. The seven-module Maven reactor compiled successfully.
-
-**Next integration prompt:** “Run the staging predicate-split namespace with the live worldview,
-WCS resource and a registered normalization contextualizer declaring its base input. Verify
-model visibility, base/transformer execution order and numerical results. Record the evidence here;
-then extend S5 to named/chained merge results and richer typed graph ports without broadening
-unsupported merge operators implicitly.”
-
-### Follow-up: real semantic-builder boundary
-
-The first transformation tests doubled `Reasoner.buildObservable`; they did not exercise the
-portable builder's dispatch into `SemanticsBuilder`. Further source tracing found that both
-`ReasonerService.buildObservable` and `buildConcept` ignored `baseConcept`, so concept-backed
-constructors such as `inherent` passed a null observable into the builder. Both entry points now
-select the supplied base representation and reject a missing base explicitly.
-
-The same test exposed an overload-resolution defect in `ObservableBuildStrategy.Operation`:
-a single concept selected the fixed-arity `Object` constructor instead of the concept-varargs
-constructor. Consequently `of(quality)` put its argument in `pod` and left `concepts` empty.
-An explicit single-concept overload now preserves the expected operation representation.
-
-Builder initialization now copies the top-level semantic syntax before removing predicates or
-adding inherence. Resources may return cached syntax objects; editing those objects directly could
-change subsequent declarations or attempts. Collection-based predicate removal now delegates to
-the implemented removal path. The existing syntax-copy constructor also preserves the authority
-term correctly. None of these changes adds a transport annotation or bean dependency.
-
-`RealSemanticBuilderTest` exercises real builder dispatch and mutation with Resources and OWL
-storage doubled, rather than replacing the whole build operation. Ordinary pattern misses and
-false guards now emit debug messages identifying the strategy and observable; guard messages name
-the failed functor. Unsupported-operation warnings still identify selection/setup/lowering.
-A transformer-model mismatch is a later Resolver query failure and cannot explain an empty
-strategy list before that query. Live worldview and model-subsumption behavior remains to be verified.
-
-Verification: the seven-module reactor compiled and all 13 tests in `RealSemanticBuilderTest`,
-`PredicateTransformationTest` and `ObservationPipelineTest` passed. The real-builder regression
-selects and lowers the corpus strategy twice against the same Resources syntax objects, and
-checks that the transformer has TRANSFORMATION contextualization. This confirms builder and
-selection behavior with controlled ontology storage; it does not assert a live-worldview result.
+These are schematic declarations illustrating the axes, not production ecology
+terms. `structural relationship Incomplete;` is invalid because its concrete
+orientation is unspecified. A bond descendant of a directed relationship is invalid.
+Raw authored choices remain distinct from inherited effective choices through API
+and workspace transport. Exported OWL class annotations preserve both; known nature
+also uses the existing ODO structural/functional relationship class. No ODO release
+or core pin change is required by these annotations. Runtime connection operations
+reject unknown or conflicting effective axes; swapping bond participants preserves
+identity, whereas swapping directed endpoints changes their ordered meaning.
 
 ## Language guide
 
@@ -296,7 +212,7 @@ removed to resolve dependent observations.
 
 ### Names, setup and matching
 
-| Form | Meaning in the accepted baseline |
+| Form | Meaning |
 |---|---|
 | `$this` | The requested observable, including its observable-level information |
 | `$context` | The observable of the context observation; null when no context exists |
@@ -308,7 +224,7 @@ removed to resolve dependent observations.
 
 Reserved variables cannot be rebound. Setup is evaluated in source order, after a successful
 match. Captures are local to a candidate: a failed alternative does not leak bindings, and
-`not(...)` exports none. Use `same(item)` to test equality with an existing capture. The initial
+`not(...)` exports none. Use `same(item)` to test equality with an existing capture. The
 functor implementation is deliberately small: context existence, fully specified/concrete/abstract/
 collective checks, relationship endpoints and collective conversion. An arbitrary function name
 does not imply an available extension implementation.
@@ -326,7 +242,7 @@ use `for pattern { ... }`, optionally `pattern on $context { ... }`.
 | `any`, `absent`, `present(p)` | Existing value, absence, or a present value satisfying a pattern; false is not absence |
 | `contains(p)`, `every(p)`, `exactly [p, q]` | Collection membership tests; exact collections use unordered matching |
 | `semantic(is, {{ earth:Region }})` | Explicit semantic subsumption test |
-| `semantic(exact, {{ earth:Region }})` | Exact URN comparison in this initial matcher |
+| `semantic(exact, {{ earth:Region }})` | Exact URN comparison in the matcher |
 | `logical(or, operands = canonical [capture first as any, rest remaining])` | Canonical operand decomposition; the remainder is a semantic expression |
 | `logical(and, operands = unordered [p, q])` | Unordered logical matching with backtracking |
 
@@ -359,11 +275,9 @@ An unnamed producer must be the final statement. Currently `yield` must select t
 named producer; it cannot select an arbitrary earlier graph. Statements after a terminal
 result are invalid. `yielding $this` on a merge instead asserts output semantics.
 
-The optional `to name` changes only Observation's `GraphProducer` rule. Syntax and semantic
-beans preserve an absent name as null; lowering assigns a collision-free internal operation
-ID, preserving interface-based JSON transport and the Resolver protocol. The Observation
-parser has been regenerated and installed locally; other installations need the updated parser.
-Other grammar forms retain their existing naming requirements.
+An absent producer name remains null in syntax and semantic beans. Lowering assigns a
+collision-free internal operation ID while preserving interface-based transport. Other grammar
+forms retain their own naming requirements.
 
 Earlier producers must contribute through explicit input bindings:
 
@@ -378,1795 +292,170 @@ Here the unnamed final graph is implicitly returned. `sources` and `targets` are
 producer's named ports. Unconnected preceding graphs are invalid; producing several graphs does
 not silently union their coverage. Endpoint graphs alone cannot resolve a relationship without
 an explanatory model. The current runtime supports these recursive prerequisites followed by a
-final observe, and a single recursive producer. It does not support intermediate observe results,
-resolve inputs, context/member blocks, fallback or references yet. The bounded terminal quality
-transformation merge described above is now supported; other typed merges remain pending. These grammar
-forms are extension contracts, not available execution shortcuts.
+final observe, and a single recursive producer. General intermediate observe results, resolve-input composition, arbitrary context/member
+blocks and fallback/reference composition remain unsupported. The bounded current-context
+binding and terminal quality-transformation routes have their own supported contracts below.
 
-### Unary semantic operators: `presence of` and `count of`
+### Unary semantic operators: presence and count
 
-These are **semantic operators**, distinct from value operators such as `whose`, arithmetic and
-comparisons. `presence of earth:Region` produces a boolean quality about Region observations;
-`count of earth:Region` produces a numeric quality. Their operand is `earth:Region`, while the
-whole expression is the requested quality. Do not infer the operand from the quality's `head`
-alone, or confuse the pattern helper `present(...)` with the semantic operator `presence of`.
+`presence of X` and `count of X` are semantic operators producing qualities; they are distinct
+from value operators and from the pattern helper `present(...)`. An ordinary observable
+pattern checks the unary modifier and recursively matches its operand. The dedicated
+`semantic_operator`/`operator(...)` pattern projection is not an executable general operator
+registry; grammar support alone must not be presented as a runtime capability.
 
-There are two matching routes:
+Direct models of the complete observable have priority. The bounded collective-reduction
+route resolves the operand collection and computes whole-support count/presence only after
+successful discovery. It uses current visible member identities, not graph-node counts or
+an arbitrary producer's `childrenCount`. Successful empty discovery gives zero/false;
+unknown, failed, stale or insufficiently covered discovery does not.
 
-1. **Ordinary observable pattern, existing code path:** `for presence of earth:Region` goes to
-   `SyntacticMatcher`. That matcher checks the semantic modifier, then recursively matches its
-   operand and any comparison operand. Thus unary concept patterns were not excluded by the
-   new language. This is a source-supported path, with the inherited matcher's limits; it is
-   not evidence of a completed Tier-1 presence/count strategy. This route does not capture `X`
-   as a named setup variable.
-2. **Dedicated operator projection, next implementation:** the grammar has `semantic_operator`
-   and `operator(...)` forms, but `ObservationPatternMatcher` currently rejects that projection.
-   Its `ValueOperatorPattern` bean name is historical; semantic and value operator families
-   must be distinguished by their projection and registry contract, not conflated by that name.
+This route is initialization-only and explicitly scalar/nondistributed. It does not broadcast
+a regional total into cells or select a general sampling policy. See
+[Collective reductions](TIER1_COLLECTIVE_REDUCTIONS.md).
 
-The following expresses the intended structural match; **it parses as design syntax but does
-not execute in the baseline**. The quoted registry identifier `presence` still needs its formal
-mapping to the semantic operator enum:
+### Predicate transformation
 
-```text
-for pattern {
-  node {
-    semantic_operator = operator("presence",
-      operand = capture entity as semantic(is, {{ earth:Region }}));
-  }
-}
+The bounded quality-transformation strategy decomposes a concrete quality with a direct trait
+into a base quality and a transformer. `predicates.split_first` selects the direct trait in
+canonical URN order, removes it with the semantic builder and preserves the observable wrapper.
+The remainder must differ from the request so recursion makes progress.
+
+Resolve the base, observe a model of the predicate inhering in that base, and finish with a
+terminal `merge base, transformer using transform yielding $this`. Both inputs must resolve.
+The transformer must expose one unambiguous base input, tagged INPUT or named for the base
+graph, and one service-call contextualizer. The compiled operation carries the checked
+transformation target and named base binding, including when the base is an existing reference.
+
+This is a specific lowering, not a general merge interpreter. Named or chained merge results,
+other merge operators and multi-contextualizer transformer pipelines remain unsupported.
+
+## Process and event occurrence phases
+
+![Scheduled processes, event instantiators and individual events](diagrams/occurrence-scheduling.drawio.png)
+
+[Editable diagram](diagrams/occurrence-scheduling.drawio).
+
+Process simulation and event instantiation use the temporal dispatcher rather than executing
+their temporal computation under INIT. Processes dispatch at accepted interval ends; collective
+event instantiators dispatch at interval starts and can produce zero or more individuals.
+The complete event batch is validated before ordinary child resolution in the producing attempt.
+
+Individual event plans/dependencies are prepared on submission. Their EVENT-role computations
+execute at START and END timepoints, with the actual boundary instant. Pending registration,
+boundary effects and durable completion flags follow their transaction/publication contracts.
+An individual's period is positive, bounded and atomic; instantaneous boundary notifications
+do not turn the event itself into a zero-duration observation.
+
+These are implemented paths, with complete dedicated event acceptance still unverified. See
+[Occurrence scheduling](OCCURRENCE.md) for schedules, geometry defaults, effects and the required
+event verification cases.
+
+## Collective discovery, classification and selection
+
+![Native discovery, classification, selection and ordinary model consumption](diagrams/collective-selection.drawio.png)
+
+[Editable diagram](diagrams/collective-selection.drawio).
+
+A positive concrete-predicate request such as `each earth:Terrestrial earth:Region` first
+tries an eligible model of that full observable. The automatic route then discovers bare
+Regions, establishes the required predicate families on those same members and filters a
+source-backed view. It preserves each member's identity, geometry and native cohort.
+
+The native discovery must complete before classification. Reuse completed support; resolve
+the missing part when its geometry is representable. If exclusion cannot represent the
+remainder, request a conservatively sufficient domain rather than assert an invented gap.
+Completed fragments remain independent native contributions. They are not computational
+inputs to the producer filling missing support. Fresh native query receipts are bound after
+the producers and classifiers finish, before the selection is sealed.
+
+A family already known on every relevant member needs no classifier invocation. Otherwise
+normal admitted UPDATE work supplies a satisfiable concrete attribution, followed by required
+characterization. Errors roll back the uncommitted root attempt. Unknown discovery or a missing
+classifier is not a successful empty collection.
+
+The result is a QUERY_ID view with a `CollectiveSelectionView` receipt. The receipt binds the
+requested/native meanings, predicates and families, source/cohort/member identities, support,
+observer, context and scoped semantic evidence. It is not a durable observation or executable
+authority carried by arbitrary JSON. Replay revalidates the recorded view against current
+native and semantic evidence. See [Collective completion](COLLECTIVE_COMPLETION.md).
+
+### Selected collections as ordinary model inputs
+
+A model can consume a selected collection through its local dependency alias:
+
+```kim
+private model count of (each earth:Terrestrial earth:Region)
+    observing each earth:Terrestrial earth:Region named selected
+    set to [selected.childrenCount];
 ```
 
-The current adapter retains the quoted spelling (`"presence"`) in the operator field. The
-operator extension must define identifier normalization/decoding as part of registry lookup.
-
-Once implemented, the Tier-1 plan should have this meaning:
-
-```text
-match presence/count of X and bind X
-resolve collective(X) in the requested context and support -> instances
-apply the registered presence/count dereifier to instances -> the requested quality
-return that quality's graph
-```
-
-This is a plan sketch, not new accepted executable syntax. `resolve` allows strategies to explain
-the collection; `observe` would restrict that step to model lookup. A dereifier is a typed unary
-operation consuming the collection produced at execution time. It must not count planning graph
-nodes, provisional observations or submitted models. Keep binary merge binary; no artificial
-second graph is needed. A typed unary node is already allowed for in Section 5.1, but its strategy
-surface and operational beans still require implementation. Do not reuse the old underspecified
-strategy `apply` clause or rename a collection result as a quality.
-
-The contract must preserve the original request's context, geometry, time and observable modifiers.
-Presence of a member is positive evidence; false/zero requires adequate observation support and
-an explicit completeness policy. An unresolved or incompletely observed collection is not an
-observed empty collection. Counting must define member identity/deduplication and spatial/temporal
-support; it counts members at the applicable support, not the number of instantiation events.
-
-**Next bounded operator prompt:** “Extend the accepted baseline with unary semantic-operator
-patterns. Add positive/negative tests for ordinary presence/count patterns and implement typed
-semantic_operator projection/capture without changing shared Observable grammar. Preserve operand
-and whole-observable information. Then specify a registered unary dereifier node and its syntax,
-portable interface beans and Jackson registration. Implement Tier-1 collection-to-presence/count
-plans only after identity, support and empty/unknown/completeness policies have tests. Record
-each stage here; do not infer a second graph or use planning-time collection sizes.”
-
-### Extending and documenting strategies for provenance
-
-Use stable strategy and graph names and a description that explains why the strategy applies.
-Keep pattern selection, semantic decomposition, model search and runtime computation distinct in
-documentation. Record implemented capability and rejection behavior alongside every new construct.
-An extension must cross grammar/syntax beans, LanguageAdapter, semantic beans, matching/lowering,
-Resolver and DataflowCompiler as appropriate, with populated interface-JSON regression tests.
-No Jackson annotations or dependencies belong in portable API beans.
-
-For provenance, distinguish **source plan** (candidate logic), **selected operational plan**
-(concrete observables and input bindings), and **executed dataflow** (actual computations and
-outcomes). The baseline retains strategy URN, namespace, rank, description and operational bindings;
-it does not yet persist a complete capture/matching proof or reconstruct executable source from
-provenance. That builder and the separate `dataflow`/`define`/`apply` document form remain the
-Section 7/S10 extension. Do not present a named planning graph as execution evidence.
-
-<details>
-<summary>Historical migration summary (superseded by the accepted baseline above)</summary>
-
-**Historical status:** the initial source audit/design proposal is complete. The maintainer has generated
-the draft grammar on `klab-languages/feature/observation-revision`. The first reported logical-pattern
-parse failure was reproduced in the generated lexer. Observation-local overrides then caused
-ANTLR unreachable-token errors, so they were removed. With maintainer approval, the three
-affected shared Observable identifier ranges are now corrected. The maintainer confirms that
-the dependent languages and the new sample compile. See [grammar revision 0.3](grammar/README.md).
-Typed Java syntax snapshots and an adapter are implemented in `klab-languages`, with real-parser
-tests. Initial strategy semantic beans and Resources/LanguageAdapter adaptation are now implemented
-in `klab-services`. Initial structural matching, guarded setup, producer lowering and tier-0
-resolution are implemented (S3c). Full lexical validation and the broader composition runtime
-remain pending; no deployed worldview strategies were migrated. See the S3 progress record below.
-The [running compatibility example](OBSERVATION_STRATEGIES_EXAMPLE.md) preserves the maintainer's
-eight currently used strategies, compares each with this design, and supplies a proposed translation
-and stable acceptance cases. Its tier-0 source is now exercised through the service boundaries;
-the remaining cases are acceptance specifications for subsequent stages.
-The [running Observation.xtext sketch](grammar/Observation.xtext) and its
-[integration notes](grammar/README.md) make the proposed syntax concrete for review. The running
-copy tracks active grammar corrections and separates maintainer generation reports from tested
-behavior; it is not itself installed into the active language project.
-Section 2 retains the pre-revision source audit as a baseline. The current authored-bean boundary
-and its validation evidence are recorded in S3a; S3c supersedes the historical Reasoner/runtime
-audit for the initial producer subset. Source inspection does not imply a successful live integration test.
-The proposal also covers a strategy-local pattern language and the executable dataflow persistence
-form, including provenance reconstruction through a builder. Sections 4–8 are proposed contracts.
-Their syntax remains provisional; the three running syntax fixtures now parse and adapt with
-the generated grammar. This does not establish their semantic or runtime behavior.
-Section 9 supplies staged implementation tasks and continuation prompts.
-
-</details>
-
-## 1. Two levels of control
-
-An unresolved observation is a request to realize a meaning in context. Resolution constructs a
-plan for doing so; contextualization executes that plan. Neither selecting a strategy nor finding
-a model proves that an observation has been produced.
-
-The **semantic lifecycle** determines the primary activity and mandatory follow-ups.
-`Contextualization` classifies that activity = for example, a physical quality requires `MEASURE`,
-a predicate inherent to a quality requires `TRANSFORMATION`, and a collective substantial requires
-`INSTANTIATION`. The enum contract requires instantiation and connection to trigger individual
-acknowledgements, and classification to trigger characterization of attributed predicates.
-These are semantic obligations of the implementation, not optional worldview strategies.
-
-**Observation strategies** choose ways to fulfil a particular activity. A strategy can seek models
-for the whole observable, resolve another observable recursively, or arrange dependent work.
-Each recursive resolution again has its own semantic activity and applicable strategies. Numeric
-strategy rank orders alternatives; it is distinct from model ranking and from execution order.
-
-The intended coverage contract allows several successful strategies to contribute complementary
-parts of one request. Their contributions form a resolution graph, later compiled into a
-Dataflow. Combining alternatives' coverage is distinct from composing dependent graphs *inside*
-one strategy. A transformation cannot cover a missing measurement simply because both graphs
-mention the same geographical area.
-
-```mermaid
-flowchart TD
-    W[Worldview strategy documents] --> R[Resources: parse and adapt]
-    R --> N[Reasoner: register, match, bind, rank]
-    U[Runtime: unresolved observation and context] --> V[Resolver]
-    V --> N
-    N --> S[Applicable contextualized strategies]
-    S --> V
-    V --> M[Resources: candidate models]
-    V --> V2[Recursive observation resolution]
-    M --> G[Resolution graph]
-    V2 --> G
-    G --> D[DataflowCompiler]
-    D --> X[Runtime: compile, schedule, contextualize]
-    X --> F[Required semantic follow-ups]
-    F --> U
-```
-
-## 2. Current source trace
-
-### 2.1 Grammar, parsing, and Resources ownership
-
-The sibling `klab-languages` grammar is
-`org.integratedmodelling.languages.observation/src/org/integratedmodelling/languages/Observation.xtext`.
-It has two top-level forms, `strategies` and `dataflow`. Sharing a grammar does not make a
-strategy an executable dataflow: the former guides planning, while the latter represents its
-execution result. Strategy documents have a name, mandatory version, optional imports, metadata,
-and coverage. Each strategy has an integer rank and optional name and description; it may be an
-observation or identification strategy. Identification strategies address substantial identity
-and are outside the graph-composition proposal here.
-
-The current clause surface is:
-
-| Clause | Syntax-level purpose | What reaches the services |
-|---|---|---|
-| `for` | Concept pattern, uppercase type/activity pattern, or function test, with conditions; comma and semicolon connectors | Filter groups, connector values, semantic patterns, functions, and type tests |
-| `let` | Bind one name or a tuple of names to each function result | An ordered macro-variable map whose tuple keys are comma-joined names |
-| `resolve … as id` | Recursively resolve an observable and name its result | `RESOLVE` operation with observable and local ID |
-| `observe … as id` | Seek models for the target | `OBSERVE` operation with observable and local ID |
-| `transform id through …` | Seek a predicate/transformation model referring to an earlier result | An `OBSERVE` operation with a transformation-target string |
-| `apply …` | Supply contextualizer functions | `APPLY` bean supports functions; current syntax extraction is incomplete |
-| `optional`, operation `if` | Express conditional work | Not a complete executable control-flow contract across the current layers |
-| Legacy deferred `{ … }` bodies still visible in the inspected grammar | Former deferred-strategy design, since eliminated | Obsolete remnants, not an available feature; do not restore implicitly |
-| `ensure` | Check applicability | Recognized but not implemented in the syntax body's `ensure` branch |
-| `mediate` | Dataflow-side unit/currency/range mediation | Not a strategy graph-composition operator |
-
-`ObservationStrategySyntaxImpl` in the sibling project reads clauses into syntax objects.
-`WorkspaceManager.readObservationStrategy` parses source, wraps it in
-`ObservationStrategiesSyntaxImpl`, invokes `LanguageAdapter.adaptStrategies`, and validates the
-semantic asset. Invalid source retains a diagnostic document. `LanguageAdapter.adaptStrategy`
-creates `KimObservationStrategy` beans, preserving rank, namespace, source locations, filters,
-macro variables, operations, local IDs, and transformation targets.
-
-Resources hosts the documents and includes them in the worldview. `ReasonerService` registers
-their statements with `ObservationReasoner` and calls `initializeStrategies`; worldview update
-handling also releases/reloads affected strategy namespaces. The default strategy visitor traverses
-concepts and calls but provides no substantive default strategy/operation validation rules.
-Parser acceptance is therefore substantially weaker than an executable strategy contract.
-
-There is already an `as id` foothold for naming results; named graphs are not starting from a
-completely unnamed language. However, the current ID names an edge/input binding, not a typed
-graph value. The bare operation-reference path in `LanguageAdapter` only prints a diagnostic;
-it does not construct the operation's observable. Deferred adaptation is commented out. The
-maintainer confirms that the former deferral facility was eliminated; grammar remnants must not
-be documented as supported deferral. The inspected syntax `OperationImpl` also reads operation
-predicates into its function list without extracting the clause's `apply` function list, so
-function retention needs a parser-to-bean regression test as well as executable lowering. New
-syntax must be carried through all these layers, rather than added to Xtext alone.
-
-### 2.2 Matching, setup, contextualization, and rank
-
-`ObservationReasoner.computeMatchingStrategies` currently performs these steps:
-
-1. Iterate registered strategies, skipping identification strategies for observation resolution.
-2. Reject a strategy using reserved `context` if no context observation exists.
-3. Apply precomputed semantic-type, collective, and activity/type-pattern filters.
-4. Populate detected reserved variables `this` and `context` with their observables.
-5. Execute macro-variable functions and unpack their results, before full filter matching.
-6. Test filter groups; on a match, instantiate operation observables using variable substitution
-   and construct an `ObservationStrategyImpl` for the Resolver.
-
-Thus the current order differs from the desired **match, then setup** contract. Macros may execute
-for a strategy that later fails its full pattern. Reserved-variable discovery scans semantic
-patterns and operation observables, not every function argument. `matchFunction` supplies the
-incoming observable when arguments are absent; its explicit-argument substitution is ad hoc and
-needs a typed argument contract. Tuple arity errors are reported but do not reliably stop unpacking.
-
-`initializeStrategies` sorts numeric ranks in ascending order. Matching preserves that order.
-`getCost` returns zero and is not a contextual tie-break implementation. The contextualized bean
-is populated with URN and documentation, but this builder does not copy rank or namespace, despite
-the operational API exposing both. Do not use those bean defaults as an explanation of priority.
-The current source does not enforce “rank zero means whole-observable resolution only.”
-
-The maintainer confirms that comma-separated match alternatives mean disjunction. The syntax
-adapter currently maps commas to `ALL`/intersection, while the evaluator accepts the first
-successful member of any group, ignoring connector values. That OR behavior can mask the adapter
-bug; changing evaluation to honor the existing connector values would break the supplied direct
-strategies. Correct the AST mapping and evaluator together. The legacy semicolon connector needs
-a separately reviewed meaning. Multiple function conditions overwrite the boolean result rather than preserving a
-conjunction. The separate `getTypeTest()` field is not evaluated by `matchFilter`. Quick-filter
-negation and mixed alternatives also need truth-table verification: an optimization must never
-reject something accepted by the authoritative matcher.
-
-### 2.3 Syntactic matching is structured, but uses semantic checks inside it
-
-`Reasoner.match` delegates to `SyntacticMatcher`. Its atomic-pattern shortcut uses semantic `is`.
-For composed patterns it retrieves `KimObservable` syntax through Resources and checks structure:
-collective status, negation, logical operands, semantic modifiers, requested traits/roles, and
-semantic clauses. Nested components are matched recursively. A subject-only pattern can accept
-a subject carrying additional predicates; a predicate-bearing pattern requires corresponding
-predicate structure. This is not a single subsumption test on the complete expression.
-
-Important current limits in `matchConcepts`:
-
-- Logical patterns require exactly two operands and match the candidate's first operand against
-  the first pattern operand and its remaining expression against the second. This is ordered
-  head/tail matching, not a general commutative logical-equivalence algorithm.
-- Trait and role loops overwrite a shared `ok` flag for each requested predicate; an earlier
-  failure can be lost when a later predicate matches.
-- The composed path does not finish with a general comparison of the base observable/head.
-  Its structural checks must not be treated as a complete soundness proof.
-- Value-operator matching is a TODO.
-- Matching caches must be invalidated with worldview changes.
-
-These gaps warrant small counterexample tests before expanding the strategy language. They do
-not justify replacing structural pattern matching with whole-expression semantic `is`.
-
-### 2.4 Functors currently available
-
-The Reasoner loads the `type` library from `functors/TypeFunctors.java`. It provides concrete,
-abstract, and collective checks; predicate counting and splitting; lexical-root lookup; and
-singular/collective conversion. The declared `KimObservationStrategy.Functor` enum describes a
-larger intended inventory, not proof that every functor exists.
-
-`predicates.splitfirst` selects a trait using `findAny`, removes it, and returns the trait plus the
-remaining concept. It does not split roles and does not establish a stable lexical “first.”
-`operator.splitfirst` is a stub returning the original concept twice. Predicate counting declares
-a boolean artifact type although its Java return is an integer. Tuple-producing splitters declare
-a concept artifact type without an explicit tuple signature. Production setup needs deterministic,
-typed, pure decomposition that preserves every unremoved modifier and observable-level operator.
-
-### 2.5 Resolver execution and coverage
-
-`RuntimeService.submit` establishes transactions and a scope contextualized for the observation,
-then calls the Resolver unless predefined contextualization supplies the dataflow directly.
-`ResolverService` creates a compiler; `ResolutionCompiler.resolve` starts an isolated attempt
-from the context's submitted-resource snapshot. Child graphs share metadata within that attempt,
-but concurrent attempts do not share their mutable planning graphs.
-
-The compiler checks geometry, queries existing runtime observations where supported, retains
-reference coverage, and attempts resolution for the missing scale. Its intended previous-resolution
-catalog is still incomplete (`getResolving` returns an empty list and `accept` does nothing).
-It obtains applicable strategies from the Reasoner and processes their operations sequentially:
-
-| Operation | Current Resolver behavior | Important boundary |
-|---|---|---|
-| `RESOLVE` | Contextualize the scope, query/register the target, recursively seek strategies, then merge a relevant graph under the operation ID | No typed graph symbol table; the result becomes part of the strategy immediately |
-| `OBSERVE` | Query Resources for models using observable, context observable, geometry and resolution constraints; rank models; resolve their computations and dependencies | This avoids strategy lookup for the target itself, but model dependencies still resolve recursively |
-| `APPLY` | Ask Runtime to resolve contextualizers and record requirements/service prototypes | Validation of availability does not establish executable application or output coverage |
-
-`contextualizeScope` mainly checks for a missing context for dependents and adds a geometry
-constraint. It does not implement discovery of alternative inherents, per-member resolution, or
-aggregation back to the original subject. `requireObservation` clears the focused context for
-collective registration. This is not a general distribution operator.
-
-Occurrence model quality dependencies have a specific bearer-selection step before this generic
-contextualization: inherency to the process or individual event selects that observation; otherwise
-inherency must match the context and the occurrence must affect or create the quality. Queries and
-recursive resolution use the selected scope, so a similarly named quality on the context is not
-reused as an occurrence quality. Process plans persist the selection for graph attribution and
-deferred creation. See [OCCURRENCE.md](OCCURRENCE.md) for lifecycle limits.
-
-Individual event resolution persists an EVENT plan and initializes ordinary quality dependencies,
-but does not execute the event computation at INIT. Scheduled instantiation resolves the complete
-batch within its producing transaction. After commit, each individual waits for its own start and
-end boundaries. Java `TimeInstant` parameters receive the boundary instant. Scanners use event
-spatial support even when the quality belongs to the context; semantic `affects` grants writable
-bindings. Event publication and duration history begin at START, independently of instantiation.
-
-Model discovery also indexes `change in X` for a process's declared affected/created quality outputs
-and dependencies. Semantic-distance filtering considers these inferred outputs as well as explicit
-outputs. Automatic consequence requests now supply the observed quality group so model ranking
-prefers admitted joint processes inherent specifically to that bearer. This preference remains
-inside strategy precedence and is not a global collinearity optimizer; see the
-[consequence engine](CONSEQUENCE_ENGINE.md#automatic-change-resolution).
-
-The current loops fall short of the intended partial-contribution contract. The observation loop
-collects relevant strategy graphs but calls `strategyResolution.checkCoverage(strategyResolution)`
-and merges them into the observation only after a strategy is individually complete. Two
-complementary partial strategies therefore need not complete the request together. The model loop
-likewise accumulates model graphs in a list before merging; its stop checks do not see earlier
-unmerged model contributions. Within a strategy, generic union coverage can also conceal a missing
-mandatory input. Coverage must be defined per operation, not inferred solely from parent node type.
-
-`ResolutionGraph.merge` copies vertices/edges and links parent to child with coverage, local name,
-and observation ID. It intersects coverage for model parents and unions it otherwise. It is
-**graph assembly with coverage accounting**, not a general semantic composition operation. The
-underlying directed graph cannot represent parallel bindings between the same pair of vertices.
-Metadata and requirements can be added at attempt scope while a candidate is still speculative;
-root-attempt isolation does not by itself provide candidate-level rollback.
-
-### 2.6 Transformation wiring and Dataflow compilation
-
-The existing transformation route carries `transform target through observable` as `OBSERVE`
-plus a target string. `ResolutionCompiler` passes that string into graph-edge local names.
-`DataflowCompiler.compileStrategy` traverses strategy children: models are compiled into the
-current actuator and recursively resolved observations become children. `compileModel` consults
-the contextualizer prototype, selects an input tagged `INPUT` or matching the local name, and
-overrides that parameter with an identifier for the target. Computations are appended to the
-observation actuator.
-
-This couples meaning to edge names, prototype heuristics, and compiler traversal. It does not
-represent the base graph, transforming graph, binding, resulting semantics, and composition order
-as one validated operation. The compiler also contains a TODO for transformation-target internal
-IDs and ends strategy compilation with a TODO to add `APPLY` work. The user-reported working
-quality-transformation example is consistent with this route; it was not executed during this audit.
-
-The resulting Dataflow carries requirements and coverage to Runtime. Runtime compiles it into
-executors, commits resolution, schedules contextualization, and commits or fails submission.
-`submitContextualizationResult` resubmits instantiation outcomes in the collective's scope;
-classification executes through semantic-update nodes and Runtime-owned characterization;
-connections acknowledge each instance in a `between(source, target)` scope and await
-completion. The classification and connection lifecycles are complete and accepted;
-see [CLASSIFICATION.md](CLASSIFICATION.md) and [CONNECTION.md](CONNECTION.md).
-
-## 3. Design requirements and decisions to review
-
-The proposed solution is a **typed strategy plan with named graph results, explicit binary
-composition, and scoped deferred resolution**. It retains `observe` and `resolve` as different
-planning operations and keeps semantic lifecycle obligations outside authored strategy logic.
-
-| Decision | Recommendation | Reason |
-|---|---|---|
-| Graph naming | Single-assignment, strategy-local graph symbols, distinct from semantic variables | Avoids implicit stacks, rebinding, and accidental mixing of observables with graphs |
-| Binary merge | Exactly two operands, ordered where the operation requires it | Makes dependencies inspectable and allows chaining, without hiding many-input rules |
-| Merge interpretation | Explicit operator kind; infer only when one validated signature applies | Two activity types alone cannot distinguish mosaic, aggregation, transformation, or logical operations |
-| Result | A terminal merge without `into`, an explicit `yield`, or the sole graph when no composition exists | No accidental “last graph wins” |
-| Context | Bind any independently observed context to a variable; support singular and per-member work with a declared output target | Coverage geometry alone cannot identify a bearer or endpoint |
-| Rank zero | Direct whole-observable models; explicit preparation of mandatory contextual inputs permitted; other worldview exceptions documented | The supplied relationship strategy resolves endpoints without decomposing its output meaning |
-| Failure | Distinguish no match, insufficient coverage, invalid plan, unsupported capability, and execution failure | Preserves useful fallback without silently accepting malformed strategies |
-| Evolution | Version the syntax/plan and migrate legacy forms explicitly | Existing grammar and transport clients must not silently reinterpret new constructs |
-
-Binary composition is valuable, but it does **not** make contextualization unambiguous on its own.
-Two `MEASURE` graphs could be alternative coverage contributions, operands of a difference, or
-values to aggregate. Even `MEASURE` plus `TRANSFORMATION` needs a declared input/output contract,
-bearer compatibility, mediation, and temporal support. `MEASUREMENT` is a current type-pattern
-keyword; the activity enum is `MEASURE`.
-
-## 4. Proposed strategy language and intermediate representation
-
-### 4.1 Separate selection, setup, graph production, and composition
-
-Use four explicit phases: match `for`, evaluate ordered pure `let` bindings, produce graph values,
-then compose and select an output. Patterns may use reserved `$this` and `$context` and structural
-captures; they must not require a later `let`. A post-setup guard may validate a decomposition
-before graph production. Absence of context is a typed condition, not an invented observable.
-
-The running fixture proposes `ensure f(), g()` for these pure guards: checks conjunct, execute
-after the bindings they reference, and precede graph production. This guard-list comma is a
-separator distinct from the confirmed OR connector between legacy match alternatives. Reserved
-`$this` and `$context` cannot be rebound by setup, captures, or context/member binders.
-
-The following is **design pseudocode**, not current Xtext syntax. Function names beyond the
-audited library illustrate required contracts rather than installed functors:
-
-```text
-observation strategy 10 named predicates.quality
-  for <quality carrying a removable concrete predicate>
-  let predicate, base = split.predicate($this)
-  resolve $base to base_graph
-  observe $predicate of $base to predicate_graph
-  merge base_graph, predicate_graph using transform
-    yielding $this
-;
-```
-
-Choose `to` for graph production and `into` for an intermediate merge result:
-
-```text
-merge base_graph, predicate_graph using transform yielding $qualified into intermediate
-merge intermediate, other_graph using <validated-kind> yielding $this
-```
-
-Graph names are bare identifiers here; `$name` denotes semantic/setup variables. This deliberately
-distinguishes the two namespaces. The user's suggested `$graph1` spelling is also possible if
-the type checker distinguishes graph and semantic values, but is not needed for the core design.
-
-A merge without `into` is terminal and returns its result in the extension design. Alternatively
-`yield graph_name` returns an existing graph (currently restricted to the final producer).
-Exactly one output is required. The final producer implicitly returns its graph when all preceding
-graphs feed it through explicit inputs; disconnected producers are invalid. Reject duplicate
-definitions, forward references, cycles, statements after a terminal result, and unused graph
-producers. Inputs may be reused by several nodes, but every produced node must reach the output.
-These rules permit a DAG without making source order the execution scheduler.
-
-`yielding <observable>` declares the expected output meaning, defaulting to `$this` only at the
-strategy boundary. It is an assertion to validate, not permission to relabel arbitrary data.
-Intermediate results must carry their own semantics. A single graph implicitly returned must
-also satisfy the incoming request's output contract.
-
-### 4.2 Plan values, ports, and bindings
-
-Keep symbolic strategy syntax (`KimObservationStrategy`) separate from the contextualized portable
-plan (`ObservationStrategy`). The latter should contain typed nodes and symbol references rather
-than a list of redundant nullable fields. Keep Resolver implementation graphs out of API beans.
-
-| Plan element | Required information |
-|---|---|
-| Strategy envelope | Stable strategy/document identity, version/hash, rank, deterministic tie-break, source location, matched request/context, trace of bindings |
-| Semantic binding | Kind (observable, concept, literal, tuple), declared type/arity, dependencies, absence behavior; immutable after evaluation |
-| Graph producer | Unique node ID, `OBSERVE` or `RESOLVE`, complete target observable, context/scale binding, required/optional policy, result symbol |
-| Graph result | Output observable, primary contextualization, artifact/value kind, cardinality, bearer/endpoints, geometry and time support, units/currency, coverage, provenance and requirements |
-| Transformation graph | A declared open input port and its expected observable/value contract, output contract, and other already resolved dependencies |
-| Merge node | Operator ID/version, two graph references, explicit port bindings/options, expected output contract, coverage rule, result symbol or terminal marker |
-| Scoped plan | Singular context or collection input, observation-variable binding, body plan, completion/coverage policy, and continuation dependencies |
-
-A predicate model consumes the base observation through an **explicit open port**. It must not
-recursively request the same base merely because the port has not yet been bound. The merge closes
-the port and validates its type. Graphs with unresolved required ports are not executable final
-results. When a model exposes several outputs or matching inputs, choose named ports explicitly;
-do not select the first `INPUT` tag. Every node and binding occurrence has its own identity even
-when two nodes refer to the same model or observable.
-
-Producers may accept already produced graphs through explicit ports, for example
-`observe $this with inputs(source = sources, target = targets)`. This is the
-proposed translation of the supplied relationship strategy: two named endpoint graphs become
-dependencies of one final producer, with no implicit graph union or arbitrary pair generation.
-This general input-binding form does not change the two-operand limit on semantic merge. Validate
-role contracts during model selection and preserve repeated use of the same graph in distinct ports.
-
-### 4.3 Validation at the right boundary
-
-Validate names, operation shapes, guard dependencies, and unique output statically in the language
-adapter/visitor. The Reasoner validates substituted semantics and emits a typed plan. The Resolver
-validates actual graph contracts, coverage, cycles, and bindings when composing resolved inputs.
-Runtime validates installed operator capabilities, dataflow ports, and execution constraints before
-execution, and checks dynamic cardinality/support during execution. Unsupported combinations
-produce explicit diagnostics; they never fall through to a generic graph union.
-
-An operator registry should define each accepted signature, result derivation, scope rule, coverage
-algebra, and lowering implementation. Prefer a closed set of core operator kinds initially, with
-versioned, declared extension signatures later. Operator selection must not become arbitrary
-worldview code mutating Resolver graphs.
-
-### 4.4 Recommended syntax for arbitrary observed contexts and deferred resolution
-
-Do not reinstate the eliminated anonymous deferred-strategy bodies attached to `resolve`,
-`observe`, or function calls. Introduce **graph-bound context blocks**, with explicit inputs,
-context variables, and outputs. The primitive is resolution inside an arbitrary independently
-observable context, not iteration over basins or any particular domain. Recommended syntax is:
-
-```text
-resolve $context_observable to context_graph
-within context_graph as target_context {
-  resolve $target within $target_context to result
-  yield result
-} into contextual_result
-```
-
-`context_graph` resolves an independently specified context observable in the caller's scope.
-Once its single context observation is available, the block binds that observation to
-`$target_context`. The target may be any observable valid in that context: a quality, process,
-event, relationship request with the required endpoint scope, or another substantial. The
-context's ontology type is unrestricted by this syntax; ordinary k.LAB context admissibility
-rules still apply. A quality value cannot become a context merely through assignment.
-
-The block establishes the default context for its body, so `resolve $target to result` has the
-same context as the explicit form above. Keeping `within $target_context` in examples makes the
-binding visible. Operation-level `within` also accepts an already available observation variable,
-without requiring a new context graph or block. `observe` can replace either `resolve` when the
-strategy intentionally requires direct model lookup rather than recursive strategy search.
-
-The context observation, its concept, and the graph that produces it are different values.
-`$context_observable` is semantic input; `context_graph` is a plan; `$target_context` is an
-observation-reference binding available when that plan produces its context. The binder never
-chooses an arbitrary member of a collection. `within graph as name` requires exactly one eligible
-context observation; use the collection form when there are zero or more contexts:
-
-```text
-resolve each earth:RiverBasin to basins
-for each basin in basins {
-  resolve earth:RunoffWaterVolume of earth:RiverBasin within $basin to runoff
-  yield runoff
-} into basin_results
-reference $context to region_support
-merge region_support, basin_results using aggregate
-  with <approved reducer and support mapping>
-  yielding $this
-```
-
-These are syntax proposals, not currently supported syntax. The collection form replaces the preliminary
-`for each … to … { … }` sketch with `{ … } into …`, placing the block result after its body.
-The complete proposed graph-operation shapes are:
-
-```text
-observe <observable> [within <observation-reference>] to <graph-name>
-resolve <observable> [within <observation-reference>] to <graph-name>
-reference <observation-reference> to <graph-name>
-within <context-graph-name> as <context-variable> {
-  <graph operations>
-  yield <body-graph-name>
-} into <graph-name>
-for each <member-name> in <collection-graph-name> {
-  <graph operations>
-  yield <body-graph-name>
-} into <member-results-name>
-merge <left-graph>, <right-graph> using <operator>
-  [with <typed-options>] yielding <observable> [into <graph-name>]
-yield <graph-name>
-```
-
-Square brackets denote optional grammar elements, not literal syntax. One terminal merge or
-`yield` is allowed in each body; the general sole-producer implicit-output rule also applies.
-Final grammar work must explicitly distinguish operation-level `within` from any observable
-modifier, for example by requiring parentheses around a composed observable when necessary.
-`for each` must also be a distinct clause alternative from the existing strategy-selection `for`.
-
-The context variable `$target_context`, or member variable `$basin`, is an **observation reference**,
-not its concept or graph. Operation-level `within` explicitly establishes its context. Graph identifiers remain bare;
-the variable type checker distinguishes observation references from semantic values such as
-`$this` and `$predicate`. `$context` retains its existing meaning as the context observable in
-semantic expressions; `reference $context` is a dedicated operation that resolves that reserved
-binding to the existing context observation and fails if none exists. It must not manufacture an
-observation merely from a concept. Other reference operands must be observation-reference values.
-
-Rules shared by both block forms:
-
-- The input graph must be defined earlier. Its output contract determines whether the singular
-  or collection binder is appropriate. Context validity and cardinality are checked statically
-  where possible and dynamically before the body starts.
-- Each body inherits observer, permissions, scenario and resolution constraints from the caller,
-  changing only the explicitly selected context and its compatible scale binding. It must not
-  silently use the caller's geometry for a differently supported context. The result retains
-  its actual context identity; returning it does not recontextualize it into the caller.
-- Outer observation variables remain available by name inside nested blocks. Reserved semantic
-  `$context` denotes the currently bound context's observable in the body; capture an outer
-  context explicitly if needed. `$this` retains the enclosing strategy request. A recursive
-  strategy invocation receives its own `$this` for the recursively requested observable.
-- A body needing data from the observed context waits for its required contextualization and
-  lifecycle completion, not just registration or geometry discovery. Existing resolved contexts
-  can be bound immediately. This supplies general singular-context deferral as well as iteration.
-
-Collection-specific rules:
-
-1. The collection graph must be defined earlier and expose substantial members with stable
-   identities. A scalar quality graph is not iterable.
-2. The body is lexically scoped, may capture immutable outer semantic values and read-only graph
-   references, and cannot overwrite outer symbols. Each invocation has fresh local graph names.
-3. The body produces one result per member under the declared failure/optionality policy.
-   `basin_results` is a member-keyed result collection, not an automatically merged regional
-   quality. Aggregation or selection remains explicit.
-4. Each iteration binds its member as the default context, just as the singular block does.
-   Execution waits for member availability and required lifecycle completion. If members are
-   already resolved, planning may expand the body immediately; otherwise the Dataflow retains
-   the body as a typed continuation. These are two implementations of the same source semantics.
-5. A complete empty collection yields a complete empty result collection. Failed discovery or
-   unresolved member work must not be reported as that empty success.
-6. Nested blocks require explicit variable scopes, bounded work, and captured version/constraint
-   information. They use the ordinary resolver for each request, not a private alternative list
-   embedded in anonymous deferral syntax.
-
-Both forms avoid a separate `defer` keyword: the named graph dependency determines when the work can
-proceed. Deferral is a scheduling consequence, while the language describes the semantic dependency.
-Do not add an unrestricted `after { … }` or arbitrary callback facility until a concrete scenario
-requires one. Ordinary data dependencies use graph ports and merge nodes; singular and collection
-context binders cover independently observed contexts, including runtime-discovered contexts in
-`whose` and distribution. Reject a plan before execution when the Runtime lacks the required
-context-binding/continuation capability.
-
-For `whose`, the same block resolves a boolean condition per member and returns a member-keyed
-condition collection; `merge subjects, conditions using select yielding $this` then selects
-identities. This reuses one mechanism instead of introducing a second filtering-specific deferral
-syntax. Comparison functions and options still require the typed operator contracts of Section 5.
-
-### 4.5 A dedicated pattern language, with ordinary observable matches retained
-
-**Recommendation:** keep ordinary observable syntax as a match alternative, and add a delimited
-`pattern { … }` language defined only in Observation.xtext. Match a typed, normalized observable
-structure rather than constructing a partially substituted observable and hoping it behaves as
-a pattern. The pattern AST, captures, wildcards, and logical matching rules must not become
-worldview concepts or additions to the shared Observable grammar.
-
-The current `ConceptReference` rule accepts `PATTERN_VARIABLE` alongside concept and authority
-references; the `$` terminal is consequently available throughout the shared grammar. Strategies
-also embed `ConceptExpression` in `SemanticPattern` and offer function tests as an alternative.
-These are migration inputs, not the desired modular boundary. Audit consumers before removing
-strategy-specific variable alternatives: ordinary `any`/`all`/`no` selectors, value operators,
-logical observables, and k.Actors semantic literals retain their existing meanings and must not
-be removed simply because strategies also use them.
-
-Recommended matching alternatives, all **proposed syntax** except the existing bare observable form:
-
-```text
-for earth:Region
-
-for pattern on $this {
-  node {
-    kind = quality;
-    predicates = contains(capture predicate as node { kind = attribute; });
-  }
-}
-
-for pattern on $context {
-  semantic(is, {{ earth:Region }})
-}
-
-for matcher domain.match_special_structure($this, $context)
-```
-
-`pattern` is a unique entry keyword and braces delimit the entire pattern. `on` selects a typed
-semantic input, defaulting to `$this`; an absent `$context` gives no match unless absence is
-explicitly tested. `matcher` selects the external-functor contract described below. A bare
-observable keeps the documented structural matching behavior, including the atomic semantic-`is`
-shortcut, with no implicit capture variables. Explicit `semantic(exact, {{ … }})` and
-`semantic(is, {{ … }})` remove ambiguity when an author wants whole-expression equality or
-subsumption. Exact means normalized full semantic equality, not source-string equality.
-
-The draft grammar uses `field = value;` and `capture name as pattern` to avoid the shared lexer's
-name-with-colon tokens. Earlier colon-based notation is superseded in the translated fixture.
-See [the grammar notes](grammar/README.md) for lexical boundaries, scope rules, and remaining
-generator checks; this is a proposed surface revision rather than an active language change.
-
-#### Pattern vocabulary and matching rules
-
-Use a small closed vocabulary over an immutable observable view, with extension points in the
-functor registry rather than arbitrary field names or Java reflection:
-
-| Pattern construct | Meaning and proposed contract |
-|---|---|
-| `node { … }` | Conjunction of structural field constraints; omitted fields are unconstrained |
-| `one_of(subject, agent, …)` | Disjunction of typed field alternatives; overlapping inherited kinds do not duplicate a match |
-| `kind`, `activity`, `collective`, `abstract`, `negated` | Separate semantic category, contextualization, arity, and flags; `MEASUREMENT` must not be confused with `MEASURE` |
-| `head`, `predicates`, `roles`, `inherent`, `clauses` | Typed structural children; a constrained head must actually match, regardless of predicate success |
-| `semantic_operator`, `value_operators` | Separate operator families with typed operands, parameters, comparison units, and ordering |
-| `semantic(exact, {{ observable }})`, `semantic(is, {{ observable }})` | Explicit semantic relation on the selected node; embedded ordinary observable syntax has no captures |
-| `any` | Any present node of the required structural type; not the observable selector `any Concept` |
-| `absent`, `present(pattern)` | Explicit absence/presence tests; a missing field does not satisfy `any` |
-| `contains(pattern)` | At least one matching collection element; extra elements permitted |
-| `every(pattern)`, `exactly [ … ]` | All elements, or complete collection shape; define empty-collection behavior explicitly |
-| `all( … )`, `either( … )`, `not( … )` | Boolean pattern composition, separate from semantic `and`/`or` nodes |
-| `capture name as pattern` | Bind the matched typed subtree after success; never mutate the candidate |
-| `same(name)` | Require equality with an earlier capture; a second declaration of the name is an error |
-| `logical(and, …)`, `logical(or, …)` | Match semantic intersection/union nodes, not boolean combinations of match conditions |
-
-Captures are immutable semantic values visible to later `let` and graph producers. They are
-not observed instances or graph variables. Export bindings only after the whole pattern succeeds.
-Branches of `either` must export the same names and compatible types; `not` exports no bindings.
-Repeated collection matches with different captures are **ambiguous**, not permission to pick
-the first hash-set element. Reject with a diagnostic or require an explicit deterministic
-selection/decomposition rule. Do not expand an unbounded number of matches into strategies.
-
-`contains(capture predicate as …)` is therefore appropriate when the predicate is unique or
-otherwise constrained. For generic “remove one predicate” use a pure deterministic splitter with
-a declared ordering after the pattern establishes applicability. Preserve the complete remainder
-with a structural subtraction/rebuild operation; do not reconstruct it from the lexical head.
-
-#### Logical and value-operator patterns
-
-Represent logical operands as typed lists. Support two explicit modes: `unordered [ … ]` for
-semantic operand matching without positional significance, and `canonical [ … ]` for deterministic
-decomposition when no operand has a distinguished semantic role. An unordered matcher uses
-distinct operand occurrences, rejects ambiguous captured assignments, and has a bounded search
-budget. Canonical ordering is versioned and independent of source spelling.
-
-```text
-for pattern {
-  logical(and, operands = canonical [capture first as any, rest remaining])
-}
-
-for pattern {
-  node {
-    value_operators = contains(
-      operator(whose, condition = capture condition = any)
-    );
-  }
-}
-```
-
-`rest remaining` captures the remaining operands together with their logical connector, exposing
-a rebuilt observable expression to later setup. Require at least one remaining operand; never
-invent an empty conjunction or silently lose parentheses. Flatten associative logical nodes only
-where semantic scope permits. Do not reorder value transformations, comparisons, or context clauses
-under a general normalization rule. Predicate occurrence identity, authority identities, units,
-currencies, and modifier scope must survive matching and decomposition.
-
-A `whose` pattern recognizes the request's structure and captures its condition. It does not
-evaluate that condition against observations; the scoped resolution plan still does that work.
-The same separation applies to logical matching versus runtime membership/quality operations.
-
-#### External matcher contract and semantic construction
-
-An external matcher accepts the same immutable observable/context view and returns a typed
-`MatchResult`: match/no-match, a declared capture schema and values, diagnostics, and optional
-explanation. Invalid results, exceptions, or budget exhaustion are diagnostic failures, not
-successful matches. Functors must be deterministic for a declared worldview/version and free of
-observation creation or graph mutation. Register signatures and capabilities; do not execute
-arbitrary source supplied by a pattern. A legacy boolean matcher adapts to a result with no captures.
-Built-in and external matchers must feed the same setup and validation pipeline.
-
-Keep construction separate from matching too. Strategy-local expressions may contain variable
-references, ordinary observable literals, and typed constructors such as
-`inherent($predicate, $base)` or `without_predicate($this, $predicate)`. Constructors operate on
-semantic objects and preserve unrelated structure. Thus a producer can be written
-`observe inherent($predicate, $base) to predicate_graph` without adding variable placeholders
-inside Observable's `ConceptReference`. Earlier `$predicate of $base` sketches in this proposal
-express the intended composition; the recommended final spelling uses these typed constructors.
-Ordinary closed observable expressions remain accepted directly in producers and matches.
-
-Implementation should share semantic AST/view utilities rather than duplicate the Observable
-grammar. Add distinct Observation-owned `Pattern`, `StrategyExpression`, and `MatchResult`
-contracts, with an explicit adapter from ordinary observable syntax. Remove old shared-grammar
-pattern plumbing only after its host consumers and legacy strategies have migration coverage.
-S1 must freeze the vocabulary, exact-match definition, ambiguity policy, and normalization version;
-S2 tests matcher semantics and S3 implements the grammar/API boundary.
-
-## 5. Composition contracts
-
-### 5.1 Initial binary operator families
-
-| Proposed operator | Left / right input roles | Output and validation | Coverage/completion rule |
-|---|---|---|---|
-| `transform` | Base quality graph / predicate transformation graph with open input | Quality expressing the predicate; validate bearer, input value type, mediators, and target semantics | Require both on the output support; intersect after declared support conversion |
-| `attribute` | Substantial/member graph / classification or characterization plan | Same individuals with attributed/explained predicates; preserve identity | Track member availability and attribution completion separately; invoke mandatory characterization lifecycle |
-| `select` | Collection graph / member-keyed boolean condition graph | Selected members with original identities and provenance | Completed evaluation can legitimately select zero members; unresolved conditions are not false |
-| `logical-union` / `logical-intersection` | Two compatible membership or predicate-result graphs | Union/intersection by substantial identity, or a separately declared quality operation | Set algebra on members is distinct from spatial validity/knownness coverage |
-| `mosaic` | Two alternative graphs for the same full output meaning | One observation assembled with an explicit overlap precedence policy | Union of accepted valid support; count only new coverage gain |
-| `aggregate` | Target/support graph / member-keyed quality results | Target quality using a declared reducer and support mapping | Output coverage follows contribution completeness and mapping, not raw union of basin footprints |
-
-This is an initial signature family list, not permission to combine every enum pair. `attribute`
-has separate concrete signatures for classification and characterization. Quality logical operators
-need value-space-specific signatures: boolean conjunction/disjunction, categorical set operations,
-and numerical operations are different contracts. There is no generic rule “and means add” or
-“or means maximum.” Reject combinations without a scientifically justified interpretation.
-
-Unary value operations do not need a fabricated second observation. Represent a typed unary
-operation node with an explicit input graph, or a transformation graph exposing an input port
-and merge it with the operand. Keep binary *merge* binary; do not force every computation to have
-two graph operands. Multi-input operations can use typed operand bundles or a reviewed sequence
-of binary nodes whose intermediate type is explicit. Reduction order matters for non-associative
-operators and floating-point reproducibility.
-
-### 5.2 Coverage, fallback, and speculative state
-
-At an observation boundary, maintain an accepted contribution graph and its accumulated coverage.
-Attempt strategies in deterministic priority order against the remaining support. After a strategy
-has a valid terminal result, calculate its incremental gain, apply overlap precedence, and accept
-the contribution atomically. Stop when accumulated coverage satisfies the request. Apply the same
-principle to alternative models. Higher-priority coverage wins by default; another overlap policy
-must be explicit. Keep strategy rank and model ranking as separate recorded decisions.
-
-Inside a strategy, mandatory dependencies restrict support. A base graph covering the whole region
-and a transformation covering half produce a transformed result for at most that half; the
-untransformed remainder does not satisfy the predicate-qualified request. An optional input has
-a declared absence policy, such as a typed fallback or a missing value, and cannot silently make
-an invalid output complete.
-
-Distinguish **no applicable solution**, **valid zero-member result**, **partial solution**, and
-**failed execution**. In particular, an empty tree collection or a `whose` query selecting no trees
-may be a complete answer. Geometry coverage alone cannot express membership completeness or an
-unresolved condition. Preserve both support coverage and task/member completion where needed.
-
-Each candidate should own a speculative graph/requirements/registration delta. Rejecting it must
-not publish observations or leave requirements attached to an accepted plan. Root-attempt isolation
-already exists; extend it to candidate acceptance and runtime provisional registration. Cancellation
-and exceptions must discard unaccepted deltas. Do not blindly retry another strategy after a
-partially executed effect without rollback or an explicitly idempotent continuation contract.
-
-### 5.3 Termination and reuse
-
-Track active resolution keys including normalized full observable, contextualization, context and
-observer identity, scale/time support, and relevant constraints/worldview version. Detect a repeated
-active request and report the strategy/node path. Recursive predicate/operator decomposition should
-also demonstrate structural progress. Add bounded depth/work limits as a final safeguard, not as
-the definition of correctness. Context-changing distribution must not revisit the same request
-indefinitely through alternate inherents.
-
-Cache only complete, compatible plan results or explicit partial contributions with their validity
-envelope. A pending shared request is not a resolved reference. Preserve bindings when one model
-or observation is used in two roles; use occurrence nodes or a suitable multigraph rather than
-relying on the current single-edge representation.
-
-## 6. Scenario walkthroughs
-
-### 6.1 Direct whole-observable resolution
-
-The default rank-zero strategy matches concrete, consistent, fully specified requests with an
-observable activity and calls `observe $this`. The single graph is its output. “Whole” includes
-predicates, operators, inherency, collective status, and other semantic clauses; it is not a lexical
-head match. Scientific unit mediation may be permitted without weakening the requested meaning.
-`type.concrete()` alone is insufficient to establish all these conditions.
-
-```text
-observation strategy 0 named core.direct
-  for <resolvable complete observable>
-  observe $this to direct
-;
-```
-
-The direct path should require a model explaining the full requested meaning, with exact semantic
-matching policy specified separately from string equality. Decomposition fallbacks use positive
-ranks. Preparation of mandatory contextual inputs is permitted at rank zero when the terminal
-producer still observes the full requested meaning: the supplied relationship strategy resolves
-endpoint collections before direct connection lookup. This is not output decomposition, and its
-bindings must be explicit. A specialized worldview rank-zero exception needs an explicit scope, rationale, and
-deterministic precedence. Current Resources model lookup does not receive a distinct “exact whole
-observable only” flag from `queryModels`; define and test that contract before claiming this rule
-is enforced. If direct models cover only part, fallback strategies can complete the residual.
-
-### 6.2 Predicate decomposition
-
-For a concrete predicate on a quality, split the predicate and remainder without losing context,
-units, operators, or other predicates. Resolve the remainder, seek or recursively resolve the
-predicate model, bind its input to the base graph, and merge with `transform`. Repeated decomposition
-must preserve the intended order where transformations do not commute.
-
-For a predicate on substantials, distinguish attribution from numeric transformation. Collective
-inherency first resolves the requested collection, then applies the predicate plan to members.
-Individual inherency uses the existing inherent observation/context; it must not instantiate a
-new collection as a side effect. Distributed inherence requests concrete classification outcomes for an abstract or concrete predicate;
-each successful attribution triggers characterization through the semantic lifecycle. Preserve
-individual IDs and cohort rules. Individual inherence requires characterization regardless of predicate abstraction. The implemented collective-classification and individual-characterization
-paths follow these rules; additional distribution forms require explicit member-selection support.
-
-### 6.3 Value operators, including `whose`
-
-Distinguish semantic operators that change the head (`count of`, `presence of`, `type of`, etc.)
-from observable value filters and arithmetic transformations. A decomposition result must identify
-the operator family, operands, parameters, comparator, and expected output kind, not return two
-untyped concepts. Validate units and missing-data behavior for arithmetic and comparisons.
-
-For “trees whose height exceeds a threshold,” the plan must:
-
-1. Resolve the tree collection with an explicit discovery-completeness policy.
-2. Resolve height within each tree's context, retaining member identity in every result.
-3. Compare each value after compatible unit mediation, retaining true, false, and unknown states.
-4. Use `select` to produce the original tree identities whose conditions are true; report unknowns
-   according to the request's completeness policy.
-
-Do not evaluate the condition once in the enclosing region and reuse it for every tree. If member
-identities emerge only after instantiation executes, store a scoped continuation in the Dataflow;
-the Resolver cannot enumerate those future observations during initial planning.
-
-### 6.4 `and` and `or`
-
-For substantials, normalize membership by identity and explicitly represent conjunctive or
-disjunctive predicates. Intersection requires evidence for both properties on the same individual;
-union must not duplicate an individual observed by both branches. Unknown attribution is not
-negative evidence. For qualities, select a signature appropriate to the value space and the
-semantic operator. Never infer a numeric aggregation from a logical connector alone.
-
-Use deterministic head/tail decomposition for more than two operands only when it preserves
-meaning. Match normalization and execution order are separate decisions: commutative semantics
-must not depend accidentally on source spelling, while non-commutative transformations must retain
-their order. Tests must distinguish set membership algebra from coverage union/intersection.
-
-### 6.5 Arbitrary context resolution, distribution, and aggregation
-
-The general case first resolves an independently observable context, binds the resulting
-observation using `within context_graph as target_context`, and resolves another observable
-`within $target_context`. Nothing in this operation depends on the context being a basin,
-geographical object, or even spatial. It applies to an admissible person, organization, event,
-experimental system, or other context. An event context also carries its relevant temporal frame.
-The target's inherency and other semantic dependencies must be compatible with that context;
-changing scope cannot erase an incompatible `of` clause.
-
-Use `for each` when context discovery produces a collection. Both forms produce observations
-in the selected contexts. If the enclosing request instead asks for a result in its original
-context, an explicit, validated composition/support mapping must bring those results back.
-The two operations—resolving in another context and deriving an answer for the original
-context—must not be conflated. The following basin case illustrates this second, stricter case.
-
-Suppose the request is `earth:RunoffWaterVolume` in an `earth:Region`, while available models
-explain `earth:RunoffWaterVolume of earth:RiverBasin`. This requires a contextual bridge, not
-dropping the `of` clause during model matching.
-
-The proposed plan identifies an allowed Region-to-RiverBasin bridge, resolves relevant basins,
-resolves runoff within each basin, maps those results to the requested region/support, and reduces
-them under a declared hydrological aggregation rule. A scoped-plan sketch is:
-
-```text
-resolve each earth:RiverBasin to basins
-for each basin in basins {
-  resolve earth:RunoffWaterVolume of earth:RiverBasin within $basin to runoff
-  yield runoff
-} into basin_results
-reference $context to region_support
-merge region_support, basin_results using aggregate
-  with <approved runoff support mapping and reducer>
-  yielding $this
-```
-
-Here `within`, `for each`, `reference`, and reducer notation describe proposed plan operations;
-they are not a grammar patch. The per-member result collection is one typed operand of the binary
-merge. The reference supplies target support, not a second set of values to add.
-
-The bridge must specify intersecting versus contained basins, boundary clipping, time interval,
-units, missing basins, overlaps/nested basins, identity deduplication, and conservation assumptions.
-Runoff volume is extensive, but summing arbitrary basin totals can double-count routed water or
-include water outside the region. Area-weighting basin totals is not generally justified either.
-If the model output and support mapping cannot justify region-level volume, this strategy fails
-with an explanatory diagnostic rather than fabricating a regional answer.
-
-To control search, use declared, ranked bridge candidates rather than enumerating every possible
-subject in the worldview. Where basin identities are known, a scoped plan can expand during
-planning. Otherwise it becomes a bounded runtime continuation: instantiate, resolve per member
-under the same observer/constraints, then aggregate after the required member work completes.
-
-## 7. Deferred work and semantic lifecycle
-
-There are two reasons for later work, and they need separate representations:
-
-- **Mandatory lifecycle follow-ups:** acknowledgement after instantiation/connection and
-  characterization after classification. Runtime owns these obligations and their completion.
-- **Strategy-authored scoped work:** arbitrary observable resolution within an independently
-  observed context, or per-context conditions/aggregation over a collection discovered by an
-  earlier graph. The strategy plan carries this continuation explicitly.
-
-A continuation captures stable semantic bindings, context/observer identity, worldview/strategy
-version, constraints, and a context variable (or member variable for iteration). It must not
-serialize a live Java scope or a closure. Runtime invokes ordinary resolution in each bound context, links resulting fragments and
-provenance to the parent plan, and releases the dependent merge when the completion contract is
-met. Define cancellation, member failure, retries, batching, and time transitions. Zero members
-must terminate successfully when discovery is complete. Repeated schedule transitions need
-idempotent identities and invalidation rules rather than repeated untracked appends.
-
-General process scheduling and configuration detection are governed by their semantic lifecycles;
-the strategy language must not override them with a generic “execute all children immediately.”
-Preserve the accepted classification/characterization and connection lifecycles when extending
-collective predicate and relationship strategies.
-
-### 7.1 Observation language as planning and execution source
-
-Keep the two document forms in one observation language: `strategies` describes how to obtain an
-observation plan; `dataflow` records the executable realization of chosen observation activities.
-They share ordinary observables, typed values, identities, computation signatures, and source
-provenance, but have separate ASTs and validators. Patterns and selection ranks belong only to
-strategies. Executable bindings and submitted-object definitions belong to dataflows. Named plan
-graphs lower into executable nodes and ports; no Resolver-specific graph implementation is serialized.
-
-**Do not remove executable `apply` merely because implicit strategy `apply` is being replaced.**
-The dataflow form needs an explicit sequence of contextualizer calls with named input/output
-bindings and versions. Retaining `apply` for that purpose is the recommended spelling. Strategy
-`observe` means model search; dataflow `observe` declares an executable observation actuator with
-already selected computations. A recorded strategy URN is provenance, not an instruction to run
-strategy selection again. Legacy dataflow `resolve` must have a distinct, validated actuator
-meaning and must not silently invoke strategy-level recursive search.
-
-Current `Observation.xtext` already has separate `StrategiesPreamble` and `DataflowPreamble`,
-`DefinitionBody`, actuators, requirements, and function calls. `DataflowImpl` is used for compiled
-service transport, but the provenance-backed `DataflowGraph` and source reconstruction path remain
-largely unfinished. `DataflowGraph.adapt()` returns null, while the current `DataflowEncoder` has
-an empty `encodeDefinitions` and an incomplete preamble. Existing JSON tests do not prove source
-replay, Resource persistence, or reconstruction from provenance.
-
-### 7.2 Provenance-to-dataflow builder
-
-The staged implementation, current graph evidence and initial semantic API are documented in
-[DATAFLOW.md](DATAFLOW.md).
-
-Make reconstruction a first-class builder workflow rather than another string encoder or a
-wrapper around the most recent resolution fragment:
-
-```text
-selected knowledge-graph roots + consistent committed snapshot
-  -> scan observation/activity provenance and executable bindings
-  -> reconstruction builder: assemble fragments, close references, validate completeness
-  -> typed portable Dataflow with definitions, nodes, ports, requirements, validity envelope
-  -> canonical observation-language source + external payload manifest
-  -> Resource descriptor with semantic annotations and versioned dependencies
-  -> load, parse, validate, bind identities, compile and execute in a target digital twin
-```
-
-Proposed builder inputs are selection roots, snapshot/revision, replay mode, external-reference
-policy, and payload export policy. Builder output is either a complete validated artifact or an
-explicit report of missing provenance/dependencies; it must not invent computations from model
-names. Use activity start timestamps to order submission roots, then causal and executable dependency
-edges to reconstruct each plan; timestamp ties need additional evidence when order matters.
-An interactive partial diagnostic export may be
-useful, but must be marked non-executable. Keep the builder independent of source formatting so
-the Resolver compiler and provenance reconstruction can share the same executable validation.
-
-The scanner must distinguish causal/executable edges from descriptive annotations. Capture at
-execution time the information reconstruction will need: observation identities and contexts,
-chosen model/strategy versions, actual contextualizer calls and parameters, input/output bindings,
-composition operator versions, support/coverage and mediation, submitted inputs, scheduler events,
-and resolved continuation fragments. Activity success and transaction boundaries determine which
-fragments can enter an exported snapshot. A failed candidate or partially committed run is not
-a valid recorded plan merely because it has provenance nodes.
-
-Reference closure follows executable dependencies, with cycle detection and explicit feedback/time
-transition nodes for supported temporal cycles. References inside the export become local symbols.
-References intentionally supplied by the target remain declared prerequisites with identity and
-validity conditions. Unknown references, omitted context observations, or missing payloads prevent
-an executable export. Local aliases replace runtime database IDs; import establishes a mapping
-that preserves identity relationships without requiring the target to reuse source database keys.
-
-### 7.3 `define`, source fidelity, and Resource persistence
-
-Use dataflow `define` sections for pre-defined submitted observations/objects that have no producing
-computation. Define typed records, not opaque Java serialization: full observable, identity,
-context/endpoints or member links, geometry/time, metadata, and supplied value or payload reference.
-Literal definitions and structured object definitions need distinct schemas. Large payloads may
-live in immutable resource-backed objects, but checksums, representation, and dependency references
-must make the package complete. An unresolved external URL is not a self-contained definition.
-
-The existing `define <class> <name> as <value>` production is a syntactic starting point; S1 must
-choose supported definition kinds and payload representations. Keep required definitions within
-the dataflow package, allowing explicit versioned imports for reusable definitions. Do not require
-an implicit sibling k.IM document just to reconstruct submitted inputs. k.IM may subsequently
-annotate or expose the persisted Resource using ordinary semantic models.
-
-The canonical source must encode every executable field: document/schema version, requirements,
-definitions, named observations, ordered computations and ports, references, composition,
-geometry/temporal validity, continuation policy, and provenance identity. Preserve optionality,
-missing-data semantics, mediators, operator parameters, and distinction between a failed/empty
-plan and a valid zero-member result. Comments and formatting may normalize; executable meaning
-may not. Require `decode(encode(bean))` semantic equivalence, deterministic re-encoding, and
-equivalent execution on representative fixtures. Unknown required node/definition kinds fail
-validation rather than disappearing during parsing or JSON adaptation.
-
-The Resource descriptor declares its executable entry points and output observable meanings,
-artifact type, coverage/validity, observation-language version, dependency/payload manifest,
-checksums, provenance lineage, and access conditions. Resource registration, semantic annotation,
-catalogue discovery, loading, and execution are separate operations with explicit adapters and
-capability checks. A source file on disk is not yet a registered or runnable Resource. Replication
-must carry or declare dependencies and validate target capabilities; it does not imply bit-identical
-numeric results across unpinned components or external data versions.
-
-### 7.4 Replay versus a reusable adaptive plan
-
-Declare two distinct modes rather than promising that every exported continuation can replay
-without resolution:
-
-| Mode | Recorded choices | Unresolved/deferred work | Intended guarantee |
-|---|---|---|---|
-| `replay` | Models, computations, bindings, member contexts, and executed continuation fragments are fixed for the selected snapshot | No fresh semantic strategy/model search; missing fragments make export incomplete | Reconstruct the selected executed plan subject to its explicit inputs and validity envelope |
-| `adaptive` | Fixed portions are retained; explicit typed context blocks may request later resolution | Declared continuations may invoke Resolver/Reasoner under pinned policies/versions | Reuse a plan in admissible contexts; chosen future computations may differ and acquire new provenance |
-
-These are proposed manifest values. Strict replay materializes completed context blocks as their
-recorded executable fragments, or uses an equivalent fully bound iteration with no unresolved
-search. Adaptive plans retain the typed binders from Section 4.4 and declare resolution-service
-requirements. Never silently downgrade replay to adaptive when recorded data or bindings are
-missing. Saving values as a snapshot and recomputing them are also different payload policies;
-the export must state which inputs/results are materialized and which are recomputed.
-
-The first persistence target should be strict replay of finite completed observations, including
-submitted-object definitions. Schedule/history reconstruction, future process evolution, external
-resources, and adaptive continuations expand that target only with explicit tests. This limits the
-first implementation without limiting the general observation-language architecture.
-
-## 8. Compatibility and unresolved decisions
-
-Recommended migration: retain legacy parsing for a declared version, lower only unambiguous
-legacy forms into the new plan, and issue source-located errors for ambiguous combinations.
-A single `observe`/`resolve` maps directly. A named resolution followed by a uniquely bound
-`transform` can map to producers plus `transform` merge. Legacy `apply` requires a declared input
-and output contract; arbitrary multi-graph implicit-stack behavior must not be guessed.
-
-The `strategies` and `dataflow` alternatives in Observation.xtext require coordinated but separate
-changes. Version the portable plan/JSON representation and executable Dataflow nodes; update
-encoding/decoding and capability negotiation. A newer Reasoner must not send unknown merge nodes
-to an older Resolver and receive apparent success after fields are discarded.
-
-Before implementation, record decisions on:
-
-1. Final spelling: keep existing `as` for graph production or adopt `to`; retain `into` for merge
-   results and explicit `yielding` for output meaning as proposed, or select equivalent syntax.
-   Adopt the singular `within graph as context_variable { … } into result` and collection
-   `for each member in graph { … } into results` blocks from Section 4.4 for general observed-context
-   resolution; do not restore the eliminated anonymous deferral facility.
-2. The first supported operator signatures and exact whole-observable model-match contract.
-3. Whether unresolved `whose` conditions fail completeness or are returned as explicitly unknown;
-   the default should not silently exclude unknown members as false.
-4. Initial domain-specific aggregation rules and where approved bridge declarations live.
-5. Plan-version migration window and minimum Resolver/Runtime capability requirements.
-6. The strategy-local pattern vocabulary, capture typing, logical normalization and ambiguity
-   policy, external matcher signature, and migration of shared Observable pattern variables.
-7. Separate strategy/dataflow ASTs; dataflow `apply` bindings; supported `define` kinds; builder
-   provenance requirements; replay/adaptive modes; canonical source and Resource package contract.
-
-These choices are deliberately visible review items. The recommended architecture can be reviewed
-now without treating provisional examples as accepted grammar or executable semantics.
-
-## 9. Progressive implementation ledger and continuation prompts
-
-Every implementation stage must update this document: change its status, record approved decisions,
-link changed code and tests, list validation actually performed, and revise affected examples and
-the next prompt. Keep source behavior in Section 2 separate from proposal text. Coordinate
-`RESOLUTION.md`, `OBSERVABLES.md`, and README links whenever their contracts change. A stage is
-complete only when its acceptance criteria pass; source inspection, mocked contracts, and live
-execution must be reported separately. Do not mark a later stage complete merely because its
-grammar parses.
-
-| Stage | Status | Prerequisite | Deliverable |
-|---|---|---|---|
-| S0 | Complete: source audit and initial proposal | Current source | Sections 1–8 and this ledger; no implementation claim |
-| S1 | Accepted for the implemented baseline, 2026-09-09; future capability-specific contracts remain extension work | S0 | Observation-local language, named producers/implicit output, transport and context propagation; preserve accepted decisions |
-| S2 | In progress: implemented structural subset, setup and rank accepted; operator projections and extension dispatch pending | S1 | Reliable structural matching/captures, external matcher contract, setup, rank, and semantic lifecycle classification baseline |
-| S3 | In progress: semantic adaptation and initial tier-0 Reasoner/Resolver boundary implemented; complete validation and composition pending | S1; align with S2 | Observation-local patterns/expressions, named-plan API, separate dataflow AST, validators, versioned transport |
-| S4 | In progress: tier-0 graph/context propagation accepted; full coverage, rollback and termination contracts pending | S2–S3 | Correct candidate coverage, graph identities, failure isolation, termination |
-| S5 | Direct resolution accepted; typed transformation pending | S4 | Direct resolution and quality transformation through typed composition |
-| S6 | Complete; accepted 2026-09-19 | S5 | Substantial classification/characterization and connection lifecycle completion |
-| S7 | Pending | S6 | Arbitrary observed-context binding, scoped continuations, value operators, and `whose` |
-| S8 | Pending | S7 | Logical union/intersection with value-space contracts |
-| S9 | Pending | S7–S8 | Context bridges, per-inherent resolution, and validated aggregation |
-| S10 | Pending; substeps S10a–S10c below | S5–S9 | Builder-based reconstruction, source/Resource persistence, migration, and integrated validation |
-
-### S1 — Accepted baseline and historical review scope
-
-The implemented baseline decisions are accepted by the maintainer. The review scope and original
-prompt below are historical guidance for unimplemented extensions, not a request to reopen the
-baseline. Operator registry signatures, dereifier execution policies and remaining composition/
-persistence capabilities still need their own implementation contracts and tests.
-
-Produce a decision record for Section 8, typed operation and matcher signatures, and positive/negative
-fixtures for all five scenarios plus pattern captures/logical matching and reconstruction/persistence.
-Use [the supplied eight-strategy corpus](OBSERVATION_STRATEGIES_EXAMPLE.md) and its EX00–EX09
-acceptance matrix as the mandatory running baseline. Confirm its proposed translation, including
-comma disjunction, endpoint prerequisites, acknowledgement eligibility, and categorical operations.
-Freeze the Observation-local pattern boundary, external matcher result contract, dataflow `apply`
-and `define` contracts, builder inputs, provenance capture requirements, and replay/adaptive modes.
-Define exact-match policy, rank-zero exceptions, optionality,
-unknown results, graph output rules, and default overlap precedence. Decide which runtime
-capabilities are required for each fixture. Acceptance: every fixture has an expected semantic
-output, context, coverage/completion result, and rejection behavior; unresolved scientific choices
-are explicitly excluded from the first implementation.
-
-**Continuation prompt:** “Continue S1 in docs/OBSERVATION.md. Review the proposed contracts against
-the current source and my feedback. Produce a decision record and acceptance fixtures for patterns,
-matching functors, named graphs, context binding, executable dataflow apply/define, provenance
-reconstruction, and Resource persistence, using docs/OBSERVATION_STRATEGIES_EXAMPLE.md and its
-translation/EX00–EX09 cases as the required baseline. Highlight remaining semantic choices.
-Update the ledger and next prompt. Do not
-change grammar or runtime behavior in this review stage.”
-
-### S2 — Establish a trustworthy selection baseline
-
-Define the normalized pattern view, typed captures/MatchResult, logical operand modes, ambiguity
-rules, and external matcher adapter from Section 4.5 before extending syntax. Test ordinary
-observable matches alongside the new pattern engine; retain host-language compatibility.
-Work in `SyntacticMatcher`, `ObservationReasoner`, `TypeFunctors`, and semantic classification
-contracts. Preserve the intended structural matcher while fixing required-head/predicate checks,
-filter boolean evaluation, type tests, quick-filter soundness, reserved variables, ordered setup,
-tuple arity, and deterministic decomposition. Copy rank/namespace into contextualized plans and
-make ties deterministic. Define direct-match eligibility independently of abstractness alone.
-
-Acceptance: tests cover extra predicates, absent required predicates, different heads, roles,
-collective versus singular, negation, nested clauses, logical operands, value operators, context
-absence, AND/OR filters, failing guards, and setup not running for rejected patterns. Prove the
-quick filter has no false negatives against the full evaluator on these fixtures. Preserve full
-observable meaning through split/recombine tests. Check enum dispatch against the reviewed
-classification/characterization distinctions; do not silently rewrite the semantic contract.
-
-**Continuation prompt:** “Implement S2 from docs/OBSERVATION.md using the approved S1 decisions.
-Add focused matcher, capture, logical normalization, external MatchResult, setup, functor, and
-priority regression tests before extending graph syntax.
-Preserve structural matching and full observable expressions. Update the source trace, validation
-evidence, stage status, and next prompt.”
-
-### S3 — Add named plans through every language and service layer
-
-**Progress, 2026-09-08:** the maintainer reports successful compilation of the shared-grammar
-consumers and the Observation sample. The new
-[`ObservationSyntax` API](../../klab-languages/org.integratedmodelling.languages.observation/src/org/integratedmodelling/languages/api/ObservationSyntax.java)
-and [`ObservationSyntaxAdapter`](../../klab-languages/org.integratedmodelling.languages.observation/src/org/integratedmodelling/languages/ObservationSyntaxAdapter.java)
-cover all 68 generated node types and 15 enums. Both live alongside the grammar in the Observation
-module, retaining their Java packages (`org.integratedmodelling.languages.api` and
-`org.integratedmodelling.languages`). Observation exports the API package. Every syntax node implements `ParsedObject`, and both
-document types also implement `ParsedDocument`. No shared grammar or existing shared adapter
-behavior was changed for this step.
-
-The syntax adapter copies ordered declarations, match alternatives, tuple bindings, arguments, patterns,
-plans, definitions, and executable continuations. It reuses `ObservableSyntaxImpl`,
-`ParsedLiteralImpl`, and shared map/number parsing. Graph and declaration cross-references become
-typed `SymbolReference<T>` source occurrences, with names and spans; adaptation neither resolves
-EMF proxies nor retains graph targets. Lexical visibility, undefined names, type compatibility,
-and replay/adaptive legality still require validation. The commented legacy implementations and
-their old public APIs are preserved; the new API is an explicit migration boundary.
-
-`getSourceCode()` preserves the source fragment, including document comments;
-`encode()` returns a stable token-normalized encoding of the parsed snapshot. It is not a builder
-or serializer for newly synthesized dataflows. Existing shared literal/observable contracts remain
-in force, including their mutable properties. Java serialization was checked on a valid strategy
-snapshot; this is not the versioned JSON transport contract. In particular, the inherited URI is
-transient, and inherited diagnostic records may contain EMF objects. Portable semantic beans must
-copy source locations and diagnostics into transport-safe records explicitly.
-
-**Verification:** compiled the new code and current generated Observation/Observable Java with
-JDK 21 targeting Java 17, using cached Xtext 2.36, Guice 5.1, and ANTLR 3.2. Seven Java contract tests
-pass through a standalone runner, including an audit that every concrete Observation node rule
-is exercised. The eight-strategy corpus, arbitrary-context fixture, and dataflow fixture all
-parse, adapt, and reparse their normalized encodings. Tests cover source spans, detached snapshots,
-serialization, unresolved references without forced linking, patterns, ports, and continuations.
-The obsolete starter Xtend test now names `ObservationDocument` and uses a valid document.
-Full Tycho/Xtext regeneration, the Xtend test launcher, and service/runtime integration were not
-run for this syntax-bean step. The copied fixtures in the Observation test project must stay
-coordinated with this repository's running examples.
-
-#### S3a — Initial strategy semantic boundary
-
-The maintainer installed the revised language artifacts and authorized an initial, non-operational
-semantic model. The implemented boundary is now:
-
-`ObservationSyntax.StrategyDocument → LanguageAdapter.adaptStrategies → KimObservationStrategyDocument`
-
-[`KimObservationStrategy`](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/lang/kim/KimObservationStrategy.java)
-replaces legacy filters, macro maps, and implicit operations with selection, ordered setup, and a
-plan. [`KimObservationPlan`](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/lang/kim/KimObservationPlan.java)
-contains the typed nested contracts; its implementation classes are ordinary mutable, no-argument
-beans in `KimObservationPlanImpl`. The 47 strategy-plan forms include 42 concrete language variants;
-portable source records and graph-symbol occurrences are additional bean types.
-
-| Concern | Semantic representation | Initial behavior |
-|---|---|---|
-| Document header | `KimObservationStrategyDocument`: authored version, imports, coverage, metadata, source, project, timestamp | Preserved; ontology dependencies collected from adapted semantic expressions |
-| Strategy | `KimObservationStrategy`: type, rank, namespace, name/URN, description, source, selection, setup, plan | Transportable independently of its containing document |
-| Selection | `StrategySelection` and `MatchAlternative` | Alternatives remain OR; each guard list is AND; no matching is performed |
-| Patterns | Distinct node, boolean, collection, semantic, capture, logical, and operator interfaces | Ordered tree retained; activity constraints reuse API `Contextualization` |
-| Setup/expressions | `LetSetup`, `EnsureSetup`, tuple bindings, variable/call/scalar/closed-observable variants | No tuple keys encoded as strings; calls retain ordered arguments and remain unevaluated; scalar booleans and pattern flags become nullable `Boolean` values |
-| Plans | Producer, reference, input port, merge, context/member block, yield variants | Names, context variables, optional fallback, composition kind and terminal/named output preserved |
-| Graph symbols | `SymbolReference` with name and source | No parser proxy or runtime graph; undefined names survive for later lexical validation |
-| Locations/diagnostics | `Source` with string URI, code fragment, offset, length, service notifications | No EMF objects or syntax callback references on the wire; fragments may include trivia outside the semantic token span |
-
-`LanguageAdapter` delegates the exhaustive node copying to `ObservationPlanAdapter`, while reusing
-the existing observable/literal conversion methods. That shared observable boundary now copies
-units, currencies, optionality, and numeric ranges, which were previously omitted. The document visitor now traverses nested
-selection/setup/plan observables. Strategy calls remain distinct from `ServiceCall`: traversal does
-not invent service signatures or flatten duplicate/named arguments. Resources parser entry points
-use the new document root and explicitly reject executable documents in strategy-only ingestion.
-
-**JSON contract:** all new source/node interfaces, including abstract families, are registered in
-[`JacksonConfiguration`](../klab.core.common/src/main/java/org/integratedmodelling/common/data/jackson/JacksonConfiguration.java).
-The existing interface serializer/deserializer and `@CLASS` protocol are retained. No Jackson
-annotations or dependencies were added to the API or bean classes; no global deserializer changes
-were needed. `modelVersion = 2` identifies this transport model, separately from the version written
-in the source document. This preserves the serialization mechanism, not the old filters/operations
-wire schema: old strategy JSON needs explicit migration or regeneration. Version rejection and
-migration policy remain a subsequent validation task.
-
-Metadata and coverage objects use string keys; adaptation rejects numeric keys rather than
-silently converting potentially colliding keys. Their values use existing literal/semantic beans.
-This stage does not broaden all existing `KimObservable` semantics: for example, independently
-declared observer semantics still need a shared API decision. Original source remains available.
-
-**Verification:** the Maven reactor compiled API, common, core-services, Resources, resolver, and
-modeler against the maintainer-installed Observation artifact. All 12 selected tests passed:
-two interface-registration/serialization tests, four real-parser adaptation tests, five semantic
-visitor tests, and one Resources semantic-validation test. The populated corpus covers every
-concrete plan variant, source locations, headers, dependencies, tuple bindings, scalar values,
-logical remainders, context blocks, graph references, and interface-root JSON reconstruction.
-Only fields declared as sets are compared without order; argument, pattern, setup, and plan lists
-must retain order. No serialization annotations, new dependencies, or shared Jackson behavior
-changes were introduced. The command used was:
-
-```powershell
-mvn -o -pl klab.services.resources,klab.modeler,klab.services.resolver -am `
-  '-Dtest=ObservationPlanSerializationTest,ObservationStrategyAdaptationTest,KimVisitorsTest,WorkspaceManagerSemanticValidationTest' `
-  '-Dsurefire.failIfNoSpecifiedTests=false' test
-```
-
-The relevant tests are `ObservationPlanSerializationTest`, `ObservationStrategyAdaptationTest`,
-`KimVisitorsTest`, and `WorkspaceManagerSemanticValidationTest`. Resources test fixtures under
-`src/test/resources/observation` mirror the running strategy/context examples and add pattern/tuple
-cases from the language syntax tests. Keep these copies synchronized. No live Reasoner/Resolver
-resolution or dataflow execution was tested; modeler/resolver compilation does not imply migration
-of the authored-plan execution contract.
-
-**S3a historical integration limit:** this stage initially left `ObservationReasoner` on the old
-Filter/Operation API. S3c below replaces that consumer and implements the initial producer subset.
-The operational enum belongs to `ObservationStrategy.Operation`, independently of the authored AST.
-
-#### S3b — Executable dataflow semantic API proposal (not implemented)
-
-Use a distinct `KimObservationDataflowDocument`, rather than putting executable declarations in
-`KimObservationStrategiesImpl` or treating a persisted source document as runtime `Dataflow`.
-Keep all implementations annotation-free and register every public interface in
-`JacksonConfiguration`, just as for strategies. A starting interface outline is:
-
-```java
-interface KimObservationDataflowDocument
-    extends KlabDocument<KimObservationDataflow.Declaration> {
-  int getModelVersion();
-  KimObservationPlan.Source getSource();
-  KimObservationDataflow.Mode getMode(); // REPLAY or ADAPTIVE
-  List<KimObservationDataflow.Requirement> getRequirements();
-  Map<String, Object> getCoverage();
-}
-```
-
-`KimObservationDataflow` would group these typed interfaces and their local enum vocabularies:
-
-| Interface family | Fields to retain from `ObservationSyntax` |
-|---|---|
-| `Requirement` | Kind, identity, version, checksum, source |
-| `Declaration extends KlabStatement` | Local name/URN and portable source; project/namespace from the containing document |
-| `ObservationDefinition` | Closed `KimObservable`, identity, named context reference, geometry, metadata, definition links, optional stored value |
-| `ValueDefinition` | Declared type and `StoredValue` |
-| `StoredValue` | Separate `InlineValue` (adapted common literal) and `PayloadValue` (resource, checksum, media type) |
-| `ExecutionObservation` | Observable, named context, strategy provenance ID, geometry, metadata, ordered computations |
-| `ExecutionApply` | Implementation ID, version, ordered named arguments, explicit output port |
-| `ExecutionValue` | Separate port-reference, stored-value, and closed-observable variants; no free strategy variables |
-| `ExecutionReference` | Observation identity, asserted observable, local name |
-| `ExecutionMerge` | Two named inputs, composition kind/version, options, asserted output observable, local name |
-| `ExecutionContinuation` | Input declaration, single/each cardinality, bound variable, closed request, explicit captures, reusable `KimObservationPlan.PlanBody` |
-
-Execution references should be source-located symbol occurrences, not object links. Keep execution
-values separate from strategy expressions: a captured literal/observable/reference is closed data;
-an unevaluated strategy variable or call requires the explicit continuation boundary.
-
-The future `LanguageAdapter.adaptObservationDocument(...)` should dispatch by the syntax root to
-`adaptStrategies(...)` or a new `adaptDataflow(...)`, returning a `KlabDocument<?>`. The dataflow
-adapter should reuse common literal/observable conversion and the plan adapter for continuation
-bodies. A separate validator must reject continuations in replay mode, undefined references,
-incompatible ports and captures, missing implementation versions, and invalid payload descriptors.
-Reconstruction from provenance will produce the same semantic document through a builder;
-source generation and Resource persistence then become separate tested transformations.
-
-#### S3c — Initial tier-0 Reasoner and Resolver integration
-
-`ObservationReasoner` now consumes `KimObservationPlan` directly. It selects comma-separated
-alternatives by disjunction, evaluates each alternative's guards conjunctively, and only then
-executes ordered `ensure`/`let` setup. `$this` and `$context` are always defined; the latter is null
-without a context observation. Captures cannot replace reserved variables. Failed branches discard
-their captures; `not` never exports captures. Tuple bindings require the exact destination arity.
-Registration replaces strategies by namespace plus URN, and initialization preserves ascending
-rank order. Compiled beans retain rank, namespace, documentation, metadata and annotations.
-
-| Initial supported construct | Behavior and boundary |
-|---|---|
-| `node` | Kind/`one_of`, collective and abstract flags, contextualization activity, head, direct predicates, direct roles and direct inherent |
-| `all`, `either`, `not`, `capture`, `same` | Transactional captures; `same` requires an existing binding |
-| `any`, `absent`, presence and scalar tests | Absence is distinct from `false`; absent collections are empty collections |
-| Collections and logical operands | `contains`, `every`, exact unordered collections; canonical URN ordering or unordered backtracking for logical operands; remainder is the remaining semantic expression, not a list |
-| Semantic tests and ordinary observable alternatives | Explicit `is` invokes semantic subsumption; exact compares URNs; ordinary observable alternatives retain `SyntacticMatcher` and its historical limits |
-| Tier-0 setup | `context.exists`, `request.fully_specified`, concrete/abstract/collective checks, relationship source/target extraction, and `collective` |
-| `resolve`/`observe ... to name` | Concrete target observables and graph IDs are recorded in operational beans; the Reasoner performs no observation resolution |
-| `observe ... with inputs(port = graph)` | Earlier recursive-resolution graphs are prerequisites, bound to model inputs by port name |
-| Terminal result | The final producer, optionally selected by a final `yield`; earlier producers must be consumed explicitly |
-
-This initial lowering accepts recursive producers followed by a final observe, or a single
-recursive producer. Intermediate observe, resolve inputs, arbitrary context blocks, member loops,
-fallback, graph references and general merges remain unsupported. The terminal quality
-transformation subset documented above is the first supported merge lowering. Negation flags, clause/operator projections,
-value-operator patterns and unimplemented/external functors also fail explicitly. A matching but
-unsupported strategy produces a scope warning and is omitted from candidates; it never contributes
-a partially lowered plan. Full document-wide validation, extension-functor dispatch and capability
-negotiation remain subsequent work. Version-2 authored beans are required at selection.
-
-The operational transport remains `ObservationStrategy` / `ObservationStrategy.Operation` through
-their existing registrations in `JacksonConfiguration`. `Operation.getInputs()` is an ordered
-port-to-graph-name map on a mutable no-argument bean. There are no Jackson annotations or new
-dependencies in these beans. Graph IDs are local to one candidate, not identifiers of runtime
-observations, and the last output is implicit in this initial execution subset.
-
-The Resolver holds earlier recursive results in a per-strategy table. Their coverage cannot resolve
-the requested output. Explicit inputs are attached to the selected model and intersect its coverage;
-the dataflow carries child actuator names and contextualizer argument identifiers for the ports.
-The resolution graph now permits parallel edges, including source and target ports referencing the
-same observation. Direct model contributions accumulate before completeness is tested. Accepted
-strategies are merged into the requested observation before the next strategy is tested. General
-partial-strategy completion and rollback still need the S4 contract and dedicated tests.
-
-`ObservationPipelineTest` uses the running source fixture, real Xtext/syntax/semantic adaptation,
-interface JSON transport, Reasoner selection/lowering, Resolver graph assembly and DataflowCompiler.
-Model search, ontology services and existing endpoint observations are service doubles; it does not
-run a deployed worldview or execute runtime contextualizers. It checks all four tier-0 forms,
-recursive strategy selection for missing endpoints, and rejects a relationship when only its
-endpoints resolve. Compiled strategies travel both individually and as `List<ObservationStrategy>`;
-every populated operation also round-trips through its own interface. `ObservationPatternMatcherTest` covers
-capture isolation, absence/false, reserved names, `same`, canonical remainders and backtracking.
-
-**Validation (2026-09-08):** the full 18-project reactor compiled main and test sources and passed
-20 focused tests, including the existing Resolver query, concurrency, transport and dataflow tests:
-
-```powershell
-mvn -o '-Dtest=ObservationPipelineTest,ObservationPatternMatcherTest,ObservationPlanSerializationTest,ObservationStrategyAdaptationTest,ResolutionCompilerQueryTest,ResolutionGraphConcurrencyTest,DataflowCompilerTest,ResolverTransportSerializationTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
-```
-
-The existing dataflow coverage test used universal geometry with an expected fraction of 0.75,
-although universal coverage is defined as 1. Its fixture now uses a temporal extent to test actual
-fractional coverage. No coverage semantics were changed for that correction. The complete test
-suite and a live distributed/runtime execution were not run.
-
-**Context propagation follow-up (2026-09-09):** the first tests supplied an existing context to
-dependent requests, missing the transition from a substantial's explanatory model to its quality
-dependencies. The Resolver now enters the explained substantial for model computation/dependencies,
-after model lookup, carrying the producer geometry and model namespace/project constraints forward.
-It leaves the requesting scope unchanged, including after collective dependency registration. The
-new `ObservationPipelineTest` case covers root/nested and singular/collective owners, a collective
-dependency with different lexical constraints, and two subsequent qualities that must select
-`dependent.direct` in the original owner's context. External services remain doubles.
-Validation: the Resources/Reasoner/Resolver reactor and its prerequisites compiled; eight focused
-tests passed with the command below. The regression also checks geometry at runtime contextualizer
-validation, unchanged requesting scopes, and dataflow compilation. Live service execution remains
-for the maintainer's retest.
-
-```powershell
-mvn -o -pl klab.services.resources -am '-Dtest=ObservationPipelineTest,ResolutionCompilerQueryTest,ResolverTransportSerializationTest,DataflowCompilerTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
-```
-
-**Next bounded prompt:** “Continue S2–S4 from the accepted, maintainer-tested baseline. Use the
-language guide's unary-operator prompt for presence/count work. Add document-wide lexical validation and typed
-functor dispatch, then complete syntax projections for negation, clauses and operators. Validate
-model input compatibility and prevent duplicate resolution of explicit inputs. Add recursion guards,
-candidate rollback and complementary partial-coverage tests before introducing intermediate observe
-graphs and typed binary merges. Preserve interface-based Jackson transport and update this ledger
-after each bounded stage. Keep persisted dataflow semantics at proposal level.”
-
-Change Observation.xtext and its syntax APIs/implementations in `klab-languages`, then API beans,
-starting from the reviewed [grammar sketch](grammar/Observation.xtext) and its fixture set,
-Resources adaptation/visitors, and Reasoner contextualization in `klab-services`. Introduce typed
-producers, graph references, ports, merges, and terminal outputs. Preserve source spans and encode
-the reviewed version/capabilities. Avoid exposing JGraphT in the public API. Legacy syntax gets
-explicit lowering rules and diagnostics.
-
-Add the dedicated pattern and strategy-expression grammar in Observation, preserving bare
-observables and shared host-language syntax. Implement a distinct executable dataflow AST/bean
-contract, including typed definitions and explicit `apply` ports. Record required provenance
-fields in this contract now; implementing reconstruction later must not require guessing data
-that earlier execution failed to capture. Delay removal of legacy pattern plumbing until consumer
-compatibility tests pass.
-
-Acceptance: parse/adapt/serialize fixtures retain graph names, targets, scopes, rank, merge kind,
-output assertions, and port bindings. Reject undefined/rebound symbols, incompatible values,
-multiple implicit outputs, dangling graphs, and unsupported versions. Round-trip the portable plan
-through the same JSON boundary used by Reasoner/Resolver. A parser-only pass is insufficient.
-
-**Continuation prompt:** “Implement S3 of docs/OBSERVATION.md across klab-languages and
-klab-services, using the approved Observation-local patterns, typed plans, and separate executable
-dataflow/definition contracts. Preserve dataflow apply and shared Observable consumers. Add parser, adaptation,
-validation, and transport tests, with explicit legacy diagnostics. Update the document and build
-instructions; report separately which sibling artifacts and service tests were verified.”
-
-### S4 — Make graph evaluation and coverage correct
-
-Add graph symbol evaluation, explicit occurrence/port bindings, operator-aware coverage,
-candidate deltas, accumulated model/strategy contributions, recursion detection, and cancellation
-cleanup. Preserve existing query-reference coverage and isolated root attempts. Coordinate
-provisional Runtime registrations with rejected candidates; do not claim graph isolation alone
-rolls them back.
-
-Acceptance: two partial models and two partial strategies can each complete a target; overlapping
-support is not counted twice; missing transformation support restricts the result; rejected
-candidates leave no accepted requirements or registrations; two uses of one model preserve both
-bindings. Exercise cycle paths, optional inputs, positive-ID references, concurrent attempts, and
-cancellation using controlled service fakes.
-
-**Continuation prompt:** “Implement S4 in docs/OBSERVATION.md. Correct cumulative coverage and
-candidate isolation, evaluate named graph plans, and preserve repeated bindings and reference
-coverage. Add focused coverage, rollback, recursion, and concurrency tests. Update RESOLUTION.md
-and this ledger with verified behavior and remaining limitations.”
-
-### S5 — Deliver the first executable composition
-
-Implement rank-zero direct resolution and positive-rank quality predicate transformation. Add
-the initial operator registry and typed open-port binding, lower the result to explicit Dataflow
-dependencies, and execute it without edge-name or first-input heuristics. Resolve legacy `apply`
-by typed lowering where unambiguous or reject it clearly. Remove obsolete transformation wiring
-only after equivalent fixtures pass.
-
-Acceptance: a direct full-meaning model wins; absent/partial direct coverage permits the correct
-fallback; a transformation consumes the intended base exactly once; multiple inputs require
-explicit bindings; units, context, output semantics, and coverage are checked. Verify execution
-order and a numerical result, not merely the shape of the graph. Verify the transformation route
-contains no special-case graph surgery for the example.
-
-**Continuation prompt:** “Implement S5 from docs/OBSERVATION.md: the direct strategy and typed
-quality transformation through explicit graph composition, including Dataflow lowering and Runtime
-execution. Replace legacy heuristic wiring only with tested equivalents. Record graph, transport,
-and executable-result evidence and revise the example to actual accepted syntax.”
-
-### S6 — Complete substantial predicate and lifecycle behavior
-
-Complete and accepted on 2026-09-19. Individual requests use existing inherents; collective
-requests resolve members first. Classification attributes concrete predicates and awaits individual
-characterization while preserving identity and cohort membership. Connections acknowledge their
-instances; identical endpoint semantics share one producer while retaining both named bindings.
-Zero outcomes terminate, and required child failure prevents parent success. These lifecycle
-obligations belong to Runtime rather than authored continuations. The classification staging plan
-is retired; see the [implementation reference](CLASSIFICATION.md).
-
-### S7 — Add operators and scoped continuations
-
-Implement general `within graph as context_variable` binding before its `for each` collection
-form, then typed semantic/value-operator decomposition, unary operation nodes, member-keyed scoped
-resolution, and `select`. Persist continuation bindings and validate capability support. Start
-with a target resolved inside an independently observed non-basin context, then a simple numeric
-transformation and a `whose` condition requiring a quality of newly instantiated subjects. Add
-bounded execution and propagation of failures/cancellation.
-
-Acceptance: singular and nested context blocks retain observation identity and correct scope;
-wrong cardinality and incompatible inherency are rejected; already resolved and deferred contexts
-produce equivalent results; returning a graph never silently maps it to the outer context.
-Operator parameters survive parsing to execution; member qualities use the correct
-context; unknown differs from false; empty selections are complete when appropriate; deferred
-plans resume without duplicating identities or losing provenance. Test known members and members
-discovered only at runtime.
-
-**Continuation prompt:** “Implement S7 in docs/OBSERVATION.md, beginning with an arbitrary observable
-resolved within an independently observed context bound to a variable. Implement singular and
-collection context blocks, including nested and deferred binding, then a simple value operator
-and a whose query over newly discovered subjects. Implement typed decomposition, selection,
-and unknown/empty-result semantics.
-Validate execution and cancellation, then update syntax examples, evidence, and next prompt.”
-
-### S8 — Define and implement logical composition
-
-Implement identity-preserving substantial union/intersection and only the reviewed quality
-signatures. Normalize logical decomposition without losing meaning, and retain deterministic
-execution. Acceptance: duplicate identities, unknown predicates, three or more operands, reversed
-commutative operands, incompatible quality value spaces, and coverage/membership distinctions
-all have explicit tests. Reject unsupported numeric interpretations.
-
-**Continuation prompt:** “Implement S8 from docs/OBSERVATION.md using the approved logical
-operator signatures. Test identity deduplication, conjunction/disjunction evidence, unknowns,
-multi-operand expressions, and quality value-space rejection. Keep membership algebra distinct
-from coverage accounting and update the running documentation.”
-
-### S9 — Add contextual bridges and aggregation
-
-Define a bounded registry of allowed inherent bridges, resolve member contexts, and add reducer
-signatures with scientific support mappings. Implement the Region/RunoffWaterVolume/RiverBasin
-case only for reviewed model semantics and aggregation assumptions.
-
-Acceptance: contained and crossing basins, overlapping/nested basins, missing outputs, incompatible
-time support, conservation, no valid bridge, and recursive bridge cycles are tested. Demonstrate
-one valid regional result and reject a plausible but scientifically invalid summation. Record the
-exact assumptions in strategy provenance.
-
-**Continuation prompt:** “Implement S9 of docs/OBSERVATION.md using approved basin-to-region
-support and aggregation rules. Add bounded bridge selection, per-basin resolution, and typed
-aggregation; test conservation, overlaps, boundaries, missing coverage, and cycle rejection.
-Do not infer an aggregation law from extensivity alone. Update the worked example and ledger.”
-
-### S10 — Reconstruct, persist, migrate, and validate the complete path
-
-Keep S10 as the existing stage ID, with three individually reviewable substeps. The source/bean
-contracts are designed in S1/S3 and execution provenance is recorded during S5–S9; S10 integrates
-them rather than postponing their requirements until after implementation.
-
-**S10a — Provenance reconstruction builder.** Implement selection at a committed snapshot,
-dependency traversal, reference closure, stable local identities, submitted-object definitions,
-and executable-plan validation as in Sections 7.2–7.4. Begin with finite strict replay. Test a
-multi-fragment graph, shared dependencies, a submitted root without a producing actuator, external
-prerequisites, completed continuations, and missing/failed provenance. Acceptance: a valid portable
-Dataflow is reconstructed or an explicit incompleteness report is returned; no semantic search is
-used to fill missing recorded choices.
-
-**Continuation prompt:** “Implement S10a in docs/OBSERVATION.md using the approved provenance
-and Dataflow contracts. Build a snapshot-scoped reconstruction builder that closes references,
-preserves bindings, and encodes submitted inputs. Test complete and deliberately incomplete
-graphs. Update the source trace, evidence, ledger, and next prompt.”
-
-**S10b — Canonical source and Resource round-trip.** Complete source encoding, parsing/adaptation,
-typed `define` and dataflow `apply`, manifest/payload packaging, and Resource registration/loading.
-Acceptance: bean-to-source-to-bean equivalence; deterministic encoding; no lost ports, geometry,
-mediators or versions; missing payload/version/capability rejection; Resource export/import into
-a fresh compatible context followed by an equivalent executable result. Test identity remapping
-without relying on source database IDs. Treat snapshot restoration and recomputation separately.
-
-**Continuation prompt:** “Implement S10b in docs/OBSERVATION.md. Complete canonical observation
-dataflow source, typed definitions and computations, and Resource packaging/loading. Verify
-round-trip fidelity and execution after import, including submitted inputs and external payloads.
-Preserve strict replay and report unsupported adaptive capabilities. Update coordinated docs.”
-
-**S10c — Migration and integrated validation.** Complete the following release checks after S10a
-and S10b. Adaptive replay support requires its own declared capabilities and continuation tests;
-it must not be inferred from successful finite replay.
-
-Migrate the selected worldview strategies, remove deprecated implicit composition paths, and
-complete encoding/decoding for the new executable nodes. Verify strategy/plan version negotiation,
-provenance, incremental references, continuation replay, and failures across service boundaries.
-Review process/configuration scheduling compatibility before broadening claims beyond the tested
-scenarios. Add missing scenario families to the ledger rather than silently declaring universality.
-
-Acceptance: run the five scenario families end to end, with reproducible fixtures and expected
-results; reject old clients lacking required capabilities; replay supported dataflows without
-losing bindings or changing semantics. Document any remaining reconstruction/export limits.
-
-**Continuation prompt:** “Complete S10c from docs/OBSERVATION.md after S10a and S10b: migrate the reviewed worldview
-strategies, validate plan/dataflow compatibility and replay, and run all five scenario families
-across the relevant services. Remove superseded paths only after verification. Reconcile this
-document, RESOLUTION.md, OBSERVABLES.md, and README.md, and list remaining unsupported cases.”
-
-## 10. Source map and audit evidence
-
-Paths below are relative to the repository root; method names are stable navigation anchors.
-The grammar and syntax implementation listed in Section 2.1 are in the sibling repository.
-
-| Layer | Source |
-|---|---|
-| Semantic activity | [Contextualization.java](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/Contextualization.java) |
-| Parsed strategy contract | [KimObservationStrategy.java](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/lang/kim/KimObservationStrategy.java) |
-| Operational contract | [ObservationStrategy.java](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/ObservationStrategy.java) |
-| Parsing/worldview assembly | [WorkspaceManager.java](../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/storage/WorkspaceManager.java): `readObservationStrategy`, `getStrategyDocuments`, worldview assembly |
-| Adaptation | [LanguageAdapter.java](../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/lang/LanguageAdapter.java): `adaptStrategies`, `adaptStrategy` |
-| Validation seam | [KimObservationStrategyDocumentVisitor.java](../klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/language/KimObservationStrategyDocumentVisitor.java) |
-| Worldview registration | [ReasonerService.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java): `computeObservationStrategies`, `registerStrategy` call sites |
-| Selection and setup | [ObservationReasoner.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ObservationReasoner.java): `computeMatchingStrategies`, selection/setup/lowering; `ObservationPatternMatcher` for structural matching |
-| Structural matching | [SyntacticMatcher.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/SyntacticMatcher.java): `doMatch`, `matchConcepts` |
-| Setup library | [TypeFunctors.java](../klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/functors/TypeFunctors.java) |
-| Resolver entry | [ResolverService.java](../klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/ResolverService.java): `resolve` |
-| Recursive planning | [ResolutionCompiler.java](../klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/ResolutionCompiler.java): `resolve` overloads, `queryModels`, `contextualizeScope` |
-| Graph assembly | [ResolutionGraph.java](../klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/ResolutionGraph.java): `createAttempt`, `merge`, `checkCoverage` |
-| Executable lowering | [DataflowCompiler.java](../klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/DataflowCompiler.java): `compileStrategy`, `compileModel` |
-| Execution/lifecycle | [RuntimeService.java](../klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/RuntimeService.java): `submit`, `compile`, `submitContextualizationResult` |
-| Provenance-backed dataflow placeholder | [DataflowGraph.java](../klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/knowledge/DataflowGraph.java): `adapt`, `getComputation` |
-| Executable dataflow API | [Dataflow.java](../klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/runtime/Dataflow.java) |
-| Current source encoder | [DataflowEncoder.java](../klab.core.common/src/main/java/org/integratedmodelling/common/services/client/resolver/DataflowEncoder.java): `encodeDefinitions`, `encodeActuator` |
-
-S0 validation consisted of reading these source paths and the sibling grammar/syntax adapter,
-reviewing the existing resolution guide, and checking documentation links and whitespace. No
-parser suite, Java test suite, or connected worldview/runtime scenario was run for this
-documentation-only stage. Existing query/concurrency tests described in RESOLUTION.md provide
-starting fixtures; they do not establish the proposed composition contracts.
-
-
-## Semantic-update strategy execution
-
-The [resolution contract](RESOLUTION.md#17-semantic-update-contextualizations) describes portable
-UPDATE nodes, typed member bindings, full-observable invocation, validation and runtime-owned
-characterization. The [knowledge graph contract](KNOWLEDGE_GRAPH.md#semantic-attribution-transactions)
-defines staging, atomic commit, typed effects and client invalidation.
-
-The Tier-0 collective classification strategy resolves the member graph before selecting and
-executing the classifier. A graph binding is an explicit prerequisite, not an observation of the
-directive or a scalar functor argument. Classification and characterization directives never become
-result observations. Strategies choose explanations; Runtime owns the acknowledgement and
-characterization lifecycle and waits for its completion. Error-free absence of an acknowledgement
-explanation, and successful discovery with no characterization model, are explicit non-empty
-`NO_MODEL` Dataflows. Actual failures remain failures.
-
-[FlowChart metadata](FLOWCHARTS.md) exposes the accepted resolution graph and execution plan to
-clients while retaining their distinct meanings. Neither diagram is a graph-reproduction document.
-
-
-### Observational containment: declaration support versus contextual execution
-
-**Containment here is an observational contract, not spatial enclosure or physical
-parthood.** It declares which collective observation can realize an authored
-container/type relationship. For example, `Region contains Stream` permits the
-declared Stream collective, whose successful result may have zero members; it does
-not assert that any Stream exists, lies inside a polygon, or covers the Region.
-An unresolved or failed Stream discovery is not a successful empty result.
-
-The worldview clauses `A contains B` / `B contained into A` normalize to the same
-additive `odo:observationallyContains` declaration. See
-[Observational containment declarations](OBSERVABLES.md#observational-containment-declarations)
-for the empty-safe asserted OWL carrier and its application-level interpretation.
-Declaration support does not complete S7/S9 or authorize a cross-bearer dependency
-without a typed execution route. It does not change native bearers or member extents.
-
-A collective that successfully returns zero members realizes the observational
-contract; unresolved, failed or cancelled discovery does not. Verify existing
-collective lifecycle behavior before adding runtime machinery. The current query
-foundation requires successful typed execution and invocation support, rejects failed
-attempt reuse, and returns one proven fragment rather than an unsafe union. See
-[Collective query completion](COLLECTIVE_COMPLETION.md) for its limits. A declaration alone
-does not mean that discovery has run or completed, and an error/empty observation
-sentinel must not be counted as successful empty membership.
-
-Contextual request permission is now checked before strategy selection for qualities
-and processes. It uses native bearer compatibility or authored containment with
-asserted container inheritance and a single named native bearer witness. See the
-[admission boundary](OBSERVABLES.md#observational-containment-declarations).
-This does not admit unbridged computational dependencies or lower unsupported context/member
-plans. Legal requests and choice of implementation remain separate. Precomputed
-Tier-0 models may fulfill a legal request independently, without a discovery receipt.
-Recursive domain discovery/computation is Tier-1+ and must be deferred until Tier-0
-alternatives leave relevant support unfulfilled. Preserve accepted partial coverage
-and native computation extents; never turn missing/unrepresentable support into
-success. S7/S9 still require actual domain bindings, typed sampling/composition,
-gap/overlap policies, provenance, cycle protection and execution-side-effect tests.
-
-
-### Configuration detection and later resolution
-
-A configuration observation emerges through **DETECTION**; models never instantiate
-configurations. `model each Configuration` is illegal, including aliases and effective
-configuration heads. `model Configuration` remains a legitimate request to resolve
-an observation after emergence. It must not be described as creating that observation.
-`model Quality of each Bearer` qualifies the bearer collectively and is a distinct,
-legal form; unary-derived qualities are classified by their effective quality kind.
-
-The intended lifecycle places a configuration detected through (com)presence of
-dependents under those dependents' bearer. Detection from substantials places it
-in root-level cohorts, like substantials. Relationship emergence produces Network
-configurations; resolving an emerged Network then creates the scientific network
-model. Placement for dependent ingredients with different bearers is a future-stage
-question; do not invent automatic bearer coalescing or silently discard ingredients.
-
-**Implemented boundary:** source/loaded-world model validation rejects configuration
-instantiation. The API already maps configurations to DETECTION, the grammar carries
-`emerges from`, and the reasoner registers trigger declarations. These are not proof
-of functioning detection or placement: ReasonerService.emergentResolvables currently
-returns an empty map, and its observation catalog/matching runtime is incomplete.
-Detection, placement and network construction are not added by this declaration slice.
-
-### Future consequence engine: after observation commits
-
-The authoritative collaborator-facing design draft is
-[CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md). It specifies future consequences
-after observation/knowledge commits: configuration DETECTION, change processes for
-qualities in occurrent contexts, conferred roles, role implications and optional
-uncertainty resolution. Consequences can recursively cause consequences through
-models. Reuse resolution idempotency/reuse, verify bounded distinct work as well as
-duplicate suppression, and preserve Tier-0 precedence. The draft separates agreed
-contracts, actual source support, proposed integration and open questions. No
-consequence runtime is implemented by this declaration/validation slice.
-
-
-## Bounded singular binding capability - 2026-10-21
-
-The isolated S7a candidate implements one explicit current-context reference and one
-native quality OBSERVE child, with typed identity/revision transport and lazy Tier-1
-admission. It requires the identical result obligation and full native context support.
-Same-obligation RESOLVE, other context/result bindings, member iteration, discovery and
-composition remain unavailable. See [the capability contract](SINGULAR_CONTEXT_BINDING.md).
-
-
-## Prepared predicate-dependency expansion boundary - 2026-10-21
-
-The isolated P0 candidate freezes source/declaration/occurrence identities once and applies
-keyed completed outcomes, including nonblocking CompletionStage composition. This preserves
-positional Cartesian choices across asynchronous completion without supplying classifier
-completion certificates, member snapshots or production Resolver wiring. Generated syntax
-still requires redeclaration and eligibility validation before distance/execution. See
-[the precise boundary and remaining integration seam](PREDICATE_DEPENDENCY_EXPANSION.md).
-
-
-## Selected-model classifier execution - 2026-10-21 isolated increment
-
-The bounded ordinary-submission route now plans and executes a classifier prerequisite for one
-deferred abstract ATTRIBUTE occurrence, then resolves its concrete closure as independent child
-dependency observations of one modeled output. The final contextualizer reads exact prerequisite
-bindings from the graph and supplies any aggregation itself. Successful precomputed Tier-0
-alternatives precede this automatic Tier-1 work. See
-[dependency families](CLASSIFIER_DEPENDENCY_FAMILIES.md) for conditional admission, live-attempt
-guards, the dynamic crop cash-value fixture, test adapters and remaining multi-occurrence limits.
-This advances the earlier prepared-expansion boundary without claiming general recursive sampling
-or typed outer-context composition.
-
-
-The subsequent isolated [independent product and native recovery increment](CLASSIFIER_CARTESIAN_RECOVERY.md)
-extends the preserved single-occurrence family milestone. Its exact admission, producer identity,
-characterization, embedded persistence and verification boundaries are documented separately.
+The Resolver retains the deferred selection plan on that reference port. Runtime completes
+the prerequisite within the consumer's root attempt, binds its original issued view to
+`selected`, and records the selected-input receipt with the committed consumer. A later
+consumer failure rolls back the attempt's native discovery, attributions and outputs together.
+
+Storage validates the association in the compiler's actual execution scope. Child transactions
+share root storage state but have distinct execution scopes; the parent scope cannot stand in
+for the active child. A scope's child counter can increase when the consumer is staged without
+changing its semantic identity. The selected view's own count, payload and compiled alias remain
+strictly bound. Copied receipts, another transaction and changed ports do not gain authority.
+
+## Observational containment: declaration support versus contextual execution
+
+`A contains B` / `B contained into A` declares an observational contract. It is neither spatial
+enclosure nor physical parthood, and does not assert that members of B exist. A completed
+zero-member discovery can realize the contract. An unresolved request cannot.
+
+Request permission is checked before strategies for qualities and processes, using compatible
+native bearers or supported authored containment and an unambiguous native-bearer witness.
+This permits the request; the chosen model must still prove its required context. Containment
+does not redistribute a quality between native bearers or supply a sampling/composition operator.
+See [Conditional model contexts](CONDITIONAL_MODEL_CONTEXT.md) and
+[Member-quality collections](MEMBER_QUALITY_COLLECTIONS.md).
+
+## Composition and execution limits
+
+Coverage contributed by alternative explanations and typed composition inside one explanation
+are separate operations. Coverage cannot replace a missing mandatory input. Reusing a reference
+also does not copy its values into a newly produced quality or define overlap precedence.
+
+| Route | Executable boundary |
+| --- | --- |
+| Direct OBSERVE and recursive RESOLVE prerequisites | Named ports retain the actual result and scope of each dependency |
+| Classification and characterization | Typed UPDATE nodes bind observed members or an individual target |
+| Singular context binding | One explicit current-context reference and one native quality child with the identical result obligation; see [Singular binding](SINGULAR_CONTEXT_BINDING.md) |
+| Predicate dependency families | Selected-model classifier prerequisites and independent dependency products; see [Dependency families](CLASSIFIER_DEPENDENCY_FAMILIES.md) and [Cartesian recovery](CLASSIFIER_CARTESIAN_RECOVERY.md) |
+| Native member-quality collections | Explicitly supported request/adapter shapes and native geometry; see [Member-quality collections](MEMBER_QUALITY_COLLECTIONS.md) |
+| Arbitrary context/member blocks, fallbacks and merges | Not a general executable composition language |
+| General authored strategy APPLY | Unsupported beyond the explicitly implemented lowering routes; a parsed clause alone is not executable work |
+
+Builders operate on detached syntax and preserve authority, observer, collectivity and
+observable-level mediators. Removing a predicate or adding inherence must not mutate a cached
+Resources bean used by another candidate or attempt.
+
+## Provenance-to-dataflow builder
+
+A contextual Dataflow is an incremental plan against an existing knowledge graph. A complete
+reproduction document must close dependencies across resolutions, package submitted inputs and
+retain actual methods, versions, identities and support. FlowCharts and serialized resolution
+responses alone do not provide that document. Graph extraction, source generation and general
+import/replay remain separate capabilities; see [Dataflow reconstruction](DATAFLOW.md).
+
+## Implementation and verification
+
+| Boundary | Main implementation |
+| --- | --- |
+| Parsed strategy and observable beans | `KimObservationStrategy`, `KimObservable`, `LanguageAdapter` |
+| Matching, setup and bounded lowering | `ObservationPatternMatcher`, `ObservationReasoner`, `SemanticsBuilder` |
+| Planning and portable actuators | `ResolutionCompiler`, `ResolutionGraph`, `DataflowCompiler` |
+| Binding and execution | `CompiledDataflow`, `MemberClassifierExecutor`, scheduler |
+| Selection and consumer continuation | `CollectiveSelectionExecution`, `CollectiveSelectionContinuation`, `SelectedQueryInput` |
+| Publication and native guards | `DigitalTwinImpl.TransactionImpl`, `KnowledgeGraphNeo4j` |
+
+Parser/adapter tests establish language contracts. Planning tests establish ordering, bindings
+and supported coverage. Native execution tests must also establish actual effects, identity,
+storage, rollback, observer/context retention and receipt revalidation. Live acceptance uses
+the same public submission and inspection APIs as clients. See
+[Acceptance checks](ADMISSION.md#acceptance-checks) and the
+[strategy examples](OBSERVATION_STRATEGIES_EXAMPLE.md).

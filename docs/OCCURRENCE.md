@@ -1,24 +1,37 @@
-# Occurrences: achieved behavior and next steps
+# Occurrence scheduling: processes and events
 
-Status: 2026-09-24. S0–S5, including S3.1/S3.2, and the implementable S7a client path are achieved for bounded simulated processes. The user confirmed that the live process fixture resolves, dispatches its transitions, and displays correct results in all IDE views. The event lifecycle implementation below adds scheduled instantiation, individual boundaries, partial spatial effects and client duration history; live event/IDE acceptance remains a separate gate.
+Processes, collective event instantiators and individual events share the digital twin's
+temporal dispatcher, with distinct execution roles and due-time rules. Resolution prepares
+their admitted plans, dependencies, native effects and support. Scheduled temporal computation
+does not execute as ordinary INIT work.
 
-This document replaces the chronological implementation plan with the accepted contracts, achievements, and remaining gates. Earlier implementation detail is available in repository history.
+Read [Resolution](RESOLUTION.md), [Observation semantics](OBSERVATION.md) and
+[Admission](ADMISSION.md) for the surrounding publication and evidence contracts.
 
-## Achieved through S5 and S7a
+![Process simulation, scheduled event generation and individual boundaries](diagrams/occurrence-scheduling.drawio.png)
 
-| Stage | Delivered |
-| --- | --- |
-| S1–S2 | Portable schedules and execution roles; validated actuator persistence; registration after commit; separation of occurrence registration from quality INIT |
-| S3 | Quality inherency selects the occurrence or its context as bearer; named inputs and outputs retain that selection; `creates` is deferred until temporal execution |
-| S3.1 | Dependency-local schedule requests, provenance, whole-schedule replacement, inclusive acceptance ranges, model/Java locks, candidate rejection and schedule-aware reuse |
-| S3.2 | Correct direct effects versus descriptive quality links, typed portable evidence and graph edges, semantic consequence closure; ontology synchronization including authoritative odo-im 0.1.0 |
-| S4 | Bounded native-calendar dispatch, per-registration filtering, fresh transactions, durable progress, historical catch-up, retry and restart support |
-| S5 | Executable inline scalar process assignments, localized quality geometry, lazy transactional writes, atomic temporal Data/history and geometry deltas, effective-change propagation and durable no-op receipts |
-| S7a | Durable committed transition envelopes, client recovery/deduplication, graph/data refresh, Timeline and quality visualization; successful live process acceptance |
+[Editable diagram](diagrams/occurrence-scheduling.drawio).
 
-The live fixture uses a Region, an initialized Elevation quality, and an Erosion process assigning `elevation - 10` each month. Registration commit starts the twelve monthly transitions across the year. Explicit process cadence is independent of the context geometry's step.
+## Three temporal roles
 
-### Execution and semantic contracts
+| Role | Preparation | Temporal execution |
+| --- | --- | --- |
+| Process | Resolve dependencies/effects, negotiate cadence, initialize existence and publish occurrence registration | SIMULATION at the end of each accepted interval |
+| Collective event instantiator | Resolve the instantiator and publish its accepted cadence | Execute at interval start and produce zero or more validated event individuals |
+| Individual event | Validate its period and resolve its plan/dependencies through ordinary submission in the producing attempt | Contextualize the individual at START and END, each with its actual boundary instant |
+
+Individual resolution/preparation and boundary execution are separate. The individual's plan is
+prepared when it is submitted, while its event computation waits for the start/end timepoints.
+At each boundary the scheduler restores/compiles against the fresh execution scope; a cached
+executor must not retain a committed transaction. Temporal effects and progress are published
+atomically in that dispatch's transaction.
+
+The event path described here is an implemented code contract. Complete dedicated public event
+instantiator/START/END acceptance remains unverified; process acceptance does not establish event
+coverage. The verification requirements below identify what must be checked without presenting
+the illustration as a successful event test.
+
+## Execution and semantic contracts
 
 - Processes resolve through SIMULATION. Event instantiators register scheduled plans; individual events are observations with their own lifecycle. All relationships are substantials: functional relationships may host processes, structural relationships may not.
 - Quality dependencies of processes and individual events select their bearer from semantics. If a quality inheres to the occurrence (including an inherited compatible type), resolve and attribute it there. Otherwise it must inhere to the context observation and the occurrence must `affect` or `create` it. Inherency to the occurrence takes precedence. Missing or incompatible inherency is rejected; an inline assignment does not establish a semantic effect on the context.
@@ -29,7 +42,7 @@ The live fixture uses a Region, an initialized Elevation quality, and an Erosion
 - `marks` concerns boolean qualities; `discretizes` maps a quantifiable quality to ordering classes under the explaining model's one-to-one mapping; `classifies` defines predicate classification without uniqueness or coverage guarantees.
 - Actual recomputation follows resolved model dependency paths. Descriptive reachability alone does not manufacture a computation. Process input bindings remain in actuator HAS_CHILD links and portable plans; they no longer produce reverse quality-to-process prerequisite AFFECTS edges. Existing graph edges are not retroactively migrated.
 
-### Scheduling, including geometry defaults
+## Schedule negotiation and geometry defaults
 
 Precedence is dependency observable `@time`, then model `@time`, then Java `@Contextualizer`, then geometry fallback. A higher-precedence request replaces the entire schedule, rather than merging individual fields. Every downstream declared lock and inclusive `minStep`/`maxStep` range still applies; incompatible candidates are rejected so resolution can try alternatives. Model and portable Java metadata use the same native time units and constraints.
 
@@ -49,72 +62,13 @@ A successful root registration commit activates all its occurrences before reque
 
 Scheduler construction restores registrations without running models. An explicit advancement or later registration commit resumes unfinished work from durable receipts. Accepted bounds retain automatic-run intent even when the first transition fails. Native calendar recurrence and per-registration cursors support newly introduced historical cadences; equal-time occurrences retain distinct identities. Real-time execution remains explicitly unsupported.
 
-### Storage, no-ops and delivery
+The due queue merges process intervals, event-instantiator intervals and individual boundaries.
+It is rebuilt after each commit so newly produced events can enter before the next regular tick.
+At an equal instant, event instantiators are considered before individual boundaries, and process
+interval execution follows them. A committed temporal cursor belongs to its accepted registration
+and plan revision; a mismatched cursor requires re-resolution.
 
-Temporal writes use a lazy transaction-owned write set. Merely obtaining a scanner or returning immediately does not allocate a new durable state. Effective value/support changes determine dirty outputs; successful unchanged execution is a no-op, not failure. No-op completion is durable for retry suppression but creates no new Data state, geometry extension, causal recomputation or client timeline clutter.
-
-Changed buffers, Data links, temporal support deltas, provenance and completion commit atomically. Rollback discards provisional output; historical data remains accessible. Downstream computations run only when effective changes reach their resolved inputs. This contract is intended to accommodate later distributed storage/computation implementations without relying on local invocation counts.
-
-TransitionCommit version 1 persists on the root Activity with the graph commit summary, scheduler journals and typed quality-state deltas. ActivityFinished carries committed consequences; history recovery survives messaging outages and client reconnects. Client scopes deduplicate/reconcile delivery and invalidate affected graph/data views before notifying viewers. History polling handles unavailable graphs with bounded backoff. Synthetic ticks without consequences stay out of the Timeline; all successfully committed observed events must ultimately be shown.
-
-The scalar path has automated storage-content, Data-link, rollback, retry, restart, calendar-cadence, no-op and transport coverage, and user-confirmed live Runtime/Resolver/IDE acceptance. The new geometry fallback is covered separately by Java negotiation/transport/reuse tests; its parsed k.IM and live observer-event acceptance remain to be exercised. Equal-time timeline entries are distinct, but selecting a particular quality revision sharing an endpoint still needs an event/revision-aware export contract.
-
-## Next steps
-
-### Semantic bearer revision (2026-09-24)
-
-The shared `of` argument rules accept processes as quality bearers without making processes
-countable. Inherited inherency and `applies to` bounds still constrain specialization. A process
-continues to require its own substantial/event host; allowing a quality to belong to a process
-does not make processes hosts for other ordinary processes.
-
-ProcessPlan version 3 records CONTEXT or OCCURRENT on each quality binding. Resolution uses that
-scope for queries and initialization; graph storage and deferred creation use the same bearer.
-Versions 1 and 2 retain their original context-bearer interpretation on replay. Existing observations
-are not reparented; re-resolution is needed to adopt revised semantics.
-
-ModelKbox's existing `inferModels` extension point now adds `change in X` descriptors for quality
-outputs and dependencies that a process semantically affects or creates. Occurrence qualities retain
-their declared inherency during indexing. Resolver semantic matching recognizes the same inferred
-outputs. Resources' existing knowledge-indexing pass removes and reindexes each namespace;
-run that pass with the updated service to populate existing catalogs. This makes a process a
-candidate for explicit change requests; it does not implement joint-effect selection.
-
-The `change in` operator is valid for every quality, irrespective of its bearer or whether a model
-currently affects it. The affects/creates requirement controls which process models advertise that
-change, not whether the change concept can be constructed. In ODO, `changes` has a union domain
-of Process and Event; separate domains would require both disjoint types and make every change
-unsatisfiable. The generated `odo:Change` is a Process and retains the quality's bearer.
-
-Change inference also exercises inherited OWL restrictions, including imported vocabularies such
-as PROV. Clause matching must compare OWL properties and their superproperties without requiring
-unrelated properties to have a registered k.LAB namespace. A failed knowledge-indexing pass must
-leave semantic search unavailable and return a discovery error, rather than query a partial catalog
-and report that an ordinary explanatory model is absent. A later successful indexing pass restores
-search availability.
-
-**Pending collinearity rule:** when `change in X` is requested in a context providing X and Y,
-prefer a process that changes both over two independent processes changing X and Y. Define the
-coverage and priority policy before implementing it; independent per-observable ranking is not
-sufficient to make that choice.
-
-Verification: 52 targeted tests passed for observable validation, parsed ontology declarations,
-bearer selection and scope routing, plan transport, ModelKbox inference and resolver matching,
-schedule negotiation, registration and temporal storage/restart. No live services were restarted.
-
-```text
-mvn -pl klab.services.resources,klab.services.runtime -am test -Dtest=ObservableValidatorTest,ProcessModelBindingsTest,WorldviewValidationTest,OccurrenceModelIndexTest,TemporalProcessIntegrationTest,ScheduleNegotiationResolutionTest,OccurrenceRegistrationTest -Dsurefire.failIfNoSpecifiedTests=false
-```
-
-### Earlier geometry-default verification
-
-Verification for the geometry-default addition: 37 selected Java tests passed across schedule/negotiation serialization, resolver candidate selection and reuse, registration, simulated dispatch and temporal scalar storage. The 17 schedule/resolver tests also passed after adding event-instantiator and native-calendar assertions. No live services were restarted for this addition.
-
-```text
-mvn -pl klab.services.resolver,klab.services.runtime -am test -Dtest=OccurrenceScheduleTest,OccurrenceNegotiationTest,ScheduleNegotiationResolutionTest,TemporalProcessIntegrationTest,OccurrenceRegistrationTest,SimulatedDispatchTest -Dsurefire.failIfNoSpecifiedTests=false
-```
-
-### S6 — Event production and feedback
+## Individual event production and boundaries
 
 Collective event instantiators execute at the start of each accepted schedule interval, never at
 INIT, and may return zero or more individuals. The complete batch is validated before child
@@ -153,39 +107,66 @@ end), inside the existing TransitionCommit envelope. `TransitionHistory.eventsBy
 one immutable duration record per started event, grouped by canonical semantic type for IDE
 lanes. END records do not create duplicate bars, and reordered/replayed delivery converges.
 
-Acceptance must include real instantiator contextualizers and IDE rendering; the client history
-API is available here, but this repository does not establish live UI acceptance. Distributed
-writeback, real-time driving and behavior-driven recursive production remain separate gates.
+## Storage, no-ops and delivery
 
-Verification: 88 selected tests passed across client/common, core services, resolver and runtime.
-Coverage includes single-cell bbox/shape promotion and round trips, atomic-period validation,
-whole-batch rejection before child submission, required child success, Java boundary arguments,
-read-only versus affected scanners, partial writes with untouched native cells, downstream
-recomputation at START and END beyond the original horizon, rollback/retry/restart, and replayed
-duration history. Existing process creation and no-op behavior remain covered. The final Maven
-run used an isolated source copy under `target/event-verification-workspace` to avoid concurrent
-IDE compiler output replacement; its `event-verification.log` records BUILD SUCCESS. No live
-services were restarted.
+Temporal writes use a lazy transaction-owned write set. Merely obtaining a scanner or returning immediately does not allocate a new durable state. Effective value/support changes determine dirty outputs; successful unchanged execution is a no-op, not failure. No-op completion is durable for retry suppression but creates no new Data state, geometry extension, causal recomputation or client timeline clutter.
 
-```text
-mvn -o -pl klab.services.runtime,klab.services.resolver -am test -Dtest=GeometryRepositoryTest,EventSupportTest,OccurrenceCompilationTest,OccurrenceExecutorTest,OccurrenceRegistrationTest,SimulatedDispatchTest,TemporalStorageTest,TemporalProcessIntegrationTest,AbstractExecutorScannerBindingTest,TransitionTransportTest,ProcessModelBindingsTest,ClientKnowledgeGraphTest,ComputationalClosureTest,InstantiationNamespaceTest -Dsurefire.failIfNoSpecifiedTests=false
-```
+Changed buffers, Data links, temporal support deltas, provenance and completion commit atomically. Rollback discards provisional output; historical data remains accessible. Downstream computations run only when effective changes reach their resolved inputs. This contract is intended to accommodate later distributed storage/computation implementations without relying on local invocation counts.
 
-### S7b — Events and behavior-driven mutations
+TransitionCommit version 1 persists on the root Activity with the graph commit summary, scheduler journals and typed quality-state deltas. ActivityFinished carries committed consequences; history recovery survives messaging outages and client reconnects. Client scopes deduplicate/reconcile delivery and invalidate affected graph/data views before notifying viewers. History polling handles unavailable graphs with bounded backoff. Synthetic ticks without consequences stay out of the Timeline; all successfully committed observed events must ultimately be shown.
 
-Use the committed event duration history above for IDE event lanes and complete live acceptance and causal navigation. k.Actors behaviors bound to process/event models must join the same digital-twin transition. Plan explicit versioned mutation records rather than overloading quality deltas or generic graph added/deleted sets.
+Process initialization records existence and schedule activation without inventing a numerical
+process INIT state. Later simulation commits retain the activation's causal provenance where
+available. Individual-event START/END flags and journals are different completion records from
+the instantiator's interval cursor. A committed event may remain pending until its boundary is due.
 
-| Mutation | Required committed client behavior |
-| --- | --- |
-| Occupied geometry change | Move the same substantial identity, refresh spatial views, preserve geometry history |
-| Substantial instantiation | Add the initialized observation and its links under the correct bearer/context |
-| Configuration instantiation | Display participants and relationships as one atomic batch |
-| End of existence | Remove from the active-time projection and cancel future participation while preserving historical inspection |
+## Bearers and change requests
 
-Keep occupied geometry, perceived geometry, existence and computed support distinct. Mutations need stable identities, causal/action provenance, temporal support and base/result revisions. Retirement is a temporal tombstone, not deletion. Settle authorization, competing mutations, spatial conflict rules, cascading retirement and behavior transaction entry before implementation. Test reordered create/move/retire messages, reconnect, rollback and atomic quality recomputation alongside mutations. Negotiate envelope compatibility explicitly.
+Qualities may inhere to processes without making processes countable. Inherited inherency and
+applicability bounds still constrain specialization. An ordinary process still needs its own
+substantial/event host; it is not an automatic host for another ordinary process.
 
-Continuation prompt: “Complete S7 event delivery after S6, then integrate agreed k.Actors mutation contracts in a new versioned envelope. Apply committed batches to receiving scopes and IDE views, preserving history and replay safety.”
+ProcessPlan version 3 records CONTEXT or OCCURRENT on each quality binding. Querying,
+initialization, storage and deferred creation use that bearer. Versions 1/2 retain their defined
+context-bearer interpretation; existing observations are not silently reparented.
 
-### S8 — Real time and operational release
+`change in X` is a valid quality-derived Process meaning regardless of whether a writer model
+is available. Only processes/events with supported semantic affects/creates evidence advertise
+that output. Existing compatible writers with the correct bearer, observer and complete support
+can satisfy CHANGE. Joint-effect preference is bounded by its ranking contract; it is not a
+general global set-cover optimizer. See [Consequence engine](CONSEQUENCE_ENGINE.md).
 
-Real-time behavior remains rejected. Define clock switching, outage/catch-up, concurrency and operational stop/resume policy before enabling it. Gate release on migration/restart, controlled-clock tests, backend/distributed-storage acceptance, load tests and live client compatibility. Upgrade API/common, resolver, runtime and IDE as a compatible stack; do not mix legacy semantic plans with corrected ontology/runtime behavior.
+## Event acceptance requirements
+
+Complete event verification must exercise actual instantiator contextualizers and public
+submission, not just schedule/geometry helpers:
+
+1. Confirm no temporal instantiation under INIT, then dispatch at accepted interval starts.
+2. Validate complete batches before child resolution; reject an invalid or failed required
+   child without publishing a partial batch.
+3. Check individual resolution/preparation, positive atomic duration, future starts and ends
+   beyond the producing interval/horizon.
+4. Execute both START and END with correct TimeInstant/boundary arguments and actual numerical
+   effects. Test read-only versus affected scanners and untouched cells outside event support.
+5. Fail genuine work and verify atomic rollback, retry/restart flags, cursor ownership and
+   immutable earlier state. A failed or unexecuted transition is not a durable no-op.
+6. Verify due-queue rebuilding, downstream recomputation, pending/current projection and event
+   duration history through reconnect/reordered delivery. END must not duplicate the START bar.
+7. Verify live client rendering and causal navigation independently of service/transport checks.
+
+Focused geometry, event-support, registration, scanner-binding, dispatch, temporal storage and
+transport tests exercise individual boundaries. They do not substitute for complete event
+lifecycle coverage. Keep the event acceptance gap explicit until the public path is exercised.
+
+## Open execution contracts
+
+Real-time driving is rejected until clock switching, outage/catch-up, concurrency and operational
+stop/resume policies are defined. General distributed writeback and behavior-driven recursive
+production require separate contracts.
+
+Behavior-driven create/move/retire operations need versioned mutation envelopes with stable
+identities, causal/action provenance, temporal support and base/result revisions. Occupied
+geometry, perceived geometry, existence and computed support remain distinct. Retirement is
+a temporal tombstone, not deletion. Authorization, competing mutations, spatial conflict,
+cascading retirement and behavior transaction entry must be specified before those operations
+are enabled. Quality delta transport alone does not supply them.

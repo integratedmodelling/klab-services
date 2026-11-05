@@ -1,9 +1,8 @@
 # Reconstructing executable dataflows from provenance
 
-Status: initial design and API skeleton, September 2026. The document model and its structural
-builder exist; live graph extraction, observation-language source generation, import and replay
+The document model and its structural builder exist; live graph extraction, observation-language source generation, import and replay
 do not yet exist through these entry points. This document develops the implementation plan in
-[OBSERVATION.md, section 7](OBSERVATION.md#72-provenance-to-dataflow-builder), rather than defining
+[the provenance-to-dataflow contract](OBSERVATION.md#provenance-to-dataflow-builder), rather than defining
 a second dataflow language. See also [RESOLUTION.md](RESOLUTION.md) for resolution and compilation.
 
 ## Two distinct dataflow contracts
@@ -24,7 +23,7 @@ characterization therefore extend the contextual Dataflow's explicit operation a
 they do not require a separate resolution or mutation endpoint. Runtime validates contextualizer
 signatures against that plan rather than discovering the operation's meaning only at execution.
 
-The contextual response also carries `resolutionOutcome` (`RESOLVED`, `NO_MODEL`, or `FAILED`).
+The contextual response also carries `resolutionOutcome` (`RESOLVED`, `DEFERRED`, `NO_MODEL`, or `FAILED`).
 `NO_MODEL` is an explicit successful lifecycle decision for acknowledgment/characterization,
 with no computation; it is not evidence of a failed contextualizer or a graph-reproduction plan.
 Classification's Runtime-owned characterization resolves and executes member-bound UPDATE nodes
@@ -35,7 +34,7 @@ Semantic-update actuators explicitly carry the operation observable, contextuali
 and typed member bindings. Their node identity is independent of observation identity: there is
 no observation for the directive. Member producers are executable prerequisites, and existing-member
 bindings are references to targets. The portable interface contract preserves these distinctions
-across services. See [semantic-update planning](RESOLUTION.md#17-semantic-update-contextualizations).
+across services. See [semantic-update planning](RESOLUTION.md#semantic-update-contextualizations).
 
 A reproduction document must account for semantic history as well as creation. CLASSIFIED effects
 record the member's before/after observables, predicate family/result and support/event. Replaying
@@ -55,7 +54,7 @@ Strict reproduction retains recorded computational choices and does not silently
 selection. Any later adaptive mode is a separate, explicit contract. Reproducibility still depends
 on the supplied inputs and pinned resources/components; packaging requirements must make these
 conditions visible. The runtime Dataflow retains its interface-based transport contract. Transport
-registration for the reconstruction document remains a separate implementation milestone below.
+registration for the reconstruction document has its own implementation boundary below.
 
 ## 1. Intended result
 
@@ -98,7 +97,7 @@ An incomplete scan can produce a diagnostic draft, but cannot be labeled an exec
 | Legacy computation | Old textual computation is deliberately not reconstructed into service calls. Its empty hydrated call list must not be mistaken for a valid no-op actuator. Extraction needs access to schema/completeness evidence as well as hydrated assets. |
 | Existing graph facade | `DataflowGraph.getComputation()` returns an empty list and `adapt()` returns null. Neither reconstructs a committed plan today. |
 | Existing encoder | `DataflowEncoder` emits a partial preamble, no definitions and `obs<runtime ID>` for RESOLVE. Activity descriptions can contain this text. Treat it as inspection output, not authoritative replay source. |
-| Language | The sibling `klab-languages` `Observation.xtext` contains separate strategy and executable document forms, including define/observe/reference/apply, versions and ports. Its header still labels it a design draft. Verify generated parser, adapter and deployed artifact together before claiming source support; earlier sections of OBSERVATION.md also describe the legacy grammar. |
+| Language | The sibling `klab-languages` `Observation.xtext` contains separate strategy and executable document forms, including define/observe/reference/apply, versions and ports. Verify the active generated parser, adapter and deployed artifacts together; the reference grammar alone does not establish executable replay. |
 
 Concrete source locations:
 
@@ -231,19 +230,19 @@ source-aware concern. Require semantic parse/serialize round trips and stable re
 required fields must fail before any persistent file is replaced. Payload staging and final publication
 should be atomic as a package. Resource registration follows source validation and package checks.
 
-## 6. Stages and acceptance gates
+## 6. Implementation and acceptance gates
 
-| Stage | Work | Completion evidence |
+| Capability | Work | Completion evidence |
 |---|---|---|
-| 0 — current | Document design; initial immutable semantic model, structural builder, extractor and serializer contracts | Focused builder tests; no claim of live extraction or source replay |
-| 1 — capture audit | Verify start-timestamp ordering; supplement ambiguous cases if needed; capture execution occurrence identity, ordered dependencies, actual ports/versions, schema/completeness markers and snapshot contract | Neo4j contract tests including equal timestamps, concurrency, restart, repeated resolution and legacy records |
-| 2 — scanner | Context-bound PROVENANCE traversal, root filtering, nested activities, plans and dependency closure | Real graph fixtures: ordered roots, nested submissions, failed/in-flight roots, repeated references, cycles and missing records |
-| 3 — reconstruction | Definitions, portable identity/context bindings, requirements/payload closure and complete supported semantic nodes | No unresolved symbols or runtime IDs; precise gaps for unsupported captures; deterministic document per snapshot |
-| 4 — source | Parser adaptation, explicit polymorphic transport mappings, validators, canonical dataflow serializer | Bean/source/parser round trip, deterministic source, preservation of every supported executable field |
-| 5 — replay | Import into fresh context, input binding, requirement verification and lowering to runtime Dataflow/Actuator | Execute without fresh model selection; compare observations, identity relations, geometry and values |
-| 6 — generalization | Resource packaging and k.IM serializer; later adaptive/temporal/composition capabilities | Resource reload/replay and k.IM semantic round trips; separate tests for every added capability |
+| Structural model | Document design; initial immutable semantic model, structural builder, extractor and serializer contracts | Focused builder tests; no claim of live extraction or source replay |
+| Capture | Verify start-timestamp ordering; supplement ambiguous cases if needed; capture execution occurrence identity, ordered dependencies, actual ports/versions, schema/completeness markers and snapshot contract | Neo4j contract tests including equal timestamps, concurrency, restart, repeated resolution and legacy records |
+| Scanner | Context-bound PROVENANCE traversal, root filtering, nested activities, plans and dependency closure | Real graph fixtures: ordered roots, nested submissions, failed/in-flight roots, repeated references, cycles and missing records |
+| Reconstruction | Definitions, portable identity/context bindings, requirements/payload closure and complete supported semantic nodes | No unresolved symbols or runtime IDs; precise gaps for unsupported captures; deterministic document per snapshot |
+| Source | Parser adaptation, explicit polymorphic transport mappings, validators, canonical dataflow serializer | Bean/source/parser round trip, deterministic source, preservation of every supported executable field |
+| Replay | Import into fresh context, input binding, requirement verification and lowering to runtime Dataflow/Actuator | Execute without fresh model selection; compare observations, identity relations, geometry and values |
+| Packaging and extensions | Resource packaging and k.IM serializer; later adaptive/temporal/composition capabilities | Resource reload/replay and k.IM semantic round trips; separate tests for every added capability |
 
-Each stage should ship a bounded supported subset and explicit diagnostics for the rest. Avoid a
+Each capability needs a bounded supported subset and explicit diagnostics for the rest. Avoid a
 single success flag that means only that a text file was written. Suggested stable extraction codes
 include `submission_order_unavailable`, `snapshot_incomplete`, `legacy_computation`,
 `missing_binding`, `missing_implementation_version`, `unresolved_reference`, `unsupported_cycle`
@@ -254,7 +253,7 @@ and `unsupported_document_field`.
 The user's `klab.staging.vxii` workspace contains the project suite at
 `testcases/klab/staging/vxii/testsuite.kactors`, with submitted-region identity and direct/implicit
 quality paths. Its `samples/dataflow.obs` is entirely commented historical design material, not a
-parser fixture. Neither file is changed by this stage.
+parser fixture. A commented source sketch is not a parser or replay acceptance fixture.
 
 Extend that suite once export/import actions exist: submit the Ruaha region, resolve Elevation and
 the Normalized transformation, export the successful snapshot, parse/import into a fresh context,

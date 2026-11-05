@@ -23,6 +23,30 @@ import org.junit.jupiter.api.*;
 /** Runtime signature accounting/composition against a controlled semantic proof boundary.
  * Real locality extraction and live producer revalidation have separate acceptance tests. */
 class SemanticExecutionEvidenceTest {
+  @Test void receiptIgnoresOnlyScopeChildCountersAndStillBindsScopeMeaningAndViewCount() {
+    var focus = new ObservationImpl(); focus.setId(3); focus.setUrn("focus:3");
+    focus.setObservable(observable("test:Native"));
+    when(scope.getContextObservation()).thenReturn(focus);
+    var observer = new ObservationImpl(); observer.setId(4); observer.setUrn("observer:4");
+    observer.setObservable(observable("test:Observer"));
+    when(scope.getObserver()).thenReturn(observer);
+    var view = new ObservationImpl(); view.setId(Observation.QUERY_ID);
+    view.setObservable(observable("test:Native")); view.setChildrenCount(1);
+    var collector = new SemanticExecutionEvidence.Collector(); collector.term("test:Native");
+    var proof = collector.finish(scope);
+    SemanticExecutionEvidence.issue(view, proof, scope);
+    focus.setChildrenCount(2); observer.setChildrenCount(3);
+    assertSame(proof, SemanticExecutionEvidence.issuedForConsequence(view, scope));
+    view.setChildrenCount(2);
+    assertNull(SemanticExecutionEvidence.issuedForConsequence(view, scope));
+    view.setChildrenCount(1);
+    focus.setObservable(observable("test:Changed"));
+    assertNull(SemanticExecutionEvidence.issuedForConsequence(view, scope));
+    focus.setObservable(observable("test:Native"));
+    observer.setUrn("observer:other");
+    assertNull(SemanticExecutionEvidence.issuedForConsequence(view, scope));
+  }
+
   @Test void genericConsumedQueryIsFrozenBeforeOwnEffectsAndFailedAttemptCannotCertify() {
     var source=new SemanticExecutionEvidence.Collector();source.term("test:Native");
     var query=new ObservationImpl();query.setId(Observation.QUERY_ID);query.setObservable(observable("test:Native"));

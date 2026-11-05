@@ -1,4 +1,4 @@
-# Singular context binding: bounded S7a capability
+# Singular context binding
 
 The executable subset references the current already observed singular Subject/Agent and
 runs one native quality **OBSERVE** producer. The child has the same observable and full
@@ -14,8 +14,7 @@ within known as ctx {
 yield bound
 ```
 
-The source grammar and portable ContextPlan already existed. Lowering recognizes this
-closed shape at rank 1 or higher. `$context` elsewhere remains the context Observable;
+The source and portable ContextPlan lower this closed shape at rank 1 or higher. `$context` elsewhere remains the context Observable;
 only this reference form denotes the actual scope context Observation. Semantic captures
 are never used to select an individual. No callback function or new reference API is added.
 

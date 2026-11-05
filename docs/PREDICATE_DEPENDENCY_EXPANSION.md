@@ -1,8 +1,9 @@
 # Abstract-predicate dependency expansion: prepared syntax boundary
 
-P0 provides request-local frozen preparation and keyed outcome application. Production
-Resolver/classifier orchestration remains absent. This is not a completed-classification
-adapter, member snapshot, deferred runtime, semantic cache or end-to-end recursive resolver.
+The prepared expansion API freezes request-local syntax and applies keyed outcomes. Runtime
+and Resolver integrate it through the supported prerequisite/family routes described below.
+The syntax object alone is not a classification certificate, native member snapshot, transaction
+or general recursive resolver.
 
 ## Supported API
 
@@ -51,31 +52,26 @@ accepted-revision validation before semantic distance or execution. The producti
 Reasoner gate tests prove ineligible canonical compound requests do not invoke the matcher;
 intentional abstract classifier categories retain their existing exception.
 
-## Production integration seam (updated after P1 and the sixth candidate)
+## Runtime integration
 
-The stable prepared attempt now bridges asynchronous syntax requests without rerunning
-preparation and changing their UUIDs. It must be associated with the enclosing Runtime
-attempt, not used as a Runtime transaction ID. The documented next API remains:
+The stable prepared attempt bridges asynchronous syntax requests without rerunning preparation
+or changing request identities. It belongs to an enclosing Runtime attempt and is not itself
+a transaction ID. The bounded prerequisite route captures coherent cohort/attempt state,
+returns complete keyed outcomes, redeclares generated syntax and checks eligibility before
+ordinary concrete dependency planning. See [continuation](CLASSIFIER_DEPENDENCY_CONTINUATION.md),
+[selected-model families](CLASSIFIER_DEPENDENCY_FAMILIES.md) and
+[independent products](CLASSIFIER_CARTESIAN_RECOVERY.md).
 
-`classifyPrerequisite(parentAttempt, occurrenceRequest, runtimeContext) -> CompletionStage<ClassificationOutcome>`
+Stateful classification is not speculative ranking work. Successful precomputed Tier-0
+alternatives remain eligible before automatic expansion. Direct classification is a Tier-0
+activity even though member resolution is its required prerequisite.
 
-The sixth candidate implements a bounded explicit Runtime prerequisite hop with coherent
-cohort-plus-attempt capture, complete keyed outcomes, redeclaration, eligibility validation and
-ordinary concrete dependency planning. See [its admitted inputs, atomicity and exact limits](CLASSIFIER_DEPENDENCY_CONTINUATION.md).
-The selected-parent-model dependency loop still needs suspension/resumption and generic input
-fanout/binding. The explicit hop must not run while ranking speculative model candidates.
-
-The independent-occurrence product and outcome distinctions are settled. Explicit shared
-binding syntax is undecided and unsupported. UNKNOWN resume/parent-lifetime and retry/cycle/
-retention policies remain future lifecycle design; no such choices are made by this boundary.
-Current classification's direct strategy is documented Tier-0 despite required member
-prerequisites. Successful precomputed outer Tier-0 strategies continue to win without entering
-this future route; do not relabel every classifier as Tier-1 or eagerly prepare candidates.
+Independent positional products do not imply shared binding syntax. General unknown-outcome
+resumption, cross-attempt retention/retry and arbitrary recursive lifecycle policies are not
+supplied by this API.
 
 ## Diagnostics
 
-ClassificationExecutionTest installs the standard scale factory independently of suite order.
-The optional actual generator-source fixture now supplies its companion sourcepath and runs
-when configured. The sixth candidate's ordinary Maven runner enables both that fixture and the
-local LAND archive probe; optional skips must be reported separately when either is unavailable.
-No generator artifact, shared cache, live service or deployed runtime is changed.
+Tests must establish their own scale factory and required fixture availability independently
+of suite order. Report optional source/archive fixture skips separately. Source preparation,
+keyed outcome composition, typed redeclaration and actual native execution are distinct checks.
