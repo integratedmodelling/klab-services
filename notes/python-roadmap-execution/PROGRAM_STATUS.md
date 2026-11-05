@@ -1,5 +1,17 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest queue steering — Q7 unresolved, Q8a fresh accepted-base branch
+
+Q7 firstactualhierarchy assertionFAILED; source/offline success is not acceptance.
+Preservedfeature/python-current-semantic-inspection at830a141cd,noPR/merge.
+Controller/service delegate assertedOWL queries; rootcause/direction unproved,
+futurediagnostic needs actual response/source-generationidentity. No fixture/meaning
+changed to forcepass; processcleanupPASS. IndependentQ8a begins on acceptedb41016737,
+branchfeature/python-async-own-wait-acceptance,contractbeforecode. Two local waits
+sameactualJob,one cancellation,no remote cancel/replay/disposal,20nativecells,
+foreignprincipaldenial andcreatorcleanup. FullQ7/Q8 matrices remain incomplete;
+not all-work stoppage; sleepnotrequested while actionablequeue remains.
+
 ## Latest Q6a local acceptance
 
 Tested739081adf LOCAL_ACCEPTED_BOUNDED:2,994installed/17gates/lint/parity+
