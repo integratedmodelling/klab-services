@@ -67,3 +67,39 @@ Python3.12.7; inherited Rasterio warning retained. Wheel
 sdist `fedc1724b04f1b01c88b85b0cd1a633a9faaf5664bf8bf6b43bd11b020a7b227`.
 Fresh owned Java `native-async-handle-live` is active. Actual recovery/access/
 cleanup remains pending; installed success does not establish live acceptance.
+
+## Final-candidate installed checkpoint
+
+Review added type-only secondary report-save failure notes without masking a
+primary recovery/cleanup error; SDK restoration is unchanged. Candidateb658cc388
+passed255focused tests and fresh full installed validation:3,119tests/all17gates/
+lint/build/sourceparity. Wheel
+`a5b1ca64e646bfa7d5789090ecb277e3c7ac1cdb4c8d26fc6e8dce6cbbbd9e48`;
+sdist `37db227c619c374beb3709da8edd203ae07cdae0182f762048bb71dcd21537ff`.
+One exact-head `native-async-handle-final-live` run is active; no final live outcome
+or PR/merge acceptance is predeclared. Earlier live PASS stays bound to20d07091d.
+
+## Verified bounded result
+
+Final executable `b658cc388c505b044a4f6653544bfd5483af7dba`:3,119installedtests/
+17gates/lint/build/parity and255focused tests PASS. Exact-head fresh Java run PASS:
+one original scenario computation, saved context/Job/observation handles restored
+in a distinct installed-interpreter async process, original Job2/observation15/
+focus11, all20cells234.5m. The worker submitted no scientific work and acquired no
+creator ownership. Local wait cancellation and local close preserved creator work.
+Foreign and known-expired TEST credentials were denied; a missing observation
+returned MissingAssetError after positive original lookup, not protocol-error
+absence inference. Creator context/session, worker and owned services/listeners
+closed; unrelated Java unchanged.
+
+Raw SDK/harness, installed artifacts and live candidate identity verified; private
+handles/reports checked for actual configured credentials and byte-hashed. Earlier
+coverage failure and first passing candidate remain preserved. Type-only report-I/O
+notes preserve a primary failure; successful evidence saves remain required.
+
+Normal final-head PR/CI/eligible merge remain pending. Actual deployed Resolver/
+mapping/observer, deleted-context, restart/in-flight/history guarantees remain
+unaccepted beyond source-derived unit contracts. No async export/Hub orchestration,
+managed lifecycle, whole A/B or original-study acceptance. The Quality warning and
+broader Q7 matrices remain separate. Explicit authorized release is unchanged;
+unowned/local-close does not imply a client-side release prohibition.

@@ -1,5 +1,16 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Native async saved-handle checkpoint — 5 November 2026
+
+PR217merged361b6920b. Native async restorationb658cc388 locallyPASS:3,119installed/
+17gates+actualfreshprocess originalcontext/Job/observation/focus/20cells/access/
+localcancel-close/creator-worker-processcleanup. Existing schema/identity/selection/
+decoder, nativeawaitedI/O; no replay or auto-release. NormalPR/CI/mergepending.
+Deletedcontext, wider peer-observer/mapping deployments and in-flight restart/history
+remain unaccepted beyond source-derived unitcontracts. Async export/Hub/managed
+lifecycle/fullA-B/studies remain incomplete; no whole-row promotion. Qualitywarning/
+broader Q7 matrices and nonpassing release assessment retained.
+
 ## Bounded current model-plan checkpoint — 5 November 2026
 
 CanonicalPR216merged4e4df955b. Model-plan7eb7f3637 locallyPASS:3,090installed/

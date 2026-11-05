@@ -1,5 +1,16 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Native async handle restoration local acceptance
+
+feature/python-native-async-handle-restoration;base361b6920b;testedb658cc388;
+PR/mergepending.3,119installed/17gates+255focused and exact-headfreshJava/asyncprocess
+originalJob-observation-focus/20cells/access/cancel-close/creator-workercleanupPASS.
+Native awaited existingcontracts/validators/decoder,no scientificreplay orauto-release.
+Initialcoveragefailure/firstlivepass preserved. Broaderdeletedstate/peer-observer/
+mapping/restart-history/managed/export/fullA-B gates notpromoted. Wheel
+a5b1ca64e646bfa7d5789090ecb277e3c7ac1cdb4c8d26fc6e8dce6cbbbd9e48.
+NormalPR/CI/mergeNEXT;releaseassessment remainsnonpassing.
+
 ## Latest delivery / next async restoration slice
 
 PR217 merged361b6920b, reviewed4ceea6c42; allCI/exact evidence/normalmerge/ancestry/

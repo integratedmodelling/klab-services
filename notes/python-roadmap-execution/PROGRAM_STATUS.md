@@ -1,5 +1,27 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest native async restoration local acceptance
+
+b658cc388 LOCAL_ACCEPTED_BOUNDED:3,119installed/17gates/lint/parity+255focusedPASS;
+exact-head actualJava/freshasyncprocess originalcontext/Job2/observation15/focus11/
+20cells234.5m/accesscontrols/localcancel-close/creator-worker-servicecleanupPASS.
+Worker scientificsubmissions0,unowned;unrelatedJavaunchanged. RawSDK/harness/
+installed/liveidentity/privateevidencehashes/credentialabsence verified; laterdelta
+Markdownonly. Initialcoveragefailure and firstlivecandidate retained; primaryreport
+errorguard tested. NormalPR/CI/mergeNEXT. Deletedstate/wider peer-observer/mapping/
+restart-history remain unaccepted beyond unitcontracts;no fullA/B/study/releaseclaim.
+PR217merged361b6920b/postmerge25PASS. Nosleepconditionwhileactionableworkremains.
+
+## Latest native async final installed pass / exact-head live pending
+
+b658cc388:3,119installedtests/all17gates/lint/build/sourceparity and255focusedPASS.
+Report-I/O safeguard retains primary failures with type-only notes; native SDK
+restoration unchanged. Exactcandidate native-async-handle-final-liveACTIVE, final
+recovery/access/cleanup/identity notpredeclaredPASS; firstactualpass staysbound to
+20d07091d. NoPRyet; deletedstate/wider peer-observer/restart-history remainseparate.
+Wheela5b1ca64e646bfa7d5789090ecb277e3c7ac1cdb4c8d26fc6e8dce6cbbbd9e48.
+FullA/B/studies/Qualitywarning/othergates incomplete;nosleepconditionwhileworkremains.
+
 ## Latest native async restoration installed pass / actual run active
 
 20d07091d:3,117installedtests/17coveragegates/lint/build/sourceparityPASS. Initial

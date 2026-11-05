@@ -77,3 +77,38 @@ failure, as in the previously diagnosed model-plan harness. Add a small typed-no
 save safeguard and tests, leaving SDK restoration and successful computation path
 unchanged. Final installed gates and fresh exact-head live validation are required
 before delivery; preserve the first passing receipt, do not relabel its candidate.
+
+Final executableb658cc388 installed `ab-native-async-handle-final`:3,119tests/
+17gates/lint/build/sourceparityPASS;255focused testsPASS. Exact noneditableWindows
+Python3.12.7; inheritedRasterio warning retained. Wheela5b1ca64e646bfa7d5789090ecb277e3c7ac1cdb4c8d26fc6e8dce6cbbbd9e48;
+sdist37db227c619c374beb3709da8edd203ae07cdae0182f762048bb71dcd21537ff.
+Fresh exactcandidate live state `native-async-handle-final-live` ACTIVE; final
+recovery/cleanup/identity not predeclared. No PR yet.
+
+## Final exact-candidate recommendation
+
+**Ready for bounded maintainer review**, author/CLI only, not human scientific
+approval. Testedb658cc388c505b044a4f6653544bfd5483af7dba on361b6920b; subsequent
+delta Markdown-only, actual SDK/harness/installed/live hashes verified. Full diff
+reviewed for usefulness, architecture, identity/security, wire contracts, scientific
+meaning, lifecycle, primary errors, state, performance and maintainability. No
+remaining demonstrated important/blocking defect in this bounded restore slice.
+
+| Check | Verified outcome and boundary |
+|---|---|
+| Full installed command above | PASS:3,119tests/all17gates/lint/build/sourceparity;255focused tests |
+| Final owned Java command above | PASS:fresh installed process restores originalcontext/Job2/observation15/focus11/20cells234.5m without scientific replay |
+| Access/ownership/lifecycle | PASS:foreign/expiredTESTdenials, positive-controlledmissingobservation, localwaitcancel/localclosepreservecreator, allcreator/worker/process/listenercleanup;unrelatedJavaunchanged |
+| Identity/privacy | PASS:rawSDK/workflow/functional hashes, installed sourceparity/artifactpins/livehead; privatehandles/reports byte-hashed and actualcredentials absent |
+| Final-head hostedCI/protections/normaleligiblemerge | Pending; required before merge |
+
+Private `native-async-handle-final-live` and `native-async-handle-final-validation.json`
+bind exact executable/artifacts/results/cleanup. First20d07091dpass and original
+coverage failure retained, not relabelled. Actual persistedobserver/Resolver/mapping
+deployments, deletedcontext and broader restart/history/Runtime-incarnation proof
+remain separate; unit tests do not close them. No protocolerror=absence inference.
+No SDK networkthreads, fake Runtime/provider implementation, scientificmodel/oracle/
+Java/worldview/dependency change. ProductionHub/export/managedagents/fullA-B/studies
+remain incomplete; Qualitywarning retained. No release/support/contributor/reviewer
+assignment or publication authority inferred. Next normalPR/CI/exactheadmerge,
+ancestry/postmerge and ownedbranch retirement.
