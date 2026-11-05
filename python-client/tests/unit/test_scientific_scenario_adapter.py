@@ -18,6 +18,7 @@ def test_harness_success_requires_explicit_checks_and_axes(tmp_path, contract, m
     manifest.write_text(json.dumps(contract))
     state = tmp_path / "state"
     monkeypatch.setattr(adapter, "PACKAGE", tmp_path)
+    monkeypatch.setattr(harness, "PACKAGE", harness.PACKAGE)
     monkeypatch.setattr(adapter, "installed_wheel", lambda _: "f" * 64)
     def run(args):
         state.mkdir()

@@ -49,6 +49,16 @@ or process manager was introduced. This is not a new hard overall watchdog.
 Remaining validation: installed suite/coverage, detailed discovery inventory, live
 N/S explicit expectations and failure receipts on actual unavailable prerequisites.
 
+### Installed result and independent-branch adapter
+
+Candidate5af6668b14e13418b2bca2182db082503682a6d7:3461installed tests/all17gates/
+build/install/lint PASS,78.46s offline suite (not total gate duration). Wheel SHA256
+d9a1d5ff2ce33d41ab61f78260671e696cabbd50f12b309dccd77e3ee233280c.
+Added explicit workflow-package selection restricted to server-repo/python-client
+so independent N/S branches can reuse the thin adapter without a cascading PR stack;
+41focused tests stillPASS. This adapter delta is not covered by the earlier whole
+suite receipt; distinguish its source hash and subsequent focused check.
+
 ## Validation and compatibility
 
 Command: installed WindowsPython3.12 `pytest -q tests/unit/test_scientific_scenario.py`:

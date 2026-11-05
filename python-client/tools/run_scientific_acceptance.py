@@ -44,11 +44,18 @@ def now():
 
 
 def execute(args):
+    global PACKAGE
+    if getattr(args, "workflow_package", None) is not None:
+        selected = args.workflow_package.resolve()
+        require(selected == args.server_repo.resolve() / "python-client",
+                "Workflow package must belong to the explicit server checkout")
+        PACKAGE = selected
     manifest = validate(load(args.manifest), PACKAGE)
     require(manifest["claim_level"] == "L4", "L5 execution is excluded from this milestone")
     wheel_hash = installed_wheel(args.wheel)
     # Use the existing harness directly so its finally block owns every cleanup.
     import run_reliability_acceptance as harness
+    harness.PACKAGE = PACKAGE
     args.scenario = manifest["execution"]["operation"]
     required = {"nonuniform-export": (1, 2), "request-plan": (4, 6)}[args.scenario]
     require(manifest["execution"]["max_contexts"] >= required[0]
@@ -110,6 +117,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("manifest", "wheel", "server-repo", "java", "components", "state-dir"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--workflow-package", type=Path,
+                        help="Explicit python-client directory in server checkout for independent accepted-base scenario branches")
     return execute(parser.parse_args())
 
 
