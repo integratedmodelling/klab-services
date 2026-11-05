@@ -89,3 +89,14 @@ zero failures/errors/skips. Tested provider/test source and private class hashes
 must remain exact; final-head hosted checks including routing and the two focused
 Maven test counts must pass again before normal eligibility/merge. No live services,
 shared classfiles or scientific inputs changed for this prerequisite.
+
+Checkout validation found raw source/test hashes changed solely through LF/CRLF
+conversion. All three Git blobs and normalized bytes match the tested candidate;
+private/shared class hashes remain unchanged. Raw-byte equality is **not** claimed.
+Fresh isolated main/test compilation and nine focused tests PASS (zero skips) against
+the final checked-out bytes at `71b1c4811`; 108 Python regressions passed again. Receipt:
+`q11-after-ci-prerequisite-validation.json`; final compilation receipt is separate
+from the preserved original candidate evidence.
+Final receipt: `resource-access-final-head.json`. No services started, access grants
+changed or shared classfiles modified. Final documentation-head hosted checks remain
+required; local completion is not merge acceptance.
