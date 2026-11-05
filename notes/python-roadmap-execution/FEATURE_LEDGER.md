@@ -1,5 +1,24 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q9a local evidence acceptance
+
+feature/python-current-compatibility-evidence;base0f645465c;tested7b7cd4cfe;
+PR/mergepending.3,041installed/17gates+freshactualJavaonboarding(original20cells/
+2authroutes/nativeGeoJSON/2workers/access/cleanup)PASS. Existing8gate release
+assessment4PASS/3UNKNOWN/1BLOCKED,expectedexit3/eligibilityfalse/publicationfalse;
+allartifacts pinned,no whole-rowpromotion. FullQ9/A/B/studies remainincomplete.
+Wheela2c329d408f6a47c35b50e6b831f5da0e59c3828c71b1a30787beaf1fa5c9b01.
+NormalPR/CI/mergeNEXT;notreleaseauthorization.
+
+## Latest delivery / Q9a contract
+
+PR213merged0f645465c,revieweda4e90c313;allCI/normalmerge/ancestry/sourceequality/
+postmerge33PASS;branchretired. Authority health regression corrected withoutweakening
+readiness/networkguard;actualJava startup/parsercleanupPASS. Q9a freshbranch
+feature/python-current-compatibility-evidence/base0f645465c:publicsupport row
+reconciliation/exactinstalled integratedjourney/existing8gatereleasechecker;
+validationpending,nonpassinggates retained. FullQ8/Q9/A/B/studies incomplete.
+
 ## Latest authority health regression validated
 
 fix/python-fixture-authority-health;base d3453dd42;tested7fe1a43b5;PR/mergepending.

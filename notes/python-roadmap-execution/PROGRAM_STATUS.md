@@ -1,5 +1,41 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q9a bounded evidence result
+
+7b7cd4cfe LOCAL_ACCEPTED_BOUNDED compatibility/docs evidence:3,041installed/
+17gates/lint/parityPASS;freshactualJavaonboardingPASS oneoriginal20cell result/
+units/nativeGeoJSON/twoTESTauthroutes/twofreshworkeroriginalreads/denial-expiry/
+creatorcleanup. Ownedprocess/listenercleanupPASS,existingJavaunchanged. Exact
+installed/live/rawharness+Markdown-onlydelta verified. Existing8gatechecker:
+offline/coverage/core-package/ownedlifecyclePASS(bounded);security-failure/scale/
+server-compatibilityUNKNOWN;scientific-referenceBLOCKED. Expectedexit3,
+eligible_for_reviewfalse/publication_authorizedfalse;all8artifacts verified.
+NormalQ9aPR/CI/mergeNEXT,notreleaseapproval/fullQ9/A/B/studycompletion. Q7/managed
+cleanup andauthenticinputs unresolved;SleepNOT_REQUESTED whileworkremains.
+
+## Latest Q9 installed pass / fresh integrated journey active
+
+7b7cd4cfe onaccepted0f645465c:3,041installed/17gates/lint/build/parityPASS;
+wheela2c329d408f6a47c35b50e6b831f5da0e59c3828c71b1a30787beaf1fa5c9b01.
+q9-current-onboarding-liveACTIVE:onefreshsingle-use20cellnumericcomputation,
+twoTESTauthroutes/nativeGeoJSON/twofreshprocessoriginalreadbacks/access/cleanup.
+No broadscience/scale/version support inferred. Existing8gatechecker assessment
+pending with UNKNOWN/BLOCKED retained;noQ9PRyet/releaseauthorization. Program/A/B/
+studies incomplete;Q7/managedcleanup unresolved;SleepNOT_REQUESTED whileworkremains.
+
+## Latest health delivery / independent Q9a contract
+
+PR213 MERGED_BOUNDED0f645465c6810f6a226a2526390a9cd35528f06d,reviewed
+a4e90c313e7172910241229fb9424e96cc541a5a;everyfinalcheckSUCCESS;normalmerge/
+ancestry/sourceequality/postmerge33PASS;ownedbranchretired. Original404red and
+guardfailure retained;actualdefaultownedJava startup/parsercleanupPASS. No readiness
+bypass. New accepted-base Q9a compatibility/evidence branch reconciles stale public
+support rows and will revalidate exactinstalled onboarding journey, retaining all
+eightreleasegates/nonpassingoriginalscience-broadscale-server states. Contractbefore
+validation:python-client/docs/current-compatibility-evidence.md. No release/support
+authorization or wholeA/Bpromotion. Managedcleanup/Q7/studies remainunresolved;
+sleepnotrequestedwhileactionableworkremains.
+
 ## Latest health correction actual Java regression pass
 
 7fe1a43b5 LOCAL_VALIDATED_REGRESSION:28focusedHTTP/auth/readiness and3,041installed/
