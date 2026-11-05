@@ -1,5 +1,26 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## CODELIST retrieval-only candidate: local acceptance PASS
+
+`2f94029fb` includes accepted #228: 3,369 installed tests/all 17 gates/134 focused
+tests and actual Java root/type/service/entry checks passed. Served codebook is
+empty—metadata retrieval only, not categorical computation or a recovered study
+dictionary. Positive-controlled unknown root produced typed HTTP200 absence;
+list/resolve refused locally with zero HTTP. Three GETs, zero scientific/inspection
+writes; exact identity/privacy and owned cleanup passed. No Java/mapping changes.
+Final focused/normal PR/CI/merge pending. Full RC-P2.2/CAP-09/A+B/studies remain open.
+
+## PR #228 delivered / CODELIST retrieval prerequisite
+
+#228 merged `13b723aa3c361e011031e76e5a7730ae0caf28c1`; all hosted checks,
+ancestry/tree equality and 128 exact-source postmerge tests passed, branch retired.
+Earlier pending preview notes are historical. Current CODELIST retrieval admits
+existing Java class selection for both facades only; list/resolve remain unsupported.
+Two before-fix positive tests failed locally; 106 focused tests passed after fix.
+Expanded installed gates active; actual metadata acceptance pending. No mapping
+interpretation, categorical computation, study dictionary or Java change claimed.
+RC-P2.2/CAP-09 and all broader A+B/study gates remain incomplete.
+
 ## Native async source preview — integrated candidate PASS
 
 859670c97 includes acceptedPR227/6af50a1dc;3,346installed/17gates/117focused and

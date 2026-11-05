@@ -1,5 +1,39 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## CODELIST exact-candidate local acceptance
+
+`2f94029fb`: 3,369 installed/all 17 gates/134 focused tests and actual Java
+declared-root/type/service/entries/missing-root/read-only audit PASS. Empty entries
+establish only metadata retrieval, not categorical computation or original dictionary
+recovery. Typed missing-root HTTP200 after positive lookup; list/resolve refused
+locally with zero HTTP. Three GETs/no inspection or scientific writes; exact source/
+install/harness/live privacy binding and owned cleanup passed, unrelated Java unchanged.
+Final focused/normal PR/CI/merge pending; integration `13b723aa3`, 28 queue PRs
+merged/0 open until submission. Broader requirements/studies/authorization gates unchanged.
+
+## Current: PR #228 delivered; CODELIST validation active
+
+Candidate `2f94029fb`: 134 focused / 3,369 installed / all 17 gates and
+lint/build/source parity passed; exact package/source/raw-harness identity verified.
+Fresh owned Java codebook metadata run active, no success predeclared. Need actual
+root/type/service/entries/missing-root/read-only/privacy/cleanup evidence before PR.
+
+Integration `feature/python-experiment-runner@13b723aa3c361e011031e76e5a7730ae0caf28c1`.
+28 queue PRs merged (#201–228), 0 open. #228 all hosted checks, exact-head merge,
+ancestry/tree equality and 128 exact-source postmerge tests passed; branch retired.
+Current CODELIST branch: contract `b983929d7`, implementation `15ce01595`, accepted
+parent merged normally. Two positive retrieval cases failed locally before fix;
+106 focused tests passed afterward. Expanded installed/17-gate validation active.
+Next actual Java root/type/service/entries/missing-root/read-only controls, then exact
+identity/privacy/cleanup and guide review/normal PR. Empty codebook is metadata only.
+No CODELIST list/resolve, inferred mappings, Java change or scientific computation.
+Requirements: 23 in-scope A+B = 1 accepted / 20 partial / 1 missing / 1 blocked,
+plus 1 Target-C exclusion; capabilities 4 accepted / 13 partial / 1 excluded.
+Seven dependencies, peer fixture and component authorization blockers unchanged.
+All three complete study fixtures L3 PARTIAL/L4 BLOCKED/L5–L7 NOT_RUN; original
+provenance/interpretation evidence still required. PROGRAM_IN_PROGRESS/A_INCOMPLETE/
+B_INCOMPLETE; independent work remains actionable.
+
 ## Native async source preview exactcandidate acceptance
 
 859670c97879e5fa9197fd91db38d3f6293a7b8b:3,346installed/17gates/117focused and

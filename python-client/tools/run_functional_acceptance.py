@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "native-codelist-retrieval": "tests/functional/test_native_codelist_retrieval.py",
     "async-source-previews": "tests/functional/test_async_source_previews.py",
     "async-resource-inspection": "tests/functional/test_async_resource_inspection.py",
     "shared-context-readers": "tests/functional/test_shared_context_readers.py",
