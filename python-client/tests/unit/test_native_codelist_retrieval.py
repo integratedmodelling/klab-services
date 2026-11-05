@@ -24,6 +24,27 @@ def client(native_async, handler):
         resources=Endpoint("https://resources.invalid/base", "resource-token"), http_transport=httpx.MockTransport(handler))
 
 
+def test_retrieval_selector_preserves_existing_class_domain_and_resource_default():
+    from klab_client.api.services import ResourcesServiceImpl
+    for name in ("RESOURCE", "MODEL", "NAMESPACE", "ONTOLOGY", "PROJECT", "WORKSPACE", "BEHAVIOR",
+        "OBSERVATION_STRATEGY_DOCUMENT", "WORKFLOW", "FLOW"):
+        assert ResourcesServiceImpl._retrieval_knowledge_class(name) == name
+    assert ResourcesServiceImpl._retrieval_knowledge_class(KlabAsset) == "RESOURCE"
+    for value in (None, "codelist", "CODELIST/other", 1):
+        with pytest.raises(UnsupportedOperationError):
+            ResourcesServiceImpl._retrieval_knowledge_class(value)
+
+
+def test_live_codebook_guard_accepts_empty_metadata_not_invented_mappings():
+    from types import SimpleNamespace
+    from workflows.native_codelist_retrieval import validate_codebook
+    payload = CODELIST | {"entries": []}
+    assert validate_codebook(SimpleNamespace(urn=ROOT, raw=payload), ROOT, "resources-id") == 0
+    for changes in ({"rootConceptId": "different"}, {"serviceId": "foreign"}, {"type": "NUMBER"}, {"entries": {}}):
+        with pytest.raises(AssertionError):
+            validate_codebook(SimpleNamespace(urn=ROOT, raw=payload | changes), ROOT, "resources-id")
+
+
 @pytest.mark.parametrize("native_async", [False, True])
 def test_explicit_native_codelist_retrieval_preserves_full_payload_and_typed_codes(native_async):
     seen = []
