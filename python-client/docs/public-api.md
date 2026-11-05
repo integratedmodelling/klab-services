@@ -104,6 +104,12 @@ timestamps and native interval validation before HTTP. Keys/timestamps are calle
 supplied; no time/revision discovery, lease, scheduling or temporal computation is
 implied. See [native scan slices](native-scan-slices.md).
 
+Indexed point offsets must be exact nonnegative integers in Java's signed-long
+domain (0..2**63-1), with 1..256 offsets per fetch. The shared sync/async preflight
+rejects out-of-domain values before any HTTP; it does not establish that a valid
+integer names a cell present in the selected observation. Order and duplicates
+remain explicit. See [offset bounds](indexed-offset-long-bounds.md).
+
 Within a single sync/async indexed read, validated explicit native `semantics`
 fields are copied before the first HTTP request and retained for every point and
 the returned requested observable/unit metadata. Caller mutations remain caller

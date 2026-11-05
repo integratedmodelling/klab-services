@@ -1,5 +1,26 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## PR225 delivered / integrated offset validation
+
+Latest combinedoffsetcandidateaaa2e35d9:3,259installed/all17gates/lint/build/parity
+PASS; exactcurrent SDK/install/harness/artifact binding verified. Rawlineendinghash
+transition diagnosed with committedblob equality/currentLFparity, both receipts
+retained. No scientificlive orJava change; finalfocused/PR/CI/merge pending.
+
+Current integration feature/python-experiment-runner@c178e390ee7ec5b9f301b92edbe5debfdf1b88f2.
+PR225 normal exact-headmerge/allhostedchecks/ancestry/source equality and133exactsource
+postmerge testsPASS; successful branchretired. Failed22af36adf harnessrun retained;
+corrected7c33ab67f actualACL/read/localclose/cleanup evidence remainsbounded, not full89.
+Queue#201–225=25merged/0open. A+B23in-scope=1accepted/20partial/1missing/1blocked;
+18CAP=4accepted/13partial/1excluded. Seven dependencyfamilies and all3study complete
+fixture L3partial/L4blocked/L5–L7NOT_RUN unchanged; recovered subartifacts preserved.
+Current fix/python-indexed-offset-long-bounds normally merged accepted225 ancestry,
+no resets/discards. e9a4b6e37 beforeintegration154focused/3,249installed/17gatesPASS;
+combined-tree installedvalidationACTIVE. No new live scientific run/Java production
+change; local impossible-input refusal only. Next: exactintegrated candidate/final
+checks, review/normalPR/CI/eligiblemerge, then next supported A+B slice.
+PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE.
+
 ## Shared-reader corrected actual acceptance
 
 7c33ab67f:3,251installed/17gates/122focused and actualJava ACL/original16restore/
