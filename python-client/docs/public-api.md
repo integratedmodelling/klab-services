@@ -53,6 +53,14 @@ Saved references: `Handle`, `to_handle`, `save_handle`, `load_handle`,
 `restore_handle`, source-object `to_handle()` and `Client.restore_handle`.
 See [versioned schema and verification](saved-handles.md).
 
+Native async typed metadata: `AsyncResourceInspector(AsyncClient, scope=None)`
+provides awaited `list`, `retrieve` and `resolve` for MODEL/RESOURCE, with the same
+immutable views, budgets and redaction as `ResourceInspector` on synchronous Client.
+It uses existing native async service calls, not threads or a nested event loop.
+Missing versions/dependencies remain unavailable; provider URLs remain inert data.
+Neither facade proves model applicability, Resolver selection or computation.
+See [native async inspection](native-async-resource-inspection.md).
+
 Shared readers use the same saved-handle API with independently configured clients:
 the server must admit the second principal through its existing context ACL. A handle
 does not grant access, change credentials or confer creator ownership. Closing a

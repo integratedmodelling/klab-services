@@ -26,3 +26,31 @@ inspection with ordinary controlled principal and validtoken negative controls w
 supported; no model computation or invented project/publication workflow. Guide
 review, exactsource/install/harness/live/privacy/cleanup, normalPR/CI/eligiblemerge
 and postmerge required. FullRC-P4.1/A/B/scientific-study gates remain open.
+
+## Use
+
+```python
+from klab_client import AsyncResourceInspector
+
+inspector = AsyncResourceInspector(async_client, max_items=100)
+models = await inspector.list("MODEL")
+# Choose an exact served URN; no semantic model selection is inferred by this list.
+model = await inspector.retrieve(models[0].urn, "MODEL")
+resources = await inspector.resolve(model.urn, "MODEL")
+```
+
+Use ResourceInspector for synchronous Client, AsyncResourceInspector for AsyncClient.
+Whole lists are bounded, not paginated; duplicates retained. Scope/service checks
+bracket the actual read, but no multi-request revisionlease is implied. Immutable
+advertisements and providerURLs stay inert metadata, not credential-routing instructions.
+Model version/dependencies can be None; labels/observables do not prove applicability,
+Resolver choice or actual computation. Native cancellation only stops local requests.
+
+## Initial candidate checkpoint
+
+003078ecd:119focused/3,285installed/all17gates/lint/build/sourceparityPASS.
+Wheel284de2b518c8ba59ee2ea5ae5b7e820bea9cff8c1f2c512741ce76287202d256;
+sdist e881a17983371693c87fc9013556c08eb971c51700b5885e88a6727397e472c5.
+This candidate starts atacceptedPR225 and excludes offsetPR226's8newtests/fix.
+PR226hostedchecks nowPASS; normalmerge/postmerge/integration then combinedpackage
+validation must precede one actual read-only modelmetadata run. No livePASSpredeclared.
