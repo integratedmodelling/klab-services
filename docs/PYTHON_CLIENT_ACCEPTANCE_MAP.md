@@ -54,8 +54,14 @@ fresh-process completedJob/observation/focus/20cells/no-child-replay-disposal/
 foreign-deleted refusals/creatorcleanupPASS. Allhosted checks and ancestryPASS;
 postmerge39focusedtests/sourceidentityPASS; ownedbranchretired. FullP1.2/P3.3
 remainPARTIAL, including in-flight/history/Runtime-generation scenarios.
-Q3 bounded native GeoJSON adapter is under validation on a fresh independent
-branch; no whole RC/CAP row is promoted. A/B remain incomplete.
+Q3 bounded native GeoJSON adapter PR204 mergednormally atd92dbdbde;2,943installed/
+17gates+actualnativeJava rectangle/identity/CRS/digest/cleanupPASS;allhostedchecks/
+ancestry/postmerge61testsPASS,branchretired. FullRC-P2.5/CAP09/15remainPARTIAL.
+Q2 currenttuple TEST onboarding nowlocallyaccepted atc19e319c1:2,966installed/
+17gates+certificate/token/sameoriginal20cells/m/twoauditedfreshworkers/access-expiry/
+secretfree/creatorcleanupPASS;normalPR/CI/mergepending. Firstreadinessfailure and
+boundedsource-backedcorrectionretained. GenuineproductionHub/license/certificate
+and fullRC-P1.1/CAP01/02remainPARTIAL. No whole RC/CAP row is promoted;A/Bincomplete.
 
 ## Current reconciliation — 4 November 2026
 

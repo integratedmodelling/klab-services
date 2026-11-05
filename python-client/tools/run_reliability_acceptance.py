@@ -80,6 +80,29 @@ def runtime_control(state, launches, spawn, actions):
         (state / (action + "-runtime.done")).write_text("confirmed")
 
 
+def wait_onboarding_ready(state, *, timeout=60):
+    """Observe genuine readiness after owned Resources reindex; never override it."""
+    deadline = time.monotonic() + timeout
+    snapshots = []
+    with httpx.Client(trust_env=False, timeout=5) as client:
+        while time.monotonic() < deadline:
+            snapshot = {}
+            for name, port in PORTS.items():
+                try:
+                    response = client.get(f"http://127.0.0.1:{port}/{name}/public/status")
+                    response.raise_for_status()
+                    payload = response.json()
+                    snapshot[name] = {key: payload.get(key) for key in ("serviceId", "available", "operational")}
+                except (httpx.HTTPError, ValueError):
+                    snapshot[name] = {"available": None, "operational": None}
+            snapshots.append(snapshot)
+            (state / "onboarding-readiness.json").write_text(json.dumps(snapshots, indent=2))
+            if all(row.get("available") is True and row.get("operational") is True for row in snapshot.values()):
+                return
+            time.sleep(.5)
+    raise RuntimeError("Owned onboarding deployment did not report available+operational; do not weaken selection")
+
+
 def run(args):
     import klab_client
     state, repo = args.state_dir.resolve(), args.server_repo.resolve()
@@ -193,6 +216,8 @@ def run(args):
             process = spawn("resources-reindexed", command, cwd); ready(PORTS["resources"], route, process)
         fixture_hub.SERVICES = PORTS
         fixture_hub.issue(state, key)
+        if args.scenario == "onboarding-journey":
+            wait_onboarding_ready(state)
         with (state / "functional-private.log").open("xb") as log:
             functional = subprocess.Popen([sys.executable, str(PACKAGE / "tools/run_functional_acceptance.py"),
                 "--suite", args.scenario, "--state-dir", str(state), "--report", str(state / "functional.xml")],
@@ -225,7 +250,7 @@ def run(args):
                     _, alive = psutil.wait_procs(alive, timeout=20)
                     if alive:
                         raise RuntimeError("Owned functional descendant cleanup unconfirmed")
-        result_file = {"vector-analysis": "vector-analysis.json", "completed-recovery": "completed-recovery.json", "parser-preview": "parser-preview.json", "partial-refresh": "partial-refresh.json", "request-plan": "request-plan.json",
+        result_file = {"onboarding-journey": "onboarding-journey.json", "vector-analysis": "vector-analysis.json", "completed-recovery": "completed-recovery.json", "parser-preview": "parser-preview.json", "partial-refresh": "partial-refresh.json", "request-plan": "request-plan.json",
             "nonuniform-export": "nonuniform-science.json"}[args.scenario]
         result["science"] = json.loads((state / result_file).read_text())
         result["passed"] = True
@@ -262,7 +287,7 @@ if __name__ == "__main__":
     parser.add_argument("--java", type=Path)
     parser.add_argument("--components", type=Path, help="JSON list of exactly two explicit {path,sha256} archives")
     parser.add_argument("--state-dir", type=Path, required=True)
-    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh", "request-plan", "completed-recovery", "parser-preview", "vector-analysis"), default="nonuniform-export")
+    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh", "request-plan", "completed-recovery", "parser-preview", "vector-analysis", "onboarding-journey"), default="nonuniform-export")
     args = parser.parse_args()
     if args.authority:
         fixture_hub.SERVICES = PORTS

@@ -67,3 +67,35 @@ def test_occupied_port_never_replaces_a_service(tmp_path, monkeypatch):
         with pytest.raises(OSError):
             runner.run(args)
     assert not args.state_dir.exists()
+
+
+@pytest.mark.parametrize("mode", ["recover", "timeout", "transport"])
+def test_onboarding_waits_for_true_status_without_overriding_it(tmp_path, monkeypatch, mode):
+    clock, requests = [0], []
+    monkeypatch.setattr(runner.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(runner.time, "sleep", lambda seconds: clock.__setitem__(0, clock[0] + seconds))
+    class PublicStatusClient:
+        def __init__(self, **kwargs):
+            assert kwargs == {"trust_env": False, "timeout": 5}
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def get(self, url):
+            assert url.endswith("/public/status")
+            requests.append(url)
+            if mode == "transport":
+                raise runner.httpx.ConnectError("unavailable")
+            available = mode == "recover" and clock[0] > 0
+            return SimpleNamespace(raise_for_status=lambda: None,
+                json=lambda: {"serviceId": "original", "available": available, "operational": True})
+    monkeypatch.setattr(runner.httpx, "Client", PublicStatusClient)
+    if mode == "recover":
+        runner.wait_onboarding_ready(tmp_path, timeout=1)
+        snapshots = json.loads((tmp_path / "onboarding-readiness.json").read_text())
+        assert snapshots[0]["reasoner"]["available"] is False
+        assert snapshots[-1]["reasoner"]["available"] is True
+    else:
+        with pytest.raises(RuntimeError, match="do not weaken selection"):
+            runner.wait_onboarding_ready(tmp_path, timeout=1)
+    assert requests and clock[0] <= 1

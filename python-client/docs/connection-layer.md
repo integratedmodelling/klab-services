@@ -25,6 +25,11 @@ scientist `services`; legacy `nodes` are not substituted. Authentication must
 return a valid matching identity and nonexpired package; there is no anonymous
 fallback. See [contract inventory and evidence](connection-verification.md).
 
+The newer [controlled current-tuple journey](onboarding-journey.md) verifies both
+existing providers, independent original scientific readback and audited fresh
+processes on the current owned Java tuple. It still does not certify genuine
+production Hub/license/certificate onboarding.
+
 ## Profiles and issued tokens
 
 Build and atomically save a version-1 profile from explicitly known endpoints:
