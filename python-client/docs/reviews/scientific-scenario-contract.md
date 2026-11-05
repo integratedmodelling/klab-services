@@ -59,6 +59,19 @@ so independent N/S branches can reuse the thin adapter without a cascading PR st
 41focused tests stillPASS. This adapter delta is not covered by the earlier whole
 suite receipt; distinguish its source hash and subsequent focused check.
 
+### Actual N/S reuse and inventory expansion
+
+Both independent accepted-base scenarios ran once through adapter753b7629b and
+passed explicit real-Java expectations/cleanup. Later adapter reporting adds a
+whitelisted workflow projection, loads failed workflow reports if the harness did
+not aggregate them, and records its own source hash at invocation. These changes
+are not retroactively attributed to the original N/S receipts; supplemental indexed
+evidence binds the original raw workflow report and its exact hash without replay.
+Per-module inventory now expands156testmodules, with109unchanged-source modules
+matched to actual baseline JUnit timings,47unmeasured modules left unknown.42focused
+tests PASS before final installed suite. Scientific PASS comes from explicit N/S
+oracle assertions, not these42unit tests.
+
 ## Validation and compatibility
 
 Command: installed WindowsPython3.12 `pytest -q tests/unit/test_scientific_scenario.py`:

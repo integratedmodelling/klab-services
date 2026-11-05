@@ -45,6 +45,7 @@ def now():
 
 def execute(args):
     global PACKAGE
+    adapter_sha256 = sha(Path(__file__))
     if getattr(args, "workflow_package", None) is not None:
         selected = args.workflow_package.resolve()
         require(selected == args.server_repo.resolve() / "python-client",
@@ -74,6 +75,10 @@ def execute(args):
     raw = load(state / "result.json")
     config = load(state / "scientist.json") if (state / "scientist.json").is_file() else {}
     science = raw.get("science", {})
+    if not science:
+        failed_report = state / {"nonuniform-export": "nonuniform-science.json", "request-plan": "request-plan.json"}[args.scenario]
+        if failed_report.is_file():
+            science = load(failed_report)
     actual = science.get("expectations", {})
     checks = {c["expectation_id"]: actual.get(c["expectation_id"], outcome("NOT_RUN", "Workflow did not record this check"))
               for c in manifest["checks"]}
@@ -98,6 +103,9 @@ def execute(args):
         "installed_sha256": raw.get("installed_sha256", {}), "functional_sha256": raw.get("functional_sha256", {}),
         "components": [{"sha256": c["sha256"]} for c in raw.get("components", [])],
         "checks": checks, "axes": axes, "cleanup": cleaned,
+        "workflow_report": {k: science[k] for k in ("selected_models", "observation", "activity_ids", "plan_partial",
+            "durable_root_commit", "cells", "missing", "zero", "sha256", "oracle_sha256", "metadata_negative", "records")
+            if k in science},
         "private_diagnostic_hashes": {p.name: sha(p) for p in state.glob("*")
             if p.is_file() and (p.suffix == ".log" or p.name == "failure-private.txt")}}
     encoded = json.dumps(summary, sort_keys=True, indent=2)
@@ -105,7 +113,8 @@ def execute(args):
                 if "token" in key and isinstance(value, str) and value), "Credential leaked into summary")
     summary_path = state / "scientific-sanitized.json"
     summary_path.write_text(encoded, encoding="utf-8")
-    identities = {"source_sha": raw["server_head"], "build_hashes": {"manifest_sha256": sha(summary_path)},
+    identities = {"source_sha": raw["server_head"], "build_hashes": {"manifest_sha256": sha(summary_path),
+        "adapter_sha256_at_start": adapter_sha256},
         "wheel_sha256": wheel_hash, "services": services or {"state": "NOT_AVAILABLE"},
         "auth_principal": config.get("username", "NOT_AVAILABLE"), "java_version": raw.get("java_version", "NOT_AVAILABLE"),
         "components": summary["components"] or ["NOT_AVAILABLE"]}
