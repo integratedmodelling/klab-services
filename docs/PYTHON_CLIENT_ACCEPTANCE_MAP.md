@@ -1,5 +1,16 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Latest bounded Q8a checkpoint — 5 November 2026
+
+Q6PR209mergedb41016737/allchecks/ancestry/postmerge131PASS. Q8a locallyaccepted
+744a37f03:3,004installed/17gates+actualJavaownwaitcancel/otherwaitsameJob/focus/
+20cells/concurrentreads/foreignattach/localclose/creatorcleanupPASS;normalPR/CI/
+mergepending. Asyncsaved-handle restoration stillUNSUPPORTED,not certified by
+explicitknownroot/focus/Job attachment. Notebook/events/managedagents/fullRC-P3.5/
+Q8remainPARTIAL. IndependentQ7hierarchyFAILED beforemodel/session/compute;
+branch830a141cdretainednoPR/merge,rootcauseunresolved. No whole-rowpromotion;
+A/B/studiesincomplete. Originalfailuresnotrecastaspasses.
+
 ## Latest bounded Q6a checkpoint — 5 November 2026
 
 Q11PR207/CI208 mergednormally; no access grants changed. Q6a oneadditional

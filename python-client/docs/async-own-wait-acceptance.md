@@ -37,3 +37,15 @@ the original known root plus explicit known focus/Job IDs. Same-owner reader mus
 remain unowned, retain Runtime/observation/focus identity and close without disposal;
 foreign attach must be explicitly denied. Saved-handle serialization is checked,
 but native async saved-handle restoration remains unsupported, not certified here.
+
+## Verified bounded outcome
+
+At744a37f03:3,004installed/17gates/lint/build/parity+9focusedPASS. Correctedactual
+JavaPASS:oneownwaitcancel/otherwaitsameJob+focus+20exact234.5m cells,tworeads,
+foreignattachdenied,sameownerunownedexplicitroot/focus/Jobreadback,readerclose
+preservescreatorwork. Exactly2scientificsubmits,0remoteJobcancels;waitauditGETonly.
+Creatorcontext/sessionrelease+ownedprocess/listenercleanupPASS,unrelatedJavaunchanged.
+Wheel `571eb2dba8341532f028ea7b77c56d42f5659ec8b55618a755725f7185e8a3ef`.
+First unsupportedrestore-callfailure retained. Normalhosted/merge/release separate;
+see [author/CLI review](reviews/async-own-wait-acceptance.md). FullQ8/A/B/notebook/
+agents/events andasyncsaved-handle restoration incomplete.

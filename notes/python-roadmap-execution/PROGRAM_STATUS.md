@@ -1,5 +1,37 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q8a local acceptance
+
+744a37f03 LOCAL_ACCEPTED_BOUNDED:3,004installed/17gates/lint/parity+9focusedPASS;
+correctedactualJavaownwaitcancel/otherwaitoriginalJob+focus+20cells/tworeads/
+foreignattach/sameownerunownedexplicitknownIDreader/localclose/2submits-0remotecancel/
+creatorcontext-sessionrelease/processcleanupPASS,existingJavaunchanged. Wheel
+571eb2dba8341532f028ea7b77c56d42f5659ec8b55618a755725f7185e8a3ef.
+Firstunsupportedrestorefailure retained;Async.restore_handle stillUNSUPPORTED.
+Authorreviewcomplete;normalPR/CI/mergeNEXT. Q7hierarchyunresolved;notebook/agents/
+events/fullQ8/A/B/studies incomplete;SleepNOT_REQUESTED whileactionableworkremains.
+
+## Latest corrected Q8a live attempt
+
+Corrected744a37f03:3,004installed/17gates/lint/build/parity+9focusedPASS;
+wheel571eb2dba8341532f028ea7b77c56d42f5659ec8b55618a755725f7185e8a3ef.
+q8-async-explicit-attach-liveACTIVE,onecorrectedattempt after supportedattach
+harnessfix. No native async handle-restoration claim; noSDK/backenderrorchange.
+Q7hierarchygate remains unresolved/preserved;noQ8PRorlocalacceptanceyet. Further
+failuremustbe retained/classified before independentqueue rather than repairloop.
+
+## Latest Q8 first-live failure and bounded correction
+
+q8-async-own-wait-live FAILED because harnesscalled AsyncClient.restore_handle,
+explicitlyunsupportedin async_client.py342–343. Ownwait/otherwait/exactfocus/
+20cells/concurrentreads had completed before failure; context/session/process/
+listenercleanupPASS,existingJavaunchanged. No acceptance inferred.
+One correction uses existing attach_context plus explicit knownroot/focus/JobIDs;
+foreignattach must be403/missing, sameownerreadermustremainunowned and close locally.
+Asyncsaved-handle restoration remainsUNSUPPORTED,notfixed/claimed. Corrected
+installedgatesactive;thenonefreshownedrun,elsepreserve/advance independentwork.
+Q7unresolvedbranch830a141cdretained. NoQ8PRyet,fullA/B incomplete;nosleepwhileworkremains.
+
 ## Latest Q8a final installed pass / first live run
 
 Finalae99a4e04:3,004installedtests/17gates/lint/build/parity+9focusedPASS;

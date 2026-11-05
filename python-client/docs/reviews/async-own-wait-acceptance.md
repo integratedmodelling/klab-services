@@ -66,3 +66,37 @@ UnsupportedOperationError, infer handle restoration, resubmit work or alter Java
 One correctedfreshownedrun after final installedgates; if another gatefails,
 preserve evidence and advance independent work rather than immediate repairloop.
 Full native async saved-handle restoration remains a separate unfinished capability.
+
+Corrected744a37f03 installed `ab-q8-async-explicit-attach-final` PASS:
+3,004tests/17gates/lint/build/sourceparity+9focused. Wheel
+`571eb2dba8341532f028ea7b77c56d42f5659ec8b55618a755725f7185e8a3ef`;
+sdist `d0cacbb9b2f9d9a25f757693c26fe6e7b9c153e133c195f2c13ae704e73b38da`.
+One corrected actualJava run `q8-async-explicit-attach-live` active; no pass assumed.
+
+## Final exact-candidate recommendation
+
+**Ready for bounded maintainer review**, author/CLI not human approval. Tested
+744a37f03,acceptedbaseb41016737; subsequent Markdown-only edits must be verified
+before evidence reuse. Full diff reviewed for usefulness/architecture/contracts/
+science/identity/lifecycle/state/performance/maintainability/contributor fit. No
+remaining demonstrated important/blocking defect in this explicit-attach slice.
+No reviewer assigned or overlap inferred; support/release separate.
+
+| Check/command | Exact environment | Verified result / boundary |
+|---|---|---|
+| `run_gates.py --repo <checkout> --label ab-q8-async-explicit-attach-final` | NoneditablePython3.12.7,744a37f03 | PASS:3,004tests/17gates/lint/build/parity; retained Rasterio warning |
+| Focused ownwait/audit tests | Sameinstalledcandidate | PASS:9; sameJob/twowaits/cancel/otherwait/hook-taskcleanup/mutationrefusal |
+| Owned runner command above, state `q8-async-explicit-attach-live` | PinnedJava/core/components; accepted234.5scenario | PASS:originalJob2/observation15/exactfocus,ownwaitCancelledError/otherwaitcomplete,20exactcells/m,twoconcurrentreads,2scientificsubmits/0remoteJobcancels |
+| Actual principal/localclose controls | Sameliverun | PASS:foreignrootattachAuthorizationError;sameownerunownedexplicitroot+focus+Jobreadback retainsoriginalresult;readerclosepreservescreatorwork |
+| Cleanup | Sameliverun | PASS:context/sessionreleaseconfirmed,ownedprocesses/listenersclosed,existingJavaunchanged |
+| Normal hosted checks/eligible merge | Finaldocumentationhead | Pending; required before merge |
+
+WaitauditGETstatus/retrieveonly. Local pending-read synchronization is not Java
+running-simulation interruption. Explicit knownIDs are not asyncsaved-handle
+restoration; that public method still refuses. No notebook/eventcommit/durablereplay/
+managedagent/incarnation/concurrencysoak/scientificreplication claim. Earlier
+unsupported-call failure retained; no SDK/server error remap. Unknownmutations stop
+dependent releases,no rollback/replay promise. FullQ8/A/B remainincomplete.
+Finalwheel/sdist above; externalab-q8-async-explicit-attach-final/identity.json and
+q8-async-explicit-attach-live/result.json bind exactinstalled/harness/live evidence.
+Next:normalfinal-headPR/CI/protections/eligiblemerge,ancestry/postmerge/branchcleanup.
