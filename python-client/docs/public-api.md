@@ -61,6 +61,12 @@ Missing versions/dependencies remain unavailable; provider URLs remain inert dat
 Neither facade proves model applicability, Resolver selection or computation.
 See [native async inspection](native-async-resource-inspection.md).
 
+Native Resources GET asset retrieval can encode Java `null` as HTTP200 with zero
+bytes. Only that exact JSON-mode retrieve route is recognized as MissingAssetError
+(status_code200); malformed nonempty bodies, unrelatedroutes/writes and otherempty
+success statuses remain protocolerrors. This does not turn arbitrary failures into
+absence or change authorization/ambiguous-write behavior.
+
 Shared readers use the same saved-handle API with independently configured clients:
 the server must admit the second principal through its existing context ACL. A handle
 does not grant access, change credentials or confer creator ownership. Closing a

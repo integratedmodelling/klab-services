@@ -1,5 +1,23 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Native async inspection candidate verified
+
+cdf28153b:3,324installed/17gates/282focused+actualJava metadata/typednativeempty
+missing/privatebinding/cleanupPASS. First DTO-equality andsecond invalidJSONmissing
+failures preserved; source-defined enrichment confirmed, bounded sharednullresponse
+compatibility corrected without weakeningotherJSON/routes/writes.0scientificcompute/
+inspectionwrites. NormalPR/CI/merge pending;26queuePRsmerged/0open untilsubmission.
+FullA/B/study/version/applicability/closure gates remain open; noJava repair.
+
+## PR226 delivered / async inspection integrated
+
+PR226merged21750594eebe119d551d5820e861fd615afffdae;allCI/normalmerge/ancestry/
+source/174exactsourcepostmergePASS; branchretired.26queuePRsmerged/0open.
+Currentasyncinspectionbranch integrated accepted226 normally; initial003078ecd
+119focused/3,285installed/17gatesPASS, combinedvalidationACTIVE/livepending.
+Read-only existing nativeasyncmetadata contracts; noJava/selection/computation/
+providertrust/versionclosure claims. Allresearch/authorization gates unchanged.
+
 ## PR225 delivered / offset-long integrated validation
 
 Combinedoffsetaaa2e35d9 now3,259installed/17gates/lint/build/parityPASS. Exactcurrent

@@ -106,3 +106,26 @@ Positive/negative sync/nativeasync tests must failbeforefix and prove narrowrout
 body/status behavior afterfix. Native live run must independently reach typedabsence
 after successful existing-model lookup; sourceinspection is not a liveabsencepass.
 All prior failures/cleanup remain preserved; correctedpackage/newlive required.
+
+cdf28153b:282focused/3,324installed/all17gates/lint/build/sourceparityPASS.
+Wheel2b791a5bd474aca759c815048138377ca9e0b9763f27d40d753733d3f598b2d7;
+sdist e0b2369418cbb95f009881c1e32e2ef524e314c45d723eb640c06dc3c27deffc.
+New async-resource-inspection-null-assets-live run ACTIVE. Missingmodel exception
+status is recorded, so actual nativeHTTP200/empty compatibility can be distinguished
+from404/JSONnull without calling ProtocolError absence. Inspection mutation/view
+consistency counters explicitly exclude required user-scope advertisement and do
+not claim whole rawDTO equality. Prior two failures remain preserved separately.
+
+## Verified exact-candidate outcome
+
+cdf28153b4d82c4112de7bb1f8327c8425c620cf actualJava metadataPASS:3listedmodels,
+existing model list/retrieve/resolve identity preserved, exactly serviceId-only
+native enrichment, then unknownmodel MissingAssetError with HTTP200. Thatstatus
+is emitted only by the exact zero-byte native null guard; generic ProtocolError
+was never accepted as absence. Version unavailable remainsfalse; dependencyclosure/
+modelselection/execution NOT_CLAIMED. Audited phase made11GETs,0inspectionwrites,
+0scientificsubmissions; standard scopeadvertisement precedes thataudit. Local reader/
+ownedprocess/listener cleanupPASS; unrelatedJava unchanged. Exact installed/source/
+rawharness/live identity, private reporthash and credentialabsence verified.
+Both earlier failedruns retained, not rolledintoPASS. Finalfocused/normalPR/CI/
+eligiblemerge/postmerge remain required. FullRC-P4.1/A/B/studies remain incomplete.
