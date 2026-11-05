@@ -1,5 +1,20 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest direct Q6 prerequisite (supersedes older pending bullets)
+
+Q4aPR206 MERGED_BOUNDED554b5e30b;allhostedchecks/ancestry/postmerge15tests/
+sourceidentityPASS,ownedbranchretired. Q6contract-onlybranchb4cdb8f33preserved,
+notstackedonunacceptedcode. Source+compiledpreflightshowedexplicitprojectCREATE/
+documentgrantchecks throwgenericKlabResourceAccessException→HTTP500, nottypeddenial.
+Q11 fix/resource-access-forbidden at9a39e8a39 changesonlytwoexplicitguardexception
+types toexistingKlabAuthorizationException; NOgrantsorbroadererrorremapping.
+Privatejavac+9focusedJUnit/SpringMockMvc testsPASS/0skips;108PythonregressionsPASS;
+CIYAML/pinnedbootstrap/existingpackagingcommandchecksPASS;sharedclassfilesunchanged,
+nosharedservicesstarted/stopped,noownedJava/cmdprocessremains. Java-only,wheelN/A.
+NEXT normalQ11PR/CI/eligiblemerge/ancestry/postmerge,then resumeQ6strategyfamily
+with acceptedprivatecompiledprovider explicitly pinned forownedservices only.
+PROGRAM_IN_PROGRESS;A/Bincomplete;studyartifactgatesblocked;SleepNOT_REQUESTED.
+
 **PROGRAM_IN_PROGRESS; A_INCOMPLETE; B_INCOMPLETE.**
 
 - **COMPLETED:** PR202 CI prerequisite and PR201 parser acceptance merged normally
