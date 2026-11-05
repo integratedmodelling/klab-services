@@ -45,3 +45,35 @@ combined validation required before one actual semantic read-only Java run.
 
 - Wheel: `8862dc29e2c568a6599ecabfa045afd2ce9cb5457b04ae839e51f53131e5c166`
 - Sdist: `9b978fd0ce4d7a68d5bee23fb9dba5ced4d4e721945ff41514bd65b9e098b624`
+
+#230 delivered`1af1e4935ee4c3c3cd9a260af3151a7837ab6bcb`; all hosted checks/
+ancestry/tree/209exact-sourcepostmergePASS and branch retired. Parent integrated
+normally`c84317576`, preserving both adjacent public-api Markdown additions at only
+conflict. Combinedpackage validation active before one actualJava semantic run;
+initial counts above are not substituted for combined-tree or live evidence.
+
+Combined`c843175764291df59d55b34162d2bc22828c8c56`:3,420 installed/all17gates/
+build/lint/source parity PASS. Exact SDK/install/raw-harness/artifact identity
+verified. One fresh owned`async-semantic-exploration-live` run active; no live
+success predeclared. Positive real authority candidate remains NOT_TESTED unless
+an authentic fixture is provided; unconfigured-authority negative is not a substitute.
+
+- Wheel: `96b4aa22aa4d179c3378f03d4b7f51cba6712ddf1764c09650934371ae09023e`
+- Sdist: `ab8547625fde9eb3a4b75c68bf02352b95e858087d4cdcbf897a32fc8a27f611`
+
+## Exact-candidate Java outcome
+
+`c843175764291df59d55b34162d2bc22828c8c56` actual Java PASS: known Region and
+Subject alias→canonical`odo:Subject`, observable identity, direct parent/child,
+forward true/reverse false specialization, satisfiable true. Unknown concept gave
+MissingAssetError after positive lookup. Explicit unconfigured authority returned
+UNAVAILABLE with no candidates—not normalized into OK and not a provider fixture.
+Observed service/worldview/revision1 retained; atomic revision lease and whole
+worldview validity NOT_CLAIMED. Positive authority candidate/documentation remains
+NOT_TESTED without an authentic configured fixture; mocked DTO controls are separate.
+
+After standard user-scope preparation,36 audited capability/semantic-read routes
+only, zero scientific submissions/inspection writes. Reader/owned process/listener
+cleanup passed; unrelated Java unchanged. Exact SDK/install/raw-harness/live identity,
+private report hash and credential absence verified. Final focused/normal PR/hosted
+CI/eligible merge/postmerge still required; full A+B/studies incomplete.

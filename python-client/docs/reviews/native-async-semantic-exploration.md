@@ -2,7 +2,7 @@
 
 ## Recommendation and reviewed state
 
-Needs installed/actual Java evidence before submission. Contributor/CLI review
+Ready for maintainer review of bounded native async semantic inspection. Contributor/CLI review
 under `KLAB_CLI_Contribution_Review.md`, not human approval. Accepted base
 `e92b8be52e21f81acafcd9436a962d77d5fa7dbf` (#229), current
 `feature/python-async-semantic-exploration`; contract `01e480cde` preceded code.
@@ -24,7 +24,7 @@ ordering preserved. No Java, compiler/grammar, model forcing or worker/provider 
 Missing supported Python capability reproduced locally with zero HTTP. Current
 Reasoner routes already implement the required read operations. No demonstrated
 Java defect or production repair request. No important/blocking defect demonstrated
-after initial 110 async/sync tests; expanded/installed/live evidence still required.
+after initial tests and completed installed/live evidence in this bounded scope.
 This is not exhaustive proof or human acceptance.
 
 Observed knowledgeRevision may be unavailable; null/zero retains unknown freshness,
@@ -43,16 +43,18 @@ or given credentials. Cancellation stops local waits, not server-side work.
 | Initial native async + existing sync explorer tests | candidate source, Windows Python3.12 | 110 passed | Route/DTO/immutable/parity, authority statuses, ownership/staleness/error/unknown revision/predicate/type/cancel; mocked semantics not science |
 | Expanded focused + fresh installed/17 gates | candidate | Running | Additional malformed authority/docs/drift/byte/redaction tests, no predeclared result |
 | Corrected expanded/package result | 1c4a6bad6, Windows Python3.12 | Passed:160 focused/3,404 installed/all17gates | Lint/build/source parity; before #230 integration, no coverage gate changes |
-| Actual Java source-defined semantic hierarchy/predicates/negative controls | fresh owned fixture | Not run | Must check actual source-defined Region→Subject canonicalization and honest unconfigured-authority status; no scientific computation |
+| Combined accepted #230 package | c84317576, same environment | Passed:3,420 installed/all17gates | Exact SDK/install/raw-harness/artifact identity; build/lint/parity; no threshold changes |
+| Combined actual Java semantic workflow | c84317576 | Passed | Actual source-defined Region→canonical Subject, observable/direct hierarchy/directional predicates/satisfiability, missing positive control and authorityUNAVAILABLE;36read-route audit/cleanup |
 
 Expanded first run:159passed/1failed because HTTPX's mock json= encoder rejected
 the deliberately nonfinite score before SDK decoding. Corrected test uses raw JSON
 response bytes, matching existing sync malformed-wire tests; no production fix was
-made for this harness issue. Corrected focused/package validation active.
+made for this harness issue. Corrected focused/package validation passed.
 
 #230 now merged`1af1e4935ee4c3c3cd9a260af3151a7837ab6bcb`, all hosted checks,
-ancestry/tree equality verified. Exact209postmerge/retirement and integration into
-this branch wait for current gate completion; checkout not changed while gate runs.
+ancestry/tree equality/209exactpostmerge verified, successful branch retired.
+Parent integrated normally`c84317576`; only adjacent Markdown additions conflicted,
+both retained. Combined package/live evidence belongs to this exact integrated tree.
 
 ## Scientific fidelity, identity and lifecycle
 
@@ -70,10 +72,21 @@ query bodies); no context/authoring/job mutation or scientific submission. Exact
 source/install/harness/live privacy/cleanup binding required before PR; owned stack
 only, unrelated Java/services preserved. No original-study inputs/models executed.
 
+Final actual Java bounded acceptance passed. Unknown concept was typed missing
+after positive lookup, unconfigured authority was honestly UNAVAILABLE—not emptyOK.
+No real positive authority candidate/documentation fixture invented.36 audited read
+routes/zero scientific submissions/inspection writes; local reader/owned processes/
+listeners cleanup passed, unrelated Java unchanged. Exact SDK/install/raw-harness/
+live identity and private report hash/credential absence verified in
+`async-semantic-exploration-final-validation.json`. Observed revision1 is not an
+atomic lease; whole-worldview validity NOT_CLAIMED. No important/blocking defect
+demonstrated after validation in scope, not exhaustive proof or human acceptance.
+
 ## Coordination and next actions
 
 No authority registration, publication, principal expansion, NiFi/custodian/Java
 repair work. Full RC-P4.1/CAP-06/production authority/revisions/A+B and all studies
-remain incomplete. Finish installed evidence, reconcile accepted #230 normally and
-validate combined tree, one actual Java semantic run, exact identity/privacy/cleanup,
-final review/normal PR/CI/eligible merge/ancestry/postmerge; continue independent queue.
+remain incomplete. Accepted #230 integrated normally; combined package/actualJava/
+identity/privacy/cleanup verified. Finish final focused/map checks and normal
+PR/CI/eligible merge/ancestry/postmerge; continue independent queue. No unchanged
+live rerun, fabricated authority fixture or Java repair needed for this bounded claim.
