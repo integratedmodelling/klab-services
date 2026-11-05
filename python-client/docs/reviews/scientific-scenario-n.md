@@ -44,3 +44,12 @@ scopes/processes/listeners closed, unrelatedJava unchanged. Partial plan/rootcom
 unknown retained; synthetic engineering L4 only. Full installed candidate checks
 and final evidence index remain; prior TA12 installed gates do not certify this
 workflow delta. Normal PR/CI/merge still blocked B0, no bypass attempted.
+
+## Final local regression
+
+95793070b:3421installed/all17gates/build/install/lint PASS;18focused oracle/plan
+tests and actual9c3d14878 N run preserved. Installed validation artifact
+a4183697007a6c074ec085d28e99a68abb5e028d3e6e1f6baf14b21b3688c54c differs from
+the actual N/S live wheel d9a1d5ff…, both recorded distinctly. No further important
+defect found in bounded review. Recommendation: **Needs normal hosted delivery
+evidence**, not missing local scientific acceptance. No new Java run justified.
