@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "origin": "Independent source review of existing model literals and scenario activation rule, not extracted from service response or client execution",
+  "source_revision": "937c758b62743a0ab68e48792870a9261cf7cc87",
+  "contract_reference": "docs/KIM.md namespace/scenario declaration: scenario alternatives participate when activated; existing request-to-plan #200 acceptance",
+  "observable": "consolidation:Elevation of consolidation:Region in m",
+  "geometry": {"crs": "EPSG:3857", "bbox": [200000, 200500, 6000000, 6000400], "shape": [4, 5]},
+  "cases": [
+    {"option": "namespace", "namespace": "consolidation.lexical", "expected_model_namespace": "consolidation.lexical", "literal_decimal": "66.5", "cells": 20, "units": "m"},
+    {"option": "scenarios", "active_scenarios": ["consolidation.scenario"], "expected_model_namespace": "consolidation.scenario", "literal_decimal": "234.5", "cells": 20, "units": "m"}
+  ],
+  "negative": "Valid distinct signed principal may create/release its own positive-control session but must not attach the owner-only context; no scientific submit or foreign mutation during denial",
+  "review_attestation": "Contributor source-contract review, not independent human maintainer approval or a cryptographic signature; exact oracle hash pinned by manifest",
+  "limits": "Synthetic constant model applicability and observed partial plan/result only; no universal ranking explanation, root commit, general union reasoning or published replication"
+}
