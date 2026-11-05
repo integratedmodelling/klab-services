@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q7 evidence-led diagnosis (not acceptance)
+
+01fa17053:3,053installed/17gates+11focused/singleactualcapture+cleanupPASS.
+Actualodo:Subject/Agent canonicalparents versuslocalcorealiases explain prior
+literalURN mismatch;expectedchildren/directional-is_a/satisfiable succeeded.
+Stableactualgeneration/sourcecommitmentandbackendclassidentity verified; separate
+Qualitywarning unresolved. No semantic/backend/sourcefix,originalfailedbranch
+830a141cdunchanged. DiagnosticPR/CIpending;thenindependentcanonicalidentity
+acceptance correction. FullQ7/model-plan/matrices/A-B/studiesnotpromoted.
+
 ## Latest delivery / bounded diagnostic
 
 Q9aPR214mergedf5a43caca,reviewed5913d607d;allCI/normalmerge/ancestry/sourceequal/

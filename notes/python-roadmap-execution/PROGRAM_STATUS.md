@@ -1,5 +1,30 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q7 bounded diagnosis — literal alias mismatch identified
+
+Singleq7-hierarchy-snapshot-livecapturePASS,20records/noreadfailures/noscientific-
+session-contextwrites;ownedprocess/listenercleanupPASS,existingJavaunchanged.
+Oldliteralparent assertions diverge:consolidation:Subject/Agent resolve/directparents
+areodo:Subject/Agent,withklab:localAlias. Expectedchildren,forwardis_a/reversefalse/
+satisfiable allsuccess. Fixture4–5explicitcorealiases+Java delegate installation
+explain oldharness mismatch;not missingedge evidence. No source/meaning/Javachange.
+Actualstablecommitment/revision/session/fingerprint andacceptedGeneration1/input2
+captured;ontologyhashmatchescopiedsource,compiledclasshashes/originsverified.
+Qualityfundamentaltypewarning remainsseparate/unresolved alongside ready/consistent.
+Diagnostic01fa17053installed3,053/17gates+11focusedPASS;normaldiagnosticPR/CI NEXT.
+Originalfailed830a141cd preserved. Q7acceptance/model-plan/fullmatrixNOT_CLAIMED;
+separately justifiedcanonicalidentity harnesscorrection next,notfixture-repairloop.
+
+## Latest Q7 bounded diagnostic installed pass / one live capture
+
+01fa17053:3,053installed/17gates/lint/parity+11focusedPASS;wheel
+6623d99f65029820023184d7887cfa68f7a44fbd97b25be5fe5994df94f83c27.
+q7-hierarchy-snapshot-liveACTIVE,onesingleboundedcapture:actualReasonerresponses
+persistbefore sourcecomparisons;strictqueryallowlist/no scientificsession or
+computation. Capturecompletion isNOThierarchyacceptance;actualURNs/generation/
+tupleidentity/cleanup remainunverified. Originalfailed830a141cd untouched;noPRyet.
+Q9aPR214mergedf5a43caca,releaseassessmentstillnonpassing;fullA/B/studiesincomplete.
+
 ## Latest Q9a delivery / bounded Q7 diagnostic contract
 
 PR214 MERGED_BOUNDEDf5a43cacae82500636b7146f488a37188b866aff,reviewed

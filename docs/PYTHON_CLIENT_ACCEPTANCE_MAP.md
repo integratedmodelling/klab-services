@@ -1,5 +1,14 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Q7 diagnostic checkpoint — 5 November 2026
+
+Q9aPR214mergedf5a43caca;releaseassessmentstillnonpassing. Follow-upQ7capture at
+01fa17053 completed withactualcanonicalodo:Subject/Agent parents for authoredlocal
+corealiases;expectedchildren/directionalpredicates/satisfiable succeeded. This
+explains oldliteralURN harnessfailure,not a backendfix or Q7acceptance. Separate
+Quality-typewarning unresolved;originalfailedbranch830a141cd preserved. Diagnostic
+PR/CIpending;fullhierarchy/model-plan/semanticmatrices andA/B remainPARTIAL.
+
 ## Current compatibility/evidence checkpoint — 5 November 2026
 
 PR211notebook,PR212ownedHubtransport andPR213authorityhealth correction merged
