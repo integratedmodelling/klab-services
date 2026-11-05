@@ -30,3 +30,17 @@ Retain failure diagnostic and NOT_RUN checks. Normal hosted delivery blocked by
 recorded ref/rules failure; no new push/rules workaround. Need actual pinned Java
 values/plan/artifact/cleanup evidence, then exact review/update and normal eligible
 merge once repository evaluation is restored or remedy authorized.
+
+## Actual run — PASS, not merged acceptance
+
+9c3d14878 executed once through adapter753b7629b, installed wheel
+d9a1d5ff2ce33d41ab61f78260671e696cabbd50f12b309dccd77e3ee233280c, fresh private
+state `ta-n-live-01`. All5explicit expectations/five axes PASS. Observation15,
+selected `consolidation.fixture.elevation_of region-quantifier`, activities18/19/20;
+exact observation-handle association,20cells/two missing/onevalidzero,691byte TIFF
+SHA256fc442366732cb8fe47b050c76e7e4c53739a8d754527a0aeaca430f18f41fba0.
+Allfour controlled metadata copies rejected and original bytes unchanged. Owned
+scopes/processes/listeners closed, unrelatedJava unchanged. Partial plan/rootcommit
+unknown retained; synthetic engineering L4 only. Full installed candidate checks
+and final evidence index remain; prior TA12 installed gates do not certify this
+workflow delta. Normal PR/CI/merge still blocked B0, no bypass attempted.
