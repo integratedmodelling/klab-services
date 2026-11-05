@@ -120,6 +120,9 @@ class SemanticExplorer:
     def __init__(self, client, scope=None, *, max_items=100, max_response_bytes=1024 * 1024):
         from ._inspection import require_sync
         require_sync(client)
+        self._configure(client, scope, max_items, max_response_bytes)
+
+    def _configure(self, client, scope, max_items, max_response_bytes):
         self.client, self.scope = client, scope
         self.max_items = bounds(max_items, 1000, "Semantic item budget")
         self.max_response_bytes = bounds(max_response_bytes, 16 * 1024 * 1024, "Response byte budget")
@@ -138,6 +141,10 @@ class SemanticExplorer:
 
     def _state(self):
         payload = object_payload(self._request("GET", "/public/capabilities"), "Reasoner capabilities")
+        return self._knowledge_state(payload)
+
+    def _knowledge_state(self, payload):
+        payload = object_payload(payload, "Reasoner capabilities")
         check_notifications(payload, self.client.transport.redact)
         if payload.get("consistent") is not True:
             raise ProtocolError("Reasoner knowledge consistency is false or unknown")
@@ -195,6 +202,15 @@ class SemanticExplorer:
         return result
 
     def search_authority(self, authority, query, *, filter=None, offset=0, limit=20):
+        self._search_spec(authority, query, filter, offset, limit)
+        state = self._state()
+        payload = self._request("POST", "/api/v1/authority/search",
+            json={"authority": authority, "query": query, "filter": filter, "offset": offset, "limit": limit})
+        result = self._search_result(payload, authority, offset, limit, state)
+        self._unchanged(state)
+        return result
+
+    def _search_spec(self, authority, query, filter, offset, limit):
         _authority(authority)
         text(query, "Authority query", 256)
         if filter is not None:
@@ -202,9 +218,8 @@ class SemanticExplorer:
         if type(offset) is not int or not 0 <= offset <= 10000:
             raise InvalidRequestError("Authority offset must be 0..10000")
         bounds(limit, min(100, self.max_items), "Search limit")
-        state = self._state()
-        payload = object_payload(self._request("POST", "/api/v1/authority/search",
-            json={"authority": authority, "query": query, "filter": filter, "offset": offset, "limit": limit}), "authority search")
+    def _search_result(self, payload, authority, offset, limit, state):
+        payload = object_payload(payload, "authority search")
         status = payload.get("status")
         if status not in ("OK", "UNSUPPORTED", "UNAVAILABLE", "FAILED"):
             raise ProtocolError("Unknown authority search status")
@@ -246,7 +261,6 @@ class SemanticExplorer:
                 raw=raw,
                 _owner=self._owner,
             ))
-        self._unchanged(state)
         return AuthoritySearch(
             status=status,
             matches=tuple(matches),
@@ -257,9 +271,15 @@ class SemanticExplorer:
         )
 
     def _candidate(self, candidate):
+        self._owned_candidate(candidate)
+        self._unchanged(candidate.knowledge)
+        self._candidate_notifications(candidate)
+
+    def _owned_candidate(self, candidate):
         if not isinstance(candidate, AuthorityCandidate) or candidate._owner is not self._owner:
             raise InvalidRequestError("Select a candidate returned by this explorer")
-        self._unchanged(candidate.knowledge)
+
+    def _candidate_notifications(self, candidate):
         check_notifications({"notifications": [dict(n) for n in candidate.raw.get("notifications", ())]}, self.client.transport.redact)
 
     def documentation(self, candidate):
@@ -267,13 +287,18 @@ class SemanticExplorer:
         self._candidate(candidate)
         payload = object_payload(self._request("GET", "/api/v1/authority/documentation",
             params={"authority": candidate.authority, "identity": candidate.code}), "documentation")
+        result = self._documentation(payload)
+        self._unchanged(candidate.knowledge)
+        return result
+
+    def _documentation(self, payload):
+        payload = object_payload(payload, "documentation")
         for media_type, url in payload.items():
             if not isinstance(media_type, str) or "/" not in media_type or not isinstance(url, str):
                 raise ProtocolError("Invalid documentation descriptor")
             parsed = urlsplit(url)
             if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password:
                 raise ProtocolError("Documentation links must be HTTP(S) URLs without credentials")
-        self._unchanged(candidate.knowledge)
         return freeze(payload, self.client.transport.redact)
 
     def resolve_candidate(self, candidate):
@@ -319,3 +344,105 @@ class SemanticExplorer:
 
     def satisfiable(self, definition):
         return self._check("satisfiable", (definition,))
+
+
+class AsyncSemanticExplorer(SemanticExplorer):
+    """Native awaited remote semantics; no local inference or authority auto-selection."""
+
+    def __init__(self, client, scope=None, *, max_items=100, max_response_bytes=1024 * 1024):
+        from .async_client import AsyncClient
+        if not isinstance(client, AsyncClient):
+            raise InvalidRequestError("Async semantic exploration requires a native AsyncClient")
+        self._configure(client, scope, max_items, max_response_bytes)
+
+    async def _request(self, method, route, **kwargs):
+        return await self.client.transport.request("reasoner", method, route, scope=scope_token(self.scope),
+            service_id=self.client.runtime_service_id, max_response_bytes=self.max_response_bytes, **kwargs)
+
+    async def _state(self):
+        return self._knowledge_state(await self._request("GET", "/public/capabilities"))
+
+    async def _unchanged(self, expected):
+        if await self._state() != expected:
+            raise StaleKnowledgeError("Reasoner service, scope, worldview or knowledge revision changed; search/resolve afresh")
+
+    async def _resolve(self, definition, kind, state):
+        payload = await self._request("POST", "/api/v1/resolve/" + kind, text=text(definition, "Definition"))
+        return self._semantic(payload, kind, state)
+
+    async def resolve_concept(self, definition):
+        state = await self._state()
+        result = await self._resolve(definition, "concept", state)
+        await self._unchanged(state)
+        return result
+
+    async def resolve_observable(self, definition):
+        state = await self._state()
+        result = await self._resolve(definition, "observable", state)
+        await self._unchanged(state)
+        return result
+
+    async def search_authority(self, authority, query, *, filter=None, offset=0, limit=20):
+        self._search_spec(authority, query, filter, offset, limit)
+        state = await self._state()
+        payload = await self._request("POST", "/api/v1/authority/search",
+            json={"authority": authority, "query": query, "filter": filter, "offset": offset, "limit": limit})
+        result = self._search_result(payload, authority, offset, limit, state)
+        await self._unchanged(state)
+        return result
+
+    async def _candidate(self, candidate):
+        self._owned_candidate(candidate)
+        await self._unchanged(candidate.knowledge)
+        self._candidate_notifications(candidate)
+
+    async def documentation(self, candidate):
+        await self._candidate(candidate)
+        payload = await self._request("GET", "/api/v1/authority/documentation",
+            params={"authority": candidate.authority, "identity": candidate.code})
+        result = self._documentation(payload)
+        await self._unchanged(candidate.knowledge)
+        return result
+
+    async def resolve_candidate(self, candidate):
+        await self._candidate(candidate)
+        result = await self._resolve(candidate.locator, "concept", candidate.knowledge)
+        await self._unchanged(candidate.knowledge)
+        return result
+
+    async def _concept_wire(self, definition, state):
+        result = await self._request("POST", "/api/v1/resolve/concept", text=text(definition, "Concept definition"))
+        self._semantic(result, "concept", state)
+        return result
+
+    async def _neighbors(self, definition, direction):
+        state = await self._state()
+        concept = await self._concept_wire(definition, state)
+        payload = await self._request("POST", "/api/v1/" + direction, json=concept)
+        if not isinstance(payload, list) or len(payload) > self.max_items:
+            raise ProtocolError("Hierarchy response exceeds the item budget or is not an array")
+        result = tuple(self._semantic(row, "concept", state) for row in payload)
+        await self._unchanged(state)
+        return result
+
+    async def parents(self, definition):
+        return await self._neighbors(definition, "parents")
+
+    async def children(self, definition):
+        return await self._neighbors(definition, "children")
+
+    async def _check(self, route, definitions):
+        state = await self._state()
+        concepts = [await self._concept_wire(definition, state) for definition in definitions]
+        result = await self._request("POST", "/api/v1/" + route, json=concepts if len(concepts) == 2 else concepts[0])
+        if type(result) is not bool:
+            raise ProtocolError("Semantic predicate must return a boolean")
+        await self._unchanged(state)
+        return result
+
+    async def is_a(self, concept, other):
+        """Whether concept specializes other (concept ⊑ other); argument order matters."""
+        return await self._check("subsumes", (concept, other))
+
+    async def satisfiable(self, definition):
+        return await self._check("satisfiable", (definition,))

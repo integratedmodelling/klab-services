@@ -1,5 +1,22 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Async semantic candidate verified
+
+`c84317576`:3,420installed/17gates/160focused+actualJava known resolution/canonical
+hierarchy/predicates/missing/authorityUNAVAILABLE/read-onlyaudit/privacy/cleanup PASS.
+Positive real authority NOT_TESTED; no local inference/Java/atomiclease/science claim.
+Finalfocused/normalPR/CI/merge pending;30queuePRsmerged/0open untilsubmission.
+Broader semantic/production-authority/A+B/study gates remain incomplete.
+
+## PR #230 delivered / async semantic combined package
+
+#230merged`1af1e4935ee4c3c3cd9a260af3151a7837ab6bcb`; allCI/ancestry/tree/
+209exactsourcepostmergePASS; branchretired.30queuePRsmerged/0open.
+Asyncsemanticcontract`01e480cde`,initial`1c4a6bad6`:160focused/3,404installed/17gates
+PASS. Parent integrated`c84317576`, only adjacentMarkdown conflict/bothretained.
+Combinedinstalledvalidationactive; actualJava read-only semantic evidence pending.
+NoJava/localinference/science; fullA+B/research/authorization unchanged.
+
 ## PR #229 delivered / source-ID integrated candidate
 
 Combined `d9f76fea2`:3,385 installed/all17gates/build/lint/parity PASS; exact

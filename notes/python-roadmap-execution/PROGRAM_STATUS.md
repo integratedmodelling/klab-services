@@ -1,5 +1,36 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Async semantic exact-candidate local acceptance
+
+`c84317576`:3,420 installed/all17gates/160focused and actual Java known resolution/
+canonical direct hierarchy/directional predicates/satisfiability/missing positive
+control PASS. Unconfigured authority UNAVAILABLE preserved; real positive candidate/
+documentation NOT_TESTED.36 read-route calls/zero scientific submissions or inspection
+writes; exact SDK/install/raw-harness/live identity/privacy and owned cleanup PASS.
+NoJava/localinference/lease/whole-worldview/scientificexecution claim. Final focused/
+normalPR/CI/merge pending; integration`1af1e4935`,30queuePRsmerged/0open untilsubmit.
+Requirements/capabilities/dependencies/authorization/all3study stages unchanged.
+
+## PR #230 delivered / combined async semantics
+
+Combined`c84317576`:3,420 installed/all17gates/build/lint/parity PASS, exactSDK/
+install/raw-harness/artifacts verified. One ownedactualJava semantic run active,
+no success predeclared. Need actualread-only semantics/negativecontrols/privacy/
+cleanup before PR; no scientific execution or invented authority fixture.
+
+Integration`feature/python-experiment-runner@1af1e4935ee4c3c3cd9a260af3151a7837ab6bcb`.
+30queuePRsmerged/0open. #230 allhostedchecks/normalmerge/ancestry/tree equality/
+209exact-sourcepostmergePASS; branch retired. Local source-ID wire-domain claim only.
+Current semantic branch/contract`01e480cde`,initial`1c4a6bad6`160focused/3,404installed/
+17gates/build/lint/parityPASS; NaN mock encoding failure corrected as test setup.
+Acceptedparent integrated`c84317576`, only adjacent Markdown conflict/both retained.
+Combinedpackagechecksactive; actualJava semantic read-only/missing/authority-negative
+workflow pending. No localinference/Java/authorityregistration/scientificexecution.
+Requirements23in-scope=1accepted/20partial/1missing/1blocked,+1TargetCexcluded;
+capabilities4accepted/13partial/1excluded. Seven dependency families/peer fixture/
+componentauthorization and all3 studyL3PARTIAL/L4BLOCKED/L5–L7NOT_RUN unchanged.
+PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE.
+
 ## PR #229 delivered / combined source-ID checks
 
 Combined `d9f76fea2` now 3,385 installed/all17gates/build/lint/parity PASS; exact
