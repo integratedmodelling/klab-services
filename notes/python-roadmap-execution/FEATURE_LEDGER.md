@@ -1,5 +1,18 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## PR #229 delivered / source-ID integrated candidate
+
+Combined `d9f76fea2`:3,385 installed/all17gates/build/lint/parity PASS; exact
+source/install/harness/artifacts/SDK blob equality verified. Final focused/review/
+normal PR pending; native probe is domain-only, no source-existence/science claim.
+
+#229 merged `e92b8be52e21f81acafcd9436a962d77d5fa7dbf`, all checks/ancestry/tree/
+145 exact-source postmerge passed; branch retired. 29 queue PRs merged/0 open.
+Source-ID branch integrated parent `d9f76fea2`, preserving both adjacent Markdown
+additions. Combined installed gates active after preintegration176focused/3,362
+installed/17gates/native-domain probe PASS. No Java, source existence or scientific
+claim; final combined identity/tests/review/PR pending. Broader gates unchanged.
+
 ## CODELIST candidate local acceptance verified
 
 `2f94029fb`: 3,369 installed/all 17 gates/134 focused + actual Java empty codebook

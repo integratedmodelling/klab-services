@@ -1,5 +1,26 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## PR #229 delivered / combined source-ID checks
+
+Combined `d9f76fea2` now 3,385 installed/all17gates/build/lint/parity PASS; exact
+source/install/raw-harness/artifact binding, unchanged committed SDK blob/current
+LF parity verified. Native domain probe retained. Final focused/review/normal PR
+pending; no new scientific live/source-existence/Java claim.
+
+Integration `feature/python-experiment-runner@e92b8be52e21f81acafcd9436a962d77d5fa7dbf`.
+29 queue PRs merged/0 open. #229 all hosted checks/exact-head normal merge/ancestry/
+tree equality/145 exact-source postmerge passed; successful branch retired.
+CODELIST acceptance is empty metadata only, no categorical mapping/study recovery.
+Current source-ID branch normally integrated parent `d9f76fea2`; only adjacent
+public-api Markdown conflict, both additions retained. Combined installed gates
+active. Preintegration `6f782b4a4`:176focused/3,362installed/17gates/native constructor
+JSON domain probe passed. No source existence/Java repair/scientific rerun claim.
+Next combined candidate identity/final focused tests/review/normal PR/CI/merge.
+Requirements 23 in-scope=1accepted/20partial/1missing/1blocked,+1TargetCexcluded;
+capabilities4accepted/13partial/1excluded. Seven dependencies/peer fixture/component
+authorization and all 3 study L3PARTIAL/L4BLOCKED/L5–L7NOT_RUN gates unchanged.
+PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE.
+
 ## CODELIST exact-candidate local acceptance
 
 `2f94029fb`: 3,369 installed/all 17 gates/134 focused tests and actual Java
