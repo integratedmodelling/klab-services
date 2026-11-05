@@ -35,3 +35,14 @@ Initial962e6024e passed3484installedtests/all17gates/build/install/lint; that re
 does not certify the newer capability delta. A fresh exact-head full regression
 and normal latest-head hosted checks are required before merge. No live Java rerun
 or scientific/input/expectation change is justified by this metadata correction.
+
+## Retained coverage failure and deterministic regression
+
+5d825f1f5 offline suite passed3485tests, but coverage gate0 failed: unchanged
+async_client.py line87/arc86→87 was not covered. The existing timeout test uses
+a15ms wall-clock wait and can reach an earlier deadline check instead. Added an
+L1 test with a module-local controlled clock and status failure after the deadline
+to exercise that exact TransportError→WaitTimeout path, retaining the same job
+without HTTP/replay/cancel. No SDK code, real timeout, expectation or gate changed.
+The failed receipt is retained; new-head full gates are required, not an unchanged
+retry until green. This test is not L3/L4 evidence and does not rerun Java.
