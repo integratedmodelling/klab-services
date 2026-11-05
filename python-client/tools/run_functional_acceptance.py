@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "read-semantics-isolation": "tests/functional/test_read_semantics_isolation.py",
     "native-scan-slices": "tests/functional/test_native_scan_slices.py",
     "model-source-authoring": "tests/functional/test_model_source_authoring.py",
     "deleted-state-recovery": "tests/functional/test_deleted_state_recovery.py",

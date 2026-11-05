@@ -304,7 +304,7 @@ class Context(ContextScopeImpl):
         return self.client.runtime.release_context(self)
 
     def fetch_data(self, observation, offsets, *, curve, slice, semantics):
-        offsets, slice, origin = self._read_spec(observation, offsets, curve, slice, semantics)
+        offsets, slice, semantics, origin = self._read_spec(observation, offsets, curve, slice, semantics)
         texts = tuple(self.client.transport.request(
             "runtime", "POST", "/api/v1/observation/value", scope=scope_token(self),
             json={"sourceId": observation.id, "slice": slice, "curve": curve, "geometry": None,
@@ -346,7 +346,12 @@ class Context(ContextScopeImpl):
                 not isinstance(semantics.get(k), str) for k in
                 ("observable", "unit", "range", "currency", "contextualDimensions"))):
             raise InvalidRequestError("Semantics requires explicit observable/unit/range/currency/contextualDimensions strings")
-        return offsets, slice, self._read_origin()
+        # A single indexed read must use the same explicit semantic definitions for
+        # every point and for its returned metadata, even if the caller mutates its
+        # dictionary while a request is in flight. Native fields are checked strings;
+        # this is not a snapshot lease or deep-freezing of arbitrary extensions.
+        semantics = dict(semantics) if semantics is not None else None
+        return offsets, slice, semantics, self._read_origin()
 
     def _read_origin(self):
         origin = ScientificDataOrigin(self.client.transport.endpoint("runtime").url,
