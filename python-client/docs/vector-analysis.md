@@ -23,4 +23,36 @@ calculated geographic corners. Current Java exporter is pinned, not republished;
 synthetic geometry is not historical study replication. Large-provider/soak and
 arbitrary GeoJSON interoperability are not claimed.
 
-Implementation and acceptance are pending at this contract checkpoint.
+## Use
+
+Install `klab-python-client[vector]`. Core imports do not load GeoPandas/Shapely.
+
+```python
+from klab_client import export_for_analysis, open_vector
+
+artifact = export_for_analysis(observation, "native.geojson", media_type="application/geo+json")
+vectors = open_vector(artifact)
+frame = vectors.dataframe
+print(vectors.sha256, vectors.geometry_column, frame.crs)
+print(vectors.features[0])  # immutable original record, including original ID
+```
+
+`open_vector` also accepts a local file path. Defaults cap input at16MiB,
+10,000 features,100,000 positions and1,000,000 dense dataframe cells. Configurable
+hard maxima are256MiB/100,000 features/1,000,000 positions/1,000,000 table cells.
+These are eager-allocation guards, **not total process-RSS guarantees**. A feature
+with null geometry remains null. Empty coordinate geometries, mixed dimensions
+within one geometry, unclosed rings and invalid topology fail without repair.
+Explicit2D/3D coordinates are preserved; no vertical datum/height units inferred.
+
+IDs, feature order and every source property are preserved in `features`; duplicate
+IDs are not deduplicated. Dataframe properties use object dtype; absent and null
+properties both display as None there, but remain distinct in immutable records.
+The active geometry column gets a noncolliding name; no source property is replaced.
+No dataframe index or property is promoted to a k.LAB identity or class dictionary.
+
+The `vector-analysis` owned reliability scenario uses actual advertised Java native
+GeoJSON and compares its original rectangle against independent Mercator-to-lon/lat
+corners. Multipart/hole/null contracts are independently specified local fixtures,
+not a claim that this live rectangle exercises arbitrary Java multipart producers.
+Implementation exists; installed/live acceptance and review remain separate gates.

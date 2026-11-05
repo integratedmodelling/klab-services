@@ -62,6 +62,11 @@ Scientific analysis: `export_for_analysis`, `open_raster`, `trace_analysis`,
 recorded neighborhoods: `fetch_provenance`, `ProvenanceNode`, `ProvenanceLink`,
 `ProvenanceView`. See [supported representations and consistency limits](scientific-analysis.md).
 
+Optional native vector analysis: `open_vector`, `VectorAnalysis` with the `vector`
+extra. Local bounded RFC7946 FeatureCollections only; preserves immutable source
+records and a detached GeoDataFrame, without reprojection or topology repair.
+See [vector budgets, identities and limits](vector-analysis.md).
+
 Remaining unsupported capabilities include Avro worker contextualization and job
 data decoding, general chunk/window access, automatic arbitrary query/consumer geometry
 conversion, general pandas/multidimensional adapters, privileged server administration, full Modeler

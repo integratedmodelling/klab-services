@@ -1,5 +1,10 @@
 # Functional workflows and test organization
 
+`vector-analysis` verifies the optional local GeoDataFrame adapter using actual
+advertised Java native GeoJSON and independent geographic corners. See
+[bounded vector interpretation](vector-analysis.md); no raster-to-vector conversion
+or historical science claim. Use the owned runner, not a shared Modeler service.
+
 `completed-recovery` adds the bounded current-worldview installed fresh-process
 Job/observation readback described in [its acceptance contract](completed-recovery-acceptance.md).
 It does not replace the older `resume-saved-work` scenario or certify in-flight/
