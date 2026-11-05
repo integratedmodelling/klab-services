@@ -1,5 +1,6 @@
 """Link one advertised canonical scenario model to this result's recorded plan."""
 from dataclasses import asdict
+from decimal import Decimal
 import json
 from pathlib import Path
 
@@ -9,6 +10,23 @@ from klab_client.errors import SubmissionOutcomeUnknown
 from klab_client.evidence import _plain
 from .request_plan import model_urns
 from .scientific_checks import require
+
+
+def encode_report(report):
+    def exact_decimal(value):
+        if isinstance(value, Decimal) and value.is_finite():
+            return str(value)
+        raise TypeError("Report contains unsupported or nonfinite data")
+    return json.dumps(report, indent=2, allow_nan=False, default=exact_decimal)
+
+
+def save_evidence(save, failure=None):
+    try:
+        save()
+    except Exception as error:
+        if failure is None:
+            raise
+        failure.add_note("Model-plan evidence save failed: " + type(error).__name__)
 
 
 def select_candidate(inspector):
@@ -37,13 +55,14 @@ def run(state):
     state = Path(state)
     config = json.loads((state / "scientist.json").read_text())
     report = {"passed": False, "context_released": False, "session_released": False,
-        "historical_admission": "NOT_CLAIMED", "full_dependency_access_revision_matrix": "NOT_TESTED"}
+        "historical_admission": "NOT_CLAIMED", "full_dependency_access_revision_matrix": "NOT_TESTED",
+        "decimal_encoding": "Exact finite SDK Decimal values retained as decimal text, never float-coerced"}
     session = context = None
     primary = None
     with Client(config["urls"]["runtime"], config["token"], agent_name=config["username"],
             **{name: Endpoint(config["urls"][name], config["token"]) for name in ("reasoner", "resources", "resolver")}) as api:
         def save():
-            encoded = json.dumps(report, indent=2, allow_nan=False)
+            encoded = encode_report(report)
             require(len(encoded.encode("utf-8")) <= 2 * 1024 * 1024, "Inspection report exceeds byte budget")
             require(api.transport.redact(encoded) == encoded, "Inspection report contains credentials")
             (state / "current-model-plan.json").write_text(encoded, encoding="utf-8")
@@ -95,8 +114,9 @@ def run(state):
                 if failures:
                     report.update(passed=False, cleanup_error_types=failures)
                     if primary is None:
-                        save()
-                        raise AssertionError("Owned model-plan cleanup failed")
+                        cleanup_error = AssertionError("Owned model-plan cleanup failed")
+                        save_evidence(save, cleanup_error)
+                        raise cleanup_error
                     primary.add_note("Owned model-plan cleanup failed: " + ",".join(failures))
-            save()
+            save_evidence(save, primary)
     return report

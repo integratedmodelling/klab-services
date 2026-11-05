@@ -1,8 +1,10 @@
 from types import SimpleNamespace
+from decimal import Decimal
+import json
 
 import pytest
 
-from workflows.current_model_plan import select_candidate, verify_result
+from workflows.current_model_plan import encode_report, save_evidence, select_candidate, verify_result
 
 
 def model(urn="consolidation.scenario.example", **changes):
@@ -44,6 +46,29 @@ def evidence(urn, outcome="SUCCESS", phase="resolution plan"):
 def test_successful_recorded_plan_identity_and_independent_cells_are_separate_gates():
     candidate = model()
     assert verify_result(candidate, evidence(candidate.urn), "m", (234.5,) * 20) == [candidate.urn]
+    assert verify_result(candidate, evidence(candidate.urn), "m", (Decimal("234.5"),) * 20) == [candidate.urn]
+
+
+def test_evidence_retains_actual_sdk_decimal_precision_without_float_conversion():
+    value = Decimal("234.500000000000000000000000001")
+    encoded = encode_report({"values": [Decimal("234.5"), value], "context_released": True})
+    assert json.loads(encoded) == {"values": ["234.5", str(value)], "context_released": True}
+
+
+@pytest.mark.parametrize("value", [Decimal("NaN"), Decimal("Infinity"), float("nan"), object()])
+def test_report_does_not_silently_coerce_nonfinite_or_unknown_data(value):
+    with pytest.raises((ValueError, TypeError)):
+        encode_report({"value": value})
+
+
+def test_secondary_evidence_failure_never_masks_primary_or_echoes_private_message():
+    def broken_save():
+        raise TypeError("private diagnostics")
+    primary = AssertionError("original failure")
+    save_evidence(broken_save, primary)
+    assert primary.__notes__ == ["Model-plan evidence save failed: TypeError"]
+    with pytest.raises(TypeError):
+        save_evidence(broken_save)
 
 
 @pytest.mark.parametrize("defect", ["other-model", "failed", "not-plan", "wrong-values", "wrong-unit", "wrong-count"])

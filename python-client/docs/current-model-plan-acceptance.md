@@ -30,3 +30,10 @@ evidence remains explicitlypartial; no complete dependencyclosure,lineage,negati
 resourceACL/provider/versionfreshness/authoritymatrix. No originalstudyadmission,
 managedagentcleanup,productionHub/release/support or wholeQ7/A-B claim. Installed/
 live/review/normalCI/eligiblemerge pending. Fullscope/criteria remainpreserved.
+
+## Installed checkpoint
+
+8698b0659:3,084installedtests/17gates/lint/build/parity+14focusedPASS. Onefresh
+ownedJava attempt active;actualmodel/servedplan/20cells/cleanup notpredeclaredpass.
+Wheel `158c4c0ffc16196c4bb5dc82d94e5af2bbb10e054ba3bc3ec9c1e8f50477d914`.
+See [review/reproduction/limits](reviews/current-model-plan-acceptance.md).

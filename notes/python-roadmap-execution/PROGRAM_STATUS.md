@@ -1,5 +1,25 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest model-plan live failure / evidence-only correction
+
+Firstq7-current-model-plan-liveFAILED on SDKDecimal JSON serialization after
+numericalreadback,beforefinalservedplan/value acceptance. Finallysave maskedfirst
+serializationerror;staleearlierreportcannotprovecreatorrelease. Parentprocess/
+listenercleanupPASS,existingJavaunchanged. No acceptedscience orretryclaimed.
+Oneboundedharnesscorrection retains finiteDecimal as exactdecimaltext and preserves
+primaryerrors onsecondarysavefailure. No SDK/fixture/model/meaningchange. Corrected
+tests/installedgatesnext,thenonefreshcorrectedattempt;preservefurtherfailure before
+independentwork. NoPRyet,fullQ7/A-B/studies incomplete.
+
+## Latest model-plan installed pass / one fresh live attempt
+
+8698b0659:3,084installed/17gates/lint/build/parity+14focusedPASS;wheel
+158c4c0ffc16196c4bb5dc82d94e5af2bbb10e054ba3bc3ec9c1e8f50477d914.
+q7-current-model-plan-liveACTIVE:existingResourceInspector/canonicalcandidate→
+originalsuccessfulrecordedplan→20cells234.5m,creatorcleanup. No forcedmodel,
+newscientificfixture/reset/semanticchange. Actualgatesnotyetaccepted,noPRyet.
+BroaderQ7matrices/Qualitywarning/managedcleanup/studies remainseparate;A/Bincomplete.
+
 ## Latest canonical delivery / model-plan contract
 
 PR216 MERGED_BOUNDED4e4df955b8ad9c744c689f3c36d402bc7dbb8099,reviewed
