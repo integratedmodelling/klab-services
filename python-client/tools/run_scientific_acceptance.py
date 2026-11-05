@@ -55,6 +55,11 @@ def execute(args):
     wheel_hash = installed_wheel(args.wheel)
     # Use the existing harness directly so its finally block owns every cleanup.
     import run_reliability_acceptance as harness
+    if getattr(args, "workflow_package", None) is not None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("scientific_owned_harness", PACKAGE / "tools/run_reliability_acceptance.py")
+        harness = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(harness)
     harness.PACKAGE = PACKAGE
     args.scenario = manifest["execution"]["operation"]
     required = {"nonuniform-export": (1, 2), "request-plan": (4, 6)}[args.scenario]
