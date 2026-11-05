@@ -1,5 +1,12 @@
 # Existing public scaffold method inventory
 
+Local dependent candidate: `await async_fetch_execution_evidence(async_observation)`
+awaits bounded recorded provenance and scoped activity reads, returning the existing
+immutable `ExecutionEvidence`. Plans are not execution/commit proof and absent
+diagrams remain explicit. It depends on unpublished native async provenance; neither
+feature is yet accepted integration delivery. See
+[dependent async evidence contract](native-async-execution-evidence.md).
+
 `await async_fetch_provenance(async_observation, limit=64, offset=0)` explicitly
 refreshes one bounded recorded neighborhood using native async membership/query
 requests. Synchronous observations retain `fetch_provenance`. Both return immutable

@@ -1,5 +1,26 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Next milestone W2-2 — actual prerequisite delivered, current validation pending
+
+W1PR238 mergedf099ffffa and D1provenancePR239 mergedc16c75427; exact current
+source/install/Java/CI/delta/postmerge acceptance verified. D2 now reconciles its
+original preservedbranch onto acceptedc16c75427,not an unmerged stack or renamed
+workaround. Both historical evidence sections below retained; new exactinstalled/
+actualJava/normalCI/merge proof required. No full-lineage/primaryA+B promotion.
+
+## Dependent native async execution evidence: local acceptance PASS, delivery blocked
+
+`52672d871`:3,479installed/all17gates/376finalsource tests and actualJava original15/
+handle15/6links/3scopedactivities PASS. Served resolution/contextualization charts
+remain plans, unavailable diagrams explicit; partial/unknown durable commit retained.
+Two engineering setup submissions; five queryPOST/zero submissions or mutations in
+evidence phase. ExactSDK/install/harness/live/privacy/ownedcleanup verified. No study
+execution/historical lineage/complete graph/lease claim. Accepted integration remains
+`937c758b6`,31queuePRsmerged/0open. Provenance prerequisite `b548b09da` ref creation
+was rejected twice by GitHub; no ref/PR. No third unchanged retry/rules bypass.
+Dependent submission waits for normal prerequisite-first delivery; no status/count
+promotion. CAP06 bounded evidence ACCEPTED, complete lineage RC-P3.4 PARTIAL.
+
 ## Next milestone W2-1 — current reconciliation, not historical evidence reuse
 
 Existing native async provenance candidate is reconciled onto acceptedf099ffffa
