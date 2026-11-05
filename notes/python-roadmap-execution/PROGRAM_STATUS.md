@@ -1,5 +1,22 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q8b delivery / current managed-agent preflight
+
+PR211 MERGED_BOUNDED `c7dea3373c0fc1a4cbf9d577bd066b69374e6ca3`, reviewed
+`a7f7eaee483596fbc384ed022d234a42863e537e`. Every final-head hosted check SUCCESS;
+exact installed/live/harness/notebook evidence reverified; normal exact-head merge,
+ancestry and source equality verified. Postmerge13focused notebook/map tests PASS;
+owned branch retired locally/remotely. Prior3,013installed/17gates and actual Java
+notebook/kernel/owned-service cleanup evidence retained. This is not fullQ8/A/B.
+
+Fresh accepted-base branch `feature/python-managed-agent-preflight`: contract in
+`python-client/docs/managed-agent-current-preflight.md`. Existing agent lifecycle/
+federation messaging/release APIs confirmed; authenticated federation-property
+provisioning and independent cleanup witnesses must be traced before live work.
+No managed execution or shared service change. Q7 unresolved branch preserved;
+study inputs and other Q4/Q6/Q8/Q9 gates remain open. Sleep not requested while
+actionable work remains.
+
 ## Latest Q8b local acceptance
 
 f04fe0a0f LOCAL_ACCEPTED_BOUNDED:3,013installed/17gates/lint/build/parity+

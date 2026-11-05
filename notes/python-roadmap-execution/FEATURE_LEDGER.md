@@ -1,5 +1,14 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q8b delivery / next preflight
+
+PR211 MERGED_BOUNDED c7dea3373, reviewed a7f7eaee4; all final checks SUCCESS,
+normal merge/ancestry/source equality verified, postmerge13tests PASS, owned branch
+retired. Installed3,013/17gates and actual exact-installed-kernel Java notebook/
+output/cleanup PASS retained; fullQ8/A/B remain incomplete. Next accepted-base
+managed-agent preflight traces authenticated federation broker provisioning and
+independent cleanup; existing SDK/Java lifecycle reused, no live acceptance claimed.
+
 ## Latest Q8b local acceptance
 
 feature/python-async-notebook-acceptance;basea83d9643d;testedf04fe0a0f;PR/mergepending.
