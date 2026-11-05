@@ -102,6 +102,17 @@ class _TransportPolicy:
             raise failure
         if response == "text":
             return result.text
+        if (response == "json" and service == "resources" and method == "GET"
+                and result.status_code == 200 and result.content == b""
+                and route.startswith("/api/v1/retrieve/")):
+            # ResourceCRUDController returns a Java null directly for absent
+            # assets, which Spring can serialize as HTTP200 with no bytes. This
+            # native read route only: malformed JSON and all other routes stay strict.
+            asset_class, separator, urn = route[len("/api/v1/retrieve/"):].partition("/")
+            if asset_class and separator and urn:
+                failure = MissingAssetError("Resources native retrieval returned no asset (HTTP 200 empty body)")
+                failure.status_code = 200
+                raise failure
         try:
             return result.json()
         except ValueError:

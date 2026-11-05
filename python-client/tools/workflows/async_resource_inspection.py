@@ -30,7 +30,7 @@ def verify_model_views(listed, retrieved):
 
 async def scenario(state):
     config = json.loads((state / "scientist.json").read_text())
-    report = {"passed": False, "scientific_submissions": 0, "remote_mutations": 0,
+    report = {"passed": False, "scientific_submissions": 0, "inspection_mutations": 0,
         "model_selection_execution": "NOT_CLAIMED", "dependency_closure": "NOT_CLAIMED"}
     primary = None
     try:
@@ -57,8 +57,9 @@ async def scenario(state):
             require(any(row.urn == candidate.urn for row in resolved.results), "Model resolution omitted listed model identity")
             try:
                 await inspector.retrieve("consolidation.absent_" + uuid.uuid4().hex, "MODEL")
-            except MissingAssetError:
+            except MissingAssetError as error:
                 report["missing_model"] = "MissingAssetError after positive list/retrieve/resolve"
+                report["missing_model_http_status"] = getattr(error, "status_code", None)
             else:
                 raise AssertionError("Unknown model did not produce a typed missing-asset result")
             report.update(passed=True, model_urn=candidate.urn, listed_models=len(listed),
@@ -66,7 +67,7 @@ async def scenario(state):
                 project=retrieved.project_name, version_available=retrieved.version is not None,
                 advertised_observables=len(retrieved.advertised_observables or ()),
                 listed_dependencies_available=retrieved.listed_dependencies is not None,
-                immutable_view_parity=True, partial_resolution=resolved.partial, calls=calls)
+                checked_native_model_views=True, partial_resolution=resolved.partial, calls=calls)
         report["reader_closed_locally"] = True
     except BaseException as error:
         primary = error
