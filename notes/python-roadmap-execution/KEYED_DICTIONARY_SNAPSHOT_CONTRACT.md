@@ -24,3 +24,10 @@ read-only captured snapshot after append; restored durable metadata without lazy
 semantic lookup; real keyed scanners match their planned dictionary. Compile/test
 only isolated owned outputs with pinned dependencies; exact review/normalPR/CI/
 merge remains required. No artifact publication or categorical Runtime advertisement.
+
+Implemented metadata accessor and immutable captured read-only wrapper; isolated
+reactor compilation and 14 focused / 210 broader storage tests PASS (overlapping
+counts), zero failures/errors/skips. First invocation failed PowerShell argument
+parsing before compilation; quoted invocation corrected without production changes.
+Review and exact source/evidence binding recorded separately. Hosted checks and
+normal merge remain pending; no categorical writer or shared artifact install.

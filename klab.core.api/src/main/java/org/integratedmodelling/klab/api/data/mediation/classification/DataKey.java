@@ -16,6 +16,20 @@ import org.integratedmodelling.klab.api.lang.Encodeable;
 public interface DataKey extends Encodeable, Serializable {
 
   /**
+   * Immutable durable semantic dictionary, when supported by this key. Entries retain their
+   * positive codes (entry index plus one); missing code zero is implicit. Legacy keys return empty:
+   * callers must not reconstruct worldview, target or authority from labels.
+   *
+   * <p>This is a point-in-time metadata snapshot, not an atomic snapshot of an associated live
+   * scanner. Retain it and reject any scanned code outside its entries. A read-only key returns its
+   * captured dictionary even if the original allocator later grows. Reading metadata does not
+   * allocate codes, bind a context, resolve concepts or translate identities.
+   */
+  default java.util.Optional<KeyedData.Dictionary> dictionarySnapshot() {
+    return java.util.Optional.empty();
+  }
+
+  /**
    * The total amount of categories, rows or other mappings used in this key.
    *
    * @return
