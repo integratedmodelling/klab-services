@@ -1,5 +1,16 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest model-plan delivery / native async restoration contract
+
+PR217 MERGED_BOUNDED `361b6920b706839a01856dacde80d1416da8d175`, reviewed
+4ceea6c420c9cf8d2661c429991ca8e313b922ea. All final checks SUCCESS; exact installed/
+live/harness evidence, normal merge, ancestry/source equality and25postmerge tests
+PASS; owned branch retired. Initial Decimal failure and Quality warning retained;
+full Q7 not promoted. New accepted-base native async restoration contract uses
+existing Handle identity/credential validators and awaited attach/query/Job APIs,
+no sync network/thread facade or recreation. Implementation/live acceptance pending;
+full A/B/studies incomplete; no sleep condition while actionable work remains.
+
 ## Latest corrected model-plan local acceptance
 
 7eb7f3637 LOCAL_ACCEPTED_BOUNDED:3,090installed/17gates/lint/parity+20focusedPASS;

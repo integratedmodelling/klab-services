@@ -1,5 +1,14 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest delivery / next async restoration slice
+
+PR217 merged361b6920b, reviewed4ceea6c42; allCI/exact evidence/normalmerge/ancestry/
+source equality/postmerge25PASS, ownedbranchretired. Bounded model-plan only;
+failure/warnings retained. Newfeature/python-native-async-handle-restoration from
+acceptedmerge: contract before implementation; native awaited restoration with
+existing schema/identity/selection/decoder, unowned attachment, no replay. Validation
+pending; no A/B or whole-row promotion.
+
 ## Latest model-plan local acceptance
 
 feature/python-current-model-plan-acceptance;base4e4df955b;tested7eb7f3637;
