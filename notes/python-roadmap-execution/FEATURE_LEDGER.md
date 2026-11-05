@@ -1,5 +1,13 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest delivery / native async export contract
+
+PR218mergeda3e8949c5,reviewed7350e53ce;allCI/exactevidence/normalmerge/ancestry/
+sourceequality/postmerge33PASS;ownedbranchretired. Boundedasyncsavedhandles accepted;
+deletedstate/widerdeployment/historylimits retained. Newfeature/python-native-async-export
+fromacceptedmerge:existingnativeasyncstream/advertisedformats/atomicpublication
+contract;implementation/validationpending. No Java/scientific model/exporter rewrite.
+
 ## Native async handle restoration local acceptance
 
 feature/python-native-async-handle-restoration;base361b6920b;testedb658cc388;

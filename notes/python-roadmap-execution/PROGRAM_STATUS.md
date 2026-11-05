@@ -1,5 +1,16 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest async restoration delivery / native export contract
+
+PR218 MERGED_BOUNDED a3e8949c5da648007895694641a9f02e8bc2d6d0,reviewed
+7350e53cecac597d5e4ad2b112da5ccfed88a1da;allfinalchecksSUCCESS;exactevidence/
+normalmerge/ancestry/sourceequality/postmerge33PASS;ownedbranchretired. Nativeasync
+savedhandles accepted for boundedoriginalstate journey,notdeleted/restart-history.
+Freshacceptedbase feature/python-native-async-export:contractbeforecode reuses
+nativeasyncstream/sharedpurecontracts/atomicfile publication,notPythonrendering or
+Javaexporterchanges. Implementation/installed/liveacceptancepending;fullA/B/studies/
+Qualitywarning/othergates incomplete;nosleepconditionwhileactionableworkremains.
+
 ## Latest native async restoration local acceptance
 
 b658cc388 LOCAL_ACCEPTED_BOUNDED:3,119installed/17gates/lint/parity+255focusedPASS;
