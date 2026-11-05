@@ -1,5 +1,9 @@
 """Real loopback Hub HTTP prerequisite, NOT broker/managed Runtime acceptance."""
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 import threading
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -30,6 +34,20 @@ def test_owned_group_lookup_uses_java_authentication_header_and_cleans_server(tm
     def get(name, headers):
         return urlopen(Request(url + name, headers=headers), timeout=3)
     try:
+        with urlopen(url.removesuffix("/api/v2/users/services/") + "/health", timeout=3) as health:
+            assert health.status == 200
+            assert json.load(health) == {"status": "TEST_ONLY"}
+        # Exercise the existing runner's real HTTP readiness logic unchanged;
+        # this authority is owned by this test thread, not a Java process.
+        # Run outside pytest's deliberately unchanged offline httpx guard, as
+        # with other local process integration tests. Only this owned server
+        # address is supplied, no live Java/broker or external endpoint.
+        code = ("import sys;from types import SimpleNamespace;"
+            "sys.path.insert(0,sys.argv[1]);from run_reliability_acceptance import ready;"
+            "ready(int(sys.argv[2]),'/health',SimpleNamespace(poll=lambda:None))")
+        subprocess.run([sys.executable, "-c", code, str(Path(fixture_hub.__file__).parent),
+            str(server.server_address[1])], check=True, timeout=10, capture_output=True,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
         if enabled:
             with get("python-scientist", {"Authentication": service}) as response:
                 assert response.headers["Cache-Control"] == "no-store"

@@ -1,5 +1,13 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q8c delivery / direct regression correction
+
+PR212 mergedd3453dd42,reviewed17ad05d65;allchecks/ancestry/source/postmerge33PASS;
+ownedbranchretired. Hubtransportonly. Follow-on discovered/health404 readiness
+regression from newGET handler;twoactualHTTPredtests reproduce both modes.
+Separatefix/python-fixture-authority-health adds200TEST_ONLYhealth without
+weakeningrunner readiness;green/fullvalidation/PRpending. No managedacceptance.
+
 ## Latest Q8c prerequisite local validation
 
 feature/python-managed-agent-preflight;acceptedbasec7dea3373;testedf35e984de.

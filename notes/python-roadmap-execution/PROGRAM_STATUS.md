@@ -1,5 +1,17 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q8c delivery / discovered authority readiness regression
+
+PR212 MERGED_BOUNDED d3453dd42e7918e0c94776f8fac5108983f55e62,reviewed
+17ad05d654037994b4267c42f33ada64a8ab369f;allCI/ancestry/sourceequality/postmerge33
+PASS;ownedbranchretired. This acceptsHubtransportonly,not managedRuntime.
+Follow-onsourceinspection found newGET handler returns404 for/health while owned
+runner accepts200/historical501. Two newrealHTTPtests reproduced404 inboth opt-in
+modes. Separatefix/python-fixture-authority-health adds explicitcredentialfree
+200TEST_ONLYhealth;readiness guards NOTweakened. Green/fullgates/normalPRpending.
+No managed/scientificwrite occurred;priortransportpasses notwhole-runacceptance.
+Independentcleanup/principal-incarnation/brokerACL/Q7/study/fullA-B gates remain.
+
 ## Latest Q8c Hub prerequisite local validation
 
 Testedf35e984de onacceptedc7dea3373:3,041installedtests/17gates/lint/build/parity
