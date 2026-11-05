@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "canonical-hierarchy": "tests/functional/test_canonical_hierarchy.py",
     "hierarchy-diagnostic": "tests/functional/test_hierarchy_diagnostic.py",
     "async-notebook": "tests/functional/test_async_notebook.py",
     "async-own-wait": "tests/functional/test_async_own_wait.py",

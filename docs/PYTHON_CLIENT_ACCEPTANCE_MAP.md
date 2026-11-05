@@ -1,5 +1,15 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Bounded canonical hierarchy checkpoint — 5 November 2026
+
+DiagnosticPR215mergedb79c86dd8. Corrected canonical acceptance at4ea7c946c locally
+PASS:3,069installed/17gates+actual authoredcore-aliasrelationships/directional
+predicates/satisfiability/opaqueidentity/sourcecommitment/generation/ownedcleanup.
+No Java/worldview/model changes orscientificcreates;originalfailedbranch retained.
+NormalPR/CI/mergepending. Qualitywarning unresolved;wholeworldview/model-plan/
+dependency/revision/access/authoritymatrices andfullQ7 remainPARTIAL. No whole-row
+promotion orA_COMPLETE/B_COMPLETE/study/release claim.
+
 ## Q7 diagnostic checkpoint — 5 November 2026
 
 Q9aPR214mergedf5a43caca;releaseassessmentstillnonpassing. Follow-upQ7capture at
