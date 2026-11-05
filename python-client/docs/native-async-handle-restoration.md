@@ -21,6 +21,9 @@ One fresh owned Java journey must save original handles, restore via native asyn
 in a fresh process and verify original Job/observation/focus/20cells. Require
 foreign/expired/deleted-state controls from maintained wire behavior, local close/
 cancel ownership and creator cleanup; protocol errors are not absence evidence.
+Source inspection confirms unowned attachment does not prohibit an explicit
+authorized `release()` call in the existing sync/async API. Preserve that contract;
+test no automatic release on restoration/local close, not an invented release ban.
 Offline/source-derived negative tests, installed gates and exact-candidate review,
 normal CI/eligible merge remain separate from actual acceptance.
 
@@ -28,3 +31,22 @@ No in-flight restart/durable history/Runtime generation portability guarantee,
 native async export, async Hub facade, semantic migration or worker SDK. Full A/B,
 managed lifecycle, broader Q7 matrices, unresolved Quality warning and authentic
 study requirements remain separate. No release or scientific publication authority.
+
+## Development checkpoint
+
+Native restoration and a fresh-process acceptance workflow are implemented locally.
+250 focused source-checkout tests PASS across async restore, existing async client
+and sync handles; lint PASS. This is not installed/live acceptance. Tests cover
+pre-I/O schema/credential/origin policy, Runtime/peer/root/observation identity,
+selection refusal, EMPTY Jobs, original decoders, relocation identity, authentication,
+local cancellation and no automatic release/recreation. Existing sync contracts
+are unchanged. Initial test collection import and unsupported RUNNING mock status
+were corrected to the actual Handle module and STARTED wire enum, not by loosening
+production validators. The explicit-release test assumption was corrected as above.
+
+The fresh Java workflow saves original context/Job/observation handles, restores
+in an installed-interpreter child, verifies focus/original20cells, local cancellation/
+close preservation, foreign/expired credentials, missing observation and creator
+cleanup. Deleted-state and additional observer/peer deployment coverage remain
+separate evidence requirements; no restart/history guarantee is predeclared.
+Full installed gates, actual Java outcome and review/normal PR/CI are pending.
