@@ -1,0 +1,1451 @@
+{
+  "W1": {
+    "local_worker_run_id": "b4eecf5d-8a6b-4b29-b2b1-6e84ed72a960",
+    "resource_file_pins": 3988,
+    "resource_manifest_sha256": "ccc203a77e0e4319057bc313d7d1b5ac54011f1dbaf81af0ae6ca25d4cd50d9d",
+    "runs": [
+      {
+        "axes": {
+          "environment_artifacts": {
+            "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+            "status": "PASS"
+          },
+          "java_contract": {
+            "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+            "status": "PASS"
+          },
+          "python": {
+            "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+            "status": "PASS"
+          },
+          "scientific": {
+            "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+            "status": "PASS"
+          },
+          "security_lifecycle": {
+            "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+            "status": "PASS"
+          }
+        },
+        "checks": {
+          "n-cleanup": {
+            "reason": "Owned scopes released",
+            "status": "PASS"
+          },
+          "n-geography": {
+            "reason": "Independent north-first matrix, CRS/edges/centres/orientation/float64/masks/units match native TIFF",
+            "status": "PASS"
+          },
+          "n-metadata-negative": {
+            "reason": "L2 controlled copies reject missing/wrong units, bad CRS, missing nodata; native bytes unchanged",
+            "status": "PASS"
+          },
+          "n-model-input": {
+            "reason": "Successful recorded plan models associated to exact requested observation handle",
+            "status": "PASS"
+          },
+          "n-values": {
+            "reason": "Exact independent native offsets/values/units; valid zero distinct from null",
+            "status": "PASS"
+          }
+        },
+        "cleanup": {
+          "reason": "Captured owned processes/listeners and unrelated Java preservation",
+          "status": "PASS"
+        },
+        "command": [
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree\\python-client\\tools\\run_scientific_acceptance.py",
+          "--manifest",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree\\python-client\\tests\\acceptance\\scenarios\\n-nonuniform.json",
+          "--server-repo",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree",
+          "--java",
+          "C:\\Users\\lumsd\\AppData\\Local\\Programs\\Temurin21\\jdk-21.0.12.1+1\\bin\\java.exe",
+          "--wheel",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\ta-workflow-binding-deterministic-final\\dist\\klab_python_client-0.1.0-py3-none-any.whl",
+          "--components",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\corrected-components.json",
+          "--state-dir",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\next-scientific-delivery-20261105\\local-n-s-01\\n-nonuniform"
+        ],
+        "ended": "2026-11-05T21:46:33.668286+00:00",
+        "identities": {
+          "auth_principal": "python-scientist",
+          "build_hashes": {
+            "adapter_sha256_at_start": "22dc0c67e6b1886fa70b40cbd57b103bfa92ee39b7856d28230e98a618ae9d3b",
+            "manifest_sha256": "42c3b388b3638b6a0d8456ab5b74eed770b084a7aafa8eb36f327ac2c8cad277"
+          },
+          "components": [
+            {
+              "sha256": "e2190a05eb478f4e8859faeddf5d25935bf53de0aaf12f135652e6e23c37aa03"
+            },
+            {
+              "sha256": "9844147666bbb53071dfcd54db284aef48be9c79315b73415e74af8c1d70126f"
+            }
+          ],
+          "java_version": "openjdk version \"21.0.12.1\" 2026-08-18 LTS\r\nOpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)\r\nOpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)\r\n",
+          "services": {
+            "reasoner": {
+              "id": "740812b9-d2a0-40b0-98aa-228f0d4e1ffc",
+              "url": "http://127.0.0.1:38091/reasoner"
+            },
+            "resolver": {
+              "id": "af04bf79-f0cb-46da-8aed-b7ad362d7a62",
+              "url": "http://127.0.0.1:38093/resolver"
+            },
+            "resources": {
+              "id": "58977c57-82cf-426b-88a1-7a5e15e3e37b",
+              "url": "http://127.0.0.1:38092/resources"
+            },
+            "runtime": {
+              "id": "ac78c513-0565-4437-a190-451555fce709",
+              "url": "http://127.0.0.1:38094/runtime"
+            }
+          },
+          "source_sha": "d74a8dc77c1be1587ba33a95bc9cf71bfda5c4fa",
+          "wheel_sha256": "d1473b53efd16cd2e896faba85083ae0ad8afe968c27d0043a734b5cb32db865"
+        },
+        "receipt_sha256": "f67039b45994e3b81a9ef8808a018630b79eacfaae872bc9f913cbf2d724f61c",
+        "run_id": "e5b4afc5-f79d-4071-9801-911764142e67",
+        "sanitized_projection": {
+          "axes": {
+            "environment_artifacts": {
+              "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+              "status": "PASS"
+            },
+            "java_contract": {
+              "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+              "status": "PASS"
+            },
+            "python": {
+              "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+              "status": "PASS"
+            },
+            "scientific": {
+              "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+              "status": "PASS"
+            },
+            "security_lifecycle": {
+              "reason": "Bounded synthetic Java numerical use case; not provider accuracy",
+              "status": "PASS"
+            }
+          },
+          "checks": {
+            "n-cleanup": {
+              "reason": "Owned scopes released",
+              "status": "PASS"
+            },
+            "n-geography": {
+              "reason": "Independent north-first matrix, CRS/edges/centres/orientation/float64/masks/units match native TIFF",
+              "status": "PASS"
+            },
+            "n-metadata-negative": {
+              "reason": "L2 controlled copies reject missing/wrong units, bad CRS, missing nodata; native bytes unchanged",
+              "status": "PASS"
+            },
+            "n-model-input": {
+              "reason": "Successful recorded plan models associated to exact requested observation handle",
+              "status": "PASS"
+            },
+            "n-values": {
+              "reason": "Exact independent native offsets/values/units; valid zero distinct from null",
+              "status": "PASS"
+            }
+          },
+          "cleanup": true,
+          "compiled_class_count": 2842,
+          "compiled_classes_manifest_sha256": "5168a676959183d55b8d32a39d2d0f8cbc76e6bb9ce6cac8ae15268e064164e3",
+          "components": [
+            {
+              "sha256": "e2190a05eb478f4e8859faeddf5d25935bf53de0aaf12f135652e6e23c37aa03"
+            },
+            {
+              "sha256": "9844147666bbb53071dfcd54db284aef48be9c79315b73415e74af8c1d70126f"
+            }
+          ],
+          "elapsed_seconds": 88.287499,
+          "fixture_sha256": {
+            "consolidation.fixture/META-INF/manifest.json": "d3c0866bc94e920985527ce6425d4bdc77217d3a132f163777b60be268c86733",
+            "consolidation.fixture/src/consolidation.fixture.kim": "a8419bc56f701513366865d752b714cb15d374c90871c8c0831bacd1b1f607b0",
+            "consolidation.fixture/src/consolidation.lexical.kim": "ae3315db9f346017f2f4cfa3a144ad1bc48ad63f8b5f72804e44b965f041412b",
+            "consolidation.fixture/src/consolidation.scenario.kim": "d452c3f823a6feaf9b523825475a8c2a65c47bf92c01042984c4cbd08debfd31",
+            "consolidation/META-INF/manifest.json": "b0f8e29cb333fa94685c8a1afd5b83130f18d4969738f9ecf20e19fa4ddefc30",
+            "consolidation/src/consolidation.kwv": "cbcd93ff3055f4af4937dbac743582d00d0bc2f1aef2db7d53abf8cb1062dd05",
+            "consolidation/strategies/observations.obs": "4cf65cce34ccc9235508e6e1a74d60a485f7e51715fbe86fa2d1e7773ccfa24d"
+          },
+          "harness_passed": true,
+          "manifest_sha256": "203a85783ffe399272f27406e27f8ed00f7b28e7425c669b7f11bf67ba95eb77",
+          "scenario_id": "n-nonuniform",
+          "schema_version": 1,
+          "test_class_sha256": "58db292cb60d0d9e34d028b42637d39397a4107ca86c4752427f278ef1e1f73c",
+          "test_source_sha256": "1b48d93b264a3207cb51e18271b090a8a9c4e92e7082bb698112fb7a128dadc1",
+          "workflow_report": {
+            "activity_ids": [
+              18,
+              19,
+              20
+            ],
+            "cells": 20,
+            "durable_root_commit": "unknown: activity completion and resolution are not durable root commit proof",
+            "metadata_negative": {
+              "original_unchanged": true,
+              "rejected": [
+                "missing-units",
+                "wrong-units",
+                "bad-crs",
+                "missing-nodata"
+              ],
+              "tier": "L2"
+            },
+            "missing": 2,
+            "observation": {
+              "context_id": "6bdf7580bec84d00a054fc2c0a460de7.6zp7bn6n9k",
+              "kind": "observation",
+              "observation_id": 15,
+              "runtime_id": "ac78c513-0565-4437-a190-451555fce709",
+              "runtime_url": "http://127.0.0.1:38094/runtime",
+              "scope": "6bdf7580bec84d00a054fc2c0a460de7.6zp7bn6n9k.11",
+              "version": 1
+            },
+            "oracle_sha256": "f0848f723b485547c4b37f725e0e1aed63db1c29c49280481e7bcd0439ac9213",
+            "plan_partial": true,
+            "selected_models": [
+              "consolidation.fixture.elevation_of region-quantifier"
+            ],
+            "sha256": "fc442366732cb8fe47b050c76e7e4c53739a8d754527a0aeaca430f18f41fba0",
+            "zero": 1
+          }
+        },
+        "sanitized_summary_sha256": "42c3b388b3638b6a0d8456ab5b74eed770b084a7aafa8eb36f327ac2c8cad277",
+        "scenario": "n-nonuniform.json",
+        "scheduled_L4": "NOT_RUN",
+        "scientific_admission_state": "LOCALLY_ACCEPTED_BOUNDED",
+        "source": "d74a8dc77c1be1587ba33a95bc9cf71bfda5c4fa",
+        "started": "2026-11-05T21:45:05.380787+00:00"
+      },
+      {
+        "axes": {
+          "environment_artifacts": {
+            "reason": "Bounded source-justified model/plan/output and authorization control",
+            "status": "PASS"
+          },
+          "java_contract": {
+            "reason": "Bounded source-justified model/plan/output and authorization control",
+            "status": "PASS"
+          },
+          "python": {
+            "reason": "Bounded source-justified model/plan/output and authorization control",
+            "status": "PASS"
+          },
+          "scientific": {
+            "reason": "Bounded source-justified model/plan/output and authorization control",
+            "status": "PASS"
+          },
+          "security_lifecycle": {
+            "reason": "Bounded source-justified model/plan/output and authorization control",
+            "status": "PASS"
+          }
+        },
+        "checks": {
+          "s-cleanup": {
+            "reason": "Owned contexts/session and negative principal positive-control session released",
+            "status": "PASS"
+          },
+          "s-local-negative": {
+            "reason": "L1 unsupported forced model/conflicting options refused before HTTP",
+            "status": "PASS"
+          },
+          "s-plan-output": {
+            "reason": "Three actual request-associated plans and independently sourced values; exact observation handles and focus",
+            "status": "PASS"
+          },
+          "s-private-denial": {
+            "reason": "Actual valid distinct principal refused private owner context; no submit or foreign mutation",
+            "status": "PASS"
+          }
+        },
+        "cleanup": {
+          "reason": "Captured owned processes/listeners and unrelated Java preservation",
+          "status": "PASS"
+        },
+        "command": [
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree\\python-client\\tools\\run_scientific_acceptance.py",
+          "--manifest",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree\\python-client\\tests\\acceptance\\scenarios\\s-model-selection.json",
+          "--server-repo",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree",
+          "--java",
+          "C:\\Users\\lumsd\\AppData\\Local\\Programs\\Temurin21\\jdk-21.0.12.1+1\\bin\\java.exe",
+          "--wheel",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\ta-workflow-binding-deterministic-final\\dist\\klab_python_client-0.1.0-py3-none-any.whl",
+          "--components",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\corrected-components.json",
+          "--state-dir",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\next-scientific-delivery-20261105\\local-n-s-01\\s-model-selection"
+        ],
+        "ended": "2026-11-05T21:48:08.834677+00:00",
+        "identities": {
+          "auth_principal": "python-scientist",
+          "build_hashes": {
+            "adapter_sha256_at_start": "22dc0c67e6b1886fa70b40cbd57b103bfa92ee39b7856d28230e98a618ae9d3b",
+            "manifest_sha256": "629a8cf564034e1f21f8795050dedb6036bbfa374ee91d6121e10b2e58057892"
+          },
+          "components": [
+            {
+              "sha256": "e2190a05eb478f4e8859faeddf5d25935bf53de0aaf12f135652e6e23c37aa03"
+            },
+            {
+              "sha256": "9844147666bbb53071dfcd54db284aef48be9c79315b73415e74af8c1d70126f"
+            }
+          ],
+          "java_version": "openjdk version \"21.0.12.1\" 2026-08-18 LTS\r\nOpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)\r\nOpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)\r\n",
+          "services": {
+            "reasoner": {
+              "id": "ae40b830-beb1-4ee9-a372-055a853620b2",
+              "url": "http://127.0.0.1:38091/reasoner"
+            },
+            "resolver": {
+              "id": "aa20429a-3bce-43dd-8b6b-f3b8d1f28905",
+              "url": "http://127.0.0.1:38093/resolver"
+            },
+            "resources": {
+              "id": "47eafecd-46f2-403c-be2c-8512a32c192b",
+              "url": "http://127.0.0.1:38092/resources"
+            },
+            "runtime": {
+              "id": "d6d72758-adb3-4cd0-805f-59665d5255fb",
+              "url": "http://127.0.0.1:38094/runtime"
+            }
+          },
+          "source_sha": "d74a8dc77c1be1587ba33a95bc9cf71bfda5c4fa",
+          "wheel_sha256": "d1473b53efd16cd2e896faba85083ae0ad8afe968c27d0043a734b5cb32db865"
+        },
+        "receipt_sha256": "b5c2f98d631988e85a286e7aa4be6e27832ced56e76486c112c15dd4c25d5e31",
+        "run_id": "a47012cb-978b-4a53-a30b-ac3c5a0af9c4",
+        "sanitized_projection": {
+          "axes": {
+            "environment_artifacts": {
+              "reason": "Bounded source-justified model/plan/output and authorization control",
+              "status": "PASS"
+            },
+            "java_contract": {
+              "reason": "Bounded source-justified model/plan/output and authorization control",
+              "status": "PASS"
+            },
+            "python": {
+              "reason": "Bounded source-justified model/plan/output and authorization control",
+              "status": "PASS"
+            },
+            "scientific": {
+              "reason": "Bounded source-justified model/plan/output and authorization control",
+              "status": "PASS"
+            },
+            "security_lifecycle": {
+              "reason": "Bounded source-justified model/plan/output and authorization control",
+              "status": "PASS"
+            }
+          },
+          "checks": {
+            "s-cleanup": {
+              "reason": "Owned contexts/session and negative principal positive-control session released",
+              "status": "PASS"
+            },
+            "s-local-negative": {
+              "reason": "L1 unsupported forced model/conflicting options refused before HTTP",
+              "status": "PASS"
+            },
+            "s-plan-output": {
+              "reason": "Three actual request-associated plans and independently sourced values; exact observation handles and focus",
+              "status": "PASS"
+            },
+            "s-private-denial": {
+              "reason": "Actual valid distinct principal refused private owner context; no submit or foreign mutation",
+              "status": "PASS"
+            }
+          },
+          "cleanup": true,
+          "compiled_class_count": 2842,
+          "compiled_classes_manifest_sha256": "5168a676959183d55b8d32a39d2d0f8cbc76e6bb9ce6cac8ae15268e064164e3",
+          "components": [
+            {
+              "sha256": "e2190a05eb478f4e8859faeddf5d25935bf53de0aaf12f135652e6e23c37aa03"
+            },
+            {
+              "sha256": "9844147666bbb53071dfcd54db284aef48be9c79315b73415e74af8c1d70126f"
+            }
+          ],
+          "elapsed_seconds": 94.684605,
+          "fixture_sha256": {
+            "consolidation.fixture/META-INF/manifest.json": "d3c0866bc94e920985527ce6425d4bdc77217d3a132f163777b60be268c86733",
+            "consolidation.fixture/src/consolidation.fixture.kim": "a8419bc56f701513366865d752b714cb15d374c90871c8c0831bacd1b1f607b0",
+            "consolidation.fixture/src/consolidation.lexical.kim": "ae3315db9f346017f2f4cfa3a144ad1bc48ad63f8b5f72804e44b965f041412b",
+            "consolidation.fixture/src/consolidation.scenario.kim": "d452c3f823a6feaf9b523825475a8c2a65c47bf92c01042984c4cbd08debfd31",
+            "consolidation/META-INF/manifest.json": "b0f8e29cb333fa94685c8a1afd5b83130f18d4969738f9ecf20e19fa4ddefc30",
+            "consolidation/src/consolidation.kwv": "cbcd93ff3055f4af4937dbac743582d00d0bc2f1aef2db7d53abf8cb1062dd05",
+            "consolidation/strategies/observations.obs": "4cf65cce34ccc9235508e6e1a74d60a485f7e51715fbe86fa2d1e7773ccfa24d"
+          },
+          "harness_passed": true,
+          "manifest_sha256": "e42b0e85bc351bbe6206704998cd658e91487741927255494454ee60a0189a91",
+          "scenario_id": "s-model-selection",
+          "schema_version": 1,
+          "test_class_sha256": "58db292cb60d0d9e34d028b42637d39397a4107ca86c4752427f278ef1e1f73c",
+          "test_source_sha256": "1b48d93b264a3207cb51e18271b090a8a9c4e92e7082bb698112fb7a128dadc1",
+          "workflow_report": {
+            "records": [
+              {
+                "accepted": true,
+                "activity_ids": [
+                  18,
+                  19,
+                  20
+                ],
+                "durable_root_commit": "unknown: activity completion and resolution are not durable root commit proof",
+                "executed": true,
+                "expected_constant": "independent nonuniform offsets",
+                "focus_preserved": true,
+                "geometry_verified": "5x4 EPSG:3857 bbox200000,200500,6000000,6000400",
+                "model_urns": [
+                  "consolidation.fixture.elevation_of region-quantifier"
+                ],
+                "observation": {
+                  "context_id": "877b9c5e38ab4b8ca409860045e01e36.6zqcda33pc",
+                  "kind": "observation",
+                  "observation_id": 15,
+                  "runtime_id": "d6d72758-adb3-4cd0-805f-59665d5255fb",
+                  "runtime_url": "http://127.0.0.1:38094/runtime",
+                  "scope": "877b9c5e38ab4b8ca409860045e01e36.6zqcda33pc.11",
+                  "version": 1
+                },
+                "option": "baseline",
+                "plan_partial": true,
+                "reflected_in_plan": true,
+                "requested": true,
+                "verified_cells": 10
+              },
+              {
+                "accepted": true,
+                "activity_ids": [
+                  38,
+                  36,
+                  37
+                ],
+                "durable_root_commit": "unknown: activity completion and resolution are not durable root commit proof",
+                "executed": true,
+                "expected_constant": "66.5",
+                "focus_preserved": true,
+                "geometry_verified": "5x4 EPSG:3857 bbox200000,200500,6000000,6000400",
+                "model_urns": [
+                  "consolidation.lexical.elevation_of region-quantifier"
+                ],
+                "observation": {
+                  "context_id": "877b9c5e38ab4b8ca409860045e01e36.6zqhbo4wh8",
+                  "kind": "observation",
+                  "observation_id": 33,
+                  "runtime_id": "d6d72758-adb3-4cd0-805f-59665d5255fb",
+                  "runtime_url": "http://127.0.0.1:38094/runtime",
+                  "scope": "877b9c5e38ab4b8ca409860045e01e36.6zqhbo4wh8.29",
+                  "version": 1
+                },
+                "option": "namespace",
+                "plan_partial": true,
+                "reflected_in_plan": true,
+                "requested": true,
+                "verified_cells": 20
+              },
+              {
+                "accepted": true,
+                "activity_ids": [
+                  54,
+                  55,
+                  56
+                ],
+                "durable_root_commit": "unknown: activity completion and resolution are not durable root commit proof",
+                "executed": true,
+                "expected_constant": "234.5",
+                "focus_preserved": true,
+                "geometry_verified": "5x4 EPSG:3857 bbox200000,200500,6000000,6000400",
+                "model_urns": [
+                  "consolidation.scenario.elevation_of region-quantifier"
+                ],
+                "observation": {
+                  "context_id": "877b9c5e38ab4b8ca409860045e01e36.6zqiwkdms0",
+                  "kind": "observation",
+                  "observation_id": 51,
+                  "runtime_id": "d6d72758-adb3-4cd0-805f-59665d5255fb",
+                  "runtime_url": "http://127.0.0.1:38094/runtime",
+                  "scope": "877b9c5e38ab4b8ca409860045e01e36.6zqiwkdms0.47",
+                  "version": 1
+                },
+                "option": "scenarios",
+                "plan_partial": true,
+                "reflected_in_plan": true,
+                "requested": true,
+                "verified_cells": 20
+              },
+              {
+                "calls": [
+                  {
+                    "method": "POST",
+                    "path": "/runtime/api/v1/connect"
+                  }
+                ],
+                "context_id": "877b9c5e38ab4b8ca409860045e01e36.6zqiwkdms0",
+                "error_type": "AuthorizationError",
+                "negative": "non-admitted valid signed principal private context",
+                "positive_session_released": true,
+                "scientific_submissions": 0
+              },
+              {
+                "accepted": true,
+                "executed": false,
+                "normalization_warning_verified": true,
+                "option": "grid",
+                "reflected_in_configuration": true,
+                "reflected_in_plan": "NOT_ASSERTED",
+                "requested": true,
+                "requested_span": 100,
+                "served_stepX": 100.00004163587894,
+                "served_stepY": 100.00004163587894
+              },
+              {
+                "http_requests": 0,
+                "option": "forced-model/conflicting-lexical/unknown-constraint",
+                "rejected": true
+              }
+            ]
+          }
+        },
+        "sanitized_summary_sha256": "629a8cf564034e1f21f8795050dedb6036bbfa374ee91d6121e10b2e58057892",
+        "scenario": "s-model-selection.json",
+        "scheduled_L4": "NOT_RUN",
+        "scientific_admission_state": "LOCALLY_ACCEPTED_BOUNDED",
+        "source": "d74a8dc77c1be1587ba33a95bc9cf71bfda5c4fa",
+        "started": "2026-11-05T21:46:34.150072+00:00"
+      }
+    ],
+    "scheduled_disposition": "BLOCKED_EXTERNAL",
+    "scheduled_runs": [],
+    "worker_receipt_sha256": "64f502ebeabf1ef4254e970b7974115a0878a4e67c877ed9f8e283cedfb220c7"
+  },
+  "W3": {
+    "candidates_considered": 2,
+    "disposition": "BLOCKED_EXTERNAL",
+    "findings": [
+      {
+        "D0": {
+          "boundary": "Pinned Java executable artifact/admission and coordinated fixture/worldview, not a Python semantic implementation defect",
+          "reason": "Existing native fixture requires configuration inspector/detection/effect admission; no compiled ConfigurationInspector class in the retained pinned stack and README explicitly separates prepared/parser admission from execution. Existing N/S loader admits only consolidation fixture, not this imod fixture. No attested executable bundle/loading contract for this candidate.",
+          "status": "BLOCKED_EXTERNAL"
+        },
+        "D1": {
+          "reason": "D0 not admitted; no semantic query/plan run or weakening",
+          "status": "NOT_RUN"
+        },
+        "D2": {
+          "reason": "D0/D1 prerequisites absent; no surrogate calculation",
+          "status": "NOT_RUN"
+        },
+        "candidate": "primary",
+        "independent_expected_values": {
+          "basis": "Independent literal source reading, not a response or arithmetic model",
+          "height_m": "2",
+          "summary_m": "7",
+          "width_m": "3"
+        },
+        "scientific_acceptance": "NOT_RUN",
+        "smallest_unblock": "Platform/fixture owner provides coordinated current compiled bundle, accepted fixture/worldview admission and positive/negative executable plan evidence before any D2; no Java/ontology rewriting authorized",
+        "source_assets": {
+          "klab.services.runtime/src/test/resources/consequences/configurations-dependent/README.txt": "f0fbf17b7d3eccb1206c32175b0a7b952d33d3252a8b7e3c2bb227edcbaa5352",
+          "klab.services.runtime/src/test/resources/consequences/configurations-dependent/src/consequence/configurations/network.kim": "f3e9713ebf56e43db9dfa86af0334d4dc6f9ec5ff3414127736159f4fc2b06a1",
+          "klab.services.runtime/src/test/resources/consequences/configurations-dependent/src/consequence/configurations/update.kim": "0c487e46bafd96100c89d738edfd7b23445813507d0b65dc7113ec345635152b",
+          "klab.services.runtime/src/test/resources/consequences/configurations-dependent/src/imod.kwv": "2e82278579621edee362dfe32a16fa372d778e535bb5cd0f361081b91da63c20",
+          "klab.services.runtime/src/test/resources/consequences/configurations-dependent/strategies/observations.obs": "f81cf1fd14d5190639b7a47fe7951e395a681e2dd08feb388cdd55ea4bcd5bef",
+          "klab.services.runtime/src/test/resources/consequences/configurations-dependent/testcases/consequence/configurations/testsuite.kactors": "53d9f53a84d9d5c7fc84bf047bd21b8925c6255e89ec2c6c31472ab50733f408"
+        },
+        "source_directory": "klab.services.runtime/src/test/resources/consequences/configurations-dependent",
+        "source_sha": "d74a8dc77c1be1587ba33a95bc9cf71bfda5c4fa"
+      },
+      {
+        "D0": {
+          "boundary": "Pinned Java executable artifact/admission and coordinated fixture/worldview, not a Python semantic implementation defect",
+          "reason": "Existing README requires parent coordination and accepted imod layering; parser/semantic compilation/live integration explicitly pending. No coordinated admitted rolefixture/worldview/evaluator tuple on N/S consolidation stack; must not copy into user staging/worldview.",
+          "status": "BLOCKED_EXTERNAL"
+        },
+        "D1": {
+          "reason": "D0 not admitted; no semantic query/plan run or weakening",
+          "status": "NOT_RUN"
+        },
+        "D2": {
+          "reason": "D0/D1 prerequisites absent; no surrogate calculation",
+          "status": "NOT_RUN"
+        },
+        "candidate": "alternate",
+        "independent_expected_values": {
+          "basis": "Existing model literals only; not proof of role implication/lineage",
+          "implied_m": "7",
+          "input_m": "0"
+        },
+        "scientific_acceptance": "NOT_RUN",
+        "smallest_unblock": "Platform/fixture owner provides coordinated current compiled bundle, accepted fixture/worldview admission and positive/negative executable plan evidence before any D2; no Java/ontology rewriting authorized",
+        "source_assets": {
+          "klab.services.runtime/src/test/resources/consequences/roles/README.txt": "6bdeed870817d0202d35cb23dc22cbce1b2558eef7c0de2d28fffe0c515594f9",
+          "klab.services.runtime/src/test/resources/consequences/roles/src/consequence/roles/process.kim": "a6fdff4aef05a0ac9ce84017743b543e97e1b7538f92795468f8b335d0dad09d",
+          "klab.services.runtime/src/test/resources/consequences/roles/src/rolefixture.kwv": "74ab2454a99e673c1a9ef4a40d72ae02d0b70e9fec27e252d41b5fdce477166e",
+          "klab.services.runtime/src/test/resources/consequences/roles/testcases/consequence/roles/testsuite.kactors": "161022b2047d898914a9f0c7e4772dde66a060789c97cb5a6611d9a285b5876c"
+        },
+        "source_directory": "klab.services.runtime/src/test/resources/consequences/roles",
+        "source_sha": "d74a8dc77c1be1587ba33a95bc9cf71bfda5c4fa"
+      }
+    ],
+    "followup_owner": "Java fixture/platform maintainers; operator for isolated artifact permissions",
+    "no_more_alternates": true,
+    "not_a_demonstrated_general_Java_composition_defect": true,
+    "production_models_or_ontology_changed": false,
+    "scenario_executions": 0,
+    "schema_version": 1,
+    "source_only": true,
+    "union_retested": false,
+    "workstream": "W3"
+  },
+  "cleanup_verification": {
+    "compiled_reusable_core": "Retained for reviewed finalhandoff;not deleted",
+    "final_handoff_branch": "Active until normaldocsmerge/postmerge",
+    "fresh_local_N_S_and_D1_D2_harness_cleanup": "PASS",
+    "new_worktrees_created": 0,
+    "owned_process_identities_absent": 28,
+    "power_actions": 0,
+    "remaining_five_old_candidates": "Preserved;outsidefixedbatch",
+    "schema_version": 1,
+    "status": "PASS",
+    "temporary_feature_branches_retired": [
+      238,
+      239,
+      240
+    ],
+    "unrelated_Java_unchanged_each_run": true,
+    "unrelated_terminals_or_services_closed": 0,
+    "visible_agent_service_windows": "None;CREATE_NO_WINDOW used;no capturedownedprocess remains"
+  },
+  "features": [
+    {
+      "command_results": [
+        {
+          "exit": 0,
+          "step": "build"
+        },
+        {
+          "exit": 0,
+          "step": "install"
+        },
+        {
+          "exit": 0,
+          "step": "offline"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-0"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-1"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-2"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-3"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-4"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-5"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-6"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-7"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-8"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-9"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-10"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-11"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-12"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-13"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-14"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-15"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-16"
+        },
+        {
+          "exit": 0,
+          "step": "lint"
+        }
+      ],
+      "delivery": {
+        "PR": 238,
+        "artifacts": {
+          "klab_python_client-0.1.0-py3-none-any.whl": "93d0549e4543d444dd33b36e7697f9061c2ca5b89f7c0d793838756c92b56ec9",
+          "klab_python_client-0.1.0.tar.gz": "727f4d572924e212954c7025f9faae42f91093908b616791c81d74bf63e4a7b7"
+        },
+        "base": "b04977ea2a8c9484d63b2717c1b2f1a9044d1390",
+        "branch_retired_after_ancestry_and_postmerge": true,
+        "compiled_core_retained": true,
+        "exact_reviewed_delta": true,
+        "gate_directory": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\next-w1-worker-final",
+        "gate_identity_sha256": "ba1a5cacbf073276163638ff3d1e24a5a6d3b70fd46ec8152a25511dd967a212",
+        "latest_hosted_checks": "PASS",
+        "merge": "f099ffffa764cb036d570c6918a57066b8781c3f",
+        "merged_at": "2026-11-05T21:57:56Z",
+        "postmerge_tests": 123,
+        "schema_version": 1,
+        "source": "7ba159d6587a298e99aa3f33c02d2e8066b6a468",
+        "status": "MERGED_BOUNDED",
+        "url": "https://github.com/integratedmodelling/klab-services/pull/238"
+      },
+      "exact_commands": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\next-w1-worker-final\\commands.json",
+        "sha256": "c2135141fd07123d701b8fe60af8790fa3cf7b03f289b89fbbb27d2ebbf6d15e"
+      },
+      "installed_identity": {
+        "artifacts": {
+          "klab_python_client-0.1.0-py3-none-any.whl": "93d0549e4543d444dd33b36e7697f9061c2ca5b89f7c0d793838756c92b56ec9",
+          "klab_python_client-0.1.0.tar.gz": "727f4d572924e212954c7025f9faae42f91093908b616791c81d74bf63e4a7b7"
+        },
+        "head": "7ba159d6587a298e99aa3f33c02d2e8066b6a468",
+        "identity_sha256": "ba1a5cacbf073276163638ff3d1e24a5a6d3b70fd46ec8152a25511dd967a212",
+        "installed_source_manifest_sha256": "7a5fe0a25ba73292b9df43d34071cc4d5377decca9d497bc59ac9089f7ed98e2",
+        "source_match": true,
+        "tool_source_manifest_sha256": "1531a286fa11717b1eb2b45f11bf42b1c95320ee2d947f4d71e02584327dfa8a"
+      }
+    },
+    {
+      "command_results": [
+        {
+          "exit": 0,
+          "step": "build"
+        },
+        {
+          "exit": 0,
+          "step": "install"
+        },
+        {
+          "exit": 0,
+          "step": "offline"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-0"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-1"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-2"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-3"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-4"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-5"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-6"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-7"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-8"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-9"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-10"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-11"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-12"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-13"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-14"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-15"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-16"
+        },
+        {
+          "exit": 0,
+          "step": "lint"
+        }
+      ],
+      "delivery": {
+        "PR": 239,
+        "artifacts": {
+          "klab_python_client-0.1.0-py3-none-any.whl": "2a96e65a8c1a0dd2cca35069e1b7f7e644488885edd18ff3f2fd20c9435107ec",
+          "klab_python_client-0.1.0.tar.gz": "5ade3c124ab2e985ee62b8520588fd00438fd1d64f7632299f6e4f28bb5e5f27"
+        },
+        "base": "f099ffffa764cb036d570c6918a57066b8781c3f",
+        "branch_retired_after_ancestry_and_postmerge": true,
+        "compiled_core_retained": true,
+        "exact_reviewed_delta": true,
+        "gate_directory": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\next-d1-provenance-final",
+        "gate_identity_sha256": "5ee8a769003605de85a2bc5d9f5fa47fcd9c38f9cb9ee60ac110ab22d1a95a8e",
+        "latest_hosted_checks": "PASS",
+        "merge": "c16c75427e34133ba973446b18666f18c8b36ad2",
+        "merged_at": "2026-11-05T22:07:39Z",
+        "postmerge_tests": 169,
+        "schema_version": 1,
+        "source": "9283983f7a7a7e403d975f76851946c5218cb8a0",
+        "status": "MERGED_BOUNDED",
+        "url": "https://github.com/integratedmodelling/klab-services/pull/239"
+      },
+      "exact_commands": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\next-d1-provenance-final\\commands.json",
+        "sha256": "c71105b308bf1b0c6f7ed893f84c9234ee2242bdb966e8374213877c97ebc55d"
+      },
+      "installed_identity": {
+        "artifacts": {
+          "klab_python_client-0.1.0-py3-none-any.whl": "2a96e65a8c1a0dd2cca35069e1b7f7e644488885edd18ff3f2fd20c9435107ec",
+          "klab_python_client-0.1.0.tar.gz": "5ade3c124ab2e985ee62b8520588fd00438fd1d64f7632299f6e4f28bb5e5f27"
+        },
+        "head": "9283983f7a7a7e403d975f76851946c5218cb8a0",
+        "identity_sha256": "5ee8a769003605de85a2bc5d9f5fa47fcd9c38f9cb9ee60ac110ab22d1a95a8e",
+        "installed_source_manifest_sha256": "6c99c2be53b6abd98f3960e5a5585e0ae164c1d0fdec79218a42caebfd0fc9d1",
+        "source_match": true,
+        "tool_source_manifest_sha256": "1b7d471ff791627757c8aed04e2bdfd4163f2ab1bd39e0db97ee347279b170b4"
+      },
+      "live": {
+        "actual": {
+          "atomic_revision_lease": "NOT_CLAIMED",
+          "calls": [
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query"
+            },
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query"
+            },
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query"
+            },
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query"
+            },
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query"
+            },
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query"
+            }
+          ],
+          "consistency": "unknown: no shared export/provenance revision contract",
+          "context_released": true,
+          "continuation_checked": true,
+          "evidence": [
+            "recorded relationship",
+            "recorded relationship",
+            "recorded relationship",
+            "planned resolution",
+            "planned resolution",
+            "recorded relationship"
+          ],
+          "full_lineage": "NOT_CLAIMED",
+          "historical_study_provenance": "NOT_RECOVERED",
+          "link_count": 6,
+          "numeric_value_control": "234.5m at offsets0,19",
+          "original_observation_id": 15,
+          "partial": true,
+          "passed": true,
+          "provenance_phase_mutations": 0,
+          "provenance_phase_scientific_submissions": 0,
+          "relationships": [
+            "CREATED",
+            "CREATED",
+            "CREATED",
+            "CONTEXTUALIZED_BY",
+            "RESOLVED",
+            "MEASURED"
+          ],
+          "retained_handle_observation_id": 15,
+          "scientific_submissions": 2,
+          "session_released": true
+        },
+        "command": [
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree\\python-client\\tools\\run_reliability_acceptance.py",
+          "--server-repo",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree",
+          "--java",
+          "C:/Users/lumsd/AppData/Local/Programs/Temurin21/jdk-21.0.12.1+1/bin/java.exe",
+          "--components",
+          "C:/Users/lumsd/AppData/Local/Temp/opencode/scientific-reliability-queue-20261104/corrected-components.json",
+          "--state-dir",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\next-scientific-delivery-20261105\\d1-provenance-live-01",
+          "--scenario",
+          "async-recorded-provenance"
+        ],
+        "compiled_manifest_sha256": "5168a676959183d55b8d32a39d2d0f8cbc76e6bb9ce6cac8ae15268e064164e3",
+        "components": [
+          {
+            "sha256": "e2190a05eb478f4e8859faeddf5d25935bf53de0aaf12f135652e6e23c37aa03"
+          },
+          {
+            "sha256": "9844147666bbb53071dfcd54db284aef48be9c79315b73415e74af8c1d70126f"
+          }
+        ],
+        "core_sha256": "5c020dac9bd9d1cd4f9673b8075cf08f75ecc7194c74378bdb8f0498110ddba3",
+        "elapsed_time": "NOT_RECORDED by retained harness; no invented wall clock",
+        "fixture_sha256": {
+          "consolidation.fixture/META-INF/manifest.json": "d3c0866bc94e920985527ce6425d4bdc77217d3a132f163777b60be268c86733",
+          "consolidation.fixture/src/consolidation.fixture.kim": "a8419bc56f701513366865d752b714cb15d374c90871c8c0831bacd1b1f607b0",
+          "consolidation.fixture/src/consolidation.lexical.kim": "ae3315db9f346017f2f4cfa3a144ad1bc48ad63f8b5f72804e44b965f041412b",
+          "consolidation.fixture/src/consolidation.scenario.kim": "d452c3f823a6feaf9b523825475a8c2a65c47bf92c01042984c4cbd08debfd31",
+          "consolidation/META-INF/manifest.json": "b0f8e29cb333fa94685c8a1afd5b83130f18d4969738f9ecf20e19fa4ddefc30",
+          "consolidation/src/consolidation.kwv": "cbcd93ff3055f4af4937dbac743582d00d0bc2f1aef2db7d53abf8cb1062dd05",
+          "consolidation/strategies/observations.obs": "4cf65cce34ccc9235508e6e1a74d60a485f7e51715fbe86fa2d1e7773ccfa24d"
+        },
+        "harness_result_sha256": "45442bf24f2085efe99709740b4150ba2d44444b47d7a18191317717d0395277",
+        "identity_capture_limit": "Existing workflow asserts exact original Handle equality in-run; summary retains service-qualified observation/activity IDs, not full job/context IDs. Private raw receipt/log hashes preserved; no complete lineage inferred.",
+        "java_version": "openjdk version \"21.0.12.1\" 2026-08-18 LTS\r\nOpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)\r\nOpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)\r\n",
+        "not_scientific_complete_lineage": true,
+        "owned_cleanup": "PASS",
+        "run_id": "d1-provenance-live-01",
+        "service_ids": {
+          "reasoner": "084a49c7-e4e3-4feb-9185-125687078c2f",
+          "resolver": "2d80b9f8-0202-455d-bc8c-be81eae3aa16",
+          "resources": "4f620429-e2a6-4810-84cf-aba2b9accc65",
+          "runtime": "c0201fc9-e0b3-46b0-8fae-5df7158f520a"
+        },
+        "source": "9283983f7a7a7e403d975f76851946c5218cb8a0",
+        "status": "PASS"
+      }
+    },
+    {
+      "command_results": [
+        {
+          "exit": 0,
+          "step": "build"
+        },
+        {
+          "exit": 0,
+          "step": "install"
+        },
+        {
+          "exit": 0,
+          "step": "offline"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-0"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-1"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-2"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-3"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-4"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-5"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-6"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-7"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-8"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-9"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-10"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-11"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-12"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-13"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-14"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-15"
+        },
+        {
+          "exit": 0,
+          "step": "coverage-16"
+        },
+        {
+          "exit": 0,
+          "step": "lint"
+        }
+      ],
+      "delivery": {
+        "PR": 240,
+        "artifacts": {
+          "klab_python_client-0.1.0-py3-none-any.whl": "03c0ec58024601f5caa5f0a9ef33eefe603dcdf6ad2b7bab9d240e492f6fd82e",
+          "klab_python_client-0.1.0.tar.gz": "727df6212432bae28aa8c2434e6873cfb97bfcf756a89ecfc2818718726c39a0"
+        },
+        "base": "c16c75427e34133ba973446b18666f18c8b36ad2",
+        "branch_retired_after_ancestry_and_postmerge": true,
+        "compiled_core_retained": true,
+        "exact_reviewed_delta": true,
+        "gate_directory": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\next-d2-execution-final",
+        "gate_identity_sha256": "320c70e6c6130131aee0c495d88a4fe971bdd2d70cc0f2c394c0949dd2a35168",
+        "latest_hosted_checks": "PASS",
+        "merge": "5849d7b78ebdd4daa6a836c7985684e522b23fd5",
+        "merged_at": "2026-11-05T22:16:06Z",
+        "postmerge_tests": 264,
+        "schema_version": 1,
+        "source": "d2c5f00b8e7dd9033519fe967812635a1351a86b",
+        "status": "MERGED_BOUNDED",
+        "url": "https://github.com/integratedmodelling/klab-services/pull/240"
+      },
+      "exact_commands": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\next-d2-execution-final\\commands.json",
+        "sha256": "97b0c361782ee0e783d836f33cd37e3cb9b422b6c41bc308afe6e1927f1dac52"
+      },
+      "installed_identity": {
+        "artifacts": {
+          "klab_python_client-0.1.0-py3-none-any.whl": "03c0ec58024601f5caa5f0a9ef33eefe603dcdf6ad2b7bab9d240e492f6fd82e",
+          "klab_python_client-0.1.0.tar.gz": "727df6212432bae28aa8c2434e6873cfb97bfcf756a89ecfc2818718726c39a0"
+        },
+        "head": "d2c5f00b8e7dd9033519fe967812635a1351a86b",
+        "identity_sha256": "320c70e6c6130131aee0c495d88a4fe971bdd2d70cc0f2c394c0949dd2a35168",
+        "installed_source_manifest_sha256": "a0af3bb6afffecab38a78dd4ca3660c34f9dc1ae16762092a53598c6c2067f5a",
+        "source_match": true,
+        "tool_source_manifest_sha256": "6e7465ac9931814c0ac0f3209d4193312e40f15b2174184560a72b563bba8de4"
+      },
+      "live": {
+        "actual": {
+          "activities": [
+            {
+              "chart_phases": [],
+              "id": 18,
+              "missing": [
+                "im:resolution-graph unavailable; absence does not establish no dependencies",
+                "im:dataflow-graph unavailable; absence does not establish no dependencies"
+              ],
+              "outcome": "SUCCESS",
+              "type": "SUBMISSION"
+            },
+            {
+              "chart_phases": [
+                "resolution plan"
+              ],
+              "id": 19,
+              "missing": [
+                "im:dataflow-graph unavailable; absence does not establish no dependencies"
+              ],
+              "outcome": "SUCCESS",
+              "type": "RESOLUTION"
+            },
+            {
+              "chart_phases": [
+                "contextualization plan"
+              ],
+              "id": 20,
+              "missing": [
+                "im:resolution-graph unavailable; absence does not establish no dependencies"
+              ],
+              "outcome": "SUCCESS",
+              "type": "MEASURE"
+            }
+          ],
+          "calls": [
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query",
+              "result_type": "OBSERVATION"
+            },
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query",
+              "result_type": "LINK"
+            },
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query",
+              "result_type": "ACTIVITY"
+            },
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query",
+              "result_type": "ACTIVITY"
+            },
+            {
+              "method": "POST",
+              "path": "/runtime/api/v1/query",
+              "result_type": "ACTIVITY"
+            }
+          ],
+          "context_released": true,
+          "diagnostics": [],
+          "durable_commit": "NOT_CLAIMED",
+          "engineering_submissions": 2,
+          "evidence_phase_mutations": 0,
+          "evidence_phase_submissions": 0,
+          "historical_study_provenance": "NOT_RECOVERED",
+          "link_count": 6,
+          "numeric_value_control": "234.5m at offsets0,19",
+          "original_observation_id": 15,
+          "partial": true,
+          "passed": true,
+          "retained_handle_observation_id": 15,
+          "session_released": true
+        },
+        "command": [
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree\\python-client\\tools\\run_reliability_acceptance.py",
+          "--server-repo",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree",
+          "--java",
+          "C:/Users/lumsd/AppData/Local/Programs/Temurin21/jdk-21.0.12.1+1/bin/java.exe",
+          "--components",
+          "C:/Users/lumsd/AppData/Local/Temp/opencode/scientific-reliability-queue-20261104/corrected-components.json",
+          "--state-dir",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\next-scientific-delivery-20261105\\d2-execution-live-01",
+          "--scenario",
+          "async-execution-evidence"
+        ],
+        "compiled_manifest_sha256": "5168a676959183d55b8d32a39d2d0f8cbc76e6bb9ce6cac8ae15268e064164e3",
+        "components": [
+          {
+            "sha256": "e2190a05eb478f4e8859faeddf5d25935bf53de0aaf12f135652e6e23c37aa03"
+          },
+          {
+            "sha256": "9844147666bbb53071dfcd54db284aef48be9c79315b73415e74af8c1d70126f"
+          }
+        ],
+        "core_sha256": "5c020dac9bd9d1cd4f9673b8075cf08f75ecc7194c74378bdb8f0498110ddba3",
+        "elapsed_time": "NOT_RECORDED by retained harness; no invented wall clock",
+        "fixture_sha256": {
+          "consolidation.fixture/META-INF/manifest.json": "d3c0866bc94e920985527ce6425d4bdc77217d3a132f163777b60be268c86733",
+          "consolidation.fixture/src/consolidation.fixture.kim": "a8419bc56f701513366865d752b714cb15d374c90871c8c0831bacd1b1f607b0",
+          "consolidation.fixture/src/consolidation.lexical.kim": "ae3315db9f346017f2f4cfa3a144ad1bc48ad63f8b5f72804e44b965f041412b",
+          "consolidation.fixture/src/consolidation.scenario.kim": "d452c3f823a6feaf9b523825475a8c2a65c47bf92c01042984c4cbd08debfd31",
+          "consolidation/META-INF/manifest.json": "b0f8e29cb333fa94685c8a1afd5b83130f18d4969738f9ecf20e19fa4ddefc30",
+          "consolidation/src/consolidation.kwv": "cbcd93ff3055f4af4937dbac743582d00d0bc2f1aef2db7d53abf8cb1062dd05",
+          "consolidation/strategies/observations.obs": "4cf65cce34ccc9235508e6e1a74d60a485f7e51715fbe86fa2d1e7773ccfa24d"
+        },
+        "harness_result_sha256": "ef57bd81c6a2c1e06b665b43ad0aa30825408f3d17031d02eadae41178b66960",
+        "identity_capture_limit": "Existing workflow asserts exact original Handle equality in-run; summary retains service-qualified observation/activity IDs, not full job/context IDs. Private raw receipt/log hashes preserved; no complete lineage inferred.",
+        "java_version": "openjdk version \"21.0.12.1\" 2026-08-18 LTS\r\nOpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)\r\nOpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)\r\n",
+        "not_scientific_complete_lineage": true,
+        "owned_cleanup": "PASS",
+        "run_id": "d2-execution-live-01",
+        "service_ids": {
+          "reasoner": "57f9beaa-5b8a-4ae5-bc6b-1c6aef3c20e9",
+          "resolver": "5b0b8b44-dc45-4875-a808-ba68978f62ed",
+          "resources": "4ce4def8-a750-4f4a-a70e-e32c043f6ba8",
+          "runtime": "1d976b38-76b0-4aec-8b9a-949ffd409cf0"
+        },
+        "source": "d2c5f00b8e7dd9033519fe967812635a1351a86b",
+        "status": "PASS"
+      }
+    }
+  ],
+  "historical_studies": "UNCHANGED; no original study executed or artifacts swept",
+  "milestone": "INCOMPLETE_EXTERNAL_ACCEPTANCE_GATES",
+  "prior_baseline_index_sha256": "efdf4a1d129d646de7037731fca14fa7422abc776fc87ef7ae7338c501563aa4",
+  "schema_version": 1,
+  "selection_evidence": {
+    "benchmark_claim": "No causal/global productivity or Java-churn claim; same local interpreter, selector-only measurements while unrelated live acceptance may be active",
+    "results": [
+      {
+        "Java_families_executed_by_selector": 0,
+        "case": "worker-workflow",
+        "command": [
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree\\python-client\\tools\\select_scientific_tests.py",
+          "--changed",
+          ".github/workflows/python-scientific-admission.yml"
+        ],
+        "plan": {
+          "changed_paths": [
+            ".github/workflows/python-scientific-admission.yml"
+          ],
+          "declared_capabilities": [],
+          "excluded_families": [],
+          "exclusion_reason": "Feedback only; mandatory complete CI/coverage still runs",
+          "included_python": [
+            "tests/unit",
+            "tests/integration"
+          ],
+          "java_contract_validation_required": false,
+          "java_full_suite_triggered": false,
+          "java_reason": "Affected API/modules require existing Java gates and source-contract review, not automatic full Java campaign",
+          "l4_reason": "Requires explicit isolated pinned Java stack, wheel, manifests and owned fresh states",
+          "l4_status": "NOT_RUN",
+          "mandatory_ci_coverage_unchanged": true,
+          "matched_families": [],
+          "mode": "broad",
+          "python_command": [
+            "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/unit",
+            "tests/integration"
+          ],
+          "python_status": "NOT_RUN",
+          "rationale": [
+            {
+              "path": ".github/workflows/python-scientific-admission.yml",
+              "rule": "shared/high-risk/unknown/selector/CI: broaden"
+            }
+          ],
+          "release_acceptance": false,
+          "required_l4_scenarios": [
+            "N",
+            "S"
+          ],
+          "schema_version": 1
+        },
+        "selector_wall_seconds": 0.07539040001574904,
+        "source": "d2c5f00b8e7dd9033519fe967812635a1351a86b",
+        "tests_executed_by_selector": 0
+      },
+      {
+        "Java_families_executed_by_selector": 0,
+        "case": "async-provenance",
+        "command": [
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree\\python-client\\tools\\select_scientific_tests.py",
+          "--changed",
+          "python-client/src/klab_client/provenance.py"
+        ],
+        "plan": {
+          "changed_paths": [
+            "python-client/src/klab_client/provenance.py"
+          ],
+          "declared_capabilities": [],
+          "excluded_families": [],
+          "exclusion_reason": "Feedback only; mandatory complete CI/coverage still runs",
+          "included_python": [
+            "tests/unit",
+            "tests/integration"
+          ],
+          "java_contract_validation_required": false,
+          "java_full_suite_triggered": false,
+          "java_reason": "Affected API/modules require existing Java gates and source-contract review, not automatic full Java campaign",
+          "l4_reason": "Requires explicit isolated pinned Java stack, wheel, manifests and owned fresh states",
+          "l4_status": "NOT_RUN",
+          "mandatory_ci_coverage_unchanged": true,
+          "matched_families": [],
+          "mode": "broad",
+          "python_command": [
+            "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/unit",
+            "tests/integration"
+          ],
+          "python_status": "NOT_RUN",
+          "rationale": [
+            {
+              "path": "python-client/src/klab_client/provenance.py",
+              "rule": "shared/high-risk/unknown/selector/CI: broaden"
+            }
+          ],
+          "release_acceptance": false,
+          "required_l4_scenarios": [
+            "N",
+            "S"
+          ],
+          "schema_version": 1
+        },
+        "selector_wall_seconds": 0.07292700000107288,
+        "source": "d2c5f00b8e7dd9033519fe967812635a1351a86b",
+        "tests_executed_by_selector": 0
+      },
+      {
+        "Java_families_executed_by_selector": 0,
+        "case": "async-execution",
+        "command": [
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+          "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\keyed-dictionary-core-worktree\\python-client\\tools\\select_scientific_tests.py",
+          "--changed",
+          "python-client/src/klab_client/evidence.py"
+        ],
+        "plan": {
+          "changed_paths": [
+            "python-client/src/klab_client/evidence.py"
+          ],
+          "declared_capabilities": [],
+          "excluded_families": [],
+          "exclusion_reason": "Feedback only; mandatory complete CI/coverage still runs",
+          "included_python": [
+            "tests/unit",
+            "tests/integration"
+          ],
+          "java_contract_validation_required": false,
+          "java_full_suite_triggered": false,
+          "java_reason": "Affected API/modules require existing Java gates and source-contract review, not automatic full Java campaign",
+          "l4_reason": "Requires explicit isolated pinned Java stack, wheel, manifests and owned fresh states",
+          "l4_status": "NOT_RUN",
+          "mandatory_ci_coverage_unchanged": true,
+          "matched_families": [],
+          "mode": "broad",
+          "python_command": [
+            "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\scientific-reliability-queue-20261104\\installed-env\\Scripts\\python.exe",
+            "-m",
+            "pytest",
+            "-q",
+            "tests/unit",
+            "tests/integration"
+          ],
+          "python_status": "NOT_RUN",
+          "rationale": [
+            {
+              "path": "python-client/src/klab_client/evidence.py",
+              "rule": "shared/high-risk/unknown/selector/CI: broaden"
+            }
+          ],
+          "release_acceptance": false,
+          "required_l4_scenarios": [
+            "N",
+            "S"
+          ],
+          "schema_version": 1
+        },
+        "selector_wall_seconds": 0.07588460005354136,
+        "source": "d2c5f00b8e7dd9033519fe967812635a1351a86b",
+        "tests_executed_by_selector": 0
+      }
+    ],
+    "schema_version": 1,
+    "status": "PASS dry-run selection, not scientific execution"
+  },
+  "starting_base_and_queue": {
+    "Jenkins_worker_metadata_response": 403,
+    "W2_fixed_queue": [
+      {
+        "current_gap": "No native async recorded provenance entry point; existing synchronous context gate refuses AsyncClient before HTTP",
+        "id": "D1",
+        "original_branch": "feature/python-async-recorded-provenance",
+        "original_head": "b548b09da",
+        "source_sha256": "c722c1a74c5bbfacc1d8b2b48534939a4fdae900bfc979ee8eb1ad0e9bb58a96"
+      },
+      {
+        "current_gap": "No native async recorded activity/execution evidence entry point; depends on D1 accepted integration",
+        "id": "D2",
+        "original_branch": "feature/python-async-execution-evidence",
+        "original_head": "ab8fa9f03",
+        "source_sha256": "b616c528969c9a6ba3c2f6962bdfab74d7b5ef18a16ba33cfe00ccf61c113e4a"
+      }
+    ],
+    "W3_candidate_limit": 2,
+    "actions_policy_response": 403,
+    "admin_permission": false,
+    "baseline_manifest_oracles": {
+      "n-nonuniform.json": "203a85783ffe399272f27406e27f8ed00f7b28e7425c669b7f11bf67ba95eb77",
+      "s-model-selection.json": "e42b0e85bc351bbe6206704998cd658e91487741927255494454ee60a0189a91",
+      "s-selection-oracle.json": "cac9ade5cabef8b20ca5931659f4a9fda9ead39b1bbf9599fa3fa6cef05bf4c8"
+    },
+    "core_clean_at_start": true,
+    "default_branch": "develop",
+    "existing_open_PRs_at_start": [],
+    "main_checkpoint": "427d22d55b2f3621fa37554d5f22fa7fe01947ea",
+    "original_N_S_receipt_and_declared_input_hashes_reverified": true,
+    "push_permission": true,
+    "runner_list_response": 403,
+    "schema_version": 1,
+    "starting_integration": "b04977ea2a8c9484d63b2717c1b2f1a9044d1390"
+  }
+}

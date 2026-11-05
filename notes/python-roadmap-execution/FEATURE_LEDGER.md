@@ -1,5 +1,38 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Next scientific acceptance & A+B milestone — fixed queue reconciled
+
+Exactstartb04977ea2; acceptedimplementation5849d7b78ebdd4daa6a836c7985684e522b23fd5.
+This updates this ledger,not a competingroadmap. Onefeature/PRatonce; D2startedonly
+after actualD1normalmerge/postmerge. Read-onlyCLIreviews are not humanapproval.
+
+|Item|Current verified evidence|Delivery / remaining boundary|
+|---|---|---|
+|W1isolatedN/Sadmission|3988pinpreflight,newlocalN/SrunIDs+oracles+independentcleanupPASS;3494installed/all17gates/123postmerge|MERGED_BOUNDED PR238/f099ffffa;scheduledBLOCKED_EXTERNAL,no guessedrunner/schedule/secretprovisioning|
+|D1nativeasyncprovenance|9283983f7:3528installed/all17gates/169postmerge,newJavaoriginal15/6links/6queries/zeroinspectionmutations/cleanupPASS|MERGED_BOUNDED PR239/c16c75427;full/historical/revision-pinned lineage stilloutsideclaim|
+|D2nativeasyncexecutionevidence|d2c5f00b8:3553installed/all17gates/264postmerge,newJava3activities/servedpartialplans/5queries/zeroinspectionmutations/cleanupPASS|MERGED_BOUNDED PR240/5849d7b78,afterD1;rootcommit/completegraphs notclaimed|
+|W3composition|Primaryconfigurations-dependent6files+onealternateroles4files sourcehashed;no coordinatedexecutable/admissiontuple|D0BLOCKED_EXTERNAL,D1/D2NOT_RUN;no morecandidates,Javarepair or surrogate science|
+|W4reconciliation|StandaloneNEXT_SCIENTIFIC_ACCEPTANCE_DELIVERY_REPORT.md,indexedactualidentities/oracles/commands/merges/cleanup;primarycountsunchanged|FinaldocsnormalCI/merge/postmergepending;no milestonefullacceptance|
+
+OriginalD1/D2branchrefs were updated and normallypublished,not renamed or retried
+unchanged;historicalref/rules failures retained,no currentblock assumed forallrefs.
+AlluniqueD1/D2commits remain inacceptedhistory;branches retiredafterproof. Remaining
+five priorlocallyaccepted/unpublished candidates (graphabc86d5ba,authoringc47f57b45,
+compatibilitye866cf0ea,notebook3d663bdb1,inventory982461890) are preserved and OUT_OF_THIS_BATCH.
+They need currentbaserevalidation/selection/normaldelivery in a futureauthorizedbatch,
+not automaticacceptance or another hiddenactivequeue. No allsevencombinedrelease.
+
+Original24requirements+18capabilities remain in the authoritativeacceptancemap;
+23in-scopecriteria1accepted/20partial/1missing/1blocked,+Cexcluded;18CAP4accepted/
+13partial/1excluded. Pythonfacade delivery isnot backendhistory/revision/import/
+publish/managedagent/supportpolicy. B1productionHub/ACL,B2history,B3providerpositive,
+B4category/time/provideroracle,B5versionedremote windows,B6commit/replay,B7union,
+B8completeapplicability/lineage,B9import,B10versionedpublish,B11managedcleanup,
+B12release/support,B13originalstudy artifacts remain externalboundaries described
+in the map/report;no Python scientific substitute. HistoricalresearchL1–L7 stays
+separate;allthree studiesL3PARTIAL/L4BLOCKED/L5–L7NOT_RUN. No artifactsweep/rerun.
+Earlierdevelopmentcheckpoints below do not override this currentreconciliation.
+
 ## Dependent execution evidence locally verified / not published
 
 `52672d871`:3,479installed/17gates/376finalsource+actualJava original15/3activities/

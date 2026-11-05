@@ -1,5 +1,24 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Next scientific acceptance & A+B batch — implementation delivered, external gates blocked
+
+W1PR238 normally mergedf099ffffa; nativeasync provenancePR239 mergedc16c75427,
+then nativeasync executionevidencePR240 merged5849d7b78. Latest reviewedD2source
+d2c5f00b8 passed3553installedtests/all17gates;264postmerge checks PASS. Both fixed
+Python slices have NEW exact-source ownedJavaquery/privacy/cleanup evidence, not
+historical receipt reuse. No primary status automatically promoted.
+
+|Rows / owner|Code and actual Java capability|Acceptance and merge|Remaining gate|
+|---|---|---|---|
+|RC-P3.4/CAP-06,Python|Native awaited originalobservation membership/provenance and scopedactivity/plan views over implemented Runtimequeries|D1/D2currentJavaPASS;PR239/240MERGED_BOUNDED;immutablepartial/unknownrevision/missingdiagrams preserved|Complete/historical/revision-pinned lineage/rootcommit remains Java/artifactdependent;RC-P3.4PARTIAL,CAP-06alreadyacceptedbounded|
+|RC-P0/RC-R1/CAP-16,testinfrastructure|Pinned isolated N/S admission/manualCI wrapper reuses unchangedoracles|FreshlocalN/S PASS+independentcleanup;PR238MERGED_BOUNDED|PeriodicBLOCKED_EXTERNAL:authorizedworker/artifacts/defaultbranchadoption andactualscheduledreceipts absent;manualYAML/localrun notscheduledPASS|
+|RC-P1.5/RC-P3.4/CAP-13,Javafixture/platform|Twoexisting composition sources inspected,not rewritten|W3primary+onealternateD0BLOCKED_EXTERNAL;D1/D2NOT_RUN|Coordinatedexecutable/worldview/admissiontuple required;no surrogate reasoning or generalJavafailureclaim|
+
+[Next milestone report](../notes/python-roadmap-execution/NEXT_SCIENTIFIC_ACCEPTANCE_DELIVERY_REPORT.md)
+and [indexed evidence](../notes/python-roadmap-execution/evidence/next-scientific-delivery-index-20261105.json)
+separate delivery from scientificproof. OriginalN/S baselines unchanged. BroaderA+B
+and allthree historicalstudies remain incomplete;no publishedpaperreplication.
+
 ## Next milestone W2-2 — actual prerequisite delivered, current validation pending
 
 W1PR238 mergedf099ffffa and D1provenancePR239 mergedc16c75427; exact current

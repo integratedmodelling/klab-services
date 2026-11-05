@@ -1,5 +1,12 @@
 # Contribution review: isolated scientific worker admission
 
+## Final delivery (supersedes pending implementation checks below)
+
+PR238 normally mergedf099ffffa764cb036d570c6918a57066b8781c3f,reviewed7ba159d65:
+3494installed/all17gates/latesthostedCI/exactdelta/ancestry/123postmergePASS.
+NewlocalN/S and independentcleanupPASS; scheduledL4 remainsBLOCKED_EXTERNAL.
+Implementation MERGED_BOUNDED,not periodicacceptance or humanreviewapproval.
+
 ## Recommendation
 
 Needs contract/coordination evidence for periodic acceptance; bounded implementation
