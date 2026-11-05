@@ -1,5 +1,13 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest delivery / bounded diagnostic
+
+Q9aPR214mergedf5a43caca,reviewed5913d607d;allCI/normalmerge/ancestry/sourceequal/
+postmerge60PASS;branchretired. Releaseassessmentremains4PASS/3UNKNOWN/1BLOCKED,
+noteligible/notauthorized. Q7followupaccepted-base diagnostic contract captures
+actualparent-childURNs/stamps andbackendidentity,not scientificwrites/semanticsfix.
+Originalfailedbranch830a141cd preserved;fullQ7/A/Bremainincomplete.
+
 ## Latest Q9a local evidence acceptance
 
 feature/python-current-compatibility-evidence;base0f645465c;tested7b7cd4cfe;
