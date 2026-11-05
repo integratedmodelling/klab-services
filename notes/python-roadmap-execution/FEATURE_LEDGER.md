@@ -1,5 +1,25 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Java admission / all-19 study milestone — single working queues
+
+|Queue|Item / currentstate|Ownerrole / smallestnextaction / unblocks|
+|---|---|---|
+|DELIVERY|E1existingworkerengineering inheritedMERGED_BOUNDED;currentpreflight/154tests/5negativeprobesPASS|No newlauncher/codegap; CLIrecordsoperatoractionpackage|
+|DELIVERY|E2bounded unchangedprimary+alternate D0analysis complete, scientificBLOCKED_EXTERNAL|Exactclassloadingcorrects priorabsenceclaim; source/expected2m,3m,7m/rolesandcontractsindexed|
+|DELIVERY|R1all19Rmatrix+separatePprojectcomparisons complete;Research-L3partialR09recovery|Readyforread-onlyreview;no originalstudycurrentJavaadmitted|
+|DELIVERY|ConditionalpilotG0–G4decision complete, R3BLOCKED_EXTERNAL|No fakeimplementationPR/skippedtest;P1–P4NOT_RUN|
+|DELIVERY|Standalone report/index/map/status and thisledger|NormaldocumentationCI/merge/postmergepending;CLIselfreviewnothumanapproval|
+|DEPENDENCIES|E1SCHEDULED_L4BLOCKED_EXTERNAL|Infrastructureoperator approvesWindowsJava21worker/source-attestedbundle/environment/sourceaccess/retention/quarantine/defaultbranchcadence,thenactualscheduledN/Sreceipts|
+|DEPENDENCIES|E2W3D0BLOCKED_EXTERNAL,D1/D2NOT_RUN|Platformfixtureowner supplies originalacceptedproject/worldview/strategies/Runtimeinvocation/buildprovenance;inspectorsalreadycompiled,notmissing|
+|DEPENDENCIES|R09originalNETadmission/reference/rights|Scientificandadaptercustodian providesexistingsupportednativeNETevaluator/bindings plusoriginalconditionedposteriorreference/tolerance;no newPythonBNengine|
+|DEPENDENCIES|IndependentP02originalcarbonfixture|Producer suppliesproducingmodel/fiveinputs/year/mask/modifiedGAUL/area/units/rights;originalrasterandCSValreadyrecovered|
+
+BEST_EXECUTABLE_NOW NONE_VERIFIED;conditionalnear-termR09,distinctiveR05,
+independentfallbackP02. R01–R19 invariantkept;PprojectsnotextraRstudies. Original
+49catalogIDs preserved. No requests/outreachsent,namedownersnotassigned. Main
+untrackedoriginalresearch/fiveolderuniquecandidates preservedoutsidebatch.
+WholeA+B/Research-L5–L7 remainincomplete;no algorithm/worldview/model/componentedit.
+
 ## Next scientific acceptance & A+B milestone — fixed queue reconciled
 
 Exactstartb04977ea2; acceptedimplementation5849d7b78ebdd4daa6a836c7985684e522b23fd5.

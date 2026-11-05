@@ -1,5 +1,21 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Java admission and all-19 research readiness — no scientific promotion
+
+Assessment at accepted4ea9ad166 reverified the merged N/S worker and original
+receipts; current local preflight/154focused tests/five rejection probes PASS.
+Recurring L4 remains BLOCKED_EXTERNAL. Exact-classpath evidence corrects the prior
+W3 inspector-absence claim: both inspectors are present; the coordinated original
+project/worldview/Runtime admission tuple remains missing, D1/D2NOT_RUN.
+
+All R01–R19 are accounted for in the
+[full readiness matrix](../notes/research-replication/RESEARCH_19_READINESS_MATRIX.md).
+New original R09 Bayesian-network/CPT bytes improve artifact readiness but do not
+prove currentJava admission or a published result. BEST_EXECUTABLE_NOW=NONE_VERIFIED;
+conditional R09 admission investigation/P02 independent fallback. No primary row,
+whole A+B status or Research-L5–L7 is promoted. See the
+[standalone report](../notes/python-roadmap-execution/JAVA_ADMISSION_AND_19_STUDY_READINESS_REPORT.md).
+
 ## Next scientific acceptance & A+B batch — implementation delivered, external gates blocked
 
 W1PR238 normally mergedf099ffffa; nativeasync provenancePR239 mergedc16c75427,

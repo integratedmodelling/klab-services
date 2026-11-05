@@ -1,0 +1,1449 @@
+{
+  "schema_version": 1,
+  "assessment_started_utc": "2026-11-05",
+  "baseline": {
+    "main_head": "30c9f5ce53c99b0d86aff4241ded4eceeeb359c5",
+    "integration": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85",
+    "develop": "bd39c7fc72c6af0041b5f0cba0cadba54d73220c",
+    "core_head": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85",
+    "core_clean": true,
+    "PRs": [
+      {
+        "headRefOid": "7ba159d6587a298e99aa3f33c02d2e8066b6a468",
+        "mergeCommit": {
+          "oid": "f099ffffa764cb036d570c6918a57066b8781c3f"
+        },
+        "mergedAt": "2026-11-05T21:57:56Z",
+        "number": 238,
+        "state": "MERGED",
+        "url": "https://github.com/integratedmodelling/klab-services/pull/238"
+      },
+      {
+        "headRefOid": "9283983f7a7a7e403d975f76851946c5218cb8a0",
+        "mergeCommit": {
+          "oid": "c16c75427e34133ba973446b18666f18c8b36ad2"
+        },
+        "mergedAt": "2026-11-05T22:07:39Z",
+        "number": 239,
+        "state": "MERGED",
+        "url": "https://github.com/integratedmodelling/klab-services/pull/239"
+      },
+      {
+        "headRefOid": "d2c5f00b8e7dd9033519fe967812635a1351a86b",
+        "mergeCommit": {
+          "oid": "5849d7b78ebdd4daa6a836c7985684e522b23fd5"
+        },
+        "mergedAt": "2026-11-05T22:16:06Z",
+        "number": 240,
+        "state": "MERGED",
+        "url": "https://github.com/integratedmodelling/klab-services/pull/240"
+      },
+      {
+        "headRefOid": "96913f08faa2971eca8410134e5812cd1ab0182f",
+        "mergeCommit": {
+          "oid": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85"
+        },
+        "mergedAt": "2026-11-05T22:31:01Z",
+        "number": 241,
+        "state": "MERGED",
+        "url": "https://github.com/integratedmodelling/klab-services/pull/241"
+      }
+    ],
+    "python": "3.12.7",
+    "installed_wheel_sha256": "03c0ec58024601f5caa5f0a9ef33eefe603dcdf6ad2b7bab9d240e492f6fd82e",
+    "prior_resource_manifest_sha256": "ccc203a77e0e4319057bc313d7d1b5ac54011f1dbaf81af0ae6ca25d4cd50d9d",
+    "pins_checked": 3988,
+    "pins_byte_match": 3987,
+    "byte_drift": [
+      {
+        "path_role": "S scenario manifest",
+        "old_sha256": "e42b0e85bc351bbe6206704998cd658e91487741927255494454ee60a0189a91",
+        "current_sha256": "180996f6115c0d46a3f231fc33d0d949b386374612e68483441f0ce0cdafcb86",
+        "cause": "Git checkout CRLF; git blob unchanged; old resource manifest correctly fails closed",
+        "scientific_source_changed": false
+      }
+    ],
+    "java_version": "openjdk version \"21.0.12.1\" 2026-08-18 LTS\r\nOpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)\r\nOpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)\r\n",
+    "compiled_provenance": "Retained originalN/S compiled classes; no productionJava diffs from actualN/S9c3d14878/20d3bc368; exact current class/JAR hashes repinned, not a newJava build",
+    "immutable_original_receipts": "PASS",
+    "prior_index_sha256": "24b2952dc7905f9b9aee0307a9245c55627c1c67f12557f1e0791ed47b59f1b3",
+    "catalog_sha256": "b97f84c696b7b415ade4144117dc4aa0388878cb3effedfe27222f56267a4995"
+  },
+  "component_sha256": [
+    "e2190a05eb478f4e8859faeddf5d25935bf53de0aaf12f135652e6e23c37aa03",
+    "9844147666bbb53071dfcd54db284aef48be9c79315b73415e74af8c1d70126f"
+  ],
+  "source_hashes": {
+    "docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md": "7be21fa03816c741479686377b7cc84484c288c06fa2e8a0cb537649afb3b3ae",
+    "docs/KIM.md": "80efa6509d529b24899c0bde97d51fdde9a03a2a9e53aeaaec25c1dc8402a23c",
+    "docs/REASONING.md": "6904380caebd5af4cc1d1585f3bc1436005d8b65a8f9f8143714193fe5575b6f",
+    "docs/RESOLUTION.md": "38c033cac545dd2006fd1c25cf12ed9062b49cad59135b96a67b3a5e63f5baff",
+    "docs/ADMISSION.md": "edbbba30e1091ac8814e1214245d120b6296f2e5d5721dfffb4225362af637ff",
+    "python-client/tools/run_scientific_worker.py": "ceb858a484ab68cc6d0d21098cea236421bca618026c9a6c6496b658a9c6a49a",
+    "python-client/tools/run_scientific_acceptance.py": "ca216e8e32d0551662d7916b7d84ee9aecf0595763b66612d95707dc25cab56f",
+    "python-client/tools/run_reliability_acceptance.py": "f1207684cee48c828038cc98aacc4ac47c2e6cbb22babdfd099b4f2750110c95",
+    ".github/workflows/python-scientific-admission.yml": "544217298ab9ecb39a3de1d35d4b95633ca24b666e8959e4409f32c4c605fe50"
+  },
+  "E1": {
+    "engineering": "MERGED_BOUNDED inherited PR238",
+    "scheduled": "BLOCKED_EXTERNAL",
+    "scheduled_run_ids": [],
+    "operator_inventory": [
+      {
+        "id": "repository",
+        "command": [
+          "gh",
+          "api",
+          "repos/integratedmodelling/klab-services"
+        ],
+        "exit": 0,
+        "elapsed_seconds": 0.38541530002839863,
+        "default_branch": "develop",
+        "permissions": {
+          "admin": false,
+          "maintain": false,
+          "push": true,
+          "triage": true,
+          "pull": true
+        }
+      },
+      {
+        "id": "runners",
+        "command": [
+          "gh",
+          "api",
+          "repos/integratedmodelling/klab-services/actions/runners"
+        ],
+        "exit": 1,
+        "elapsed_seconds": 0.2923710999311879,
+        "response": {
+          "message": "You must have repository read permissions or have the repository runners fine-grained permission.",
+          "documentation_url": "https://docs.github.com/rest/actions/self-hosted-runners#list-self-hosted-runners-for-a-repository",
+          "status": "403"
+        }
+      },
+      {
+        "id": "policy",
+        "command": [
+          "gh",
+          "api",
+          "repos/integratedmodelling/klab-services/actions/permissions"
+        ],
+        "exit": 1,
+        "elapsed_seconds": 0.2435025000013411,
+        "response": {
+          "message": "You must have repository read permissions or have the repository Actions policies fine-grained permission.",
+          "documentation_url": "https://docs.github.com/rest/actions/permissions#get-github-actions-permissions-for-a-repository",
+          "status": "403"
+        }
+      },
+      {
+        "id": "artifacts",
+        "command": [
+          "gh",
+          "api",
+          "repos/integratedmodelling/klab-services/actions/artifacts?per_page=10"
+        ],
+        "exit": 0,
+        "elapsed_seconds": 0.2684151000576094,
+        "total": 71,
+        "artifacts": [
+          {
+            "name": "selected-query-input-reports",
+            "expired": false,
+            "id": 13435366147
+          },
+          {
+            "name": "source-preview-dto-not-parser-acceptance",
+            "expired": false,
+            "id": 13427549378
+          },
+          {
+            "name": "source-preview-dto-not-parser-acceptance",
+            "expired": false,
+            "id": 13426609079
+          },
+          {
+            "name": "source-preview-dto-not-parser-acceptance",
+            "expired": false,
+            "id": 13426587127
+          },
+          {
+            "name": "source-preview-dto-not-parser-acceptance",
+            "expired": false,
+            "id": 13425923074
+          },
+          {
+            "name": "selected-query-input-reports",
+            "expired": false,
+            "id": 13415324948
+          },
+          {
+            "name": "source-preview-dto-not-parser-acceptance",
+            "expired": false,
+            "id": 13391876230
+          },
+          {
+            "name": "source-preview-dto-not-parser-acceptance",
+            "expired": false,
+            "id": 13391860243
+          },
+          {
+            "name": "source-preview-dto-not-parser-acceptance",
+            "expired": false,
+            "id": 13391835826
+          },
+          {
+            "name": "selected-query-input-reports",
+            "expired": false,
+            "id": 13365726250
+          }
+        ]
+      }
+    ],
+    "current_local_preflight": {
+      "authorization_reference_sha256": "c05b7bd76a4b23d16c3f6866b780267e472dc8ee373572e75d0f25fdca23d0bc",
+      "cleanup": "NOT_RUN",
+      "delivery_state": "IMPLEMENTED_OFFLINE",
+      "ended": "2026-11-05T23:43:00.318041+00:00",
+      "resource_manifest_sha256": "bbb2b7eb5b387202b357a92a490d0024a0d66ef024f38d3ef3b53c9ffbeecbcc",
+      "run_id": "f39a9777-5b93-4723-91d9-ac2708ddeeb6",
+      "scenarios": [],
+      "scheduled_L4": "NOT_RUN",
+      "scheduled_reason": "Only an independently verified authorized scheduled run can establish scheduled acceptance",
+      "schema_version": 1,
+      "source_sha": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85",
+      "started": "2026-11-05T23:42:56.850099+00:00",
+      "status": "PASS"
+    },
+    "preflight_command": {
+      "command": [
+        "INSTALLED_PYTHON",
+        "python-client/tools/run_scientific_worker.py",
+        "--resources",
+        "PRIVATE/current-local-resources.json",
+        "--worker",
+        "OWNED_LOCAL_LABEL",
+        "--output",
+        "FRESH_PRIVATE_DIRECTORY"
+      ],
+      "exit": 0,
+      "resources_sha256": "bbb2b7eb5b387202b357a92a490d0024a0d66ef024f38d3ef3b53c9ffbeecbcc",
+      "file_pins": 3989,
+      "scheduled": "BLOCKED_EXTERNAL",
+      "new_scientific_runs": 0
+    },
+    "negative_probes": [
+      {
+        "case": "missing-artifact",
+        "observed": "PrerequisiteUnavailable",
+        "status": "PASS rejection",
+        "elapsed_seconds": 1.0410161999752745,
+        "scientific_runs": 0
+      },
+      {
+        "case": "wrong-source",
+        "observed": "ScenarioError",
+        "status": "PASS rejection",
+        "elapsed_seconds": 0.04895379999652505,
+        "scientific_runs": 0
+      },
+      {
+        "case": "wrong-component",
+        "observed": "ScenarioError",
+        "status": "PASS rejection",
+        "elapsed_seconds": 0.9619037999073043,
+        "scientific_runs": 0
+      },
+      {
+        "case": "wrong-worldview",
+        "observed": "ScenarioError",
+        "status": "PASS rejection",
+        "elapsed_seconds": 0.9752454999834299,
+        "scientific_runs": 0
+      },
+      {
+        "case": "unapproved-runner",
+        "observed": "ScenarioError",
+        "status": "PASS rejection",
+        "elapsed_seconds": 0.02365390001796186,
+        "scientific_runs": 0
+      }
+    ],
+    "focused_tests": {
+      "command": [
+        "INSTALLED_PYTHON",
+        "-m",
+        "pytest",
+        "-q",
+        "python-client/tests/unit/test_scientific_worker.py",
+        "python-client/tests/unit/test_scientific_scenario_adapter.py",
+        "python-client/tests/unit/test_scientific_scenario.py",
+        "python-client/tests/unit/test_async_client.py",
+        "python-client/tests/unit/test_async_provenance.py",
+        "python-client/tests/unit/test_async_execution_evidence.py",
+        "--junitxml",
+        "PRIVATE/focused.xml"
+      ],
+      "source": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85",
+      "exit": 0,
+      "elapsed_seconds": 1.7647739000385627,
+      "level": "Test-L1, not new Java science",
+      "tests": 154,
+      "junit_sha256": "60b8c4061ad606e19bbf9caa23e2c6aed10a027a145a81772d269133942a09a6",
+      "log_sha256": "22fb688c5214e85455dd5a1ee370dd81cf1563db8b95702c886bac2d2472d995"
+    },
+    "forced_interruption_quarantine": "OPERATOR_POLICY_NOT_OPERATIONALLY_VERIFIED",
+    "new_scientific_runs": 0
+  },
+  "E2": {
+    "source": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85",
+    "probe_exit": 0,
+    "probe_stdout": "org.integratedmodelling.klab.runtime.libraries.ConfigurationInspector PRESENT_NOT_EXECUTED file:/RETAINED_CORE/klab.core.services/target/classes/ 0a62f551c9e1e48cda61315c2609280a776bc462bcc7cb295f9ae62c1175826d\norg.integratedmodelling.klab.runtime.libraries.ConfigurationRecomputeInspector PRESENT_NOT_EXECUTED file:/RETAINED_CORE/klab.core.services/target/classes/ f526a1102bc565683680c9ee739e5ae7b6b7b9a62b4a6cf86c06f5e0bd5865c1\norg.integratedmodelling.klab.runtime.libraries.CoreActorLibrary PRESENT_NOT_EXECUTED file:/RETAINED_CORE/klab.core.services/target/classes/ 2c5923bee03993b21ad10724b5ee653de5a452c54417be4398f0a7d86329c4ed\norg.integratedmodelling.klab.services.runtime.RuntimeService PRESENT_NOT_EXECUTED file:/RETAINED_CORE/klab.services.runtime/target/classes/ 1830e3f6e1b26b8963d17014b193e74bca77cf8142aeca25239cf3a757f38408\n",
+    "probe_source_sha256": "9c358f886f71876f5d25923e61c868a9b94ebb80609cccff7bd9214558648690",
+    "classpath_argfile_sha256": "97b0580b83534a70cd68f08ff50358359a3ad0840e9ea1f81c63695f8542378b",
+    "class_initialization": false,
+    "source_files": {
+      "klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/libraries/ConfigurationInspector.java": "44dc9ca0138c7fe71dee96c7b37d60ed309509866307ab299be20334076bc99b",
+      "klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/libraries/ConfigurationRecomputeInspector.java": "6fef9815143e64517a825d796855ec1a1c20075f206d771e5d2137e7a34abc0f",
+      "klab.services.resources/src/test/java/org/integratedmodelling/klab/services/resources/storage/ConfigurationFixtureSemanticIntegrationTest.java": "e82f5ef93941709a26428422cd423c156a35292e1762802d92eed9292662acac",
+      "python-client/tools/run_reliability_acceptance.py": "f1207684cee48c828038cc98aacc4ac47c2e6cbb22babdfd099b4f2750110c95",
+      "python-client/tools/fixture_hub.py": "03e5aa4e4f03a55fd1d51745d97c72df9512eea1f7f66202b13c7abf2697de13"
+    },
+    "fixtures": {
+      "configurations-dependent": {
+        "klab.services.runtime/src/test/resources/consequences/configurations-dependent/README.txt": "f0fbf17b7d3eccb1206c32175b0a7b952d33d3252a8b7e3c2bb227edcbaa5352",
+        "klab.services.runtime/src/test/resources/consequences/configurations-dependent/src/imod.kwv": "2e82278579621edee362dfe32a16fa372d778e535bb5cd0f361081b91da63c20",
+        "klab.services.runtime/src/test/resources/consequences/configurations-dependent/strategies/observations.obs": "f81cf1fd14d5190639b7a47fe7951e395a681e2dd08feb388cdd55ea4bcd5bef",
+        "klab.services.runtime/src/test/resources/consequences/configurations-dependent/src/consequence/configurations/network.kim": "f3e9713ebf56e43db9dfa86af0334d4dc6f9ec5ff3414127736159f4fc2b06a1",
+        "klab.services.runtime/src/test/resources/consequences/configurations-dependent/src/consequence/configurations/update.kim": "0c487e46bafd96100c89d738edfd7b23445813507d0b65dc7113ec345635152b",
+        "klab.services.runtime/src/test/resources/consequences/configurations-dependent/testcases/consequence/configurations/testsuite.kactors": "53d9f53a84d9d5c7fc84bf047bd21b8925c6255e89ec2c6c31472ab50733f408"
+      },
+      "roles": {
+        "klab.services.runtime/src/test/resources/consequences/roles/README.txt": "6bdeed870817d0202d35cb23dc22cbce1b2558eef7c0de2d28fffe0c515594f9",
+        "klab.services.runtime/src/test/resources/consequences/roles/src/rolefixture.kwv": "74ab2454a99e673c1a9ef4a40d72ae02d0b70e9fec27e252d41b5fdce477166e",
+        "klab.services.runtime/src/test/resources/consequences/roles/src/consequence/roles/process.kim": "a6fdff4aef05a0ac9ce84017743b543e97e1b7538f92795468f8b335d0dad09d",
+        "klab.services.runtime/src/test/resources/consequences/roles/testcases/consequence/roles/testsuite.kactors": "161022b2047d898914a9f0c7e4772dde66a060789c97cb5a6611d9a285b5876c"
+      }
+    },
+    "classifications": [
+      "MISSING_WORLDVIEW_OR_MODEL_ADMISSION",
+      "MISSING_RUNTIME_ADAPTER_OR_CONTRACT (complete original live contract UNVERIFIED, not proven absent)"
+    ],
+    "correction": "Prior claim MISSING_COMPILED_ARTIFACT for inspectors was incorrect: target/classes present and classloading verifies it. Prior ignored-file glob is not evidence of absence.",
+    "D0": "BLOCKED_EXTERNAL",
+    "D1": "NOT_RUN",
+    "D2": "NOT_RUN",
+    "services_started": 0,
+    "original_examples": "Primary birth intended executable after coordination; recompute staged; alternate README says integration pending, not proven executable as specified",
+    "driver_incident": "WinError206 direct command corrected with Java argfile; no scientific attempt failed",
+    "expected_primary": {
+      "height_m": 2,
+      "width_m": 3,
+      "summary_m": 7,
+      "grid": "EPSG:3857 200m square,100m grid",
+      "time": "2014 annual",
+      "dependency": "Both Height AND Width must contribute to Pair; Summary is literal7m,not their sum",
+      "oracles": "Independent literal/strategy/testcase reading; no oracle inferred from Runtime result"
+    }
+  },
+  "research_catalog": {
+    "source_sha256": "b97f84c696b7b415ade4144117dc4aa0388878cb3effedfe27222f56267a4995",
+    "R_ids": 19,
+    "C_ids": 19,
+    "P_ids": 11,
+    "cases": [
+      {
+        "id": "R01",
+        "identity": {
+          "study_publication_type": "Marquez Torres et al., **Fire risk modeling: an integrated and data-driven approach applied to Sicily**, NHESS23:2937\u20132959 (2023), publication",
+          "source_archive_revision": "[10.5194/nhess-23-2937-2023](https://nhess.copernicus.org/articles/23/2937/2023/); [Zenodo7616451](https://zenodo.org/records/7616451),v0.1,k.LAB0.10.0",
+          "models_weights_ontology": "V four original .kim files; M frozen trained `fire.ml.ignition.bayes.fireml`/seed/folds; newer training is not original inference",
+          "inputs_boundary_time_units": "V partial rasters/DBF; L eleven private WCS descriptors, not contacted; M complete August2020/2050 forcing/masks",
+          "reference_output": "V paper confusion matrix/area tables, M matched probability grid",
+          "licence_access": "L articleCC-BY4; archiveGPL3 versus metadata`apgl-v3` conflict; external-data terms unresolved"
+        },
+        "experiment": {
+          "bounded_experiment": "Frozen ignition probability for one original50m Sicily tile/August2020; later2020\u21922050risk panels",
+          "Java_required_and_state": "Resources original rasters/WCS+Reasoner worldview+Resolver+Runtime WEKA/K2/discretization/MCA; HISTORICAL_FAILURE for original namespaces, current UNKNOWN",
+          "independent_oracle": "Author frozen inference grid and trained artifact first; Table6 14491completecases/12172correct is training-evaluation reference, not arbitrary probability-tile truth; keep thirds versus archived thresholds conflict",
+          "highest_research_level_gate": "Research-L3 PARTIAL; frozen weights/forcing/units/licence and actual adapter/admission beforeL4/L5"
+        },
+        "decision": {
+          "scientific_breadth": "Learned spatial hazard/exposure",
+          "artifact_completeness": "Partial originalsource/trainingtable, missingfrozenfit",
+          "probable_migration_scope": "LegacyWEKA/k.IM/MCA integration potentiallylarge",
+          "cost_risk": "HIGH",
+          "confidence": "HIGH blockers",
+          "go_no_go_rank_reversal_owner": "NO-GO; producer supplies original frozenfit+tile+reference/rights and adapterowner provesunchanged admission; then ranksabove unarchived cases"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R02",
+        "identity": {
+          "study_publication_type": "South African household natural-resource dependence (2019), publication lead; exact title/authors NOT_VERIFIED here",
+          "source_archive_revision": "[DOI10.1088/1748-9326/aafe43](https://doi.org/10.1088/1748-9326/aafe43) inherited dossier identity, primary payload not recovered; original catalog shortlist is not primary evidence; archive revision UNKNOWN",
+          "models_weights_ontology": "M matched BN/K2 trained network/folds/weights",
+          "inputs_boundary_time_units": "M original household/ward geometry/population/predictors and classification denominator",
+          "reference_output": "L reported classification claim; N matched prediction table",
+          "licence_access": "N household-data access, consent and model/data licence; no private request"
+        },
+        "experiment": {
+          "bounded_experiment": "One original ward/household dependence class under published predictor/weight settings; geography/year finer thanSouthAfrica UNKNOWN",
+          "Java_required_and_state": "Resources household/ward provenance+semantic model selection+Runtime BN/K2; MISSING_CONTRACT for matched probabilistic adapter",
+          "independent_oracle": "Original held-out labels and predictions/folds; denominator reconciliation before accuracy; do not refit unknown weights",
+          "highest_research_level_gate": "Research-L1 identity lead; full paper/rights/model/input/reference closure beforeL2\u2013L5"
+        },
+        "decision": {
+          "scientific_breadth": "Household Bayesian classification",
+          "artifact_completeness": "Paperidentitylead; originalbundlemissing",
+          "probable_migration_scope": "BN/legacysemantics unknown",
+          "cost_risk": "HIGH",
+          "confidence": "LOW completeness",
+          "go_no_go_rank_reversal_owner": "NO-GO; scientific/data custodian supplies exactpaper/frozenBN+wardlabels/consent; cannot promote on shortlist"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R03",
+        "identity": {
+          "study_publication_type": "Villa et al., **A Methodology for Adaptable and Robust Ecosystem Services Assessment**, PLOS ONE9:e91001 (2014), Eastern Madagascar subcase",
+          "source_archive_revision": "[10.1371/journal.pone.0091001](https://pmc.ncbi.nlm.nih.gov/articles/PMC3953216/); method cites2011 ARIES; executable revision UNKNOWN",
+          "models_weights_ontology": "M original water BN/source\u2013sink\u2013use/routing bundle",
+          "inputs_boundary_time_units": "L regional descriptions; M exact input snapshots/beneficiary masks/time support",
+          "reference_output": "V published Tables5\u20136 in prior inspected paper; M original matched grids",
+          "licence_access": "L open paper, original-input distribution restrictions discussed; exact input rights unresolved"
+        },
+        "experiment": {
+          "bounded_experiment": "Original EasternMadagascar rice-water source/sink/beneficiary area1, m\u00b3/year; original year UNKNOWN",
+          "Java_required_and_state": "Legacy2011 routing/source\u2013sink/use/BN modules via current Resources/Reasoner/Resolver/Runtime; MISSING_CONTRACT",
+          "independent_oracle": "Published need15943889 versus maximum15443129m\u00b3/year; matched routing/input/mask needed; Table values alone are not a runnable reference",
+          "highest_research_level_gate": "Research-L1/L2partial; original routing/beneficiary grids and output contract"
+        },
+        "decision": {
+          "scientific_breadth": "Rival water/beneficiary flows",
+          "artifact_completeness": "Publishedtables,no originalrunnablechain",
+          "probable_migration_scope": "2011routing/BN migration likelylarge",
+          "cost_risk": "HIGH",
+          "confidence": "MEDIUM",
+          "go_no_go_rank_reversal_owner": "NO-GO; originalflowmodule+regionalinputs+celloutput; distinctive after custodyclosure"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R04",
+        "identity": {
+          "study_publication_type": "Same2014 methodology paper, **Green-Duwamish/Washington open-space** subcase, not a second paper",
+          "source_archive_revision": "[PLOS/PMC primary](https://pmc.ncbi.nlm.nih.gov/articles/PMC3953216/); original executable revision UNKNOWN",
+          "models_weights_ontology": "M proximity/beneficiary/flow and valuation configuration",
+          "inputs_boundary_time_units": "L 2000/2060 constrained/open scenarios; M original parcels/scenario geometries/weights",
+          "reference_output": "V Table7 published changes; M original score/value grids",
+          "licence_access": "L paper terms; N original parcel/input redistribution"
+        },
+        "experiment": {
+          "bounded_experiment": "Original Green-Duwamish2000\u21922060 constrained/open proximity flow and benefit, exact units UNKNOWN until source",
+          "Java_required_and_state": "Resources scenario parcels+Resolver beneficiary-connected rules+Runtime distance/barrier/value, UNKNOWN",
+          "independent_oracle": "Table7 actualflow+25.7%/+23.3%; independently recompute on original support/weights; no barebuffer substitute",
+          "highest_research_level_gate": "Research-L1; original scenario/beneficiary/value bundle"
+        },
+        "decision": {
+          "scientific_breadth": "Beneficiary/scenario valuation",
+          "artifact_completeness": "Subcasepaper,no matchedparcels/weights",
+          "probable_migration_scope": "Legacyflow/value bindings unknown",
+          "cost_risk": "HIGH",
+          "confidence": "MEDIUM",
+          "go_no_go_rank_reversal_owner": "NO-GO; originalparcel/scenario/valuationbundle; mustremain separate Rsubcase not secondpaper"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R05",
+        "identity": {
+          "study_publication_type": "Bagstad et al., **From theoretical to actual ecosystem services: mapping beneficiaries and spatial flows in ecosystem service assessments**, Ecology and Society19(2):64 (2014), publication",
+          "source_archive_revision": "[10.5751/ES-06523-190264](https://www.ecologyandsociety.org/vol19/iss2/art64/); [USGS70112919](https://pubs.usgs.gov/publication/70112919); no immutable model archive recovered",
+          "models_weights_ontology": "M source/sink/beneficiary models and original BN/flow parameters",
+          "inputs_boundary_time_units": "L 200m Puget grids,502HUC12 units,29reservoirs; M exact masks/grids/resources",
+          "reference_output": "V published aggregate ratios in prior full text; M matched cell outputs",
+          "licence_access": "L public article; M exact original data/model reuse permissions"
+        },
+        "experiment": {
+          "bounded_experiment": "One original200m Puget service, then originalfive; use upstream-of-reservoir sediment or homeownerproximity, original year UNKNOWN",
+          "Java_required_and_state": "Resources source/sink/use+Resolver flow+Runtime original BN/flow; UNKNOWN; flood502HUC12proxy is not eventSPAN,carbon has noflowmodel",
+          "independent_oracle": "Scenic15.7%,proximity43.3%,floodsink65.9%,sedimentsource21.8%/sink22.1%; original denominators/grids required, not generic16\u201366%tolerance",
+          "highest_research_level_gate": "Research-L1/L2partial; one complete service source/sink/use/reference fixture"
+        },
+        "decision": {
+          "scientific_breadth": "Highest distinctive beneficiary-connected five-service science",
+          "artifact_completeness": "Strong aggregateclaim,missingexecutables/grids",
+          "probable_migration_scope": "Legacyflow/BN/uncertainty substantial",
+          "cost_risk": "HIGH",
+          "confidence": "HIGH resultmeaning",
+          "go_no_go_rank_reversal_owner": "BEST_DISTINCTIVE_SCIENCE conditional; model/dataowner supplies onecomplete servicefixture; not a first runnablecandidate now"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R06",
+        "identity": {
+          "study_publication_type": "Bagstad/Semmens/Winthrop, **Comparing approaches to spatially explicit ecosystem service modeling: A case study from the San Pedro River, Arizona**, Ecosystem Services5:e40\u2013e50 (2013), publication",
+          "source_archive_revision": "[10.1016/j.ecoser.2013.07.007](https://doi.org/10.1016/j.ecoser.2013.07.007); [full article](https://seea.un.org/sites/default/files/11_4.pdf); archive revision UNKNOWN",
+          "models_weights_ontology": "M original ARIES BN/carbon/scenario implementation; L legacy guide",
+          "inputs_boundary_time_units": "L 2000 baseline/2020 urban scenarios and922ha mesquite domain; M exact masks/rasters/parameters",
+          "reference_output": "V paper Tables2\u20135; M original numerical grids/aggregation executor",
+          "licence_access": "A publisher supplement in prior check; N input/model rights; UN-hosted paper is not data permission"
+        },
+        "experiment": {
+          "bounded_experiment": "Original SanPedro2000baseline/2020open/constrained carbon comparison on common mask, tC stock versus tC/yearflux separate",
+          "Java_required_and_state": "Resources original scenario/mask+Resolver originalBN+Runtime carbon; UNKNOWN",
+          "independent_oracle": "ARIES526200\u2192410900/416600tC/year; InVEST53019000\u219249660000/50817000tC stock; annualization over20years only for published comparison,not identical science",
+          "highest_research_level_gate": "Research-L1/L2partial; original carbon-only rasters/parameters/aggregate executor"
+        },
+        "decision": {
+          "scientific_breadth": "Scenario/inter-model non-equivalence",
+          "artifact_completeness": "Strongtables,missing originalmodels/rasters",
+          "probable_migration_scope": "LegacyBN/masks/moderation substantial",
+          "cost_risk": "HIGH",
+          "confidence": "HIGH targets",
+          "go_no_go_rank_reversal_owner": "NO-GO; producer supplies carbon-only pairedoriginalsupport/source/reference; would overtake weakerdocument-onlyRcases"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R07",
+        "identity": {
+          "study_publication_type": "**Modeling the effects of urban expansion on natural capital stocks and ecosystem service flows: A case study in the Puget Sound, Washington, USA**, Landscape and Urban Planning (2016), publication",
+          "source_archive_revision": "[10.1016/j.landurbplan.2016.01.004](https://doi.org/10.1016/j.landurbplan.2016.01.004), title matched fresh Crossref; [official story](https://aries.integratedmodelling.org/aries-hub/modeling-the-effects-of-urban-expansion-on-natural-capital-stocks-and-ecosystem-service-flows-a-case-study-in-the-puget-sound-washington-usa/); revision UNKNOWN",
+          "models_weights_ontology": "M original stock/flow/scenario models",
+          "inputs_boundary_time_units": "M actual urban expansion rasters/baseline support; exact study years UNKNOWN here, not borrowed fromR04",
+          "reference_output": "L paper lead; M named matched scenario output",
+          "licence_access": "N original model/data/reference licence"
+        },
+        "experiment": {
+          "bounded_experiment": "One original urbanexpansion scenario's stock/flow change, Puget; year pair/variables UNKNOWN until paperfixture",
+          "Java_required_and_state": "Resources scenario surfaces+Reasoner/Resolver stock/flow distinctions+Runtime original modules; UNKNOWN",
+          "independent_oracle": "Original named scenario table/grid, not R04/R05 values reused; tolerance NOT_DEFINED",
+          "highest_research_level_gate": "Research-L1 title/DOI; scenario and matched source/reference"
+        },
+        "decision": {
+          "scientific_breadth": "Urban-growth stock/flow scenarios",
+          "artifact_completeness": "DOIconfirmed,originalsurfacesabsent",
+          "probable_migration_scope": "Originalflowengine unknown",
+          "cost_risk": "HIGH",
+          "confidence": "MEDIUM",
+          "go_no_go_rank_reversal_owner": "NO-GO; sourceowner supplies exactgrowth/scenario/reference; not replaceable withR04"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R08",
+        "identity": {
+          "study_publication_type": "**Linking biophysical models and public preferences for ecosystem service assessments: a case study for the Southern Rocky Mountains** (2015), publication lead; DOI UNKNOWN",
+          "source_archive_revision": "[official title source](https://aries.integratedmodelling.org/aries-hub/linking-biophysical-models-and-public-preferences-for-ecosystem-service-assessments-a-case-study-for-the-southern-rocky-mountains/); fresh200 title, full primary paper/source revision not recovered",
+          "models_weights_ontology": "M biophysical models and original elicited preference weights",
+          "inputs_boundary_time_units": "M survey/paired service surfaces/geography/time precision",
+          "reference_output": "L publication lead; M paired weighted/unweighted reference",
+          "licence_access": "N survey consent/data and software reuse terms"
+        },
+        "experiment": {
+          "bounded_experiment": "One SouthernRockies service surface before/after original preference weighting; date/resolution UNKNOWN",
+          "Java_required_and_state": "Resources survey/biophysical layers+Resolver weighted service+Runtime original preference model; UNKNOWN",
+          "independent_oracle": "Original elicited weights and paired surfaces/validation; no invented publicpreferences",
+          "highest_research_level_gate": "Research-L1 publication lead; survey weights/rights and surface pair"
+        },
+        "decision": {
+          "scientific_breadth": "Participatory preference+biophysical",
+          "artifact_completeness": "Weights/surfacesnotrecovered",
+          "probable_migration_scope": "Originalweighting modelunknown",
+          "cost_risk": "HIGH",
+          "confidence": "LOW/MEDIUM",
+          "go_no_go_rank_reversal_owner": "NO-GO; surveycustodian supplies consentedweights and pairedsurfaces; no CLI designofpreferences"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R09",
+        "identity": {
+          "study_publication_type": "Balbi/Villa/Mojtahed/Hegetschweiler/Giupponi, **A spatial Bayesian network model to assess the benefits of early warning for urban flood risk to people**, NHESS16:1323\u20131337 (2016), publication",
+          "source_archive_revision": "[10.5194/nhess-16-1323-2016](https://nhess.copernicus.org/articles/16/1323/2016/); **NEW** [publisher supplement](https://nhess.copernicus.org/articles/16/1323/2016/nhess-16-1323-2016-supplement.zip); immutable observed ZIP hash in \u00a7D; no Git producing revision attested",
+          "models_weights_ontology": "**V Hazard.net, Vulnerability.net, RiskComprehensive.net**, 4/16/6 nodes/potentials; CPT bytes recovered, not absent as prior dossier said",
+          "inputs_boundary_time_units": "V network states/priors and questionnaire; L Zurich lowerSihl50m/300-year-event inputs; M original depth/velocity/debris/exposure grids and matched executed scenario",
+          "reference_output": "V full paperXML/figures; M machine-readable matched inference/run-output tuple and uncertainty tolerance",
+          "licence_access": "L paperCC-BY3; ZIP linked as supplement, no standalone licence member; third-party hazard/demographic-grid rights unresolved"
+        },
+        "experiment": {
+          "bounded_experiment": "One authored Hazard.net prior/conditioned distribution under a **published original** input configuration; later lowerSihl/Zurich300-year flood50m warning scenario",
+          "Java_required_and_state": "Resources originalnet/CPT+Reasoner/Resolver semantic bindings+Runtime GeNIe/nativeNET inference; MISSING_CONTRACT on selected installed components; no originalmodel admitted",
+          "independent_oracle": "Original paper network/figures plus custodian matched input\u2192posterior vector/tolerances; CPTs permit independent cross-engine check, but no posterior fabricated or computed here; map requires original depth/velocity/debris grids",
+          "highest_research_level_gate": "Research-L3 PARTIAL now; G2 matched vector and G3 originalNET evaluator/admission; spatial-input rights also open"
+        },
+        "decision": {
+          "scientific_breadth": "Authentic probabilistic hazard/vulnerability chain",
+          "artifact_completeness": "**Improved: actual3networks/CPTs+paper**, spatialfixturepartial",
+          "probable_migration_scope": "OriginalNET evaluator and semanticspatialbinding unverified; bounded firstmodule possible onlyifexistingadapter",
+          "cost_risk": "MEDIUM formoduleartifactdecision; HIGH forfullmap",
+          "confidence": "HIGH source,LOW currentadmission",
+          "go_no_go_rank_reversal_owner": "**BEST_NEAR_TERM conditional admission investigation**, not readyexecution; adapterowner provides supportedunchangedNET route and scientist suppliesmatchedpublished vector. If newevaluator needed, stopproposal and movefallbackforward"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R10",
+        "identity": {
+          "study_publication_type": "**Landscape aesthetic modelling using Bayesian networks: Conceptual framework and participatory indicator weighting** (2017), publication lead; DOI UNKNOWN",
+          "source_archive_revision": "[official title source](https://aries.integratedmodelling.org/aries-hub/landscape-aesthetic-modelling-using-bayesian-networks-conceptual-framework-and-participatory-indicator-weighting/), fresh200; archive/producing revision UNKNOWN",
+          "models_weights_ontology": "M exact elicited weights/CPTs/network",
+          "inputs_boundary_time_units": "M geographic indicator snapshots/participatory data/time",
+          "reference_output": "L named method; M original mapped scores/validation values",
+          "licence_access": "N participatory-data consent and model/data rights"
+        },
+        "experiment": {
+          "bounded_experiment": "One original landscape aesthetic score under fixed participatory indicators; geography/year/units UNKNOWN",
+          "Java_required_and_state": "Resources originalindicators+Resolver score semantics+Runtime original BN/CPT; MISSING_CONTRACT",
+          "independent_oracle": "Original elicited CPTs/weights and held-out score map, not a new recreation proxy",
+          "highest_research_level_gate": "Research-L1 title; original elicitation/network/reference"
+        },
+        "decision": {
+          "scientific_breadth": "Participatory aestheticprobability",
+          "artifact_completeness": "Titlelead,no CPTs/weights",
+          "probable_migration_scope": "BN+indicator semanticsunknown",
+          "cost_risk": "HIGH",
+          "confidence": "LOW",
+          "go_no_go_rank_reversal_owner": "NO-GO; scientificcustodian suppliesoriginalnetwork/elicitation/input/reference; no proxyrecreation"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R11",
+        "identity": {
+          "study_publication_type": "Bagstad/Semmens/Ancona/Sherrouse, **Evaluating alternative methods for biophysical and cultural ecosystem services hotspot mapping in natural resource planning**, Landscape Ecology32:77\u201397 (2017; online2016), publication",
+          "source_archive_revision": "[10.1007/s10980-016-0430-6](https://doi.org/10.1007/s10980-016-0430-6); [USGS70175520](https://pubs.usgs.gov/publication/70175520); executable revision UNKNOWN",
+          "models_weights_ontology": "L six methods; M original service-surface generation and method implementation",
+          "inputs_boundary_time_units": "L six forests,4biophysical/11cultural services; M exact surfaces/masks",
+          "reference_output": "L 10%/33% thresholds/Getis-Ord comparisons; M original ranked overlap/area outputs",
+          "licence_access": "N original cultural/surface-data rights"
+        },
+        "experiment": {
+          "bounded_experiment": "One published hotspotmethod/10%threshold on original sixforest service surfaces, then33%/sixmethods",
+          "Java_required_and_state": "Original service generators plus bounded hotspot method; current service generation UNKNOWN; Python threshold-only is not Java science",
+          "independent_oracle": "Original ranked areas/overlap/Getis-Ord settings, independently recompute identical method and original surfaces; no arbitrary new raster",
+          "highest_research_level_gate": "Research-L1/L2partial; original surfaces/method/reference and source generation"
+        },
+        "decision": {
+          "scientific_breadth": "Method/scale sensitivity",
+          "artifact_completeness": "Methodthresholds,no originalsurfaces",
+          "probable_migration_scope": "Originalservicegeneration unknown;postprocessalone insufficient",
+          "cost_risk": "MEDIUM method/HIGH fullstudy",
+          "confidence": "MEDIUM",
+          "go_no_go_rank_reversal_owner": "NO-GO; originalsurfaces+methodoutput+generatorroute; if allalreadyserved could become narrowerconsumption comparison only"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R12",
+        "identity": {
+          "study_publication_type": "**Livestock and Ecosystem Services: An Exploratory Approach to Assess Agri-Environment-Climate Payments of RDP in Trentino** (2015), publication lead; DOI UNKNOWN",
+          "source_archive_revision": "[official title source](https://aries.integratedmodelling.org/aries-hub/livestock-and-ecosystem-services-an-exploratory-approach-to-assess-agri-environment-climate-payments-of-rdp-in-trentino/), fresh200; immutable archive UNKNOWN",
+          "models_weights_ontology": "M original farm/service/payment-rule models, not PaL substitute",
+          "inputs_boundary_time_units": "M farm/land-management/payment/scenario inputs; exact season/year/unit contract UNKNOWN",
+          "reference_output": "L policy comparison lead; M matched response/payment table",
+          "licence_access": "N farm/confidential/payment-data and model terms"
+        },
+        "experiment": {
+          "bounded_experiment": "One original Trentino management/payment scenario, response/payment units/year UNKNOWN",
+          "Java_required_and_state": "Resources farm/management inputs+Resolver service/payment rules+Runtime originalmodels; UNKNOWN",
+          "independent_oracle": "Original management response/payment table with original policy version and support, not Puerto/PaL values",
+          "highest_research_level_gate": "Research-L1 title; original farm/payment/reference package"
+        },
+        "decision": {
+          "scientific_breadth": "Livestock/paymentpolicyresponse",
+          "artifact_completeness": "No originalfarm/scenariobundle",
+          "probable_migration_scope": "Policy/modelbindings unknown",
+          "cost_risk": "HIGH",
+          "confidence": "LOW",
+          "go_no_go_rank_reversal_owner": "NO-GO; farm/policycustodian suppliesexactrules/inputs/output and rights; notPaL"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R13",
+        "identity": {
+          "study_publication_type": "Italian regulating/cultural ecosystem-service changes (2022), publication/story lead; exact paper title/DOI UNKNOWN",
+          "source_archive_revision": "[official story](https://aries.integratedmodelling.org/aries-hub/how-regulating-and-cultural-services-of-ecosystems-have-changed-over-time-in-italy/), fresh200; no authoritative original model revision identified",
+          "models_weights_ontology": "M matched change/classification/valuation source; ISPRA association not proof",
+          "inputs_boundary_time_units": "M original year pair/input versions/Italy boundary and units",
+          "reference_output": "N named quantitative original output not verified",
+          "licence_access": "N original data/model rights"
+        },
+        "experiment": {
+          "bounded_experiment": "One original Italian service/year-pair change, years/output units UNKNOWN",
+          "Java_required_and_state": "Resources timeversionedinputs+Resolver source/time selection+Runtime originalchange/valuation; UNKNOWN",
+          "independent_oracle": "Original year-pair table/grid and mask; distinguish new inputs from originaltemporalchange",
+          "highest_research_level_gate": "Research-L1 storylead only; exactpaper and immutable year/output identity"
+        },
+        "decision": {
+          "scientific_breadth": "Temporalnationalservices",
+          "artifact_completeness": "Exactpaper/yearcontractunresolved",
+          "probable_migration_scope": "Cannot estimate untilidentityknown",
+          "cost_risk": "UNKNOWN/HIGH",
+          "confidence": "LOW",
+          "go_no_go_rank_reversal_owner": "NO-GO; resolveexactpaper and oneyear-pairsource/output before adapterwork"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R14",
+        "identity": {
+          "study_publication_type": "Marquez Torres/Balbi/Villa, **Scientific modelling can be accessible, interoperable and user friendly: A case study for pasture and livestock modelling in Spain**, PLOS ONE (2023), publication",
+          "source_archive_revision": "[10.1371/journal.pone.0281348](https://doi.org/10.1371/journal.pone.0281348); Puerto[6786419](https://zenodo.org/records/6786419)v1.0 prefixb2139dc; PaL[7533051](https://zenodo.org/records/7533051)v0.1.1 prefix575f36d",
+          "models_weights_ontology": "V original R/PaL source and equations, not a modern adopted worldview; current public Puerto c69ccafd is not producing revision",
+          "inputs_boundary_time_units": "V partial site/vector inputs; M generatedclima/suelo/rr1/rr25 files, authentic Radiation tuple/date/unit/state",
+          "reference_output": "V S12 140roundedgrowthpairs; M authoritative run/plot/mask/time join and Radiation output",
+          "licence_access": "L softwareAGPL3; external climate/ALICE/input rights not closed"
+        },
+        "experiment": {
+          "bounded_experiment": "Original2\u20133step Radiation chain for authenticPas/Miera/As\u00f3n tuple/date; thenS12growth",
+          "Java_required_and_state": "Originalk.IM/Groovy/R/resource/time/compiler/worldview through currentResources/Reasoner/Resolver/Runtime; HISTORICAL_FAILURE originalsource, current UNKNOWN",
+          "independent_oracle": "OriginalR: Rg2=rg if identitiesmatch else0.2rg; FR=min(1,Rg2/Rgmax),tenclassesRgmax25MJ/m\u00b2; authentic tuple absent. S12plot1=4.64/4.71,plot96=0/0g/m\u00b2 are rounded output,not a Radiationoracle",
+          "highest_research_level_gate": "Research-L3 PARTIAL; authentic tuple/units/time/rights, original evaluator; fullgrowth also generatedRinputs and plot/runjoin"
+        },
+        "decision": {
+          "scientific_breadth": "Strong semanticcomposition/growth/state",
+          "artifact_completeness": "Source/R/S12good,matchedforcing/unitfixturemissing",
+          "probable_migration_scope": "Legacyk.IM/Groovy/R/time/worldview potentiallylarge",
+          "cost_risk": "HIGH",
+          "confidence": "HIGH blockers",
+          "go_no_go_rank_reversal_owner": "NO-GO; custodian suppliesoneauthenticRadiationtuple/output/units/rights; evaluatorowner admitsunchangedchain; growthrequiresseparateS12join/run"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R15",
+        "identity": {
+          "study_publication_type": "Aznarez et al., **Ecosystem service mismatches evidence inequalities in urban heat vulnerability**, STOTEN (2024), publication",
+          "source_archive_revision": "[10.1016/j.scitotenv.2024.171215](https://doi.org/10.1016/j.scitotenv.2024.171215); [PubMed38428611](https://pubmed.ncbi.nlm.nih.gov/38428611/); archive/producing revision UNKNOWN",
+          "models_weights_ontology": "M supply/demand/vulnerability implementation and weights",
+          "inputs_boundary_time_units": "L Vitoria-Gasteiz census tracts; M original remote sensing/health/socioeconomic snapshots/year bindings",
+          "reference_output": "L published mismatch claim; M matched tract values; intervention run not established",
+          "licence_access": "A publisher prior403; N health-data licence/consent and public validation subset"
+        },
+        "experiment": {
+          "bounded_experiment": "One originalVitoria-Gasteiz census-tract heat-supply/demand/vulnerability mismatch; originaltime UNKNOWN",
+          "Java_required_and_state": "Resources health/remote-sensing/census inputs+Resolver composite binding+Runtime originalmethod; UNKNOWN",
+          "independent_oracle": "Published tract values and composite normalization/weights under consented validation subset; do not invent intervention scenario",
+          "highest_research_level_gate": "Research-L1/L2partial; original tract/code/health terms and reference"
+        },
+        "decision": {
+          "scientific_breadth": "Heat/environmentaljustice",
+          "artifact_completeness": "Paperidentified,privatehealth/codeunclosed",
+          "probable_migration_scope": "Composite/GISbinding unknown",
+          "cost_risk": "HIGH",
+          "confidence": "MEDIUM",
+          "go_no_go_rank_reversal_owner": "NO-GO; consentedtractinput+weights/reference and actualoriginalmodel, not inferredscenario"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R16",
+        "identity": {
+          "study_publication_type": "Marquez-Torres et al., **Assessing the cooling potential of green and blue infrastructure from twelve US cities with contrasting climate conditions**, Urban Forestry & Urban Greening (2025), publication",
+          "source_archive_revision": "[10.1016/j.ufug.2024.128660](https://doi.org/10.1016/j.ufug.2024.128660); DOIyear2024 \u2260 publicationyear2025; source revision UNKNOWN",
+          "models_weights_ontology": "M original GIS/GLMM fitted model, not proved k.LAB executable source",
+          "inputs_boundary_time_units": "L >4600green spaces/12cities; M original predictors/land-cover/climate periods",
+          "reference_output": "L up-to3\u00b0C/NDVI>0.4 summaries, not universal oracle; M per-city fitted/prediction data",
+          "licence_access": "A publisher prior403; N input/fitted-artifact reuse terms"
+        },
+        "experiment": {
+          "bounded_experiment": "One original12US-city cooling association/prediction with originalGLMM fit; city/year selection UNKNOWN",
+          "Java_required_and_state": "Resources geographicpredictors+Runtime originalGIS/GLMM evaluator+Resolver modelbinding; MISSING_CONTRACT",
+          "independent_oracle": "Original per-city fittedcoefficients/prediction table/errorbudget; up-to3\u00b0C is not a universal celloracle",
+          "highest_research_level_gate": "Research-L1/L2partial; originalpredictor/fit/reference/archive and currentbinding"
+        },
+        "decision": {
+          "scientific_breadth": "Multicitycooling/statisticaleffects",
+          "artifact_completeness": "Summaryidentified,fittedmodelmissing",
+          "probable_migration_scope": "OriginalGLMM/GISroute unverified",
+          "cost_risk": "HIGH",
+          "confidence": "MEDIUM",
+          "go_no_go_rank_reversal_owner": "NO-GO; originalfit/predictors/reference and sourceagreement; no universal3\u00b0Coracle"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R17",
+        "identity": {
+          "study_publication_type": "Tidal marsh climate adaptation (2024), hybrid process/ML publication lead; exact title/DOI UNKNOWN",
+          "source_archive_revision": "[official story](https://aries.integratedmodelling.org/aries-hub/new-approach-to-help-tidal-marshes-cope-with-changing-climate-copy/), fresh200; linked publisherPII S0048969724083220; archive revision UNKNOWN",
+          "models_weights_ontology": "M original process/ML/state-transition/calibration models",
+          "inputs_boundary_time_units": "L Oka/Santander/C\u00e1diz sites; M tidal/sediment/elevation/forcing snapshots/time",
+          "reference_output": "L scenario narrative; M original state/output time series",
+          "licence_access": "A publisher prior403; N site/model/data licence"
+        },
+        "experiment": {
+          "bounded_experiment": "One originalOka/Santander/C\u00e1diz marsh transition; date/step/forcing UNKNOWN",
+          "Java_required_and_state": "Resources originaltide/elevation/sediment+Runtime hybridprocess/ML/statetransition+Resolver coupling; MISSING_CONTRACT",
+          "independent_oracle": "Original state/transition/extent series, units/massbalance/initialcondition; no extent-only substitute for adaptation",
+          "highest_research_level_gate": "Research-L1 story/PII; exactpaper, originaldynamicstate/forcing/model/reference"
+        },
+        "decision": {
+          "scientific_breadth": "Dynamiccoast/process+ML",
+          "artifact_completeness": "Story/PII,originalstate/MLabsent",
+          "probable_migration_scope": "Dynamiccoupler/calibration likelylarge",
+          "cost_risk": "VERY HIGH",
+          "confidence": "LOW/MEDIUM",
+          "go_no_go_rank_reversal_owner": "NO-GO; scientist suppliesexactpaper/calibratedstate/forcing/reference before backendproposal"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R18",
+        "identity": {
+          "study_publication_type": "**Coupling virtual watersheds with ecosystems services assessment: a 21st century platform to support river research and management** (2015), publication lead; DOI UNKNOWN; catalog title typo retained in URL",
+          "source_archive_revision": "[official title source](https://aries.integratedmodelling.org/aries-hub/coupling-virtual-watersheds-with-ecosystems-ervices-assessmenta-21st-century-platform-to-support-river-research-and-management/), fresh200; exact solver/build revision UNKNOWN",
+          "models_weights_ontology": "M original coupled solver, exchange contract and parameters",
+          "inputs_boundary_time_units": "M actual basin/forcing/state/time-step restart files; geography/year UNKNOWN here",
+          "reference_output": "L coupling claim; M original hydrographs/state-reference outputs",
+          "licence_access": "N solver/data/forcing licences"
+        },
+        "experiment": {
+          "bounded_experiment": "One originalwatershed linkedstep with originalforcing/state; basin/date/timestep UNKNOWN",
+          "Java_required_and_state": "Resources forcing/restart+Runtime original hydrologicsolver/coupler+Resolver exchange; MISSING_CONTRACT",
+          "independent_oracle": "Original hydrograph/stateexchange/time/massbalance reference; no Pythonhydrological implementation",
+          "highest_research_level_gate": "Research-L1 title; executable solver/build/input/restart/reference contract"
+        },
+        "decision": {
+          "scientific_breadth": "Hydrologicalstate/coupling",
+          "artifact_completeness": "Solver/forcing/reference absent",
+          "probable_migration_scope": "Coupler/restart/solver majorunknown",
+          "cost_risk": "VERY HIGH",
+          "confidence": "LOW",
+          "go_no_go_rank_reversal_owner": "NO-GO; originalsolver/build/forcing/restart/hydrograph then compatibleadmission"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      },
+      {
+        "id": "R19",
+        "identity": {
+          "study_publication_type": "**Modeling trade-offs among ecosystem services in agricultural production systems** (2013), publication lead; DOI UNKNOWN",
+          "source_archive_revision": "[official title source](https://aries.integratedmodelling.org/aries-hub/modeling-trade-offs-among-ecosystem-services-in-agricultural-production-systems/), fresh200; rejected unrelated Crossref matches; archive revision UNKNOWN",
+          "models_weights_ontology": "M original production/multiservice scenario source and parameters",
+          "inputs_boundary_time_units": "M original field/scenario/time support/input versions",
+          "reference_output": "L trade-off claim; M original response surfaces/figure values",
+          "licence_access": "N original agronomic/model/data rights"
+        },
+        "experiment": {
+          "bounded_experiment": "One originalproduction-versus-service scenario; geography/year/variables UNKNOWN",
+          "Java_required_and_state": "Resources agronomicinputs+Resolver multiservice/scenario+Runtime originalmodels; UNKNOWN",
+          "independent_oracle": "Original trade-offfigure/table pairedoutputs; no newlydesigned agricultural scenario",
+          "highest_research_level_gate": "Research-L1 title; exactpaper and originalscenario/model/input/reference"
+        },
+        "decision": {
+          "scientific_breadth": "Agronomicmultiservicetrade-offs",
+          "artifact_completeness": "Titleonly,originalchainabsent",
+          "probable_migration_scope": "Unbounded untiloriginalversionknown",
+          "cost_risk": "HIGH",
+          "confidence": "LOW",
+          "go_no_go_rank_reversal_owner": "NO-GO; exactpaper/originalscenario/source/data/table bundle required before anymigration"
+        },
+        "Python_state": "BACKEND_DEPENDENT/PARTIAL end-to-end; merged SDK N/S and PR239/240 bounded receipts do not admit original study",
+        "current_Java_original_admission": "NOT_RUN",
+        "pilot_P1_P4": "NOT_RUN"
+      }
+    ],
+    "P_projects_separate": [
+      "P01",
+      "P02",
+      "P03",
+      "P04",
+      "P06"
+    ]
+  },
+  "artifacts": [
+    {
+      "role": "R01-archive",
+      "custody": "REUSED_REHASHED",
+      "bytes": 14256699,
+      "sha256": "4a86ec3a1ed1b1cbf9c16d068f30ec7d539e297c36f9f938dc051736134d08b1",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "R14-Puerto",
+      "custody": "REUSED_REHASHED",
+      "bytes": 612570,
+      "sha256": "4b1aff4c5b8ba3be9b2568ed79098c176850dc1be5570816e00d27848adccad9",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "R14-PaL",
+      "custody": "REUSED_REHASHED",
+      "bytes": 4704395,
+      "sha256": "6503feeb0dc743601fe3e3205c879354801fc21353913fd06b9ae4ff1443d872",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "R14-S12",
+      "custody": "REUSED_REHASHED",
+      "bytes": 2101111,
+      "sha256": "3089114b43a942123cc156438470b4338920573ab8078834e355e3b3b119b066",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "R06-paper",
+      "custody": "REUSED_REHASHED",
+      "bytes": 3326534,
+      "sha256": "f140468f37c9b729bade748b6bb4b51a12ad37d3809ab81f03adbfc6244bd2f1",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "P02-raster",
+      "custody": "REUSED_REHASHED",
+      "bytes": 506361894,
+      "sha256": "92c9982b8f44164398d04e7c5a83a6e39f96235b07c24623cc1e84a4c3ce3030",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "P02-country-reference",
+      "custody": "REUSED_REHASHED",
+      "bytes": 82073,
+      "sha256": "60227feef563e22bb37d81bd6d59b1eef86abd16a5c0d72756006884d9ac63c1",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "P01-map2015",
+      "custody": "REUSED_REHASHED",
+      "bytes": 4194747,
+      "sha256": "8b3aa7e18ea222e081ffe2c779d8f0cadd8f017532272bad47874bd1cc951186",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "P01-map2020",
+      "custody": "REUSED_REHASHED",
+      "bytes": 4194747,
+      "sha256": "86febafce4ffa1dcf5bccd8d58a63817ee73eb46439c1263732489ad43cebb38",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "P01-areaCSV",
+      "custody": "REUSED_REHASHED",
+      "bytes": 1169,
+      "sha256": "4bd752f8c4d322e734f89fd16759a8973fc0d460b60103cbd14f5035046a58cd",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "P01-extentCSV",
+      "custody": "REUSED_REHASHED",
+      "bytes": 1166,
+      "sha256": "ee4d63a65b60e69db94e2f636a4de0b6acfa450efe371c4801ebf6c9905af329",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "P01-pairwiseCSV",
+      "custody": "REUSED_REHASHED",
+      "bytes": 4055,
+      "sha256": "790cd73a5638a3c8748d8a1a4006dc37e376084e1ea0ef7db2a8aae4004bf7f6",
+      "scientific_execution": "NOT_RUN"
+    },
+    {
+      "role": "P04-crosswalk",
+      "custody": "REUSED_REHASHED",
+      "bytes": 126439,
+      "sha256": "a7ca5f974fa9eedc1ea75a0b204d2cb752e129cf68ba5d9e55cc7dc4fa4e2ac9",
+      "scientific_execution": "NOT_RUN"
+    }
+  ],
+  "R09": {
+    "supplement": {
+      "url": "https://nhess.copernicus.org/articles/16/1323/2016/nhess-16-1323-2016-supplement.zip",
+      "method": "GET",
+      "cap_bytes": 20000000,
+      "retry": false,
+      "status": 200,
+      "bytes": 299487,
+      "sha256": "eb41ef6dce28509706eaa6469249cbe40a75f5a01dcde8facc1aa22c7943b89c",
+      "members": [
+        {
+          "name": "Flood_Zurich_BN/Hazard.net",
+          "bytes": 2777,
+          "sha256": "4b7e7404b11453c0a7ecca3c39885cdef646bc8616cc30b887973b476a3ed909"
+        },
+        {
+          "name": "Flood_Zurich_BN/RiskComprehensive.net",
+          "bytes": 6811,
+          "sha256": "8e670bafae77685be27dec576f2b9fe485992192dc24405b1023a04bf777ea5c"
+        },
+        {
+          "name": "Flood_Zurich_BN/Vulnerability.net",
+          "bytes": 14630,
+          "sha256": "223bab9d43ad6653c47fe3154cde290854991ddcee5ffda65edc790d45a89a18"
+        },
+        {
+          "name": "nhess-16-1323-2016-supplement-title-page.pdf",
+          "bytes": 17720,
+          "sha256": "3bd3d5aaf8a21e674871ed00118424d16b4c894b50db1f8b02d0f5d42745ab56"
+        },
+        {
+          "name": "Questionnaire_Flood_Zurich.pdf",
+          "bytes": 284549,
+          "sha256": "29fdd8aaa3f0146fdeba06610829eeb36ba4fbd93ee0b84f5c591e2a13376c2e"
+        }
+      ],
+      "elapsed_seconds": 0.8164195000426844
+    },
+    "paper": {
+      "url": "https://nhess.copernicus.org/articles/16/1323/2016/nhess-16-1323-2016.xml",
+      "http_status": 200,
+      "bytes": 169496,
+      "sha256": "b2f996485e7f7807480b9221b6aa736f84735b957866b1e3a8b396d7fe522939",
+      "elapsed_seconds": 0.6760532000334933,
+      "retry": false
+    },
+    "original_networks": [
+      {
+        "name": "Flood_Zurich_BN/Hazard.net",
+        "bytes": 2777,
+        "sha256": "4b7e7404b11453c0a7ecca3c39885cdef646bc8616cc30b887973b476a3ed909",
+        "nodes": 4,
+        "potentials": 4,
+        "inference_executed": false
+      },
+      {
+        "name": "Flood_Zurich_BN/RiskComprehensive.net",
+        "bytes": 6811,
+        "sha256": "8e670bafae77685be27dec576f2b9fe485992192dc24405b1023a04bf777ea5c",
+        "nodes": 6,
+        "potentials": 6,
+        "inference_executed": false
+      },
+      {
+        "name": "Flood_Zurich_BN/Vulnerability.net",
+        "bytes": 14630,
+        "sha256": "223bab9d43ad6653c47fe3154cde290854991ddcee5ffda65edc790d45a89a18",
+        "nodes": 16,
+        "potentials": 16,
+        "inference_executed": false
+      }
+    ],
+    "licence": "Paper CC-BY3; no separate ZIP licence member; grid/input rights not closed",
+    "G0": "PARTIAL",
+    "G1": "PARTIAL",
+    "G2": "BLOCKED original matched posterior reference",
+    "G3": "BLOCKED original nativeNET Java evaluator/binding not admitted",
+    "G4": "NOT_ESTABLISHED for study tuple",
+    "pilot": "PILOT_BLOCKED_JAVA_ADMISSION plus original reference/rights gates",
+    "Research_L5_L7": "NOT_RUN"
+  },
+  "http_receipts": [
+    {
+      "id": "R02",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=South%20Africa%20natural%20resource%20dependence%202019%20aafe43",
+      "checked_utc": "2026-11-05T23:38:12.841387+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 429,
+      "error": "HTTPError",
+      "elapsed_seconds": 0.12517550005577505
+    },
+    {
+      "id": "R07",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=Modeling%20the%20effects%20of%20urban%20expansion%20on%20natural%20capital%20stocks%20and%20ecosystem%20service%20flows%20Puget%20Sound",
+      "checked_utc": "2026-11-05T23:38:12.841387+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://api.crossref.org/works?rows=2&query.bibliographic=Modeling%20the%20effects%20of%20urban%20expansion%20on%20natural%20capital%20stocks%20and%20ecosystem%20service%20flows%20Puget%20Sound",
+      "bytes": 21034,
+      "sha256": "66674d9f12f2e81e9114a6d91600432eaab1834f114b7ea42d88f47c60f05737",
+      "body_file": "R07.body",
+      "elapsed_seconds": 0.22705370001494884
+    },
+    {
+      "id": "R08",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=Linking%20biophysical%20models%20and%20public%20preferences%20for%20ecosystem%20service%20assessments%20Southern%20Rocky%20Mountains",
+      "checked_utc": "2026-11-05T23:38:12.841387+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 429,
+      "error": "HTTPError",
+      "elapsed_seconds": 0.12413729995023459
+    },
+    {
+      "id": "R09",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=A%20spatial%20Bayesian%20network%20model%20to%20assess%20the%20benefits%20of%20early%20warning%20for%20urban%20flood%20risk%20to%20people",
+      "checked_utc": "2026-11-05T23:38:12.842902+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://api.crossref.org/works?rows=2&query.bibliographic=A%20spatial%20Bayesian%20network%20model%20to%20assess%20the%20benefits%20of%20early%20warning%20for%20urban%20flood%20risk%20to%20people",
+      "bytes": 24247,
+      "sha256": "e91ab7f57fbdf055a2aca23799f3a4ae1cabdeee970003715efc2c51dfdf7329",
+      "body_file": "R09.body",
+      "elapsed_seconds": 0.23858020000625402
+    },
+    {
+      "id": "R10",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=Landscape%20aesthetic%20modelling%20using%20Bayesian%20networks%20Conceptual%20framework%20participatory%20indicator%20weighting",
+      "checked_utc": "2026-11-05T23:38:12.852700+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 429,
+      "error": "HTTPError",
+      "elapsed_seconds": 0.11428580002393574
+    },
+    {
+      "id": "R12",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=Livestock%20and%20Ecosystem%20Services%20Exploratory%20Approach%20Agri%20Environment%20Climate%20Payments%20RDP%20Trentino",
+      "checked_utc": "2026-11-05T23:38:12.966563+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 429,
+      "error": "HTTPError",
+      "elapsed_seconds": 0.05315349996089935
+    },
+    {
+      "id": "R13",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=regulating%20cultural%20ecosystem%20services%20changes%20Italy%202022",
+      "checked_utc": "2026-11-05T23:38:12.966563+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 429,
+      "error": "HTTPError",
+      "elapsed_seconds": 0.05313749995548278
+    },
+    {
+      "id": "R17",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=tidal%20marsh%20climate%20adaptation%20eco%20geomorphic%20machine%20learning%202024",
+      "checked_utc": "2026-11-05T23:38:12.966563+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 429,
+      "error": "HTTPError",
+      "elapsed_seconds": 0.05363569990731776
+    },
+    {
+      "id": "R18",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=Coupling%20virtual%20watersheds%20ecosystems%20services%20assessment%2021st%20century%20platform%20river%20research%20management",
+      "checked_utc": "2026-11-05T23:38:13.019073+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 429,
+      "error": "HTTPError",
+      "elapsed_seconds": 0.05280109995510429
+    },
+    {
+      "id": "R19",
+      "url": "https://api.crossref.org/works?rows=2&query.bibliographic=Modeling%20trade-offs%20among%20ecosystem%20services%20in%20agricultural%20production%20systems",
+      "checked_utc": "2026-11-05T23:38:13.019073+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://api.crossref.org/works?rows=2&query.bibliographic=Modeling%20trade-offs%20among%20ecosystem%20services%20in%20agricultural%20production%20systems",
+      "bytes": 52112,
+      "sha256": "5be70d62233af9797fb9bdcb72c31eb8d1669de7b8e97c49a8b62d595c06f594",
+      "body_file": "R19.body",
+      "elapsed_seconds": 0.2010397999547422
+    },
+    {
+      "id": "carbon-package",
+      "url": "https://data.integratedmodelling.org/api/3/action/package_show?id=global-vegetation-carbon-stock-2001-2020",
+      "checked_utc": "2026-11-05T23:38:13.020602+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://data.integratedmodelling.org/api/3/action/package_show?id=global-vegetation-carbon-stock-2001-2020",
+      "bytes": 33319,
+      "sha256": "8054d06d70b848fa5d34465cc1f45e87877d984bd7b92a8a824cf58f2ced9df8",
+      "body_file": "carbon-package.body",
+      "elapsed_seconds": 0.5407936000265181
+    },
+    {
+      "id": "nigeria-package",
+      "url": "https://data.integratedmodelling.org/api/3/action/package_show?id=ecosystem-accounts-nigeria-2015-2020",
+      "checked_utc": "2026-11-05T23:38:13.069261+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://data.integratedmodelling.org/api/3/action/package_show?id=ecosystem-accounts-nigeria-2015-2020",
+      "bytes": 47446,
+      "sha256": "4abbe29b692ec799ef8c0667ab05ed023f38615a1e77b506895cf28406312491",
+      "body_file": "nigeria-package.body",
+      "elapsed_seconds": 0.527121200109832
+    },
+    {
+      "id": "PaL-metadata",
+      "url": "https://zenodo.org/api/records/7533051",
+      "checked_utc": "2026-11-05T23:38:13.072305+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://zenodo.org/api/records/7533051",
+      "bytes": 3705,
+      "sha256": "59be84d67f2d725ad19e1203dedc9d418eb07923820d5dec45abef659b8a5fd9",
+      "body_file": "PaL-metadata.body",
+      "elapsed_seconds": 0.3776673999382183
+    },
+    {
+      "id": "Sicily-story",
+      "url": "https://aries.integratedmodelling.org/aries-hub/fire-risk-modeling-an-integrated-and-data-driven-approach-applied-to-sicily/",
+      "checked_utc": "2026-11-05T23:38:13.080562+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://aries.integratedmodelling.org/aries-hub/fire-risk-modeling-an-integrated-and-data-driven-approach-applied-to-sicily/",
+      "bytes": 187023,
+      "sha256": "848c670ecd04dd31d3e1c819bd705384f27dd700c0be5627392e8902c84f25b9",
+      "body_file": "Sicily-story.body",
+      "elapsed_seconds": 1.4227947999024764
+    },
+    {
+      "id": "P06-releases",
+      "url": "https://api.github.com/repos/ibartomeus/CropPol/releases?per_page=10",
+      "checked_utc": "2026-11-05T23:38:13.220623+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://api.github.com/repos/ibartomeus/CropPol/releases?per_page=10",
+      "bytes": 11998,
+      "sha256": "a27de8e0d8cfb1968e3a15052fc5135bedf5d3d9d1f781d59b907ba1987fb4d7",
+      "body_file": "P06-releases.body",
+      "elapsed_seconds": 0.2691835999721661
+    },
+    {
+      "id": "publications-current",
+      "url": "https://aries.integratedmodelling.org/hub-cateogory/publications/",
+      "checked_utc": "2026-11-05T23:38:13.449914+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://aries.integratedmodelling.org/hub-cateogory/publications/",
+      "bytes": 140499,
+      "sha256": "0063a09f00733ac62f543ad62583d9ad5c486a1a8f0ba05f72aaee22c1858725",
+      "body_file": "publications-current.body",
+      "elapsed_seconds": 1.0570833999663591
+    },
+    {
+      "id": "R13-story",
+      "url": "https://aries.integratedmodelling.org/aries-hub/how-regulating-and-cultural-services-of-ecosystems-have-changed-over-time-in-italy/",
+      "checked_utc": "2026-11-05T23:38:13.490156+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://aries.integratedmodelling.org/aries-hub/how-regulating-and-cultural-services-of-ecosystems-have-changed-over-time-in-italy/",
+      "bytes": 187015,
+      "sha256": "abbe98a73daa3f84b793c7ddbeb5e70916f638f9b316f550e26c9022810cb695",
+      "body_file": "R13-story.body",
+      "elapsed_seconds": 1.4030098000075668
+    },
+    {
+      "id": "R17-story",
+      "url": "https://aries.integratedmodelling.org/aries-hub/new-approach-to-help-tidal-marshes-cope-with-changing-climate-copy/",
+      "checked_utc": "2026-11-05T23:38:13.561175+00:00",
+      "method": "GET",
+      "auth": "NONE",
+      "retry": false,
+      "cap_bytes": 3000000,
+      "http_status": 200,
+      "final_url": "https://aries.integratedmodelling.org/aries-hub/new-approach-to-help-tidal-marshes-cope-with-changing-climate-copy/",
+      "bytes": 193347,
+      "sha256": "cdf6a7818072d2a072df3ab91b902c4c588149db8010a2c9a758810d1d3db3ac",
+      "body_file": "R17-story.body",
+      "elapsed_seconds": 0.7018375999759883
+    },
+    {
+      "id": "R10",
+      "url": "https://aries.integratedmodelling.org/aries-hub/landscape-aesthetic-modelling-using-bayesian-networks-conceptual-framework-and-participatory-indicator-weighting/",
+      "checked_utc": "2026-11-05T23:39:30.417661+00:00",
+      "retry": false,
+      "http_status": 200,
+      "bytes": 187364,
+      "sha256": "b643302e40cea0c3093611739d5ae9592b7688630e31a017630dc0158bae8ed5",
+      "external_links": [],
+      "elapsed_seconds": 1.4313749000430107
+    },
+    {
+      "id": "R09",
+      "url": "https://aries.integratedmodelling.org/aries-hub/a-spatial-bayesian-network-model-to-assess-the-benefits-of-early-warning-for-urban-flood-risk-to-people/",
+      "checked_utc": "2026-11-05T23:39:30.417661+00:00",
+      "retry": false,
+      "http_status": 200,
+      "bytes": 187340,
+      "sha256": "3fe2388e461f24847db0302b3dc4fd7fc65f32ef5f21245e36a00a8629b20270",
+      "external_links": [],
+      "elapsed_seconds": 1.4072419999865815
+    },
+    {
+      "id": "R07",
+      "url": "https://aries.integratedmodelling.org/aries-hub/modeling-the-effects-of-urban-expansion-on-natural-capital-stocks-and-ecosystem-service-flows-a-case-study-in-the-puget-sound-washington-usa/",
+      "checked_utc": "2026-11-05T23:39:31.825803+00:00",
+      "retry": false,
+      "http_status": 200,
+      "bytes": 188693,
+      "sha256": "5cd14939253b8654c2b33fee11942b757cafe4001f0098be057dc0dd4df7de47",
+      "external_links": [],
+      "elapsed_seconds": 0.7285399999236688
+    },
+    {
+      "id": "R12",
+      "url": "https://aries.integratedmodelling.org/aries-hub/livestock-and-ecosystem-services-an-exploratory-approach-to-assess-agri-environment-climate-payments-of-rdp-in-trentino/",
+      "checked_utc": "2026-11-05T23:39:31.849162+00:00",
+      "retry": false,
+      "http_status": 200,
+      "bytes": 188661,
+      "sha256": "f712628829aa17330934e8c145eb265e59e7bfe72e6f5c41ba2e37c889780006",
+      "external_links": [],
+      "elapsed_seconds": 0.7330489000305533
+    },
+    {
+      "id": "R18",
+      "url": "https://aries.integratedmodelling.org/aries-hub/coupling-virtual-watersheds-with-ecosystems-ervices-assessmenta-21st-century-platform-to-support-river-research-and-management/",
+      "checked_utc": "2026-11-05T23:39:32.553979+00:00",
+      "retry": false,
+      "http_status": 200,
+      "bytes": 188806,
+      "sha256": "9a5effd1b57a392c02a76c124131571f9df5fab437e7c63d6f7d0671085fed03",
+      "external_links": [],
+      "elapsed_seconds": 0.7182158000068739
+    },
+    {
+      "id": "R08",
+      "url": "https://aries.integratedmodelling.org/aries-hub/linking-biophysical-models-and-public-preferences-for-ecosystem-service-assessments-a-case-study-for-the-southern-rocky-mountains/",
+      "checked_utc": "2026-11-05T23:39:32.582776+00:00",
+      "retry": false,
+      "http_status": 200,
+      "bytes": 187877,
+      "sha256": "f1d0d4fb6ae016725e9c4e99a4e22c933bdaf299213018e684fe16c8098acfff",
+      "external_links": [],
+      "elapsed_seconds": 1.366419899975881
+    },
+    {
+      "id": "R19",
+      "url": "https://aries.integratedmodelling.org/aries-hub/modeling-trade-offs-among-ecosystem-services-in-agricultural-production-systems/",
+      "checked_utc": "2026-11-05T23:39:33.271951+00:00",
+      "retry": false,
+      "http_status": 200,
+      "bytes": 186669,
+      "sha256": "1d0da5b6bce08a1811d8bb611c97c6b682ed6a6134334144c96a04552be6f595",
+      "external_links": [],
+      "elapsed_seconds": 1.3977311999769881
+    },
+    {
+      "id": "R09-primary",
+      "url": "https://nhess.copernicus.org/articles/16/1323/2016/",
+      "checked_utc": "2026-11-05T23:39:33.949268+00:00",
+      "retry": false,
+      "http_status": 200,
+      "bytes": 142324,
+      "sha256": "6ce0bb0c197b6c97ac0b16f9872966df76d3bd04012fdffcc82e3039dca28056",
+      "external_links": [
+        "https://nhess.copernicus.org/articles/16/1323/2016/nhess-16-1323-2016-supplement.zip"
+      ],
+      "elapsed_seconds": 0.687337200040929
+    }
+  ],
+  "ranking": {
+    "BEST_EXECUTABLE_NOW": "NONE_VERIFIED",
+    "BEST_NEAR_TERM": "R09 conditional nativeNET module admission investigation",
+    "BEST_DISTINCTIVE_SCIENCE": "R05",
+    "FALLBACK_INDEPENDENT": "P02 conditional original carbon path"
+  },
+  "prior_local_N_S": [
+    {
+      "run_id": "e5b4afc5-f79d-4071-9801-911764142e67",
+      "source": "d74a8dc77c1be1587ba33a95bc9cf71bfda5c4fa",
+      "receipt_sha256": "f67039b45994e3b81a9ef8808a018630b79eacfaae872bc9f913cbf2d724f61c",
+      "scheduled": "NOT_RUN",
+      "status": "HISTORICAL_PASSED_LOCAL_BOUNDED"
+    },
+    {
+      "run_id": "a47012cb-978b-4a53-a30b-ac3c5a0af9c4",
+      "source": "d74a8dc77c1be1587ba33a95bc9cf71bfda5c4fa",
+      "receipt_sha256": "b5c2f98d631988e85a286e7aa4be6e27832ced56e76486c112c15dd4c25d5e31",
+      "scheduled": "NOT_RUN",
+      "status": "HISTORICAL_PASSED_LOCAL_BOUNDED"
+    }
+  ],
+  "delivery": {
+    "state": "PREPARED_FOR_REVIEW",
+    "base": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85",
+    "new_code_PRs": [],
+    "new_scientific_Jobs": 0,
+    "documentation_PR": "NOT_OPENED_YET"
+  },
+  "limitations": [
+    "No full original study passes G0-G4",
+    "No new N/S/W3/study science executed",
+    "Metadata429/old403 retained; no access bypass",
+    "No model/ontology/algorithm/component edits",
+    "Prior inspector-absence claim corrected with exact classloading",
+    "No new full Java regression or speedup claim"
+  ]
+}
