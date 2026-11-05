@@ -1,5 +1,14 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Semantics isolation delivered / next acceptance slice
+
+PR224 merged597b2fed15f3b25960667a7d47322a55ef96d796; reviewed56ae58981,
+executablee2b768501. All hosted checks and157postmerge tests PASS; normal exact-head
+merge/ancestry/source equality verified, successful branch retired. Earlier pending
+notes are historical. Current shared-context-reader slice tests existing ACL admission,
+concurrent native reads and local collaborator-close survival; no new permission role,
+Java implementation or full issue89/primary-row promotion.
+
 ## Indexed-read semantics isolation — bounded local PASS
 
 e2b768501 on accepted PR223/95b7db67f fixes a reproduced Python request aliasing
