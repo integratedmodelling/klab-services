@@ -1,5 +1,23 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Native async source preview verified candidate
+
+859670c97 includes accepted227:3,346installed/17gates/117focused+actualJava4valid/
+4invalidfamilies/sourcehash/serviceidentity/explicittrim/blank0HTTP/audit/cleanupPASS.
+ExactSDK/install/harness/liveprivacy verified.0authoring/scientificsubmissions;
+semanticrevision/compilation/persistence/execution/fullA-B/study outcomes notclaimed.
+Finalfocused/normalPR/CI/merge pending;27queuePRsmerged/0open untilsubmission.
+
+## PR227 delivered / native async source previews integrated
+
+PR227merged6af50a1dc83459a17ed065030ca6960addda9b11, allCI/normalmerge/ancestry/
+source/293exactsourcepostmergePASS; branchretired.27queuePRsmerged/0open.
+Currentsourcepreviewcontract007d1a13d/initial2ef2fed06:117focused/3,281installed/
+17gatesPASS. Accepted227 merged859670c97, runner-only conflictsresolved preserving
+bothsuites/reports/choices viaASTcomparison, ruff/117focusedPASS. Combinedpackage
+checksACTIVE; actualfourfamilyparseracceptancepending. NoJava/grammar/authoring/
+scientificexecution, fullB/A criteria/studies/revisionclaims unchanged.
+
 ## Native async inspection candidate verified
 
 cdf28153b:3,324installed/17gates/282focused+actualJava metadata/typednativeempty

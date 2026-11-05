@@ -1,5 +1,33 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Native async source preview exactcandidate acceptance
+
+859670c97879e5fa9197fd91db38d3f6293a7b8b:3,346installed/17gates/117focused and
+actualJava4familyvalid-invalid/sourcehash/serviceidentity/explicittrim/blank0HTTP
+PASS.20auditedGET/parserPOSTonly;0authoringwrites/0scientificsubmissions, localreader/
+ownedprocess/listener cleanupPASS; unrelatedJava unchanged. ExactSDK/install/raw
+harness/live/privacy verified. Semanticrevision NOT_ESTABLISHED; compile/publish/
+scientificexecution NOT_RUN. Finalfocused/normalPR/CI/merge pending; integration
+6af50a1dc,27queuePRsmerged/0open untilsubmission. FullA/B/research/dependencygates
+unchanged. PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE.
+
+## Current integration / native async source preview checks
+
+Integration feature/python-experiment-runner@6af50a1dc83459a17ed065030ca6960addda9b11.
+PR227 merged normally/allCI/ancestry/source equality/293exactsourcepostmergePASS;
+successful branchretired.27queuePRsmerged/0open. A+B23in-scope=1accepted/20partial/
+1missing/1blocked (+1TargetCexcluded);18CAP=4accepted/13partial/1excluded. Both earlier
+metadatafailures retained; actualtypednative-null/read-onlymetadata evidence bounded.
+Current feature/python-async-source-previews, contract007d1a13d, initial2ef2fed06
+117focused/3,281installed/17gatesPASS. Accepted227 merged normally859670c97;
+only ownrunner-addition conflicts resolved preserving allaccepted mappings/choices
+andnewpreviewentry; ASTcomparison/ruff/117focusedPASS. CombinedpackagechecksACTIVE;
+actualJava4familyparserworkflow NOT_RUN until combinedcandidate installed. NoJava/
+grammar/authoring/compilation/scientificexecution or knowledge-revision promise.
+Next combinedgates→oneactualparserrun→identity/privacy/cleanup/review/normalPR.
+Seven dependencyfamilies andall3completefixturesL3partial/L4blocked/L5–L7NOT_RUN
+unchanged. PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE; no ownedlive services.
+
 ## Native async inspection exactcandidate local acceptance
 
 cdf28153b4d82c4112de7bb1f8327c8425c620cf:3,324installed/17gates/282focused,
