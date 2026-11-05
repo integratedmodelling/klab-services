@@ -1,5 +1,13 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest canonical delivery / next model-plan slice
+
+PR216merged4e4df955b,reviewedd5952a964;allCI/normalmerge/ancestry/sourceequal/
+postmerge31PASS;branchretired. Boundedcanonicalrelationaccepted,notwholeQ7;
+Qualitywarning retained. Freshfeature/python-current-model-plan-acceptance from
+4e4df955b:contractadvertisement→recordedservedplan→20cell234.5scenario usingexisting
+facades,notPythonmodelchoice/fullclosure. Actualvalidationpending;no rowpromotion.
+
 ## Latest canonical hierarchy local acceptance
 
 feature/python-canonical-hierarchy-acceptance;baseb79c86dd8;tested4ea7c946c;

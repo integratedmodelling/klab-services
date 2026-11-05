@@ -1,5 +1,16 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest canonical delivery / model-plan contract
+
+PR216 MERGED_BOUNDED4e4df955b8ad9c744c689f3c36d402bc7dbb8099,reviewed
+d5952a96459866dccd26fe96ed08ed28f1738a5e;allfinalchecksSUCCESS;normalmerge/
+ancestry/sourceequality/postmerge31PASS;ownedbranchretired. Actualcanonicalrelations/
+identity/cleanupPASS,Qualitywarning remainsunresolved. Originalfailed830a141cd
+untouched. Freshaccepted-base feature/python-current-model-plan-acceptance:
+contractbeforecode for actualadvertisedcanonicalMODEL→thisresultservedplan→20cells,
+existingfacades/oracle,no sourceorsemanticschange. BroaderQ7matrices/managedcleanup/
+studies/fullA-B remainincomplete;nosleepconditionwhileactionableworkremains.
+
 ## Latest bounded canonical hierarchy local acceptance
 
 4ea7c946c LOCAL_ACCEPTED_BOUNDED:3,069installed/17gates/lint/parity+26focused;
