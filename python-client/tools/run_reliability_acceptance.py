@@ -151,6 +151,8 @@ def run(args):
         if sha(Path(item["path"])) != item["sha256"]:
             raise ValueError("Component pin differs")
     overlay = None
+    if getattr(args, "scenario", None) == "model-source-authoring" and getattr(args, "allow_owned_authoring", False) is not True:
+        raise ValueError("Model source authoring requires explicit owned-work authorization")
     if getattr(args, "scenario", None) == "strategy-authoring":
         if getattr(args, "allow_owned_authoring", False) is not True:
             raise ValueError("Explicit --allow-owned-authoring consent is required")
@@ -257,12 +259,12 @@ def run(args):
             process = spawn("resources-reindexed", command, cwd); ready(PORTS["resources"], route, process)
         fixture_hub.SERVICES = PORTS
         fixture_hub.issue(state, key)
-        if args.scenario == "strategy-authoring":
+        if args.scenario in ("strategy-authoring", "model-source-authoring"):
             operator = {"username": "python-authoring-operator",
                 "token": fixture_hub.token(key, "python-authoring-operator", ("ROLE_USER", "ROLE_ADMINISTRATOR")),
                 "fixture_principal_role": "distinct signed TEST ROLE_ADMINISTRATOR", "allow_owned_authoring": True}
             (state / "authoring-operator.json").write_text(json.dumps(operator))
-        if args.scenario in ("onboarding-journey", "async-own-wait", "async-notebook", "hierarchy-diagnostic", "canonical-hierarchy", "current-model-plan", "async-handle-restoration", "async-native-export", "deleted-state-recovery"):
+        if args.scenario in ("onboarding-journey", "async-own-wait", "async-notebook", "hierarchy-diagnostic", "canonical-hierarchy", "current-model-plan", "async-handle-restoration", "async-native-export", "deleted-state-recovery", "model-source-authoring"):
             wait_onboarding_ready(state)
         with (state / "functional-private.log").open("xb") as log:
             functional = subprocess.Popen([sys.executable, str(PACKAGE / "tools/run_functional_acceptance.py"),
@@ -297,7 +299,7 @@ def run(args):
                     if alive:
                         raise RuntimeError("Owned functional descendant cleanup unconfirmed")
         result_file = {"native-stream-workload": "native-stream-workload.json", "onboarding-journey": "onboarding-journey.json", "vector-analysis": "vector-analysis.json", "completed-recovery": "completed-recovery.json", "parser-preview": "parser-preview.json", "partial-refresh": "partial-refresh.json", "request-plan": "request-plan.json",
-            "deleted-state-recovery": "deleted-state-recovery.json", "async-native-export": "async-native-export.json", "async-handle-restoration": "async-handle-restoration.json", "current-model-plan": "current-model-plan.json", "canonical-hierarchy": "canonical-hierarchy.json", "hierarchy-diagnostic": "hierarchy-diagnostic.json", "async-notebook": "async-notebook.json", "async-own-wait": "async-own-wait.json", "strategy-authoring": "strategy-authoring.json", "nonuniform-export": "nonuniform-science.json"}[args.scenario]
+            "model-source-authoring": "model-source-authoring.json", "deleted-state-recovery": "deleted-state-recovery.json", "async-native-export": "async-native-export.json", "async-handle-restoration": "async-handle-restoration.json", "current-model-plan": "current-model-plan.json", "canonical-hierarchy": "canonical-hierarchy.json", "hierarchy-diagnostic": "hierarchy-diagnostic.json", "async-notebook": "async-notebook.json", "async-own-wait": "async-own-wait.json", "strategy-authoring": "strategy-authoring.json", "nonuniform-export": "nonuniform-science.json"}[args.scenario]
         result["science"] = json.loads((state / result_file).read_text())
         result["passed"] = True
     except Exception as error:
@@ -335,7 +337,7 @@ if __name__ == "__main__":
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--resources-overlay", type=Path)
     parser.add_argument("--allow-owned-authoring", action="store_true")
-    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh", "request-plan", "completed-recovery", "parser-preview", "vector-analysis", "onboarding-journey", "native-stream-workload", "strategy-authoring", "async-own-wait", "async-notebook", "hierarchy-diagnostic", "canonical-hierarchy", "current-model-plan", "async-handle-restoration", "async-native-export", "deleted-state-recovery"), default="nonuniform-export")
+    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh", "request-plan", "completed-recovery", "parser-preview", "vector-analysis", "onboarding-journey", "native-stream-workload", "strategy-authoring", "async-own-wait", "async-notebook", "hierarchy-diagnostic", "canonical-hierarchy", "current-model-plan", "async-handle-restoration", "async-native-export", "deleted-state-recovery", "model-source-authoring"), default="nonuniform-export")
     args = parser.parse_args()
     if args.authority:
         fixture_hub.SERVICES = PORTS

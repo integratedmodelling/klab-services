@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "model-source-authoring": "tests/functional/test_model_source_authoring.py",
     "deleted-state-recovery": "tests/functional/test_deleted_state_recovery.py",
     "async-native-export": "tests/functional/test_async_native_export.py",
     "async-handle-restoration": "tests/functional/test_async_handle_restoration.py",
