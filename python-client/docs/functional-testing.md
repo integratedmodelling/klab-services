@@ -1,5 +1,12 @@
 # Functional workflows and test organization
 
+`strategy-authoring` tests one exact-source observation-strategy draft in a fresh
+owned project. The owned runner requires `--allow-owned-authoring` and an explicit
+`--resources-overlay` accepted-main-only manifest. It provisions a distinct signed
+TEST operator; shared classes and scientist permissions are unchanged. See
+[strategy source boundaries](strategy-source-authoring.md). This is not strategy
+execution, worldview admission or publication.
+
 `native-stream-workload` validates all cells of a bounded1024x1024 native numerical
 scenario export, records actual chunks/RSS observations, and injects two read-only
 interruptions to verify file/staging safety. See [workload contract and exclusions](native-stream-workload.md).

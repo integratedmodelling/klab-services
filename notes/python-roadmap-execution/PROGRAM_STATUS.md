@@ -1,5 +1,63 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q6a local acceptance
+
+Tested739081adf LOCAL_ACCEPTED_BOUNDED:2,994installed/17gates/lint/parity+
+126focusedPASS. Correctedq6-strategy-listing-livePASS exactsource/class/URN/service/
+projectCREATE+retrieval,invalidsource,ordinaryproject/document403,positive-controlled
+denied-nameabsence,projectthenworkspacecleanup. Actualproviderorigin/private+shared
+hashes verified;ownedprocess/listenercleanupPASS,existingJavaunchanged. Distinct
+signedTESToperator,main-onlyacceptedoverlay; no access grants changed. First
+emptybodymissingGETfailure retained. Wheel3a41c315b7283aaf5dd8741ceffb058eb507040c8c7bb1ff172d07bde6b16d43.
+NEXT normalQ6PR/CI/eligiblemerge/ancestry/postmerge;thenQ7/Q8/Q9. No semantic/
+worldview/strategyexecution/publication acceptance; fullQ6/A/B incomplete;
+studiesblocked. SleepNOT_REQUESTED while actionable work remains.
+
+## Latest corrected Q6 live attempt
+
+First q6-strategy-live FAILED at missing-project empty HTTPbody→ProtocolError,
+not at source persistence or explicit denial. Both project/workspace deletion
+confirmed; ownedprocess/listenercleanupPASS,existingJavaunchanged. Provider class
+origin verified private main-only overlay. Preserve original failure.
+One correction changes absence proof to successful operator lists with known
+same-family positive visibility before requiring denied names absent. No SDK
+retrieval/error remap, access-grant change or write replay. Candidate739081adf:
+2,994installedtests/17gates/lint/build/parity+126focusedPASS; wheel
+3a41c315b7283aaf5dd8741ceffb058eb507040c8c7bb1ff172d07bde6b16d43.
+One corrected q6-strategy-listing-live ACTIVE; noQ6PR/acceptanceyet. If another
+gatefails, retain exact blocker and continue independent queue, not repairloop.
+
+## Latest Q6 validation — installed pass, first owned live run active
+
+Q6 candidate35a022211: corrected2,994installedtests/17coveragegates/lint/build/
+sourceparityPASS;126focusedtestsPASS. Wheelf879dcc011db02a3c4513cd660b9b62594d6dedc71c6f428b27a20b2f5c38d53.
+Initial four hardcoded-family assertion failures retained and corrected explicitly,
+not waived. q6-strategy-live ACTIVE with literal owned consent and validated
+accepted main-only provider overlay; distinct TEST administrator, no cached
+scientist elevation. Exact roundtrip/403controls/assetabsence/cleanup not yet
+accepted; noQ6PR. No new scientific/ontology/worldview execution. A/B incomplete;
+three studyartifactgates blocked; sleep not requested while actionable work remains.
+
+## Latest acceptance — Q11 merged; Q6 implementation under validation
+
+PR207 MERGED_BOUNDED `cfb7bf48119ad8b395390b4a3e08953cdd134133`, reviewed
+`e075030488b4ced2ca77f50478a9360fb9b576ab`. All final-head checks PASS including
+routing; hosted focused Maven7+2tests/0failures/errors/skips verified from final
+run41972759664. Fresh private9JUnit and108Python regressions PASS; normal merge/
+ancestry/source equality/postmerge108tests verified. Owned branch retired.
+Main-only accepted overlay prepared,5whitelisted ResourcesProvider classes;
+sharedclasses/services untouched. Q6 branch integrated accepted changes normally.
+
+Q6 now implements one strategy draft family using existing ADD/identity/consent
+guards. Owned runner requires explicit authoring consent and accepted main-only
+overlay; distinct signed TEST administrator issued before first scope creation.
+Live workflow checks exact source/class/URN/project,invalid source,ordinary actual
+project/document403denials+assetabsence and confirmed creator-only cleanup.
+No live authoring yet; installed tests/live/review/normalPR remain. Initial local
+tests exposed stale installed SDK and source-import/preflight guard mismatch;
+do not weaken the noneditable gate: rebuild/install candidate for final tests.
+Program/A/B incomplete; studies blocked; sleep not requested while work remains.
+
 ## Latest CI prerequisite — PR208 accepted, PR207 final-head checks next
 
 PR208 MERGED_BOUNDED `079bb15bfe3fa29fbe8528b4569572123f8c4cd4`, reviewed
@@ -38,10 +96,10 @@ PROGRAM_IN_PROGRESS;A/Bincomplete;studyartifactgatesblocked;SleepNOT_REQUESTED.
   passes 2,886 installed tests/16 gates/lint/build/source parity. Fresh integrated
   owned Java recovery PASSED: same Job/observation/focus,20 cells,no child replay/
   disposal,foreign/deleted refusals and creator cleanup. This is new evidence.
-- **NEXT:** Q4a bounded native stream workload on fresh branch
-  `feature/python-native-stream-workload`, basec491dbbff. Reuse accepted234.5scenario
-  on1024x1024grid, independentlyvalidate nativefiles/streams and interruption safety.
-  Categorical/time/provider gates and Q6/Q7/Q8/Q9 remain separate.
+- **NEXT:** Q6a one additional exact-source strategy draft family on fresh branch
+  `feature/python-strategy-source-authoring`, base554b5e30b. Existing ADD/identity/
+  ownedproject guards reused; distinctsignedTESToperator, no cacheduserescalation.
+  Ontology/worldview/versionedpublish and Q7/Q8/Q9/category/time/provider remain separate.
 
 Q2 implementationab69eee3c initialinstalled2,963tests/17gates/lint/build/parityPASS,
 but source-preflight found its two-computation plan would exhaust the deliberately
@@ -89,6 +147,11 @@ with response/stagingcleanup/no partialdestination/existingfilebyteidentity.
 Creatorreleases/ownedprocess-listenercleanupPASS,unrelatedJavaunchanged.
 Authorreviewcomplete;normalPR/CI/mergeNEXT. FullQ4/category/time/providersoak and
 threehistoricalstudies remainincomplete. No genericRSS/throughputclaim.
+
+Q4aPR206 nowMERGED_BOUNDED554b5e30b9433300610ff66c4f79f6d564018827,
+reviewedede78a222411f4dfbf17f8824056366707511495. AllhostedchecksPASS;normal
+exactheadmerge/ancestryverified;postmergesourcediffempty/15focusedtestsPASS;
+ownedbranchretiredlocal/remote. Next Q6a source/permission contract before code.
 
 Q3 implementation06c6eef53 initially passes2,942installedtests/17coveragegates/
 lint/build/parity, wheel8c7eb033d733d47dcd4fe9fd89622727ae169cd1b0f096f3cc4367aa4a286a2b.

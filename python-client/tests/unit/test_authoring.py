@@ -39,12 +39,13 @@ def setup(*, parse=None, write=None, write_status=200, transport_error=False):
     return client, calls
 
 
-@pytest.mark.parametrize("kind", ["NAMESPACE"])
+@pytest.mark.parametrize("kind", ["NAMESPACE", "OBSERVATION_STRATEGY_DOCUMENT"])
 def test_explicit_add_only_flow_retains_exact_source_and_confirmation(kind):
     api, calls = setup()
     with api:
         author = Authoring(api)
-        parsed = author.parse(SOURCE, kind=kind)
+        source = SOURCE if kind == "NAMESPACE" else "// exact draft\nstrategies python.authoring version 1.0;\n\n"
+        parsed = author.parse(source, kind=kind)
         workspace = author.create_workspace("owned-test", allow_write=True)
         project = author.create_project(workspace, "owned.project", allow_write=True)
         receipt = author.create_document(parsed, project, allow_write=True)
@@ -58,7 +59,7 @@ def test_explicit_add_only_flow_retains_exact_source_and_confirmation(kind):
     writes = [request for request in calls if request.method == "PUT"]
     assert len(writes) == 3 and len(calls) == 8
     payload = json.loads(writes[-1].content)
-    assert payload["sourceCode"] == SOURCE and payload["projectName"] == "owned.project"
+    assert payload["sourceCode"] == source and payload["projectName"] == "owned.project"
     assert payload["metadata"]["nested"][0]["items"] == [1]
     assert writes[1].url.params["urn"] == "owned-test/owned.project"
 

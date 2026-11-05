@@ -8,6 +8,12 @@ document creation are admitted. No running deployment/worldview change or parser
 Server prerequisites merged separately in PRs #114 and #115. Final client-head
 checks are still required before PR #110 can merge.
 
+Current development increment additionally admits `OBSERVATION_STRATEGY_DOCUMENT`
+through the same exact-source ADD-only guards. See
+[strategy draft contract](strategy-source-authoring.md) for its separate pending
+installed/live acceptance, explicit TEST operator provisioning and actual project/
+document denial controls. This does not add ontology/worldview editing or publication.
+
 ```python
 from klab_client import Authoring, Client
 

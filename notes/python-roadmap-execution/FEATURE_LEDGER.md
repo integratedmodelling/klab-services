@@ -1,5 +1,26 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q6a local acceptance
+
+Q6a feature/python-strategy-source-authoring,acceptedbasecfb7bf481,tested739081adf;
+PR/mergepending. LOCAL_ACCEPTED_BOUNDED oneOBSERVATION_STRATEGY_DOCUMENT ADD:
+2,994installed/17gates/lint/parity+126focusedPASS;actualJavaexactsource/identity/
+CREATE/retrieval/invalidsource/ordinaryproject-document403/positivecontrolledabsence/
+creatorcleanupPASS. Providerorigin/private+sharedhashes/processcleanupverified.
+Wheel3a41c315b7283aaf5dd8741ceffb058eb507040c8c7bb1ff172d07bde6b16d43.
+Firstemptybodyfailure retained; no missing-GETfix,grants,ontology/worldview/scientific
+execution/generalpublish claim. FullQ6/B remainPARTIAL; normalCI/mergeNEXT.
+
+## Latest Q11 delivery and Q6 implementation
+
+Q11PR207 MERGED_BOUNDEDcfb7bf481, reviewede07503048; final hosted routing/build/
+Python/JenkinsPASS, actual focused7+2Maventests zero failures/errors/skips. Private
+9JUnit/108PythonPASS; normal merge/ancestry/source equality/postmerge108PASS;
+ownedbranch retired. Accepted main-only overlay prepared; sharedclasses unchanged.
+Q6 one-family strategy ADD implementation now exists; installed/live gates pending.
+Ordinary denial controls correctly target project/document guards, not workspace
+creation. No whole-row promotion or semantic/publication acceptance.
+
 ## Latest delivery — direct CI prerequisite Q12
 
 PR208 MERGED_BOUNDED `079bb15bfe3fa29fbe8528b4569572123f8c4cd4`, reviewed
@@ -30,8 +51,9 @@ b4cdb8f33retainedindependently;noactualsourceauthoring/scientificexecutionyet.
 | Q1 | PR203 MERGED_BOUNDED `597ecb0ae`, reviewed53b3b53e0 | 2,886 installed tests/16 gates and fresh integrated Java recovery/identity/20cells/denials/cleanup PASS; all hosted checks/ancestry/postmerge39 tests PASS; branch retired; fullP1.2/P3.3 PARTIAL |
 | Q3 | PR204 MERGED_BOUNDED d92dbdbde; base597ecb0ae; testedf62f6bd42; reviewede3b944ec3 | 2,943installed/17gates/lint/parity;actualJava nativeGeoJSON independentcorners/identity/coordinates/CRS84/digest+cleanupPASS; wheel3b44da35a00de5415c225dbd7d4d3714464d15a5d822fb1f8bceb90519bdc849;allhostedchecks/ancestry/postmerge61testsPASS;branchretired;fullRC-P2.5/CAP09/15PARTIAL |
 | Q2 | PR205 MERGED_BOUNDEDc491dbbff; based92dbdbde; testedc19e319c1; reviewed502e750b9 | 2,966installed/17gates/lint/parity;wheel795279deed9385c02c14bbe339d9822c601e468663f6042cee3b7d4fbaa056d6;actualTESTproviders/readyselection/oneJavafield+token20cells/twofreshworkers/access-expiry/secretfree/cleanupPASS;allhostedchecks/ancestry/postmerge31PASS;branchretired;genuineHub/fullRC-P1.1/CAP01/02PARTIAL |
-| Q4a | feature/python-native-stream-workload; basec491dbbff; testedc283bd437; PR/mergepending | LOCAL_ACCEPTED_BOUNDED:2,977installed/17gates/lint/parity;wheel2acd249c1a199830f902ed9bc7b935dd84fec3430ee3b61416968c759911a01e;actualJava1,048,576cells/64windows/234.5m/float64/mask/geometry+8,390,163bytes/129chunks/2injectedfaults/filepreservation/cleanupPASS;notprovider-soak/wholeQ4 |
-| Q4 categories/time/provider + Q6/Q7/Q8/Q9 | Pending independent queue | Source-specific categorical export absence is separate, not universal; complete crosswalk below; A/B incomplete |
+| Q4a | PR206MERGED_BOUNDED554b5e30b; basec491dbbff; testedc283bd437; reviewedede78a222 | 2,977installed/17gates/lint/parity;wheel2acd249c1a199830f902ed9bc7b935dd84fec3430ee3b61416968c759911a01e;actualJava1,048,576cells/native8,390,163bytes/129chunks/2injectedfaults/filepreservation/cleanupPASS;allhostedchecks/ancestry/postmerge15PASS;branchretired;notwholeQ4 |
+| Q6a | feature/python-strategy-source-authoring; base554b5e30b | One additional exact-fidelity OBSERVATION_STRATEGY_DOCUMENT ADD to new owned project; source/permission inventory in python-client/docs/strategy-source-authoring.md; implementation/acceptancepending; not ontology/worldview admission |
+| Q4 categories/time/provider + Q6 remaining/Q7/Q8/Q9 | Pending independent queue | Source-specific exporter/authoring gates are separate, not universal; complete crosswalk below; A/B incomplete |
 
 Both inherited branch checkpoints below are historical evidence. This table and
 the latest delivery section supersede their stale pending/build-blocked states.

@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "strategy-authoring": "tests/functional/test_strategy_authoring.py",
     "native-stream-workload": "tests/functional/test_native_stream_workload.py",
     "onboarding-journey": "tests/functional/test_onboarding_journey.py",
     "vector-analysis": "tests/functional/test_vector_analysis.py",

@@ -103,6 +103,38 @@ def wait_onboarding_ready(state, *, timeout=60):
     raise RuntimeError("Owned onboarding deployment did not report available+operational; do not weaken selection")
 
 
+def accepted_resource_overlay(repo, manifest):
+    """Validate explicit accepted main-only provider; never touch shared classes."""
+    if manifest is None:
+        raise ValueError("Strategy authoring requires an accepted Resources overlay")
+    record = json.loads(manifest.read_text())
+    source = "klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java"
+    if (record.get("schema") != 1 or record.get("source_path") != source or
+            record.get("test_classes_included") is not False or
+            record.get("scientific_algorithms_or_access_grants_changed") is not False):
+        raise ValueError("Unsupported Resources overlay contract")
+    accepted = record["accepted_integration_head"]
+    subprocess.run(["git", "merge-base", "--is-ancestor", accepted, "HEAD"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "merge-base", "--is-ancestor", accepted, "origin/feature/python-experiment-runner"],
+        cwd=repo, check=True, capture_output=True)
+    blob = subprocess.check_output(["git", "rev-parse", accepted + ":" + source], cwd=repo, text=True).strip()
+    current = subprocess.check_output(["git", "hash-object", "--path=" + source, source], cwd=repo, text=True).strip()
+    if blob != record["source_git_blob"] or current != blob:
+        raise ValueError("Resources overlay source differs from accepted integration")
+    directory = Path(record["classes_directory"]).resolve(strict=True)
+    classes = record["classes_sha256"]
+    actual = {p.relative_to(directory).as_posix() for p in directory.rglob("*") if p.is_file()}
+    if not classes or actual != set(classes):
+        raise ValueError("Resources overlay must contain only whitelisted main classes")
+    prefix = "org/integratedmodelling/klab/services/resources/ResourcesProvider"
+    for name, digest in classes.items():
+        if (not (name == prefix + ".class" or name.startswith(prefix + "$"))
+                or not name.endswith(".class") or ".." in Path(name).parts
+                or sha(directory / name) != digest):
+            raise ValueError("Resources overlay class identity differs")
+    return directory, record
+
+
 def run(args):
     import klab_client
     state, repo = args.state_dir.resolve(), args.server_repo.resolve()
@@ -118,6 +150,11 @@ def run(args):
     for item in archives:
         if sha(Path(item["path"])) != item["sha256"]:
             raise ValueError("Component pin differs")
+    overlay = None
+    if getattr(args, "scenario", None) == "strategy-authoring":
+        if getattr(args, "allow_owned_authoring", False) is not True:
+            raise ValueError("Explicit --allow-owned-authoring consent is required")
+        overlay = accepted_resource_overlay(repo, args.resources_overlay)
     for port in (*PORTS.values(), *GRAPH, 18090):
         with socket.socket() as probe:
             probe.bind(("127.0.0.1", port))
@@ -129,6 +166,8 @@ def run(args):
     result = {"passed": False, "server_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip(),
               "components": archives, "core_sha256": CORE, "mutations": [], "scenario": args.scenario, "owned_processes": []}
     result["java_version"] = subprocess.run([str(args.java), "-version"], capture_output=True, check=True).stderr.decode(errors="replace")
+    if overlay:
+        result["accepted_resources_overlay"] = overlay[1]
     result["tool_sha256"] = {str(p.relative_to(PACKAGE)): sha(p) for p in
         (Path(__file__), PACKAGE / "tools/workflows/nonuniform_export.py", PACKAGE / "tests/fixtures/nonuniform-export.json")}
     result["functional_sha256"] = {p.relative_to(PACKAGE).as_posix(): sha(p)
@@ -175,6 +214,8 @@ def run(args):
             module, main, _, route = SERVICES[name]
             port = GRAPH[0] if name == "graphdb" else PORTS[name]
             cp = classpath(repo, module)
+            if name == "resources" and overlay:
+                cp = str(overlay[0]) + os.pathsep + cp
             if name == "runtime":
                 cp = str(classes) + os.pathsep + cp
                 result["runtime_classpath_jars_sha256"] = {raw: sha(Path(raw)) for raw in cp.split(os.pathsep) if Path(raw).is_file()}
@@ -216,6 +257,11 @@ def run(args):
             process = spawn("resources-reindexed", command, cwd); ready(PORTS["resources"], route, process)
         fixture_hub.SERVICES = PORTS
         fixture_hub.issue(state, key)
+        if args.scenario == "strategy-authoring":
+            operator = {"username": "python-authoring-operator",
+                "token": fixture_hub.token(key, "python-authoring-operator", ("ROLE_USER", "ROLE_ADMINISTRATOR")),
+                "fixture_principal_role": "distinct signed TEST ROLE_ADMINISTRATOR", "allow_owned_authoring": True}
+            (state / "authoring-operator.json").write_text(json.dumps(operator))
         if args.scenario == "onboarding-journey":
             wait_onboarding_ready(state)
         with (state / "functional-private.log").open("xb") as log:
@@ -251,7 +297,7 @@ def run(args):
                     if alive:
                         raise RuntimeError("Owned functional descendant cleanup unconfirmed")
         result_file = {"native-stream-workload": "native-stream-workload.json", "onboarding-journey": "onboarding-journey.json", "vector-analysis": "vector-analysis.json", "completed-recovery": "completed-recovery.json", "parser-preview": "parser-preview.json", "partial-refresh": "partial-refresh.json", "request-plan": "request-plan.json",
-            "nonuniform-export": "nonuniform-science.json"}[args.scenario]
+            "strategy-authoring": "strategy-authoring.json", "nonuniform-export": "nonuniform-science.json"}[args.scenario]
         result["science"] = json.loads((state / result_file).read_text())
         result["passed"] = True
     except Exception as error:
@@ -287,7 +333,9 @@ if __name__ == "__main__":
     parser.add_argument("--java", type=Path)
     parser.add_argument("--components", type=Path, help="JSON list of exactly two explicit {path,sha256} archives")
     parser.add_argument("--state-dir", type=Path, required=True)
-    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh", "request-plan", "completed-recovery", "parser-preview", "vector-analysis", "onboarding-journey", "native-stream-workload"), default="nonuniform-export")
+    parser.add_argument("--resources-overlay", type=Path)
+    parser.add_argument("--allow-owned-authoring", action="store_true")
+    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh", "request-plan", "completed-recovery", "parser-preview", "vector-analysis", "onboarding-journey", "native-stream-workload", "strategy-authoring"), default="nonuniform-export")
     args = parser.parse_args()
     if args.authority:
         fixture_hub.SERVICES = PORTS
