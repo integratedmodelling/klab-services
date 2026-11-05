@@ -15,6 +15,17 @@ Repository klab-services; integration597b2fed15f3b25960667a7d47322a55ef96d796
 implementation. Shared-reader PR225 independently pendingCI, unchanged pushed
 candidate preserved. Reused owned worktree, no unrelated changes.
 
+Latest integration:PR225 mergedc178e390ee7ec5b9f301b92edbe5debfdf1b88f2,
+133exactsourcepostmergePASS/branchretired, then normally merged into this branch.
+Combinedtree installedvalidation ACTIVE. Original preintegration counts remain
+historical evidence; no claim they include later shared-reader harness tests.
+
+Combined candidateaaa2e35d9357c5a55654f95309bef8ff48092d80 passed3,259installed/
+all17gates/build/install/parity/lint. SDK committed blobs equal e9a4b6e37; current
+raw/source/installed/harness bindings verified. Windows checkout changed raw line
+endings and firstrawhash comparison failed; both receipts retained and committedblob
+equality/currentLFparity explicitly verified rather than replacing the old rawhash.
+
 ## Capability and boundaries
 
 Sync/nativeasync fetch_data reject exact integer offsets outside0..2**63-1 before
@@ -39,6 +50,7 @@ demonstrated in the bounded correction; full package evidence remains required.
 | New offset tests beforefix, pytest test_indexed_offset_long_bounds.py | source597b2fed, Windows Python3.12.7 | Failed6,Passed2 | Sync/async oversized offset reached mockedHTTP; existing valid domain controls |
 | NativePointOffsetContractProbe.java via existing accepted Java classpath/Temurin21 | unchanged Java StorageScan.Point | Passed | Actual constructor/JSON0/maxlong exact, negative rejected, out-of-long Java parse fails; not servercell existence |
 | Focused and fresh installed regression/gates | e9a4b6e37 | Passed:154focused/3,249installed/all17gates | Build/install/parity/lint; source/install/artifact identity bound; pre-PR225 baseline |
+| Combined acceptedPR225 installed gates | aaa2e35d9 | Passed:3,259/all17gates | Exact integrated package/source/harness identity; unchanged SDK blobs; no live science claim |
 
 ## Scientific and lifecycle evidence
 
@@ -60,9 +72,10 @@ submission of this feature, preserving its candidate/evidence and all unrelated 
 
 ## Smallest next actions
 
-Finish installed/focused gates, exact SDK/artifact identity and final documentation;
-integrate accepted upstream normally when PR225 delivered, then final-head tests/
-normalPR/CI/eligiblemerge/ancestry/postmerge. Continue independent queue afterward.
+Finish final-focused/map checks and final documentation, then normalPR/final-head
+CI/eligiblemerge/ancestry/postmerge. AcceptedPR225 normally integrated; package/
+SDK/artifact identity verified. No unchanged scientific rerun or Java repair required.
+Continue independent queue afterward; maintainer acceptance remains separate.
 
 ## Suggested PR description
 

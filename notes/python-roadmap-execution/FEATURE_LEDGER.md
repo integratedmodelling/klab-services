@@ -1,5 +1,20 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## PR225 delivered / offset-long integrated validation
+
+Combinedoffsetaaa2e35d9 now3,259installed/17gates/lint/build/parityPASS. Exactcurrent
+SDK/install/harness binding and preintegration SDK committedblob equality verified;
+rawlineendingtransition receipt retained. Finalfocused/PR/CI/merge pending.
+
+PR225 mergedc178e390ee7ec5b9f301b92edbe5debfdf1b88f2, allCI/exactheadmerge/
+ancestry/source/133exactsourcepostmergePASS; branchretired.25queuePRsmerged/0open.
+Bounded existing ACL/native reader acceptance only, not full89/A/B/studies.
+Current offsetbranch integrated accepted225 normally, no userwork discarded.
+Shared upperbound fix e9a4b6e37 passed preintegration154focused/3,249installed/
+17gates/nativePointconstructorJSONprobe; combinedfullinstalledchecksACTIVE.
+NoJava production or scientific algorithm/live-model change. Next eligible Python
+slice must use existing contracts; import/revision/peer/componentblockers unchanged.
+
 ## Shared-reader corrected candidate verified
 
 7c33ab67f/base597b2fed:3,251installed/17gates/122focused and actualJava ACL/

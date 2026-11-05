@@ -41,3 +41,22 @@ Exact source/installed/artifact/rawharness identity and native-domain probe boun
 in indexed-offset-long-bounds-final-validation.json. No new services/credentials
 or scientific live run. Combined tree with eventual accepted PR225 must be checked
 before delivery; its additional harness tests are absent from this baseline count.
+
+PR225 now mergedc178e390ee7ec5b9f301b92edbe5debfdf1b88f2; allhostedchecks,
+normalmerge/ancestry/source equality and133exactsourcepostmerge testsPASS; branch
+retired. Accepted ancestry merged normally into offsetbranch without conflicts or
+resets. Combined installedvalidation ACTIVE; no reuse of old full-suite count as
+the combined tree's result. NativeSDK correction source unchanged frome9a4b6e37.
+
+## Combined candidate verified
+
+aaa2e35d9357c5a55654f95309bef8ff48092d80 includes acceptedPR225/c178e390e.
+Fresh3,259installed/all17gates/lint/build/sourceparityPASS. Wheel
+326c58bd03ae129f99d84afd4e2c74d442be3fa7724a8f0bcf06036868404d3e;
+sdist11970756084073258455a6a0fb5f7c12722813174ed3bc10e15a8ea70e9195f0.
+Exact installed/rawharness/current source binding verified. Initial raw-source hash
+comparison against preintegration receipt failed after Windows checkout rewrote
+mixed lineendings; original receipt kept. Committed SDK blob equality (gitdiffempty)
+and LF-normalized worktree parity verified, plus fresh installed source_match.
+Both raw fingerprints retained; no SDK code change beyond the tested upperbound.
+No new scientific live claim. Finalfocused/normalPR/hostedCI/eligiblemerge pending.
