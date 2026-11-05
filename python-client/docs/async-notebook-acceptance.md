@@ -28,3 +28,18 @@ support promise, arbitrary notebook execution, Java simulation cancellation,
 asyncsaved-handle restoration, agents/events or committedstate convergence.
 Q7unresolvedhierarchy/branch830a141cd remains separate; A/B/studies incomplete.
 Installed/live/review/normalCI/eligiblemerge acceptance pending.
+
+## Verified bounded outcome
+
+Atf04fe0a0f:3,013installedtests/17gates/lint/build/parity+8focusedPASS. Actual
+ownedJava notebookPASS:threeorderedcodecells executed once withtop-levelawait,
+exactnoneditableinterpreter/SDKsourceidentity innewkernel,originalJob/focus/20cells
+234.5m/ownwaitcancel+otherwait/foreignattach/readerclose. CredentialoutputchecksPASS;
+kernelshutdown/PIDgone/privatekernelspecremoved andcreatorcontext-session/service/
+listenercleanupPASS;unrelatedJavaunchanged.
+Wheel `148d5c8dfeb824bb4bef945b3dd0445615c0890502dc46f3e6f2c61f8a9983bf`;
+executednotebook `2fbac8279872710ada7a0b898fa8752d41fc3b31320bd0fe1a1f0124baa5b81c`.
+Notebook retained privately, not rendered/published as a public artifact. Optional
+dependencies unchanged. Reproduction command and full boundaries in
+[author/CLI review](reviews/async-notebook-acceptance.md). Normalhosted/merge/release
+remain separate; fullQ8/A/B/studies remainincomplete.
