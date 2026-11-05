@@ -1,5 +1,56 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest corrected model-plan local acceptance
+
+7eb7f3637 LOCAL_ACCEPTED_BOUNDED:3,090installed/17gates/lint/parity+20focusedPASS;
+correctedactualJava canonicalMODEL list/retrieve/origin/advertisedmetadata→original
+successfulservedplan→20exact234.5m cellsPASS. ExactURN/unknownversion/emptylists
+preserved;recordedevidencepartial. Creatorcontext/sessionrelease+ownedprocess/
+listenercleanupPASS,unrelatedJavaunchanged. Exactinstalled/live/rawharness and
+credentialabsence verified;laterdeltaMarkdownonly. FirstDecimalserializationfailure
+retained;no SDK/fixture/meaningchange. Qualitywarning/fullQ7matrices/managedcleanup/
+studies remainopen. NormalPR/CI/mergeNEXT;A/Bincomplete,nosleepcondition.
+
+## Latest corrected model-plan installed pass / one fresh live attempt
+
+7eb7f3637:3,090installed/17gates/lint/build/parity+20focusedPASS;wheel
+976019902b0d97aaf639729be4f371f595186498af9df8c92c727392dfa58393.
+ExactDecimaltext/nonfinite/errorpreservation testsPASS;no SDK/fixture/meaningchange.
+Oneq7-model-plan-decimal-liveACTIVE. Firstfailedserializationreport retained;
+newcandidate-model/servedplan/20cells/creatorcleanup notyetaccepted,noPRyet.
+FullQ7matrices/Qualitywarning/managedcleanup/studies remainseparate;A/Bincomplete.
+
+## Latest model-plan live failure / evidence-only correction
+
+Firstq7-current-model-plan-liveFAILED on SDKDecimal JSON serialization after
+numericalreadback,beforefinalservedplan/value acceptance. Finallysave maskedfirst
+serializationerror;staleearlierreportcannotprovecreatorrelease. Parentprocess/
+listenercleanupPASS,existingJavaunchanged. No acceptedscience orretryclaimed.
+Oneboundedharnesscorrection retains finiteDecimal as exactdecimaltext and preserves
+primaryerrors onsecondarysavefailure. No SDK/fixture/model/meaningchange. Corrected
+tests/installedgatesnext,thenonefreshcorrectedattempt;preservefurtherfailure before
+independentwork. NoPRyet,fullQ7/A-B/studies incomplete.
+
+## Latest model-plan installed pass / one fresh live attempt
+
+8698b0659:3,084installed/17gates/lint/build/parity+14focusedPASS;wheel
+158c4c0ffc16196c4bb5dc82d94e5af2bbb10e054ba3bc3ec9c1e8f50477d914.
+q7-current-model-plan-liveACTIVE:existingResourceInspector/canonicalcandidate→
+originalsuccessfulrecordedplan→20cells234.5m,creatorcleanup. No forcedmodel,
+newscientificfixture/reset/semanticchange. Actualgatesnotyetaccepted,noPRyet.
+BroaderQ7matrices/Qualitywarning/managedcleanup/studies remainseparate;A/Bincomplete.
+
+## Latest canonical delivery / model-plan contract
+
+PR216 MERGED_BOUNDED4e4df955b8ad9c744c689f3c36d402bc7dbb8099,reviewed
+d5952a96459866dccd26fe96ed08ed28f1738a5e;allfinalchecksSUCCESS;normalmerge/
+ancestry/sourceequality/postmerge31PASS;ownedbranchretired. Actualcanonicalrelations/
+identity/cleanupPASS,Qualitywarning remainsunresolved. Originalfailed830a141cd
+untouched. Freshaccepted-base feature/python-current-model-plan-acceptance:
+contractbeforecode for actualadvertisedcanonicalMODEL→thisresultservedplan→20cells,
+existingfacades/oracle,no sourceorsemanticschange. BroaderQ7matrices/managedcleanup/
+studies/fullA-B remainincomplete;nosleepconditionwhileactionableworkremains.
+
 ## Latest bounded canonical hierarchy local acceptance
 
 4ea7c946c LOCAL_ACCEPTED_BOUNDED:3,069installed/17gates/lint/parity+26focused;
