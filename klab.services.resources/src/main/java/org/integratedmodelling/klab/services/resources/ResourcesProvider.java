@@ -1091,7 +1091,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public synchronized ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
     if (scope == null
         || !isAllowed(CRUDOperation.CREATE, scope) && !isAllowed(CRUDOperation.ADMINISTER, scope))
-      throw new KlabResourceAccessException("Creating projects requires CREATE");
+      throw new KlabAuthorizationException("Creating projects requires CREATE");
 
     var workspaceInfo = resourcesKbox.getStatus(workspaceName, null);
 
@@ -2628,7 +2628,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   public void requireProjectOperation(String project, CRUDOperation operation, UserScope user) {
     if (!canProjectOperation(project, operation, user))
-      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+      throw new KlabAuthorizationException(
           "Project " + project + " requires " + operation);
   }
 

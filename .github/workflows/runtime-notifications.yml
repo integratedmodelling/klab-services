@@ -20,6 +20,19 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      # Use the same immutable official-source bootstrap accepted for packaging.
+      # A restored Maven cache is not an artifact-availability contract.
+      - name: Checkout pinned packaging plugin
+        uses: actions/checkout@v4
+        with:
+          repository: integratedmodelling/klab.product
+          ref: 0c80acb1f16a1d405f888cf99286d6e365293559
+          path: .ci/klab-product
+          persist-credentials: false
+      - name: Bootstrap packaging plugin from source
+        run: |
+          ./mvnw -B --no-transfer-progress -pl klab.core.api -am install -DskipTests
+          ./mvnw -B --no-transfer-progress -f .ci/klab-product/pom.xml install
       - name: Test source-matched scope and notification routing regressions
         run: ./mvnw -B -pl klab.services.runtime.server -am -Pnotification-coverage -Dtest=ContextActivityHintScopeTest,ContextActivityNotificationsTest,RuntimeContextReleaseTest,RuntimeContextReleaseControllerTest -Dsurefire.failIfNoSpecifiedTests=false org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent verify org.jacoco:jacoco-maven-plugin:0.8.12:report
       - name: Require complete canonical context-release method coverage

@@ -11,6 +11,8 @@ class KlabErrorHandlerTest {
     var resolver = new org.springframework.web.method.annotation.ExceptionHandlerMethodResolver(KlabErrorHandler.class);
     assertEquals("handleAuthorizationException", resolver.resolveMethodByExceptionType(
         org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException.class).getName());
+    assertEquals("handleDefaultException", resolver.resolveMethodByExceptionType(
+        org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class).getName());
     assertEquals("handleMissingResource", resolver.resolveMethodByExceptionType(
         org.integratedmodelling.klab.api.exceptions.KlabResourceNotFoundException.class).getName());
     assertEquals("handleInvalidRequest", resolver.resolveMethodByExceptionType(
@@ -23,6 +25,12 @@ class KlabErrorHandlerTest {
     @org.springframework.web.bind.annotation.GetMapping("/denied")
     public void denied() {
       throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException("SECRET_ASSET_IDENTITY");
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/resource-denied")
+    public void resourceDenied() {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException(
+          "SECRET_PROJECT_IDENTITY requires CREATE");
     }
   }
 
@@ -37,6 +45,21 @@ class KlabErrorHandlerTest {
     assertEquals(403, body.get("status").asInt());
     assertEquals("Access denied", body.get("detail").asText());
     assertFalse(response.getContentAsString().contains("SECRET_ASSET_IDENTITY"));
+  }
+
+  @Test void resourceAccessDenialIsForbiddenRatherThanUnknownServerFailure() throws Exception {
+    var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
+        .standaloneSetup(new DeniedController()).setControllerAdvice(new KlabErrorHandler()).build();
+    var response = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+        .put("/resource-denied")).andReturn().getResponse();
+    assertEquals(403, response.getStatus());
+    assertEquals("application/problem+json", response.getContentType());
+    var body = new com.fasterxml.jackson.databind.ObjectMapper().readTree(response.getContentAsString());
+    assertEquals(403, body.get("status").asInt());
+    assertEquals("Access denied", body.get("detail").asText());
+    assertFalse(response.getContentAsString().contains("SECRET_PROJECT_IDENTITY"));
+    assertFalse(response.getContentAsString().contains("requires CREATE"));
+    assertFalse(response.getContentAsString().contains("stackTrace"));
   }
 
   @Test void serverUnhandledFailureLogsSafeStackAndKeepsErrorResponse() {
