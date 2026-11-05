@@ -1,5 +1,26 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest health correction actual Java regression pass
+
+7fe1a43b5 LOCAL_VALIDATED_REGRESSION:28focusedHTTP/auth/readiness and3,041installed/
+17gates/lint/parityPASS; freshauthority-health-parser-livePASS defaultstartup/
+enrollment/fouractualJava parserfamilies/invalidsource/blankpre-I/O controls.
+Ownedprocess/listenercleanupPASS,existingJavaunchanged. Readinesshelper/offlineguard
+unchanged;original404red and intermediateguardfailure retained. Authorreviewcomplete;
+normalfixPR/CI/mergeNEXT. Broker/managedRuntime/scientificexecutionNOT_RUN;Q7/fullA-B/
+studies remain incomplete;SleepNOT_REQUESTED whileactionableworkremains.
+
+## Latest authority health correction validation
+
+Healthfix7fe1a43b5:28focusedactualHTTP/auth/config/unchangedreadinesshelperPASS;
+3,041installed/17gates/lint/build/sourceparityPASS. Offlineguard unchanged;
+intermediate guardfailure retained, not a health failure. Wheel
+dc865e06287d706483c723d9461f1d51c1466f46023f1e4f11363d432855094c.
+Freshauthority-health-parser-liveACTIVE on ownedports/classes/pinnedcomponents,
+to verifydefaultenrollment/Java startup/fourparserfamilies/processcleanup before
+normalfixPR/CI. No new managedRuntime acceptance; no readiness bypass. Q7/other
+A-B/study gates remain incomplete;SleepNOT_REQUESTED whileactionableworkremains.
+
 ## Latest Q8c delivery / discovered authority readiness regression
 
 PR212 MERGED_BOUNDED d3453dd42e7918e0c94776f8fac5108983f55e62,reviewed
