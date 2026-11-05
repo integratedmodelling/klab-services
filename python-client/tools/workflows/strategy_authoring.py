@@ -7,7 +7,7 @@ from uuid import uuid4
 from klab_client import Authoring, Client, Endpoint
 from klab_client.dto import check_notifications
 from klab_client.evidence import _plain
-from klab_client.errors import AuthorizationError, MissingAssetError, ProtocolError, ServerError, SubmissionOutcomeUnknown, TransportError
+from klab_client.errors import AuthorizationError, ProtocolError, ServerError, SubmissionOutcomeUnknown, TransportError
 from .scientific_checks import require
 
 KIND = "OBSERVATION_STRATEGY_DOCUMENT"
@@ -26,12 +26,13 @@ def cleanup(api, kind, urn):
         "Deleted owned asset remains listed")
 
 
-def require_missing(api, urn, kind):
-    try:
-        api.resources.retrieve(urn, kind)
-    except MissingAssetError:
-        return
-    raise AssertionError("Denied asset unexpectedly exists")
+def require_missing(api, urn, kind, *, positive):
+    # Missing retrieval may be HTTP200 with an empty body. Never interpret a
+    # protocol error as absence: require successful operator listing plus a
+    # known-positive asset of the same family in that very response.
+    listed = {asset.urn for asset in api.resources.list(kind, max_response_bytes=2 * 1024 * 1024)}
+    require(positive in listed, "Operator absence check lacks same-family positive visibility")
+    require(urn not in listed, "Denied asset unexpectedly exists")
 
 
 def require_write_denied(api, kind, name, body):
@@ -91,8 +92,8 @@ def run(state):
                 for kind, name, body in (("PROJECT", workspace_name + "/" + denied_project,
                         {"urn": workspace_name + "/" + denied_project}), (KIND, denied_urn, payload)):
                     require_write_denied(ordinary, kind, name, body)
-                require_missing(api, denied_project, "PROJECT")
-                require_missing(api, denied_urn, KIND)
+                require_missing(api, denied_project, "PROJECT", positive=project_name)
+                require_missing(api, denied_urn, KIND, positive=urn)
             report.update(passed=True, kind=KIND, urn=urn, service_id=receipt.service_id,
                 source_sha256=hashlib.sha256(source.encode()).hexdigest(), exact_source_round_trip=True,
                 actual_project_document_denial=True, denied_assets_absent=True, write_replay=False)

@@ -1,5 +1,16 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q6 validation — installed pass, first owned live run active
+
+Q6 candidate35a022211: corrected2,994installedtests/17coveragegates/lint/build/
+sourceparityPASS;126focusedtestsPASS. Wheelf879dcc011db02a3c4513cd660b9b62594d6dedc71c6f428b27a20b2f5c38d53.
+Initial four hardcoded-family assertion failures retained and corrected explicitly,
+not waived. q6-strategy-live ACTIVE with literal owned consent and validated
+accepted main-only provider overlay; distinct TEST administrator, no cached
+scientist elevation. Exact roundtrip/403controls/assetabsence/cleanup not yet
+accepted; noQ6PR. No new scientific/ontology/worldview execution. A/B incomplete;
+three studyartifactgates blocked; sleep not requested while actionable work remains.
+
 ## Latest acceptance — Q11 merged; Q6 implementation under validation
 
 PR207 MERGED_BOUNDED `cfb7bf48119ad8b395390b4a3e08953cdd134133`, reviewed

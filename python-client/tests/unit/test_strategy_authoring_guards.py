@@ -7,7 +7,6 @@ import pytest
 
 import run_reliability_acceptance as runner
 from workflows import strategy_authoring as workflow
-from klab_client.errors import MissingAssetError
 from klab_client.errors import AuthorizationError, ServerError, TransportError, ProtocolError, SubmissionOutcomeUnknown
 
 
@@ -54,14 +53,15 @@ def test_overlay_is_explicit_before_any_service_start(tmp_path):
         runner.accepted_resource_overlay(tmp_path, None)
 
 
-def test_denied_asset_absence_requires_actual_missing_not_generic_failure():
-    def missing(*args):
-        raise MissingAssetError("absent")
-    api = SimpleNamespace(resources=SimpleNamespace(retrieve=missing))
-    workflow.require_missing(api, "new", "PROJECT")
-    api.resources.retrieve = lambda *args: SimpleNamespace(urn="unexpected")
+def test_denied_asset_absence_requires_successful_listing_with_positive_visibility():
+    api = SimpleNamespace(resources=SimpleNamespace(list=lambda *args, **kwargs: [SimpleNamespace(urn="known")]))
+    workflow.require_missing(api, "denied", "PROJECT", positive="known")
+    api.resources.list = lambda *args, **kwargs: []
     with pytest.raises(AssertionError):
-        workflow.require_missing(api, "new", "PROJECT")
+        workflow.require_missing(api, "denied", "PROJECT", positive="known")
+    api.resources.list = lambda *args, **kwargs: [SimpleNamespace(urn="known"), SimpleNamespace(urn="denied")]
+    with pytest.raises(AssertionError):
+        workflow.require_missing(api, "denied", "PROJECT", positive="known")
 
 
 def test_cleanup_does_not_accept_empty_acknowledgement():
