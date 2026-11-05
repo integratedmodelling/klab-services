@@ -48,7 +48,8 @@ from klab_client.semantics import (SemanticExplorer, AsyncSemanticExplorer, Sema
 from klab_client.inspection import (ResourceInspector, AsyncResourceInspector, AssetInspection, InspectionOrigin,
     AdvertisedObservable, ResourceReference, ResourceResolution)
 from klab_client.evidence import (ChartNode, ChartPort, ChartLink, FlowChartEvidence, ActuatorEvidence,
-    DataflowEvidence, ActivityEvidence, ExecutionEvidence, decode_flowchart, decode_dataflow, fetch_execution_evidence)
+    DataflowEvidence, ActivityEvidence, ExecutionEvidence, decode_flowchart, decode_dataflow, fetch_execution_evidence,
+    async_fetch_execution_evidence)
 from klab_client.experiments import (Experiment, OwnedContextPolicy, ExperimentOutcome, ExperimentBatch,
     ExperimentRunner, BatchInterrupted)
 from klab_client.errors import WaitCancelled
@@ -76,7 +77,7 @@ __all__ = [
     "WaitCancelled",
     "Experiment", "OwnedContextPolicy", "ExperimentOutcome", "ExperimentBatch", "ExperimentRunner", "BatchInterrupted",
     "ChartNode", "ChartPort", "ChartLink", "FlowChartEvidence", "ActuatorEvidence", "DataflowEvidence",
-    "ActivityEvidence", "ExecutionEvidence", "decode_flowchart", "decode_dataflow", "fetch_execution_evidence",
+    "ActivityEvidence", "ExecutionEvidence", "decode_flowchart", "decode_dataflow", "fetch_execution_evidence", "async_fetch_execution_evidence",
     "ResourceInspector", "AsyncResourceInspector", "AssetInspection", "InspectionOrigin", "AdvertisedObservable", "ResourceReference", "ResourceResolution",
     "SemanticExplorer", "AsyncSemanticExplorer", "SemanticResult", "KnowledgeState", "AuthorityCandidate", "AuthoritySearch", "StaleKnowledgeError",
     "Connection", "SelectionPolicy", "connect", "DeploymentProfile", "ConnectionIdentity", "ServiceReference",

@@ -246,7 +246,23 @@ def fetch_execution_evidence(observation, *, limit=64, offset=0, activity_limit=
     view = fetch_provenance(observation, limit=limit, offset=offset, max_response_bytes=max_response_bytes)
     context = observation._context
     client = context.client
-    activities, candidates, diagnostics = [], {}, []
+    candidates, diagnostics = _activity_candidates(view, activity_limit)
+    activities = []
+    for node in candidates:
+        try:
+            rows = client.transport.request("runtime", "POST", "/api/v1/query",
+                json={"type": "QUERY", "resultType": "ACTIVITY", "id": node.id, "limit": 2},
+                scope=scope_token(context), service_id=view.observation.runtime_id, max_response_bytes=max_response_bytes)
+        except InvalidRequestError as failure:
+            _activity_query_failure(failure)
+            raise
+        activities.append(_activity(node, rows, observation.urn, max_nodes, max_links,
+            max_response_bytes, client.transport.redact))
+    return ExecutionEvidence(view, tuple(activities), tuple(diagnostics))
+
+
+def _activity_candidates(view, activity_limit):
+    candidates, diagnostics = {}, []
     for link in view.links:
         for node in (link.source, link.target):
             if node.kind == "activity":
@@ -255,44 +271,68 @@ def fetch_execution_evidence(observation, *, limit=64, offset=0, activity_limit=
                 candidates[node.id] = node
     if len(candidates) > activity_limit:
         diagnostics.append("Activity fetch budget reached; additional recorded activities remain unexamined")
-    for node in list(candidates.values())[:activity_limit]:
+    if not candidates:
+        diagnostics.append("No activity metadata in this partial neighborhood; not proof of no computation")
+    return tuple(candidates.values())[:activity_limit], diagnostics
+
+
+def _activity_query_failure(failure):
+    if getattr(failure, "status_code", None) == 422:
+        raise UnsupportedOperationError("This Runtime does not support scoped activity retrieval") from None
+
+
+def _activity(node, rows, observation_urn, max_nodes, max_links, max_response_bytes, redact):
+    if not isinstance(rows, list) or len(rows) > 1:
+        raise ProtocolError("Scoped activity lookup must return at most one activity")
+    missing, charts = [], []
+    if rows:
+        current = _node(rows[0], redact)
+        if current.kind != "activity" or current.id != node.id or current.urn != node.urn:
+            raise ProtocolError("Scoped activity lookup returned a different activity identity")
+        node = current
+    else:
+        missing.append("Activity metadata unavailable from the current scoped query")
+    declared_observation = node.raw.get("observationUrn")
+    if declared_observation is not None and declared_observation != observation_urn:
+        raise ProtocolError("Activity observation association differs from the requested observation")
+    metadata = node.raw.get("metadata")
+    if metadata is not None:
+        if not isinstance(metadata, Mapping):
+            raise ProtocolError("Activity metadata must be a map or unavailable")
+        metadata = metadata.get("delegate", metadata)
+        if not isinstance(metadata, Mapping):
+            raise ProtocolError("Activity metadata delegate must be a map")
+    for key, phase in (("im:resolution-graph", "resolution plan"), ("im:dataflow-graph", "contextualization plan")):
+        chart = metadata.get(key) if metadata is not None else None
+        if chart is None:
+            missing.append(key + " unavailable; absence does not establish no dependencies")
+        else:
+            charts.append(decode_flowchart(chart, max_nodes=max_nodes, max_links=max_links,
+                max_response_bytes=max_response_bytes, phase=phase, redact=redact))
+    return ActivityEvidence(node.id, node.urn, node.activity_type, node.outcome,
+        tuple(charts), tuple(missing), node.raw)
+
+
+async def async_fetch_execution_evidence(observation, *, limit=64, offset=0, activity_limit=16,
+                                         max_response_bytes=1024 * 1024, max_nodes=256, max_links=512):
+    """Await bounded recorded neighborhood and scoped activity metadata, never resolve anew."""
+    from .provenance import async_fetch_provenance
+    bounds(activity_limit, 64, "Activity fetch budget")
+    bounds(max_nodes, 4096, "Chart node/port budget")
+    bounds(max_links, 8192, "Chart link budget")
+    view = await async_fetch_provenance(observation, limit=limit, offset=offset, max_response_bytes=max_response_bytes)
+    context = observation._context
+    client = context.client
+    candidates, diagnostics = _activity_candidates(view, activity_limit)
+    activities = []
+    for node in candidates:
         try:
-            rows = client.transport.request("runtime", "POST", "/api/v1/query",
+            rows = await client.transport.request("runtime", "POST", "/api/v1/query",
                 json={"type": "QUERY", "resultType": "ACTIVITY", "id": node.id, "limit": 2},
                 scope=scope_token(context), service_id=view.observation.runtime_id, max_response_bytes=max_response_bytes)
         except InvalidRequestError as failure:
-            if getattr(failure, "status_code", None) == 422:
-                raise UnsupportedOperationError("This Runtime does not support scoped activity retrieval") from None
+            _activity_query_failure(failure)
             raise
-        if not isinstance(rows, list) or len(rows) > 1:
-            raise ProtocolError("Scoped activity lookup must return at most one activity")
-        missing, charts = [], []
-        if rows:
-            current = _node(rows[0], client.transport.redact)
-            if current.kind != "activity" or current.id != node.id or current.urn != node.urn:
-                raise ProtocolError("Scoped activity lookup returned a different activity identity")
-            node = current
-        else:
-            missing.append("Activity metadata unavailable from the current scoped query")
-        declared_observation = node.raw.get("observationUrn")
-        if declared_observation is not None and declared_observation != observation.urn:
-            raise ProtocolError("Activity observation association differs from the requested observation")
-        metadata = node.raw.get("metadata")
-        if metadata is not None:
-            if not isinstance(metadata, Mapping):
-                raise ProtocolError("Activity metadata must be a map or unavailable")
-            metadata = metadata.get("delegate", metadata)
-            if not isinstance(metadata, Mapping):
-                raise ProtocolError("Activity metadata delegate must be a map")
-        for key, phase in (("im:resolution-graph", "resolution plan"), ("im:dataflow-graph", "contextualization plan")):
-            chart = metadata.get(key) if metadata is not None else None
-            if chart is None:
-                missing.append(key + " unavailable; absence does not establish no dependencies")
-            else:
-                charts.append(decode_flowchart(chart, max_nodes=max_nodes, max_links=max_links,
-                    max_response_bytes=max_response_bytes, phase=phase, redact=client.transport.redact))
-        activities.append(ActivityEvidence(node.id, node.urn, node.activity_type, node.outcome,
-            tuple(charts), tuple(missing), node.raw))
-    if not candidates:
-        diagnostics.append("No activity metadata in this partial neighborhood; not proof of no computation")
+        activities.append(_activity(node, rows, observation.urn, max_nodes, max_links,
+            max_response_bytes, client.transport.redact))
     return ExecutionEvidence(view, tuple(activities), tuple(diagnostics))
