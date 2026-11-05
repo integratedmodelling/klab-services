@@ -154,3 +154,21 @@ def test_cancelling_native_async_inspection_only_cancels_local_request():
                 await task
         assert len(paths) == 1 and paths[0].endswith("/public/capabilities")
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("changes", [{}, {"serviceId": "resources-origin"}, {"serviceId": "foreign"},
+    {"serviceId": "resources-origin", "label": "changed"},
+    {"serviceId": "resources-origin", "observables": [{"urn": "geography:Elevation", "unit": "km"}]}])
+def test_live_model_view_guard_allows_only_source_defined_missing_service_id_enrichment(changes):
+    from workflows.async_resource_inspection import verify_model_views
+    async def run():
+        client, inspector, _, _ = setup(payload=lambda request: [MODEL] if "/list/" in request.url.path else MODEL | changes)
+        async with client:
+            listed = (await inspector.list())[0]
+            retrieved = await inspector.retrieve(MODEL["urn"])
+            if changes in ({}, {"serviceId": "resources-origin"}):
+                assert verify_model_views(listed, retrieved) == bool(changes)
+            else:
+                with pytest.raises(AssertionError):
+                    verify_model_views(listed, retrieved)
+    asyncio.run(run())

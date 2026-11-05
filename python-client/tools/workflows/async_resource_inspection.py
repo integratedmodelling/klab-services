@@ -1,5 +1,6 @@
 """Actual native async model metadata reads, not model selection or computation."""
 import asyncio
+from dataclasses import fields
 import json
 from pathlib import Path
 import uuid
@@ -9,6 +10,22 @@ from klab_client.errors import MissingAssetError
 from .async_handle_restoration import client
 from .model_source_authoring import save_report
 from .scientific_checks import require
+
+
+def verify_model_views(listed, retrieved):
+    """Java retrieve may fill a missing KimAsset serviceId; no other drift allowed."""
+    for field in fields(listed):
+        if field.name not in ("raw", "provider_metadata"):
+            require(getattr(listed, field.name) == getattr(retrieved, field.name),
+                "Actual Java list/retrieve model identity or metadata changed")
+    raw, provider = dict(listed.raw), dict(listed.provider_metadata)
+    filled = raw.get("serviceId") is None and retrieved.raw.get("serviceId") is not None
+    if filled:
+        raw["serviceId"] = retrieved.origin.service_id
+        provider["serviceId"] = retrieved.origin.service_id
+    require(retrieved.raw == raw and retrieved.provider_metadata == provider,
+        "Model views differ beyond Java's missing-serviceId enrichment")
+    return filled
 
 
 async def scenario(state):
@@ -31,7 +48,11 @@ async def scenario(state):
             require(bool(listed), "Actual Java model advertisements unavailable")
             candidate = listed[0]
             retrieved = await inspector.retrieve(candidate.urn, "MODEL")
-            require(retrieved == candidate, "Actual Java list/retrieve immutable model views differ")
+            report["model_view_differing_fields"] = [field.name for field in fields(candidate)
+                if getattr(candidate, field.name) != getattr(retrieved, field.name)]
+            report["model_view_differing_raw_keys"] = sorted(key for key in candidate.raw.keys() | retrieved.raw.keys()
+                if candidate.raw.get(key) != retrieved.raw.get(key))
+            report["retrieval_filled_missing_service_id"] = verify_model_views(candidate, retrieved)
             resolved = await inspector.resolve(candidate.urn, "MODEL")
             require(any(row.urn == candidate.urn for row in resolved.results), "Model resolution omitted listed model identity")
             try:
