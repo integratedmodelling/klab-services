@@ -1,5 +1,16 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Current compatibility/evidence checkpoint — 5 November 2026
+
+PR211notebook,PR212ownedHubtransport andPR213authorityhealth correction merged
+with exactnormalCI/ancestry/source/postmergereceipts; these do not close managed
+Runtime lifecycle orQ7hierarchy. Q9a tested7b7cd4cfe locally:3,041installed/17gates
+andfreshownedJava integratedonboarding/access/originalreadbacks/cleanupPASS.
+Existingreleasechecker retains8gates:4boundedPASS,3UNKNOWN,scientific-reference
+BLOCKED;exit3/eligible_for_reviewfalse/publication_authorizedfalse. Originalstudy
+assets/contracts missing;no release/support/A_COMPLETE/B_COMPLETE orwhole-row
+promotion. Q9aPR/CI/mergepending;remainingcapability gates preserved.
+
 ## Latest bounded Q8b notebook checkpoint — 5 November 2026
 
 Q8aPR210mergednormallya83d9643d;allchecks/ancestry/postmerge14PASS. Q8b locally

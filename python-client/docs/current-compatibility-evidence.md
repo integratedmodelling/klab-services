@@ -41,3 +41,44 @@ separate. FullA/B/studies and maintainer support/publication decisions stay open
 
 Implementation/docs reconciliation, installed/live evidence, final review/normalCI/
 eligiblemerge are separate gates; this contract predeclares no acceptance pass.
+
+## Current installed checkpoint
+
+Candidate7b7cd4cfe:3,041installedtests/17coveragegates/lint/build/sourceparityPASS.
+Wheel `a2c329d408f6a47c35b50e6b831f5da0e59c3828c71b1a30787beaf1fa5c9b01`;
+sdist `07cf8e8105090dd502beac25706971e5d40aaecc44a40c2799ff04ad953c20b5`.
+Fresh ownedJava onboarding journey is active; no localjourney acceptance or release
+readiness predeclared. Reproduction/boundaries in
+[author/CLI review](reviews/current-compatibility-evidence.md).
+
+## Verified candidate result (not release acceptance)
+
+Executable `7b7cd4cfeb19d625abbc9b2d6106b35754473f3a`: installed3,041tests/
+17gates/lint/build/parityPASS. Fresh actualJava integratedjourneyPASS:one original
+nonuniform20cell result with units, native897byteGeoJSON/CRS/coordinate checks,
+TESTcertificate/token routes, two distinct freshprocess originalreadbacks with
+zeroscientificresubmissions, privateaccess/expiredJWTrefusal and creatorcleanup.
+Ownedprocess/listenercleanupPASS,unrelatedJavaunchanged. ProductionHubNOT_RUN;
+historicalreplicationNOT_CLAIMED. This reuses the accepted oracle/tolerance unchanged.
+
+Private exactcandidate manifest assessed with existingcheck_release_readiness.py:
+
+| Release gate | State | Scope / reason |
+|---|---|---|
+| offline | PASS | Exact installed local candidate tests |
+| coverage | PASS | All17 declared local coverage gates |
+| core-package | PASS | Wheel/sdist build, noneditable install/source parity; not release publication |
+| security-failure | UNKNOWN | Controlled denials/expiry passed, full deployment/failure matrix unproved |
+| owned-lifecycle | PASS | This one controlled TEST journey only; not managedagent cleanup |
+| scientific-reference | BLOCKED | Authentic original-study inputs/contracts missing; syntheticcells no substitute |
+| scale | UNKNOWN | Prior bounded million-cell acceptance does not prove category/time/revision/provider breadth |
+| server-compatibility | UNKNOWN | One pinned owned tuple is not a mixed-version/universal compatibility promise |
+
+All eight artifacts byte-pinned/verified; checkerexit3,
+`eligible_for_review=false`, `publication_authorized=false`. This is a structurally
+valid nonpassing release assessment, not missing successful evidence or a global
+security/scale failure claim. No required gate dropped. Human evidence interpretation
+and maintainer support/release decisions remain separate; fullQ9/A/B incomplete.
+Installed/live/rawharness identity and laterMarkdown-onlydelta verified before
+evidence reuse. No public privateprofile/credential/log publication. Normalfinal-
+head PR/CI/eligiblemerge remain separate from release eligibility.
