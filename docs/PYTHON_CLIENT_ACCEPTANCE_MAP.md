@@ -1,5 +1,18 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Authorized shared-context readers — bounded candidate PASS
+
+7c33ab67f on PR224/597b2fed:3,251installed/all17gates/122focused and corrected
+actualJava ACL/read acceptance PASS. B validsession control/private denial, original
+observation16 restoration/unowned exactscope, overlapping native A/B234.5m reads,
+duplicate/order fidelity, no B scientific mutation/disposal, owner survival after
+local B close and allowned cleanup verified. NoSDKproduction/Java/policy changes.
+[Contract](../python-client/docs/shared-context-readers.md) and
+[review](../python-client/docs/reviews/shared-context-readers.md). First harness
+failure preserved; corrected exactcandidate/privacy verified. NormalPR/CI/merge
+pending. No server-scanner simultaneity/revisionlease/productionHub or read-only-B
+role claim. Full issue89/RC-P1.2/CAP-04 remain PARTIAL; studies unchanged.
+
 ## Semantics isolation delivered / next acceptance slice
 
 PR224 merged597b2fed15f3b25960667a7d47322a55ef96d796; reviewed56ae58981,

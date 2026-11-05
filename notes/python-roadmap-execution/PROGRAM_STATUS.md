@@ -1,6 +1,30 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Shared-reader corrected actual acceptance
+
+7c33ab67f:3,251installed/17gates/122focused and actualJava ACL/original16restore/
+overlapping native A/B234.5m reads/localclose owner-survival/allowned cleanupPASS.
+PrivateAuthorizationError positively controlled by valid Bsession; no Bscientific
+mutation/disposal. Exact install/source/harness/live/handle/reportprivacy verified.
+First22af36adf harnessfailure retained. NoSDKproduction/Java changes; no remote
+lease/server scanner simultaneity/read-only-B role claim. Finalfocused/normalPR/
+CI/merge pending. Integration597b2fed,24mergedqueuePRs/0open untilsubmission.
+Next independent Python correction: native signed-long offset upperbound, reproduced
+without network. Scientific fullfixture gates/dependency families unchanged; program incomplete.
+
 ## Current integration / shared-reader slice
+
+Corrected7c33ab67f passed122focused/3,251installed/17gates/lint/build/parity;
+new actualJava shared-context-readers-corrected-live ACTIVE. First22af36adf live
+failure remains FAIL withcleanupPASS, corrected absent .urn harness attribute via
+served raw['urn'] and regressionguard. NoSDKproduction/Java change. NormalPR still
+pending live/candidate/privacy/cleanup evidence. Nextoffset-long defect reproduced
+separately; noJava defect claim or extra scientific study execution.
+
+Latest candidate22af36adf:121focused/3,250installed/all17gates/lint/build/parityPASS;
+one owned actualJava shared-context-readers-live run ACTIVE. No SDK production/Java
+changes, noPRyet/livePASSpredeclared. Barrier guards cancel+join tasks/remove hooks
+after reader failure/timeout. Await actualACL/identity/values/local-close/cleanup result.
 
 PR224 MERGED597b2fed15f3b25960667a7d47322a55ef96d796, reviewed56ae58981;
 all hosted checks, exact-head normalmerge/ancestry/source equality and157postmerge

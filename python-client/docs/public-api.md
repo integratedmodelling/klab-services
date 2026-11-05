@@ -53,6 +53,14 @@ Saved references: `Handle`, `to_handle`, `save_handle`, `load_handle`,
 `restore_handle`, source-object `to_handle()` and `Client.restore_handle`.
 See [versioned schema and verification](saved-handles.md).
 
+Shared readers use the same saved-handle API with independently configured clients:
+the server must admit the second principal through its existing context ACL. A handle
+does not grant access, change credentials or confer creator ownership. Closing a
+client is local transport cleanup, not context release. The bounded
+[shared-context reader workflow](shared-context-readers.md) distinguishes client
+read overlap from simultaneous server computation or revision leases; ACL admission
+alone must not be described as a read-only per-operation permission role.
+
 Native export: `Client.export_formats`, `Client.export_to_file`,
 `ObservationImpl.export_to_file`, frozen `ExportFormat`/`ExportResult` and
 `ExportIOError`. See [streamed files and exporter limits](stream-exports.md).

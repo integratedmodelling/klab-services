@@ -1,5 +1,13 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Shared-reader corrected candidate verified
+
+7c33ab67f/base597b2fed:3,251installed/17gates/122focused and actualJava ACL/
+original-handle/client-overlap234.5m reads/local-close survival/cleanupPASS; exact
+identity/privacy bound. First22af36adf absent .urn harnessfailure retained and fixed
+with guardtest, not Java repair. NoSDKproduction/policy change or fullissue89 pass.
+Finalfocused/PR/CI/merge pending;24mergedqueuePRs/0open untilsubmission.
+
 ## PR224 delivered / shared-context readers begun
 
 PR224 merged597b2fed15f3b25960667a7d47322a55ef96d796; allCI/ancestry/source/
