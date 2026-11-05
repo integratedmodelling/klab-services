@@ -84,3 +84,18 @@ Category/time/provider/revision/fullformat and maintainedmixeddeployment matrice
 asyncHub/managedagents/fullA-B/studies remainunaccepted. Qualitywarning separate;
 no release/support/contributor/reviewer assignment or publication authorization.
 Next normalPR/CI/exact-headmerge/ancestry/postmerge/ownedbranchretirement.
+
+## Hosted coverage failure retained / bounded contract test correction
+
+PR219 finalhead19a92f020 hostedUbuntuPython3.11–3.13 offline tests passed, but
+changed-branch checking failed on async final byte-count success arc64→66.
+LocalWindows coverage reported that same arc executed; build/Jenkins/core/Windows
+checks passed. This is not green hosted acceptance and no merge is permitted.
+Cross-platform tracing difference is a hypothesis, not a proven root cause.
+
+Extract the unchanged completed-byte-count predicate into a shared pure sync/async
+validator, exercise its nonempty/matching/unknown/mismatched length outcomes
+directly, and add public async small-complete exports with and without length.
+No bytes/expectations/limits/thresholds/exclusions changed. Preserve failed hosted
+logs; require fresh exact installed gates, actual Java and final-head hosted checks
+before reusing acceptance. No failed scientificrun or blind rerun is concealed.

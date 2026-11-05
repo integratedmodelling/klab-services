@@ -79,3 +79,10 @@ network awaited natively. Actualinterruption is injectedReadError, not a simulat
 scientificresult or provider reliabilityclaim. Taskcancellation is separately
 unit-tested; broad deployedcancellation/provider/time/revision matrices notclaimed.
 Normalfinal-headPR/CI/eligiblemerge pending;fullA/B/studies/release incomplete.
+
+PR219 hosted acceptance is currently BLOCKED: UbuntuPython3.11–3.13 passed tests
+but failed changed-branch coverage on the completed-byte-count success arc that
+localWindows recorded. No merge. Shared pure completed-size validator and direct/
+publiccomplete-stream tests preserve the exact predicate;150focused testsPASS.
+No weakened thresholds/exclusions. Fresh installed/live/hosted validation required;
+prior passing scientific receipt stays bound to4dd0ef841, not a corrected candidate.

@@ -110,6 +110,12 @@ def _length(response):
     return int(value)
 
 
+def _validate_size(written, length):
+    """Check completed native byte counts identically in sync and async paths."""
+    if not written or length is not None and length != written:
+        raise ProtocolError("Export is empty or differs from its declared byte count")
+
+
 def export_to_file(client, observation, path, *, media_type, overwrite=False, max_bytes=None):
     """Download exactly one advertised representation; never recreate or release remote work."""
     expected_type, expected_parameters = _media(media_type, InvalidRequestError)
@@ -155,8 +161,7 @@ def export_to_file(client, observation, path, *, media_type, overwrite=False, ma
                         if count <= 0:
                             raise OSError("Short export write")
                         view = view[count:]
-                if not written or length is not None and length != written:
-                    raise ProtocolError("Export is empty or differs from its declared byte count")
+                _validate_size(written, length)
             os.fsync(descriptor)
         except BaseException as error:
             failure = error

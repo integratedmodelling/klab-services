@@ -1,5 +1,16 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest PR219 hosted failure / bounded validation correction
+
+PR219 OPEN19a92f020,NOTeligible: hostedUbuntu3.11–3.13 tests passed but changed-
+branch coverage failed asyncsizecheck successarc64→66;Windowslocal recordedexecuted.
+Build/Jenkins/core/Windows checksPASS,no merge. Tracingdifference cause unproved;
+failedlogs retained. Unchangedsizepredicate extracted to sharedpurevalidator with
+directoutcome and publiccomplete-stream tests,150focusedPASS. No threshold/
+exclusion/scientificexpectation change. Freshinstalled/actualJava/finalhostedchecks
+required,next. Prioractualnativebytes/oracles/cleanup retained atoriginalcandidate;
+not relabeled orwholeA/Bpromotion. Independentdeletedstate work waits acceptedbase.
+
 ## Latest native async export local acceptance
 
 4dd0ef841 LOCAL_ACCEPTED_BOUNDED:3,154installed/all17gates/lint/parity+142focused;

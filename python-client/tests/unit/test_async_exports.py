@@ -214,3 +214,25 @@ def test_secondary_close_failure_keeps_primary_stream_error(tmp_path, monkeypatc
             assert "Export descriptor cleanup failed: OSError" in caught.value.__notes__
         assert not list(tmp_path.glob(".klab-export-*"))
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("written,length,valid", [(0, None, False), (0, 0, False),
+    (12, None, True), (12, 12, True), (12, 11, False), (12, 13, False)])
+def test_shared_completed_native_size_contract_is_directly_exercised(written, length, valid):
+    from klab_client.exports import _validate_size
+    if valid:
+        assert _validate_size(written, length) is None
+    else:
+        with pytest.raises(ProtocolError):
+            _validate_size(written, length)
+
+
+@pytest.mark.parametrize("length", [None, "12"])
+def test_small_complete_native_stream_reaches_publication_with_and_without_length(tmp_path, length):
+    async def run():
+        stream = Stream([b"native-bytes"])
+        async with client(stream, headers={} if length is None else {"content-length": length}) as api:
+            result = await api.export_to_file(asset(api), tmp_path / "result", media_type=MIME)
+        assert result.path.read_bytes() == b"native-bytes" and result.bytes_written == 12
+        assert stream.closed and not list(tmp_path.glob(".klab-export-*"))
+    asyncio.run(run())

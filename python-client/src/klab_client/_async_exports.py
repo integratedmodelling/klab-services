@@ -7,7 +7,7 @@ from urllib.parse import quote
 from .client import scope_token
 from .errors import InvalidRequestError, ProtocolError, UnsupportedOperationError
 from .exports import (CHUNK_BYTES, ExportIOError, ExportResult, _bound_observation,
-                      _formats, _length, _media)
+                      _formats, _length, _media, _validate_size)
 
 
 async def export_formats(client, observation):
@@ -61,8 +61,7 @@ async def export_to_file(client, observation, path, *, media_type, overwrite=Fal
                         if count <= 0:
                             raise OSError("Short export write")
                         view = view[count:]
-                if not written or length is not None and length != written:
-                    raise ProtocolError("Export is empty or differs from its declared byte count")
+                _validate_size(written, length)
             os.fsync(descriptor)
         except BaseException as error:
             failure = error
