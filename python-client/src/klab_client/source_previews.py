@@ -41,6 +41,9 @@ class SourcePreviews:
     def __init__(self, client, *, max_source_bytes=1024 * 1024, max_response_bytes=2 * 1024 * 1024):
         if not isinstance(client, Client):
             raise InvalidRequestError("Source previews require a synchronous configured Client")
+        self._configure(client, max_source_bytes, max_response_bytes)
+
+    def _configure(self, client, max_source_bytes, max_response_bytes):
         if (type(max_source_bytes) is not int or not 1 <= max_source_bytes <= 1024 * 1024
                 or type(max_response_bytes) is not int or not 1 <= max_response_bytes <= 16 * 1024 * 1024):
             raise InvalidRequestError("Source previews require bounded UTF-8 source/response budgets")
@@ -69,14 +72,16 @@ class SourcePreviews:
             elif isinstance(item, (list, tuple)):
                 pending.extend(item)
 
-    def _identity(self):
+    def _before_identity(self):
         if self._client.transport is not self._transport:
             raise ProtocolError("Preview transport changed; no implicit rebinding")
         endpoint = self._transport.endpoint("resources")
         before = (endpoint.url, endpoint.credential)
         if self._binding is not None and before != (self._binding[0], self._binding[2]):
             raise ProtocolError("Resources preview endpoint/credential changed; no request sent")
-        capability = self._client.resources.capabilities(max_response_bytes=self._max_response)
+        return before
+
+    def _after_identity(self, before, capability):
         after = self._transport.endpoint("resources")
         binding = (before[0], capability.service_id, before[1])
         if ((after.url, after.credential) != before or self._client.transport is not self._transport
@@ -86,7 +91,12 @@ class SourcePreviews:
         self._binding = binding
         return binding[:2]
 
-    def parse(self, source, *, kind="NAMESPACE", allow_edge_trimming=False):
+    def _identity(self):
+        before = self._before_identity()
+        capability = self._client.resources.capabilities(max_response_bytes=self._max_response)
+        return self._after_identity(before, capability)
+
+    def _source(self, source, kind, allow_edge_trimming):
         if not isinstance(kind, str) or kind not in DOCUMENT_CLASSES:
             raise UnsupportedOperationError("Preview admits only namespace, ontology, strategy document or behavior")
         if type(allow_edge_trimming) is not bool:
@@ -98,9 +108,18 @@ class SourcePreviews:
         if not source_bytes or not source.strip() or len(source_bytes) > self._max_source:
             raise InvalidRequestError("Preview source must be nonblank text within its UTF-8 byte budget")
         self._safe(source)
+        return source_bytes
+
+    def parse(self, source, *, kind="NAMESPACE", allow_edge_trimming=False):
+        source_bytes = self._source(source, kind, allow_edge_trimming)
         url, identity = self._identity()
         payload = self._transport.request("resources", "POST", f"/parseAsset/{kind}", text=source,
                                           max_response_bytes=self._max_response)
+        result = self._preview(payload, source, source_bytes, kind, allow_edge_trimming, url, identity)
+        self._identity()
+        return result
+
+    def _preview(self, payload, source, source_bytes, kind, allow_edge_trimming, url, identity):
         payload = object_payload(payload, "source preview")
         check_notifications(payload, self._transport.redact)
         parser_source = payload.get("sourceCode")
@@ -112,7 +131,30 @@ class SourcePreviews:
         if len(urn) > 512 or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*", urn):
             raise ProtocolError("Parser returned an unsafe source URN")
         self._safe(payload)
-        self._identity()
         return SourcePreview(kind, urn, url, identity, hashlib.sha256(source_bytes).hexdigest(),
             hashlib.sha256(parser_source.encode("utf-8")).hexdigest(), parser_source != source,
             freeze(payload, self._transport.redact))
+
+
+class AsyncSourcePreviews(SourcePreviews):
+    """Native awaited read-only parser receipts; not authoring or model execution."""
+
+    def __init__(self, client, *, max_source_bytes=1024 * 1024, max_response_bytes=2 * 1024 * 1024):
+        from .async_client import AsyncClient
+        if not isinstance(client, AsyncClient):
+            raise InvalidRequestError("Async source previews require a native AsyncClient")
+        self._configure(client, max_source_bytes, max_response_bytes)
+
+    async def _identity(self):
+        before = self._before_identity()
+        capability = await self._client.resources.capabilities(max_response_bytes=self._max_response)
+        return self._after_identity(before, capability)
+
+    async def parse(self, source, *, kind="NAMESPACE", allow_edge_trimming=False):
+        source_bytes = self._source(source, kind, allow_edge_trimming)
+        url, identity = await self._identity()
+        payload = await self._transport.request("resources", "POST", f"/parseAsset/{kind}", text=source,
+            max_response_bytes=self._max_response)
+        result = self._preview(payload, source, source_bytes, kind, allow_edge_trimming, url, identity)
+        await self._identity()
+        return result
