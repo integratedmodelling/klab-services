@@ -91,3 +91,11 @@ ScopeRequestID and exact deleted-context notification controls, then freeze/run
 installed+ownedJavaacceptance. Q1branch is not stacked on unmergedQ5. Q1current
 server/program wheel identity will be recorded pernewrun, not inferred fromQ5.
 BothQ1initialfailures andQ5initial/corrected/hostedfailures remain preserved.
+
+Resumed Q1implementationd8ae23b3d: actualownedJava `q1-live-resume`PASSED with
+samecompletedJob/observation/focus/20cells, no childscientificreplay ordisposal,
+foreign/deletedcontrols andcreatorcleanup. Installed2874tests/16gates/lint/parity
+PASS;wheel1be8630f9b1297ff1d51f2497eda4505590bcaa4be509737adfd89bfefbd16a6.
+Q1 LOCAL_ACCEPTED_BOUNDED,notmerged;RC-P1.2/P3.3remainPARTIAL. Nextconsider the
+direct packaginggate via pinnedofficialpluginsource bootstrap as a separately
+scoped CIcandidate, never a dependency swap or upstream publication. ThenQ2/Q3.

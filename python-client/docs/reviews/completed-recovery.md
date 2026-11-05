@@ -82,6 +82,27 @@ RuntimeService4960–4971 and explicitdispose4656–4662, not a fitted pass crit
 Five new negative/positive unit vectors cover that distinction. Q1 has no dependency
 on Q5code, no Java changes and no new claimed retention/restart capability.
 
+## Resumed exact-candidate acceptance
+
+Implementationd8ae23b3d passes `q1-live-resume`: creatortransportclosed, distinct
+workerPID, same originalJob/observation/focus, two independent20cellreadbacks,
+restoredownershipfalse, no submits/releases/cancels in worker, creatorread after
+localclose, actualforeignrefusal, exactdeleted-context ServerError notification
+and confirmed creatoronlycleanup. Ownedprocesses/listenersclosed and preexisting
+Java identities unchanged. Runtime restart/in-flight retention remainNOT_TESTED.
+
+Final installed noneditable package/source parity PASSED: **2874offline tests,
+16coverage gates, lint, wheel/sdist**; one retained Rasterio warning. WheelSHA256
+`1be8630f9b1297ff1d51f2497eda4505590bcaa4be509737adfd89bfefbd16a6`,
+sdist`445aecd8539f3b3a6b414b4577c3e471ef4ba2a1e07f36b4efdc66599683de51`.
+External exactcommands/identities: priorqueue`ab-q1-resume/` and currentprogram
+`q1-live-resume/result.json`; both earlierfailedruns retained, not recast aspasses.
+
+**Ready for bounded maintainer review**, not humanapproval/fullRC-P1.2/P3.3.
+Normalmerge currently faces the separately demonstrated packagingartifact gate
+fromPR201; no bypass permitted. This branch has no Q5product dependency. No new
+historical science, worldviews, Java product code or dependencyversions changed.
+
 ## Suggested bounded PR
 
 “Verify installed fresh-process completed Job and observation recovery on owned

@@ -16,6 +16,12 @@ Next independent item Q5 is actual parser/source-receipt acceptance.
 RC-P1.2 remains PARTIAL. A/B remain
 incomplete; no scope revision or release approval has been inferred.
 
+Q1resumed implementationd8ae23b3d now passes installed actualJava freshprocess
+completedJob/observation/focus/20cellreadback, no replay/disposal, foreign/deleted
+refusal andcreatorcleanup;2874offline/16gates/lint/parityPASS. NormalPR/merge
+remains separate, with PR201's newly demonstrated missing packagingplugin gate
+under investigation. In-flight/Runtime-generation/history claims remainunproved.
+
 ## Current reconciliation — 4 November 2026
 
 This section supersedes status claims below, not the historical requirements or
@@ -70,7 +76,7 @@ rows do not revoke their separately accepted subcapabilities.
 |---|---|---|---|---|
 | RC-P0 | A/B operation inventory and compatibility diagnostics | PARTIAL | public-api/contracts; transport tests; I/L | Exhaustive operation/feature and mixed-version inventory; support decisions #129; P1 |
 | RC-P1.1 | A supported onboarding through computation | PARTIAL | connection/credentials/requests; #84/#85; controlled connection tests; S | Actual supported Hub/license end-user walkthrough still unverified; deployment credentials/consent; P1 |
-| RC-P1.2 | A fresh-process restoration without disposal | PARTIAL | handles/client; #86/#139; saved-handles tests; S separate Client restore | Full fresh-process retained Job/restart chain and retention contract #89; P1 |
+| RC-P1.2 | A fresh-process restoration without disposal | PARTIAL | handles/client; #86/#139; Q1 local installed actualJava completedJob/observation/focus/20cells and no-disposal controls pass atd8ae23b3d (not merged) | Full in-flight/restart/history retention remains #89; bounded local acceptance not whole criterion; P1 |
 | RC-P1.3 | A collaborator reads, forbidden writes and expiry diagnosis | PARTIAL | transport/context ACLs; connection-access tests and historical controlled positive controls | Current integrated private-parent/stale-vs-forbidden matrix #89; P1 |
 | RC-P1.4 | A actionable readiness/trust diagnostics | PARTIAL | connection/catalog origin guards; connection HTTP tests | Supported-deployment provider outage/recovery and mixed capabilities; #129; P1 |
 | RC-P1.5 | A requested options visible in actual plan | PARTIAL | #200 installed actual-Java baseline/namespace/scenario model URNs and independent executed values, actual geometry/focus, normalized grid configuration and zero-HTTP unsupported/conflicting rejections pass | Full observer/project/material-dependency and executed-grid matrix remains unproven; forced model explicitly unsupported; no complete-lineage claim; P1 |

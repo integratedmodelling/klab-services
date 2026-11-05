@@ -36,3 +36,10 @@ continuation, collaborator writes, production Hub onboarding and whole RC-P1.2/
 P3.3 acceptance are not claimed. The original legacy-workflow failures remain
 separate; test `consolidation` semantics do not migrate historical worldviews.
 This synthetic scientific workflow is not replication of any published study.
+
+Verified2026-11-05 atd8ae23b3d on `q1-live-resume`: completedJob/observation/focus
+and exact20cellvalues survive creatortransportclose and freshprocess recovery;
+foreign/deleted controls and creatorcleanupPASS. Deleted root is reported by the
+actualcontroller as a200configuration error notification (ServerError), not an
+invented404contract. Only the exactknownnotification is accepted. Installed2874
+tests/16gates/lint/sourceparityPASS. Normalhosted/merge gate remains separate.
