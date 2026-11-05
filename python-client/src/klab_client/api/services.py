@@ -159,12 +159,18 @@ class ResourcesServiceImpl(_RemoteService, ResourcesService):
             return "RESOURCE"
         raise UnsupportedOperationError("Pass a supported Java KnowledgeClass enum name (e.g. RESOURCE)")
 
+    @staticmethod
+    def _retrieval_knowledge_class(asset_class):
+        if isinstance(asset_class, str) and asset_class == "CODELIST":
+            return asset_class
+        return ResourcesServiceImpl._knowledge_class(asset_class)
+
     def retrieve(self, urn: str, asset_class: str | type[KlabAsset] = "RESOURCE", scope: UserScope | None = None, *, max_response_bytes=None) -> KlabAsset:
         """Retrieve an explicit knowledge class as a URN plus retained wire DTO."""
         from urllib.parse import quote
         from klab_client.dto import required_text
         from klab_client.errors import MissingAssetError
-        knowledge_class = self._knowledge_class(asset_class)
+        knowledge_class = self._retrieval_knowledge_class(asset_class)
         payload = self._request("GET", f"/api/v1/retrieve/{knowledge_class}/{quote(urn, safe='')}", scope,
                                 max_response_bytes=max_response_bytes)
         if payload is None:
