@@ -30,3 +30,32 @@ No historical FREL/ESA/other study dictionary recovered or guessed. Actual scien
 category export/component registration remains blocked by existing authorization/
 delivery gates. Guide review/exactidentity/privacy/cleanup/normalPR/CI/eligiblemerge/
 postmerge required; fullA/B/studies remain incomplete. No Java repair campaign.
+
+## Candidate validation
+
+Accepted #228 integrated normally; current base includes
+`13b723aa3c361e011031e76e5a7730ae0caf28c1`. Candidate
+`2f94029fb2cdf15f98b9d34bc7ee5c3767902901` passed 134 focused tests, 3,369
+fresh installed tests, all 17 gates, lint/build/source parity. Both positive
+retrieval tests failed locally before the selector correction. Package/source/raw
+harness identity verified; no coverage thresholds changed.
+
+- Wheel: `c6541ab05e0f6066c77eda56d2bcae9e3c08cbc935b0ac98834b6a34f3a64c1a`
+- Sdist: `0b65f4d24d5d6c29808d7753e53617a46e11daeb98ff0010a9e89196df52bde1`
+
+One fresh owned `native-codelist-retrieval-live` run is active on this candidate.
+No live success predeclared. Raw portable code entries remain uninterpreted; an
+empty native concept dictionary cannot substantiate categorical computations.
+
+## Exact-candidate Java outcome
+
+`2f94029fb2cdf15f98b9d34bc7ee5c3767902901` actual Java PASS: declared root
+`consolidation:Region`, native CONCEPT/root/service identity and entries checked.
+The served entry array was empty: **empty-metadata retrieval only**, not a usable
+categorical mapping or recovered FREL dictionary. Unknown root produced typed
+MissingAssetError/HTTP200 after positive lookup. CODELIST list/resolve remained
+local UnsupportedOperationError with zero HTTP. Three audited capability/retrieve
+GETs, zero inspection mutations/scientific submissions after scope preparation.
+Reader/process/listener cleanup passed; unrelated Java unchanged. Exact SDK/install/
+raw-harness/live identity, private report hash and credential absence verified.
+Final focused checks, normal PR/hosted CI/eligible merge/postmerge remain required.

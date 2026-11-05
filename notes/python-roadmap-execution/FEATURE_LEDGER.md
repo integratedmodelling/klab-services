@@ -1,5 +1,23 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## CODELIST candidate local acceptance verified
+
+`2f94029fb`: 3,369 installed/all 17 gates/134 focused + actual Java empty codebook
+metadata, typed missing-root positive control, unsupported list/resolve zero HTTP,
+read-only audit/privacy/cleanup PASS. No usable mapping or categorical computation
+claimed. Final focused/PR/CI/merge pending; 28 queue PRs merged/0 open until submission.
+No Java or historical study interpretation change; broader gates remain open.
+
+## PR #228 delivered / CODELIST retrieval validation
+
+Integration `13b723aa3c361e011031e76e5a7730ae0caf28c1`, 28 queue PRs merged/0 open.
+#228 all checks/ancestry/tree equality/128 exact-source postmerge tests passed;
+branch retired. CODELIST contract `b983929d7`, implementation `15ce01595`, accepted
+parent integrated normally. Two red retrieval cases, 106 focused green tests;
+expanded package validation active. Retrieval-only class selection preserves existing
+classes and list/resolve refusal; no Java, mapping interpretation or science changes.
+Next one actual metadata run/exact evidence/review/normal PR. Broader gates unchanged.
+
 ## Native async source preview verified candidate
 
 859670c97 includes accepted227:3,346installed/17gates/117focused+actualJava4valid/
