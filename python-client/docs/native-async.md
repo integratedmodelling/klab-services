@@ -3,9 +3,11 @@
 Current [own-wait acceptance](async-own-wait-acceptance.md) verifies local task
 cancellation without cancelling original Java work, exact result/focus, explicit
 known-ID attachment/access and cleanup. Later notebook acceptance is separate.
-Native saved-handle restoration is implemented in the current candidate; its
+Native saved-handle restoration is accepted in bounded PR218; its
 [exact validation and limits](native-async-handle-restoration.md) remain separate
-from native export and managed-agent/event guarantees.
+from native export and managed-agent/event guarantees. The current native export
+candidate has [separate exact Java stream evidence](native-async-export.md), not
+universal exporter/scale coverage.
 
 ## Scope and state
 
@@ -43,12 +45,16 @@ Native asynchronous observation workflows over existing endpoints:
 The ordinary sync client stays synchronous. Events/durable replay, live graph
 caching, new chunk protocols, authoring and worker execution are later feature PRs.
 Transport streaming alone is not a completed native file-export or async scientific
-adapter workflow. Async connection orchestration/credential persistence and native
-file export remain unsupported. `await client.restore_handle(reference)` now uses
+adapter workflow. Async connection orchestration/credential persistence remain
+unsupported. `await client.export_formats(result)` and
+`await client.export_to_file(result, path, media_type=...)` use native awaited
+streams and atomic publication; bounded candidate validation/limits are recorded
+separately. Local filesystem writes are bounded synchronous operations.
+`await client.restore_handle(reference)` now uses
 native async I/O and the existing Handle identity/selection contracts; it does not
 recreate absent work or promise in-flight restart/history portability. Restored
 contexts are unowned; explicit authorized release stays explicit. Use a separate
-synchronous Client for supported sync export; do not pass AsyncClient to synchronous inspection,
+synchronous Client for sync-only workflows; do not pass AsyncClient to synchronous inspection,
 provenance or ExperimentRunner helpers. No synchronous network callback is invoked
 implicitly on the event-loop thread. Existing offline Handle serialization can
 record a known AsyncJob/AsyncContext after service identity has been established.

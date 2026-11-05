@@ -45,3 +45,37 @@ Actualworkflow reuses unchanged GeoJSON rectangle/identity oracle and native-str
 It requires measured64KiB native chunks and interrupted-new/overwrite preservation.
 This is not a new scientific computation/provider implementation or reset of the
 single-use nonuniform fixture. Full installed/live/review/normalCI remain pending.
+
+## Installed checkpoint
+
+Executable4dd0ef841: `ab-native-async-export` PASS with3,154installedtests/all17
+coveragegates/lint/build/sourceparity;142focused async/sync export/client testsPASS.
+Exact noneditableWindowsPython3.12.7; inheritedRasterio warning retained.
+Wheel `ec73863fdbd8c5c2db522a512aa0fe4c601b526ac5b1e6b2a3d363f8b65817c3`;
+sdist `68375d799daaf3ca831ecad0c82aa88a645f53fbbd7ad141b1c35519844909f0`.
+One fresh owned Java run `native-async-export-live` is active. Actual GeoJSON/native
+values/metadata/stream/interruption/creator/servicecleanup are not predeclaredPASS;
+no PR yet or full-scale/format acceptance.
+
+## Verified bounded outcome
+
+Executable `4dd0ef84190bf8545aac025e186816ae4fc4c9b1`:3,154installedtests/
+all17gates/lint/build/parity and142focused testsPASS. One fresh owned Java runPASS:
+native897byteGeoJSON exact observationidentity/rectangle/coordinates (existing1e-6
+degree tolerance); native8,390,163byteGeoTIFF with1,048,576cells checked across64
+bounded128x128windows. Exact234.5m values/validity, float64, EPSG:3857, transform/
+bounds/missingvalue metadata match the unchanged independent oracle.
+
+Native stream129chunks, max65,536bytes; responseclosed. Two deliberately interrupted
+read-only streams each stopped after onechunk: no partial newdestination, existing
+valid raster unchanged on overwrite, responsesclosed and ownedstagingfilesremoved.
+Creatorcontext/session and ownedprocess/listenercleanup confirmed; unrelatedJava
+unchanged. No Javaexporter/model/fixture/source/scientifictransform change or reset.
+NativeSHA256 `45ab2c5acdb3fad439fea7d3c75112dd8e122a3798ef84ed5474104f1fd1f23f`.
+
+Exact installed/rawSDK/harness/liveidentity and private reportcredentialabsence/
+nativebytehash verified. Localdisk operations remain bounded synchronous calls;
+network awaited natively. Actualinterruption is injectedReadError, not a simulated
+scientificresult or provider reliabilityclaim. Taskcancellation is separately
+unit-tested; broad deployedcancellation/provider/time/revision matrices notclaimed.
+Normalfinal-headPR/CI/eligiblemerge pending;fullA/B/studies/release incomplete.

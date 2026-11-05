@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Native async export local acceptance
+
+feature/python-native-async-export;basea3e8949c5;tested4dd0ef841;PR/mergepending.
+3,154installed/all17gates+142focused+actualJavaGeoJSON/native1,048,576cells/raster-
+metadata/8,390,163bytes/129boundedchunks/interruptednew-overwrite/cleanupPASS.
+Nativehash/SDK-sharedsync-harness-installed-liveidentity/privacyverified;unchanged
+oracles and Javaexporters. Wheel
+ec73863fdbd8c5c2db522a512aa0fe4c601b526ac5b1e6b2a3d363f8b65817c3.
+NormalPR/CI/mergeNEXT;broaderformat/provider/time/revision/fullA-B/studiesnotpromoted.
+
 ## Latest delivery / native async export contract
 
 PR218mergeda3e8949c5,reviewed7350e53ce;allCI/exactevidence/normalmerge/ancestry/

@@ -1,5 +1,25 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest native async export local acceptance
+
+4dd0ef841 LOCAL_ACCEPTED_BOUNDED:3,154installed/all17gates/lint/parity+142focused;
+onefreshactualJavaGeoJSONidentity/coordinates and native1,048,576cells/validity/
+unit-dtype-CRS-transform-boundsPASS. Native8,390,163bytes/129chunks/max64KiB;
+injectednew/overwrite interruptionspreserved destinations/closedresponses/removed
+staging. Creatorcontext-session/service-listenercleanupPASS,unrelatedJavaunchanged.
+ExactSDK/sharedsync/harness/installed/liveidentity/nativehash/privacy verified;
+laterdeltaMarkdownonly. NormalPR/CI/mergeNEXT. No Java/model/fixture/resetchange;
+fullformat/provider/category/time/revision/A-B/study gates remainincomplete.
+
+## Latest native async export installed pass / actual run active
+
+4dd0ef841:3,154installedtests/all17gates/lint/build/sourceparity+142focusedPASS.
+Wheelec73863fdbd8c5c2db522a512aa0fe4c601b526ac5b1e6b2a3d363f8b65817c3.
+Onefreshnative-async-export-liveACTIVE:actualGeoJSON/native1024x1024raster/unchanged
+oracles/boundedchunks/interruptednew-overwrite/creator-servicecleanup. Outcome not
+predeclared;noPRyet. No Javaexporter/model/fixture/reset/scientificrewrite. Fullformat/
+provider/category/time/revision/A-B/study gates remainopen;nosleepcondition.
+
 ## Latest async restoration delivery / native export contract
 
 PR218 MERGED_BOUNDED a3e8949c5da648007895694641a9f02e8bc2d6d0,reviewed

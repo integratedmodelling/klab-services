@@ -35,3 +35,52 @@ log is finalcandidate evidence without exact source/artifact equivalence. Primar
 report-save errors likewise must not mask existing failures. Review not final;
 noPR/wholeformat/provider/category/time/revision/asyncHub/managed/A-B/study/release
 acceptance claimed. Qualitywarning and existing originalstudy blockers separate.
+
+## Exact installed candidate / actual acceptance pending
+
+4dd0ef841 onaccepteda3e8949c5:
+`run_gates.py --repo <checkout> --label ab-native-async-export` PASS:
+3,154installedtests/all17gates/lint/build/sourceparity. Focused142testsPASS.
+Wheel ec73863fdbd8c5c2db522a512aa0fe4c601b526ac5b1e6b2a3d363f8b65817c3;
+sdist68375d799daaf3ca831ecad0c82aa88a645f53fbbd7ad141b1c35519844909f0.
+Exact noneditableWindowsPython3.12.7, inheritedRasterio warningretained.
+
+One fresh actual command ACTIVE, not predeclaredpass:
+`run_reliability_acceptance.py --server-repo <checkout> --java <Temurin21>
+--components <corrected-components.json> --state-dir <native-async-export-live>
+--scenario async-native-export`. Require genuine native GeoJSON rectangle/identity
+and substantial native raster shape/CRS/unit/transform/allcells/validity, measured
+boundedchunks and interrupted-new/overwrite preservation, creator/servicecleanup.
+No newmodel/source/NonuniformExportFixture reset; local NumPy/Rasterio oracle only
+checks bytes produced by Java, not substitute scientific computation. NoPRyet.
+
+## Final exact-candidate recommendation
+
+**Ready for bounded maintainer review**, author/CLI not independenthumanapproval.
+Tested4dd0ef84190bf8545aac025e186816ae4fc4c9b1 onaccepteda3e8949c5. Laterdelta
+Markdownonly;rawSDK/sharedsynccontracts/harness/installed/liveidentity verified.
+Full diff reviewed for usefulness/architecture/security/identity/wirecontracts/
+scientificmeaning/lifecycle/primaryerrors/state/performance/maintainability.
+No remaining demonstrated important/blocking defect in this bounded export slice.
+
+| Check | Verified outcome and boundary |
+|---|---|
+| Full installed command above | PASS:3,154tests/all17gates/lint/build/parity;142focused async/sync export/client tests |
+| Fresh owned Java command above | PASS:nativeGeoJSON sourceidentity/rectangle/coordinates; native1,048,576cells/validity/unit/dtype/CRS/transform/bounds checked in64boundedwindows |
+| Stream/failure/lifecycle | PASS:8,390,163nativebytes/129chunks/max65,536bytes; injectednew/overwrite interruptions preserve destinations, close responses/remove staging; creatorcontext-session/service-listenercleanup;unrelatedJavaunchanged |
+| Identity/privacy | PASS:exactSDK/sharedsync/harness/installed/live candidate; actual native SHA256 and reportcredentialabsence checked |
+| Final-head hostedCI/protections/normaleligiblemerge | Pending; required before merge |
+
+Private native-async-export-live and native-async-export-final-validation.json
+bind executable/artifacts/oracles/stream/nativebytes/cleanup. NativeSHA256
+45ab2c5acdb3fad439fea7d3c75112dd8e122a3798ef84ed5474104f1fd1f23f;
+exactwheel/sdist above. No model/source/Javaexporter/scientificfixture or expectation
+change; original nonuniformfixture notreset. LocalNumPy/Rasterio checks do not replace
+Java computation. Taskcancel is unit-tested; actualfaultcontrols are explicitly
+injected readerrors, not provideravailability/performance guarantees. Localdisk
+calls remain bounded synchronous; no wholeevent-loop/disklatency promise.
+
+Category/time/provider/revision/fullformat and maintainedmixeddeployment matrices,
+asyncHub/managedagents/fullA-B/studies remainunaccepted. Qualitywarning separate;
+no release/support/contributor/reviewer assignment or publication authorization.
+Next normalPR/CI/exact-headmerge/ancestry/postmerge/ownedbranchretirement.
