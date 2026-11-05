@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Deleted-state recovery local acceptance
+
+feature/python-deleted-state-recovery-acceptance;base8956f7d70;tested9807a97d5;
+PR/mergepending.3,180installed/all17gates+17focused+actualJava positivecontrolled
+listingabsence/creatorrelease/deletedhandleServerErrorrefusals/survivororiginal
+Job-observation-focus/20cells/norecreation/cleanupPASS. Errorsnotabsencewitnesses;
+exactidentity/privatepins/privacyverified. Wheele918675707726caaaccd6a4e7a080abdbe0a9b98601ebc8f17243f6a97c99fdc.
+NormalPR/CI/mergeNEXT;fullrestart-history/peer-observer/provider/managed/A-B/studies
+notpromoted;noSDK/Java/model/fixturechange.
+
 ## Latest delivery / deleted-state control contract
 
 PR219merged8956f7d70,reviewedce6ec01a5;allcorrectedCI/exactevidence/normalmerge/

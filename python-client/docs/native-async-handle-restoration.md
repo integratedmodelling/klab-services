@@ -103,3 +103,9 @@ unaccepted beyond source-derived unit contracts. No async export/Hub orchestrati
 managed lifecycle, whole A/B or original-study acceptance. The Quality warning and
 broader Q7 matrices remain separate. Explicit authorized release is unchanged;
 unowned/local-close does not imply a client-side release prohibition.
+
+Later deleted-state candidate9807a97d5 separately passed positive-controlled actual
+Java listing/release/absence/restore-refusal/survivor-integrity/cleanup checks;
+normalPR/CI deliverypending. See [deleted-state acceptance](deleted-state-recovery-acceptance.md).
+This adds bounded evidence, not a reinterpretation of originalPR218 receipts or
+in-flight/restart/history guarantees.

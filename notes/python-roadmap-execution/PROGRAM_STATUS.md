@@ -1,5 +1,25 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest deleted-state local acceptance
+
+9807a97d5 LOCAL_ACCEPTED_BOUNDED:3,180installed/all17gates/lint/parity+17focused;
+freshactualJava listingbothcontexts→confirmedcreatorrelease→successfulabsencewith
+survivorpositivecontrol→deletedhandleServerErrorrefusals→sameoriginalsurvivorJob4/
+observation33/focus29/20cells and no recreation/cleanupPASS. Absencefromlistings,
+notServerError; noJobEMPTY/historyclaim. Exactinstalled/rawharness/live/privatepins/
+credentialabsence verified,laterdeltaMarkdownonly. NoSDK/Java/scientificchange.
+NormalPR/CI/mergeNEXT;restart-history/peer-observer/provider/managed/A-B/studies/
+Qualitywarning remainseparate;nosleepconditionwhileactionableworkremains.
+
+## Latest deleted-state installed pass / actual run active
+
+9807a97d5:3,180installed/all17gates/lint/build/parity+17focusedPASS. Onefresh
+deleted-state-recovery-liveACTIVE:twopositivevisibleownedcontexts,explicitreleaseone,
+successfulabsence/survivorcontrols,restorefailure/norecreation/originalvalues/cleanup.
+Noactualoutcome predeclared,noPRyet. Wheele918675707726caaaccd6a4e7a080abdbe0a9b98601ebc8f17243f6a97c99fdc.
+No SDK/Java/scientificchange;broaderhistory/peer-observer/provider/managed/A-B/study
+gatesremainopen;nosleepconditionwhileactionableworkremains.
+
 ## Latest native async export delivery / deleted-state contract
 
 PR219 MERGED_BOUNDED8956f7d70211fb832266e26f0889a08252b611e6,reviewed
