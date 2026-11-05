@@ -1,5 +1,27 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest bounded canonical hierarchy local acceptance
+
+4ea7c946c LOCAL_ACCEPTED_BOUNDED:3,069installed/17gates/lint/parity+26focused;
+onefreshactualJava canonical alias relationships/directparents-children/is_a/
+satisfiable/opaqueidentity/sourcecommitment/generationchecksPASS. No scientific/
+session/contextcreates;ownedprocess/listenercleanupPASS,unrelatedJavaunchanged.
+Rawinstalled/live/harness/backendclasshashes/origins verified;laterdeltaMarkdownonly.
+Qualitywarning retained/unresolved;model-plan/fullQ7matrices nottested orpromoted.
+Originalfailed830a141cd untouched. NormalcanonicalPR/CI/mergeNEXT;fullA/B/studies
+incomplete,releaseassessmentnonpassing;nosleepconditionwhileactionableworkremains.
+
+## Latest canonical hierarchy installed pass / one corrected live attempt
+
+4ea7c946c:3,069installed/17gates/lint/parity+26focusedPASS;wheel
+b4f74231dbade3bcbbfa068a0e1c34799b5bc9fb596ad72f63c64a79472f800d.
+q7-canonical-hierarchy-liveACTIVE,onefreshcorrectedacceptance using independently
+authoredcanonicaltargets/opaqueidentity/sourcecommitment/generationwitnesses.
+No SDK/Java/model/worldviewchange,session/context/sciencecreate or fixture reset.
+Originalfailed830a141cd preserved;Qualitywarning/fullmodel-plan/matrices remain
+separate. Actualrelationships/identity/cleanup notyetaccepted,noPRyet. A/B/studies
+incomplete;SleepNOT_REQUESTED whileactionableworkremains.
+
 ## Latest diagnostic delivery / canonical hierarchy contract
 
 PR215 MERGED_BOUNDEDb79c86dd89ccf656b76418cbfb367524bf8fc8fd,reviewed

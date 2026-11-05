@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest canonical hierarchy local acceptance
+
+feature/python-canonical-hierarchy-acceptance;baseb79c86dd8;tested4ea7c946c;
+PR/mergepending.3,069installed/17gates+26focused+onefreshactualJava authoredcanonical
+relationships/identity/sourcecommitment/generation/no-science/cleanupPASS. Backend
+classbytes/origins+rawharnessverified. Qualitywarning unresolved;originalfailedbranch
+preserved;no wholeworldview/fullQ7/model-plan/authoritymatrix promotion. Wheel
+b4f74231dbade3bcbbfa068a0e1c34799b5bc9fb596ad72f63c64a79472f800d.
+NormalPR/CI/mergeNEXT;A/B/studiesincomplete.
+
 ## Latest Q7 evidence-led diagnosis (not acceptance)
 
 01fa17053:3,053installed/17gates+11focused/singleactualcapture+cleanupPASS.
