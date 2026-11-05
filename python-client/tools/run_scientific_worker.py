@@ -20,6 +20,7 @@ import run_scientific_acceptance as adapter
 
 PACKAGE = Path(__file__).resolve().parents[1]
 SCENARIOS = ("n-nonuniform.json", "s-model-selection.json")
+WINDOWS = os.name == "nt"
 
 
 class PrerequisiteUnavailable(RuntimeError):
@@ -40,7 +41,7 @@ def preflight(path, *, worker, repo):
     require(not subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"],
         cwd=repo, text=True).strip(), "Tracked worker source must be clean")
     require(manifest.get("python_version") == platform.python_version(), "Python version differs")
-    if os.name != "nt":
+    if not WINDOWS:
         raise PrerequisiteUnavailable("Existing owned harness requires an isolated Windows worker")
     files = manifest.get("files")
     require(isinstance(files, dict) and files and len(files) <= 20000, "Bounded resource file pins required")

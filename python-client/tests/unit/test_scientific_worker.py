@@ -24,6 +24,7 @@ def test_missing_operator_manifest_is_blocked_not_green(tmp_path):
 
 @pytest.mark.parametrize("failure", ["worker", "source", "tamper", "missing"])
 def test_invalid_authority_source_or_artifact_never_executes(tmp_path, monkeypatch, failure):
+    monkeypatch.setattr(worker, "WINDOWS", True)
     file = tmp_path / "artifact"
     file.write_bytes(b"original")
     manifest = {"schema_version": 1, "authorization": {"worker": "owned", "isolated": True, "reference": "test consent"},

@@ -71,3 +71,11 @@ scheduled_L4 remainsNOT_RUN. This is a new local run,not historical receipt reus
 Original N/S baseline receipts remain untouched. Final workflow upload includes only
 worker receipt and sanitized scenario receipts/projections,never raw diagnostics.
 That reporting-only YAML delta does not imply a hosted/scientific execution.
+
+## Cross-platform test isolation correction
+
+Read-only CI review found the invalid-artifact tests reached the genuine Windows
+prerequisite on Linux before the artifact assertion. A module-local platform flag
+keeps the real gate unchanged and lets controlled L1 tests isolate artifact checks
+without changing global os.name/path semantics. No live rerun required: the actual
+Windows behavior is identical; exact-source full/hosted validation must use newhead.
