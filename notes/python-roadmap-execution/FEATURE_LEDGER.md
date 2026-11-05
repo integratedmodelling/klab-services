@@ -1,5 +1,14 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest delivery / deleted-state control contract
+
+PR219merged8956f7d70,reviewedce6ec01a5;allcorrectedCI/exactevidence/normalmerge/
+ancestry/sourceequality/postmerge116PASS;branchretired. Originalcoveragefailure
+retained,no waiver. Newacceptedbase deleted-state-recovery-acceptance contract:
+two visibleownedcontexts→explicitreleaseone→successfulabsence+survivorcontrol→
+freshrestorefailure/no recreation/originalsurvivorvalues/cleanup. No code/liveyet;
+no wholeA-B/history/provider/managed/study guarantee.
+
 ## PR219 corrected candidate validation
 
 PR219OPEN;correctedtested33db19a29 afterhostedcoveragefailure(old19a92f020 retained).

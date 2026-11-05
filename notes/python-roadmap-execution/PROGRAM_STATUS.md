@@ -1,5 +1,17 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest native async export delivery / deleted-state contract
+
+PR219 MERGED_BOUNDED8956f7d70211fb832266e26f0889a08252b611e6,reviewed
+ce6ec01a5250720d062e65ca88d7e63824c12735;everycorrectedfinalcheckSUCCESS.
+Exactevidence/normalmerge/ancestry/sourceequality/postmerge116PASS;ownedbranch
+retired. Initialhostedcoveragefailure retained;no bypass or broaderpromotion.
+Freshacceptedbase feature/python-deleted-state-recovery-acceptance:contractbefore
+code uses successfulpositive-controlledlistings/explicitcreatorrelease/freshhandle
+restorerefusal/survivororiginalread/no recreation. Implementation/installed/live
+acceptancepending;no SDK/Java/scientificrewrite. FullA/B/studies/history/managed/
+othermatrices remainincomplete;nosleepconditionwhileactionableworkremains.
+
 ## Latest corrected PR219 actual validation pass / final hosted checks next
 
 33db19a29 LOCAL_ACCEPTED_BOUNDED:3,162installed/all17gates/lint/parity+150focused;
