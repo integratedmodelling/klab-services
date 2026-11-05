@@ -1,5 +1,26 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Current after PR223 delivery — semantics isolation follow-up
+
+Remote integration feature/python-experiment-runner@95b7db67f38e75b1dd537c2b25284a6ad7dfc546.
+PR223 merged normally after all checks, ancestry/source equality and146postmerge
+PASS; branch retired. Queue#201–223=23merged,0open. A+B23in-scope remains1accepted/
+20partial/1missing/1blocked;18CAP=4accepted/13partial/1excluded. No whole-row promotion.
+Current fix/python-indexed-read-semantics-isolation uses same owned worktree, from
+95b7db67f. Reproduced mutable caller semantics causing per-cellunit changes and wrong
+final label; Python-only copy-before-HTTP correction, not missing external work.
+Contract before code; focused red/green then full installed/live validation next.
+
+Research latest recovered bytes: full2018carbon raster+sidecar/summary/legend and
+threeKadunaCSVs+bothpublisher2015/2020maps. Completefixtures L3partial/L4blocked,
+Java/science L5–L7NOT_RUN. Originalmodifiedboundary/masks/area/run/dictionary and
+unit/rights conflicts remain required. Puerto forcing/R/S12provenance gaps unchanged.
+2immediate featureblockers(peerpositiveadmission engineering; componentauthorization)
+and wider#89/#123/#124/#125/#126/Quality remain. ResourcesProvider.resolveImportSchema
+at731–733 returnsnull: import workflow needs Java contract/adapter/persistence/rights
+evidence, not a Python fabricated schema or an authorized broad Java implementation.
+Next executable action: fix/test isolated semantics snapshot, no Java changes.
+
 ## Live operational summary — continuation after PR222
 
 Latest pass: native-scan-slices executableba7773abd implemented;135focusedtests,

@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## PR223 delivered / next reproduced Python defect
+
+PR223 MERGED95b7db67f,reviewed34d7769e2/executableba7773abd; allCI/normalmerge/
+ancestry/source/postmerge146PASS; branch retired.23queuePRsmerged,0open.
+Next fix/python-indexed-read-semantics-isolation from95b7db67f: mutable caller
+semantics changed per-cell requests/final units in deterministic reproducer.
+Shared validated snapshot is a bounded Python correction, no Java repair needed.
+FullRC-P2.2/CAP matrices remain open. Import-schema source returnsnull (ResourcesProvider
+731–733); classify as missing Java contract, not a safe Python import implementation.
+
 ## Native scan slice candidate — Python-only bounded PASS
 
 feature/python-native-scan-slices from accepted PR222/c10555ebf; contract12cbd9516,
