@@ -1,5 +1,14 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q8c prerequisite local validation
+
+feature/python-managed-agent-preflight;acceptedbasec7dea3373;testedf35e984de.
+LOCAL_VALIDATED_PREREQUISITE:opt-in authenticated ownedHub federation user-services
+lookup;3,041installed/17gates/lint/parity+28focusedrealHTTP/config/auth/cleanupPASS.
+Wheelfinal8717f496aa9a2acbc5ce1927bd650043d10ca206e0be6abfa40db7e04d4c82e9.
+PR/CI/mergepending;no managedRuntime/broker/agent execution/remote cleanup claim.
+ExistingSDK/Java lifecycle reused;no acceptance-rowpromotion/fullQ8completion.
+
 ## Latest Q8b delivery / next preflight
 
 PR211 MERGED_BOUNDED c7dea3373, reviewed a7f7eaee4; all final checks SUCCESS,

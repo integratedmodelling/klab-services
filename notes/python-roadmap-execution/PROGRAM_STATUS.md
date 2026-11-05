@@ -1,5 +1,16 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q8c Hub prerequisite local validation
+
+Testedf35e984de onacceptedc7dea3373:3,041installedtests/17gates/lint/build/parity
+PASS;28focusedtestsPASS including actualloopbackHTTP/typedauth refusals/exactgroups/
+defaultoff/ownedserver-threadcleanup. Opt-in private boundedTEST federation only;
+no productionSDK/Java/permissions/scientific changes. Wheel
+8717f496aa9a2acbc5ce1927bd650043d10ca206e0be6abfa40db7e04d4c82e9.
+Authorreviewcomplete;normalPR/CI/mergeNEXT. No broker/Runtime connection or agent
+execution yet. Principal/incarnation/ACL/independent remote cleanup remainrequired;
+Q7/studies/fullA-B incomplete. Sleepnotrequestedwhileactionableworkremains.
+
 ## Latest managed-agent prerequisite implementation
 
 PR211 mergedverifiedc7dea3373. Current accepted-base branch implements only opt-in

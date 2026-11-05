@@ -92,6 +92,11 @@ No public SDK/server production authorization changes. Twenty-eight focused test
 PASS, including real loopback HTTP and server/thread cleanup. Full installed gates
 and exact-candidate review/normalCI/merge remain pending for this prerequisite.
 
+At `f35e984de`, full installed validation PASS:3,041tests/17coveragegates/lint/
+build/sourceparity. The28focusedHTTP/config/auth tests alsoPASS. These results
+accept the bounded Hub fixture transport, not managed execution. Final-head hosted
+checks and normalmerge remain separate. See [author/CLI review](reviews/managed-agent-federation-prerequisite.md).
+
 ## Separate gates
 
 PR211 accepts one actual installed native async notebook journey, not managed

@@ -37,3 +37,29 @@ unchanged. No claims about Qpid confirms or productionHub/license onboarding.
 No reviewer/contributor assignment or ownership inferred. Q7hierarchy unresolved;
 fullQ8/A/B/studies incomplete. Before normal PR/merge: exact installed gates,
 finaldiff/identity review and all selected final-head hostedchecks SUCCESS.
+
+## Exact candidate / bounded recommendation
+
+**Ready for bounded maintainer review**, author/CLI only. Executable
+`f35e984deafe2f73f4486fae00a576a29ad29dd1`; acceptedbasec7dea3373.
+Final diff reviewed across usefulness/architecture/contracts/science/identity/
+lifecycle/state/performance/maintainability/contributor fit. No remaining
+demonstrated important/blocking defect in this opt-in fixture transport contract.
+
+| Command/check | Environment | Verified outcome / boundary |
+|---|---|---|
+| `run_gates.py --repo <checkout> --label ab-q8c-federation-prerequisite` | Exact noneditablePython3.12.7, f35e984de | PASS:3,041tests/17coveragegates/lint/build/sourceparity; inherited Rasterio warning retained |
+| `pytest -q tests/unit/test_fixture_federation.py tests/integration/test_fixture_federation_http.py` | Same interpreter, package test root | PASS:28; actualloopbackHTTP, serviceJWT/negativeauth, exactgroupfields, manifestguardrails, defaultoff and server/threadcleanup |
+| Java source trace | Accepted source, read-only | Existing route/header/group lookup identified; not actual Runtime decoding/connection acceptance |
+| Scientific/managed Runtime run | Not applicable to this prerequisite's claim | NOT_RUN; no broker, agent or scientific mutation |
+| Final-head hostedCI/normaleligiblemerge | Documentation head | Pending; required before merge |
+
+Wheel `8717f496aa9a2acbc5ce1927bd650043d10ca206e0be6abfa40db7e04d4c82e9`;
+sdist `4c2b3c9b305a702f83927d0ddf6ec71b2a2b37441d823155552cf381e4a7b1ec`.
+Installed identity/gate receipts are retained privately under
+`ab-q8c-federation-prerequisite`; no broker credentials or live manifest are public.
+Only Markdown edits follow this tested executable; reverify raw tool/test hashes
+and unchanged enrollment handler before evidence reuse. No new hosted scientific
+test is replaced by these HTTP tests. Acceptance rows are not promoted.
+Next: normalPR/CI/exact-headmerge, ancestry/postmerge; then separately provision
+owned broker and verify Runtime group decoding/ACL/lifecycle/independent cleanup.
