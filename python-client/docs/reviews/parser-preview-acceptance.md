@@ -41,3 +41,19 @@ offline/wire/coverage/lint/package checks, exact candidate identity, final hoste
 checks and normal eligible merge remain required. No tests or acceptance are
 predeclared passed. Evidence belongs outside Git under `ab-three-study-20261105/`.
 The prior failed Q1 runs remain unaccepted and separately retained.
+
+## Initial actual parser diagnosis
+
+`q5-live-v1` reached all four real parser families. Behavior valid/invalid checks
+pass. Namespace's test source incorrectly used scalar `set to 3`; actual parser
+diagnostic is `mismatched input '3' expecting RULE_EXPR`. Existing accepted model
+syntax uses `set to [expression]`, so the fixture now uses `[3]`. Ontology/strategy
+receipts passed SDK fidelity policy but the harness wrongly required trimming
+even when the parser preserved all edges; receipt comparison now respects the
+explicit `edge_whitespace_trimmed` flag and rejects inconsistent hashes. These are
+test-contract corrections, not relaxed scientific semantics or Java changes.
+One corrected frozen-candidate live attempt is required; no unbounded fixture loop.
+Initial2860offline tests,16coverage gates, lint and build/install/source parity
+pass; wheel SHA256 `f36a08561d7a958039b0ca81d024fe9b87ea1011865a1aaa6cab160a2bd9c26e`.
+Those package checks are not actual parser acceptance. Final corrected-candidate
+receipts remain required before a PR is proposed.

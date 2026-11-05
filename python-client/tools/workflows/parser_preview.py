@@ -8,7 +8,7 @@ from klab_client.errors import InvalidRequestError, ProtocolError, ServerError
 from .scientific_checks import require
 
 DOCUMENTS = {
-    "NAMESPACE": "namespace python.preview;\nmodel consolidation:Elevation of consolidation:Region in m set to 3;",
+    "NAMESPACE": "namespace python.preview;\nmodel consolidation:Elevation of consolidation:Region in m set to [3];",
     "ONTOLOGY": "ontology preview version 1.0 in domain root;",
     "OBSERVATION_STRATEGY_DOCUMENT": "strategies python.preview version 1.0;",
     "BEHAVIOR": 'behavior python.preview\n "Read-only parser fixture."\n version 1.0\naction main: return 0',
@@ -20,7 +20,8 @@ def validate_receipt(receipt, source, kind):
         "Parser returned a different kind/URN")
     require(receipt.source_sha256 == hashlib.sha256(source.encode()).hexdigest(),
         "Parser receipt lost caller source identity")
-    require(receipt.parser_source_sha256 == hashlib.sha256(source.strip(" \t\r\n").encode()).hexdigest(),
+    parser_source = source.strip(" \t\r\n") if receipt.edge_whitespace_trimmed else source
+    require(receipt.parser_source_sha256 == hashlib.sha256(parser_source.encode()).hexdigest(),
         "Parser changed source beyond explicit edge trimming")
     require(receipt.raw.get("serviceId") == receipt.service_id, "Parser service identity differs")
 
