@@ -19,11 +19,17 @@ WORKFLOW_ORACLES = {
     "nonuniform-export": "tests/fixtures/nonuniform-export.json",
     "request-plan": "tests/acceptance/scenarios/s-selection-oracle.json",
 }
+WORKFLOW_CAPABILITIES = {
+    "nonuniform-export": {"RC-P2.1", "RC-P2.5", "CAP-08", "CAP-09", "CAP-15"},
+    "request-plan": {"RC-P1.5", "RC-P1.3", "CAP-05", "CAP-06", "CAP-09"},
+}
 
 
 def bind_workflow(manifest):
     """Fixed adapters must not certify arbitrary declarative physics/oracles."""
     fixture = manifest["fixture"]
+    require(set(manifest["capabilities"]) <= WORKFLOW_CAPABILITIES[manifest["execution"]["operation"]],
+            "Declared capability is outside the selected reviewed workflow")
     require(fixture["oracle_file"] == WORKFLOW_ORACLES[manifest["execution"]["operation"]],
             "Manifest oracle is not the selected workflow oracle")
     require(fixture["expected_units"] == "m", "Selected workflows support the independently reviewed metre contract only")

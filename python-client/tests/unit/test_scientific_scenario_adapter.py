@@ -107,3 +107,10 @@ def test_both_real_versioned_manifests_bind_to_their_existing_workflow():
     for name in ("n-nonuniform.json", "s-model-selection.json"):
         manifest = json.loads((package / "tests/acceptance/scenarios" / name).read_text())
         adapter.bind_workflow(manifest)
+
+
+def test_unproven_target_c_capability_cannot_be_claimed_by_numeric_workflow(contract):
+    contract["fixture"]["oracle_file"] = adapter.WORKFLOW_ORACLES["nonuniform-export"]
+    contract["capabilities"].append("CAP-17")
+    with pytest.raises(ScenarioError):
+        adapter.bind_workflow(contract)

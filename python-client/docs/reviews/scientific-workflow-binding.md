@@ -24,3 +24,14 @@ Recommendation: **Needs normal full regression/hostedCI/eligiblemerge**. Final
 documentation PR236 held until this local correction is verified and merged. No
 test deadline, coverage gate, oracle value, primary A+B status or historical failure
 relaxed. Independent scheduledL4 worker gate remains unprovisioned.
+
+## Capability binding and exact validation scope
+
+The same fixed-adapter preflight now restricts declared capabilities to each
+reviewed workflow's existing capability set. Excluded Target C/CAP-17 cannot be
+claimed by the numerical case; a negative regression covers that declaration.
+Both actual manifests remain compatible.75focused tests and Ruff PASS.
+Initial962e6024e passed3484installedtests/all17gates/build/install/lint; that result
+does not certify the newer capability delta. A fresh exact-head full regression
+and normal latest-head hosted checks are required before merge. No live Java rerun
+or scientific/input/expectation change is justified by this metadata correction.
