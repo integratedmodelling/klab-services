@@ -1,5 +1,15 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Deleted-state recovery checkpoint — 5 November 2026
+
+PR219merged8956f7d70. Deletedstate9807a97d5 locallyPASS:3,180installed/all17gates/
+actualJava successfulpositivecontrolled listings establishreleasedrootabsence;
+deletedcontext-observation-Jobhandles refusedwithoutrecreation;originalsurvivor
+Job/observation/focus/20cells/readerlifecycle/creator-servicecleanupPASS. Actual
+ServerErrorrefusals are not absenceproof oruniversalJobEMPTY. NormalPR/CI/merge
+pending;no wholeA2/A-B/history/provider/managed/study/releasepromotion. Remaining
+semantic/category/time/revision/Qualitywarning/originalartifact gates preserved.
+
 ## Native async export corrected-candidate checkpoint — 5 November 2026
 
 PR219OPEN/unmerged; initialhostedUbuntucoveragefailure retained. Corrected33db19a29
