@@ -44,6 +44,9 @@ These are eager-allocation guards, **not total process-RSS guarantees**. A featu
 with null geometry remains null. Empty coordinate geometries, mixed dimensions
 within one geometry, unclosed rings and invalid topology fail without repair.
 Explicit2D/3D coordinates are preserved; no vertical datum/height units inferred.
+Coordinates use GEOS doubles. Integer ordinates with magnitude above2**53 are
+explicitly unsupported rather than silently rounded; original property/feature
+ID integers are not subject to that geometry-storage restriction.
 
 IDs, feature order and every source property are preserved in `features`; duplicate
 IDs are not deduplicated. Dataframe properties use object dtype; absent and null

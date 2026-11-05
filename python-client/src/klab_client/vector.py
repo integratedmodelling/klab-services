@@ -85,6 +85,8 @@ def _geometry(value, remaining, depth=0):
                     any(type(v) not in (int, float) or type(v) is float and not math.isfinite(v) for v in items) or
                     not -180 <= items[0] <= 180 or not -90 <= items[1] <= 90):
                 raise ProtocolError("GeoJSON positions require finite RFC7946 lon/lat coordinates")
+            if any(type(v) is int and abs(v) > 2 ** 53 for v in items):
+                raise UnsupportedOperationError("Integer coordinates beyond the exact double range are unsupported")
             dimensions.add(len(items))
             if len(dimensions) != 1:
                 raise ProtocolError("Mixed coordinate dimensions are unsupported")

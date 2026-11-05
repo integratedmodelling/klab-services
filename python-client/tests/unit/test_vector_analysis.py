@@ -162,6 +162,13 @@ def test_unknown_type_and_deep_geometry_collection(tmp_path):
         open_vector(write(tmp_path, [feature(geometry)]))
 
 
+def test_coordinate_double_precision_is_explicit(tmp_path):
+    with pytest.raises(UnsupportedOperationError, match="exact double"):
+        open_vector(write(tmp_path, [feature({"type": "Point", "coordinates": [1, 2, 9007199254740993]})]))
+    result = open_vector(write(tmp_path, [feature({"type": "Point", "coordinates": [1.25, -2.5, 9007199254740992]})]))
+    assert tuple(result.dataframe.geometry.iloc[0].coords[0]) == (1.25, -2.5, 9007199254740992)
+
+
 def test_missing_optional_dependency_is_explicit(tmp_path, monkeypatch):
     original = builtins.__import__
     def blocked(name, *args, **kwargs):
