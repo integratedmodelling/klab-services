@@ -1432,11 +1432,14 @@
     }
   ],
   "delivery": {
-    "state": "PREPARED_FOR_REVIEW",
+    "state": "OPEN_AT_DOCUMENT_FREEZE",
     "base": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85",
     "new_code_PRs": [],
     "new_scientific_Jobs": 0,
-    "documentation_PR": "NOT_OPENED_YET"
+    "documentation_PR": 242,
+    "url": "https://github.com/integratedmodelling/klab-services/pull/242",
+    "reviewed_candidate_predecessor": "29e461cf7",
+    "hosted_checks_at_document_freeze": "PENDING; actual final readback attached to PR, no future pass claimed"
   },
   "limitations": [
     "No full original study passes G0-G4",

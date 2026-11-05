@@ -5,6 +5,12 @@ handoff. Evidence collection may cross midnight; individual receipts carry their
 actual timestamps. This is **bounded engineering/research readiness**, not a
 successful original-study reproduction or full A+B acceptance.
 
+Documentation delivery: [PR #242](https://github.com/integratedmodelling/klab-services/pull/242),
+branch `docs/java-admission-19-study-readiness`, opened normally from base
+`4ea9ad16609d548b8fb795689e9eff33e4e6ea85`. At document freeze it is OPEN, with
+normal hosted checks pending; no future merge is asserted. The PR's final readback
+records actual CI/merge/postmerge outcome separately from the scientific statuses.
+
 ## 1. Executive answer
 
 **No original study is verified executable now.** The existing N/S admission runner
