@@ -41,3 +41,14 @@ The corrected component and compatible server must be pinned for genuine exporte
 raster/lineage acceptance. Historical component and connection results are not
 acceptance of this implementation. Real Hub access, external provider accuracy,
 server identity promotion and full lineage/replay remain separate gates.
+
+## Native vectors (Q3)
+
+Base597ecb0ae: pinned geospatial `GeodataIO.exportGeoJSON` advertises
+application/geo+json for substantial observations/cohorts, standardizes geometry
+to longitude/latitude, emits FeatureCollection and retains original asset IDs/URNs/
+observable/relationship metadata. It is not a raster-value or class export.
+`open_vector` reads those exact native files, with RFC7946/JSON/topology/budget
+checks before returning immutable records and optional GeoDataFrame. It never
+uses GeoPandas file drivers or infers units/area/categories. Local multipart/hole
+fixtures and actual Java rectangle acceptance must be reported separately.

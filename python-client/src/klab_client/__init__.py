@@ -42,6 +42,7 @@ from klab_client.exports import ExportFormat, ExportResult, ExportIOError
 from klab_client.analysis import (AnalysisArtifact, RasterDescriptor, RasterAnalysis, TracedAnalysis,
     export_for_analysis, open_raster, trace_analysis)
 from klab_client.provenance import ProvenanceNode, ProvenanceLink, ProvenanceView, fetch_provenance
+from klab_client.vector import VectorAnalysis, open_vector
 from klab_client.semantics import (SemanticExplorer, SemanticResult, KnowledgeState,
     AuthorityCandidate, AuthoritySearch, StaleKnowledgeError)
 from klab_client.inspection import (ResourceInspector, AssetInspection, InspectionOrigin,
@@ -84,6 +85,7 @@ __all__ = [
     "ExportFormat", "ExportResult", "ExportIOError",
     "AnalysisArtifact", "RasterDescriptor", "RasterAnalysis", "export_for_analysis", "open_raster",
     "TracedAnalysis", "trace_analysis",
+    "VectorAnalysis", "open_vector",
     "ProvenanceNode", "ProvenanceLink", "ProvenanceView", "fetch_provenance",
     "Handle", "HandleFormatError", "HandleIdentityError", "HandleIOError",
     "load_handle", "restore_handle", "save_handle", "to_handle",

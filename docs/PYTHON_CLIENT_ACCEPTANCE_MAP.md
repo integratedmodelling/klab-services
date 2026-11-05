@@ -48,9 +48,14 @@ reviewed head `10ddd25bbd5ec0c87de1df6eb0698c6706ce9107`. Final installed
 2,862 tests/16 gates and actual four-family Resources parser checks passed;
 owned cleanup passed. CI prerequisite PR202 is merged at `6305e1e78`.
 These results supersede older pending/build-blocked statements above, not failed
-evidence or acceptance boundaries. Q1 is locally accepted at `d8ae23b3d` and now
-being integrated; exact integrated-candidate validation and normal PR remain.
-No whole RC/CAP row is promoted. A/B remain incomplete.
+evidence or acceptance boundaries. Q1 PR203 merged normally at `597ecb0ae`,
+reviewed53b3b53e0: integrated2,886 installedtests/16gates and new actualJava
+fresh-process completedJob/observation/focus/20cells/no-child-replay-disposal/
+foreign-deleted refusals/creatorcleanupPASS. Allhosted checks and ancestryPASS;
+postmerge39focusedtests/sourceidentityPASS; ownedbranchretired. FullP1.2/P3.3
+remainPARTIAL, including in-flight/history/Runtime-generation scenarios.
+Q3 bounded native GeoJSON adapter is under validation on a fresh independent
+branch; no whole RC/CAP row is promoted. A/B remain incomplete.
 
 ## Current reconciliation — 4 November 2026
 
