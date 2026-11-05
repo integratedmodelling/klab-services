@@ -1,5 +1,17 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest CI prerequisite — PR208 accepted, PR207 final-head checks next
+
+PR208 MERGED_BOUNDED `079bb15bfe3fa29fbe8528b4569572123f8c4cd4`, reviewed
+`6dda63cd0dbdaba46a84ca192e2b7fd76936c223`; every selected hosted check PASS,
+including both routing jobs. Normal exact-head merge/ancestry/source equality
+verified; owned branch retired locally/remotely. Existing verify/coverage steps
+unchanged. Accepted integration incorporated into PR207 without conflict.
+Original PR207 provider/tests/private class hashes remain subject to verification;
+final-head CI and actual7+2focused Maven counts required before merge. Old failed
+routing evidence retained. Q6 contract branch remains independent; no shared
+services/classfiles changed. PROGRAM_IN_PROGRESS; A/B incomplete; sleep not requested.
+
 ## Latest direct Q6 prerequisite (supersedes older pending bullets)
 
 Q4aPR206 MERGED_BOUNDED554b5e30b;allhostedchecks/ancestry/postmerge15tests/

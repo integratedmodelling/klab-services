@@ -74,3 +74,18 @@ retry is introduced. Contributor overlap not inferred; nobody assigned. Smallest
 next action:normal final-head PR/CI/protections/eligiblemerge, then exact accepted
 source Q6 strategy draft/permission validation. Scope-specific unrelated material/
 workflow error semantics are not silently declared fixed.
+
+## Accepted routing CI prerequisite and final-head revalidation
+
+PR208 merged normally at `079bb15bfe3fa29fbe8528b4569572123f8c4cd4`, reviewed
+`6dda63cd0dbdaba46a84ca192e2b7fd76936c223`. Both routing jobs, packaging, Python,
+Windows/core and Jenkins checks passed. Merge ancestry/source equality verified;
+owned CI branch retired. Only workflow bootstrap and its review changed.
+
+Accepted integration is now incorporated into PR207. The failed old routing run
+41970836627 remains preserved, not waived. Its original packaging log independently
+verifies KlabErrorHandlerTest7 and ResourceCreationAuthorizationTest2, each with
+zero failures/errors/skips. Tested provider/test source and private class hashes
+must remain exact; final-head hosted checks including routing and the two focused
+Maven test counts must pass again before normal eligibility/merge. No live services,
+shared classfiles or scientific inputs changed for this prerequisite.
