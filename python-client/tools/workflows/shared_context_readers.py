@@ -57,6 +57,11 @@ def verify_values(data, offsets):
         and data.units == "m", "Shared reader changed actual values/units/order/duplicates")
 
 
+def verify_observable(owner_data, collaborator_data, observation):
+    require(owner_data.observable == collaborator_data.observable == observation.observable.raw["urn"],
+        "Shared reads changed observable identity")
+
+
 async def scenario(state):
     config = json.loads((state / "scientist.json").read_text())
     report = {"passed": False, "context_released": False, "session_released": False,
@@ -102,8 +107,7 @@ async def scenario(state):
                 a, b = await overlapping_reads(original, restored)
                 verify_values(a, range(20))
                 verify_values(b, [19, 0, 19, 1])
-                require(a.observable == b.observable == original.observable.urn,
-                    "Shared reads changed observable identity")
+                verify_observable(a, b, original)
                 report.update(original_observation_id=original.id, restored_observation_id=restored.id,
                     scope=reference.scope, collaborator_unowned=True, client_operations_overlap=True,
                     owner_cells=20, collaborator_offsets=[19, 0, 19, 1], units="m")

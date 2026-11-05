@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
-from workflows.shared_context_readers import overlapping_reads, read_audit, verify_values
+from workflows.shared_context_readers import overlapping_reads, read_audit, verify_observable, verify_values
 
 
 def fake_observation(*, fail=False, never_request=False):
@@ -60,3 +60,11 @@ def test_audit_records_native_read_and_guards_scientific_assertions():
         value = {"offsets": (1, 0), "values": (234.5, 234.5), "units": "m"} | changes
         with pytest.raises(AssertionError):
             verify_values(SimpleNamespace(**value), [1, 0])
+
+
+def test_observable_identity_uses_actual_dto_raw_urn_not_nonexistent_attribute():
+    observation = SimpleNamespace(observable=SimpleNamespace(raw={"urn": "served-native-urn"}))
+    a = SimpleNamespace(observable="served-native-urn")
+    verify_observable(a, a, observation)
+    with pytest.raises(AssertionError):
+        verify_observable(a, SimpleNamespace(observable="different"), observation)
