@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "completed-recovery": "tests/functional/test_completed_recovery.py",
     "request-plan": "tests/functional/test_request_plan.py",
     "partial-refresh": "tests/functional/test_partial_refresh.py",
     "nonuniform-export": "tests/functional/test_nonuniform_export.py",

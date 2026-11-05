@@ -1,5 +1,18 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## A+B / three-study master program — 5 November 2026
+
+The supplied master specification now authorizes an ordered multi-feature queue;
+earlier one-increment stopping rules below are historical. No previous bounded
+delivery is rebuilt or promoted to whole-target acceptance. All24 original RC
+criteria and18CAP rows remain intact. Current baseline is
+`fe46ddc5ec3c188f62cd1d0b0703c6e54a4b9241`, verified integration ancestry for#196–200.
+See the local [program checkpoint](../notes/python-roadmap-execution/PROGRAM_STATUS.md)
+and [complete scenario-family crosswalk / dependency queue](../notes/python-roadmap-execution/FEATURE_LEDGER.md).
+First selected item: Q1 installed fresh-process completed-Job/observation recovery
+without disposal or replay. Acceptance NOT_RUN; RC-P1.2 remains PARTIAL. A/B remain
+incomplete; no scope revision or release approval has been inferred.
+
 ## Current reconciliation — 4 November 2026
 
 This section supersedes status claims below, not the historical requirements or
