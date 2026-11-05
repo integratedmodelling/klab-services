@@ -340,11 +340,8 @@ class Context(ContextScopeImpl):
                     if dimension.get("type") == "TIME" and math.prod(dimension.get("shape") or [1]) > 1:
                         raise InvalidRequestError("Temporal observations require an explicit StorageScan.Slice")
             slice = {"type": "INITIALIZATION", "key": "0-0", "start": 0, "end": 0}
-        if (not isinstance(slice, dict) or slice.get("type") not in {
-                "INITIALIZATION", "TEMPORAL_TRANSITION", "EVENT"}
-                or not isinstance(slice.get("key"), str)
-                or not slice["key"] or any(type(slice.get(k)) is not int for k in ("start", "end"))):
-            raise InvalidRequestError("Slice requires type, nonblank key, integer start/end")
+        from .scan_slices import _slice_to_wire
+        slice = _slice_to_wire(slice)
         if semantics is not None and (not isinstance(semantics, dict) or any(
                 not isinstance(semantics.get(k), str) for k in
                 ("observable", "unit", "range", "currency", "contextualDimensions"))):

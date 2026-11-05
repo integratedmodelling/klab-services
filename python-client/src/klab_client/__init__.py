@@ -57,8 +57,10 @@ from klab_client.handles import (Handle, HandleFormatError, HandleIdentityError,
 from klab_client.requests import (ContextOptions, GridOptions, ObservationOptions,
     ObservationRequest, RectangularGeometry, ResolutionConstraint)
 from klab_client.notifications import ActivityNotifications, ActivityNotification, NotificationBroker
+from klab_client.scan_slices import ScanSlice
 
 __all__ = [
+    "ScanSlice",
     "ActivityNotifications", "ActivityNotification", "NotificationBroker",
     "Authoring", "AuthoringReceipt", "ParsedSource",
     "SourcePreview", "SourcePreviews",
