@@ -1,5 +1,47 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Live operational summary — continuation after PR222
+
+Latest pass: native-scan-slices executableba7773abd implemented;135focusedtests,
+Java constructor/JSON probe and3,229installedtests/all17gates/lint/build/parityPASS.
+New scan_slices.py has32/32 statements and12/12 branches covered, no exclusions.
+Actual owned Java initialization-read acceptance ACTIVE; no transition/input-change
+execution claim. No PR yet. Direct home-Runtime read test header assumption corrected
+without production routing changes; previous installed-wheel import failure retained.
+
+Research recovery: bounded public tree/release inventory found no new Puerto forcing
+bundle/assets and unchanged carbon postprocessor pin7673df9a7. Kaduna extent CKAN
+metadata HTTP200,910bytes, SHA2561cffcb1e1511b3472a89ae5b045219d967de0963199e38a74eb3c4a0ab82d676;
+publisher-listed originalCSV download and remaining namedexports/package requests
+ACTIVE. Earlier portal timeouts remain failures, not absence. No study stage raised
+before bytes/content/provenance verification. Evidence under private research/
+continuation-public-inventory and continuation-recovered-artifacts; originals untouched.
+
+This summary supersedes historical pending checkpoints below, without erasing them.
+PROGRAM_IN_PROGRESS / A_INCOMPLETE / B_INCOMPLETE. Verified remote integration:
+feature/python-experiment-runner@c10555ebfcd698a192fe6e19e932b3b6e30b2501.
+PR218–222 actual MERGED state and integration ancestry verified; no open service PRs.
+Owned worktree reused; failed peer8e785aa7f, categorical2c09eed and original research
+hashes preserved. Main ledger branch527d77b09 is not reset or overwritten.
+
+| Metric | Verified value |
+|---|---|
+| A+B requirements | 23 in scope: 1 ACCEPTED / 20 partial (18 PARTIAL + 2 IMPLEMENTED_UNVERIFIED) / 1 missing / 1 BLOCKED_EXTERNAL; plus 1 approved Target-C exclusion = 24 map rows |
+| Capabilities | 4 ACCEPTED / 13 PARTIAL / 1 approved Target-C exclusion = 18 rows |
+| PR deliveries | 22 merged queue contributions #201–#222; inherited #196–#200 not recounted; 0 currently open |
+| Current feature | Native scan slices; feature/python-native-scan-slices from c10555ebf; contract12cbd9516; implementation/acceptance pending |
+| Immediate blocker inventory | 2 feature blockers: peer positive-plan fixture (missing engineering/admission evidence, not proven Java defect); categorical contribution authorization (external). Wider unresolved contracts #89/#123/#124/#125/#126 and Quality warning remain; no new Java repair authorized by this slice |
+| Luxembourg | L1 passed; L2/L3 partial; original2018 raster, modified GAUL support/masks/rights/producing revision and frozen inputs missing; L4 blocked, L5–L7 NOT_RUN |
+| Kaduna | L1 passed; L2/L3 partial; original fused2015/2020 maps, numeric FREL crosswalk/priorities, exact boundary/area policy missing; L4 blocked, L5–L7 NOT_RUN |
+| Puerto–PaL | L1 passed; L2/L3 partial; authentic Radiation tuple/unit/time/reference and generated R/run/S12 lineage missing; L4 blocked, L5–L7 NOT_RUN |
+| Next executable action | Implement/test shared typed native Slice validation for sync/async reads; no Java production change or temporal scientific-result claim |
+
+Counts describe full primary map rows, not completion percentages or the number of
+accepted subfeatures. Peer recovery needs a separately specified registered unresolved
+target yielding genuine computation; no third already-resolved scientific retry.
+Categorical writer local26tests/readback PASS does not lift prior component restriction.
+Study artifacts remain required before original Java admission or computation.
+
 ## Model-containing source authoring local acceptance
 
 Accepted base PR221/6cc5bd769; executable2087dd716. Installed3,195tests/17gates,

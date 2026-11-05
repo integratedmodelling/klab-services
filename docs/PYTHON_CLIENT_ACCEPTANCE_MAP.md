@@ -1,5 +1,19 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Native indexed-read slices — 5 November 2026
+
+ba7773abd on accepted PR222/c10555ebf: shared immutable ScanSlice/native dict
+validation adds maintained INPUT_CHANGE and refuses blank/out-of-Java-long/invalid
+interval inputs before sync/async HTTP.135focused tests,3,229installed/all17gates,
+Java constructor/JSON probe and actual20cell234.5m initialization read PASS;
+typed/dict parity, zero-HTTP invalid controls and owned cleanup verified.
+See [native slices](../python-client/docs/native-scan-slices.md) and
+[review](../python-client/docs/reviews/native-scan-slices.md). PR/CI/merge pending.
+Positive transition/input-change scientific execution NOT_RUN, revision lease
+NOT_CLAIMED; RC-P2.2/CAP-09 remain PARTIAL. This is not a replacement time/window
+protocol or original-study evidence. PR222 is mergedc10555ebf with25postmergePASS;
+earlier pending checkpoints below are historical, not current PR status.
+
 ## Model-containing source authoring checkpoint — 5 November 2026
 
 Executable2087dd716 on accepted PR221/6cc5bd769: 3,195 installed tests/all17gates,

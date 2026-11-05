@@ -88,6 +88,14 @@ Indexed tabular views: `ScientificDataOrigin`, `to_dataframe` and
 reads retain declared primitive/contextualization and origin metadata; unknown
 fields remain unknown. See [precision, masks, metadata and categorical limits](scientific-tables.md).
 
+Native read slices: `ScanSlice(type, key, start, end)`, `ScanSlice.initialization()`
+and `to_wire()` mirror existing Java `StorageScan.Slice` metadata. Sync and async
+`fetch_data(..., slice=...)` accept either the typed slice or the existing dict.
+All four maintained event types are supported, with nonblank keys, Java-long
+timestamps and native interval validation before HTTP. Keys/timestamps are caller
+supplied; no time/revision discovery, lease, scheduling or temporal computation is
+implied. See [native scan slices](native-scan-slices.md).
+
 Offline indexed-read snapshots: `ScientificData.dumps` and `ScientificData.loads`
 use bounded versioned JSON and existing scalar decoders, without scientific extras,
 network access, remote restoration or operation replay. See
