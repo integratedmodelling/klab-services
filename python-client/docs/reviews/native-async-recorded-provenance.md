@@ -2,7 +2,7 @@
 
 ## Recommendation and reviewed state
 
-Needs installed/actual Java evidence before submission. Contributor/CLI review under
+Ready for maintainer review of bounded native async recorded-neighborhood queries. Contributor/CLI review under
 `KLAB_CLI_Contribution_Review.md`, not human acceptance. Accepted base
 `1af1e4935ee4c3c3cd9a260af3151a7837ab6bcb` (#230), branch
 `feature/python-async-recorded-provenance`; contract`4d2be1993` preceded code.
@@ -27,7 +27,8 @@ membership must be checked before links. Errors are never empty provenance succe
 Initial tests:109passed/1failed because wrong-ID membership raises the existing
 specific HandleIdentityError, not ProtocolError. Test expectation corrected to
 preserve that contract; no production identity-error remapping. No demonstrated
-important/blocking defect after initial tests; full package/live evidence required.
+important/blocking defect after validation in this bounded scope; not exhaustive
+proof or human acceptance.
 
 ## Validation actually performed
 
@@ -37,6 +38,9 @@ important/blocking defect after initial tests; full package/live evidence requir
 | Initial nativeasync+existing sync tests | candidate source, WindowsPython3.12 | 109passed/1expectation failure | Correct actual HandleIdentityError expectation before final validation |
 | Corrected focused/package/17gates | dcb513069, Windows Python3.12 | Passed:149focused/3,419installed/all17gates | DTO/query parity/membership/errors/budgets/pagination/empty/plans/immutability/redaction/cancel; build/lint/parity and exact SDK/install/harness/artifacts verified, before #231 integration |
 | Original engineering observation actualJava neighborhood | freshownedfixture | Notrun | Required original identity/current membership/nonempty recorded links/partial pagination/query-only audit and cleanup; not historical study lineage |
+| Combined accepted #231 package | 12bcec7cd, same environment | Passed:3,454 installed/all17gates | Exact SDK/install/raw-harness/artifact binding; parent runner entries AST-verified; build/lint/parity |
+| Combined actual Java original-work provenance | 12bcec7cd | Running | One fresh owned numeric engineering fixture; two submissions explicit, query-only audit afterward; no historic lineage claim |
+| Exact-candidate Java result | 12bcec7cd | Passed | Original15/handle15/currentmembership,6links/plan-vs-recorded/partialpagination,234.5m control;6queryPOST/zero provenance writes,allownedcleanup |
 
 ## Scientific fidelity, identity, lifecycle and coordination
 
@@ -53,8 +57,16 @@ that audit. Unknown mutation outcome is not replayed. Cancellation stops only lo
 waits. TEST/local federation not production Hub/license acceptance. Exact SDK/install/
 harness/live/report privacy and owned scope/process/listener cleanup required.
 
+Actual original observation15/handle15/current membership/6incidentlinks and explicit
+pagination verified. Partial/unknown shared revision and plan-vs-recorded evidence
+preserved. Two declared engineering submissions before audit, six queryPOST/zero
+submissions or mutations during provenance phase. Context/session/owned processes/
+listeners cleanup passed, unrelated Java unchanged. ExactSDK/install/raw-harness/
+live identity and private reporthash/credential absence verified in
+`async-recorded-provenance-final-validation.json`. No historical lineage recovered.
+
 No Java/component publication, authority/principal expansion, NiFi/compiler/grammar
 or custodian outreach. Full history/revision/authoritative provenance/A+B incomplete.
-Finish installed gates, normally integrate accepted #231/combined validation, one
-actual Java acceptance, bind evidence, final focused/map/review/normal PR/CI/merge/
+Installed/combined gates and accepted #231 integration/actualJava/identity/privacy/
+cleanup verified. Finish final focused/map checks/review/normalPR/CI/eligiblemerge/
 ancestry/postmerge; continue independent queue. No unchanged scientific retries.

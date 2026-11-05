@@ -85,7 +85,7 @@ demonstrated after validation in scope, not exhaustive proof or human acceptance
 ## Coordination and next actions
 
 No authority registration, publication, principal expansion, NiFi/custodian/Java
-repair work. Full RC-P4.1/CAP-06/production authority/revisions/A+B and all studies
+repair work. Full RC-P4.1/CAP-05/production authority/revisions/A+B and all studies
 remain incomplete. Accepted #230 integrated normally; combined package/actualJava/
 identity/privacy/cleanup verified. Finish final focused/map checks and normal
 PR/CI/eligible merge/ancestry/postmerge; continue independent queue. No unchanged

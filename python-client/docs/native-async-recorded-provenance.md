@@ -47,3 +47,34 @@ and combined validation must precede actual Java provenance acceptance.
 
 No original-study run, full graph or revision-pinned lineage established by these
 offline tests; actual engineering observation/current recorded links still required.
+
+#231 delivered`937c758b62743a0ab68e48792870a9261cf7cc87`,allhostedchecks/ancestry/
+tree/209exact-sourcepostmergePASS; branch retired. Parent integrated normally
+`12bcec7cd`; only adjacentMarkdown/runner-entry conflicts, both retained. AST verified
+all parent suites/reports/scenario choices/readiness, ruff/149focusedPASS. Combined
+package active before actual Java provenance run; no older sync/live result reused.
+
+Combined`12bcec7cd392a6c54d23ff444e33f949237b147a`:3,454 installed/all17gates/
+build/lint/source parity PASS; exact SDK/install/raw-harness/artifact identity
+verified. One fresh owned`async-recorded-provenance-live` run active, no live result
+predeclared. Two numeric engineering submissions before query audit are explicit;
+they do not execute or recover historical study provenance.
+
+- Wheel: `a3bf8f72b62beb847794ae25ebe458483f427836008dbd93c3f47664f9b4733a`
+- Sdist: `9deba64392e081ff1e0434a7d1440c96532a44cc8d9ac44778b1a7117c9c7fbe`
+
+## Exact-candidate Java outcome
+
+`12bcec7cd392a6c54d23ff444e33f949237b147a` actualJavaPASS: original observation15
+and retained credential-free handle15 matched after current membership checks.
+Six links returned (CREATED×3, CONTEXTUALIZED_BY, RESOLVED, MEASURED); planned
+resolution labels kept distinct from recorded relationships. Limit1 first page and
+explicit continuation checked. Partial=true and unknown shared-revision consistency
+preserved; no full/revision-pinned/historical lineage inferred.
+
+Numeric engineering control234.5m at offsets0/19 passed. Two declared engineering
+submissions before provenance audit; provenance phase six Runtime queryPOSTs,
+zero submissions/mutations. Context/session/process/listener cleanup passed,
+unrelated Java unchanged. Exact SDK/install/raw-harness/live identity, private
+report hash and credential absence verified. Final focused/normalPR/CI/eligiblemerge/
+postmerge remain required. Historical-study provenance NOT_RECOVERED; A+B incomplete.
