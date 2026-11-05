@@ -1,5 +1,11 @@
 # Functional workflows and test organization
 
+`async-own-wait` checks two local waits on the same actual native Java Job, one
+task cancellation without remote cancel/replay/disposal, original20scenario cells,
+concurrent readbacks, foreign-principal denial and creator-only cleanup. See
+[bounded async contract](async-own-wait-acceptance.md); it does not certify notebook,
+event replay, managed agents or interruption of running scientific simulation.
+
 `strategy-authoring` tests one exact-source observation-strategy draft in a fresh
 owned project. The owned runner requires `--allow-owned-authoring` and an explicit
 `--resources-overlay` accepted-main-only manifest. It provisions a distinct signed

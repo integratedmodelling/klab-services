@@ -1,5 +1,71 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q8a local acceptance
+
+744a37f03 LOCAL_ACCEPTED_BOUNDED:3,004installed/17gates/lint/parity+9focusedPASS;
+correctedactualJavaownwaitcancel/otherwaitoriginalJob+focus+20cells/tworeads/
+foreignattach/sameownerunownedexplicitknownIDreader/localclose/2submits-0remotecancel/
+creatorcontext-sessionrelease/processcleanupPASS,existingJavaunchanged. Wheel
+571eb2dba8341532f028ea7b77c56d42f5659ec8b55618a755725f7185e8a3ef.
+Firstunsupportedrestorefailure retained;Async.restore_handle stillUNSUPPORTED.
+Authorreviewcomplete;normalPR/CI/mergeNEXT. Q7hierarchyunresolved;notebook/agents/
+events/fullQ8/A/B/studies incomplete;SleepNOT_REQUESTED whileactionableworkremains.
+
+## Latest corrected Q8a live attempt
+
+Corrected744a37f03:3,004installed/17gates/lint/build/parity+9focusedPASS;
+wheel571eb2dba8341532f028ea7b77c56d42f5659ec8b55618a755725f7185e8a3ef.
+q8-async-explicit-attach-liveACTIVE,onecorrectedattempt after supportedattach
+harnessfix. No native async handle-restoration claim; noSDK/backenderrorchange.
+Q7hierarchygate remains unresolved/preserved;noQ8PRorlocalacceptanceyet. Further
+failuremustbe retained/classified before independentqueue rather than repairloop.
+
+## Latest Q8 first-live failure and bounded correction
+
+q8-async-own-wait-live FAILED because harnesscalled AsyncClient.restore_handle,
+explicitlyunsupportedin async_client.py342–343. Ownwait/otherwait/exactfocus/
+20cells/concurrentreads had completed before failure; context/session/process/
+listenercleanupPASS,existingJavaunchanged. No acceptance inferred.
+One correction uses existing attach_context plus explicit knownroot/focus/JobIDs;
+foreignattach must be403/missing, sameownerreadermustremainunowned and close locally.
+Asyncsaved-handle restoration remainsUNSUPPORTED,notfixed/claimed. Corrected
+installedgatesactive;thenonefreshownedrun,elsepreserve/advance independentwork.
+Q7unresolvedbranch830a141cdretained. NoQ8PRyet,fullA/B incomplete;nosleepwhileworkremains.
+
+## Latest Q8a final installed pass / first live run
+
+Finalae99a4e04:3,004installedtests/17gates/lint/build/parity+9focusedPASS;
+wheeldd7ca1cf5b061c325bc0c6f7eb4701fd883f0620e50bfa6eecfb6d4942376fe3.
+q8-async-own-wait-liveACTIVE,notaccepted. SameoriginalJob/twowaits/localcancel/
+no remotecancel-replay-disposal/exactfocus/20cells/access/readerclose/creatorcleanup
+remainactualgates. Q7hierarchygateunresolved/preserved830a141cd. Currentissues
+123/125/126/129allOPEN;issuehistorynotproofofabsentcurrentcode. ExistingAgentExecutions/
+DeferredAgent/nativebrokercontrolpreserved;realmanagedlifecycle/provisioning must
+be assessed separately,not falsely labeled absent orexternal-onlyall-workstop.
+NoQ8PRyet;A/B/studiesincomplete;SleepNOT_REQUESTED whileworkremains.
+
+## Latest Q8a installed evidence
+
+Independent accepted-base asyncownwait harnessb1e922f86 initial3,004installed/
+17gates/lint/build/parity+9focusedPASS; wheele8db9cae4ff565d8c11a728d1eb87176a2a713ee60e29522181bfdf51284df94.
+Review strengthened originalfocus equality across Jobhandle/focusedcontext/result;
+finalinstalledgates nowactive against committed stronger harness. ActualJavaNOT_RUN,
+noQ8PR. Q7hierarchydiscrepancy unresolved on830a141cd(noPR/merge),not waived by Q8.
+Allownedservicesclosed at previousrun;no new liveprocessstarted during installedgates.
+A/B/studies remainincomplete; independentqueueactive, sleepnotrequested.
+
+## Latest queue steering — Q7 unresolved, Q8a fresh accepted-base branch
+
+Q7 firstactualhierarchy assertionFAILED; source/offline success is not acceptance.
+Preservedfeature/python-current-semantic-inspection at830a141cd,noPR/merge.
+Controller/service delegate assertedOWL queries; rootcause/direction unproved,
+futurediagnostic needs actual response/source-generationidentity. No fixture/meaning
+changed to forcepass; processcleanupPASS. IndependentQ8a begins on acceptedb41016737,
+branchfeature/python-async-own-wait-acceptance,contractbeforecode. Two local waits
+sameactualJob,one cancellation,no remote cancel/replay/disposal,20nativecells,
+foreignprincipaldenial andcreatorcleanup. FullQ7/Q8 matrices remain incomplete;
+not all-work stoppage; sleepnotrequested while actionablequeue remains.
+
 ## Latest Q6a local acceptance
 
 Tested739081adf LOCAL_ACCEPTED_BOUNDED:2,994installed/17gates/lint/parity+

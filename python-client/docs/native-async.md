@@ -1,5 +1,10 @@
 # Native async client: implementation specification and current pass
 
+Current [own-wait acceptance](async-own-wait-acceptance.md) verifies local task
+cancellation without cancelling original Java work, exact result/focus, explicit
+known-ID attachment/access and cleanup. It does not implement async saved-handle
+restoration/nativeexport, notebook or managed-agent/event guarantees.
+
 ## Scope and state
 
 Roadmap feature branch: `feature/python-native-async`, based on the normal PR #104

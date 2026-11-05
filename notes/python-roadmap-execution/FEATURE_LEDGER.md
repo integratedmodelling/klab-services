@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q8a local acceptance
+
+feature/python-async-own-wait-acceptance;baseb41016737;tested744a37f03;PR/mergepending.
+LOCAL_ACCEPTED_BOUNDED:3,004installed/17gates/lint/parity+9focused;actualJavaownwait/
+otherwait/originalJob-focus-20cells/tworeads/foreignattach/unownedexplicitknownIDreader/
+localclose/no replay-remotecancel/creatorcleanupPASS;ownedprocesscleanupPASS.
+Wheel571eb2dba8341532f028ea7b77c56d42f5659ec8b55618a755725f7185e8a3ef.
+FirstunsupportedAsync.restore_handlefailure retained;methodstillUNSUPPORTED.
+No notebook/agents/events/fullQ8 orQ7promotion;normalPR/CI/mergeNEXT.
+
 ## Latest Q6a local acceptance
 
 Q6a feature/python-strategy-source-authoring,acceptedbasecfb7bf481,tested739081adf;
