@@ -17,6 +17,7 @@ from .evidence import _plain
 
 DOCUMENTS = {
     "NAMESPACE": "org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl",
+    "OBSERVATION_STRATEGY_DOCUMENT": "org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl",
 }
 COLLECTIONS = ("results", "namespaces", "ontologies", "behaviors", "resources", "observationStrategies", "projects")
 
@@ -75,7 +76,7 @@ class Authoring:
 
     def parse(self, source, *, kind="NAMESPACE"):
         if not isinstance(kind, str) or kind not in DOCUMENTS:
-            raise UnsupportedOperationError("Source authoring currently admits only NAMESPACE; other source-fidelity contracts remain unverified")
+            raise UnsupportedOperationError("Source authoring admits only NAMESPACE and OBSERVATION_STRATEGY_DOCUMENT; other write contracts remain unverified")
         if not isinstance(source, str) or not source.strip() or len(source.encode("utf-8")) > self.max_source_bytes:
             raise InvalidRequestError("Source must be nonblank text within the configured UTF-8 byte budget")
         self._safe(source)

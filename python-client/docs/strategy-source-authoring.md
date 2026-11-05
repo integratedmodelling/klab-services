@@ -13,7 +13,7 @@ Required: parse a uniquely named controlled empty strategy draft, preserve exact
 source/comments/whitespace and service/class/URN identity; explicitallow_write=True;
 new same-session confirmed workspace/project only; actual matching CREATE and exact
 re-retrieved source/project; invalid source rejected; ordinary READ-only principal
-denied creation (independently verify no object); no ambiguous-write replay;
+denied project/document creation (independently verify no object); no ambiguous-write replay;
 confirmed creator-owned project then empty-workspace cleanup and listings. Use a
 distinct explicitly provisioned signed TEST operator with ROLE_ADMINISTRATOR at
 its **first** Resources scope creation. Do not elevate/reuse cached scientist
@@ -44,3 +44,9 @@ operator success is **not ordinary-user or production-deployment write acceptanc
 No known knowledge revision, semantic dependency closure, strategy execution,
 immutable publication, authoring concurrency or original-study result is claimed.
 Implementation and installed/live/review/CI acceptance remain pending.
+
+Permission refinement: workspace creation is authenticated-only, not universally
+CREATE-mask gated. The negative controls must target actual project/document
+guards, not assume ordinary users cannot create workspace descriptors. Prerequisite
+PR207 merged at `cfb7bf481` fixes only those explicit grant denials to typed403;
+PR208 supplies accepted routing CI bootstrap. No access grants changed.

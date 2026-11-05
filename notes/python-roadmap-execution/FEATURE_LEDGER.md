@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q11 delivery and Q6 implementation
+
+Q11PR207 MERGED_BOUNDEDcfb7bf481, reviewede07503048; final hosted routing/build/
+Python/JenkinsPASS, actual focused7+2Maventests zero failures/errors/skips. Private
+9JUnit/108PythonPASS; normal merge/ancestry/source equality/postmerge108PASS;
+ownedbranch retired. Accepted main-only overlay prepared; sharedclasses unchanged.
+Q6 one-family strategy ADD implementation now exists; installed/live gates pending.
+Ordinary denial controls correctly target project/document guards, not workspace
+creation. No whole-row promotion or semantic/publication acceptance.
+
 ## Latest delivery — direct CI prerequisite Q12
 
 PR208 MERGED_BOUNDED `079bb15bfe3fa29fbe8528b4569572123f8c4cd4`, reviewed

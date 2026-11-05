@@ -1,5 +1,25 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest acceptance — Q11 merged; Q6 implementation under validation
+
+PR207 MERGED_BOUNDED `cfb7bf48119ad8b395390b4a3e08953cdd134133`, reviewed
+`e075030488b4ced2ca77f50478a9360fb9b576ab`. All final-head checks PASS including
+routing; hosted focused Maven7+2tests/0failures/errors/skips verified from final
+run41972759664. Fresh private9JUnit and108Python regressions PASS; normal merge/
+ancestry/source equality/postmerge108tests verified. Owned branch retired.
+Main-only accepted overlay prepared,5whitelisted ResourcesProvider classes;
+sharedclasses/services untouched. Q6 branch integrated accepted changes normally.
+
+Q6 now implements one strategy draft family using existing ADD/identity/consent
+guards. Owned runner requires explicit authoring consent and accepted main-only
+overlay; distinct signed TEST administrator issued before first scope creation.
+Live workflow checks exact source/class/URN/project,invalid source,ordinary actual
+project/document403denials+assetabsence and confirmed creator-only cleanup.
+No live authoring yet; installed tests/live/review/normalPR remain. Initial local
+tests exposed stale installed SDK and source-import/preflight guard mismatch;
+do not weaken the noneditable gate: rebuild/install candidate for final tests.
+Program/A/B incomplete; studies blocked; sleep not requested while work remains.
+
 ## Latest CI prerequisite — PR208 accepted, PR207 final-head checks next
 
 PR208 MERGED_BOUNDED `079bb15bfe3fa29fbe8528b4569572123f8c4cd4`, reviewed
