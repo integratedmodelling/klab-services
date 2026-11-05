@@ -1,5 +1,16 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest Q6a local acceptance
+
+Q6a feature/python-strategy-source-authoring,acceptedbasecfb7bf481,tested739081adf;
+PR/mergepending. LOCAL_ACCEPTED_BOUNDED oneOBSERVATION_STRATEGY_DOCUMENT ADD:
+2,994installed/17gates/lint/parity+126focusedPASS;actualJavaexactsource/identity/
+CREATE/retrieval/invalidsource/ordinaryproject-document403/positivecontrolledabsence/
+creatorcleanupPASS. Providerorigin/private+sharedhashes/processcleanupverified.
+Wheel3a41c315b7283aaf5dd8741ceffb058eb507040c8c7bb1ff172d07bde6b16d43.
+Firstemptybodyfailure retained; no missing-GETfix,grants,ontology/worldview/scientific
+execution/generalpublish claim. FullQ6/B remainPARTIAL; normalCI/mergeNEXT.
+
 ## Latest Q11 delivery and Q6 implementation
 
 Q11PR207 MERGED_BOUNDEDcfb7bf481, reviewede07503048; final hosted routing/build/

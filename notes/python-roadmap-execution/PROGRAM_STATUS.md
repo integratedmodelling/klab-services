@@ -1,5 +1,32 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q6a local acceptance
+
+Tested739081adf LOCAL_ACCEPTED_BOUNDED:2,994installed/17gates/lint/parity+
+126focusedPASS. Correctedq6-strategy-listing-livePASS exactsource/class/URN/service/
+projectCREATE+retrieval,invalidsource,ordinaryproject/document403,positive-controlled
+denied-nameabsence,projectthenworkspacecleanup. Actualproviderorigin/private+shared
+hashes verified;ownedprocess/listenercleanupPASS,existingJavaunchanged. Distinct
+signedTESToperator,main-onlyacceptedoverlay; no access grants changed. First
+emptybodymissingGETfailure retained. Wheel3a41c315b7283aaf5dd8741ceffb058eb507040c8c7bb1ff172d07bde6b16d43.
+NEXT normalQ6PR/CI/eligiblemerge/ancestry/postmerge;thenQ7/Q8/Q9. No semantic/
+worldview/strategyexecution/publication acceptance; fullQ6/A/B incomplete;
+studiesblocked. SleepNOT_REQUESTED while actionable work remains.
+
+## Latest corrected Q6 live attempt
+
+First q6-strategy-live FAILED at missing-project empty HTTPbody→ProtocolError,
+not at source persistence or explicit denial. Both project/workspace deletion
+confirmed; ownedprocess/listenercleanupPASS,existingJavaunchanged. Provider class
+origin verified private main-only overlay. Preserve original failure.
+One correction changes absence proof to successful operator lists with known
+same-family positive visibility before requiring denied names absent. No SDK
+retrieval/error remap, access-grant change or write replay. Candidate739081adf:
+2,994installedtests/17gates/lint/build/parity+126focusedPASS; wheel
+3a41c315b7283aaf5dd8741ceffb058eb507040c8c7bb1ff172d07bde6b16d43.
+One corrected q6-strategy-listing-live ACTIVE; noQ6PR/acceptanceyet. If another
+gatefails, retain exact blocker and continue independent queue, not repairloop.
+
 ## Latest Q6 validation — installed pass, first owned live run active
 
 Q6 candidate35a022211: corrected2,994installedtests/17coveragegates/lint/build/

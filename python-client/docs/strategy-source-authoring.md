@@ -50,3 +50,31 @@ CREATE-mask gated. The negative controls must target actual project/document
 guards, not assume ordinary users cannot create workspace descriptors. Prerequisite
 PR207 merged at `cfb7bf481` fixes only those explicit grant denials to typed403;
 PR208 supplies accepted routing CI bootstrap. No access grants changed.
+
+## Use and verified bounded outcome
+
+```python
+author = Authoring(client)
+draft = author.parse("strategies python.my_draft version 1.0;\n",
+                     kind="OBSERVATION_STRATEGY_DOCUMENT")
+workspace = author.create_workspace("new-owned-workspace", allow_write=True)
+project = author.create_project(workspace, "new-owned-project", allow_write=True)
+receipt = author.create_document(draft, project, allow_write=True)
+```
+
+This mutates remote state; it is not permission to use shared/retained projects.
+Closing Python does not delete remote work; server permissions remain authoritative.
+Owned runner requires explicit `--allow-owned-authoring --resources-overlay
+<accepted-main-only-manifest>` and provisions a distinct signed TEST administrator,
+not a public SDK role-escalation method. Production rights are deployment-specific.
+
+At739081adf:2,994installedtests/17gates/lint/build/parity+126focusedPASS.
+CorrectedactualJavaPASS:exactsource/class/URN/service/projectCREATE+retrieval,
+invalidsource,ordinaryproject/document403,positive-controlledlistingabsence,
+confirmedprojectthenworkspacecleanup. Actualproviderorigin/private+sharedhashes
+verified;ownedprocess/listenercleanupPASS,unrelatedJavaunchanged. Wheel
+`3a41c315b7283aaf5dd8741ceffb058eb507040c8c7bb1ff172d07bde6b16d43`.
+First run failed on emptybodymissingGET; failure/limitation retained, not counted
+as absence. Corrected listings require known-positive same-family visibility.
+Normal hosted/merge/release remain separate. See [author/CLI review](reviews/strategy-source-authoring.md).
+Fullauthoring/B/semantic-scientificadmission remain incomplete.

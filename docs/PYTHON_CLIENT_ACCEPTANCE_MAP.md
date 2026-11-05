@@ -1,5 +1,15 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Latest bounded Q6a checkpoint — 5 November 2026
+
+Q11PR207/CI208 mergednormally; no access grants changed. Q6a oneadditional
+OBSERVATION_STRATEGY_DOCUMENT ADD family locallyaccepted at739081adf:
+2,994installed/17gates+actualJavaexactsource/CREATE/retrieval/typeddenials/
+positivecontrolledabsence/ownedcleanupPASS. NormalPR/CI/mergepending. This is draft
+storage, not strategyexecution/semanticadmission/ontology-worldview/generalversioned
+editing/publication; fullRC-P4.2/CAP08/B remainPARTIAL. FirstemptybodymissingGET
+failure retained, not a pass/backendfix. No whole-rowpromotion;A/B/studiesincomplete.
+
 ## Historical Q1 master-program checkpoint — 5 November 2026
 
 The supplied master specification now authorizes an ordered multi-feature queue;

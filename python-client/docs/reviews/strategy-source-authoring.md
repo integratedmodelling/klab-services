@@ -87,3 +87,41 @@ denied names absent. No SDK missing-retrieval semantics are changed; no writes a
 replayed. One fresh corrected owned run after final installed validation; if another
 gate fails, preserve exact evidence and continue independent work rather than a
 fixture-repair loop. Earlier failed run and empty-body limitation remain recorded.
+
+Corrected executable `739081adf`: `ab-q6-strategy-listing-final` PASS:
+2,994installedtests/17coveragegates/lint/build/sourceparity and126focusedtests.
+Wheel `3a41c315b7283aaf5dd8741ceffb058eb507040c8c7bb1ff172d07bde6b16d43`;
+sdist `37ec3e2e24128b0338a6bb1a86019cde98c83afce2d37940fb3f5ae88d0d30a3`.
+One corrected live run `q6-strategy-listing-live` active; no pass predeclared.
+First run class-load log confirms ResourcesProvider loaded from validated private
+main-classes, not test classes or overwritten shared output. Receipt
+`q6-first-live-diagnosis.json`; corrected-run origin must be verified separately.
+
+## Final exact-candidate acceptance and recommendation
+
+**Ready for bounded maintainer review**, author/CLI only, not independent human
+approval. Tested739081adfc7f294d9326d9f61e2450bddec0e460; acceptedbasecfb7bf481.
+Subsequent edits are Markdown only, verified before evidence reuse. Full diff
+reviewed for usefulness/architecture/contracts/science/identity/lifecycle/state/
+performance/maintainability/contributor fit. No remaining demonstrated important
+or blocking defect in this one-family contract. No reviewer assigned or overlap
+inferred. Support/release/other authoring capabilities stay separate.
+
+| Command/check | Environment | Verified outcome |
+|---|---|---|
+| `run_gates.py --repo <checkout> --label ab-q6-strategy-listing-final` | Noneditable Python3.12.7,739081adf | PASS:2,994tests/17gates/lint/build/sourceparity; existing Rasterio warning retained |
+| Focused authoring/preview/overlay/preflight tests | Same installed candidate | PASS:126; unsupported ontology/behavior writes and preview-as-write-input refusal retained |
+| Owned runner command above, replacing state with `q6-strategy-listing-live` | Pinned Temurin21/core/components; accepted main-only provider; distinctsignedTESTadministrator | PASS:parser/class/URN/serviceidentity,CREATE/exactretrievedsource+comments+whitespace/project,invalidsource refusal,ordinaryproject/document403and positive-controlled denied-nameabsence |
+| Creator cleanup | Same live state | PASS:projectDELETEthenemptyworkspaceDELETE acknowledgements/listingabsence; no write replay |
+| Provider identity/process cleanup | q6-final-candidate-validation.json | PASS:actualclassorigin/private+sharedhashes verified; ownedprocesses/listenersclosed,existingJavaunchanged |
+| Hosted final-head checks/normal eligible merge | Final documentation head | Pending; required before merge |
+
+Actual uniquely named draft sourceSHA256
+`66a5fae3adec1849639b8db2e26985a6e0c7f476ea75793bac23414d5c287fdb`.
+Wheel/sdist corrected hashes above. Earlier failures retained, not recast as passes.
+Empty-body missing-retrieval remains separate; no SDK/server error remap here.
+No ontology/worldview mutation, strategy scientific execution, immutable revision,
+general update/merge/publish, production operator provisioning or concurrency/scale
+acceptance. Unknown writes stop dependent cleanup with private evidence retained;
+no transaction/rollback promise. FullQ6/B/acceptance rows remainPARTIAL. Next:
+normal final-head PR/CI/protections, exact-head eligible merge, ancestry and cleanup.
