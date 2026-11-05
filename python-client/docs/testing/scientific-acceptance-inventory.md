@@ -28,6 +28,14 @@ Run discovery with `python -m pytest tests/unit tests/integration --collect-only
 select exact file paths, retaining security/lifecycle tests for affected families.
 TA-5 will add changed-path commands; no existing gate is removed meanwhile.
 
+`python tools/inventory_scientific_tests.py` expands every current unit/integration/
+functional module into a source-linked machine-readable row, with exact selection,
+file hash, declared test-function count (not parametrized collection count), boundary,
+families/capabilities/oracle exceptions, owner and unmeasured duration/status. Optional
+`--timing-junit FILE --timing-source EXACT_SHA` joins actual measured module durations
+only when its Git blob matches that source. Changed/unmeasured modules remain unknown;
+JUnit case-duration sums explicitly exclude collection/process overhead.
+
 ## Oracle audit and case choice
 
 N reuses `tests/fixtures/nonuniform-export.json`: asymmetric4x5 north-first matrix,
