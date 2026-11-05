@@ -27,6 +27,8 @@ and external `phase0-validation.json`. No requirement or failed evidence is drop
 |---|---|---|---|
 |Q1|feature/python-fresh-process-recovery; basefe46ddc5e; head36e25ba7c; noPR/merge|Python3.12.7,wheelba40939b815ee762ac6597c9f882b1a2d4600c1205ee46320b3ed43b0ea051dc;2869offline/16gates/lint;18focusedlatestcontrols. Java tuplePROGRAM_STATUS. q1-live-v1/v2private result/logs|NOT_ACCEPTED: initialoverstrictPOSTconnectaudit; correctionmisreadScopeRequestroot instead ofconfiguration.id. Latestknownfixunitpassed,no thirdliveattempt. Ownedcleanupallpassed. Notexternal/Javadefect|
 |Q5|feature/python-source-parser-acceptance; basefe46ddc5e; tested96f6b0b243f739693e4a86850364e1e34b0531a2;PR/mergepending|Wheel0b59c80fe627510c8fc5b5f1e1c3752e96d65b717bf1407413a74d238f445fd6;2862offline/16gates/lint/sourceparity;ownedJavaTESTtuplePROGRAM_STATUS|q5-live-v2PASSED all4families/invalidrefusals/sourceidentity/zeroHTTPblank/nonauthoringroutes;initialv1fixturefailureretained;cleanupPASSED. RC-P4.2remainsPARTIAL;reviewpython-client/docs/reviews/parser-preview-acceptance.md|
+|Q10 directbuildprerequisite|fix/ci-pinned-packaging-bootstrap;basefe46ddc5e;headc1801432e0eb5e78b794273a03b6a76ffc46f449;PR202;merge6305e1e786bafa4cba23ce7af406dcaf41b14d3a|PythonwheelN/A:CI-only,noSDKchanges. Officialpluginpin0c80acb1…;isolatedAPI/plugin+full18modulepackagingPASS;YAMLcheckPASS;hostedPython/core/Windows/Jenkins/buildallPASS|MERGED_BOUNDED;normalexact-head/ancestry/postmergeverified;branchretiredlocal/remote;privatebuildsandboxretained,noactiveprocess. Restorespackaginggatewithoutdependencyversion/source/sciencechange;notpublicrelease|
+|Q1 resumed|independentfeature/python-fresh-process-recovery;testedd8ae23b3d;docs794342321;noPR/mergeyet|Wheel1be8630f9b1297ff1d51f2497eda4505590bcaa4be509737adfd89bfefbd16a6;2874installed/16gates/lint/parity;actualownedJavaq1-live-resumePASS|LOCAL_ACCEPTED_BOUNDED;priorinternalfailuresretained;completedworkonly,notin-flight/Runtime-generation/history;globalbuildfix202nowaccepted|
 
 ## Complete42-row crosswalk and constituent scenario families
 
@@ -87,6 +89,10 @@ klab.product1.0.1-SNAPSHOT is absent at configured snapshot repository (metadata
 Python/Jenkins and bounded live parser acceptance pass; no merge is eligible.
 Restore approved artifact/build contract, do not alter dependencies or waive checks.
 Continue independent Q1 validation/Q3 planning; not an all-work external-only claim.
+
+BUILD-201isnowresolvedbyseparatePR202source-bootstrapCIcandidate,normalmerge
+6305e1e78; originalfailedchecksretainedevidence. Q5mustrevalidateupdatedheadnormally.
+Q10wasaddedasademonstrateddirectdependency,notageneralJava/platformstabilization.
 
 Allrequiredissues89/123/124/125/126/127/129/130/193OPEN; component11OPENat
 90f425e0…,base3f98082d…. Runtime/resources/componentmaintainers must identify

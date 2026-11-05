@@ -92,3 +92,10 @@ corroborates availability failure; no Java source/dependency change was made.
 **Merge remains blocked**, not waived as optional. Need the approved artifact or
 separately reviewed build-contract recovery, then successful normal checks. This
 does not revoke the separately pinned actual-parser result, nor close full B.
+
+Packaging unblock: separatePR202mergednormally at6305e1e78 afterallreported
+checksPASS, includingfullpackaging. This branch nowmergesthatacceptedCI-onlyfix;
+no parser/SDK/Java/worldview/componentcodechanges. Compare exactfunctional/tool/
+installedsource hashes withq5-live-v2before reusing the bounded accepted result.
+Newfinal-headhostedchecks remain required; no failureiswaived or scientific
+sourceupdated. OriginalfailedPR201checksandinitialfixturefailure remain evidence.

@@ -2,9 +2,38 @@
 
 2026-11-05 UTC. **PROGRAM_IN_PROGRESS; A_INCOMPLETE; B_INCOMPLETE.**
 Accepted integration/base `fe46ddc5ec3c188f62cd1d0b0703c6e54a4b9241`.
-No master-program feature has merged. This checkpoint follows the preserved Q1
+At the initial checkpoint no master-program feature had merged. It followed the preserved Q1
 implementation branch; Q5 is an independent branch from the accepted integration,
 not a stack on unaccepted code. Original42-row acceptance statuses are unchanged.
+
+## Latest verified state — supersedes older checkpoint bullets below
+
+PR202 MERGED_BOUNDED at `6305e1e786bafa4cba23ce7af406dcaf41b14d3a`, reviewed
+headc1801432e0eb5e78b794273a03b6a76ffc46f449. AllreportedPython/core/Windows/
+Jenkins/packaging checksPASS; normal exact-head merge, source/merge ancestry
+verified. Postmerge diff is onlyCIworkflow+review; productJava/Python unchanged.
+Ownedbranch retired locally/remotely, no additional registered worktree, no owned
+build process remains. The previously missing packagingplugin is source-built
+fromofficialpin0c80acb1f16a1d405f888cf99286d6e365293559 atsameversion1.0.1-SNAPSHOT,
+not republished or asserted byteidentical to the oldbinary. PrivateM2/localclone
+and full18modulepackaging evidence retained; tests skipped byoriginalbuildcommand.
+
+Q5PR201 remainsOPEN, now incorporating202fornormalrevalidation. Its actualparser
+code and installedSDKbytes are unchanged from locally accepted96f6b0b24; source
+equivalence must be verified, not inferred from dates. FullRC-P4.2remainsPARTIAL.
+
+Q1resumed atd8ae23b3d on independentbranch (docs794342321): actualJava freshprocess
+samecompletedJob/observation/focus/20cells, noreplay/disposal, foreign/deleted
+controls andcreatorcleanupPASS;2874installedtests/16gates/lint/parityPASS,
+wheel1be8630f9b1297ff1d51f2497eda4505590bcaa4be509737adfd89bfefbd16a6.
+LOCAL_ACCEPTED_BOUNDED,notyetPR/merge; fullP1.2/P3.3stillPARTIAL.
+
+NEXT: normal final-head201checks/merge/ancestry/postmerge/branchretirement, then
+Q1normalintegration/PR/eligiblemerge, then remainingQ2/Q3/Q4/Q6/Q7/Q8/Q9queue.
+StudyartifactprechecksremainBLOCKED; no authoritative scientificrun/admission.
+Userauthorizessleepaftercompletionorgenuinestoppage preventing furtherwork; S3
+available, sleepNOT_REQUESTED while actionable execution continues. Save checkpoint
+and clean owned processes before sleep; leave unrelated services/worktrees intact.
 
 ## Preserved sources / environment
 
