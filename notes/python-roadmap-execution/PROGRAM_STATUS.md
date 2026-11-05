@@ -1,5 +1,44 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest Q8c Hub prerequisite local validation
+
+Testedf35e984de onacceptedc7dea3373:3,041installedtests/17gates/lint/build/parity
+PASS;28focusedtestsPASS including actualloopbackHTTP/typedauth refusals/exactgroups/
+defaultoff/ownedserver-threadcleanup. Opt-in private boundedTEST federation only;
+no productionSDK/Java/permissions/scientific changes. Wheel
+8717f496aa9a2acbc5ce1927bd650043d10ca206e0be6abfa40db7e04d4c82e9.
+Authorreviewcomplete;normalPR/CI/mergeNEXT. No broker/Runtime connection or agent
+execution yet. Principal/incarnation/ACL/independent remote cleanup remainrequired;
+Q7/studies/fullA-B incomplete. Sleepnotrequestedwhileactionableworkremains.
+
+## Latest managed-agent prerequisite implementation
+
+PR211 mergedverifiedc7dea3373. Current accepted-base branch implements only opt-in
+owned Hub federation user-services GET, traced to existing Java route/header/group
+custom properties. Private bounded TEST manifest and signed fixture serviceJWT
+required; default enrollment unchanged, no broker or agent execution.28focusedtests
+PASS including actualloopbackHTTP/negativeauth/servercleanup;lintPASS. Fullinstalled
+gates/review/normalPR/CI/merge pending. Runtimebroker connection/ACL/principal/
+incarnation/remote cleanup remain unaccepted; this is prerequisite completion only.
+Q7/studies/otherA-B gates remain open; no all-work stoppage/sleep request.
+
+## Latest Q8b delivery / current managed-agent preflight
+
+PR211 MERGED_BOUNDED `c7dea3373c0fc1a4cbf9d577bd066b69374e6ca3`, reviewed
+`a7f7eaee483596fbc384ed022d234a42863e537e`. Every final-head hosted check SUCCESS;
+exact installed/live/harness/notebook evidence reverified; normal exact-head merge,
+ancestry and source equality verified. Postmerge13focused notebook/map tests PASS;
+owned branch retired locally/remotely. Prior3,013installed/17gates and actual Java
+notebook/kernel/owned-service cleanup evidence retained. This is not fullQ8/A/B.
+
+Fresh accepted-base branch `feature/python-managed-agent-preflight`: contract in
+`python-client/docs/managed-agent-current-preflight.md`. Existing agent lifecycle/
+federation messaging/release APIs confirmed; authenticated federation-property
+provisioning and independent cleanup witnesses must be traced before live work.
+No managed execution or shared service change. Q7 unresolved branch preserved;
+study inputs and other Q4/Q6/Q8/Q9 gates remain open. Sleep not requested while
+actionable work remains.
+
 ## Latest Q8b local acceptance
 
 f04fe0a0f LOCAL_ACCEPTED_BOUNDED:3,013installed/17gates/lint/build/parity+

@@ -124,13 +124,36 @@ def issue(state, key):
         test_loopback=True, local_federation=True, timeout=30, poll_interval=.2).save(path, overwrite=True)
 
 
-def serve(state):
+def authority_server(state, *, port=18090):
+    """Construct the loopback TEST authority; optional groups are private and explicit."""
+    from fixture_federation import load_groups, service_authorized
     key = serialization.load_pem_private_key((state / "fixture-authority.pem").read_bytes(), password=None)
     secret = json.loads((state / "fixture-authority.json").read_text())["enrollment_secret"]
     public = base64.b64encode(key.public_key().public_bytes(serialization.Encoding.DER,
                                 serialization.PublicFormat.SubjectPublicKeyInfo)).decode()
     issue(state, key)
+    groups = load_groups(state)
     class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            prefix = "/api/v2/users/services/"
+            if groups is None or not self.path.startswith(prefix):
+                self.send_error(404)
+                return
+            if not service_authorized(self.headers.get("Authentication"), key.public_key(), ISSUER):
+                self.send_error(403)
+                return
+            username = self.path[len(prefix):]
+            if username not in groups:
+                self.send_error(404)
+                return
+            data = json.dumps(groups[username]).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(data)
+
         def do_POST(self):
             if self.path not in {"/api/v2/nodes/auth-cert", "/api/v2/engines/auth-cert"}:
                 self.send_error(404)
@@ -172,7 +195,11 @@ def serve(state):
                 self.send_error(400)
         def log_message(self, *args):
             pass
-    server = ThreadingHTTPServer(("127.0.0.1", 18090), Handler)
+    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+
+
+def serve(state):
+    server = authority_server(state)
     print("TEST authority listening on 127.0.0.1:18090; not a production login service", flush=True)
     try:
         server.serve_forever()
