@@ -1,5 +1,29 @@
 # Contribution review: native async recorded provenance
 
+## Next milestone current-base read-only re-review
+
+Reviewed05274c01d against acceptedf099ffffa764cb036d570c6918a57066b8781c3f.
+Originalbranch/uniquecommits retained, acceptedbase merged normally; one acceptance
+map conflict resolved by preserving both historicalprovenance and scientificmilestone
+sections and adding a currentstate note. No source conflict or Java/inputchange.
+
+Current gap confirmed: acceptedprovenance exposes onlysync query. Native async
+implementation reuses existing pure limit/membership/query/view functions, native
+awaited transport and immutable redacted DTOs. RuntimeController659–674 supplies
+scopedquery authorization; no new service/route/scientificinference required.
+Both facade misuse/origin/membership/security errors remain strict, pagination
+partialness/unknownrevision explicit; no sync loop/threadshim. No important defect
+demonstrated in this bounded re-review. Recommendation: Ready for maintainer review
+subject to current installed/live/hostedchecks, not human approval or full lineage.
+
+169focusedsource tests/RuffPASS onreconciledcandidate. Initial attemptedfocusedtest
+used the prior installedSDK and failedimport of newhelper; corrected to explicit
+source testpath, not changedAPI/testexpectation. Freshinstalledwheel and a newowned
+Java read-only acceptance are required; old12bcec7cdliveevidence is historical only.
+Currentuser authorizes normal eligible delivery on originalupdatedbranch; this is
+not an unchangedthirdpush, renamedbranch or protection/rulesworkaround. D2 waits
+for this feature's actualmerge/ancestry/postmerge proof. FullA+B/studies remainpartial.
+
 ## Recommendation and reviewed state
 
 Ready for maintainer review of bounded native async recorded-neighborhood queries. Contributor/CLI review under

@@ -1,0 +1,48 @@
+name: Scientific N-S worker admission (not scheduled acceptance)
+
+on:
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: Existing operator-authorized isolated Windows runner label
+        required: true
+        type: string
+      resources:
+        description: Absolute path to operator-provisioned byte-pinned resource manifest
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  admitted-n-s:
+    runs-on: ${{ inputs.worker }}
+    environment: scientific-acceptance
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - name: Execute existing N and S only after pinned worker admission
+        shell: pwsh
+        env:
+          RESOURCE_MANIFEST: ${{ inputs.resources }}
+          WORKER_LABEL: ${{ inputs.worker }}
+        run: |
+          # Operator's installed non-editable environment and compiled checkout must
+          # already match the resource manifest. No pip/download/Java build/update.
+          python python-client/tools/run_scientific_worker.py --resources "$env:RESOURCE_MANIFEST" --worker "$env:WORKER_LABEL" --output "$env:RUNNER_TEMP/scientific-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT" --execute
+          exit $LASTEXITCODE
+      - name: Retain sanitized admission receipt (never raw logs or credentials)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scientific-admission-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/scientific-${{ github.run_id }}-${{ github.run_attempt }}/worker-receipt.json
+            ${{ runner.temp }}/scientific-${{ github.run_id }}-${{ github.run_attempt }}/**/scientific-execution.json
+            ${{ runner.temp }}/scientific-${{ github.run_id }}-${{ github.run_attempt }}/**/scientific-sanitized.json
+          if-no-files-found: error
+# Deliberately no schedule: runner/environment/artifacts/default-branch adoption
+# require operator authorization. Manual execution never becomes scheduled proof.

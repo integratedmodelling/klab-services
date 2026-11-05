@@ -1,5 +1,13 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Next milestone W2-2 — actual prerequisite delivered, current validation pending
+
+W1PR238 mergedf099ffffa and D1provenancePR239 mergedc16c75427; exact current
+source/install/Java/CI/delta/postmerge acceptance verified. D2 now reconciles its
+original preservedbranch onto acceptedc16c75427,not an unmerged stack or renamed
+workaround. Both historical evidence sections below retained; new exactinstalled/
+actualJava/normalCI/merge proof required. No full-lineage/primaryA+B promotion.
+
 ## Dependent native async execution evidence: local acceptance PASS, delivery blocked
 
 `52672d871`:3,479installed/all17gates/376finalsource tests and actualJava original15/
@@ -12,6 +20,14 @@ execution/historical lineage/complete graph/lease claim. Accepted integration re
 was rejected twice by GitHub; no ref/PR. No third unchanged retry/rules bypass.
 Dependent submission waits for normal prerequisite-first delivery; no status/count
 promotion. CAP06 bounded evidence ACCEPTED, complete lineage RC-P3.4 PARTIAL.
+
+## Next milestone W2-1 — current reconciliation, not historical evidence reuse
+
+Existing native async provenance candidate is reconciled onto acceptedf099ffffa
+(W1 PR238 merged). Both prior candidate and scientific-milestone evidence below
+are preserved. Original branch identity retained; no renamed/protection workaround.
+New exact installed and actual Java acceptance are required before normal delivery;
+historical12bcec7cd receipts are not current validation. Primary statuses unchanged.
 
 ## Native async recorded neighborhood: exact-candidate local acceptance PASS
 
@@ -43,6 +59,42 @@ initial149focused/3,419installed/17gatesPASS, parentintegrated normally/runner e
 preserved andASTverified. Combinedpackage active, actual Java original engineering
 recorded neighborhood stillrequired. No full/historical/revisionpinned lineage,
 Java/scientific reconstruction or whole-requirement/capability/A+B/study promotion.
+
+## Scientific acceptance architecture — N/S PASS, implementation and binding correction merged
+
+All four implementation PRs232/233/234/235 and bounded TA-2 correction237 normally
+merged; accepted implementation `e153fd3949136354ff55cf10953d8e472c490f57`.
+Exact reviewedbea45c5f9 passed3486installedtests/all17gates;298postmerge checks PASS.
+N/S actual boundedL4 PASS; no primary status promoted.
+Final TA-7 documentation records exact merge/retirement and corrected timing evidence.
+MILESTONE_INCOMPLETE: periodic fullL4 execution still needs authorized pinnedworker/
+artifacts; scheduledoffline CI is not that gate. No original-study execution.
+
+Executed base was937c758b6/#231. Independent N
+source9c3d14878 and S20d3bc368 each executed once with real Java and passed their
+bounded L4 oracle plus lifecycle. Exact wheel/source/build/model/component identities,
+per-check/five-axis outcomes and cleanup are bound by the
+[evidence index](../notes/python-roadmap-execution/evidence/scientific-acceptance-index-20261105.json)
+and [standalone report](../notes/python-roadmap-execution/SCIENTIFIC_ACCEPTANCE_ARCHITECTURE_REPORT.md).
+This is bounded scientific acceptance with normal implementation delivery, not
+production support or published science.
+Normal ref creation recovered for the genuinely new milestone contributions:
+PR232contract/PR234N/PR233S/PR235selection normally merged. Older provenance ref was not
+retried/renamed, and no rule/protection workaround was used.
+
+| Affected rows | Python / Java / independent verification | Remaining gates and next owner |
+|---|---|---|
+|RC-P2.1/P2.5;CAP08/09/15|Existing implementation retained. N:L4 PASS synthetic20cell values/CRS/centres/orientation/units/mask/selectedplan; L2metadata rejection explicit|Corrected unpublished exporter;single-shard only;provider/time/category/trueaccuracy unverified. Backend/provider supplies genuine tuple/oracle|
+|RC-P1.5;CAP05/06|Existing requests/partialplans retained. S:L4 PASS source-justified lexical66.5m/scenario234.5m outputs and actual associatedmodels|Complete ranking/lineage/rootcommit not served; union contract separatelyBLOCKED. Resolver/semantic owners supply contracts,not Python reasoning|
+|RC-P1.3;CAP18|S real valid-principal private attach AuthorizationError/no scientific mutation and ownedcleanup PASS|Not wholeproductionACL/Hub matrix;operator supplies authorized deployment roles/license|
+|RC-P0/R1;CAP16|Inventory/validator/feedbackselector and fixed-workflow metadata/capability binding merged;3486installed/all17gates and298postmerge checks PASS|ScheduledL4worker absent;operator provisioning required;release/production support not certified|
+
+L1/L2 validation is not L3/L4 acceptance; missing checks remainNOT_RUN. No primary
+row is promoted:23in-scopecriteria1accepted/20partial/1missing/1blocked,+TargetCexcluded;
+18CAP4accepted/13partial/1excluded. Historical study numbering remains separate:
+allthree L3PARTIAL/L4BLOCKED/L5–L7NOT_RUN; newL5replication not executed.
+MILESTONE_INCOMPLETE until qualified delivery and remaining gates pass. No Java,
+ontology,model/component/scientificinput edits,union rerun or power action.
 
 ## Native async semantic inspection: exact-candidate local acceptance PASS
 
