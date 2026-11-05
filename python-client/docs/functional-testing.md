@@ -1,5 +1,11 @@
 # Functional workflows and test organization
 
+`completed-recovery` adds the bounded current-worldview installed fresh-process
+Job/observation readback described in [its acceptance contract](completed-recovery-acceptance.md).
+It does not replace the older `resume-saved-work` scenario or certify in-flight/
+cross-Runtime continuation. Use the existing owned reliability runner with
+`--scenario completed-recovery`; never point it at a shared Modeler stack.
+
 The `parser-preview` suite verifies existing four-family source previews against
 actual Resources parsers, with explicit source/identity and invalid-input controls.
 See [parser acceptance boundaries](parser-preview-acceptance.md). This is not

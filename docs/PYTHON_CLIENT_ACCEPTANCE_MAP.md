@@ -1,5 +1,28 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Historical Q1 master-program checkpoint — 5 November 2026
+
+The supplied master specification now authorizes an ordered multi-feature queue;
+earlier one-increment stopping rules below are historical. No previous bounded
+delivery is rebuilt or promoted to whole-target acceptance. All24 original RC
+criteria and18CAP rows remain intact. Current baseline is
+`fe46ddc5ec3c188f62cd1d0b0703c6e54a4b9241`, verified integration ancestry for#196–200.
+See the local [program checkpoint](../notes/python-roadmap-execution/PROGRAM_STATUS.md)
+and [complete scenario-family crosswalk / dependency queue](../notes/python-roadmap-execution/FEATURE_LEDGER.md).
+First item Q1 implements fresh-process completed-Job/observation recovery without
+disposal/replay but owned acceptance FAILED internal harness audit guards; the
+known ScopeRequest envelope fix is locally tested, not live accepted or merged.
+Next independent item Q5 is actual parser/source-receipt acceptance.
+RC-P1.2 remains PARTIAL. A/B remain
+incomplete; no scope revision or release approval has been inferred.
+
+Q1resumed implementationd8ae23b3d now passes installed actualJava freshprocess
+completedJob/observation/focus/20cellreadback, no replay/disposal, foreign/deleted
+refusal andcreatorcleanup;2874offline/16gates/lint/parityPASS. NormalPR/merge
+remains separate, with PR201's newly demonstrated missing packagingplugin gate
+under investigation. In-flight/Runtime-generation/history claims remainunproved.
+
+### Independent parser contribution (historical premerge checkpoint)
 ## Master-program continuation — 5 November 2026
 
 The supplied A+B/three-study master specification supersedes old one-increment
@@ -17,6 +40,17 @@ Resources parser checks, source/identity/explicit edge policies and owned cleanu
 2862offline tests/16coverage gates/lint/package/source parity pass. NormalPR/merge
 is still pending. This bounded source-preview proof does not establish knowledge
 revision, semantic dependency closure, authoring/publication or wholeRC-P4.2.
+
+### Latest verified integration state
+
+Q5 PR201 merged normally at `76b4d28a4fb87c7a4325fce5138344b3ac09ef25`,
+reviewed head `10ddd25bbd5ec0c87de1df6eb0698c6706ce9107`. Final installed
+2,862 tests/16 gates and actual four-family Resources parser checks passed;
+owned cleanup passed. CI prerequisite PR202 is merged at `6305e1e78`.
+These results supersede older pending/build-blocked statements above, not failed
+evidence or acceptance boundaries. Q1 is locally accepted at `d8ae23b3d` and now
+being integrated; exact integrated-candidate validation and normal PR remain.
+No whole RC/CAP row is promoted. A/B remain incomplete.
 
 ## Current reconciliation — 4 November 2026
 
@@ -72,7 +106,7 @@ rows do not revoke their separately accepted subcapabilities.
 |---|---|---|---|---|
 | RC-P0 | A/B operation inventory and compatibility diagnostics | PARTIAL | public-api/contracts; transport tests; I/L | Exhaustive operation/feature and mixed-version inventory; support decisions #129; P1 |
 | RC-P1.1 | A supported onboarding through computation | PARTIAL | connection/credentials/requests; #84/#85; controlled connection tests; S | Actual supported Hub/license end-user walkthrough still unverified; deployment credentials/consent; P1 |
-| RC-P1.2 | A fresh-process restoration without disposal | PARTIAL | handles/client; #86/#139; saved-handles tests; S separate Client restore | Full fresh-process retained Job/restart chain and retention contract #89; P1 |
+| RC-P1.2 | A fresh-process restoration without disposal | PARTIAL | handles/client; #86/#139; Q1 local installed actualJava completedJob/observation/focus/20cells and no-disposal controls pass atd8ae23b3d (not merged) | Full in-flight/restart/history retention remains #89; bounded local acceptance not whole criterion; P1 |
 | RC-P1.3 | A collaborator reads, forbidden writes and expiry diagnosis | PARTIAL | transport/context ACLs; connection-access tests and historical controlled positive controls | Current integrated private-parent/stale-vs-forbidden matrix #89; P1 |
 | RC-P1.4 | A actionable readiness/trust diagnostics | PARTIAL | connection/catalog origin guards; connection HTTP tests | Supported-deployment provider outage/recovery and mixed capabilities; #129; P1 |
 | RC-P1.5 | A requested options visible in actual plan | PARTIAL | #200 installed actual-Java baseline/namespace/scenario model URNs and independent executed values, actual geometry/focus, normalized grid configuration and zero-HTTP unsupported/conflicting rejections pass | Full observer/project/material-dependency and executed-grid matrix remains unproven; forced model explicitly unsupported; no complete-lineage claim; P1 |

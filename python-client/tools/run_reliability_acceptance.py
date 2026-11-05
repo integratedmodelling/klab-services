@@ -225,7 +225,7 @@ def run(args):
                     _, alive = psutil.wait_procs(alive, timeout=20)
                     if alive:
                         raise RuntimeError("Owned functional descendant cleanup unconfirmed")
-        result_file = {"parser-preview": "parser-preview.json", "partial-refresh": "partial-refresh.json", "request-plan": "request-plan.json",
+        result_file = {"completed-recovery": "completed-recovery.json", "parser-preview": "parser-preview.json", "partial-refresh": "partial-refresh.json", "request-plan": "request-plan.json",
             "nonuniform-export": "nonuniform-science.json"}[args.scenario]
         result["science"] = json.loads((state / result_file).read_text())
         result["passed"] = True
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     parser.add_argument("--java", type=Path)
     parser.add_argument("--components", type=Path, help="JSON list of exactly two explicit {path,sha256} archives")
     parser.add_argument("--state-dir", type=Path, required=True)
-    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh", "request-plan", "parser-preview"), default="nonuniform-export")
+    parser.add_argument("--scenario", choices=("nonuniform-export", "partial-refresh", "request-plan", "completed-recovery", "parser-preview"), default="nonuniform-export")
     args = parser.parse_args()
     if args.authority:
         fixture_hub.SERVICES = PORTS
