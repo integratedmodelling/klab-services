@@ -1,6 +1,14 @@
 # Python roadmap acceptance map — 3 November 2026
 
-## Scientific acceptance architecture — executed N/S, milestone not merged
+## Scientific acceptance architecture — N/S PASS, four implementation PRs merged
+
+**Current delivery supersedes the development snapshot below:** all four
+implementation PRs232/233/234/235 normally merged; accepted implementation
+`6a7d66968a612a16bb309ad0be6b8aa8d4f9243b` passed3479installedtests/all17gates and
+252focused postmerge checks. N/S actual boundedL4 PASS; no primary status promoted.
+Final TA-7 documentation records exact merge/retirement and corrected timing evidence.
+MILESTONE_INCOMPLETE: periodic fullL4 execution still needs authorized pinnedworker/
+artifacts; scheduledoffline CI is not that gate. No original-study execution.
 
 Accepted remote937c758b6/#231 unchanged; no milestone PR merged. Independent N
 source9c3d14878 and S20d3bc368 each executed once with real Java and passed their
@@ -18,7 +26,7 @@ retried/renamed, and no rule/protection workaround was used.
 |RC-P2.1/P2.5;CAP08/09/15|Existing implementation retained. N:L4 PASS synthetic20cell values/CRS/centres/orientation/units/mask/selectedplan; L2metadata rejection explicit|Corrected unpublished exporter;single-shard only;provider/time/category/trueaccuracy unverified. Backend/provider supplies genuine tuple/oracle|
 |RC-P1.5;CAP05/06|Existing requests/partialplans retained. S:L4 PASS source-justified lexical66.5m/scenario234.5m outputs and actual associatedmodels|Complete ranking/lineage/rootcommit not served; union contract separatelyBLOCKED. Resolver/semantic owners supply contracts,not Python reasoning|
 |RC-P1.3;CAP18|S real valid-principal private attach AuthorizationError/no scientific mutation and ownedcleanup PASS|Not wholeproductionACL/Hub matrix;operator supplies authorized deployment roles/license|
-|RC-P0/R1;CAP16|Source-family inventory/validator/feedbackselector measured; existing full CI/17gates retained|Normal CI/approval/merge/postmerge pending;scheduledL4worker absent;maintainer/operator provisioning needed|
+|RC-P0/R1;CAP16|Inventory/validator/feedbackselector merged;integrated3479/all17gates and exact postmerge proof PASS|ScheduledL4worker absent;operator provisioning required;release/production support not certified|
 
 L1/L2 validation is not L3/L4 acceptance; missing checks remainNOT_RUN. No primary
 row is promoted:23in-scopecriteria1accepted/20partial/1missing/1blocked,+TargetCexcluded;

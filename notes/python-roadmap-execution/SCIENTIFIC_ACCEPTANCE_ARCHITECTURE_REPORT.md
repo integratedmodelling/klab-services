@@ -4,8 +4,9 @@
 
 **N and S each executed once against real Java and passed their bounded independent
 oracles**, including N's numerical/geographic checks and S's actual private-principal
-negative. The milestone is **not complete**: normal implementation CI/merges are
-in progress, and scheduled L4 execution needs an authorized pinned Java worker.
+negative. **All four implementation PRs normally merged.** The milestone is **not
+complete** because scheduled full L4 acceptance needs an authorized pinned Java
+worker. Final documentation-only handoff verification is separate from implementation.
 Normal publication recovered for these genuinely new contributions. Existing full offline CI is
 retained, not replaced by the feedback selector. No A+B or study completion claimed.
 
@@ -16,19 +17,22 @@ measured terrain accuracy, universal model ranking or published-study replicatio
 
 ## Exact baseline, artifacts and contribution state
 
-Accepted remote remains `937c758b62743a0ab68e48792870a9261cf7cc87` (#231), verified
-read-only;31previous queue PRs merged/0open. Main prior checkpointfc5cca637 and all
+Executed milestone base was `937c758b62743a0ab68e48792870a9261cf7cc87` (#231).
+Accepted remote advanced to6a7d66968a612a16bb309ad0be6b8aa8d4f9243b;
+31previous queue PRs plus4milestone implementation merges. Main prior checkpointfc5cca637 and all
 seven prior local A+B candidates/union failures preserved. No reset or broad cleanup.
 
 | Coherent contribution | Independent base / branch | Tested state / delivery |
 |---|---|---|
-| TA-1/2 inventory, contract/adapter |937c758b6 / feature/python-scientific-scenario-contract|PR232,d1de24d9f; corrected6fdf97e28:3463installed/all17gates/43focusedPASS; hosted CI pending|
-| TA-3 numerical N |937c758b6 / feature/python-scientific-scenario-n|PR234,836f5904f; executed9c3d14878;18focused,3421installed/all17gates and actualN PASS|
-| TA-4 model-selection S |937c758b6 / feature/python-scientific-scenario-s|PR233,a8bda3318; executed20d3bc368;167focused,3420installed/all17gates and actualS PASS|
-| TA-5/6/7 selection/effectiveness/integration |937c758b6 / feature/python-scientific-test-selection|892286e3a:3434installed/all17gates;14focused plus4measured suites PASS; local linked-artifact assembly defect corrected; publication next|
+| TA-1/2 inventory, contract/adapter |937c758b6 / feature/python-scientific-scenario-contract|PR232 MERGED019107de6087f65ac8b4d2e73f2e9ae95278947f; reviewed3b9fee30c;3464installed/all17gates/44focused,latestCI and238postmerge checks PASS|
+| TA-3 numerical N |937c758b6 / feature/python-scientific-scenario-n|PR234 MERGED6980a529d47dd35417c750d98cded111866b5c17;reviewed836f5904f/executed9c3d14878;3421installed/all17gates,actualN and29postmerge checks PASS|
+| TA-4 model-selection S |937c758b6 / feature/python-scientific-scenario-s|PR233 MERGED03dfe375c068dee518307ba368a07098e585e92e;revieweda8bda3318/executed20d3bc368;3420installed/all17gates,actualS and194postmerge checks PASS|
+| TA-5/6/7 selection/effectiveness/integration |937c758b6 / feature/python-scientific-test-selection|PR235 MERGED6a7d66968a612a16bb309ad0be6b8aa8d4f9243b;reviewed6569a1c17;3434installed/all17gates/25finalfocused,hostedCI and252combined postmerge checks PASS|
 
-All four have contributor-guide self-reviews, not invented human approvals. None
-is merged or approved superseded at this report revision. No cascading PR stack: N/S reuse the
+All four have contributor-guide self-reviews, not invented human approvals, and
+normally merged after required checks passed. A final documentation-only TA-7
+handoff is split out so it can record actual merge outcomes rather than predictions.
+No cascading PR stack: N/S reuse the
 adapter from its independent worktree, with explicit source/workflow selection.
 
 Actual N/S installed noneditable wheel SHA256
@@ -43,9 +47,10 @@ No component#11 adoption, Java/ontology/worldview/model/research-input changes.
 ## Existing architecture: retained, reused, not replaced
 
 TA-1 family inventory (`python-client/docs/testing/scientific-acceptance-inventory.md`)
-is on the contract branch until delivery; its machine map preserves all24roadmap+
-18capabilityIDs. Expanded per-module inventory contains156modules:109unchanged
-modules matched to measured baseline JUnit durations,47unmeasured left unknown.
+is merged through PR232; its machine map preserves all24roadmap+
+18capabilityIDs. Integrated-source6a7d66968 inventory contains157modules:109unchanged
+modules matched to measured JUnit durations,48unmeasured left unknown. The earlier
+156module/109measured/47unknown contract-only snapshot is retained separately.
 Case-duration sums exclude collection/process overhead; actual suite wall times are
 reported separately. File hashes/source matches prevent assigning old timings to
 changed tests. No flakiness rate inferred from one sample.
@@ -138,6 +143,19 @@ rerun. Final selector integration caught a missing linked index/report in its ow
 worktree (1FAIL/3433PASS), corrected by assembling verified artifacts. These are
 preserved local failures, not environmental excuses or relaxed tests.
 
+PR232's initial push-context UbuntuPython3.12.16 had one inherited GeoJSON
+child-process30s timeout; same-head PR-context3.12 passed. One local Windows
+diagnostic passed0.98s, not a Linux root-cause proof. Deadline/expectation unchanged;
+original run/job/log hash retained. Later3b9fee30c adds typed preflight FAIL/null-identity
+receipts (44focused/3464installed/all17gates), not a speculative timeout repair;
+all latest-head hosted checks passed before normal merge. No unchanged CI-job or
+scientific rerun used to hide the earlier failure.
+
+A local S premerge metadata assertion did not halt the subsequent separate shell
+line. No CI override occurred: completed watcher and saved audit show all12checks
+SUCCESS; exact reviewed patch/ancestry and194postmerge tests verified. Subsequent
+merge orchestration uses one checked Python control flow, not independent shell lines.
+
 [Indexed sanitized evidence](evidence/scientific-acceptance-index-20261105.json)
 binds original execution/harness/workflow/compiled/fixture/component/oracle hashes,
 actual identities, commands/start/end, per-check/axis statuses and cleanup. Raw
@@ -185,6 +203,14 @@ executed in either baseline or selected offline samples**, so no measured reduct
 in irrelevant Java churn. Actual scientific executions2/pass2, flaky reruns0.
 No architecture-wide speedup inferred. Required CI still bears full validation cost.
 
+A second bounded baseline/docs measurement corrects that overlap, on the same
+source6569a1c1713a57f585e7850c8fa116377e79675d/interpreter, serially with no owned
+Java or other local agent tests concurrent: **3434tests/66.853277s versus
+351tests/2.6020429s**,0failures/errors/skips. Unrelated user services untouched.
+This demonstrates the sample's lower feedback cost, not a universal productivity
+ratio; initial four-case evidence remains preserved. Measurement repetition is a
+causally justified benchmark correction, not a flaky scientific retry.
+
 ## A+B deltas, remaining worktrees and final gates
 
 Add scoped N/S L4 evidence to RC-P2.1/P2.5/CAP08/09/15 and RC-P1.5/P1.3/CAP05/06;
@@ -195,17 +221,23 @@ gates stay separate. **No primary status promoted.**23in-scopecriteria remain
 gaps remain. Luxembourg/Kaduna/PaL remain historicalL3PARTIAL/L4BLOCKED/L5–L7NOT_RUN;
 no original-study execution, tolerance fabrication or artifact sweep.
 
-Owned core retains compiled outputs on S branch; separate lightweight contract,
-N and selector worktrees preserve their independent candidates. No branch retirement
-before eligible merge/postmerge proof. Cleanup verified14owned process identities
+Owned core retains compiled outputs at detached accepted6a7d66968. All four temporary
+implementation branches retired only after normal merge/ancestry/exact-delta/
+postmerge proof. New N/contract worktrees removed; the lightweight selector checkout
+is reused for final documentation-only handoff. Older unique A+B work is untouched.
+Cleanup verified14owned process identities
 absent; no services/kernel/windows/power helper created for ongoing work. No unrelated
 terminal/service stopped. All4contributions passed their full installed suites and
-all17gates. Final normal CI/merge/postmerge acceptance remains pending.
+all17gates. Integrated6a7d66968 passed3479installedtests/all17gates/build/install/lint
+and252focused postmerge checks. Integrated validation wheel
+7a14359369b9aefa892b09840006d5d078482ba66de8bd178b84b6affc89032b is distinct from
+the actual N/S wheel; no retroactive runtime identity substitution. Final scheduled
+L4 provisioning remains BLOCKED; no milestone-completion claim is made.
 
 ## Five prioritized next steps
 
-1. Finish normal CI/approval/eligible merges for the four qualified contributions
-   and verify exact accepted ancestry/postmerge; do not infer older ref repair.
+1. Finish final-handoff verification, preserving actual four-PR merge evidence and
+   prior failures; do not infer older provenance-specific ref repair.
 2. Provision an authorized pinned scheduled Java worker/artifact tuple; run N/S as
    a real periodic gate, retaining failures/unknown states and cleanup evidence.
 3. Extend independent provider/multishard/time/category oracles only with genuine
