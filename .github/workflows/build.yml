@@ -14,5 +14,19 @@ jobs:
         distribution: 'temurin'
         java-version: '21'
         cache: 'maven'
+    # The declared packaging plugin snapshot is no longer available from the
+    # configured public repository. Build that same version from immutable
+    # official source rather than depending on a runner's stale Maven cache.
+    - name: Checkout pinned packaging plugin
+      uses: actions/checkout@v3
+      with:
+        repository: integratedmodelling/klab.product
+        ref: 0c80acb1f16a1d405f888cf99286d6e365293559
+        path: .ci/klab-product
+        persist-credentials: false
+    - name: Bootstrap packaging plugin from source
+      run: |
+        ./mvnw -B --no-transfer-progress -pl klab.core.api -am install -DskipTests
+        ./mvnw -B --no-transfer-progress -f .ci/klab-product/pom.xml install
     - name: Build with maven
       run: ./mvnw -B -U clean package -DskipTests
