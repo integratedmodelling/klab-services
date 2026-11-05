@@ -44,6 +44,22 @@ Q5 candidate NOT_RUN at branch creation.
   (R1/R2portal25stimeouts,R3unchangeddeposit,no originalfixture).
 - **ACTUAL_GITHUB_STATUS:** no feature PR/push/merge yet. Q5 starts fromfe46ddc5e,
   notQ1. Original research remains local/unpublished.
+
+### Hosted gate update — PR201
+
+PR201 OPEN at8cdd6bec5eb02c3c5c078ed7a7e1ae7ec33ee5db. Python3.11–3.13,
+core-only, Windows and Jenkins PASS. Maven `build` failed twice in run41954884151:
+`org.integratedmodelling:klab.product:1.0.1-SNAPSHOT` cannot resolve from the
+configured snapshot repository; exact public metadata probe returned404. Tests
+were skipped by that packaging command; no Java compile/science defect is inferred.
+Q5 LOCAL_ACCEPTED_BOUNDED, **merge BLOCKED_EXTERNAL_BUILD**. No bypass/dependency
+swap/check removal. Owner action: restore approved plugin artifact or separately
+review the build contract; then normal same-head successful checks are required.
+Full initial/retry evidence is external `q5-ci-blocker.json`/retry log.
+
+**NEXT:** independent Q1 live acceptance after the source-grounded envelope and
+deleted-context notification preflight. No Q5 code dependency or new stacked PR.
+Original local Q1 branch is preserved; no current program feature has merged.
 - **CLEANUP:** bothQ1ownedruns closed all captured processes/listeners; existing
   Java unchanged. No worktree created; inherited11worktrees/cache preserved.
 

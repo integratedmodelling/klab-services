@@ -82,6 +82,12 @@ are retained. Counts:24originalcriteria=22phaseacceptance statements+2continuous
 
 ## External decisions / minimal unblock
 
+**BUILD-201:** PR201 packaging check failed twice at unchanged8cdd6bec5 because
+klab.product1.0.1-SNAPSHOT is absent at configured snapshot repository (metadata404).
+Python/Jenkins and bounded live parser acceptance pass; no merge is eligible.
+Restore approved artifact/build contract, do not alter dependencies or waive checks.
+Continue independent Q1 validation/Q3 planning; not an all-work external-only claim.
+
 Allrequiredissues89/123/124/125/126/127/129/130/193OPEN; component11OPENat
 90f425e0…,base3f98082d…. Runtime/resources/componentmaintainers must identify
 authoritative specificschemas/versions/ownedfixtures;deploymentoperator supplies

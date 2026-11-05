@@ -84,3 +84,11 @@ components and worldview are unchanged from the accepted isolated tuple.
 human approval or full RC-P4.2/B acceptance. Subsequent documentation-only updates
 do not alter tested implementation. Hosted checks/protection/merge remain a
 separate gate; no bypass or release authorization is implied.
+
+Hosted outcome: PR201 OPEN, head8cdd6bec5. Python3.11–3.13/core/Windows/JenkinsPASS;
+Maven packaging run41954884151FAILED initial and one same-head retry due missing
+`org.integratedmodelling:klab.product:1.0.1-SNAPSHOT`. Public snapshot metadata404
+corroborates availability failure; no Java source/dependency change was made.
+**Merge remains blocked**, not waived as optional. Need the approved artifact or
+separately reviewed build-contract recovery, then successful normal checks. This
+does not revoke the separately pinned actual-parser result, nor close full B.
