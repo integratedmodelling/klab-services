@@ -23,17 +23,37 @@ def client(config):
            for name in ("reasoner", "resources", "resolver")})
 
 
+def allowed_request(call, context_id):
+    """The existing attach route is POST, but must name the original root."""
+    path = call["path"]
+    if call["method"] == "GET":
+        return (path.endswith("/public/capabilities") or
+            any(part in path for part in ("/jobs/status/", "/jobs/retrieve/")))
+    if call["method"] == "POST":
+        if path.endswith("/api/v1/connect"):
+            return call.get("context_id") == context_id
+        return any(path.endswith(route) for route in ("/api/v1/observation/value", "/api/v1/query"))
+    return False
+
+
 def recover(state, directory):
     """Read original server work using new local objects and separate credentials."""
     config = json.loads((state / "scientist.json").read_text())
+    context_reference = load_handle(directory / "context.json")
     calls = []
     with client(config) as api:
         api.initialize_user_scope(local_federation=True)
-        # Setup is explicit. From this point recovery must be read-only, including
-        # on failure: no submit, creation, remote release or credential replay.
-        api.transport._http.event_hooks["request"].append(lambda request: calls.append(
-            {"method": request.method, "path": request.url.path}))
-        context = api.restore_handle(load_handle(directory / "context.json"))
+        # Setup is explicit. Recovery may attach to the saved root and read it,
+        # never create, submit, cancel, release or replay an ambiguous mutation.
+        def capture(request):
+            call = {"method": request.method, "path": request.url.path}
+            if call["path"].endswith("/api/v1/connect"):
+                call["context_id"] = json.loads(request.content).get("id")
+            calls.append(call)
+            require(allowed_request(call, context_reference.context_id),
+                "Recovery attempted an unexpected operation or a different context")
+        api.transport._http.event_hooks["request"].append(capture)
+        context = api.restore_handle(context_reference)
         observation = api.restore_handle(load_handle(directory / "observation.json"))
         job = api.restore_handle(load_handle(directory / "job.json"))
         require(not context.owned and not observation._context.owned,
@@ -50,11 +70,8 @@ def recover(state, directory):
             "observation_id": observation.id, "scope": context.get_context_id(),
             "verified_cells": 20, "owned": context.owned}
     # Client.close must remain local too; audit after the context manager exits.
-    require(all((call["method"] == "GET" or
-        call["method"] == "POST" and any(call["path"].endswith(path)
-            for path in ("/api/v1/observation/value", "/api/v1/query")))
-        and "release" not in call["path"].lower()
-        for call in calls), "Recovery or local close performed a remote mutation")
+    require(all(allowed_request(call, context_reference.context_id) for call in calls),
+        "Recovery or local close performed an unexpected operation")
     report.update(calls=calls, local_close_only=True, submissions=0)
     (directory / "recovered.json").write_text(json.dumps(report, indent=2))
     return report

@@ -27,10 +27,11 @@ def fixture(tmp_path, monkeypatch, *, owned=False, values=None, close_mutation=F
             assert kwargs == {"local_federation": True}
         def restore_handle(self, path):
             for event in events:
-                event(SimpleNamespace(method="GET", url=SimpleNamespace(path="/runtime/attachContext")))
+                event(SimpleNamespace(method="POST", url=SimpleNamespace(path="/runtime/api/v1/connect"),
+                    content=b'{"id":"session.context"}'))
             return {"context.json": context, "observation.json": observation, "job.json": job}[path.name]
     monkeypatch.setattr(workflow, "client", lambda config: Client())
-    monkeypatch.setattr(workflow, "load_handle", lambda path: path)
+    monkeypatch.setattr(workflow, "load_handle", lambda path: SimpleNamespace(name=path.name, context_id="session.context"))
     return tmp_path
 
 
@@ -52,9 +53,28 @@ def test_recovery_audits_local_close_and_preserves_identity(tmp_path, monkeypatc
 @pytest.mark.parametrize("options,match", [
     ({"owned": True}, "disposal ownership"),
     ({"values": (0,) * 20}, "independent oracle"),
-    ({"close_mutation": True}, "remote mutation")])
+    ({"close_mutation": True}, "unexpected operation")])
 def test_recovery_failure_never_writes_success(tmp_path, monkeypatch, options, match):
     state = fixture(tmp_path, monkeypatch, **options)
     with pytest.raises(AssertionError, match=match):
         workflow.recover(state, state)
     assert not (state / "recovered.json").exists()
+
+
+@pytest.mark.parametrize("method,path,target,expected", [
+    ("GET", "/runtime/public/capabilities", None, True),
+    ("GET", "/runtime/jobs/status/3", None, True),
+    ("GET", "/runtime/jobs/retrieve/3", None, True),
+    ("POST", "/runtime/api/v1/query", None, True),
+    ("POST", "/runtime/api/v1/observation/value", None, True),
+    ("POST", "/runtime/api/v1/connect", "session.context", True),
+    ("POST", "/runtime/api/v1/connect", "different.root", False),
+    ("POST", "/runtime/api/v1/connect", None, False),
+    ("POST", "/runtime/createContext", None, False),
+    ("POST", "/runtime/api/v1/submit", None, False),
+    ("GET", "/runtime/releaseContext", None, False),
+    ("GET", "/runtime/jobs/cancel/3", None, False),
+    ("DELETE", "/runtime/api/v1/query", None, False)])
+def test_existing_attachment_is_not_creation_or_arbitrary_mutation(method, path, target, expected):
+    assert workflow.allowed_request({"method": method, "path": path, "context_id": target},
+        "session.context") is expected

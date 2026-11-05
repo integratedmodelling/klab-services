@@ -10,8 +10,9 @@ must not dispose the server context: the creator reads it again before explicitl
 releasing only its own work. Foreign-principal and deleted-context restoration
 must fail rather than silently create work.
 
-The recovery worker audits HTTP methods/paths through local close: only GET reads
-and existing POST knowledge-query/value-read routes are allowed; no creation,
+The recovery worker audits HTTP methods/paths through local close: capability/Job
+GET reads, POST knowledge-query/value-read routes and the existing POST connect
+route restricted to the exact saved root are allowed; no creation,
 scientific resubmission or release is permitted. User-scope initialization is
 explicit before that audit. Source-data zero, negatives, float64 precision and
 missingness are independently checked; handles must contain neither test token.

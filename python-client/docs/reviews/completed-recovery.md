@@ -27,7 +27,8 @@ historical science, a public release, production Hub or managed multi-provider u
    The restored Job result and separate observation each read that oracle.
 3. Restoration must not silently acquire disposal ownership, replay creation or
    release scopes. Request method/path records are checked after child close;
-   existing POSTquery/value-read routes are read-only exceptions toGET. No request
+   existing POSTquery/value-read routes and POSTconnect restricted to the original
+   saved root are allowed; arbitraryGET operations/cancel/release are refused. No request
    headers, bodies or token values are saved in the success report. Explicit
    user-scope initialization precedes the audit, rather than masquerading as an
    implicit restoration effect.
@@ -53,6 +54,14 @@ existing read-only POSTquery route; final frozen harness verification remains
 required. Exact commands/receipts live under external `ab-three-study-20261105/`
 and the prior gate driver's `scientific-reliability-queue-20261104/ab-q1-first/`.
 Actual Java, final candidate and hosted/merge results will be appended, not inferred.
+
+Initial `q1-live-v1` reached original scientific readback but failed the overly
+strict harness audit: Client.attach_context explicitly uses POST `/api/v1/connect`
+(`client.py:459–464`), not GET. One evidence-led correction admits only that route
+with the exact saved root ID and restricts allGETs to capabilities/status/retrieve.
+New negative tests refuse wrong/missing root, creation/submission/cancel/release.
+This corrects the acceptance harness, not scientific Java behavior. Initial failure
+and successful owned-process/listener/foreign-Java preservation remain recorded.
 
 ## Suggested bounded PR
 
