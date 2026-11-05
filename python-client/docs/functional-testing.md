@@ -1,5 +1,10 @@
 # Functional workflows and test organization
 
+`native-stream-workload` validates all cells of a bounded1024x1024 native numerical
+scenario export, records actual chunks/RSS observations, and injects two read-only
+interruptions to verify file/staging safety. See [workload contract and exclusions](native-stream-workload.md).
+It is not categorical/time-cube, representative-provider soak or historical science.
+
 `onboarding-journey` reuses the existing Connection facade on the current isolated
 tuple: native TEST ENGINE certificate and token providers, ready-service selection,
 nonuniform scientific cells, audited fresh-process native recovery, known expired

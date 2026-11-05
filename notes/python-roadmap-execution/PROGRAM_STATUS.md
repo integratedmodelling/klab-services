@@ -11,10 +11,10 @@
   passes 2,886 installed tests/16 gates/lint/build/source parity. Fresh integrated
   owned Java recovery PASSED: same Job/observation/focus,20 cells,no child replay/
   disposal,foreign/deleted refusals and creator cleanup. This is new evidence.
-- **NEXT:** Q2 controlled current-tuple onboarding on fresh branch
-  `feature/python-onboarding-journey`, based92dbdbde. Contract before code; reuse
-  existing facade/owned workflows, no production Hub or new bootstrap claim.
-  Q4/Q6/Q7/Q8/Q9 remain queued.
+- **NEXT:** Q4a bounded native stream workload on fresh branch
+  `feature/python-native-stream-workload`, basec491dbbff. Reuse accepted234.5scenario
+  on1024x1024grid, independentlyvalidate nativefiles/streams and interruption safety.
+  Categorical/time/provider gates and Q6/Q7/Q8/Q9 remain separate.
 
 Q2 implementationab69eee3c initialinstalled2,963tests/17gates/lint/build/parityPASS,
 but source-preflight found its two-computation plan would exhaust the deliberately
@@ -42,6 +42,26 @@ secretfreeprofiles-handles-report andcreatorcleanup. Publicsnapshotsprove genuin
 readiness transition afterownedrestart;firstfailure retained. Ownedprocesses/
 listenersclosed,existingJavaunchanged. Authorreviewcomplete;normalPR/CI/mergeNEXT.
 GenuineproductionHub/fullRC-P1.1/CAP01/02remainPARTIAL;A/Bincomplete.
+
+Q2 PR205 now MERGED_BOUNDED c491dbbff934e8192e4f04d5fb62c13cfb8cbfda,
+reviewed502e750b90589ffc26df9f99d9013553a6370d08. AllhostedchecksPASS;normal
+exactheadmerge/ancestryverified;postmergesourcediffempty/31focusedtestsPASS;
+ownedbranchretiredlocal/remote. Older pending bullets remain historical.
+
+Q4a implementationc283bd437 reuses accepted234.5scenario at1024x1024; no newmodel/
+Java/fixture/reset. 79focusedworkload-exporttests/lintPASS; installedgatesactive,
+actualJavaNOT_RUN. Contractnative-stream-workload.md prespecifiesallcells/geometry/
+units/mask,8..64MiBnativebytes,chunk/RSSobservations andtwoexplicitreadonlyfaults.
+NoPRyet; fullcategory/time/multishard/provider-soak/wholeQ4remainunproved.
+
+Q4ac283bd437 nowLOCAL_ACCEPTED_BOUNDED:2,977installed/17gates/lint/parityPASS,
+wheel2acd249c1a199830f902ed9bc7b935dd84fec3430ee3b61416968c759911a01e.
+q4-native-stream-livePASS actualserved234.5scenario/1,048,576cells/64windows/native
+float64-m-mask-geometry,8,390,163bytes/129chunks/max65,536,twoinjectedreadonlyfaults
+with response/stagingcleanup/no partialdestination/existingfilebyteidentity.
+Creatorreleases/ownedprocess-listenercleanupPASS,unrelatedJavaunchanged.
+Authorreviewcomplete;normalPR/CI/mergeNEXT. FullQ4/category/time/providersoak and
+threehistoricalstudies remainincomplete. No genericRSS/throughputclaim.
 
 Q3 implementation06c6eef53 initially passes2,942installedtests/17coveragegates/
 lint/build/parity, wheel8c7eb033d733d47dcd4fe9fd89622727ae169cd1b0f096f3cc4367aa4a286a2b.
