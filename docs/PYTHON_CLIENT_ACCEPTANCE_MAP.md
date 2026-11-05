@@ -1,5 +1,21 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Model-containing source authoring checkpoint — 5 November 2026
+
+Executable2087dd716 on accepted PR221/6cc5bd769: 3,195 installed tests/all17gates,
+14 focused tests and actual owned Java authoring PASS. Exact namespace source and
+Java-derived model identity survived ADD/retrieve/advertised model inspection.
+Invalid source refusal, ordinary READ-only user document/project denials,
+positive-controlled absence and owned model/project/workspace/service cleanup PASS.
+Exact installed/source/harness/live identity and credential absence verified.
+See [contract](../python-client/docs/model-source-authoring.md) and
+[contributor review](../python-client/docs/reviews/model-source-authoring.md).
+Served version remains null; dependency metadata is not a closure. Scientific
+execution NOT_RUN; publication NOT_CLAIMED. Normal PR/CI/merge pending. RC-P4.2,
+RC-P4.4 and CAP-14 remain PARTIAL; no edit/import/publish/version-lock, full B2,
+A/B, original-study or release promotion. Prior failed peer-plan branch is retained;
+categorical component delivery remains blocked on the earlier contribution restriction.
+
 ## Deleted-state recovery checkpoint — 5 November 2026
 
 PR219merged8956f7d70. Deletedstate9807a97d5 locallyPASS:3,180installed/all17gates/

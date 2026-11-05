@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Model source authoring bounded local PASS
+
+feature/python-model-source-authoring from PR221/6cc5bd769; tested2087dd716.
+3,195installed/17gates+14focused and actual Java source/model inspection/denial/
+positive-controlled absence/owned cleanup PASS. Exact source/install/harness/live
+identity and privacy verified. Version null/dependencies partial; execution NOT_RUN,
+publication NOT_CLAIMED. No SDK/Java/permission change. Normal PR/CI/eligible merge
+pending; full B2/A/B/studies remain incomplete. Failed peer branch and component
+authorization blocker retained separately; no component push or scientific rerun.
+
 ## Deleted-state recovery local acceptance
 
 feature/python-deleted-state-recovery-acceptance;base8956f7d70;tested9807a97d5;
