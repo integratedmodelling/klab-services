@@ -50,7 +50,23 @@ Official pinned source download and acceptedAPI/plugin compilation+install pass
 in the isolated privateM2 environment. Exactarchive/POM/JAR digests, commands and
 exit statuses: external program evidence `packaging-bootstrap/source-receipt.json`,
 `commands.json`, `result.json`. Full unchanged packaging is currently running in
-that same sandbox; no pass predeclared. FinalCI/normalmerge remain required.
+that same sandbox has now **PASSED across all18reactor modules**, exit0. The final
+command still uses `-U clean package -DskipTests`; explicit privateM2/settings and
+no-transfer-progress only isolate the evidence environment. This is compilation/
+packaging, **not a full Java test result**. `full-package-result.json` binds the
+command/source/plugin and logSHA256
+`cd02afb7c967d4dc32e560def0fbb09d5551ee3cce07e4fc7f01d09b3110f6c3`.
+Sourcearchive89713bytes,SHA256
+`91e788c657482fa7731b01d6e4a9724c01ea9420ed963feb93577f196328443c`;
+local source-built plugin JAR
+`b0767bb98f7b58b8a357a6b35d87a1a4994267c018fe41889a423655d258ad6d`.
+LocalYAML parsing/pin/no-secondary-credentials/unchanged-final-command checks pass
+using external PyYAML6.0.2 (inspection-only, no SDK dependency change).
+
+**Ready for bounded maintainer review.** Hosted final-candidate checks and normal
+merge remain required; no bypass. Pythonwheel/scientificdemo are N/A to this
+workflow-only change; client source is unchanged from the accepted base. Existing
+hosted Python checks remain separately required where selected, not silently waived.
 
 No scientific claim, release authorization or supported A/B completion follows.
 Program Q1 and Q5 each have locally accepted bounded workflows but remain unmerged;
