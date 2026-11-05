@@ -48,6 +48,21 @@ reviewed502e750b90589ffc26df9f99d9013553a6370d08. AllhostedchecksPASS;normal
 exactheadmerge/ancestryverified;postmergesourcediffempty/31focusedtestsPASS;
 ownedbranchretiredlocal/remote. Older pending bullets remain historical.
 
+Q4a implementationc283bd437 reuses accepted234.5scenario at1024x1024; no newmodel/
+Java/fixture/reset. 79focusedworkload-exporttests/lintPASS; installedgatesactive,
+actualJavaNOT_RUN. Contractnative-stream-workload.md prespecifiesallcells/geometry/
+units/mask,8..64MiBnativebytes,chunk/RSSobservations andtwoexplicitreadonlyfaults.
+NoPRyet; fullcategory/time/multishard/provider-soak/wholeQ4remainunproved.
+
+Q4ac283bd437 nowLOCAL_ACCEPTED_BOUNDED:2,977installed/17gates/lint/parityPASS,
+wheel2acd249c1a199830f902ed9bc7b935dd84fec3430ee3b61416968c759911a01e.
+q4-native-stream-livePASS actualserved234.5scenario/1,048,576cells/64windows/native
+float64-m-mask-geometry,8,390,163bytes/129chunks/max65,536,twoinjectedreadonlyfaults
+with response/stagingcleanup/no partialdestination/existingfilebyteidentity.
+Creatorreleases/ownedprocess-listenercleanupPASS,unrelatedJavaunchanged.
+Authorreviewcomplete;normalPR/CI/mergeNEXT. FullQ4/category/time/providersoak and
+threehistoricalstudies remainincomplete. No genericRSS/throughputclaim.
+
 Q3 implementation06c6eef53 initially passes2,942installedtests/17coveragegates/
 lint/build/parity, wheel8c7eb033d733d47dcd4fe9fd89622727ae169cd1b0f096f3cc4367aa4a286a2b.
 Authorreview reproduced aGEOS lossy3D integerordinate and corrected it atf62f6bd42;

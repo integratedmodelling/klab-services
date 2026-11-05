@@ -63,6 +63,13 @@ secretfree/creatorcleanupPASS;normalPR/CI/mergepending. Firstreadinessfailure an
 boundedsource-backedcorrectionretained. GenuineproductionHub/license/certificate
 and fullRC-P1.1/CAP01/02remainPARTIAL. No whole RC/CAP row is promoted;A/Bincomplete.
 
+Q2PR205 is nowmergednormally atc491dbbff;allhostedchecks/ancestry/postmerge31tests
+PASS;ownedbranchretired. Q4a boundednativeworkload nowlocallyaccepted atc283bd437:
+2,977installed/17gates+actualJava1,048,576cells/native8,390,163bytes/129chunks/
+twoinjectedreadfaults/filepreservation/cleanupPASS;normalPR/CI/mergepending.
+This doesnotclose wholeQ4/P2.4 or category/time/provider-soak/maintainedrevision
+scenarios. No original scientific study has reached currentJava execution.
+
 ## Current reconciliation — 4 November 2026
 
 This section supersedes status claims below, not the historical requirements or

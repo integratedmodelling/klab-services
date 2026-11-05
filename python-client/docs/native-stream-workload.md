@@ -42,3 +42,16 @@ unproved. This synthetic workload cannot close wholeRC-P2.1/P2.2/P2.3/P2.4/Q4,
 release/public-exporter publication or any historical replication gate.
 
 Implementation/installed/live acceptance pending at this contract checkpoint.
+
+## Verified bounded outcome — 2026-11-05
+
+Atc283bd437:2,977installedtests/17gates/lint/build/sourceparityPASS. Actual Java
+`native-stream-workload` PASS:1,048,576values in64windows,exact234.5m/float64/validity,
+declared geometry/CRS/axes. Native8,390,163bytes in129chunks,max65,536bytes;
+SHA256`45ab2c5acdb3fad439fea7d3c75112dd8e122a3798ef84ed5474104f1fd1f23f`.
+Both deliberate interrupted reads passed staging/response/new-file/existing-file
+safety checks. Creatorcleanup and ownedprocess/listenercleanupPASS; unrelatedJava
+unchanged. One successful export measured0.297s and sampled RSS growth0bytes at
+chunk checkpoints; this is **not** a universal peak-memory/throughput assertion.
+See the [author/CLI review](reviews/native-stream-workload.md) for commands and
+limits. Normal hosted/merge/release acceptance remains separate.
