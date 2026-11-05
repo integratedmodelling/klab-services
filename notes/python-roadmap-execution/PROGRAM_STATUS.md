@@ -1,5 +1,18 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest health delivery / independent Q9a contract
+
+PR213 MERGED_BOUNDED0f645465c6810f6a226a2526390a9cd35528f06d,reviewed
+a4e90c313e7172910241229fb9424e96cc541a5a;everyfinalcheckSUCCESS;normalmerge/
+ancestry/sourceequality/postmerge33PASS;ownedbranchretired. Original404red and
+guardfailure retained;actualdefaultownedJava startup/parsercleanupPASS. No readiness
+bypass. New accepted-base Q9a compatibility/evidence branch reconciles stale public
+support rows and will revalidate exactinstalled onboarding journey, retaining all
+eightreleasegates/nonpassingoriginalscience-broadscale-server states. Contractbefore
+validation:python-client/docs/current-compatibility-evidence.md. No release/support
+authorization or wholeA/Bpromotion. Managedcleanup/Q7/studies remainunresolved;
+sleepnotrequestedwhileactionableworkremains.
+
 ## Latest health correction actual Java regression pass
 
 7fe1a43b5 LOCAL_VALIDATED_REGRESSION:28focusedHTTP/auth/readiness and3,041installed/

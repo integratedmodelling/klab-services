@@ -22,18 +22,25 @@ platform blockers and does not bump, tag, upload or publish the package.
 | Capability | Actual accepted scope / remaining limits |
 | --- | --- |
 | Sync observation workflow | Typed requests, configured origins, scope/Job lifecycle, checked indexed reads; scientific validity remains model/input/reference-specific |
-| Native async (#105) | Native HTTP async observation/scope/Job/point reads; no async Connection/Hub orchestration, native file export or saved-handle restoration |
+| Native async | Native HTTP scope/Job/point reads; bounded actual Java own-wait cancellation/explicit known-ID attachment accepted in PR210, actual exact-installed-kernel notebook journey in PR211. No async Connection/Hub orchestration, native file export or saved-handle restoration; no arbitrary kernel-profile guarantee |
 | Indexed pandas views (#106) | Object precision, explicit null flags, source metadata, offsets/order; no guessed axes, general categorical dictionary or lazy/chunk/time discovery |
 | Recorded graph pages (#107) | Typed bounded synchronous pages, membership checks; partial, not complete lineage, snapshot pagination or root-commit proof |
-| Native exports / raster readers | Existing advertised exporters and checked reader subset; cannot silently repair missing scientific metadata, including upstream geospatial issue #10 |
+| Native exports / raster readers | Actual Java GeoJSON identity/coordinates/CRS and million-cell streamed numeric export/fault preservation accepted in PR204/206. Checked reader subset only; categorical/time/multi-shard/revision/provider gates remain separate, including upstream geospatial issue #10 |
 | Existing Connection routing | Explicit trusted service selection/origin credentials; not automatic failover, migration or twin composition |
-| Events/reconnect | Blocked contract audit [#108](https://github.com/integratedmodelling/klab-services/pull/108), not a durable replay/resync feature |
+| Events/reconnect | Existing best-effort hints remain distinct from unaccepted durable replay/resync/root-commit proof (issue126); historical audit PR108 is not proof of absent current notification code |
 | Window/chunk/time access | Blocked remote scan contract [#109](https://github.com/integratedmodelling/klab-services/pull/109); internal Java scan plans are not a published remote scan protocol |
-| Full authoring/import/publication | Blocked scope/history/conflict/fixture gate [#110](https://github.com/integratedmodelling/klab-services/pull/110); supported Java CRUD does not imply universal safe modes |
-| Behavior/agent lifecycle | Blocked messaging/control/termination acceptance [#111](https://github.com/integratedmodelling/klab-services/pull/111); a send boolean is not confirmed cleanup |
+| Authoring/import/publication | Namespace and one ADD-only strategy-draft family, four-family read-only parser preview and actual owned draft/denial/cleanup slices accepted in PR201/209. Ontology/worldview mutation, broader editing/history/conflict/import/publication remain incomplete; Java CRUD is not universal safe modes |
+| Behavior/agent lifecycle | Existing deferred BEHAVIOR registration/native AMQP control and wire fixture; opt-in Hub federation transport prerequisite in PR212, authority readiness corrected in PR213. Genuine managed Runtime/principal-incarnation/independent remote cleanup remain unaccepted; PUBLISHED/STOPPED are not execution/cleanup proof |
 | Broader federation | Blocked composition/recovery contracts [#112](https://github.com/integratedmodelling/klab-services/pull/112); attachment is not composition |
 | Original PaL / full scientific portfolio | Still blocked by admitted models, binding/units/grid/time/masks/reference contracts. Input QA and synthetic known-answer runs are not published-study reproduction |
 | Embedded worker/provider SDK | Separate product specification and execution authorization required |
+
+These are bounded development-preview receipts, not whole-row acceptance or
+production support commitments. Current integrated evidence and remaining gates
+are tracked in [current compatibility evidence](current-compatibility-evidence.md).
+PR213 restored default owned authority readiness after a discovered PR212 regression;
+the red failure is retained, not recast as a pass. Q7's actual hierarchy discrepancy
+remains unresolved on its preserved branch and is not hidden by offline success.
 
 ## Release evidence checker (development tool, not public SDK)
 

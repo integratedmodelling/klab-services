@@ -1,5 +1,14 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest delivery / Q9a contract
+
+PR213merged0f645465c,revieweda4e90c313;allCI/normalmerge/ancestry/sourceequality/
+postmerge33PASS;branchretired. Authority health regression corrected withoutweakening
+readiness/networkguard;actualJava startup/parsercleanupPASS. Q9a freshbranch
+feature/python-current-compatibility-evidence/base0f645465c:publicsupport row
+reconciliation/exactinstalled integratedjourney/existing8gatereleasechecker;
+validationpending,nonpassinggates retained. FullQ8/Q9/A/B/studies incomplete.
+
 ## Latest authority health regression validated
 
 fix/python-fixture-authority-health;base d3453dd42;tested7fe1a43b5;PR/mergepending.
