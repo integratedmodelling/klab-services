@@ -4,7 +4,7 @@
 
 **N and S each executed once against real Java and passed their bounded independent
 oracles**, including N's numerical/geographic checks and S's actual private-principal
-negative. **All four implementation PRs normally merged.** The milestone is **not
+negative. **All four implementation PRs and the bounded TA-2 follow-up normally merged.** The milestone is **not
 complete** because scheduled full L4 acceptance needs an authorized pinned Java
 worker. Final documentation-only handoff verification is separate from implementation.
 Normal publication recovered for these genuinely new contributions. Existing full offline CI is
@@ -18,8 +18,9 @@ measured terrain accuracy, universal model ranking or published-study replicatio
 ## Exact baseline, artifacts and contribution state
 
 Executed milestone base was `937c758b62743a0ab68e48792870a9261cf7cc87` (#231).
-Accepted remote advanced to6a7d66968a612a16bb309ad0be6b8aa8d4f9243b;
-31previous queue PRs plus4milestone implementation merges. Main prior checkpointfc5cca637 and all
+Accepted implementation advanced toe153fd3949136354ff55cf10953d8e472c490f57;
+31previous queue PRs plus4milestone implementation merges and1bounded correctness
+follow-up. Main prior checkpointfc5cca637 and all
 seven prior local A+B candidates/union failures preserved. No reset or broad cleanup.
 
 | Coherent contribution | Independent base / branch | Tested state / delivery |
@@ -28,12 +29,35 @@ seven prior local A+B candidates/union failures preserved. No reset or broad cle
 | TA-3 numerical N |937c758b6 / feature/python-scientific-scenario-n|PR234 MERGED6980a529d47dd35417c750d98cded111866b5c17;reviewed836f5904f/executed9c3d14878;3421installed/all17gates,actualN and29postmerge checks PASS|
 | TA-4 model-selection S |937c758b6 / feature/python-scientific-scenario-s|PR233 MERGED03dfe375c068dee518307ba368a07098e585e92e;revieweda8bda3318/executed20d3bc368;3420installed/all17gates,actualS and194postmerge checks PASS|
 | TA-5/6/7 selection/effectiveness/integration |937c758b6 / feature/python-scientific-test-selection|PR235 MERGED6a7d66968a612a16bb309ad0be6b8aa8d4f9243b;reviewed6569a1c17;3434installed/all17gates/25finalfocused,hostedCI and252combined postmerge checks PASS|
+| TA-2 final-audit correctness follow-up |6a7d66968 / feature/python-scientific-workflow-binding|PR237 MERGEDe153fd3949136354ff55cf10953d8e472c490f57;reviewedbea45c5f9c29e40125bd30065b850295026731e0;3486installed/all17gates/115focused,latesthostedCI and298postmerge checks PASS|
 
 All four have contributor-guide self-reviews, not invented human approvals, and
 normally merged after required checks passed. A final documentation-only TA-7
 handoff is split out so it can record actual merge outcomes rather than predictions.
 No cascading PR stack: N/S reuse the
 adapter from its independent worktree, with explicit source/workflow selection.
+
+### Final-audit TA-2 correction — PR237 merged, final handoff updated
+
+The audit reproduced a local false-declaration gap without running Java: changing
+N's manifest units to km passed structural/hash validation although its fixed
+workflow checks metres. PR237 binds declared units, CRS, initialization domain,
+oracle path and capability set to the two existing reviewed adapters before any
+wheel/service execution. Unsupported CAP-17/Target C claims reject as well.
+No unit conversion, altered oracle, relaxed expectation or scientific reasoning
+was introduced. Both original N/S manifests already match; their actual results
+and original receipt hashes remain unchanged, so no additional Java run is justified.
+
+Initial962e6024e passed3484installed/all17gates. Capability-binding5d825f1f5 passed
+3485tests but failed coverage gate0: inherited async wait line87/arc86→87 was not
+covered. The existing15ms wall-clock test can reach an earlier timeout check.
+Added an L1 module-local controlled clock/status failure test for that exact path,
+with no HTTP/replay/cancel and no SDK/deadline/gate change. Original failure retained.
+Latestbea45c5f9 passed3486installedtests/all17gates/build/install/lint and115focused
+checks including the async family. All latest hosted checks passed before normal
+merge toe153fd394; exact reviewed delta/ancestry and298postmerge checks PASS.
+Its temporary branch retired after proof; compiled reusable core remains intact.
+PR236 now records this verified correction, not the earlier held development state.
 
 Actual N/S installed noneditable wheel SHA256
 `d9a1d5ff2ce33d41ab61f78260671e696cabbd50f12b309dccd77e3ee233280c`, built at5af6668b1.
@@ -48,8 +72,10 @@ No component#11 adoption, Java/ontology/worldview/model/research-input changes.
 
 TA-1 family inventory (`python-client/docs/testing/scientific-acceptance-inventory.md`)
 is merged through PR232; its machine map preserves all24roadmap+
-18capabilityIDs. Integrated-source6a7d66968 inventory contains157modules:109unchanged
-modules matched to measured JUnit durations,48unmeasured left unknown. The earlier
+18capabilityIDs. Final-sourcee153fd394 inventory contains157modules:108unchanged
+modules matched to measured JUnit durations,49unmeasured left unknown. The prior
+6a7d66968 snapshot has109measured/48unknown; the changed async test module's old
+timing is deliberately not carried forward. The earlier
 156module/109measured/47unknown contract-only snapshot is retained separately.
 Case-duration sums exclude collection/process overhead; actual suite wall times are
 reported separately. File hashes/source matches prevent assigning old timings to
@@ -221,16 +247,18 @@ gates stay separate. **No primary status promoted.**23in-scopecriteria remain
 gaps remain. Luxembourg/Kaduna/PaL remain historicalL3PARTIAL/L4BLOCKED/L5–L7NOT_RUN;
 no original-study execution, tolerance fabrication or artifact sweep.
 
-Owned core retains compiled outputs at detached accepted6a7d66968. All four temporary
-implementation branches retired only after normal merge/ancestry/exact-delta/
+Owned core retains compiled outputs at detached acceptede153fd394. All four temporary
+implementation branches and the binding follow-up branch retired only after normal merge/ancestry/exact-delta/
 postmerge proof. New N/contract worktrees removed; the lightweight selector checkout
 is reused for final documentation-only handoff. Older unique A+B work is untouched.
 Cleanup verified14owned process identities
 absent; no services/kernel/windows/power helper created for ongoing work. No unrelated
 terminal/service stopped. All4contributions passed their full installed suites and
-all17gates. Integrated6a7d66968 passed3479installedtests/all17gates/build/install/lint
-and252focused postmerge checks. Integrated validation wheel
-7a14359369b9aefa892b09840006d5d078482ba66de8bd178b84b6affc89032b is distinct from
+all17gates. Prior integrated6a7d66968 passed3479installedtests/all17gates and252checks.
+Final reviewedbea45c5f9 passed3486installedtests/all17gates/build/install/lint; merged
+e153fd394 has the exact reviewed delta and passed298focused postmerge checks.
+Final validation wheel
+d1473b53efd16cd2e896faba85083ae0ad8afe968c27d0043a734b5cb32db865 is distinct from
 the actual N/S wheel; no retroactive runtime identity substitution. Final scheduled
 L4 provisioning remains BLOCKED; no milestone-completion claim is made.
 

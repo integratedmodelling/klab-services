@@ -159,7 +159,7 @@
     "schema_version": 1,
     "sha256": "fba170d15dfbebb6f49356e78264cc89ed1381481e1390c3f34b61b80bafcd36"
   },
-  "current_accepted_implementation": "6a7d66968a612a16bb309ad0be6b8aa8d4f9243b",
+  "current_accepted_implementation": "e153fd3949136354ff55cf10953d8e472c490f57",
   "delivery": [
     {
       "headRefOid": "3b9fee30c69e80405459c2d3167b1148ae71c26c",
@@ -200,20 +200,31 @@
       "number": 235,
       "state": "MERGED",
       "url": "https://github.com/integratedmodelling/klab-services/pull/235"
+    },
+    {
+      "headRefOid": "bea45c5f9c29e40125bd30065b850295026731e0",
+      "mergeCommit": {
+        "oid": "e153fd3949136354ff55cf10953d8e472c490f57"
+      },
+      "mergedAt": "2026-11-05T21:11:41Z",
+      "number": 237,
+      "state": "MERGED",
+      "url": "https://github.com/integratedmodelling/klab-services/pull/237"
     }
   ],
   "flaky_reruns": 0,
   "integrated_validation": {
     "artifacts": {
-      "klab_python_client-0.1.0-py3-none-any.whl": "7a14359369b9aefa892b09840006d5d078482ba66de8bd178b84b6affc89032b",
-      "klab_python_client-0.1.0.tar.gz": "60dde99a43570d6f19687430f32cab3b60cba3887b723b93206757ba1809222a"
+      "klab_python_client-0.1.0-py3-none-any.whl": "d1473b53efd16cd2e896faba85083ae0ad8afe968c27d0043a734b5cb32db865",
+      "klab_python_client-0.1.0.tar.gz": "b55fc1208c2940b29760e4d5a3f3f9b90f5962c8dd249a030fea6d53ab96745b"
     },
     "coverage_gates": 17,
-    "identity_sha256": "982d3d35badd501abc794abe818b93aa9eb59ac1e09973543d2ea328c739c88e",
-    "installed_tests": 3479,
-    "postmerge_focused_tests": 252,
+    "identity_sha256": "e2ed61d5013d07f64cb2de183e1baba1873cfa1f4bb2dec864ed2266caf7f1e2",
+    "installed_tests": 3486,
+    "postmerge_focused_tests": 298,
     "source_match": true,
-    "status": "PASS"
+    "status": "PASS",
+    "tested_source": "bea45c5f9c29e40125bd30065b850295026731e0"
   },
   "measurements": {
     "comparison": "Same source/interpreter, serial runs, no coverage in either baseline or subset; mandatory coverage CI unaffected",
@@ -503,11 +514,11 @@
   },
   "milestone": "MILESTONE_INCOMPLETE",
   "module_inventory": {
-    "measured": 109,
+    "measured": 108,
     "modules": 157,
-    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\ta-test-module-inventory-integrated.json",
-    "sha256": "cc0b5b8454059b3016c3b282694cf1d259577ed8207485770a71b4d64a34ea04",
-    "unmeasured": 48
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\ta-test-module-inventory-final.json",
+    "sha256": "d0d016d9bc41edcec912ba205f856a85ad18bbe2c51977d3ff0cfb2eb5107015",
+    "unmeasured": 49
   },
   "postmerge_and_retirement": [
     {
@@ -547,11 +558,48 @@
       "prior_unique_branches_preserved": true,
       "remote_local_branch_retired": true,
       "worktree": "reused clean lightweight worktree for final documentation-only handoff"
+    },
+    {
+      "PR": 237,
+      "additional_Java_runs": 0,
+      "all_prior_implementation_merges_ancestors": true,
+      "compiled_core_retained": true,
+      "exact_reviewed_delta": true,
+      "merge": "e153fd3949136354ff55cf10953d8e472c490f57",
+      "normal_latest_head_CI": "PASS",
+      "older_unique_branches_preserved": true,
+      "original_N_S_receipts_unchanged": true,
+      "passed": true,
+      "postmerge_tests": 298,
+      "remote_local_branch_retired": true,
+      "reviewed": "bea45c5f9c29e40125bd30065b850295026731e0"
     }
   ],
   "real_java_scenario_executions": 2,
   "real_java_scenario_passes": 2,
-  "reason": "Scheduled full L4 worker/artifacts not provisioned; four implementation PRs normally merged",
+  "reason": "Scheduled full L4 worker/artifacts not provisioned; four implementation PRs and bounded binding correction normally merged",
+  "retained_coverage_gate_failure": {
+    "SDK_changed": false,
+    "correction": "Added module-local controlled-clock/status-error L1 test; no HTTP, no SDK/deadline/gate change",
+    "coverage_sha256": "f7ca9f5140e3c75d3a0fc15a3471c85c0d1353fbf170f1234ef806796af4faaa",
+    "existing_test": "15ms wall-clock timeout can fail earlier, leaving TransportError-to-WaitTimeout branch unmeasured",
+    "failed_gate": "coverage-0",
+    "failure_output_sha256": "2c419568c63912dbe2c640c0303d3226d7f667503351b23e100dd1e26bb1c00a",
+    "missing_arc": [
+      86,
+      87
+    ],
+    "missing_line": "src/klab_client/async_client.py:87",
+    "new_full_gate_result": "PASS3486/all17 at bea45c5f9c29e40125bd30065b850295026731e0; original failed coverage retained",
+    "new_head": "bea45c5f9",
+    "offline_exit": 0,
+    "offline_tests": 3485,
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\ab-three-study-20261105\\ta-pr237-retained-coverage-failure.json",
+    "schema_version": 1,
+    "sha256": "f6642c71724010b4292f087d933ab17621baee74f05ca1103a6367849b9c47a2",
+    "status": "FAIL",
+    "tested_source": "5d825f1f51e49029199209ad5a697eb7662a164d"
+  },
   "retained_inherited_CI_failure": {
     "Java_scientific_reruns": 0,
     "PR": 232,
@@ -1012,5 +1060,42 @@
   "union": {
     "reason": "Preserved disputed semantic contract, no rerun or expectation change",
     "status": "BLOCKED"
+  },
+  "workflow_binding_correction": {
+    "additional_Java_runs": 0,
+    "finding": {
+      "actual_Java_run_with_bad_manifest": false,
+      "additional_deterministic_L1_tests": 1,
+      "base": "6a7d66968a612a16bb309ad0be6b8aa8d4f9243b",
+      "checks": "Bind declared units/CRS/time/oracle to existing workflow before wheel/service execution",
+      "correction_PR": 237,
+      "correction_head": "bea45c5f9c29e40125bd30065b850295026731e0",
+      "correction_merge": "e153fd3949136354ff55cf10953d8e472c490f57",
+      "coverage_gates": 17,
+      "finding": "In-memory N manifest expected_units=km passed structural validation while fixed workflow verifies m",
+      "focused_tests": 75,
+      "installed_tests": 3486,
+      "new_guard_cases": 6,
+      "original_N_S_manifests": "Both m/EPSG3857/initialization and correct oracle; actual passes unaffected",
+      "original_oracle_values_or_test_deadlines_changed": false,
+      "owner": "Python testing adapter,not Java/scientific model",
+      "postmerge_tests": 298,
+      "retained_prior_coverage_gate_failure": "5d825f1f5 gate0 line87/arc86\u219287; no deadline or gate relaxed",
+      "schema_version": 1,
+      "status": "Reproduced local FAIL corrected; exact full gates/normal CI/merge/postmerge PASS"
+    },
+    "finding_sha256": "61c94fa8e54f6daf8203ffa2cfbe2ed1ccacb7c7cc81e8cdd472eb7ae0ab922f",
+    "original_N_S_receipts_replaced": false,
+    "postmerge": {
+      "additional_Java_runs": 0,
+      "all_prior_implementation_merges_ancestors": true,
+      "exact_reviewed_delta": true,
+      "merge": "e153fd3949136354ff55cf10953d8e472c490f57",
+      "normal_latest_head_CI": "PASS",
+      "original_N_S_receipts_unchanged": true,
+      "passed": true,
+      "postmerge_tests": 298,
+      "reviewed": "bea45c5f9c29e40125bd30065b850295026731e0"
+    }
   }
 }

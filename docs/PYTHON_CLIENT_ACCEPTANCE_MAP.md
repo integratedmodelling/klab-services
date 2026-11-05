@@ -1,24 +1,25 @@
 # Python roadmap acceptance map — 3 November 2026
 
-## Scientific acceptance architecture — N/S PASS, four implementation PRs merged
+## Scientific acceptance architecture — N/S PASS, implementation and binding correction merged
 
-**Current delivery supersedes the development snapshot below:** all four
-implementation PRs232/233/234/235 normally merged; accepted implementation
-`6a7d66968a612a16bb309ad0be6b8aa8d4f9243b` passed3479installedtests/all17gates and
-252focused postmerge checks. N/S actual boundedL4 PASS; no primary status promoted.
+All four implementation PRs232/233/234/235 and bounded TA-2 correction237 normally
+merged; accepted implementation `e153fd3949136354ff55cf10953d8e472c490f57`.
+Exact reviewedbea45c5f9 passed3486installedtests/all17gates;298postmerge checks PASS.
+N/S actual boundedL4 PASS; no primary status promoted.
 Final TA-7 documentation records exact merge/retirement and corrected timing evidence.
 MILESTONE_INCOMPLETE: periodic fullL4 execution still needs authorized pinnedworker/
 artifacts; scheduledoffline CI is not that gate. No original-study execution.
 
-Accepted remote937c758b6/#231 unchanged; no milestone PR merged. Independent N
+Executed base was937c758b6/#231. Independent N
 source9c3d14878 and S20d3bc368 each executed once with real Java and passed their
 bounded L4 oracle plus lifecycle. Exact wheel/source/build/model/component identities,
 per-check/five-axis outcomes and cleanup are bound by the
 [evidence index](../notes/python-roadmap-execution/evidence/scientific-acceptance-index-20261105.json)
 and [standalone report](../notes/python-roadmap-execution/SCIENTIFIC_ACCEPTANCE_ARCHITECTURE_REPORT.md).
-This is local acceptance, not hosted delivery, production support or published science.
+This is bounded scientific acceptance with normal implementation delivery, not
+production support or published science.
 Normal ref creation recovered for the genuinely new milestone contributions:
-PR232contract/PR234N/PR233S are open,CI pending. Older provenance ref was not
+PR232contract/PR234N/PR233S/PR235selection normally merged. Older provenance ref was not
 retried/renamed, and no rule/protection workaround was used.
 
 | Affected rows | Python / Java / independent verification | Remaining gates and next owner |
@@ -26,7 +27,7 @@ retried/renamed, and no rule/protection workaround was used.
 |RC-P2.1/P2.5;CAP08/09/15|Existing implementation retained. N:L4 PASS synthetic20cell values/CRS/centres/orientation/units/mask/selectedplan; L2metadata rejection explicit|Corrected unpublished exporter;single-shard only;provider/time/category/trueaccuracy unverified. Backend/provider supplies genuine tuple/oracle|
 |RC-P1.5;CAP05/06|Existing requests/partialplans retained. S:L4 PASS source-justified lexical66.5m/scenario234.5m outputs and actual associatedmodels|Complete ranking/lineage/rootcommit not served; union contract separatelyBLOCKED. Resolver/semantic owners supply contracts,not Python reasoning|
 |RC-P1.3;CAP18|S real valid-principal private attach AuthorizationError/no scientific mutation and ownedcleanup PASS|Not wholeproductionACL/Hub matrix;operator supplies authorized deployment roles/license|
-|RC-P0/R1;CAP16|Inventory/validator/feedbackselector merged;integrated3479/all17gates and exact postmerge proof PASS|ScheduledL4worker absent;operator provisioning required;release/production support not certified|
+|RC-P0/R1;CAP16|Inventory/validator/feedbackselector and fixed-workflow metadata/capability binding merged;3486installed/all17gates and298postmerge checks PASS|ScheduledL4worker absent;operator provisioning required;release/production support not certified|
 
 L1/L2 validation is not L3/L4 acceptance; missing checks remainNOT_RUN. No primary
 row is promoted:23in-scopecriteria1accepted/20partial/1missing/1blocked,+TargetCexcluded;

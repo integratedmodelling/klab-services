@@ -30,3 +30,15 @@ N/S+relevantmatrix execution. Weeklyoffline CI cannot imply that result. Need op
 provisioning/permission,not more passingmocks or scientific/backend repairs. Final
 documentation link/metadata tests and normalCI must pass before merge; no result
 predeclared. No poweraction,sharedservice interference or original research run.
+
+## Final audit correction verified before updating this handoff
+
+PR237 normally merged toe153fd3949136354ff55cf10953d8e472c490f57; reviewed
+bea45c5f9c29e40125bd30065b850295026731e0 passed3486installed/all17gates/115focused,
+all latest hosted checks; exact delta/ancestry and298postmerge checks PASS.
+Declared units/CRS/time/oracle/capabilities now bind to the actual fixed workflows.
+Original N/S manifests/receipts match and remain unchanged; no live replay.
+Prior3485test offlinePASS/coveragegateFAIL retained; deterministic L1 clock/status
+test covers inherited async deadline path without changing SDK/deadline/gate.
+Final-source inventory157/108measured/49unknown avoids old timings for changed tests.
+This handoff was held until that correction merged; no premature acceptance.

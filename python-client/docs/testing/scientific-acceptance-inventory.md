@@ -13,6 +13,13 @@ and indexed evidence under notes/python-roadmap-execution/. No primary A+B or st
 promotion. Scheduled L4 worker remains unprovisioned; MILESTONE_INCOMPLETE.
 Historical/development snapshots below are retained, not rewritten into new passes.
 
+Final-audit follow-up PR237 normally merged toe153fd394. Reviewedbea45c5f9 passed
+3486installed/all17gates; exact delta and298postmerge checks PASS. Fixed adapters
+now bind declared units/CRS/time/oracle/capabilities to actual workflow checks.
+The retained coverage failure was corrected with one deterministic L1 async deadline
+test, not SDK/deadline/gate changes. Final inventory157modules/108measured/49unknown:
+changed async module's earlier timing is not reused. Original N/S receipts untouched.
+
 Accepted source `937c758b62743a0ab68e48792870a9261cf7cc87` (#231). This milestone
 does not adopt the seven unpublished A+B branches. The authoritative acceptance
 map and its 24+18-ID crosswalk remain unchanged. [Machine-readable family map](../../tests/acceptance/scenarios/test-evidence-map.json)
