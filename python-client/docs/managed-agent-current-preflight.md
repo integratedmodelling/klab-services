@@ -68,6 +68,30 @@ its explicit unconfirmed publication mode cannot be promoted to delivery proof.
 No managed execution has been attempted by this increment. Client
 `remote_cleanup="UNKNOWN"` remains truthful and unchanged.
 
+## Implemented opt-in Hub prerequisite (not managed acceptance)
+
+The fixture now serves the existing `/api/v2/users/services/{id}` GET only when a
+private `owned-federation.json` is explicitly supplied before authority startup.
+Absent that file, the route returns404 and enrollment behavior is unchanged.
+The exact manifest fields are `allow_owned_federation` (literaltrue), `name`
+(`python-test-` prefixed), `broker_uri` (authenticated127.0.0.1AMQP with explicit
+unprivileged port and virtualhost), and `users` (one to eight unique `python-`
+prefixed identities). Configuration is bounded and rejects extra fields. Do not
+commit this file or print its credential-bearing broker URI.
+
+Only the authority's valid signed, unexpired TEST service JWT with the exact
+service subject/issuer/audience/roles can read these groups, via Java's
+`Authentication` header. Scientist credentials, wrong keys, expired tokens and
+the unrelated Authorization/Bearer path are refused. Unprovisioned users receive
+404; responses use no-store and the handler does not log credentials.
+
+This endpoint distributes an operator-supplied broker configuration; it neither
+creates a broker nor proves its credentials/ACLs, Runtime decoding/connection,
+managed registration/execution, principal/incarnation binding or remote cleanup.
+No public SDK/server production authorization changes. Twenty-eight focused tests
+PASS, including real loopback HTTP and server/thread cleanup. Full installed gates
+and exact-candidate review/normalCI/merge remain pending for this prerequisite.
+
 ## Separate gates
 
 PR211 accepts one actual installed native async notebook journey, not managed

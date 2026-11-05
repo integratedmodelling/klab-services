@@ -1,5 +1,16 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest managed-agent prerequisite implementation
+
+PR211 mergedverifiedc7dea3373. Current accepted-base branch implements only opt-in
+owned Hub federation user-services GET, traced to existing Java route/header/group
+custom properties. Private bounded TEST manifest and signed fixture serviceJWT
+required; default enrollment unchanged, no broker or agent execution.28focusedtests
+PASS including actualloopbackHTTP/negativeauth/servercleanup;lintPASS. Fullinstalled
+gates/review/normalPR/CI/merge pending. Runtimebroker connection/ACL/principal/
+incarnation/remote cleanup remain unaccepted; this is prerequisite completion only.
+Q7/studies/otherA-B gates remain open; no all-work stoppage/sleep request.
+
 ## Latest Q8b delivery / current managed-agent preflight
 
 PR211 MERGED_BOUNDED `c7dea3373c0fc1a4cbf9d577bd066b69374e6ca3`, reviewed
