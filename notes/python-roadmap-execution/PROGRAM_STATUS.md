@@ -61,14 +61,18 @@ original artifact, rights, reference and unchanged-Java gates.
 - **COMPLETED:** exact source preservation; current acceptance map/full roadmaps
   reconciled; PR196–200 ancestry and issues89/123/124/125/126/127/129/130/193 checked.
   All remain OPEN; component11 OPEN at90f425e0…, base3f98082d….
-- **NEXT:** Q1 add a minimal current-worldview fresh-process handle/Job recovery
-  acceptance; installed exact candidate, offline gates, actual owned Java run,
-  contributor review and eligible normal PR merge, then Q2/Q3/Q5 as dependencies allow.
+- **NEXT:** Q5 actual Resources parser/source-receipt acceptance, independently of
+  Q1. Q1 is implemented but NOT accepted: two owned runs failed internal HTTP
+  audit guards (existingPOSTconnect, then ScopeRequestconfiguration.id). Known
+  envelope extraction is corrected with focused tests; no third repair-loop run
+  in this pass. A later frozen Q1 live run must pass before PR/merge.
 - **BLOCKED:** full A/B release/provider and historical studies retain original
   data/Java/approval gates; none establishes a blocker to Q1 implementation.
-- **ACTUAL_GITHUB_STATUS:** no new feature PR, commit or push at Phase0 record.
-- **CLEANUP:** no program service/worktree created; inherited11 worktrees and
-  unrelated cache preserved. No terminal/service terminated.
+- **ACTUAL_GITHUB_STATUS:** Q1 branch contains local implementation commits;
+  no new PR/push/merge. Acceptance blockers are internal, not external-only.
+- **CLEANUP:** both owned Java runs closed all captured processes/listeners;
+  existing Java processes unchanged. No worktree created; inherited11 worktrees
+  and unrelated cache preserved. Failed private evidence retained.
 
 No completion percentage or external-only end-state is justified. This file is a
 resume checkpoint, not final handoff or a promise of background continuation.

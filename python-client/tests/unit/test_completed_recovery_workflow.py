@@ -28,7 +28,7 @@ def fixture(tmp_path, monkeypatch, *, owned=False, values=None, close_mutation=F
         def restore_handle(self, path):
             for event in events:
                 event(SimpleNamespace(method="POST", url=SimpleNamespace(path="/runtime/api/v1/connect"),
-                    content=b'{"id":"session.context"}'))
+                    content=b'{"configuration":{"id":"session.context"},"serviceIds":[]}'))
             return {"context.json": context, "observation.json": observation, "job.json": job}[path.name]
     monkeypatch.setattr(workflow, "client", lambda config: Client())
     monkeypatch.setattr(workflow, "load_handle", lambda path: SimpleNamespace(name=path.name, context_id="session.context"))

@@ -63,6 +63,15 @@ New negative tests refuse wrong/missing root, creation/submission/cancel/release
 This corrects the acceptance harness, not scientific Java behavior. Initial failure
 and successful owned-process/listener/foreign-Java preservation remain recorded.
 
+Corrected `q1-live-v2` also fails the harness guard before attach: ScopeRequest
+stores the root ID at `configuration.id` (`Client._scope_request:414–415`), not at
+the JSON top level. This is a second internal harness defect, not an external
+blocker or evidence that Java restoration fails. The extraction and unit fixture
+now use the actual envelope shape. **No third live repair loop in this pass**;
+Q1 remains IMPLEMENTED_UNVERIFIED/acceptanceFAILED, is not eligible for merge, and
+the queue moves to independent work. Required next Q1 evidence is one frozen
+candidate live run after this known source-grounded correction, not a new API.
+
 ## Suggested bounded PR
 
 “Verify installed fresh-process completed Job and observation recovery on owned

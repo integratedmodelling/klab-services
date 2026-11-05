@@ -9,7 +9,7 @@ are closed only when every constituent scenario is demonstrated or scope approve
 
 |ID / target|Before → after / exact contract|Tests and exclusions|Value / effort / risk|State / dependency|
 |---|---|---|---|---|
-|Q1 A lifecycle acceptance|Existing handles → installed fresh process restores same completed Job and observation, reads independent20cells, closes locally without disposal, original owner releases|No submit/create/release in recovery child; same IDs/scope, no secrets in handles; deleted/foreign negative controls. No in-flight continuation or Runtime-generation guarantee|High / small / medium|SELECTED;P0|
+|Q1 A lifecycle acceptance|Existing handles → installed fresh process restores same completed Job and observation, reads independent20cells, closes locally without disposal, original owner releases|No submit/create/release in recovery child; same IDs/scope, no secrets in handles; deleted/foreign negative controls. No in-flight continuation or Runtime-generation guarantee|High / small / medium|IMPLEMENTED_UNVERIFIED;liveFAILED due INTERNAL harness;pause after bounded correction cycle|
 |Q2 A connection journey|Current connection facade → owned TEST Engine-certificate/service-selection/computation/fresh-process demonstration|Issuer/origin/expiry/unauthorized/ambiguous/outage/mixed-capability checks; genuine production Hub remains separate external gate|High / medium / medium|PENDING;P0;reuse public workflows, no genericTLS substitute|
 |Q3 A optional vector analysis|Advertised native GeoJSON export → strict bounded caller-facing vector interpretation if source inspection confirms gap|Geometry/properties/IDs/CRS/multipolygon/holes/null/budget; actual Java native export. No invented schema/category or scientific spatial mediation|High / medium / medium|PENDING;P0;inspect before adding API|
 |Q4 A categories/time/multi-shard|Numerical single-shard baseline → authentic supported categorical/time/large-provider acceptance slices|Independent class dictionary/area, contrasting times, masks/units, real stream/soak; separate coherent increments as actual supported contracts permit|High / medium-large / high|PENDING;Q3 optional;#123 only maintained block/revision claims|
@@ -23,7 +23,7 @@ are closed only when every constituent scenario is demonstrated or scope approve
 
 |Item|Branch / base / head / PR / merge|Tested wheel / Java / environment|Commands/results/review/cleanup|
 |---|---|---|---|
-|Q1|Not yet created; basefe46ddc5e|CandidatewheelNOT_RUN;Java tuple inPROGRAM_STATUS;owned isolatedTEST only|Implementation/acceptanceNOT_RUN;normal eligible merge required|
+|Q1|feature/python-fresh-process-recovery; basefe46ddc5e; implementationb2ad935e1 followed by source-grounded envelope fix; noPR/merge|Wheelba40939b815ee762ac6597c9f882b1a2d4600c1205ee46320b3ed43b0ea051dc;2869offline/16gates;ownedJavaTEST tuple inPROGRAM_STATUS|q1-live-v1/v2FAILED internal audit/ScopeRequestshape;source fix and18focusedcontrols;no third live loop;all ownedprocess/listenercleanup passed. Not mergeeligible;next independentQ5, then frozenQ1acceptance|
 
 ## Every primary requirement and scenario family
 

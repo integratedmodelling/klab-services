@@ -48,7 +48,7 @@ def recover(state, directory):
         def capture(request):
             call = {"method": request.method, "path": request.url.path}
             if call["path"].endswith("/api/v1/connect"):
-                call["context_id"] = json.loads(request.content).get("id")
+                call["context_id"] = json.loads(request.content).get("configuration", {}).get("id")
             calls.append(call)
             require(allowed_request(call, context_reference.context_id),
                 "Recovery attempted an unexpected operation or a different context")
