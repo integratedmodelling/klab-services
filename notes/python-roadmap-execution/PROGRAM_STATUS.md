@@ -1,5 +1,46 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Shared-reader corrected actual acceptance
+
+7c33ab67f:3,251installed/17gates/122focused and actualJava ACL/original16restore/
+overlapping native A/B234.5m reads/localclose owner-survival/allowned cleanupPASS.
+PrivateAuthorizationError positively controlled by valid Bsession; no Bscientific
+mutation/disposal. Exact install/source/harness/live/handle/reportprivacy verified.
+First22af36adf harnessfailure retained. NoSDKproduction/Java changes; no remote
+lease/server scanner simultaneity/read-only-B role claim. Finalfocused/normalPR/
+CI/merge pending. Integration597b2fed,24mergedqueuePRs/0open untilsubmission.
+Next independent Python correction: native signed-long offset upperbound, reproduced
+without network. Scientific fullfixture gates/dependency families unchanged; program incomplete.
+
+## Current integration / shared-reader slice
+
+Corrected7c33ab67f passed122focused/3,251installed/17gates/lint/build/parity;
+new actualJava shared-context-readers-corrected-live ACTIVE. First22af36adf live
+failure remains FAIL withcleanupPASS, corrected absent .urn harness attribute via
+served raw['urn'] and regressionguard. NoSDKproduction/Java change. NormalPR still
+pending live/candidate/privacy/cleanup evidence. Nextoffset-long defect reproduced
+separately; noJava defect claim or extra scientific study execution.
+
+Latest candidate22af36adf:121focused/3,250installed/all17gates/lint/build/parityPASS;
+one owned actualJava shared-context-readers-live run ACTIVE. No SDK production/Java
+changes, noPRyet/livePASSpredeclared. Barrier guards cancel+join tasks/remove hooks
+after reader failure/timeout. Await actualACL/identity/values/local-close/cleanup result.
+
+PR224 MERGED597b2fed15f3b25960667a7d47322a55ef96d796, reviewed56ae58981;
+all hosted checks, exact-head normalmerge/ancestry/source equality and157postmerge
+tests PASS. Successful fix branch retired; peer/categorical/research preserved.
+Integration feature/python-experiment-runner@597b2fed15f3b25960667a7d47322a55ef96d796.
+Queue#201–224=24merged/0open. A+B23in-scope=1accepted/20partial/1missing/1blocked;
+18capabilities=4accepted/13partial/1excluded. No whole-row or research promotion.
+Current feature/python-shared-context-readers fast-forwarded cleanly to integration;
+contract committed before implementation. Next: positive-controlled ACL admission,
+original-handle B restoration, barrier-overlapping native A/B reads, local B close
+survival and creator cleanup. No admitted-B read-only permission claim; noJava repair.
+Seven tracked dependency families unchanged (#89/#123/#124/#125/#126+Quality/import).
+Luxembourg/Kaduna/Puerto completefixtures L3partial/L4blocked/L5–L7NOT_RUN; recovered
+artifact bytes do not close original scientific provenance/interpretation gates.
+PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE; next action implement bounded workflow.
+
 ## Semantics-isolation local acceptance
 
 e2b768501 on95b7db67f:3,241installed/all17gates/146focused and actualJava native
