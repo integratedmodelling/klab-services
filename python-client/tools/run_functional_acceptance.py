@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "async-own-wait": "tests/functional/test_async_own_wait.py",
     "strategy-authoring": "tests/functional/test_strategy_authoring.py",
     "native-stream-workload": "tests/functional/test_native_stream_workload.py",
     "onboarding-journey": "tests/functional/test_onboarding_journey.py",
