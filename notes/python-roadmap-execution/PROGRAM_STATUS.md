@@ -1,5 +1,31 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Next milestone — fixed batch implemented and normally delivered
+
+Startedatb04977ea2 (#236/#237reverified,not reset). W1PR238 mergedf099ffffa,
+D1PR239 mergedc16c75427 then D2PR240 merged5849d7b78ebdd4daa6a836c7985684e522b23fd5.
+Each feature separatelyread-onlyreviewed,currentinstalled/all17gates,ownedJava,
+normalCI/exactdelta/ancestry/postmergePASS beforedependentwork. Latest3553installed/
+17gates/264postmergePASS. Allthreefeaturebranches retiredafterproof;compiledcore
+retained,no newworktrees. OriginalN/S baselines unchanged;newlocalN/Sworkerb4eecf5d
+PASS/independentcleanupPASS,scheduledNOT_RUN.28ownedJavaidentitiesabsent,unrelatedJava
+unchanged,rawcredentialsprivate,noModeler/globaldeployment/poweractions.
+
+W1periodicBLOCKED_EXTERNAL: runner/policy/Jenkinsmetadata403/defaultdevelop;need
+operatorauthorizedlabel/environment/pinnedbundle/privateports/quarantine/defaultbranch
+adoption/cadence andgenuinescheduledN/Sreceipts. ManualCI isnot periodicacceptance.
+W3primaryconfigurations-dependent+onealternateroles D0BLOCKED_EXTERNAL,sourceassets
+hashed;no coordinatedexecutable/admissiontuple onretainedstack,D1/D2NOT_RUN.
+No newmodel/ontology/scientificalgorithm or failedunion assumption used.
+
+FixedW2queue2/2MERGED_BOUNDED. OriginalD1/D2uniquecandidates now inacceptedhistory;
+remainingfiveoldercandidates preserved,outofthisbatch. No scopeexpansion/automatic
+promotion:23criteria1accepted/20partial/1missing/1blocked,+Cexcluded;18CAP4accepted/
+13partial/1excluded. Luxembourg/Kaduna/PaL unchanged,notreplicated. FinalW4report/
+index/map handoff is documentation-only;normalCI/merge/postmerge stillrequired.
+See NEXT_SCIENTIFIC_ACCEPTANCE_DELIVERY_REPORT.md and evidence/next-scientific-delivery-index-20261105.json.
+Earlier snapshots below are historical,not current delivery blockers.
+
 ## Execution evidence local acceptance PASS / delivery remains blocked
 
 Accepted integration`937c758b62743a0ab68e48792870a9261cf7cc87`,31queuePRsmerged/0open.
