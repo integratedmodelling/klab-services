@@ -3,6 +3,19 @@
 Guide: `docs/contributor-guides/KLAB_CLI_Contribution_Review.md`.
 Contributor self-review, not independent maintainer sign-off.
 
+## Current disposition (supersedes development recommendations below)
+
+**Needs normal hosted delivery evidence.** Corrected6fdf97e28 passed3463installed
+tests/all17gates/build/install/lint and43focused checks. All retained local findings
+corrected without weakened tests; no further important defect demonstrated by this
+bounded review. N/S really executed and passed once each on independent source
+branches, not inferred from schema tests. No maintainer approval, PR or merge claimed.
+Wheel4ce530b961b4aa4bf1a4855f98428da8ae1024ded4210f696e8bff2c3171c164
+is the corrected installed-validation artifact, **not** retroactively the live N/S
+wheel. Actual live wheel d9a1d5ff… remains separately recorded. All SDK bytes equal
+accepted product source; no scientific/backend edits. Remaining scheduled L4 worker
+and normal repository delivery need real external provisioning/eligible gates.
+
 **Recommendation: Needs bounded implementation correction / validation.**
 Base937c758b62743a0ab68e48792870a9261cf7cc87; independent branch
 `feature/python-scientific-scenario-contract`. No PR/merge created. Recorded GitHub
