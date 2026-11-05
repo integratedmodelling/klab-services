@@ -22,6 +22,36 @@ refusal andcreatorcleanup;2874offline/16gates/lint/parityPASS. NormalPR/merge
 remains separate, with PR201's newly demonstrated missing packagingplugin gate
 under investigation. In-flight/Runtime-generation/history claims remainunproved.
 
+### Independent parser contribution (historical premerge checkpoint)
+## Master-program continuation — 5 November 2026
+
+The supplied A+B/three-study master specification supersedes old one-increment
+stopping rules, not original requirements or failed evidence. See the current
+[program checkpoint](../notes/python-roadmap-execution/PROGRAM_STATUS.md) and
+[42-row scenario-family crosswalk/dependency queue](../notes/python-roadmap-execution/FEATURE_LEDGER.md).
+Accepted integration remainsfe46ddc5ec3c188f62cd1d0b0703c6e54a4b9241;196–200
+merge ancestry verified. Q1localfresh-processacceptance failed internal harness
+guards and is preserved unmerged; known sourcegroundedfix not liveaccepted.
+Q5actualparserpreviewacceptance is next independently selected. No RC/CAP status
+is promoted by planning, offline tests or a written blocker. A/B remain incomplete.
+
+Q5implementation96f6b0b24 now passes installed actualJava four-family valid/invalid
+Resources parser checks, source/identity/explicit edge policies and owned cleanup;
+2862offline tests/16coverage gates/lint/package/source parity pass. NormalPR/merge
+is still pending. This bounded source-preview proof does not establish knowledge
+revision, semantic dependency closure, authoring/publication or wholeRC-P4.2.
+
+### Latest verified integration state
+
+Q5 PR201 merged normally at `76b4d28a4fb87c7a4325fce5138344b3ac09ef25`,
+reviewed head `10ddd25bbd5ec0c87de1df6eb0698c6706ce9107`. Final installed
+2,862 tests/16 gates and actual four-family Resources parser checks passed;
+owned cleanup passed. CI prerequisite PR202 is merged at `6305e1e78`.
+These results supersede older pending/build-blocked statements above, not failed
+evidence or acceptance boundaries. Q1 is locally accepted at `d8ae23b3d` and now
+being integrated; exact integrated-candidate validation and normal PR remain.
+No whole RC/CAP row is promoted. A/B remain incomplete.
+
 ## Current reconciliation — 4 November 2026
 
 This section supersedes status claims below, not the historical requirements or
@@ -91,7 +121,7 @@ rows do not revoke their separately accepted subcapabilities.
 | RC-P3.4 | A explain actual dependencies and semantic effects | PARTIAL | evidence/provenance; recorded neighborhoods/tests; S | Full lineage and semantic-update execution fixture; Java extraction gaps, not portable replay; P2 |
 | RC-P3.5 | A bounded notebook concurrency and own-wait cancellation | IMPLEMENTED_UNVERIFIED | async/experiments; #105, runner tests and controlled results | Exact supported integrated multi-principal notebook/race acceptance; no new backend defect established; P1 |
 | RC-P4.1 | B meaning-based asset applicability/version/access | PARTIAL | semantics/inspection; semantic/resource controlled results | Capability-aware full applicability/history/access matrix; actual Resources projections; P2 |
-| RC-P4.2 | B revision-aware parse/validate | PARTIAL | authoring/source_previews; #141 DTO and stale-knowledge tests | Actual parser/invalid-document/knowledge-revision matrix, not DTO-only text; P2 |
+| RC-P4.2 | B revision-aware parse/validate | PARTIAL | authoring/source_previews; #141 DTO/stale tests; Q5 local actualJava four-family valid/invalid/source-identity proof at96f6b0b24 (merge pending) | Authoritative knowledge-revision/semantic validation matrix remains; parser receipt not authoring persistence; P2 |
 | RC-P4.3 | B import/annotate/compute with input provenance | NOT_IMPLEMENTED | native export/inspection are reusable, not import workflow | Enumerate implemented schemas/routes before client import; real Java annotation contract; P2 |
 | RC-P4.4 | B authorized edit/publish/conflict | PARTIAL | authoring namespace ADD, source previews, honest unsupported errors | Safe edit/lock/version/history/publication contracts plus client slices; #129; P2 |
 | RC-P4.5 | B behavior invocation/outcomes/reconnect | PARTIAL | #134/#135/#138; agents/status/journal/AMQP tests; M READY/RUNNING/STOPPED | Production principal/incarnation provisioning and independent remote cleanup UNKNOWN #125; P2 |
