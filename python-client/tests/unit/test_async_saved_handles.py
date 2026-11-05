@@ -188,3 +188,30 @@ def test_explicit_relocation_still_requires_current_runtime_identity():
                 await api.restore_handle(ref, allow_relocation=True)
         assert len(calls) == 1
     asyncio.run(run())
+
+
+def test_persisted_agent_observer_is_checked_and_preserved():
+    async def run():
+        calls = []
+        agent = wire()
+        agent["observable"]["semantics"]["type"] = ["OBSERVABLE", "AGENT", "COUNTABLE"]
+        async with client(responder(calls, payload=[agent])) as api:
+            restored = await api.restore_handle(reference(scope="s.c#42"))
+            assert not restored.owned and restored.to_handle().scope == "s.c#42"
+        queries = [r for r in calls if r.url.path.endswith("/query")]
+        assert len(queries) == 1 and json.loads(queries[0].content)["id"] == 42
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("service", ["runtime", "resolver"])
+def test_existing_mapping_job_contract_restores_without_custom_decoder(service):
+    async def run():
+        calls = []
+        values = job_reference(service).to_dict()
+        values["result_kind"] = "mapping"
+        async with client(responder(calls)) as api:
+            job = await api.restore_handle(Handle.loads(json.dumps(values)))
+            result = await job.result(2)
+            assert isinstance(result, dict) and job.result_kind == "mapping"
+        assert not any("submit" in r.url.path or "release" in r.url.path for r in calls)
+    asyncio.run(run())

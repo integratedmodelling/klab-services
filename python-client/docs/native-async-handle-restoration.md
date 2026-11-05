@@ -50,3 +50,10 @@ close preservation, foreign/expired credentials, missing observation and creator
 cleanup. Deleted-state and additional observer/peer deployment coverage remain
 separate evidence requirements; no restart/history guarantee is predeclared.
 Full installed gates, actual Java outcome and review/normal PR/CI are pending.
+
+First installed attempt44aa5fd26 passed build/install/offline tests but correctly
+failed changed-branch coverage for valid AGENT observer and `mapping` Job decoder
+paths. Existing Handle schema admits mapping results on Runtime/Resolver; retain
+that contract. Add positive persisted-agent and both-service mapping tests;26async
+restore tests now PASS. No threshold exclusions or validator changes. A fresh full
+installed attempt is required; previous run is not labelled a gate pass.
