@@ -1,5 +1,10 @@
 # Functional workflows and test organization
 
+The `parser-preview` suite verifies existing four-family source previews against
+actual Resources parsers, with explicit source/identity and invalid-input controls.
+See [parser acceptance boundaries](parser-preview-acceptance.md). This is not
+authoring persistence, knowledge-revision acceptance or historical model admission.
+
 Tests are grouped by execution level; functional suites are named for user outcomes.
 
 Current readiness, test results and deployment/component dependencies are recorded
