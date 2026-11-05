@@ -1,5 +1,26 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Dependent execution evidence locally verified / not published
+
+`52672d871`:3,479installed/17gates/376finalsource+actualJava original15/3activities/
+servedplans/unavailablediagrams/5queryPOST/privacy/ownedcleanupPASS. Two setup
+submissions explicit; no inspection writes/full lineage/durablecommit/study claim.
+Acceptedintegration`937c758b6`,31queuePRsmerged/0open. Prerequisite`b548b09da`
+ref/rules creation blocked twice, no ref/PR; no unchanged third push/bypass. Both
+local candidates preserved; prerequisite-first normal delivery required. FullA+B/
+three study stages unchanged; next work must be independently supported and scoped.
+
+## Dependent execution evidence / provenance publishing blocker
+
+Accepted integration`937c758b6`,31queuePRsmerged/0open. Provenance`b548b09da`
+locally passed3,454installed/17gates/281focused/actualJava but ref creation rejected
+twice; no ref/PR. No third unchanged retry/rule bypass. Current dependent branch
+contract`44ef1ae15`,tested`52672d871`:244focused/3,479installed/17gates/build/lint/
+parityPASS, exactSDK/install/harness/artifacts/ancestry verified. One ownedJava
+activity/plan acceptance active, no success predeclared. Requires actual identity/
+queries/privacy/cleanup and prerequisite-first normal delivery. Broader A+B/studies
+remain incomplete; partial plans/activities are not durable/historical lineage.
+
 ## Async provenance candidate verified
 
 `12bcec7cd`:3,454installed/17gates/149focused+actualoriginal15/handle15/6partial

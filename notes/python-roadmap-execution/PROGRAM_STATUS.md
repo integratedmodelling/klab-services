@@ -1,5 +1,47 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Execution evidence local acceptance PASS / delivery remains blocked
+
+Accepted integration`937c758b62743a0ab68e48792870a9261cf7cc87`,31queuePRsmerged/0open.
+Dependent execution-evidence`52672d871`:3,479installed/all17gates/376finalsource tests
+and actualJava original15/handle15/6links/3scopedactivities PASS. Two engineering
+setup submissions, five queryPOST/zero submissions or mutations during inspection.
+Resolution/contextualization charts remain plans; absent diagrams explicit and
+partial/unknown durable commit retained. ExactSDK/install/raw-harness/live/report
+privacy/owned context/session/process/listener cleanup PASS; unrelated Java unchanged.
+No historical provenance/fullgraph/scientific acceptance claim. Local implementation
+and bounded acceptance are complete, hostedCI/merge/postmerge not run.
+
+Publishing BLOCKED by provenance prerequisite`b548b09da` GitHub ref/rules errors,
+two rejections/no remote ref or PR. No third unchanged retry/rule bypass; restore
+normal ref evaluation or obtain explicitly authorized repository-specific remedy.
+Then provenance-first normalPR/CI/eligiblemerge/postmerge before dependent delivery.
+Remaining independently actionable queue needs targeted contract/evidence selection,
+not unchanged scientific reruns or broad Java repairs. PROGRAM_IN_PROGRESS/A_INCOMPLETE/
+B_INCOMPLETE; requirement/capability/dependency and all3study stages unchanged.
+
+## Dependent native async execution evidence: installed acceptance PASS
+
+Accepted integration remains`937c758b62743a0ab68e48792870a9261cf7cc87` (#231),
+31queuePRsmerged/0open. Current branch depends on local unpublished provenance
+`b548b09da`, whose3,454installed/17gates/281focused/actualJava acceptance passed
+but GitHub ref creation failed twice; no remote ref/PR. Restore normal ref/rules
+evaluation or obtain explicitly authorized remedy; no third unchanged push/bypass.
+
+Execution-evidence contract`44ef1ae15`, tested`52672d871`:244exactsourcefocused/
+3,479installed/all17gates/build/lint/parity PASS; exact SDK/install/raw-harness/
+artifact identity and prerequisite ancestry verified. One fresh owned Java original
+engineering activity/plan run active; no live success predeclared. Requires exact
+original handle/scoped activities/diagram availability/query-only audit/privacy/
+owned cleanup. No historical lineage/durable commit/scientific accuracy claim.
+Local implementation is not acceptance or merged delivery. Prerequisite-first
+normal PR/CI/eligiblemerge/postmerge required before dependent submission.
+
+PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE;23in-scope rows=1accepted/20partial/
+1missing/1blocked,+1TargetCexcluded.18capabilities=4accepted/13partial/1excluded.
+All3study complete fixtures L3PARTIAL/L4BLOCKED/L5–L7NOT_RUN. Seven dependencies,
+original provenance/interpretation, peer fixture/component authorization unchanged.
+
 ## Async provenance exact-candidate local acceptance
 
 `12bcec7cd`:3,454installed/17gates/149focused+actualJava original15/handle15/current

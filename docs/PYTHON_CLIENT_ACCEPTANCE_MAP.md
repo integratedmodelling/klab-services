@@ -1,5 +1,18 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Dependent native async execution evidence: local acceptance PASS, delivery blocked
+
+`52672d871`:3,479installed/all17gates/376finalsource tests and actualJava original15/
+handle15/6links/3scopedactivities PASS. Served resolution/contextualization charts
+remain plans, unavailable diagrams explicit; partial/unknown durable commit retained.
+Two engineering setup submissions; five queryPOST/zero submissions or mutations in
+evidence phase. ExactSDK/install/harness/live/privacy/ownedcleanup verified. No study
+execution/historical lineage/complete graph/lease claim. Accepted integration remains
+`937c758b6`,31queuePRsmerged/0open. Provenance prerequisite `b548b09da` ref creation
+was rejected twice by GitHub; no ref/PR. No third unchanged retry/rules bypass.
+Dependent submission waits for normal prerequisite-first delivery; no status/count
+promotion. CAP06 bounded evidence ACCEPTED, complete lineage RC-P3.4 PARTIAL.
+
 ## Native async recorded neighborhood: exact-candidate local acceptance PASS
 
 `12bcec7cd`:3,454installed/all17gates/149focused+actualJava original15/handle15/
