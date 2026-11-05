@@ -7,6 +7,12 @@ detached-consumer bindings keep their explicit unsupported behavior. A domain-va
 integer does not establish source existence or authorization. See
 [source identity bounds](indexed-source-id-long-bounds.md).
 
+`Client.resources.retrieve(urn, "CODELIST")` and its native awaited async equivalent
+retrieve the existing Java codebook asset as `KlabAsset` with full retained wire DTO.
+CODELIST list/resolve remain unsupported. Numeric/string codes, order/preferences
+are not interpreted or flattened; an empty codebook is metadata, not a scientific
+mapping. See [retrieval-only contract](native-codelist-retrieval.md).
+
 **Bounded native async observation:** `AsyncClient`, `AsyncSession`, `AsyncContext`
 and `AsyncJob` expose the bounded observation workflow in
 [`native-async.md`](native-async.md). The historical APIs below remain synchronous;

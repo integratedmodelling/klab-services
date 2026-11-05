@@ -186,7 +186,7 @@ class AsyncResources(_AsyncService):
     _knowledge_class = staticmethod(ResourcesServiceImpl._knowledge_class)
 
     async def retrieve(self, urn, asset_class="RESOURCE", scope=None, *, max_response_bytes=None):
-        payload = await self._request("GET", f"/api/v1/retrieve/{self._knowledge_class(asset_class)}/{quote(urn, safe='')}",
+        payload = await self._request("GET", f"/api/v1/retrieve/{ResourcesServiceImpl._retrieval_knowledge_class(asset_class)}/{quote(urn, safe='')}",
                                       scope, max_response_bytes=max_response_bytes)
         if payload is None:
             raise MissingAssetError("Resource service returned no asset")
