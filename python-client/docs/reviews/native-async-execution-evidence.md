@@ -1,5 +1,28 @@
 # Contribution review: dependent native async execution evidence
 
+## Next milestone current-base read-only re-review (supersedes old delivery block)
+
+Reviewed96642e902 against acceptedc16c75427e34133ba973446b18666f18c8b36ad2,
+after W1PR238 and prerequisiteD1PR239 normally merged/verified. Original D2branch
+and all uniquecommits retained,acceptedbase merged normally; one map conflict
+resolved by preserving both histories plus currentstate,not droppingrequirements.
+No productsource conflict,Java/model/input edits or changed scientificexpectations.
+
+264focusedsource tests/RuffPASS. Currentcode genuinely lacks nativeasync helper
+before this slice; implemented scopedRuntimeACTIVITYquery/identity/association/
+chartdecoding supports it. Shared pure candidates/errors/decoder preserve sync;
+native awaited provenance ensures currentmembership/origin/authorization gate.
+No threadshim/nestedloop/newresolve/force-model/reasoning or rootcommitinference.
+Missing diagrams and partialness stay explicit. No importantdefect demonstrated
+in bounded re-review; Ready for maintainer review subject to exactinstalled/live/
+hosted/normalmerge proof. CLIself-review is not independent humanapproval.
+
+Freshinstalledcandidate and one new ownedJava associatedactivity/plan/queryonly/
+privacy/cleanup run required; historical52672d871receipt is not currentacceptance.
+D1 is now actuallyaccepted,not an unpublishedstack. User's new milestone authorizes
+normaleligible delivery on this originalupdatedbranch; no unchangedretry/rename/
+rules/protectionworkaround. FullRC-P3.4/A+B/studies remainincomplete.
+
 ## Current recommendation
 
 **Needs contract/coordination evidence for delivery**: bounded local acceptance passed,
