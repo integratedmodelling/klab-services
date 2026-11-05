@@ -94,6 +94,15 @@ def test_lower_passes_never_promote_unknown_or_failed_science(contract, status):
     assert record(contract, **args)["status"] == status
 
 
+def test_not_applicable_science_cannot_become_l4_pass(contract):
+    args = receipt_args()
+    args["axes"]["scientific"] = {"status": "NOT_APPLICABLE", "reason": "No scientific computation evaluated"}
+    assert record(contract, **args)["status"] == "NOT_RUN"
+    args = receipt_args()
+    args["checks"]["values"] = {"status": "NOT_APPLICABLE", "reason": "No actual check evaluated"}
+    assert record(contract, **args)["status"] == "NOT_RUN"
+
+
 @pytest.mark.parametrize("mutation", ["no-reason", "no-identity", "no-axis", "no-check", "no-sanitization"])
 def test_incomplete_receipt_refused(contract, mutation):
     args = receipt_args()

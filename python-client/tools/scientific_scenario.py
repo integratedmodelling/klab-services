@@ -139,6 +139,10 @@ def record(manifest, *, run_id, identities, command, started, ended, checks, axe
     results = [*checks.values(), *axes.values(), cleanup]
     status = next((s for s in ("FAIL", "BLOCKED", "NOT_RUN", "SKIPPED")
                    if any(r["status"] == s for r in results)), "PASS")
+    if status == "PASS" and (any(r["status"] != "PASS" for r in axes.values())
+                             or cleanup["status"] != "PASS"
+                             or not any(r["status"] == "PASS" for r in checks.values())):
+        status = "NOT_RUN"  # NOT_APPLICABLE cannot certify an L4/L5 scientific axis.
     result = {"schema_version": 1, "scenario_id": manifest["id"], "run_id": run_id,
             "claim_level": manifest["claim_level"], "status": status,
             "oracle_origin": manifest["fixture"]["oracle_origin"], "source": manifest["source"],

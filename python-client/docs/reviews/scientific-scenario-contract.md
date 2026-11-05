@@ -72,6 +72,16 @@ matched to actual baseline JUnit timings,47unmeasured modules left unknown.42foc
 tests PASS before final installed suite. Scientific PASS comes from explicit N/S
 oracle assertions, not these42unit tests.
 
+### Final truthfulness finding and bounded correction
+
+Independent local probe reproduced an aggregation defect: a scientific axis marked
+NOT_APPLICABLE could yield aggregate PASS. Corrected to NOT_RUN unless every required
+axis/cleanup is PASS and at least one check actually passed. Regression added for
+N/A science and all-N/A checks. This is a local Python test-tool defect, not external
+BLOCKED. Original N/S receipts have all required axes/checks PASS, so their actual
+scientific assertions are unaffected; no Java rerun justified. Final contract suite
+must be rerun on this corrected candidate; older full-suite receipts are historical.
+
 ## Validation and compatibility
 
 Command: installed WindowsPython3.12 `pytest -q tests/unit/test_scientific_scenario.py`:
