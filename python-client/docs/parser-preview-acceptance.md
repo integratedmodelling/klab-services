@@ -26,3 +26,11 @@ components and minimal synthetic worldview, generates private TEST credentials,
 fails on occupied reserved loopback ports, and closes only captured owned
 processes. This is not production Hub onboarding or historical scientific admission.
 Q1's unaccepted recovery harness is not a dependency of this suite.
+
+Verified2026-11-05 on implementation96f6b0b24: `q5-live-v2` passes all four
+families and their malformed-source refusals. Namespace/ontology/strategy retain
+edge whitespace; behavior trims it explicitly. For invalid behavior, a null/
+incompatible response causes ProtocolError rather than a successful receipt;
+rich syntax diagnostics are not claimed. Knowledge revision remains unestablished.
+The installed2862-test/16coverage/lint/package checks also pass; hosted merge
+acceptance is separate. The initial failed fixture run remains preserved.

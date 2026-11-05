@@ -15,7 +15,7 @@ and external `phase0-validation.json`. No requirement or failed evidence is drop
 |Q2 A connection|Certificate/token,explicit service selection,owned scientific journey and freshprocess; issuer/origin/expiry/outage/mixedversion negatives; productionHub separate|High / medium / medium|PENDING;P0|
 |Q3 A vector|Native advertised GeoJSON→bounded vector interpretation if actual sourcegap; multipolygon/holes/null/precision/CRS/budget tests; no guessed dictionary or mediation|High / medium / medium|PENDING;P0|
 |Q4 A categories/time/scale|Actual native classlegend/area,time slices,multi-shard and realprovider stream/soak; independent oracles; no invented remote block/revision protocol|High / medium-large / high|PENDING;split by actual supported coherent contract;#123only specific lease claims|
-|Q5 B parser|Existing four-family SourcePreviews→actual Resources parser/source/identity/invalid acceptance; no write/publication/whole semantic closure claim|High / small-medium / medium|SELECTED;P0;independent of Q1|
+|Q5 B parser|Existing four-family SourcePreviews→actual Resources parser/source/identity/invalid acceptance; no write/publication/whole semantic closure claim|High / small-medium / medium|LOCAL_ACCEPTED_BOUNDED;normalPR/CI/merge pending;independent of Q1|
 |Q6 B mutations|Inventory implemented route/schema, then supported import/annotation/ADD/edit/publish one workflow perPR; rights/conflict/rollback only where authoritative|High / medium / high|PENDING;Q5forparse-dependentflow;absentJava contracts remain blockers|
 |Q7 B semantics/resources|Actual context applicability/dependency/version/access and served selection; reuse#200; no Pythonmodelchoice|High / medium / medium|PENDING;P0;Q6onlyifnewassetrequired|
 |Q8 A/B notebook/agents|Ownwaitcancel,boundedconcurrency,multiprincipalrace,managedlifecycle/outcomes/cleanup; no compiler/scheduler/workerport|High / medium / medium-high|PENDING;Q1/Q2fornotebook;agentinspectionindependent;#125/#126specificcontracts|
@@ -26,7 +26,7 @@ and external `phase0-validation.json`. No requirement or failed evidence is drop
 |Item|Branch/base/head/PR/merge|Tested package/environment and exact evidence|Disposition|
 |---|---|---|---|
 |Q1|feature/python-fresh-process-recovery; basefe46ddc5e; head36e25ba7c; noPR/merge|Python3.12.7,wheelba40939b815ee762ac6597c9f882b1a2d4600c1205ee46320b3ed43b0ea051dc;2869offline/16gates/lint;18focusedlatestcontrols. Java tuplePROGRAM_STATUS. q1-live-v1/v2private result/logs|NOT_ACCEPTED: initialoverstrictPOSTconnectaudit; correctionmisreadScopeRequestroot instead ofconfiguration.id. Latestknownfixunitpassed,no thirdliveattempt. Ownedcleanupallpassed. Notexternal/Javadefect|
-|Q5|feature/python-source-parser-acceptance; basefe46ddc5e; head/PR/mergeNOT_YET|Candidatewheel/actualparserNOT_RUN|Implementation/acceptance inprogress;no predeclaredpass|
+|Q5|feature/python-source-parser-acceptance; basefe46ddc5e; tested96f6b0b243f739693e4a86850364e1e34b0531a2;PR/mergepending|Wheel0b59c80fe627510c8fc5b5f1e1c3752e96d65b717bf1407413a74d238f445fd6;2862offline/16gates/lint/sourceparity;ownedJavaTESTtuplePROGRAM_STATUS|q5-live-v2PASSED all4families/invalidrefusals/sourceidentity/zeroHTTPblank/nonauthoringroutes;initialv1fixturefailureretained;cleanupPASSED. RC-P4.2remainsPARTIAL;reviewpython-client/docs/reviews/parser-preview-acceptance.md|
 
 ## Complete42-row crosswalk and constituent scenario families
 

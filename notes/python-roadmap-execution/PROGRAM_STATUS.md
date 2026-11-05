@@ -30,8 +30,13 @@ Q5 candidate NOT_RUN at branch creation.
 - **COMPLETED:** Phase0 preservation, complete requirement/scenario-family
   reconciliation, dependency queue and independent research API attempts. All
   original24criteria(22phase+2continuous) and18CAP rows remain visible.
-- **NEXT:** Q5 actual Resources parser preview acceptance on the owned stack,
-  source/identity/invalid controls, exact candidate/gates/review and eligible merge.
+- **COMPLETED latest pass:** Q5actualfour-familyResourcesparser/source/invalid
+  acceptancePASSED at96f6b0b24;2862installedtests/16gates/lint/sourceparityPASS,
+  wheel0b59c80fe627510c8fc5b5f1e1c3752e96d65b717bf1407413a74d238f445fd6.
+  CurrentJava/correctedcomponenttupleaboveunchanged;actualownedrunq5-live-v2.
+- **NEXT:** Q5 normalPR/checks/eligiblemerge, verifyancestry/postmerge and retire
+  onlythismergedbranch. Then revisitknownQ1envelopefixafterindependentQ5delivery,
+  followedbyQ2/Q3aseligible. Q5doesnotcloseknownrevision/fullauthoringrequirements.
 - **BLOCKED:** Q1 internal harness acceptance FAILED twice; saved-root envelope
   extraction corrected/tested but not live verified. Preserve branch
   `feature/python-fresh-process-recovery` at36e25ba7c. No third immediate live

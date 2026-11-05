@@ -57,3 +57,30 @@ Initial2860offline tests,16coverage gates, lint and build/install/source parity
 pass; wheel SHA256 `f36a08561d7a958039b0ca81d024fe9b87ea1011865a1aaa6cab160a2bd9c26e`.
 Those package checks are not actual parser acceptance. Final corrected-candidate
 receipts remain required before a PR is proposed.
+
+## Final tested candidate and recommendation
+
+Implementation `96f6b0b243f739693e4a86850364e1e34b0531a2` passes actual
+`q5-live-v2`: all four valid-source receipts, invalid-source refusals, explicit
+source hashes/edge policies, one Resources identity, blank-source zeroHTTP and
+parser/capabilities-only route audit. Namespace/ontology/strategy preserve edges;
+behavior explicitly trims them. Behavior's malformed source is refused as
+ProtocolError, not fabricated as a rich syntax-diagnostic receipt. Publication,
+scientific execution and authoritative knowledge revision remain NOT_RUN/unknown.
+All captured owned processes/listeners closed and preexisting Java identities
+remained unchanged. No remote scientific scope/Job was created by the test.
+
+Installed final gates: **2862offline tests,16coverage gates, lint, wheel/sdist,
+noneditable installation and source parity PASSED**; one retained Rasterio
+NotGeoreferencedWarning. Wheel SHA256
+`0b59c80fe627510c8fc5b5f1e1c3752e96d65b717bf1407413a74d238f445fd6`,
+sdist`29053376e638778a658379d62846ccb0f71d177f562f1f2a08e58755a6c6054b`.
+Commands/identity/gate logs: prior external queue root`ab-q5-corrected/`;
+actualJava/source/component/functional hashes and cleanup: current program root
+`q5-live-v2/result.json`, original `q5-live-v1/` failure retained. Java production,
+components and worldview are unchanged from the accepted isolated tuple.
+
+**Ready for bounded maintainer review / normal eligible merge**, not independent
+human approval or full RC-P4.2/B acceptance. Subsequent documentation-only updates
+do not alter tested implementation. Hosted checks/protection/merge remain a
+separate gate; no bypass or release authorization is implied.
