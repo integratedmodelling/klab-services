@@ -23,3 +23,21 @@ scheduled L4 worker absent: current schedule is broad offline only, no skipped/f
 scientific placeholder. That limitation must remain explicit in final gates.
 No milestone PR/merge published; normal ref/rules failure remains an independent
 delivery blocker requiring restoration evidence or explicitly authorized remedy.
+
+## Measured sample and final integration correction
+
+Same-source5049ae65f serial sample:baseline3434/72.0315s,docs351/2.0636s,
+decoder3434/67.4729s,JavaDTO3434/67.6977s;0failures/errors/skips. Selector-only
+dry-runs measured0.0736/0.0707/0.0708s. Initial baseline overlaps the tail of N's
+stack run by approximately13seconds; not a quiescent-machine speed benchmark.
+Do not infer causal/global speedup from wall-time differences; lower selected count
+and conservative high-risk broadening are directly demonstrated. No Java families
+ran in the offline samples, so no measured Java-churn reduction. N/S each really
+ran once/pass once independently;0flaky reruns.
+
+Final installed run caught a missing linked evidence-index/report in this worktree:
+1FAIL/3433PASS. This is a local artifact-assembly defect, not external BLOCKED and
+not a reason to weaken link tests. Copied the verified generated index/report to
+their canonical contribution paths; rerun required. Existing CI YAML parsed with
+already-installed Anaconda PyYAML6.0.1 (not added as dependency); all17coverage and
+Pythonversion/core-only/Windows/build checks retained. No SDK/Java/scientific edits.
