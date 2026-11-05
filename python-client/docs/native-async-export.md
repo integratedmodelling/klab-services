@@ -29,3 +29,19 @@ feature; exactcandidate review/normalCI/eligiblemerge before acceptance promotio
 Fullcategory/time/provider/revision/maintainedexporter breadth, productionHub,
 managedagents/deletedstate/restart-history and originalstudies remain separate.
 Qualitywarning retained; no fullA/B/whole-row/release/publication claim.
+
+## Development checkpoint
+
+Native export methods and fresh Java workflow are implemented;142focused source-
+checkout tests across async/sync exports and async client PASS, lintPASS. Shared
+pure binding/schema parsing extracted without changing sync behavior. Async network
+streams await chunks; local shortwrites/fsync/close/atomicpublication remain bounded
+synchronous filesystem operations. Cancellation and injected failures preserve the
+existing destination and close response/remove owned staging files. Secondary
+descriptor/temporary cleanup notes do not mask primary errors.
+
+Actualworkflow reuses unchanged GeoJSON rectangle/identity oracle and native-stream
+1024x1024 numeric raster oracle, checking all1,048,576cells in bounded128x128 windows.
+It requires measured64KiB native chunks and interrupted-new/overwrite preservation.
+This is not a new scientific computation/provider implementation or reset of the
+single-use nonuniform fixture. Full installed/live/review/normalCI remain pending.
