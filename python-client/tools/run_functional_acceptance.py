@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "async-native-export": "tests/functional/test_async_native_export.py",
     "async-handle-restoration": "tests/functional/test_async_handle_restoration.py",
     "current-model-plan": "tests/functional/test_current_model_plan.py",
     "canonical-hierarchy": "tests/functional/test_canonical_hierarchy.py",

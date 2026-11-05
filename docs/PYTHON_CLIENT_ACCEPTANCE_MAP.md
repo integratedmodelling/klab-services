@@ -1,5 +1,23 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Native async export corrected-candidate checkpoint — 5 November 2026
+
+PR219OPEN/unmerged; initialhostedUbuntucoveragefailure retained. Corrected33db19a29
+locallyPASS:3,162installed/all17gates+actualJavaGeoJSON/millioncellnativeintegrity/
+streaminterruption/cleanup,rawidentity/nativebytes verified. Sharedpure finalsize
+validator/directtests keep identicalpredicate,thresholds/exclusions/oraclesunchanged.
+Finalheadhostedchecks stillrequired. Earlier checkpoint superseded only for current
+candidate counts,not wholeA/B/format/provider/time/revision/study/releasepromotion.
+
+## Native async export checkpoint — 5 November 2026
+
+PR218mergeda3e8949c5. Nativeasync-export4dd0ef841 locallyPASS:3,154installed/all17
+gates+actualJavaGeoJSONsourceidentity/rectangle/coordinates and1,048,576nativecells/
+validity/unit-dtype-CRS-transform-bounds/129boundedchunks/interruptionpreservation/
+creator-servicecleanup. Existing Javaexporters/oracles,no scientifictransformation.
+NormalPR/CI/mergepending. Fullformat/provider/category/time/revision/deletedstate/
+history/managed/A-B/studies remainincomplete;no whole-row or releasepromotion.
+
 ## Native async saved-handle checkpoint — 5 November 2026
 
 PR217merged361b6920b. Native async restorationb658cc388 locallyPASS:3,119installed/

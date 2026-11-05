@@ -1,5 +1,11 @@
 # Current integrated compatibility evidence — development preview
 
+Later bounded increments supersede the historical unsupported-async statements
+below: native saved-handle restoration PR218 mergeda3e8949c5; current native export
+candidate4dd0ef841 passed installed/actualJava GeoJSON/numericstream/interruption/
+cleanup, normalPR/CI deliverypending. See their separate contracts/reviews. This
+does not rebind the historical release manifest or promote its nonpassing gates.
+
 ## Q9a contract before validation
 
 Accepted base `0f645465c6810f6a226a2526390a9cd35528f06d`; branch

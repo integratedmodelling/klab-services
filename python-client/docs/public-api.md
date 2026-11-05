@@ -3,7 +3,9 @@
 **Bounded native async observation:** `AsyncClient`, `AsyncSession`, `AsyncContext`
 and `AsyncJob` expose the bounded observation workflow in
 [`native-async.md`](native-async.md). The historical APIs below remain synchronous;
-async file export and connection orchestration are not claimed. Native async
+async connection orchestration is not claimed. Native async advertised file export
+is implemented with bounded streaming/atomic publication; see
+[candidate acceptance and limits](native-async-export.md). Native async
 saved-handle restoration is implemented with existing origin/identity/selection
 checks; [candidate acceptance and limits](native-async-handle-restoration.md)
 are recorded separately. Controlled real-Java acceptance and its limits are recorded with the

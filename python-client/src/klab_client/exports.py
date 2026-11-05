@@ -50,6 +50,13 @@ def _media(value, error):
 def _context(client, observation):
     if not isinstance(client, Client) or not isinstance(observation, ObservationImpl):
         raise InvalidRequestError("Export requires a Client and bound ObservationImpl")
+    return _bound_observation(client, observation)
+
+
+def _bound_observation(client, observation):
+    """Pure binding validation shared by explicit sync/native async entry points."""
+    if not isinstance(observation, ObservationImpl):
+        raise InvalidRequestError("Export requires a bound ObservationImpl")
     context = observation._context
     if (not isinstance(context, Context) or type(observation.id) is not int
             or not 0 < observation.id <= 2**63 - 1):
@@ -65,7 +72,12 @@ def export_formats(client, observation):
     context = _context(client, observation)
     capabilities = client.runtime.capabilities()
     client._known_runtime_identity(context.configuration)
-    schemata = capabilities.raw.get("exportSchemata", {})
+    return _formats(capabilities.raw)
+
+
+def _formats(capabilities):
+    """Decode advertised schemas only; no network or applicability inference."""
+    schemata = capabilities.get("exportSchemata", {})
     if not isinstance(schemata, dict):
         raise ProtocolError("Runtime exporter schemas must be a mapping")
     formats = {}
@@ -96,6 +108,12 @@ def _length(response):
     if not value.isascii() or not value.isdecimal() or len(value) > 19:
         raise ProtocolError("Invalid export Content-Length")
     return int(value)
+
+
+def _validate_size(written, length):
+    """Check completed native byte counts identically in sync and async paths."""
+    if not written or length is not None and length != written:
+        raise ProtocolError("Export is empty or differs from its declared byte count")
 
 
 def export_to_file(client, observation, path, *, media_type, overwrite=False, max_bytes=None):
@@ -143,8 +161,7 @@ def export_to_file(client, observation, path, *, media_type, overwrite=False, ma
                         if count <= 0:
                             raise OSError("Short export write")
                         view = view[count:]
-                if not written or length is not None and length != written:
-                    raise ProtocolError("Export is empty or differs from its declared byte count")
+                _validate_size(written, length)
             os.fsync(descriptor)
         except BaseException as error:
             failure = error

@@ -1,5 +1,33 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## PR219 corrected candidate validation
+
+PR219OPEN;correctedtested33db19a29 afterhostedcoveragefailure(old19a92f020 retained).
+Unchangedfinalsizepredicate sharedpure/directtested; no thresholds/exclusions changed.
+3,162installed/all17gates+150focused+correctedactualJavaGeoJSON/millioncellnative/
+129chunks/interruption/cleanupPASS;nativebytes identical,exactSDK-harness-livepins
+verified. Finalpush/hostedchecks/normalmergepending. Wheel
+3c51fcc9b439d5c4c38f7e838d88b8b517e6b836f8c1806aecd91a5befef4ff4.
+No wholematrix/A-B/study/releasepromotion.
+
+## Native async export local acceptance
+
+feature/python-native-async-export;basea3e8949c5;tested4dd0ef841;PR/mergepending.
+3,154installed/all17gates+142focused+actualJavaGeoJSON/native1,048,576cells/raster-
+metadata/8,390,163bytes/129boundedchunks/interruptednew-overwrite/cleanupPASS.
+Nativehash/SDK-sharedsync-harness-installed-liveidentity/privacyverified;unchanged
+oracles and Javaexporters. Wheel
+ec73863fdbd8c5c2db522a512aa0fe4c601b526ac5b1e6b2a3d363f8b65817c3.
+NormalPR/CI/mergeNEXT;broaderformat/provider/time/revision/fullA-B/studiesnotpromoted.
+
+## Latest delivery / native async export contract
+
+PR218mergeda3e8949c5,reviewed7350e53ce;allCI/exactevidence/normalmerge/ancestry/
+sourceequality/postmerge33PASS;ownedbranchretired. Boundedasyncsavedhandles accepted;
+deletedstate/widerdeployment/historylimits retained. Newfeature/python-native-async-export
+fromacceptedmerge:existingnativeasyncstream/advertisedformats/atomicpublication
+contract;implementation/validationpending. No Java/scientific model/exporter rewrite.
+
 ## Native async handle restoration local acceptance
 
 feature/python-native-async-handle-restoration;base361b6920b;testedb658cc388;

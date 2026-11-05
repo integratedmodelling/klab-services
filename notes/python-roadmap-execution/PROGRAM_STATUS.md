@@ -1,5 +1,66 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest corrected PR219 actual validation pass / final hosted checks next
+
+33db19a29 LOCAL_ACCEPTED_BOUNDED:3,162installed/all17gates/lint/parity+150focused;
+correctedactualJavaGeoJSON/native1,048,576cells/metadata/129chunks/interruption/
+creator-servicecleanupPASS. ExactSDK-sharedsync-harness-installed-live/nativehash/
+privacy reverified; rasterbytes equaloriginalcandidate. Initialhostedcoveragefailure
+retained,notwaived; no predicate/threshold/exclusion/oracle change. Pushfinaldocs/
+correctedhead toPR219,next finalhostedchecks,normaleligiblemerge onlyafterallPASS.
+Fullformat/provider/time/revision/A-B/studies incomplete;nosleepconditionwhileworkremains.
+
+## Latest PR219 correction installed pass / new exact Java validation
+
+33db19a29:3,162installed/all17gates/lint/parity+150focusedPASS. Sharedpure final
+bytepredicate/directtests unchangedsemantics;coverage thresholds/exclusionsunchanged.
+Onefreshnative-async-export-size-liveACTIVE;actualGeoJSON/nativecells/streamfault/
+cleanupnotpredeclaredPASS. Originalhostedcoveragefailure retained;PR219OPENoldhead
+19a92f020/unmerged. NewexactJavaidentity/review/finalhostedchecksrequiredbeforemerge.
+No wholeA/B/study promotion;nosleepconditionwhileactionableworkremains.
+
+## Latest PR219 hosted failure / bounded validation correction
+
+PR219 OPEN19a92f020,NOTeligible: hostedUbuntu3.11–3.13 tests passed but changed-
+branch coverage failed asyncsizecheck successarc64→66;Windowslocal recordedexecuted.
+Build/Jenkins/core/Windows checksPASS,no merge. Tracingdifference cause unproved;
+failedlogs retained. Unchangedsizepredicate extracted to sharedpurevalidator with
+directoutcome and publiccomplete-stream tests,150focusedPASS. No threshold/
+exclusion/scientificexpectation change. Freshinstalled/actualJava/finalhostedchecks
+required,next. Prioractualnativebytes/oracles/cleanup retained atoriginalcandidate;
+not relabeled orwholeA/Bpromotion. Independentdeletedstate work waits acceptedbase.
+
+## Latest native async export local acceptance
+
+4dd0ef841 LOCAL_ACCEPTED_BOUNDED:3,154installed/all17gates/lint/parity+142focused;
+onefreshactualJavaGeoJSONidentity/coordinates and native1,048,576cells/validity/
+unit-dtype-CRS-transform-boundsPASS. Native8,390,163bytes/129chunks/max64KiB;
+injectednew/overwrite interruptionspreserved destinations/closedresponses/removed
+staging. Creatorcontext-session/service-listenercleanupPASS,unrelatedJavaunchanged.
+ExactSDK/sharedsync/harness/installed/liveidentity/nativehash/privacy verified;
+laterdeltaMarkdownonly. NormalPR/CI/mergeNEXT. No Java/model/fixture/resetchange;
+fullformat/provider/category/time/revision/A-B/study gates remainincomplete.
+
+## Latest native async export installed pass / actual run active
+
+4dd0ef841:3,154installedtests/all17gates/lint/build/sourceparity+142focusedPASS.
+Wheelec73863fdbd8c5c2db522a512aa0fe4c601b526ac5b1e6b2a3d363f8b65817c3.
+Onefreshnative-async-export-liveACTIVE:actualGeoJSON/native1024x1024raster/unchanged
+oracles/boundedchunks/interruptednew-overwrite/creator-servicecleanup. Outcome not
+predeclared;noPRyet. No Javaexporter/model/fixture/reset/scientificrewrite. Fullformat/
+provider/category/time/revision/A-B/study gates remainopen;nosleepcondition.
+
+## Latest async restoration delivery / native export contract
+
+PR218 MERGED_BOUNDED a3e8949c5da648007895694641a9f02e8bc2d6d0,reviewed
+7350e53cecac597d5e4ad2b112da5ccfed88a1da;allfinalchecksSUCCESS;exactevidence/
+normalmerge/ancestry/sourceequality/postmerge33PASS;ownedbranchretired. Nativeasync
+savedhandles accepted for boundedoriginalstate journey,notdeleted/restart-history.
+Freshacceptedbase feature/python-native-async-export:contractbeforecode reuses
+nativeasyncstream/sharedpurecontracts/atomicfile publication,notPythonrendering or
+Javaexporterchanges. Implementation/installed/liveacceptancepending;fullA/B/studies/
+Qualitywarning/othergates incomplete;nosleepconditionwhileactionableworkremains.
+
 ## Latest native async restoration local acceptance
 
 b658cc388 LOCAL_ACCEPTED_BOUNDED:3,119installed/17gates/lint/parity+255focusedPASS;

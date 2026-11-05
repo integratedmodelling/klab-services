@@ -400,10 +400,13 @@ class AsyncClient:
         return job
 
     async def export_formats(self, observation):
-        raise UnsupportedOperationError("Async native file export is not implemented; use the explicitly synchronous export workflow separately")
+        from ._async_exports import export_formats
+        return await export_formats(self, observation)
 
     async def export_to_file(self, observation, path, *, media_type, overwrite=False, max_bytes=None):
-        raise UnsupportedOperationError("Async native file export is not implemented; no download was started")
+        from ._async_exports import export_to_file
+        return await export_to_file(self, observation, path, media_type=media_type,
+            overwrite=overwrite, max_bytes=max_bytes)
 
     async def aclose(self):
         await self.transport.aclose()
