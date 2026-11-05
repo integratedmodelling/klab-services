@@ -34,3 +34,23 @@ computes once and requires genuine independent token readback plus two separatel
 authenticated fresh-process exports of the original observation before cleanup.
 The fixture is not reset, weakened or rewritten; no second computation or broader
 recovery/production capability is claimed. No user A/B requirement is removed.
+
+## Verified bounded outcome
+
+2026-11-05 atc19e319c1:2,966installedtests/17gates/lint/build/sourceparityPASS,
+wheel795279deed9385c02c14bbe339d9822c601e468663f6042cee3b7d4fbaa056d6.
+Corrected owned `onboarding-journey` actualJava run PASS:four genuinely ready
+services,same original20cells/m read via both providers,original nativegeometry/ID
+in two separately authenticated freshworkers,no scientific replay or disposal,
+private-context denial/knownexpiredTESTJWT refusal,secret-free profiles/handles/
+reports and creatorcleanup. Allownedprocesses/listenersclosed; unrelatedJavaunchanged.
+
+The first run failed before computation because the runner launched onboarding
+immediately after its owned Resources reindex restart. A bounded public-status
+preflight now records genuine transition to available+operational; it never
+overrides status or changes connection selection. Earlier failure is retained.
+Polling budget60s, each status probe bounded5s; no whole-run latency guarantee.
+
+Normal hosted/merge/release remain separate. Actual productionHub/license and
+wholeRC-P1.1/CAP01/02 remain incomplete. See the author/CLI
+[contributor review](reviews/onboarding-journey.md).

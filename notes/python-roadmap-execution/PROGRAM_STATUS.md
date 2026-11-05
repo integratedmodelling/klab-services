@@ -24,6 +24,25 @@ same20cells via token facade, then audits both providers'fresh-process original
 native-export recovery before creatorcleanup. 196focusedtests/lintPASS; corrected
 installedgatesactive, actualJavaQ2NOT_RUN, noPRyet. GenuineproductionHubstillseparate.
 
+Q2 firstactualrun q2-onboarding-live FAILED beforecompute:Connection correctly
+refused Reasoner availableFalse/operationalTrue. Ownedprocess/listenercleanupPASS,
+unrelatedJavaunchanged. Source+logs support transientavailability after the owned
+Resources reindex restart (not a proved generalJavafault). One bounded correction
+c19e319c1 adds60s publicavailable+operational preflight forQ2only, keeping snapshots
+and unchanged selection/security. 26focusedtests/lintPASS; installedgatesactive.
+NEXT onecorrectedfreshownedrun; if persistentfailure, classify exactgate/preserve
+branch and advance independentQ4/Q6/Q7/Q8, not another fixture-repairloop.
+
+Q2 correctedc19e319c1 now LOCAL_ACCEPTED_BOUNDED:2,966installedtests/17gates/lint/
+build/parityPASS;wheel795279deed9385c02c14bbe339d9822c601e468663f6042cee3b7d4fbaa056d6.
+q2-onboarding-ready-livePASS bothproviderselectedidentities,actualsingleJavafield/
+independenttoken20cells/m,twoauditedfreshworkersoriginalgeometry/ID,noreplay/
+disposal,owner/collaboratorpositive/privateparentdenial/knownexpiredTESTJWTrefusal,
+secretfreeprofiles-handles-report andcreatorcleanup. Publicsnapshotsprove genuine
+readiness transition afterownedrestart;firstfailure retained. Ownedprocesses/
+listenersclosed,existingJavaunchanged. Authorreviewcomplete;normalPR/CI/mergeNEXT.
+GenuineproductionHub/fullRC-P1.1/CAP01/02remainPARTIAL;A/Bincomplete.
+
 Q3 implementation06c6eef53 initially passes2,942installedtests/17coveragegates/
 lint/build/parity, wheel8c7eb033d733d47dcd4fe9fd89622727ae169cd1b0f096f3cc4367aa4a286a2b.
 Authorreview reproduced aGEOS lossy3D integerordinate and corrected it atf62f6bd42;
