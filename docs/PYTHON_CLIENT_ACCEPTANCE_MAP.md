@@ -1,5 +1,36 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Native async inspection / nullasset compatibility — candidate PASS
+
+cdf28153b includes acceptedPR226/21750594e;3,324installed/all17gates/282focused
+and actualJava modelmetadataPASS. Checked immutable async list/retrieve/resolve;
+exactnative serviceId enrichment retained, typedunknownmodel absenceHTTP200 after
+positive lookup (strictzero-byte nativeGETretrieve guard, not ProtocolError treated
+asabsence).11GET/0inspectionwrites/0scientificsubmissions, localreader/ownedservices/
+listeners cleanup andexactidentity/privacyPASS. Both earlier failures preserved.
+NoJava/scientificcompute/providertrust/versionclosure changes. Finalfocused/normal
+PR/CI/merge pending; fullRC-P4.1/CAP-06/A-B/studies remain open. Earlierpending/
+failed checkpoints below retained as historical evidence, not current acceptance.
+
+## Current delivery / native async inspection candidate
+
+PR226 merged21750594eebe119d551d5820e861fd615afffdae, reviewedd63cc1566/
+testedaaa2e35d9. Allhostedchecks/normalexactheadmerge/ancestry/source equality and
+174exactsourcepostmerge testsPASS; branchretired. Local signedlong offset validation
+accepted only in bounded scope; no giantcell/scientific/revision guarantee.
+Current AsyncResourceInspector adds awaited MODEL/RESOURCE list/retrieve/resolve
+using existing nativeasync endpoints/shared immutable converters. Initial003078ecd
+119focused/3,285installed/17gatesPASS; accepted226 integrated normally, combined
+installedchecksACTIVE/livepending. [Contract](../python-client/docs/native-async-resource-inspection.md)/
+[review](../python-client/docs/reviews/native-async-resource-inspection.md).
+No applicability/version/dependencyclosure inference; RC-P4.1/CAP-06 remainPARTIAL.
+
+Firstintegrated metadata livee14490851 FAILED harness full list/retrieve equality;
+cleanup/privacyPASS, failure retained. Java retrieve fills missing KimAsset serviceId
+unlike list; corrected guard records differences and permits only absent→servingID,
+rejecting othermetadata/unit drift. Exactfirst-run difference notcaptured, diagnosis
+source-derived; correctedpackagevalidationACTIVE/livepending. NoSDK/Java defect claim.
+
 ## Current delivery / native offset-domain correction
 
 PR225 mergedc178e390ee7ec5b9f301b92edbe5debfdf1b88f2, reviewed5aec13362/

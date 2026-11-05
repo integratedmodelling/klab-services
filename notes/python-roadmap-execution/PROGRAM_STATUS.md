@@ -1,5 +1,39 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Native async inspection exactcandidate local acceptance
+
+cdf28153b4d82c4112de7bb1f8327c8425c620cf:3,324installed/17gates/282focused,
+actualJava3models/list-retrieve-resolve/serviceId-onlyenrichment/typedmissingHTTP200
+afterpositive lookupPASS. Missingstatus requires exactzero-byte nativeGETretrieve
+compatibility; genericProtocolError notcountedasabsence.11GET/0inspectionwrites/
+0scientificsubmissions, localreader+ownedprocess/listener cleanupPASS; unrelatedJava
+unchanged. ExactSDK/install/rawharness/liveprivacy verified; both failedruns retained.
+Finalfocused/normalPR/CI/merge pending. Currentintegration21750594e,26queuePRsmerged/
+0open untilsubmission. No scientific/versionclosure/providertrust or Java change.
+Seven dependencies/all3studycompletefixture gates remain; PROGRAM_IN_PROGRESS.
+
+## PR226 delivered / combined async inspection validation
+
+Latest actualmetadatae14490851 FAIL retained: harness fullDTOequality assertion,
+likely Java retrieve's source-defined missingserviceId enrichment (exactfirstdiff
+notcaptured). Corrected guard recordsdiffs/allows only servingserviceId enrichment;
+foreignIDs/label/unit changes stillfail. CorrectedfullpackagechecksACTIVE/livepending.
+Ownedprocess/listener cleanup+privacyPASS, unrelatedJava unchanged. NoPRyet or
+wholecriterion promotion; noJava/SDK defect demonstrated.
+
+Integration feature/python-experiment-runner@21750594eebe119d551d5820e861fd615afffdae.
+PR226 normalexactheadmerge/allCI/ancestry/source equality/174exactsourcepostmerge
+PASS; branchretired.26queuePRsmerged/0open. A+B23in-scope=1accepted/20partial/
+1missing/1blocked;18CAP=4accepted/13partial/1excluded. Seven dependencyfamilies and
+all3studycompletefixtures L3partial/L4blocked/L5–L7NOT_RUN unchanged.
+Current feature/python-async-resource-inspection, contract54d7258e9, initial003078ecd
+119focused/3,285installed/17gates/lint/build/parityPASS. Accepted226 normally merged,
+no resets; combinedinstalledvalidationACTIVE. ActualJava read-only modelmetadata
+suite notrunyet—run only after exactcombinedcandidate installed. NoJava changes,
+new scientific calculation, providerrouting or authoritativeversion/dependencyclosure.
+Next bind combinedpackage, one metadata liveacceptance, review/normalPR/CI/merge.
+PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE.
+
 ## PR225 delivered / integrated offset validation
 
 Latest combinedoffsetcandidateaaa2e35d9:3,259installed/all17gates/lint/build/parity

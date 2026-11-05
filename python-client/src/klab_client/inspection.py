@@ -205,6 +205,12 @@ class ResourceInspector:
         knowledge_class = self._knowledge_class(knowledge_class)
         origin = self._origin()
         resource_set = self._call(self.client.resources.resolve, urn, self.scope, knowledge_class=knowledge_class)
+        result = self._resolution(urn, resource_set, origin)
+        self._unchanged(origin)
+        return result
+
+    def _resolution(self, urn, resource_set, origin):
+        """Pure checked view conversion, shared by sync and native async facades."""
         payload = resource_set.raw
         raw = freeze(payload, self.client.transport.redact)
         results = []
@@ -220,7 +226,6 @@ class ResourceInspector:
         services = payload.get("services", {})
         if not isinstance(services, dict) or any(not isinstance(url, str) for url in services.values()):
             raise ProtocolError("ResourceSet services must map service IDs to URL strings")
-        self._unchanged(origin)
         return ResourceResolution(
             requested_urn=self.client.transport.redact(urn),
             origin=self._view_origin(origin),
@@ -228,3 +233,64 @@ class ResourceInspector:
             services=freeze(services, self.client.transport.redact),
             raw=raw,
         )
+
+
+class AsyncResourceInspector(ResourceInspector):
+    """Native awaited read-only inspection; same inert metadata and limits as sync."""
+
+    def __init__(self, client, scope=None, *, max_items=100, max_response_bytes=1024 * 1024):
+        from .async_client import AsyncClient
+        if not isinstance(client, AsyncClient):
+            raise InvalidRequestError("Async resource inspection requires a native AsyncClient")
+        self.client, self.scope = client, scope
+        self.max_items = bounds(max_items, 1000, "Inspection item budget")
+        self.max_response_bytes = bounds(max_response_bytes, 16 * 1024 * 1024, "Response byte budget")
+
+    async def _call(self, operation, *args, **kwargs):
+        try:
+            return await operation(*args, max_response_bytes=self.max_response_bytes, **kwargs)
+        except InvalidRequestError as failure:
+            if getattr(failure, "status_code", None) == 422:
+                raise UnsupportedOperationError("This Resources service does not implement the requested operation") from None
+            raise
+
+    async def _origin(self):
+        capabilities = await self._call(self.client.resources.capabilities, self.scope)
+        return InspectionOrigin(
+            service_url=_normalize_service_url(self.client.transport.endpoint("resources").url),
+            service_id=capabilities.service_id,
+            scope=scope_token(self.scope),
+        )
+
+    async def _unchanged(self, origin):
+        if await self._origin() != origin:
+            raise ProtocolError("Resources service/scope identity changed during inspection; refresh explicitly")
+
+    async def list(self, knowledge_class="MODEL"):
+        """Await a bounded whole list; duplicates retained, no pagination implied."""
+        knowledge_class = self._knowledge_class(knowledge_class)
+        origin = await self._origin()
+        assets = await self._call(self.client.resources.list, knowledge_class, self.scope)
+        result = tuple(self._asset(asset, knowledge_class, origin) for asset in self._rows(assets, "asset list"))
+        await self._unchanged(origin)
+        return result
+
+    async def retrieve(self, urn, knowledge_class="MODEL"):
+        text(urn, "Asset URN")
+        knowledge_class = self._knowledge_class(knowledge_class)
+        origin = await self._origin()
+        asset = await self._call(self.client.resources.retrieve, urn, knowledge_class, self.scope)
+        if asset.urn != urn:
+            raise ProtocolError("Resources returned an asset with a different requested identity")
+        result = self._asset(asset, knowledge_class, origin)
+        await self._unchanged(origin)
+        return result
+
+    async def resolve(self, urn, knowledge_class="RESOURCE"):
+        text(urn, "Asset URN")
+        knowledge_class = self._knowledge_class(knowledge_class)
+        origin = await self._origin()
+        resource_set = await self._call(self.client.resources.resolve, urn, self.scope, knowledge_class=knowledge_class)
+        result = self._resolution(urn, resource_set, origin)
+        await self._unchanged(origin)
+        return result

@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 SUITES = {
+    "async-resource-inspection": "tests/functional/test_async_resource_inspection.py",
     "shared-context-readers": "tests/functional/test_shared_context_readers.py",
     "read-semantics-isolation": "tests/functional/test_read_semantics_isolation.py",
     "native-scan-slices": "tests/functional/test_native_scan_slices.py",
