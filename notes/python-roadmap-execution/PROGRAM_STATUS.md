@@ -1,6 +1,25 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Semantics-isolation local acceptance
+
+e2b768501 on95b7db67f:3,241installed/all17gates/146focused and actualJava native
+20cell234.5m reads PASS. Request fields/final attribution unchanged despite caller
+mutation, caller mutation retained independently. Creator/session/service/listener
+cleanup PASS, unrelatedJava unchanged. Exact SDK/install/rawharness/live/privacy
+bindings verified. Finaldocs/mapchecks then normalPR/CI/eligiblemerge required.
+No Java/algorithm/sourcefixture changes or revisionlease claim. Current integration
+still95b7db67f;23queuePRsmerged/0open until submission. Research/7trackedbackend
+dependency families unchanged; PROGRAM_IN_PROGRESS/A_INCOMPLETE/B_INCOMPLETE.
+
 ## Current after PR223 delivery — semantics isolation follow-up
+
+Latest executablee2b768501:3,241installed/all17gates/lint/build/parity and146focused
+PASS. One actual owned Java read-semantics-isolation-live ACTIVE; noPR or livePASS
+predeclared. Current feature requires0Java repairs. Seven tracked backend dependency
+families:5verifiedOPEN#89/#123/#124/#125/#126, plus Quality and import-schema source
+gaps; not a claim of7newJava defects or external-only blockers. #129/#130OPEN separately.
+Fullcarbon/Kaduna byte recovery retained; WMSlegendmetadata attempt timedout25s,
+0bytes, no repeat orabsenceclaim. Research scientificgates unchanged.
 
 Remote integration feature/python-experiment-runner@95b7db67f38e75b1dd537c2b25284a6ad7dfc546.
 PR223 merged normally after all checks, ancestry/source equality and146postmerge

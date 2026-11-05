@@ -1,5 +1,13 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Semantics isolation verified candidate
+
+e2b768501/base95b7db67f:3,241installed/17gates/146focused+actualJava20cell234.5m
+request snapshot/final units-observable/caller mutation/cleanup PASS. Eight red
+regressions retained; noJava/algorithm/dependency/sourcefixture changes. Exact
+source/install/harness/live/privacy binding verified; normalPR/CI/merge pending.
+Current integration95b7db67f,23mergedqueuePRs/0open until submission; fullA/B open.
+
 ## PR223 delivered / next reproduced Python defect
 
 PR223 MERGED95b7db67f,reviewed34d7769e2/executableba7773abd; allCI/normalmerge/
