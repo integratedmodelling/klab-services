@@ -7,6 +7,13 @@ resolution and documentation descriptors. It shares checked immutable views with
 selection is explicit, unknown revision remains unknown and URLs are never followed.
 See [native async semantics](native-async-semantic-exploration.md).
 
+Indexed reads require observation source IDs to be exact positive integers in the
+Java signed-long domain (1..2**63-1). Out-of-domain observation identities raise
+ProtocolError before read HTTP; they are not coerced or clamped. Source-zero and
+detached-consumer bindings keep their explicit unsupported behavior. A domain-valid
+integer does not establish source existence or authorization. See
+[source identity bounds](indexed-source-id-long-bounds.md).
+
 `Client.resources.retrieve(urn, "CODELIST")` and its native awaited async equivalent
 retrieve the existing Java codebook asset as `KlabAsset` with full retained wire DTO.
 CODELIST list/resolve remain unsupported. Numeric/string codes, order/preferences

@@ -332,8 +332,8 @@ class Context(ContextScopeImpl):
             raise UnsupportedOperationError("Query-result geometry/consumer bindings need an explicit StorageScan.Point; fetch_data supports committed native observations")
         if observation.metadata.get("im:storage-binding-source"):
             raise UnsupportedOperationError("Detached consumer bindings require an explicit StorageScan.Point")
-        if type(source_id) is not int or source_id <= 0:
-            raise ProtocolError("Storage reads require a positive source ID")
+        if type(source_id) is not int or not 1 <= source_id <= 2**63 - 1:
+            raise ProtocolError("Storage reads require a positive Java-long source ID")
         if slice is None:
             if observation.geometry:
                 for dimension in observation.geometry.raw.get("dimensions", []):
