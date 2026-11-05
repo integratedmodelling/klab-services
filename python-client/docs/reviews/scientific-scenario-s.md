@@ -42,3 +42,22 @@ The Region/Scientist union diagnostic is separate, preserved and not rerun or
 relaxed. No Java/grammar/component/scientific input change. Actual execution still
 NOT_RUN in this review pass; local checks/plan helper tests cannot imply L4.
 Normal PR/CI/merge requires ref/rules restoration or authorized remedy; no bypass.
+
+## Actual execution — PASS, not merged delivery
+
+20d3bc368 executed once in fresh owned `ta-s-live-01`, exact installed TA12 wheel
+d9a1d5ff2ce33d41ab61f78260671e696cabbd50f12b309dccd77e3ee233280c, adapter loaded
+from753b7629b (later reporting-only adapter edits are not attributed to this run).
+All4expectations/five axes PASS;167focused option/shared-reader/plan tests passed.
+Baseline observation15; lexical33,66.5m/20cells; scenario51,234.5m/20cells. Successful
+recorded model namespaces correspond exactly; all original observation handles and
+focus associations match. Valid distinct principal private attach AuthorizationError,
+one audited connect request/no scientific submission; own positive session released.
+Grid normalization/local option negatives preserved. Owner scopes/session and captured
+processes/listeners closed, unrelated Java unchanged. No union rerun/semantics change.
+Exact runtime/build/component/fixture hashes reside in private execution records;
+final sanitized evidence index and full installed candidate validation remain.
+
+The new oracle's byte-hash is preserved via an exact .gitattributes entry; existing
+worldview/model/research fixture bytes are not rewritten or normalized. This is
+artifact integrity, not permission to change scientific input or expectation.
