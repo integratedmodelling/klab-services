@@ -1,5 +1,22 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## Latest authority health regression validated
+
+fix/python-fixture-authority-health;base d3453dd42;tested7fe1a43b5;PR/mergepending.
+28focusedHTTP/auth/readiness+3,041installed/17gates/lint/parityPASS;actualownedJava
+startup/enrollment/fourparserfamilies/negativecontrols/processcleanupPASS. Original
+404red/intermediateguardfailure retained;runnerreadiness/offlineguard unchanged.
+Wheeldc865e06287d706483c723d9461f1d51c1466f46023f1e4f11363d432855094c.
+NormalPR/CI/mergeNEXT;notmanaged/scientificexecution oracceptance-rowpromotion.
+
+## Latest Q8c delivery / direct regression correction
+
+PR212 mergedd3453dd42,reviewed17ad05d65;allchecks/ancestry/source/postmerge33PASS;
+ownedbranchretired. Hubtransportonly. Follow-on discovered/health404 readiness
+regression from newGET handler;twoactualHTTPredtests reproduce both modes.
+Separatefix/python-fixture-authority-health adds200TEST_ONLYhealth without
+weakeningrunner readiness;green/fullvalidation/PRpending. No managedacceptance.
+
 ## Latest Q8c prerequisite local validation
 
 feature/python-managed-agent-preflight;acceptedbasec7dea3373;testedf35e984de.

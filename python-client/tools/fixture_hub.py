@@ -135,6 +135,15 @@ def authority_server(state, *, port=18090):
     groups = load_groups(state)
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
+            if self.path == "/health":
+                data = b'{"status":"TEST_ONLY"}'
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(data)
+                return
             prefix = "/api/v2/users/services/"
             if groups is None or not self.path.startswith(prefix):
                 self.send_error(404)
