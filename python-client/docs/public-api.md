@@ -1,5 +1,12 @@
 # Existing public scaffold method inventory
 
+`AsyncSemanticExplorer(AsyncClient, scope=None)` provides awaited concept/observable
+resolution, parents/children, is_a/satisfiable, authority search, selected-candidate
+resolution and documentation descriptors. It shares checked immutable views with
+`SemanticExplorer` on sync clients; no thread wrapper/local inference. Candidate
+selection is explicit, unknown revision remains unknown and URLs are never followed.
+See [native async semantics](native-async-semantic-exploration.md).
+
 Indexed reads require observation source IDs to be exact positive integers in the
 Java signed-long domain (1..2**63-1). Out-of-domain observation identities raise
 ProtocolError before read HTTP; they are not coerced or clamped. Source-zero and

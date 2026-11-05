@@ -1,5 +1,26 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Native async semantic inspection: exact-candidate local acceptance PASS
+
+`c84317576` includes accepted #230:3,420 installed/all17gates/160focused and actual
+Java resolution/direct canonical hierarchy/directional predicates/satisfiability/
+positive-controlled missingconcept PASS. Unconfigured authority honestly UNAVAILABLE;
+positive real authority candidate/documentation NOT_TESTED.36 audited read-route
+calls/zero scientific submissions or inspection writes, exact identity/privacy and
+owned cleanup verified. NoJava/localinference/provider registration/model forcing/
+atomicrevisionlease/wholeworldview/scientificexecution claim. Finalfocused/normalPR/
+CI/merge pending; fullRC-P4.1/CAP-06/A+B/studies remain incomplete.
+
+## Current delivery / native async semantic candidate
+
+#230merged`1af1e4935ee4c3c3cd9a260af3151a7837ab6bcb`, allchecks/ancestry/tree/
+209exact-sourcepostmergePASS; branch retired. Prior pending source-ID notes historical.
+AsyncSemanticExplorer implements existing Reasoner routes with nativeawaits/shared
+checked immutable semantic/authority views. Initial160focused/3,404installed/17gates
+PASS; acceptedparent integrated normally, combinedvalidationactive/livepending.
+No localinference/model forcing/authorityregistration/URL following or revisionlease;
+fullRC-P4.1/CAP-06/A+B/studies remain incomplete.
+
 ## Source-ID wire-domain correction: combined candidate PASS
 
 `d9f76fea2` includes accepted #229; 3,385 installed tests/all17gates/build/lint/
