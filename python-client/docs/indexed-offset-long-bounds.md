@@ -24,3 +24,20 @@ ordinary values only; no giant-observation scientific fixture or unchanged model
 rerun is required for rejecting impossible wire integers locally. No temporal/
 revision/offset-existence or original-study acceptance promoted. Review/normalPR/
 CI/eligiblemerge/ancestry/postmerge required; then continue next executable queue.
+
+## Red/green/native contract evidence
+
+New tests on unchanged SDK:6FAIL/2PASS (out-of-long cases in sync/async vs positive
+wire-domain/control cases). Correction adds one shared upperbound, no offset casting
+or clamping. Focused/fullinstalled validation active. NativePointOffsetContractProbe
+on unchanged Java constructor/JSON PASS: offsets0/maxlong preserved exactly, negative
+constructor offset rejected and out-of-long Java string parse rejected. This is
+domain/serialization evidence only, not a service/giant-observation scientific run.
+
+e9a4b6e37:154focused/3,249installed/all17gates/lint/build/sourceparityPASS.
+Wheel e8b41bdea24a8c4b1ad8189578212959f9f936a011f478c33f9440c0f8d2f45c;
+sdist24e467444690e0755ed7b46029888ffa4594e7d3697fb4a2bc7717dc894164f8.
+Exact source/installed/artifact/rawharness identity and native-domain probe bound
+in indexed-offset-long-bounds-final-validation.json. No new services/credentials
+or scientific live run. Combined tree with eventual accepted PR225 must be checked
+before delivery; its additional harness tests are absent from this baseline count.
