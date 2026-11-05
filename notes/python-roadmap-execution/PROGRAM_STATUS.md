@@ -11,10 +11,10 @@
   passes 2,886 installed tests/16 gates/lint/build/source parity. Fresh integrated
   owned Java recovery PASSED: same Job/observation/focus,20 cells,no child replay/
   disposal,foreign/deleted refusals and creator cleanup. This is new evidence.
-- **NEXT:** Q4a bounded native stream workload on fresh branch
-  `feature/python-native-stream-workload`, basec491dbbff. Reuse accepted234.5scenario
-  on1024x1024grid, independentlyvalidate nativefiles/streams and interruption safety.
-  Categorical/time/provider gates and Q6/Q7/Q8/Q9 remain separate.
+- **NEXT:** Q6a one additional exact-source strategy draft family on fresh branch
+  `feature/python-strategy-source-authoring`, base554b5e30b. Existing ADD/identity/
+  ownedproject guards reused; distinctsignedTESToperator, no cacheduserescalation.
+  Ontology/worldview/versionedpublish and Q7/Q8/Q9/category/time/provider remain separate.
 
 Q2 implementationab69eee3c initialinstalled2,963tests/17gates/lint/build/parityPASS,
 but source-preflight found its two-computation plan would exhaust the deliberately
@@ -62,6 +62,11 @@ with response/stagingcleanup/no partialdestination/existingfilebyteidentity.
 Creatorreleases/ownedprocess-listenercleanupPASS,unrelatedJavaunchanged.
 Authorreviewcomplete;normalPR/CI/mergeNEXT. FullQ4/category/time/providersoak and
 threehistoricalstudies remainincomplete. No genericRSS/throughputclaim.
+
+Q4aPR206 nowMERGED_BOUNDED554b5e30b9433300610ff66c4f79f6d564018827,
+reviewedede78a222411f4dfbf17f8824056366707511495. AllhostedchecksPASS;normal
+exactheadmerge/ancestryverified;postmergesourcediffempty/15focusedtestsPASS;
+ownedbranchretiredlocal/remote. Next Q6a source/permission contract before code.
 
 Q3 implementation06c6eef53 initially passes2,942installedtests/17coveragegates/
 lint/build/parity, wheel8c7eb033d733d47dcd4fe9fd89622727ae169cd1b0f096f3cc4367aa4a286a2b.
