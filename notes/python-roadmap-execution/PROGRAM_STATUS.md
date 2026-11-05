@@ -1,5 +1,49 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest native async restoration local acceptance
+
+b658cc388 LOCAL_ACCEPTED_BOUNDED:3,119installed/17gates/lint/parity+255focusedPASS;
+exact-head actualJava/freshasyncprocess originalcontext/Job2/observation15/focus11/
+20cells234.5m/accesscontrols/localcancel-close/creator-worker-servicecleanupPASS.
+Worker scientificsubmissions0,unowned;unrelatedJavaunchanged. RawSDK/harness/
+installed/liveidentity/privateevidencehashes/credentialabsence verified; laterdelta
+Markdownonly. Initialcoveragefailure and firstlivecandidate retained; primaryreport
+errorguard tested. NormalPR/CI/mergeNEXT. Deletedstate/wider peer-observer/mapping/
+restart-history remain unaccepted beyond unitcontracts;no fullA/B/study/releaseclaim.
+PR217merged361b6920b/postmerge25PASS. Nosleepconditionwhileactionableworkremains.
+
+## Latest native async final installed pass / exact-head live pending
+
+b658cc388:3,119installedtests/all17gates/lint/build/sourceparity and255focusedPASS.
+Report-I/O safeguard retains primary failures with type-only notes; native SDK
+restoration unchanged. Exactcandidate native-async-handle-final-liveACTIVE, final
+recovery/access/cleanup/identity notpredeclaredPASS; firstactualpass staysbound to
+20d07091d. NoPRyet; deletedstate/wider peer-observer/restart-history remainseparate.
+Wheela5b1ca64e646bfa7d5789090ecb277e3c7ac1cdb4c8d26fc6e8dce6cbbbd9e48.
+FullA/B/studies/Qualitywarning/othergates incomplete;nosleepconditionwhileworkremains.
+
+## Latest native async restoration installed pass / actual run active
+
+20d07091d:3,117installedtests/17coveragegates/lint/build/sourceparityPASS. Initial
+coverage failure retained and validobserver/mapping tests added without exclusions.
+Freshnative-async-handle-liveACTIVE: original savedcontext/Job/observation recovery
+in a fresh async interpreter, focus/20cells/access/cancel-close/creatorcleanup.
+No actual outcome predeclared, noPRyet. Explicit authorized release contract stays
+unchanged; no automaticrelease/replay. Deletedstate/wider peer-observer/restart
+history remain separate. PR217merged361b6920b/postmerge25PASS; fullA/B/studies and
+Qualitywarning/otherQ7 gates incomplete;no sleepconditionwhileworkremains.
+
+## Latest model-plan delivery / native async restoration contract
+
+PR217 MERGED_BOUNDED `361b6920b706839a01856dacde80d1416da8d175`, reviewed
+4ceea6c420c9cf8d2661c429991ca8e313b922ea. All final checks SUCCESS; exact installed/
+live/harness evidence, normal merge, ancestry/source equality and25postmerge tests
+PASS; owned branch retired. Initial Decimal failure and Quality warning retained;
+full Q7 not promoted. New accepted-base native async restoration contract uses
+existing Handle identity/credential validators and awaited attach/query/Job APIs,
+no sync network/thread facade or recreation. Implementation/live acceptance pending;
+full A/B/studies incomplete; no sleep condition while actionable work remains.
+
 ## Latest corrected model-plan local acceptance
 
 7eb7f3637 LOCAL_ACCEPTED_BOUNDED:3,090installed/17gates/lint/parity+20focusedPASS;

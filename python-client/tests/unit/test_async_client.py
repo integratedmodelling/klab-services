@@ -264,11 +264,11 @@ def test_invalid_scope_binding_and_unimplemented_operations_do_not_send():
             raw = observation_from_wire(observation(), context)
             for operation in [lambda: api.attach_context("s.c.1"),
                 lambda: context.observe(ObservationRequest(observable_from_wire(observation()["observable"])), options=ObservationOptions()),
-                lambda: context.fetch_data(raw, [-1])]:
+                lambda: context.fetch_data(raw, [-1]), lambda: api.restore_handle(None)]:
                 with pytest.raises(InvalidRequestError):
                     await operation()
             for operation in [lambda: api.resources.contextualize(None), lambda: api.resolver.encode_dataflow(None),
-                lambda: api.runtime.query_knowledge_graph("query", context), lambda: api.restore_handle(None),
+                lambda: api.runtime.query_knowledge_graph("query", context),
                 lambda: api.export_formats(raw), lambda: api.export_to_file(raw, "not-created", media_type="image/tiff")]:
                 with pytest.raises(UnsupportedOperationError):
                     await operation()

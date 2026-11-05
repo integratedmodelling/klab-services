@@ -340,7 +340,64 @@ class AsyncClient:
             result_kind="observation" if decoder is None else result_kind)
 
     async def restore_handle(self, reference, *, allow_relocation=False):
-        raise UnsupportedOperationError("Async saved-handle restoration is not implemented; keep known async job/context references")
+        from .handles import (Handle, HandleFormatError, HandleIdentityError,
+                              _decode_observation, _no_credentials, _selection, _url)
+        from .errors import JobUnavailableError
+
+        if not isinstance(reference, Handle) or type(allow_relocation) is not bool:
+            raise HandleFormatError("Restore requires a validated Handle and boolean relocation policy")
+        _no_credentials(reference, self)
+        if _url(self.transport.endpoint("runtime").url) != reference.runtime_url and not allow_relocation:
+            raise HandleIdentityError("Configured Runtime origin/base path differs from the saved reference")
+        if (reference.kind == "job" and not allow_relocation
+                and _url(self.transport.endpoint(reference.service).url) != reference.service_url):
+            raise HandleIdentityError("Configured job-service origin/base path differs from the saved reference")
+        runtime_id = (await self.runtime.capabilities()).service_id
+        if runtime_id != reference.runtime_id or self.runtime_service_id not in (None, runtime_id):
+            raise HandleIdentityError("Authenticated/configured home Runtime identity differs from the saved reference")
+        if reference.kind == "job" and reference.service == "resolver":
+            if (await self.resolver.capabilities()).service_id != reference.service_id:
+                raise HandleIdentityError("Executing peer identity differs from the saved reference")
+        self.runtime_service_id = runtime_id
+        root = await self.attach_context(reference.context_id)
+        if root.id != reference.context_id:
+            raise ProtocolError("Attach returned a different root context")
+        if root.configuration.get("serviceId") not in (None, runtime_id):
+            raise HandleIdentityError("Attached context belongs to another Runtime")
+
+        async def lookup(observation_id):
+            rows = await self.runtime.query_knowledge_graph(
+                {"type": "QUERY", "resultType": "OBSERVATION", "id": observation_id, "limit": 2}, root)
+            if not rows:
+                raise MissingAssetError("Saved observation/selection is absent or inaccessible in this context")
+            if len(rows) != 1:
+                raise ProtocolError("Observation lookup returned a nonunique asset")
+            return _decode_observation(root, rows[0], observation_id)
+
+        focus, observer = _selection(reference.scope, reference.context_id)
+        for observation_id in focus:
+            await lookup(observation_id)
+        if observer is not None:
+            selected = await lookup(observer)
+            if "AGENT" not in selected.observable.semantics.raw.get("type", []):
+                raise HandleIdentityError("Saved observer selection is not a persisted agent")
+        context = AsyncContext(self, root.configuration, token=reference.scope, owned=False)
+        if reference.kind == "context":
+            return context
+        if reference.kind == "observation":
+            observation = await lookup(reference.observation_id)
+            observation._context = context
+            return observation
+        decoder = None
+        if reference.result_kind == "observation":
+            decoder = lambda payload: _decode_observation(context, payload)
+        elif reference.result_kind == "dataflow":
+            decoder = lambda payload: object_payload(payload, "dataflow")
+        job = AsyncJob(self, reference.job_id, context, service=reference.service,
+            decoder=decoder, result_kind=reference.result_kind)
+        if (await job.status()).status == "EMPTY":
+            raise JobUnavailableError(job.id, "Saved job is unavailable or expired; no work was recreated")
+        return job
 
     async def export_formats(self, observation):
         raise UnsupportedOperationError("Async native file export is not implemented; use the explicitly synchronous export workflow separately")

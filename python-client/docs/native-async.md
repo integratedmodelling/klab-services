@@ -2,8 +2,10 @@
 
 Current [own-wait acceptance](async-own-wait-acceptance.md) verifies local task
 cancellation without cancelling original Java work, exact result/focus, explicit
-known-ID attachment/access and cleanup. It does not implement async saved-handle
-restoration/nativeexport, notebook or managed-agent/event guarantees.
+known-ID attachment/access and cleanup. Later notebook acceptance is separate.
+Native saved-handle restoration is implemented in the current candidate; its
+[exact validation and limits](native-async-handle-restoration.md) remain separate
+from native export and managed-agent/event guarantees.
 
 ## Scope and state
 
@@ -41,10 +43,12 @@ Native asynchronous observation workflows over existing endpoints:
 The ordinary sync client stays synchronous. Events/durable replay, live graph
 caching, new chunk protocols, authoring and worker execution are later feature PRs.
 Transport streaming alone is not a completed native file-export or async scientific
-adapter workflow. Async connection orchestration/credential persistence and saved
-handle restoration are outside this first async observation release; their methods
-fail explicitly where present. Use a separate synchronous Client for supported
-sync export/restore operations; do not pass AsyncClient to synchronous inspection,
+adapter workflow. Async connection orchestration/credential persistence and native
+file export remain unsupported. `await client.restore_handle(reference)` now uses
+native async I/O and the existing Handle identity/selection contracts; it does not
+recreate absent work or promise in-flight restart/history portability. Restored
+contexts are unowned; explicit authorized release stays explicit. Use a separate
+synchronous Client for supported sync export; do not pass AsyncClient to synchronous inspection,
 provenance or ExperimentRunner helpers. No synchronous network callback is invoked
 implicitly on the event-loop thread. Existing offline Handle serialization can
 record a known AsyncJob/AsyncContext after service identity has been established.

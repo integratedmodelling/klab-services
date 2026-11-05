@@ -22,7 +22,7 @@ platform blockers and does not bump, tag, upload or publish the package.
 | Capability | Actual accepted scope / remaining limits |
 | --- | --- |
 | Sync observation workflow | Typed requests, configured origins, scope/Job lifecycle, checked indexed reads; scientific validity remains model/input/reference-specific |
-| Native async | Native HTTP scope/Job/point reads; bounded actual Java own-wait cancellation/explicit known-ID attachment accepted in PR210, actual exact-installed-kernel notebook journey in PR211. No async Connection/Hub orchestration, native file export or saved-handle restoration; no arbitrary kernel-profile guarantee |
+| Native async | Native HTTP scope/Job/point reads; bounded own-wait cancellation/explicit attachment PR210 and exact-installed-kernel notebook PR211. Current candidate's native saved-handle restoration passed installed/fresh-process Java recovery/access/cleanup; exact limits in native-async-handle-restoration.md, PR/CI delivery pending. No async Connection/Hub orchestration, native file export, arbitrary kernel-profile, deleted-context or in-flight restart/history guarantee |
 | Indexed pandas views (#106) | Object precision, explicit null flags, source metadata, offsets/order; no guessed axes, general categorical dictionary or lazy/chunk/time discovery |
 | Recorded graph pages (#107) | Typed bounded synchronous pages, membership checks; partial, not complete lineage, snapshot pagination or root-commit proof |
 | Native exports / raster readers | Actual Java GeoJSON identity/coordinates/CRS and million-cell streamed numeric export/fault preservation accepted in PR204/206. Checked reader subset only; categorical/time/multi-shard/revision/provider gates remain separate, including upstream geospatial issue #10 |

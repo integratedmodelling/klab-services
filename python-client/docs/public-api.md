@@ -3,8 +3,10 @@
 **Bounded native async observation:** `AsyncClient`, `AsyncSession`, `AsyncContext`
 and `AsyncJob` expose the bounded observation workflow in
 [`native-async.md`](native-async.md). The historical APIs below remain synchronous;
-async file export, connection orchestration and saved-handle restoration are not
-claimed. Controlled real-Java acceptance and its limits are recorded with the
+async file export and connection orchestration are not claimed. Native async
+saved-handle restoration is implemented with existing origin/identity/selection
+checks; [candidate acceptance and limits](native-async-handle-restoration.md)
+are recorded separately. Controlled real-Java acceptance and its limits are recorded with the
 feature; this is not full-roadmap or published-experiment acceptance.
 
 The four ABCs and their `*Impl` classes have the same operation status. Service
