@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from klab_client.errors import AuthorizationError, MissingAssetError, ServerError
 from workflows import completed_recovery as workflow
 
 
@@ -78,3 +79,13 @@ def test_recovery_failure_never_writes_success(tmp_path, monkeypatch, options, m
 def test_existing_attachment_is_not_creation_or_arbitrary_mutation(method, path, target, expected):
     assert workflow.allowed_request({"method": method, "path": path, "context_id": target},
         "session.context") is expected
+
+
+@pytest.mark.parametrize("error,expected", [
+    (ServerError("Cannot find a digital twin with requested ID"), True),
+    (MissingAssetError("not found"), True),
+    (ServerError("unrelated backend failure"), False),
+    (AuthorizationError("forbidden"), False),
+    (RuntimeError("Cannot find a digital twin with requested ID"), False)])
+def test_deleted_context_notification_is_not_a_generic_server_failure(error, expected):
+    assert workflow.deleted_context_refusal(error) is expected

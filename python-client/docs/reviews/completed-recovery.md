@@ -72,6 +72,16 @@ Q1 remains IMPLEMENTED_UNVERIFIED/acceptanceFAILED, is not eligible for merge, a
 the queue moves to independent work. Required next Q1 evidence is one frozen
 candidate live run after this known source-grounded correction, not a new API.
 
+After independentQ5actualparseracceptance (PR201 is externally packaging-blocked),
+Q1sourcepreflight identified the controller's documented missing-root reply:
+HTTP200configuration with `Cannot find a digital twin with requested ID`, raised
+as ServerError by check_notifications. The deleted-context control now accepts
+only that exact notification or typedMissingAssetError, rejecting arbitrary500s
+and generic authorization failures. This follows RuntimeServerController478–483,
+RuntimeService4960–4971 and explicitdispose4656–4662, not a fitted pass criterion.
+Five new negative/positive unit vectors cover that distinction. Q1 has no dependency
+on Q5code, no Java changes and no new claimed retention/restart capability.
+
 ## Suggested bounded PR
 
 “Verify installed fresh-process completed Job and observation recovery on owned

@@ -76,3 +76,18 @@ original artifact, rights, reference and unchanged-Java gates.
 
 No completion percentage or external-only end-state is justified. This file is a
 resume checkpoint, not final handoff or a promise of background continuation.
+
+## Independent Q5 disposition / Q1 resume
+
+Q5PR201 OPEN remotehead8cdd6bec5, localdocumentationcheckpoint660715eed.
+Actual4-familyparser/invalid/sourcechecks and2862installedtests/16gatesPASS;
+Python3.11–3.13/core/Windows/JenkinsPASS. Maven packaging failed twice because
+approvedklab.product1.0.1-SNAPSHOT cannotresolve (publicmetadata404). No merge or
+bypass; artifact/build-contract owner action required. Existing acceptance map
+rows remain unchanged; this is not a global reason to stop internal work.
+
+NEXT: resume Q1 after independent parser work, with source-grounded nested
+ScopeRequestID and exact deleted-context notification controls, then freeze/run
+installed+ownedJavaacceptance. Q1branch is not stacked on unmergedQ5. Q1current
+server/program wheel identity will be recorded pernewrun, not inferred fromQ5.
+BothQ1initialfailures andQ5initial/corrected/hostedfailures remain preserved.

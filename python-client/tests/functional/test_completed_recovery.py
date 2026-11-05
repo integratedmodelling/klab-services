@@ -4,8 +4,8 @@ import json
 import pytest
 
 from klab_client import Context, ObservationRequest, RectangularGeometry, Session, load_handle
-from klab_client.errors import AuthorizationError, MissingAssetError
-from workflows.completed_recovery import client, expected_values, run_child
+from klab_client.errors import AuthorizationError, MissingAssetError, ServerError
+from workflows.completed_recovery import client, deleted_context_refusal, expected_values, run_child
 from workflows.scientific_checks import require
 
 pytestmark = [pytest.mark.live, pytest.mark.functional]
@@ -53,10 +53,12 @@ def test_completed_job_and_observation_survive_local_process_close(functional_st
             # Explicit creator cleanup only; detached/restored clients never own it.
             assert Context(api, context.configuration, owned=True).release() is True
             context = None
-            with pytest.raises((MissingAssetError, AuthorizationError)):
+            with pytest.raises((MissingAssetError, ServerError)) as refusal:
                 api.restore_handle(observation.to_handle())
+            assert deleted_context_refusal(refusal.value), "Unexpected failure is not deleted-context evidence"
             report.update(passed=True, original=original, recovered=recovered, creator_transport_closed=True,
-                owner_read_after_close=True, foreign_restore_denied=True, deleted_restore_denied=True)
+                owner_read_after_close=True, foreign_restore_denied=True, deleted_restore_denied=True,
+                deleted_context_error=type(refusal.value).__name__)
     except BaseException as error:
         primary = error
         raise

@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from klab_client import Client, Endpoint, load_handle
+from klab_client.errors import MissingAssetError, ServerError
 from .scientific_checks import require
 
 
@@ -15,6 +16,13 @@ def expected_values():
     return tuple(None if value is None else Decimal(value) for value in (
         "0", "2.25", "-100", "3", "5", "-2.5", None, "4", "-0.125", "9",
         "10.125", "-9", "12.5", "22", "-8", "16777217.125", "11", None, "31", "41"))
+
+
+def deleted_context_refusal(error):
+    # RuntimeServerController478–483 returns a 200 configuration with this error
+    # notification when the saved root is absent. Do not accept an arbitrary500.
+    return isinstance(error, MissingAssetError) or (isinstance(error, ServerError)
+        and str(error) == "Cannot find a digital twin with requested ID")
 
 
 def client(config):
