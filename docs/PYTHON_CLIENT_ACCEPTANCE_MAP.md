@@ -1,5 +1,26 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Indexed-read semantics isolation — bounded local PASS
+
+e2b768501 on accepted PR223/95b7db67f fixes a reproduced Python request aliasing
+defect: explicit semantics are copied once before point HTTP, shared by sync/
+async requests and final metadata. Eight regressions failed before correction;
+146focused/3,241installed/all17gates and actual Java20cell234.5m request/metadata/
+caller-mutation/cleanup controls PASS. Exact identity/privacy verified; normal
+PR/CI/merge pending. [Contract](../python-client/docs/indexed-read-semantics-isolation.md)
+and [review](../python-client/docs/reviews/indexed-read-semantics-isolation.md).
+No Java change, scientific recalculation, cross-fetch lease or immutable source
+observation/geometry claim. RC-P2.2/CAP-09 remain PARTIAL; no study promotion.
+
+## Delivery/current follow-up — PR223 merged
+
+PR223 MERGED95b7db67f; reviewed34d7769e2/executableba7773abd. All hosted CI,
+normal exact-head merge/ancestry/source equality and146postmerge tests PASS;
+successful branch retired. Native slice bounds/types and actual initialization
+read accepted only in the documented scope, not temporal execution/lease/fullrow.
+Next Python-only correction isolates explicit indexed-read semantics from caller
+mutation; deterministic reproduced request/metadata mismatch, not a Java defect.
+
 ## Native indexed-read slices — 5 November 2026
 
 ba7773abd on accepted PR222/c10555ebf: shared immutable ScanSlice/native dict

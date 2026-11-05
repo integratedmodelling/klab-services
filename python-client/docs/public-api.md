@@ -96,6 +96,13 @@ timestamps and native interval validation before HTTP. Keys/timestamps are calle
 supplied; no time/revision discovery, lease, scheduling or temporal computation is
 implied. See [native scan slices](native-scan-slices.md).
 
+Within a single sync/async indexed read, validated explicit native `semantics`
+fields are copied before the first HTTP request and retained for every point and
+the returned requested observable/unit metadata. Caller mutations remain caller
+owned and cannot change later point requests or relabel earlier values. This is
+not a remote revision lease, immutable observation snapshot or deep snapshot of
+arbitrary extension objects. See [semantics isolation](indexed-read-semantics-isolation.md).
+
 Offline indexed-read snapshots: `ScientificData.dumps` and `ScientificData.loads`
 use bounded versioned JSON and existing scalar decoders, without scientific extras,
 network access, remote restoration or operation replay. See
