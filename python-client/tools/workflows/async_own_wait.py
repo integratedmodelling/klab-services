@@ -93,17 +93,21 @@ async def scenario(state):
             async with client(config["other_token"], "other-scientist") as foreign:
                 await foreign.initialize_user_scope(local_federation=True)
                 try:
-                    await foreign.restore_handle(reference)
+                    await foreign.attach_context(reference.context_id)
                 except (AuthorizationError, MissingAssetError) as error:
-                    report["foreign_handle_denial"] = type(error).__name__
+                    report["foreign_context_attach_denial"] = type(error).__name__
                 else:
-                    raise AssertionError("Foreign principal restored private original Job")
+                    raise AssertionError("Foreign principal attached private original context")
             # Closing this independent reader must not dispose creator work.
             async with client(config["token"], config["username"]) as reader:
                 await reader.initialize_user_scope(local_federation=True)
-                restored = await reader.restore_handle(reference)
+                attached = await reader.attach_context(reference.context_id)
+                require(not attached.owned and reader.runtime_service_id == reference.runtime_id,
+                    "Independent reader acquired ownership or changed Runtime identity")
+                restored = attached.within(region.id).job(original_id)
                 again = await restored.result(120)
-                require(again.id == observation.id, "Same-principal async reader changed observation identity")
+                require(again.id == observation.id and scope_token(again._context) == reference.scope,
+                    "Same-principal explicit async attach changed observation identity/focus")
             require((await observation.fetch_data([0], curve="D2_YX")).values == (234.5,),
                 "Reader close disposed creator work")
             submits = [call for call in calls if call["method"] == "POST" and call["path"].endswith("/api/v1/submit")]
@@ -112,7 +116,8 @@ async def scenario(state):
             report.update(passed=True, job_id=original_id, observation_id=observation.id,
                 local_wait_cancelled=True, other_wait_completed=True, wait_audit=wait_calls,
                 verified_cells=20, units="m", expected_value=234.5, concurrent_reads=2,
-                scientific_submissions=2, remote_job_cancellations=0, reader_close_preserved_work=True)
+                scientific_submissions=2, remote_job_cancellations=0, reader_close_preserved_work=True,
+                async_saved_handle_restoration="UNSUPPORTED; explicit known root/focus/Job attachment only")
         except BaseException as error:
             primary = error
             raise

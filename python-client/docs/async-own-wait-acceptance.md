@@ -11,7 +11,7 @@ Job. Two asyncio tasks wait on that same original Job. Cancel one task after its
 status-read hook has entered; require asyncio.CancelledError, no remote cancel/
 release/submission caused by cancellation, and the other wait completes the same
 originalJob/observation. Validate all20cells exactly234.5m, original focus/IDs,
-two concurrent bounded readbacks and foreign-principal saved-handle denial. Local
+two concurrent bounded readbacks and foreign-principal root-context attachment denial. Local
 close must not dispose work; creator alone releases context/session with actual
 confirmation. Audit writes/cancel/release routes and counts around own-wait cancel.
 
@@ -29,3 +29,11 @@ installed/live/review/normalCI/eligiblemerge remain required.
 Q7a first hierarchy assertion failed before model/session/compute; branch830a141cd
 and receipts are preserved withoutPR/merge or changed semantics. Rootcause unresolved;
 this independent async work does not close that gate. A/B/studies remain incomplete.
+
+First live run exposed a harness call to explicitly unsupported
+AsyncClient.restore_handle. Do not implement a fake restoration layer or count that
+refusal as authorization. One bounded correction uses supported attach_context on
+the original known root plus explicit known focus/Job IDs. Same-owner reader must
+remain unowned, retain Runtime/observation/focus identity and close without disposal;
+foreign attach must be explicitly denied. Saved-handle serialization is checked,
+but native async saved-handle restoration remains unsupported, not certified here.
