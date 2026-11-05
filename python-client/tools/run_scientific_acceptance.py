@@ -15,6 +15,21 @@ import zipfile
 from scientific_scenario import AXES, load, outcome, record, require, sha, validate
 
 PACKAGE = Path(__file__).resolve().parents[1]
+WORKFLOW_ORACLES = {
+    "nonuniform-export": "tests/fixtures/nonuniform-export.json",
+    "request-plan": "tests/acceptance/scenarios/s-selection-oracle.json",
+}
+
+
+def bind_workflow(manifest):
+    """Fixed adapters must not certify arbitrary declarative physics/oracles."""
+    fixture = manifest["fixture"]
+    require(fixture["oracle_file"] == WORKFLOW_ORACLES[manifest["execution"]["operation"]],
+            "Manifest oracle is not the selected workflow oracle")
+    require(fixture["expected_units"] == "m", "Selected workflows support the independently reviewed metre contract only")
+    require(fixture["crs"].split(";", 1)[0] == "EPSG:3857", "Selected workflow CRS differs from declared CRS")
+    require(fixture["temporal_domain"].split(";", 1)[0] in ("initialization", "initialization only"),
+            "Selected workflows do not implement a temporal window")
 
 
 def installed_wheel(wheel):
@@ -53,6 +68,7 @@ def execute(args):
         PACKAGE = selected
     manifest = validate(load(args.manifest), PACKAGE)
     require(manifest["claim_level"] == "L4", "L5 execution is excluded from this milestone")
+    bind_workflow(manifest)
     wheel_hash = installed_wheel(args.wheel)
     # Use the existing harness directly so its finally block owns every cleanup.
     import run_reliability_acceptance as harness
