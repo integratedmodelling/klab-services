@@ -17,6 +17,15 @@ from .async_own_wait import cancel_own_wait
 from .scientific_checks import require
 
 
+def save_report(state, report, failure=None):
+    try:
+        (state / "async-handle-restoration.json").write_text(json.dumps(report, indent=2))
+    except Exception as error:
+        if failure is None:
+            raise
+        failure.add_note("Async restoration evidence save failed: " + type(error).__name__)
+
+
 def client(config, *, foreign=False):
     token = config["other_token"] if foreign else config["token"]
     return AsyncClient(config["urls"]["runtime"], token,
@@ -145,10 +154,10 @@ async def scenario(state):
                     report.update(passed=False, cleanup_error_types=failures)
                     if primary is None:
                         primary = AssertionError("Owned async restoration cleanup failed")
-                        (state / "async-handle-restoration.json").write_text(json.dumps(report, indent=2))
+                        save_report(state, report, primary)
                         raise primary
                     primary.add_note("Owned cleanup failed: " + ",".join(failures))
-            (state / "async-handle-restoration.json").write_text(json.dumps(report, indent=2))
+            save_report(state, report, primary)
     return report
 
 

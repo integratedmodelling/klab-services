@@ -57,3 +57,13 @@ paths. Existing Handle schema admits mapping results on Runtime/Resolver; retain
 that contract. Add positive persisted-agent and both-service mapping tests;26async
 restore tests now PASS. No threshold exclusions or validator changes. A fresh full
 installed attempt is required; previous run is not labelled a gate pass.
+
+## Installed checkpoint / live run pending
+
+Executable20d07091d: fresh `ab-native-async-handle-covered` PASS with3,117installed
+tests, all17coveragegates, lint/build/sourceparity. Exact noneditableWindows
+Python3.12.7; inherited Rasterio warning retained. Wheel
+`76974ad80f4d443654b9bae3050dc6c12bdfe2e23fb88e7f1df8506a09bbaa35`;
+sdist `fedc1724b04f1b01c88b85b0cd1a633a9faaf5664bf8bf6b43bd11b020a7b227`.
+Fresh owned Java `native-async-handle-live` is active. Actual recovery/access/
+cleanup remains pending; installed success does not establish live acceptance.

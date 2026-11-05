@@ -1,5 +1,16 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Latest native async restoration installed pass / actual run active
+
+20d07091d:3,117installedtests/17coveragegates/lint/build/sourceparityPASS. Initial
+coverage failure retained and validobserver/mapping tests added without exclusions.
+Freshnative-async-handle-liveACTIVE: original savedcontext/Job/observation recovery
+in a fresh async interpreter, focus/20cells/access/cancel-close/creatorcleanup.
+No actual outcome predeclared, noPRyet. Explicit authorized release contract stays
+unchanged; no automaticrelease/replay. Deletedstate/wider peer-observer/restart
+history remain separate. PR217merged361b6920b/postmerge25PASS; fullA/B/studies and
+Qualitywarning/otherQ7 gates incomplete;no sleepconditionwhileworkremains.
+
 ## Latest model-plan delivery / native async restoration contract
 
 PR217 MERGED_BOUNDED `361b6920b706839a01856dacde80d1416da8d175`, reviewed
