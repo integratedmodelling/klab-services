@@ -264,25 +264,25 @@ Research-L1–L7 is separate from Test-L1–L5. No original model reachesResearc
 
 |ID|Original case / compact current finding|Highest original-artifact evidence; next gate|
 |---|---|---|
-|R01|Sicilywildfire2023:source/trainingtable recovered, frozenfit/privateforcing missing|Research-L3partial; weights/reference/licence+actualWEKAadmission|
-|R02|SouthAfricanhouseholddependence2019: exacttrained/ward/reference bundle absent|Research-L1identitylead; originalpaper/data/model/rights|
-|R03|EasternMadagascarwater:2014methodologysubcase, source/sink/use routing bundle absent|Research-L1/L2partial; original2011 regionalflowfixture|
-|R04|Washingtonopen-space: samepaper, distinct2000/2060scenario target|Research-L1; originalparcel/beneficiary/valuationfixture|
-|R05|Pugetfive-service: genuinebeneficiary-linked ratios, not generic16–66%oracle|Research-L1/L2partial; oneoriginalservice executable/input/reference|
-|R06|SanPedro: strongcarbon tables, stock/flux/differentmask distinction essential|Research-L1/L2partial; originalcarbonmodel/scenario/masks/outputs|
-|R07|Pugeturbanexpansion2016: fresh exactDOI/title; growthbundle missing|Research-L1; originalscenario/source/output|
-|R08|SouthernRockiespreferences2015: originalsurveyweights/surfaces missing|Research-L1title; consentedweights and pairedreference|
-|R09|ZurichfloodBN2016: **new original3network/CPT recovery**, not yet Java|Research-L3partial; matchedposteriorreference and originalnativeNETadmission|
-|R10|LandscapeaestheticsBN2017: participatoryCPTs/indicators missing|Research-L1title; elicitation/network/reference|
-|R11|Hotspotcomparison2016online/2017issue: thresholds alone insufficient|Research-L1/L2partial; originalsurfaces/methodoutputs and generator|
-|R12|Trentinolivestock/payments2015: neitherPaL nor a newpolicy model substitutes|Research-L1title; originalfarm/payment/scenario/reference|
-|R13|Italianservicechanges2022: exactpaper/year-pair unresolved|Research-L1storylead; identifyoriginalpaper and namedoutput|
-|R14|Puerto–PaL2023: source/R/S12exist; Radiationtuple/time/units and fullgrowthjoin absent|Research-L3partial; authenticmatchedfixture/rights then originaladmission|
-|R15|Urbanheat2024: exactVitoria-Gasteizmismatch paper, not provedinterventionrun|Research-L1/L2partial; health/census/code/weights/reference/consent|
-|R16|Urbancooling2025:12cityGIS/GLMMpaper, not verifiedk.LABexecutable|Research-L1/L2partial; originalfit/predictors/reference/adapter|
-|R17|Tidalmarsh2024: hybridprocess/MLstory, immutablecalibratedtuple absent|Research-L1lead; exactpaper/state/forcing/reference|
-|R18|Virtualwatershed2015: originalsolver/coupler/forcing absent|Research-L1title; source/build/restart/hydrograph|
-|R19|Agriculturaltrade-offs2013: officialtitle, nooriginalscenario/model/reference|Research-L1title; exactpaper and originalchain|
+|R01|Sicily wildfire 2023: source/training table recovered; frozen fit/private forcing missing|Research-L3 partial; weights/reference/licence and actual WEKA admission|
+|R02|South African household dependence 2019: trained model/ward/reference bundle absent|Research-L1 identity lead; original paper/data/model/rights|
+|R03|Eastern Madagascar water: 2014 methodology subcase; original routing bundle absent|Research-L1/L2 partial; original 2011 regional flow fixture|
+|R04|Washington open-space: same paper, distinct 2000/2060 scenario target|Research-L1; original parcel/beneficiary/valuation fixture|
+|R05|Puget five-service: genuine beneficiary-linked ratios, not a generic 16–66% oracle|Research-L1/L2 partial; one original service executable/input/reference|
+|R06|San Pedro: strong carbon tables; stock/flux and different masks must stay distinct|Research-L1/L2 partial; original carbon model/scenarios/masks/outputs|
+|R07|Puget urban expansion 2016: fresh exact DOI/title; growth bundle missing|Research-L1; original scenario/source/output|
+|R08|Southern Rockies preferences 2015: original survey weights/surfaces missing|Research-L1 title; consented weights and paired reference|
+|R09|Zurich flood BN 2016: **three original networks/CPTs newly recovered**, not yet Java|Research-L3 partial; matched posterior reference and native NET admission|
+|R10|Landscape aesthetics BN 2017: participatory CPTs/indicators missing|Research-L1 title; elicitation/network/reference|
+|R11|Hotspot comparison, 2016 online/2017 issue: thresholds alone insufficient|Research-L1/L2 partial; original surfaces/method outputs and generator|
+|R12|Trentino livestock/payments 2015: neither PaL nor a new policy model substitutes|Research-L1 title; original farm/payment/scenario/reference|
+|R13|Italian service changes 2022: exact paper/year pair unresolved|Research-L1 story lead; original paper and named output|
+|R14|Puerto–PaL 2023: source/R/S12 exist; Radiation tuple/units/time and growth join missing|Research-L3 partial; authentic matched fixture/rights, then original admission|
+|R15|Urban heat 2024: Vitoria-Gasteiz mismatch paper, not a demonstrated intervention run|Research-L1/L2 partial; health/census/code/weights/reference/consent|
+|R16|Urban cooling 2025: twelve-city GIS/GLMM paper, not a verified k.LAB executable|Research-L1/L2 partial; original fit/predictors/reference/adapter|
+|R17|Tidal marsh 2024: hybrid process/ML story; calibrated tuple absent|Research-L1 lead; exact paper/state/forcing/reference|
+|R18|Virtual watershed 2015: original solver/coupler/forcing absent|Research-L1 title; source/build/restart/hydrograph|
+|R19|Agricultural trade-offs 2013: official title, no original scenario/model/reference|Research-L1 title; exact paper and original chain|
 
 P01Nigeria, P02carbon, P03SEEA/globalfour-servicelead, P04WEED and P06OBServ were
 explicitly compared in the matrix. P06 fresh release listing includes v1.1.1
@@ -351,6 +351,12 @@ map updates. Its final head/PR/CI/merge disposition must be recorded from GitHub
 not predicted. No mandatory Java regression is justified by a docs-only change.
 Required hosted checks remain intact; contributor-guide review is read-only
 CLI self-review, **not independent scientific or human approval**.
+
+Final documentation review checks: **165 focused tests PASS** (1.74s pytest time),
+all19 joined matrix records and all42 primary roadmap IDs verified, relative links
+and known fixture-token absence PASS. The read-only
+[contribution review](../../python-client/docs/reviews/java-admission-19-study-readiness.md)
+records exact base/candidate, corrected findings and remaining evidence limits.
 
 New test selection was focused, not a false speedup exercise:154Test-L1 checks and
 five no-service preflight negatives, plus a no-initialization Java classloader probe.
