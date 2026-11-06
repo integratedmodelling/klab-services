@@ -145,6 +145,17 @@ def validate(registry=None, audit=None, issues=None):
                     or not evidence.get("proof_refs")
                     or (issue["disposition"] == "DUPLICATE_OR_SUPERSEDED" and not evidence.get("canonical_successor"))):
                 raise ValueError("No fully justified closure candidate evidence; preserve the issue")
+    if issues.get("current_campaign_review_ref"):
+        current = load(local_ref(issues["current_campaign_review_ref"]))["issues"]
+        if len({row["url"] for row in current}) != len(current):
+            raise ValueError("Duplicate current campaign issue")
+        for row in current:
+            if (row["url"] not in urls or row["disposition"] not in (
+                    "FIXED_REAL", "FIXED_PYTHON", "TRACKING_MIGRATED", "OPEN_JAVA_REQUIRED", "OPEN_OTHER")
+                    or not set(row.get("java_gap_ids", [])) <= set(ids)):
+                raise ValueError("Invalid current campaign issue traceability")
+            if row["closure_eligible"]:
+                raise ValueError("Current campaign closure requires reviewed complete migration evidence")
     return registry, audit, issues
 
 
@@ -201,13 +212,22 @@ def outputs(registry, audit, issues):
     for gap in gaps:
         status.append(f"|{gap['id']} — {gap['title']}|{gap['priority']} / {gap['java_status']}|{gap['contract_confidence']}|{gap['contract_case']} / {gap['historical_real_result']}|{' '.join(gap['original_issues'])}; {', '.join(gap['requirement_ids'])}|")
         matrix.append(f"|{gap['id']} / {gap['contract_case']}|{'<br>'.join(gap['python_test_refs'])}|{gap['current_real_result']}|{gap['historical_real_result']}|{gap['simulator_behavior']}|")
-    reconciliation = ["# Issue reconciliation", "", "Generated from fresh reviewed public snapshots; actions are recorded separately in `issue-actions.json`.", "",
+    campaign = load(local_ref(issues["current_campaign_review_ref"])) if issues.get("current_campaign_review_ref") else {"issues": []}
+    current = {issue["url"]: issue for issue in campaign["issues"]}
+    reconciliation = ["# Issue reconciliation", "", "Generated from reviewed public snapshots; actions are recorded separately in `issue-actions.json`.", "",
         counts(issues["issues"], "disposition"), "", "**No safe closure candidates. No Java issue is fixed by simulation.**", "",
         "|Issue|Snapshot / owner|Disposition|Requirements / gaps|Action and missing acceptance|", "|---|---|---|---|---|"]
+    if current:
+        reconciliation[4:4] = ["Current full-roadmap open issue review: " + counts(campaign["issues"], "disposition"),
+            "C is now in scope. Original audit dispositions/conditions below remain attributed history; current classifications override prospective exclusions.", ""]
     actions = load(DATA / "issue-actions.json")["actions"]
     for issue in issues["issues"]:
         action = next((a["comment_url"] for a in actions if a["issue_url"] == issue["url"]), "NO_REMOTE_CHANGE")
-        reconciliation.append(f"|[{issue['repository']}#{issue['number']}]({issue['url']}) — {issue['title']}|{issue['state']} / {issue['author']}|{issue['disposition']}|{', '.join(issue['requirement_ids'])}; {', '.join(issue['java_gap_ids'])}|{action}; {issue['missing_acceptance']}|")
+        review = current.get(issue["url"], {})
+        disposition = review.get("disposition", issue["disposition"])
+        gap_ids = sorted(set(issue["java_gap_ids"]) | set(review.get("java_gap_ids", [])))
+        missing = review.get("reason", issue["missing_acceptance"])
+        reconciliation.append(f"|[{issue['repository']}#{issue['number']}]({issue['url']}) — {issue['title']}|{issue['state']} / {issue['author']}|{disposition}|{', '.join(issue['requirement_ids'])}; {', '.join(gap_ids)}|{action}; {missing}|")
     rows = ["# Independent A+B row audit", "", "Generated from `acceptance-audit.json`; original wording is authoritative.", "",
         counts(audit["records"], "implementation_status"), "", counts(audit["records"], "acceptance_status"), "",
         "No new real-Java or scientific execution is claimed. Referenced functional tests/historical receipts are not current executions.", "",
@@ -251,8 +271,12 @@ def contracts(mode, output, selected=None):
         # The SDK and simulator intentionally have independent conftest modules.
         # Isolate their pytest import namespaces instead of editing either suite.
         groups = {}
+        def test_group(reference):
+            if reference.startswith("python-client/"):
+                return "sdk"
+            return "worker" if reference.startswith("python-worker/") else "simulator"
         for reference in references:
-            group = "sdk" if reference.startswith("python-client/") else "simulator"
+            group = test_group(reference)
             groups.setdefault(group, []).append(reference)
         outcomes = {}
         logs = []
@@ -270,14 +294,14 @@ def contracts(mode, output, selected=None):
                     counts = {key: sum(int(s.attrib.get(key, 0)) for s in suites) for key in counts}
                 else:
                     counts["errors"] = 1
-                failed = bool(completed.returncode or any(counts[key] for key in ("skipped", "failures", "errors")))
+                failed = bool(completed.returncode or not counts["tests"] or any(counts[key] for key in ("skipped", "failures", "errors")))
                 outcomes[group] = {"exit": completed.returncode, "failed": failed, **counts}
             output.with_suffix(".pytest.log").write_text("\n".join(logs), encoding="utf-8")
             code = int(any(group["failed"] for group in outcomes.values()))
             if code:
                 print("\n".join(logs)[-8000:])
             for gap in gaps:
-                gap_failed = any(outcomes["sdk" if ref.startswith("python-client/") else "simulator"]["failed"]
+                gap_failed = any(outcomes[test_group(ref)]["failed"]
                                  for ref in gap["python_test_refs"])
                 result["cases"].append({"gap_id": gap["id"], "case_id": gap["contract_case"],
                     "tag": "SIMULATED_PASS" if not gap_failed else None, "status": "FAIL" if gap_failed else "PASS", "current_real": "REAL_NOT_RUN",

@@ -52,6 +52,8 @@ class State:
         self.worldview_id = "synthetic"
         from .authoring import AuthoringState
         self.authoring = AuthoringState(self)
+        from .workers import WorkerState
+        self.workers = WorkerState(self)
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -160,6 +162,7 @@ class State:
                 raise ContractError(403, "Test controls disabled or unauthorized")
             if method == "GET" and path == "/__sim__/state":
                 return {"counts": self.counts(), "resources": len(self.imported_resources),
+                        "workers": len(self.workers.workers), "worker_tasks": len(self.workers.tasks),
                         "authoring_assets": len(self.authoring.assets),
                         "project_locks": len(self.authoring.project_locks), "trace": list(self.trace)}, "application/json"
             if method == "POST" and path == "/__sim__/expireJobs":
@@ -194,6 +197,8 @@ class State:
                 self.imported_resources.clear()
                 self.query_faults.clear()
                 self.authoring.reset()
+                from .workers import WorkerState
+                self.workers = WorkerState(self)
                 self.worldview_id = "synthetic"
                 self.next_context = self.next_job = self.next_observation = 1
                 return True, "application/json"
@@ -215,6 +220,8 @@ class State:
                     "importSchemata": schemas() if service == "resources" else {},
                     "exportSchemata": export_schemas() if service == "runtime" and (
                         self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" or self.scenario == "nonuniform-export") else {}}, "application/json"
+        if service == "runtime" and route.startswith("/experimental/worker/v1/"):
+            return self.workers.request(method, route, headers, body)
         principal = {"sim-token-alice": "alice", "sim-token-bob": "bob",
                      "sim-token-admin-alice": "alice", "sim-token-admin-bob": "bob"}.get(headers.get("Authorization"))
         if principal is None:
@@ -362,6 +369,8 @@ class State:
                 self.jobs = {key: row for key, row in self.jobs.items() if row["scope"] != root}
                 self.observations = {key: row for key, row in self.observations.items() if key[0] != root}
                 self.imported_resources = {key: row for key, row in self.imported_resources.items() if row["scope"] != root}
+                self.workers.workers = {key: row for key, row in self.workers.workers.items() if key[0] != root}
+                self.workers.tasks = {key: row for key, row in self.workers.tasks.items() if row["scope"] != root}
             return True, "application/json"
         if route.startswith("/jobs/") and method == "GET":
             try:

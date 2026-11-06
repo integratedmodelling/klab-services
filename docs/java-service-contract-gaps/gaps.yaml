@@ -243,6 +243,30 @@
       "simulator_behavior": "Partial plans/recorded effects with unknown durable consistency, no historical lineage or coherent snapshot promise",
       "contract_confidence": "HARNESS_EVIDENCED", "java_status": "CONTRACT_PROVISIONAL", "priority": "P1", "contract_case": "GAP-CASE-0016",
       "links": ["https://github.com/integratedmodelling/klab-services/issues/126"], "notes": "Separate from durable notification cursor gap0005: committed graph/lineage semantics need matching remote DTOs and two-client proof, not inferred AMQP ordering."
+    },
+    {
+      "id": "JAVA-GAP-0017", "legacy_ids": [],
+      "title": "Computation-worker registration, lease and atomic output protocol pending native authority",
+      "subsystem": "worker", "java_component": "Native provider/worker role and transport not established; existing Resources contextualization is a distinct Avro contract",
+      "api_contract": {"method": null, "path": null, "request_schema_ref": "python-worker/README.md", "expected_response_schema_ref": "python-worker/README.md"},
+      "requirement_ids": ["RC-P5", "CAP-17"],
+      "original_issues": ["https://github.com/integratedmodelling/klab-services/issues/127"],
+      "python_test_refs": ["python-worker/tests/test_worker.py", "python-worker/tests/test_client_failures.py", "developer-tools/klab-service-simulator/tests/test_worker_vertical.py"],
+      "simulator_scenario_refs": ["SIM-WORKER-001"],
+      "reproducer_ref": "python-worker/README.md",
+      "observed_java_behavior": "NOT_TESTED. ServicesAPI source exposes Resources contextualize endpoints, not proof of a maintained remote computation-worker registration/lease/result protocol. No current native worker endpoint or ABI is asserted missing globally.",
+      "simulator_behavior": "Explicit opt-in klab.experimental.worker/1 HTTP proposal under /experimental/worker/v1: context-owner/worker-role registration, bounded nonuniform inputs, single claim lease, trusted isolated Python script, atomic validated output with hashes, cancellation/failure/release and no automatic redelivery. Not scientific reasoning or Java execution.",
+      "contract_confidence": "SIMULATED_PROVISIONAL", "java_status": "CONTRACT_PROVISIONAL", "priority": "P1",
+      "source_build_or_commit": "Repository source eda8697daf827d77066a5a2a7f90da4d56faf6d1 inspected; native worker transport UNKNOWN_PENDING_REFERENCE",
+      "python_status": "PROTOCOL_VERIFIED", "contract_case": "GAP-CASE-0017",
+      "links": ["python-worker/README.md", "docs/contributor-guides/KLAB_Python_Client_Planning_Guide.md", "klab.core.api/src/main/java/org/integratedmodelling/klab/api/ServicesAPI.java", "https://github.com/integratedmodelling/klab-services/issues/127"],
+      "resolution_criteria": [
+        "Maintainers pin initial computation-worker role, native endpoint/ABI, registration, principal/scope provisioning and supported deployment boundary",
+        "Same declared nonuniform/missingness fixture passes on separately owned native backend/worker with exact geometry/unit/validity/provenance and no partial publication",
+        "Reject foreign identities, unknown versions, invalid geometry/units/budgets; verify lease fencing, cancellation, duplicate/ambiguous delivery, restart and independently confirmed cleanup",
+        "Provide operator-approved resource/isolation/security and package/provenance policy; trusted process isolation is not an adversarial sandbox or hard resident-memory guarantee"
+      ],
+      "notes": "C now in scope under full-roadmap directive; issue127 remains open because a proposal/local process is not actual backend integration. Experimental routes are explicitly proposed, not invented authoritative Java APIs. Initial worker vertical remains partial: durable restart, deployment resource isolation and maintained native transport acceptance are not established. No server-supplied code, credentials or scientific model port; no production SDK dependency on simulator."
     }
   ]
 }

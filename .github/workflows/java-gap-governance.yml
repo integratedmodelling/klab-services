@@ -3,9 +3,9 @@ name: Java gap governance (not real Java acceptance)
 on:
   workflow_dispatch:
   push:
-    paths: ['docs/java-service-contract-gaps/**', 'developer-tools/java-gap-governance/**', 'developer-tools/klab-service-simulator/**', 'python-client/**', 'docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md', '.github/workflows/java-gap-governance.yml']
+    paths: ['docs/java-service-contract-gaps/**', 'developer-tools/java-gap-governance/**', 'developer-tools/klab-service-simulator/**', 'python-client/**', 'python-worker/**', 'docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md', '.github/workflows/java-gap-governance.yml']
   pull_request:
-    paths: ['docs/java-service-contract-gaps/**', 'developer-tools/java-gap-governance/**', 'developer-tools/klab-service-simulator/**', 'python-client/**', 'docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md', '.github/workflows/java-gap-governance.yml']
+    paths: ['docs/java-service-contract-gaps/**', 'developer-tools/java-gap-governance/**', 'developer-tools/klab-service-simulator/**', 'python-client/**', 'python-worker/**', 'docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md', '.github/workflows/java-gap-governance.yml']
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install development-only validator and ordinary SDK with separate simulator
-        run: python -m pip install 'jsonschema>=4.23,<5' './python-client[dev,analysis,tabular,notebook,local,events]' './developer-tools/klab-service-simulator[test]'
+        run: python -m pip install 'jsonschema>=4.23,<5' './python-client[dev,analysis,tabular,notebook,local,events]' ./python-worker './developer-tools/klab-service-simulator[test]'
       - name: Schema, immutable IDs, all original requirements and generated-report drift
         run: |
           python developer-tools/java-gap-governance/govern.py validate

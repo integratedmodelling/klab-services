@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "current_campaign_review_ref": "docs/java-service-contract-gaps/full-roadmap-issues.json",
   "collected_utc": "2026-11-06T20:48:11Z",
   "scope": "Complete services issue inventory plus relevant upstream geospatial10. All bodies/comments inspected; original bodies preserved, comments pinned by URL/author/date/hash. No issue edit/closure at snapshot.",
   "issues": [
