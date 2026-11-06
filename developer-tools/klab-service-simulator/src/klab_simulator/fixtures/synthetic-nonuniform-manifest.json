@@ -1,0 +1,13 @@
+{
+  "origin": "SYNTHETIC_SIMULATOR",
+  "materialization": "Initial native fixture created from the pre-existing independent authored N-oracle on 2026-11-06; not Java output or USGS; no existing expected values modified",
+  "oracle_source": "python-client/tests/fixtures/nonuniform-export.json",
+  "oracle_sha256": "f0848f723b485547c4b37f725e0e1aed63db1c29c49280481e7bcd0439ac9213",
+  "native_sha256": "f9cbe08df11b4c92f4b8f5691690632b297a6706f30b47ba10a88d726161c8fd",
+  "native_bytes": 1008,
+  "writer": "rasterio1.5.2; build-time only, not a simulator runtime dependency",
+  "shape": [4, 5],
+  "units": "m",
+  "crs": "EPSG:3857",
+  "limits": "Single-shard initialization-only numerical raster; no category/time/revision lease or native offset mapping is implied. No existing400-cell oracle is replaced."
+}

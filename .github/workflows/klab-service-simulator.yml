@@ -11,6 +11,27 @@ permissions:
   contents: read
 
 jobs:
+  scientific-adapters:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install separate simulator and optional scientific client dependencies
+        run: python -m pip install './python-client[analysis,tabular]' './developer-tools/klab-service-simulator[test]'
+      - name: Require scientific dependencies instead of silently skipping acceptance
+        run: python -c "import numpy, pandas, rasterio, xarray"
+      - name: Scientific adapters over isolated native HTTP exports and point reads
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_scientific_adapters.py --junitxml=scientific-adapter-results.xml
+      - name: Retain scientific adapter results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-scientific-adapters
+          path: scientific-adapter-results.xml
+          if-no-files-found: error
   simulator-sdk:
     runs-on: ubuntu-latest
     timeout-minutes: 10

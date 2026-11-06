@@ -139,3 +139,16 @@ def test_unimplemented_persistence_and_model_constraints_fail_closed():
     assert call(state, "POST", "/createContext", {"configuration": {"persistence": "PERMANENT"}}, scope="s1")[0] == 422
     request = proposal() | {"resolutionConstraints": [{"type": "Scenarios", "data": ["unknown"]}]}
     assert call(state, "POST", "/api/v1/submit", request, scope=scope)[0] == 422
+
+
+def test_nonuniform_fixture_is_pinned_independent_and_does_not_guess_native_point_mapping():
+    from klab_simulator.fixtures import nonuniform_fixture
+    from conftest import REPO, ROOT
+    fixture, native = nonuniform_fixture()
+    assert fixture["shape"] == [4, 5] and len(native) == 1008
+    assert json.loads((ROOT / "src/klab_simulator/fixtures/synthetic-nonuniform-oracle.json").read_bytes()) == json.loads(
+        (REPO / "python-client/tests/fixtures/nonuniform-export.json").read_bytes())
+    state = State("nonuniform-export")
+    assert state.grid["shape"] == [4, 5] and state.origin == "SYNTHETIC_SIMULATOR"
+    scope = setup(state)
+    assert call(state, "POST", "/api/v1/observation/value", {"sourceId": 1, "offset": 0}, scope=scope)[0] == 422
