@@ -1,5 +1,31 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## Java scientific admission and 19-study readiness
+
+Base4ea9ad16609d548b8fb795689e9eff33e4e6ea85; PR238–241 confirmedmerged,
+developbd39c7fc7 recordednotadopted. Existingworker current3989pinlocalpreflight,
+154focusedtests and5no-servicepreflight rejectionprobesPASS. Newscheduledworker
+notauthorized; runner/policy403, Jenkinsprior403notreprobed,defaultdevelop.
+E1ENGINEERING inheritedMERGED_BOUNDED; E1SCHEDULED BLOCKED_EXTERNAL.
+
+E2exactclassloading correctsearlierinspectorabsenceclaim: ConfigurationInspector
+and ConfigurationRecomputeInspector presentwithhashes/origins. Originalprimary+
+onealternate remainD0BLOCKED_EXTERNAL coordinatedproject/worldview/Runtimeadmission;
+D1/D2NOT_RUN. No semantic/model/ontology/algorithmrewrite, no broadJavarepair.
+
+All19RIDs reassessed plusseparateP01/P02/P03/P04/P06leads.13reusedoriginalartifacts
+rehashed; NEWR09publisherZIP contains3originalNET/CPTnetworks,fullpaperXMLread.
+BEST_EXECUTABLE_NOW NONE_VERIFIED; BEST_NEAR_TERM R09conditionaloriginalmodule
+admissioninvestigation; BEST_DISTINCTIVE R05; independentfallbackP02carbon with
+producinginput/boundary/units/rights gates. PilotG0–G4notallpassed,P1–P4NOT_RUN.
+No newN/S/W3/studyJob,privateWCS/authorcontact/services/worktrees/dependencyupgrade.
+
+See JAVA_ADMISSION_AND_19_STUDY_READINESS_REPORT.md, evidence/java-admission-and-study-readiness-index.json
+and ../research-replication/RESEARCH_19_READINESS_MATRIX.md. No primaryA+Bpromotion.
+DELIVERY: final documentationreview/normalCI/merge/postmerge; DEPENDENCIES:
+operatorrunner/bundle/policy, platformoriginaladmissiontuple, scientificcustodian
+matchedoriginalmodel/input/reference/rights. Blockedworkisnotacceptedscience.
+
 ## Next milestone — fixed batch implemented and normally delivered
 
 Startedatb04977ea2 (#236/#237reverified,not reset). W1PR238 mergedf099ffffa,
