@@ -40,7 +40,7 @@ from klab_client.connection_models import (DeploymentProfile, ConnectionIdentity
 from klab_client.credentials import CredentialProvider, CredentialGrant, IssuedTokenProvider, HubCertificateProvider, CertificateError
 from klab_client.exports import ExportFormat, ExportResult, ExportIOError
 from klab_client.analysis import (AnalysisArtifact, RasterDescriptor, RasterAnalysis, TracedAnalysis,
-    export_for_analysis, open_raster, trace_analysis)
+    async_export_for_analysis, export_for_analysis, open_raster, trace_analysis)
 from klab_client.provenance import ProvenanceNode, ProvenanceLink, ProvenanceView, fetch_provenance, async_fetch_provenance
 from klab_client.vector import VectorAnalysis, open_vector
 from klab_client.semantics import (SemanticExplorer, AsyncSemanticExplorer, SemanticResult, KnowledgeState,
@@ -88,7 +88,7 @@ __all__ = [
     "HubCertificateProvider", "CertificateError",
     "Client", "Context", "Session", "Job", "JobStatus", "ScientificData", "Endpoint",
     "ExportFormat", "ExportResult", "ExportIOError",
-    "AnalysisArtifact", "RasterDescriptor", "RasterAnalysis", "export_for_analysis", "open_raster",
+    "AnalysisArtifact", "RasterDescriptor", "RasterAnalysis", "async_export_for_analysis", "export_for_analysis", "open_raster",
     "TracedAnalysis", "trace_analysis",
     "VectorAnalysis", "open_vector",
     "ProvenanceNode", "ProvenanceLink", "ProvenanceView", "fetch_provenance", "async_fetch_provenance",
