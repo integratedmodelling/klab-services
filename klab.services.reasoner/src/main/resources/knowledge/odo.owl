@@ -12,7 +12,7 @@
      xmlns:prov="http://www.w3.org/ns/prov#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
     <owl:Ontology rdf:about="http://integratedmodelling.org/odo">
-        <owl:versionIRI rdf:resource="http://integratedmodelling.org/odo/0.2.0"/>
+        <owl:versionIRI rdf:resource="http://integratedmodelling.org/odo/0.2.1"/>
         <dc:contributor xml:lang="en">Dr. Ferdinando Villa (ferdinando.villa at bc3research.org)
 Main author
 Dr. Greta Adamo (greta.adamo@bc3research.org)</dc:contributor>
@@ -27,7 +27,7 @@ Dr. Greta Adamo (greta.adamo@bc3research.org)</dc:contributor>
 - ODO-IM does not provide semantics for units of measurement, like other observation ontologies do. The applications where ODO-IM is used do not need units as stated instances and do not use reasoning to validate units. To support applications, ODO-IM simply lists the SI base unit textually in annotation properties linked to all PhysicalProperty observables, using SI conventions. Applications can use a unit parser to translate these into data structures for validation and conversion.
 - ODO-IM does not provide any detail on space, time and any other topologies implied in the definition of scale beyond their statement as extentual observables (Extent), as their specific interpretation is left to worldviews derived from ODO-IM.
 - ODO-IM remains as agnostic as possible about the phenomenology underlying Observables, in an effort to preserve compatibility with an arbitrary upper ontology stated in a derived worldview. It remains as agnostic as possible about the remaining details of the phenomenology underlying Observables, in an effort to preserve maximum orthogonality with an arbitrary upper ontology stated in a derived worldview. The characterization of Observables is intentionally shallow as observables are meant to specialize types in an externally provided upper ontology to form the basis of a worldview. Such links are made in the root domain of the worldview. See the full documentation for minimum expressive requirements and caveats.</rdfs:comment>
-        <owl:versionInfo xml:lang="en">Version 0.2.0</owl:versionInfo>
+        <owl:versionInfo xml:lang="en">Version 0.2.1</owl:versionInfo>
     </owl:Ontology>
     
 
@@ -875,6 +875,22 @@ Dr. Greta Adamo (greta.adamo@bc3research.org)</dc:contributor>
     </owl:Class>
     
 
+
+    <!-- http://integratedmodelling.org/odo#CollectiveAgent -->
+
+    <owl:Class rdf:about="http://integratedmodelling.org/odo#CollectiveAgent">
+        <rdfs:subClassOf rdf:resource="http://integratedmodelling.org/odo#Agent"/>
+        <isAbstract rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</isAbstract>
+        <rdfs:comment>An identifiable collective entity capable of acting as a unit, with criteria for its unity and continuity. Its identity and cohort are distinct from an observational collection. Collective agency does not assign agency or a common type to every member, require fixed membership, or imply observational containment.</rdfs:comment>
+    </owl:Class>
+
+    <!-- http://integratedmodelling.org/odo#CollectiveSubject -->
+
+    <owl:Class rdf:about="http://integratedmodelling.org/odo#CollectiveSubject">
+        <rdfs:subClassOf rdf:resource="http://integratedmodelling.org/odo#Subject"/>
+        <isAbstract rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</isAbstract>
+        <rdfs:comment>An identifiable collective entity observed as a Subject, with criteria for its unity and continuity. Its identity and cohort are distinct from an observational collection. This kind imposes no common member type, fixed membership, member agency or observational containment.</rdfs:comment>
+    </owl:Class>
 
     <!-- http://integratedmodelling.org/odo#Configuration -->
 
