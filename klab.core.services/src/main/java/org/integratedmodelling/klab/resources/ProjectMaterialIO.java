@@ -52,6 +52,7 @@ public final class ProjectMaterialIO {
   /** Only ADD creates directories. Existing directories and the listing root cannot be overwritten. */
   public static void createDirectory(FileProjectStorage storage, ProjectMaterial material,
       SubmissionMode mode) throws IOException {
+    ReviewCycleArchive.requireMutableMaterial(material.getPath());
     if (storage.isReadOnly()) throw new IOException("Read-only project");
     if (!material.isDirectory() || material.getContent() != null || mode != SubmissionMode.ADD)
       throw new IllegalArgumentException("Directories require ADD and no content");
@@ -66,6 +67,7 @@ public final class ProjectMaterialIO {
 
   /** Empty-directory deletion is deliberate: never recursively remove unlisted project content. */
   public static boolean deleteDirectory(FileProjectStorage storage, String path) throws IOException {
+    ReviewCycleArchive.requireMutableMaterial(path);
     if (storage.isReadOnly()) throw new IOException("Read-only project");
     Path directory = target(storage, path);
     if (!Files.exists(directory)) return false;
@@ -108,6 +110,7 @@ public final class ProjectMaterialIO {
   public static void write(
       FileProjectStorage storage, String path, byte[] content, SubmissionMode mode)
       throws IOException {
+    ReviewCycleArchive.requireMutableMaterial(path);
     if (storage.isReadOnly()) throw new IOException("Read-only project");
     if (content == null || content.length > MAX_BYTES)
       throw new IOException("Material content is required and limited to 32 MiB");
@@ -150,6 +153,7 @@ public final class ProjectMaterialIO {
   }
 
   public static boolean delete(FileProjectStorage storage, String path) throws IOException {
+    ReviewCycleArchive.requireMutableMaterial(path);
     if (storage.isReadOnly()) throw new IOException("Read-only project");
     Path target = target(storage, path);
     if (!Files.exists(target)) return false;

@@ -12,6 +12,27 @@ import org.junit.jupiter.api.io.TempDir;
 class ProjectMaterialIOTest {
   @TempDir Path root;
 
+  @Test void reviewHistoryIsConsultableButGenericMaterialMutationsAreBlocked() throws Exception {
+    Path history = Files.createDirectories(root.resolve("review-history/cycle"));
+    Files.writeString(history.resolve("manifest.json"), "closed cycle");
+    var storage = new FileProjectStorage(root.toFile(), "project", null);
+    assertEquals("closed cycle", new String(ProjectMaterialIO.read(storage,
+        "review-history/cycle/manifest.json"), java.nio.charset.StandardCharsets.UTF_8));
+    assertEquals(1, ProjectMaterialIO.retrieve(storage,
+        ProjectMaterial.coordinates("project/review-history/")).getEntries().size());
+    for (String path : List.of("review-history", "review-history/cycle/manifest.json",
+        "REVIEW-HISTORY/new", "Review-History/cycle")) {
+      assertThrows(java.io.IOException.class, () -> ProjectMaterialIO.write(storage,
+          path, new byte[]{1}, SubmissionMode.CREATE_OR_UPDATE));
+      assertThrows(java.io.IOException.class, () -> ProjectMaterialIO.delete(storage, path));
+      assertThrows(java.io.IOException.class, () -> ProjectMaterialIO.deleteDirectory(storage, path));
+      var material = ProjectMaterial.coordinates("project/" + path + "/");
+      assertThrows(java.io.IOException.class, () -> ProjectMaterialIO.createDirectory(storage,
+          material, SubmissionMode.ADD));
+    }
+    assertEquals("closed cycle", Files.readString(history.resolve("manifest.json")));
+  }
+
   @Test void excludesInternalNamesAtEveryLevelAndRejectsTheirCreation() throws Exception {
     Files.createDirectory(root.resolve("assets"));
     Files.writeString(root.resolve("assets/0-file.css"), "body {}");
