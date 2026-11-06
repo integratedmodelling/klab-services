@@ -22,6 +22,13 @@ public interface WorkflowStore {
 
   boolean putFlow(Flow flow);
 
+  /**
+   * Atomically replace an existing aggregate only when its stored revision is expectedRevision.
+   * The replacement must carry expectedRevision + 1. Never implement as an unlocked read + put;
+   * shared/remote backends must enforce the predicate at the database write boundary.
+   */
+  boolean compareAndSetFlow(Flow flow, long expectedRevision);
+
   /** Remove an aggregate when an atomic initialization cannot complete. */
   boolean deleteFlow(String id);
 

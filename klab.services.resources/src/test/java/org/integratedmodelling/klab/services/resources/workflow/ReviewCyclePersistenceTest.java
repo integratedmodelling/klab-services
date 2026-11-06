@@ -48,4 +48,68 @@ class ReviewCyclePersistenceTest {
       assertArrayEquals(proposal, manager.getReviewArtifact(flowId, cycleId, closed.candidate().proposal().attachmentId(), reviewer));
     } finally { store.shutdown(); }
   }
+
+  @Test void productionStoreConditionallyUpdatesOneOfTwoDetachedSnapshots() throws Exception {
+    var fixtures = new ProposalReviewProtocolTest(); var editor = fixtures.scope("editor", "EDITOR");
+    var store = open();
+    try {
+      var manager = fixtures.manager(store);
+      var flow = manager.initializeFlow(ProposalReviewProtocolTest.WORKFLOW, fixtures.initialization(true), editor);
+      long expected = flow.getRevision();
+      var first = org.integratedmodelling.common.utils.Utils.Json.parseObject(org.integratedmodelling.common.utils.Utils.Json.asString(store.getFlow(flow.getId())), org.integratedmodelling.klab.api.services.resources.workflow.Flow.class);
+      var second = org.integratedmodelling.common.utils.Utils.Json.parseObject(org.integratedmodelling.common.utils.Utils.Json.asString(first), org.integratedmodelling.klab.api.services.resources.workflow.Flow.class);
+      first.setRevision(expected + 1); second.setRevision(expected + 1);
+      first.getMetadata().put("writer", "first"); second.getMetadata().put("writer", "second");
+      var gate = new java.util.concurrent.CountDownLatch(1);
+      try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+        var a = executor.submit(() -> { gate.await(); return store.compareAndSetFlow(first, expected); });
+        var b = executor.submit(() -> { gate.await(); return store.compareAndSetFlow(second, expected); });
+        gate.countDown();
+        assertEquals(1, (a.get(15, java.util.concurrent.TimeUnit.SECONDS) ? 1 : 0) + (b.get(15, java.util.concurrent.TimeUnit.SECONDS) ? 1 : 0));
+      }
+      assertEquals(expected + 1, store.getFlow(flow.getId()).getRevision());
+      assertFalse(store.compareAndSetFlow(first, expected));
+    } finally { store.shutdown(); }
+  }
+
+  @Test void anotherProcessCannotOwnTheDatabaseUntilTheCurrentOwnerCloses() throws Exception {
+    var store = open(); var database = directory.resolve("services/resources/data/resources.db");
+    try {
+      assertTrue(java.nio.file.Files.exists(database));
+      assertEquals(23, probe(database, "while-owned.log"));
+      assertTrue(java.nio.file.Files.readString(directory.resolve("while-owned.log")).toLowerCase().contains("lock"));
+    } finally { store.shutdown(); }
+    assertEquals(0, probe(database, "after-close.log"));
+  }
+
+  private int probe(Path database, String log) throws Exception {
+    String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
+    // Reactor test classpaths exceed Windows' process command-line limit. Java argfiles also
+    // keep paths containing spaces intact without invoking a shell.
+    var arguments = directory.resolve(log + ".args");
+    java.nio.file.Files.writeString(arguments, java.util.stream.Stream.of(
+        "-Duser.home=" + System.getProperty("user.home"), "-cp",
+        System.getProperty("surefire.test.class.path", System.getProperty("java.class.path")),
+        LockProbe.class.getName(), database.toString())
+        .map(value -> "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
+        .collect(java.util.stream.Collectors.joining(System.lineSeparator())));
+    var process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", executable).toString(),
+        "@" + arguments)
+        .redirectErrorStream(true).redirectOutput(directory.resolve(log).toFile()).start();
+    if (!process.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)) {
+      process.destroyForcibly(); fail("Isolated database lock probe timed out");
+    }
+    return process.exitValue();
+  }
+
+  public static class LockProbe {
+    public static void main(String[] args) {
+      try (var database = org.dizitart.no2.Nitrite.builder().loadModule(
+          org.dizitart.no2.rocksdb.RocksDBModule.withConfig().filePath(args[0]).build()).openOrCreate()) {
+        System.out.println("OPENED");
+      } catch (Throwable failure) {
+        failure.printStackTrace(System.out); System.exit(23);
+      }
+    }
+  }
 }

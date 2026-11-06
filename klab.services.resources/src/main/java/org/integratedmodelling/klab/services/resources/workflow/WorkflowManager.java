@@ -462,7 +462,7 @@ public class WorkflowManager {
   public synchronized Flow reopenFlow(String flowId, UserScope scope) {
     var participant = WorkflowParticipant.from(scope);
     requireAdmin(participant);
-    var flow = requiredFlow(flowId);
+    var flow = Utils.Json.parseObject(Utils.Json.asString(requiredFlow(flowId)), Flow.class);
     if (flow.getStatus() == Flow.Status.ACTIVE) {
       return project(flow, requiredWorkflowVersion(flow), participant);
     }
@@ -578,7 +578,8 @@ public class WorkflowManager {
     var participant = WorkflowParticipant.from(scope);
     var flow = requiredFlow(id);
     var workflow = requiredWorkflowVersion(flow);
-    if (ProposalReviewProtocol.enabled(workflow) || !flow.getReviewCycles().isEmpty())
+    if (ProposalReviewProtocol.enabled(workflow) || Boolean.TRUE.equals(workflow.getMetadata().get("reviewCycles"))
+        || !flow.getReviewCycles().isEmpty())
       throw new KlabIllegalStateException("Proposal review stages and evidence use the transition lifecycle; direct create/delete/reopen is blocked");
     boolean administrator = participant.getRoles().contains(WorkflowRole.ADMIN);
     boolean editorCreator =
@@ -796,40 +797,11 @@ public class WorkflowManager {
         && ("application/vnd.klab.proposal+yaml".equals(upload.getMediaType())
             || "application/vnd.klab.ontology".equals(upload.getMediaType())))
       throw new KlabIllegalStateException("Request changes before uploading a revised review candidate");
-    validateUploadBounds(upload, state);
-    var rule =
-        schema.getAttachments().stream()
-            .filter(r -> Objects.equals(r.getType(), upload.getType()))
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new KlabIllegalArgumentException(
-                        "Attachment type " + upload.getType() + " is not admitted"));
-    validateAttachmentRule(rule, upload, state);
-    var descriptor = new FlowImpl.AttachmentImpl();
-    descriptor.setId(UUID.randomUUID().toString());
-    descriptor.setFlowId(flowId);
-    descriptor.setStateId(stateId);
-    descriptor.setType(upload.getType());
-    descriptor.setFileName(upload.getFileName());
-    descriptor.setMediaType(upload.getMediaType());
-    descriptor.setAssetType(upload.getAssetType());
-    descriptor.setSize(upload.getContent().length);
-    descriptor.setCreatedAt(Instant.now());
-    descriptor.setCreatedBy(participant.getIdentity());
-    try {
-      descriptor.setChecksum(
-          HexFormat.of()
-              .formatHex(MessageDigest.getInstance("SHA-256").digest(upload.getContent())));
-    } catch (Exception e) {
-      throw new KlabIllegalStateException(e);
+    try (var staged = new BehaviorAttachments(flow, workflow, participant)) {
+      var descriptor = staged.add(state, upload);
+      persistMutation(flow, workflow, staged);
+      return descriptor;
     }
-    if (!kbox.putWorkflowAttachment(descriptor.getId(), flowId, stateId, upload.getContent()))
-      throw new KlabIllegalStateException("Cannot persist attachment");
-    state.getAttachments().add(descriptor);
-    state.setUpdatedAt(Instant.now());
-    persistMutation(flow, workflow);
-    return descriptor;
   }
 
   public byte[] getAttachment(String flowId, String attachmentId, UserScope scope) {
@@ -1235,10 +1207,12 @@ public class WorkflowManager {
 
   private void persistMutation(Flow flow, Workflow workflow, BehaviorAttachments attachments) {
     if (attachments != null) attachments.write();
-    flow.setRevision(flow.getRevision() + 1);
+    long expectedRevision = flow.getRevision();
+    if (expectedRevision == Long.MAX_VALUE) throw new KlabIllegalStateException("Workflow revision exhausted");
+    flow.setRevision(expectedRevision + 1);
     flow.setUpdatedAt(Instant.now());
-    if (!kbox.putFlow(flow))
-      throw new KlabIllegalStateException("Cannot persist flow " + flow.getId());
+    if (!kbox.compareAndSetFlow(flow, expectedRevision))
+      throw new KlabIllegalStateException("Workflow revision conflict or conditional persistence failed");
     if (attachments != null) attachments.committed();
     synchronizeResourceInfo(flow, workflow);
   }
@@ -1476,9 +1450,21 @@ public class WorkflowManager {
     }
 
     @Override public void close() {
-      if (!committed) written.forEach(id -> {
-        if (!kbox.deleteWorkflowAttachment(id)) Logging.INSTANCE.warn("Uncommitted behavior attachment cleanup failed: " + id);
-      });
+      if (!committed && !written.isEmpty()) {
+        java.util.Set<String> referenced;
+        try {
+          // A backend exception may follow a successful conditional write. Never delete a
+          // payload that a committed aggregate references, including after an uncertain result.
+          referenced = kbox.listFlows().stream().flatMap(f -> f.getStates().values().stream())
+              .flatMap(s -> s.getAttachments().stream()).map(Flow.Attachment::getId)
+              .collect(java.util.stream.Collectors.toSet());
+        } catch (RuntimeException unavailable) {
+          Logging.INSTANCE.warn("Attachment outcome cannot be checked; retaining payloads for safe recovery");
+          return;
+        }
+        for (var id : written) if (!referenced.contains(id) && !kbox.deleteWorkflowAttachment(id))
+          Logging.INSTANCE.warn("Uncommitted behavior attachment cleanup failed: " + id);
+      }
     }
   }
 

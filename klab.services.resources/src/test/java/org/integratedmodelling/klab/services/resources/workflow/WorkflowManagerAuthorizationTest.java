@@ -610,6 +610,13 @@ class WorkflowManagerAuthorizationTest {
     }
 
     @Override
+    public synchronized boolean compareAndSetFlow(Flow flow, long expectedRevision) {
+      var current = flows.get(flow.getId());
+      return current != null && current.getRevision() == expectedRevision
+          && flow.getRevision() == expectedRevision + 1 && putFlow(flow);
+    }
+
+    @Override
     public boolean deleteFlow(String id) {
       return flows.remove(id) != null;
     }

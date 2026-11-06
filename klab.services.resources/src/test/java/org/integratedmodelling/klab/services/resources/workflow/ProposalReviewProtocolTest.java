@@ -144,7 +144,7 @@ class ProposalReviewProtocolTest {
   @Test void failedAggregateWriteDoesNotPublishTerminalOrDropEvidence() throws Exception {
     var original=store();var fail=new java.util.concurrent.atomic.AtomicBoolean();
     var s=(WorkflowStore)Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{WorkflowStore.class},(p,m,a)->{
-      if(m.getName().equals("putFlow")&&fail.get())return false;return m.invoke(original,a);
+      if((m.getName().equals("putFlow")||m.getName().equals("compareAndSetFlow"))&&fail.get())return false;return m.invoke(original,a);
     });
     var m=manager(s);var user=scope("editor","EDITOR");var f=m.initializeFlow(WORKFLOW,initialization(true),user);fail.set(true);
     var c=current(f).getProposalReview().candidate();
@@ -224,7 +224,7 @@ class ProposalReviewProtocolTest {
   @Test void failedAttachmentRemovalKeepsPersistedDescriptorAndBlob() throws Exception {
     var original=store();var fail=new java.util.concurrent.atomic.AtomicBoolean();
     var s=(WorkflowStore)Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{WorkflowStore.class},(p,m,a)->{
-      if(m.getName().equals("putFlow")&&fail.get())return false;return m.invoke(original,a);
+      if((m.getName().equals("putFlow")||m.getName().equals("compareAndSetFlow"))&&fail.get())return false;return m.invoke(original,a);
     });
     var m=manager(s);var editor=scope("editor","EDITOR");var f=m.initializeFlow(WORKFLOW,initialization(true),editor);
     var a=m.addAttachment(f.getId(),current(f).getId(),upload("supporting-material","text/plain","retained evidence"),editor);fail.set(true);

@@ -157,7 +157,8 @@ class ReviewCycleProtocolTest {
     var cycle = open(); var peer = round(cycle, Audience.REVIEWER);
     var fail = new AtomicBoolean(false);
     var proxy = (WorkflowStore) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[]{WorkflowStore.class},
-        (p, method, args) -> method.getName().equals("putFlow") && fail.get() ? false : method.invoke(store, args));
+        (p, method, args) -> (method.getName().equals("putFlow") || method.getName().equals("compareAndSetFlow"))
+            && fail.get() ? false : method.invoke(store, args));
     var rejecting = fixtures.manager(proxy); var reviewer = fixtures.scope("reviewer", "REVIEWER");
     long revision = store.getFlow(flowId).getRevision(); fail.set(true);
     var request = new Command(revision, Operation.SAVE_CONTRIBUTION, source, cycle.id(), peer.id(), null, null, "feedback", true);

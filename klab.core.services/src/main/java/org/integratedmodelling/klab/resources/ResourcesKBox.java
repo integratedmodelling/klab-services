@@ -322,6 +322,17 @@ public class ResourcesKBox implements WorkflowStore {
   }
 
   @Override
+  public boolean compareAndSetFlow(Flow flow, long expectedRevision) {
+    if (!(flow instanceof FlowImpl value) || expectedRevision < 0 || expectedRevision == Long.MAX_VALUE
+        || flow.getRevision() != expectedRevision + 1)
+      throw new KlabIllegalStateException("Invalid conditional workflow revision");
+    // Nitrite holds the collection write lock across filter evaluation and update. RocksDB
+    // exclusively locks its database path, so another process cannot open a concurrent owner.
+    return flows.update(where("id").eq(flow.getId()).and(where("revision").eq(expectedRevision)),
+        value, org.dizitart.no2.collection.UpdateOptions.updateOptions(false, true)).getAffectedCount() == 1;
+  }
+
+  @Override
   public boolean deleteFlow(String id) {
     var flow = flows.getById(id);
     return flow != null && flows.remove(flow).getAffectedCount() == 1;
@@ -353,6 +364,9 @@ public class ResourcesKBox implements WorkflowStore {
         || flow.getAssetType() == null) {
       return false;
     }
+    var persisted = flows.getById(flow.getId());
+    if (persisted == null) return false;
+    if (persisted.getRevision() != flow.getRevision()) return true; // A newer writer owns the catalog summary.
     var info = resourceMetadata.getById(flow.getAssetUrn());
     if (info == null) {
       info = ResourceInfo.immediate();
