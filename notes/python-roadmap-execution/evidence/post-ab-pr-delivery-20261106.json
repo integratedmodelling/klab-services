@@ -1,0 +1,1190 @@
+{
+  "collected_utc": "2026-11-06T20:48:11Z",
+  "scope": "Actual PR base/merge provenance for every associated source/test PR and all22campaign PRs; full current-head check/review data for243\u2013264 is in post-ab-remote-inventory-20261106.json. Associations are path intersections, not whole-feature acceptance.",
+  "prs": [
+    {
+      "number": 56,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/56",
+      "title": "Codex-generated pull request",
+      "state": "MERGED",
+      "baseRefName": "develop",
+      "headRefName": "codex/create-base-classes-for-k.lab-python-client",
+      "headRefOid": "a4152fdd990347f9d7a05060af85ad80b7947517",
+      "mergedAt": "2026-02-10T08:58:39Z",
+      "mergeCommit": {
+        "oid": "e03699e9eac928d69e108027b51cc057d9345ee3"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": true
+    },
+    {
+      "number": 84,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/84",
+      "title": "Python: add a synchronous scientific client with explicit scope and job lifecycle",
+      "state": "MERGED",
+      "baseRefName": "feature/python-client",
+      "headRefName": "feature/python-client",
+      "headRefOid": "1a8bfc07bde272dd3aed7c2e2918960d5c8aea1e",
+      "mergedAt": "2026-10-07T17:08:58Z",
+      "mergeCommit": {
+        "oid": "ad2bc949c167e1c2e370973ce4427fe67cb1cc30"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 85,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/85",
+      "title": "Python: add typed scientist-facing observation requests",
+      "state": "MERGED",
+      "baseRefName": "feature/python-client",
+      "headRefName": "feature/python-client-typed-observe",
+      "headRefOid": "df9e8b9f15880b6d618e61ccbf4118f8050256ca",
+      "mergedAt": "2026-10-12T01:02:59Z",
+      "mergeCommit": {
+        "oid": "f38f7af7affb73b1955848be80e82f01fe867617"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 86,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/86",
+      "title": "Python: save and restore scoped scientific handles",
+      "state": "MERGED",
+      "baseRefName": "feature/python-client",
+      "headRefName": "feature/python-client-saved-handles",
+      "headRefOid": "33815d82660475c82f85a3fa5bbd6e7d4d928f63",
+      "mergedAt": "2026-10-12T01:08:20Z",
+      "mergeCommit": {
+        "oid": "90bebb5f35e60ad002f106c8d655e66d7e00d89d"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 92,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/92",
+      "title": "Stream observation exports and organize functional workflow tests",
+      "state": "MERGED",
+      "baseRefName": "feature/python-client",
+      "headRefName": "feature/python-client-stream-exports",
+      "headRefOid": "c0267e052a762f6f58c28fa9db5bcef5d990cc0b",
+      "mergedAt": "2026-10-13T19:50:59Z",
+      "mergeCommit": {
+        "oid": "a11462ddcf7aa0e2643c1f44faad95e8dd9fed36"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 93,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/93",
+      "title": "Add Engine-like Python connections and verified functional recovery",
+      "state": "MERGED",
+      "baseRefName": "feature/python-client",
+      "headRefName": "feature/python-client-connection",
+      "headRefOid": "ec863f9ac2f5d731b1a8c96db9c89ccfe4b9ea8b",
+      "mergedAt": "2026-10-15T00:59:50Z",
+      "mergeCommit": {
+        "oid": "4ad3887cc6f5d4a816fc9aec5e0f170cfa5efcec"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 94,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/94",
+      "title": "Python: scientific analysis, provenance and reliability polish",
+      "state": "MERGED",
+      "baseRefName": "feature/python-client",
+      "headRefName": "feature/python-client-scientific-analysis-provenance",
+      "headRefOid": "414a0cf8c483a1bd1c45df43baab610a72f13833",
+      "mergedAt": "2026-10-15T16:28:38Z",
+      "mergeCommit": {
+        "oid": "188caeb47b86f2eb114cd6f557cf839df0eb10ee"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 95,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/95",
+      "title": "Python-only develop compatibility acceptance and blocker report",
+      "state": "MERGED",
+      "baseRefName": "feature/python-client",
+      "headRefName": "feature/python-client-develop-acceptance",
+      "headRefOid": "4d269cff3cfc9e470c68b989ffe62909567527a6",
+      "mergedAt": "2026-10-16T13:53:14Z",
+      "mergeCommit": {
+        "oid": "c9d2f18a082d287c7d55561bf90761004d053504"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 97,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/97",
+      "title": "Current Python/Java compatibility and connected live contract tests",
+      "state": "MERGED",
+      "baseRefName": "feature/python-client",
+      "headRefName": "feature/python-client-ide-throughput",
+      "headRefOid": "5532430befd33d467f9614be6a3880e5c2ed05b4",
+      "mergedAt": "2026-10-17T19:44:04Z",
+      "mergeCommit": {
+        "oid": "1e20fc478f645b5fb5c2fd00ffd223a040ca2878"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 99,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/99",
+      "title": "Python F2: bounded resource and model inspection",
+      "state": "MERGED",
+      "baseRefName": "feature/python-discover-compare-explain-integration",
+      "headRefName": "feature/python-resource-inspector",
+      "headRefOid": "dd6d34004db828e0043dade875a4f1780b653a54",
+      "mergedAt": "2026-10-30T23:51:52Z",
+      "mergeCommit": {
+        "oid": "0d17032ca5083cb4a354a1509af12d5d36a52dd9"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 101,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/101",
+      "title": "Python F1: revision-aware semantic explorer",
+      "state": "MERGED",
+      "baseRefName": "feature/python-discover-compare-explain-integration",
+      "headRefName": "feature/python-semantic-explorer",
+      "headRefOid": "be7527cd294cb9c8db189f87965581dfdd251181",
+      "mergedAt": "2026-10-30T23:22:56Z",
+      "mergeCommit": {
+        "oid": "58d2a0ca4ce8ff85235272c4221b014f1a6c3cae"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 102,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/102",
+      "title": "Python tooling: workflow acceptance, notebook and evidence infrastructure",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-milestone-delivery",
+      "headRefOid": "3582566996c5b07dad2b354a76b3d4b926ef3642",
+      "mergedAt": "2026-11-01T15:46:14Z",
+      "mergeCommit": {
+        "oid": "6bcee78ee268fe321d2b417ee4403b8abfefa0b9"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 105,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/105",
+      "title": "Add bounded native async observation, job and point-read workflows",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-native-async",
+      "headRefOid": "ccf642b78b9b4ff6e84380bbb7c3ffbe5accfe08",
+      "mergedAt": "2026-11-02T05:06:49Z",
+      "mergeCommit": {
+        "oid": "a7875e4ab98c56c2fa9f4665c8b5681bd76552bf"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 106,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/106",
+      "title": "Add precision-preserving pandas views for indexed scientific reads",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-scientific-tables",
+      "headRefOid": "d51a8f95f09abf2ad9b71580f01100491991e4e5",
+      "mergedAt": "2026-11-02T05:42:16Z",
+      "mergeCommit": {
+        "oid": "1329debbe0412a5deeca17f843a00a79cf2fbe1f"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 107,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/107",
+      "title": "Add bounded typed recorded graph navigation",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-graph-browsing",
+      "headRefOid": "5e8e29ab5d8b1e1d5b656d5a31d93499a85c5cfc",
+      "mergedAt": "2026-11-02T05:59:22Z",
+      "mergeCommit": {
+        "oid": "bb4f62ce01bb41d93f506ee34c19687b401d8640"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 108,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/108",
+      "title": "Bounded best-effort activity notifications (durable recovery remains deferred)",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-event-contracts",
+      "headRefOid": "1b80d65fffd32ee9a914176c578a13ca262e170e",
+      "mergedAt": "2026-11-03T02:15:42Z",
+      "mergeCommit": {
+        "oid": "74e48622d1d13c630a93f611e6d2434d2d86c62e"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 110,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/110",
+      "title": "Add namespace-only owned source authoring (cleanup blocked)",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-authoring",
+      "headRefOid": "1d68c804811a320d245cca3bdef328062d9a0249",
+      "mergedAt": "2026-11-02T15:45:35Z",
+      "mergeCommit": {
+        "oid": "f6445ac9990a52e88d8eccc3432d9b9256b1410b"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 111,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/111",
+      "title": "Bounded source-only agent preview; execution lifecycle tracked separately",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-agent-contracts",
+      "headRefOid": "f3c1bbdb28bfaa207624f99ded6826e29cdbb389",
+      "mergedAt": "2026-11-03T02:42:10Z",
+      "mergeCommit": {
+        "oid": "19668515a7307aec4b1e671207f5b2d595572a14"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 113,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/113",
+      "title": "Add bounded release-evidence checks and explicit Python support matrix",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-support-gates",
+      "headRefOid": "6a3502abf7d9d5a6b95dcb171447ae01564f4020",
+      "mergedAt": "2026-11-02T13:21:43Z",
+      "mergeCommit": {
+        "oid": "8b675ac30f5c37ab44eaf6cce211a5c98321f4db"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 134,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/134",
+      "title": "Python: bounded read-only Java agent status payload decoding",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-agent-status",
+      "headRefOid": "c066425ca217a2ca366cd89203aeae82b0ce4ae1",
+      "mergedAt": "2026-11-04T18:16:01Z",
+      "mergeCommit": {
+        "oid": "c93d965fa211881b4edfab54b75dd9931856f716"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 135,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/135",
+      "title": "Python: bound one-shot agent control journal and lifecycle evidence",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-agent-control-journal",
+      "headRefOid": "643962d6fbeb01d5f36ae1249ec628b69154557d",
+      "mergedAt": "2026-11-04T18:31:19Z",
+      "mergeCommit": {
+        "oid": "d9a30fbf401f26e0fff51fd6bc533a7d1d10a3e8"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 136,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/136",
+      "title": "Python: bounded partial graph projection with explicit invalidation and refresh",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-graph-projection",
+      "headRefOid": "4633260e2a041153bf731be7839fa2d9a5a76715",
+      "mergedAt": "2026-11-04T18:16:06Z",
+      "mergeCommit": {
+        "oid": "58da52b29d3a4478d04de5ef4f6a1c08e0d814f0"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 138,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/138",
+      "title": "Python: deferred agent registration and explicit native AMQP lifecycle",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-agent-amqp",
+      "headRefOid": "a7bebf28cd781581a7c5a1f87d8ac27484a0beea",
+      "mergedAt": "2026-11-04T18:56:26Z",
+      "mergeCommit": {
+        "oid": "87ef80ff589428f7c088ba60abcb7cf2b88276eb"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 139,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/139",
+      "title": "Python: prevent sync and async Job identity rebinding",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-job-binding",
+      "headRefOid": "06234b7d100967de6647ab84090d6f7a2b898dcb",
+      "mergedAt": "2026-11-04T18:31:30Z",
+      "mergeCommit": {
+        "oid": "2ef8f17f82e0ef5928fcc968026f5273a24ff3f2"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 141,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/141",
+      "title": "Python: read-only source previews without expanding authoring writes",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-source-previews",
+      "headRefOid": "9e35e5d737436934aa8047b7fe09c360633d43f8",
+      "mergedAt": "2026-11-04T18:31:36Z",
+      "mergeCommit": {
+        "oid": "12f980575c4f97c7bd8c331ff4ebfed7abef8269"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 196,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/196",
+      "title": "Python: reconcile roadmap and preserve scientific reads for offline inspection",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-scientific-read-snapshots",
+      "headRefOid": "1eb3c4142a36efd79d50bf66e03643e7d4c26b7e",
+      "mergedAt": "2026-11-04T20:46:39Z",
+      "mergeCommit": {
+        "oid": "240d1a1f4574b8248f2002b194004c690930d21c"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 197,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/197",
+      "title": "Python: portable nonuniform Java export oracle and owned acceptance",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-nonuniform-export-oracle",
+      "headRefOid": "dabe5d700fb100861711dd9c49e722001b5c9e33",
+      "mergedAt": "2026-11-04T21:35:38Z",
+      "mergeCommit": {
+        "oid": "c9bf30abc7a726db9d290b89b448fd9a77a63e9f"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 199,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/199",
+      "title": "Python: owned disconnect and partial graph refetch acceptance",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-partial-refresh-acceptance",
+      "headRefOid": "5ce00c842ff29dcb0169cbd48d6f11a93a195b02",
+      "mergedAt": "2026-11-04T22:09:11Z",
+      "mergeCommit": {
+        "oid": "564d27f166b5a908240b0533bfa7c4b4b55dbd4d"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 200,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/200",
+      "title": "Python: real Java request-option to served-plan acceptance",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-request-plan-acceptance",
+      "headRefOid": "26df19d5a4fb00820b24783b765c7f07ae5847f7",
+      "mergedAt": "2026-11-04T22:22:57Z",
+      "mergeCommit": {
+        "oid": "f96f49d938cfed7e0f917669524711c099a93762"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 204,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/204",
+      "title": "Add bounded optional native GeoJSON analysis",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-vector-analysis",
+      "headRefOid": "e3b944ec38682fc79f817e6a4def3c1309f60389",
+      "mergedAt": "2026-11-05T03:43:29Z",
+      "mergeCommit": {
+        "oid": "d92dbdbdecb5aa33f5625e09cd5a395c68a9cc33"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 205,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/205",
+      "title": "Verify current-tuple controlled onboarding and fresh-process science",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-onboarding-journey",
+      "headRefOid": "502e750b90589ffc26df9f99d9013553a6370d08",
+      "mergedAt": "2026-11-05T04:13:39Z",
+      "mergeCommit": {
+        "oid": "c491dbbff934e8192e4f04d5fb62c13cfb8cbfda"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 206,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/206",
+      "title": "Verify bounded actual Java native numerical stream workload",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-native-stream-workload",
+      "headRefOid": "ede78a222411f4dfbf17f8824056366707511495",
+      "mergedAt": "2026-11-05T04:34:49Z",
+      "mergeCommit": {
+        "oid": "554b5e30b9433300610ff66c4f79f6d564018827"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 209,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/209",
+      "title": "Add one bounded ADD-only strategy draft source family",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-strategy-source-authoring",
+      "headRefOid": "0ba9d27425929c4506c26067faa9ee3b2f88b7c9",
+      "mergedAt": "2026-11-05T05:41:58Z",
+      "mergeCommit": {
+        "oid": "b41016737fde404d8f6488f488bc056cfe914fa8"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 211,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/211",
+      "title": "Verify actual installed native async notebook journey and cleanup",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-notebook-acceptance",
+      "headRefOid": "a7f7eaee483596fbc384ed022d234a42863e537e",
+      "mergedAt": "2026-11-05T06:25:59Z",
+      "mergeCommit": {
+        "oid": "c7dea3373c0fc1a4cbf9d577bd066b69374e6ca3"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 218,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/218",
+      "title": "Restore saved context observation and retained Job handles through native async APIs",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-native-async-handle-restoration",
+      "headRefOid": "7350e53cecac597d5e4ad2b112da5ccfed88a1da",
+      "mergedAt": "2026-11-05T08:30:21Z",
+      "mergeCommit": {
+        "oid": "a3e8949c5da648007895694641a9f02e8bc2d6d0"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 219,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/219",
+      "title": "Stream advertised native async exports with atomic failure-safe publication",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-native-async-export",
+      "headRefOid": "ce6ec01a5250720d062e65ca88d7e63824c12735",
+      "mergedAt": "2026-11-05T09:00:06Z",
+      "mergeCommit": {
+        "oid": "8956f7d70211fb832266e26f0889a08252b611e6"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 220,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/220",
+      "title": "Verify deleted-state recovery refusal with surviving context positive controls",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-deleted-state-recovery-acceptance",
+      "headRefOid": "8bda3d922769f01031eb806a70d4377fa6bf1152",
+      "mergedAt": "2026-11-05T09:16:32Z",
+      "mergeCommit": {
+        "oid": "891b746f82cc4a7fa5cac3518394688df06d0d8f"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 222,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/222",
+      "title": "Verify owned model source authoring and advertised identity",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-model-source-authoring",
+      "headRefOid": "80ae646aa60465dfd241387ca0fe62477debb91c",
+      "mergedAt": "2026-11-05T10:32:37Z",
+      "mergeCommit": {
+        "oid": "c10555ebfcd698a192fe6e19e932b3b6e30b2501"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 223,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/223",
+      "title": "Support faithful native scan slices in sync and async reads",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-native-scan-slices",
+      "headRefOid": "34d7769e263a04cb0865675396c8ee66a103e2d5",
+      "mergedAt": "2026-11-05T13:14:58Z",
+      "mergeCommit": {
+        "oid": "95b7db67f38e75b1dd537c2b25284a6ad7dfc546"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 224,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/224",
+      "title": "Isolate indexed-read semantics from caller mutation",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "fix/python-indexed-read-semantics-isolation",
+      "headRefOid": "56ae58981b40d9022f7538d51908b2e8027f89f9",
+      "mergedAt": "2026-11-05T13:35:56Z",
+      "mergeCommit": {
+        "oid": "597b2fed15f3b25960667a7d47322a55ef96d796"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 225,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/225",
+      "title": "Validate ACL-authorized concurrent native context readers",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-shared-context-readers",
+      "headRefOid": "5aec13362b2ccf75f0a1133f5af68a4f67ef5f79",
+      "mergedAt": "2026-11-05T13:56:57Z",
+      "mergeCommit": {
+        "oid": "c178e390ee7ec5b9f301b92edbe5debfdf1b88f2"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 226,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/226",
+      "title": "Reject indexed offsets outside the native signed-long domain",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "fix/python-indexed-offset-long-bounds",
+      "headRefOid": "d63cc1566b991627f1c04bd6c044e73d509fe176",
+      "mergedAt": "2026-11-05T14:09:27Z",
+      "mergeCommit": {
+        "oid": "21750594eebe119d551d5820e861fd615afffdae"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 227,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/227",
+      "title": "Support native async resource inspection and strict native null asset responses",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-resource-inspection",
+      "headRefOid": "4abf95395a27b3d5f0423eb4bee2e5c8e9b92a66",
+      "mergedAt": "2026-11-05T14:42:47Z",
+      "mergeCommit": {
+        "oid": "6af50a1dc83459a17ed065030ca6960addda9b11"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 228,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/228",
+      "title": "Support native async non-authoring four-family source previews",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-source-previews",
+      "headRefOid": "29db5c075d9a11925273e885eb720ca45f34cc7f",
+      "mergedAt": "2026-11-05T15:11:26Z",
+      "mergeCommit": {
+        "oid": "13b723aa3c361e011031e76e5a7730ae0caf28c1"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 229,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/229",
+      "title": "Support retrieval-only native CODELIST assets in both Python facades",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-native-codelist-retrieval",
+      "headRefOid": "edbeb2abfbe6ba1e3a1bb527390c4b33705d2f8a",
+      "mergedAt": "2026-11-05T15:27:12Z",
+      "mergeCommit": {
+        "oid": "e92b8be52e21f81acafcd9436a962d77d5fa7dbf"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 230,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/230",
+      "title": "Reject indexed read source IDs outside the native positive-long domain",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "fix/python-indexed-source-id-long-bounds",
+      "headRefOid": "a7b8d1c991b0ee1d6081d8148c539a1f22199ad6",
+      "mergedAt": "2026-11-05T15:38:06Z",
+      "mergeCommit": {
+        "oid": "1af1e4935ee4c3c3cd9a260af3151a7837ab6bcb"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 231,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/231",
+      "title": "Support native async checked semantic exploration",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-semantic-exploration",
+      "headRefOid": "ff43634907f4c857f63d47bf37073fb489a3d80e",
+      "mergedAt": "2026-11-05T15:55:11Z",
+      "mergeCommit": {
+        "oid": "937c758b62743a0ab68e48792870a9261cf7cc87"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 232,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/232",
+      "title": "test(python): add thin scientific scenario contracts and evidence inventory",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-scientific-scenario-contract",
+      "headRefOid": "3b9fee30c69e80405459c2d3167b1148ae71c26c",
+      "mergedAt": "2026-11-05T20:42:21Z",
+      "mergeCommit": {
+        "oid": "019107de6087f65ac8b4d2e73f2e9ae95278947f"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 234,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/234",
+      "title": "test(python): execute independent nonuniform Java scientific acceptance",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-scientific-scenario-n",
+      "headRefOid": "836f5904f9c3465b15d06907b637d538798bf43e",
+      "mergedAt": "2026-11-05T20:37:08Z",
+      "mergeCommit": {
+        "oid": "6980a529d47dd35417c750d98cded111866b5c17"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 237,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/237",
+      "title": "fix(testing): bind manifest science to the actual workflow before execution",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-scientific-workflow-binding",
+      "headRefOid": "bea45c5f9c29e40125bd30065b850295026731e0",
+      "mergedAt": "2026-11-05T21:11:41Z",
+      "mergeCommit": {
+        "oid": "e153fd3949136354ff55cf10953d8e472c490f57"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 239,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/239",
+      "title": "feat(python): deliver native async recorded provenance on accepted integration",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-recorded-provenance",
+      "headRefOid": "9283983f7a7a7e403d975f76851946c5218cb8a0",
+      "mergedAt": "2026-11-05T22:07:39Z",
+      "mergeCommit": {
+        "oid": "c16c75427e34133ba973446b18666f18c8b36ad2"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 240,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/240",
+      "title": "feat(python): deliver native async recorded execution evidence after provenance",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-execution-evidence",
+      "headRefOid": "d2c5f00b8e7dd9033519fe967812635a1351a86b",
+      "mergedAt": "2026-11-05T22:16:06Z",
+      "mergeCommit": {
+        "oid": "5849d7b78ebdd4daa6a836c7985684e522b23fd5"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 243,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/243",
+      "title": "fix(python): validate finished Job envelopes and persist A+B state contract",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-ide-state-audit",
+      "headRefOid": "c23f3f9472e97b70bee2559ec7b20ab63d8686d5",
+      "mergedAt": "2026-11-06T15:39:32Z",
+      "mergeCommit": {
+        "oid": "b9ee02b91bf18b916c68b18d870a685bca10c282"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 244,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/244",
+      "title": "feat(python): bounded explicit resource file imports in sync and async clients",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-ab-completion",
+      "headRefOid": "a8f1138b8c55b7f06bb042d43fde627ae0812b2b",
+      "mergedAt": "2026-11-06T16:40:01Z",
+      "mergeCommit": {
+        "oid": "b618bd96ecab818279006b17f700598217d77e09"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 245,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/245",
+      "title": "test(python): isolated service simulator and 400-cell SDK vertical",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-service-simulator",
+      "headRefOid": "ba5f4d8252159e0d637468ffdd6f9a2e18617ec9",
+      "mergedAt": "2026-11-06T17:15:59Z",
+      "mergeCommit": {
+        "oid": "1591c7fdb3edb4cced0aa690072f86f914722711"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 246,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/246",
+      "title": "test(python): owned resource imports and private simulator catalog",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-simulator-resource-imports",
+      "headRefOid": "ae535a721f0de237f9f3f0cb79c41d88e52499ce",
+      "mergedAt": "2026-11-06T17:22:12Z",
+      "mergeCommit": {
+        "oid": "75ac5b7e1eeb899bd9dd4e91d5f442b9d33c80c1"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 247,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/247",
+      "title": "test(python): fresh-process restore and bounded simulated lifecycle",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-simulator-lifecycle",
+      "headRefOid": "4ea09a003fa01024335339a5cad132b94bc3f7c6",
+      "mergedAt": "2026-11-06T17:28:32Z",
+      "mergeCommit": {
+        "oid": "f5e31e1cf9d53976dbdc2282c6f4fddc3b19ca30"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 248,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/248",
+      "title": "test(python): exact recorded exports and atomic streaming fault cases",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-simulator-exports",
+      "headRefOid": "0939e0b7676ef448dd40d16fac9ac841e9d9079c",
+      "mergedAt": "2026-11-06T17:34:24Z",
+      "mergeCommit": {
+        "oid": "b1891a64eab456092d6063567c3015580b835140"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 249,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/249",
+      "title": "feat(python): native async authoring and explicit simulated input binding",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-simulator-input-binding",
+      "headRefOid": "b2851e997a4e44af83768315a5f1c6e0bda2f1f7",
+      "mergedAt": "2026-11-06T17:51:04Z",
+      "mergeCommit": {
+        "oid": "3c9e1a5a4a49eca4ac5c072cb987277281574a68"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 250,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/250",
+      "title": "test(python): honest partial graph refresh over isolated HTTP",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-simulator-partial-refresh",
+      "headRefOid": "c6217925370a552c48ca6615e645fc774b5821ae",
+      "mergedAt": "2026-11-06T17:58:20Z",
+      "mergeCommit": {
+        "oid": "a74fda6a85e9d192a756d0d1be446b382b27e884"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 251,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/251",
+      "title": "test(python): independent native scientific adapter scenarios",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-simulator-scientific-adapters",
+      "headRefOid": "8bc1a662f8106dccc6b3aed3faf4669cdb56c776",
+      "mergedAt": "2026-11-06T18:07:24Z",
+      "mergeCommit": {
+        "oid": "013fda33e02880369e3280203801f8bf67f3a2ec"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 252,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/252",
+      "title": "test(python): documented semantic and asset inspection acceptance",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-simulator-semantics",
+      "headRefOid": "8e4336ebf2f7317e3a75df9ed5b1beb2301ca6ed",
+      "mergedAt": "2026-11-06T18:21:26Z",
+      "mergeCommit": {
+        "oid": "b873ee42b0428611a61375e87e8a400ae118de97"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 253,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/253",
+      "title": "feat(python): native async scientific export association",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-analysis-export",
+      "headRefOid": "493c349066fe0c88a6f93d59afc35f693bcfb609",
+      "mergedAt": "2026-11-06T18:31:54Z",
+      "mergeCommit": {
+        "oid": "716dbca5c3ad2cd1d7860e124ce40e81cb027ecc"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 254,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/254",
+      "title": "feat(python): explicit native temporal export selection",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-temporal-export-selection",
+      "headRefOid": "092ae4a8254a5eff7d7f3b9f990e17071ddb7775",
+      "mergedAt": "2026-11-06T18:47:09Z",
+      "mergeCommit": {
+        "oid": "b532cd779f3f5919144fec770e3fd3e35894b2d8"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 255,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/255",
+      "title": "feat(python): native awaited agent source previews",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-agent-previews",
+      "headRefOid": "8839cdaf0a381dc941547132170376377bfa7060",
+      "mergedAt": "2026-11-06T18:54:43Z",
+      "mergeCommit": {
+        "oid": "2a979754fc6fc30116e14e33545f7f9dca8f4bc4"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 256,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/256",
+      "title": "feat(python): native awaited deferred agent registration",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-agent-registration",
+      "headRefOid": "d53158e08bab0edce1b94d17bcf27852e2b2e5aa",
+      "mergedAt": "2026-11-06T19:05:39Z",
+      "mergeCommit": {
+        "oid": "c5d138b242acb54242366601693259c1d2de22aa"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 257,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/257",
+      "title": "feat(python): native awaited graph browsing and partial refresh",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-async-graph-browser",
+      "headRefOid": "d22ae0b60746f7b79e7631ec6289f524dd44b450",
+      "mergedAt": "2026-11-06T19:14:58Z",
+      "mergeCommit": {
+        "oid": "052c729cba3cae5bfe5057e68c40501ea1e96718"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 258,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/258",
+      "title": "test(python): actual notebook kernel and isolated HTTP client acceptance",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-notebook-http-acceptance",
+      "headRefOid": "5b73cf9eb88883e145bb2a9e795c06f1916acdde",
+      "mergedAt": "2026-11-06T19:25:19Z",
+      "mergeCommit": {
+        "oid": "1010c82f480bfc3e665a5d1fcd63b19ad49eed27"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 259,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/259",
+      "title": "feat(python): explicit native Resources project lock operations",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-project-locks",
+      "headRefOid": "c4b0c43c468f554af8a30a483e7ffd954edf1832",
+      "mergedAt": "2026-11-06T19:39:17Z",
+      "mergeCommit": {
+        "oid": "be22818169852902a29fe077635e649426485689"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 260,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/260",
+      "title": "fix(python): validate native scope selections and Runtime binding",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-scope-selection-guards",
+      "headRefOid": "61ba48db89bc984b2722d70c30fe1372c105abd5",
+      "mergedAt": "2026-11-06T20:06:35Z",
+      "mergeCommit": {
+        "oid": "4a0753e48389543146bb8fb0f508c121ea71e720"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 261,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/261",
+      "title": "test(python): fresh-process offline scientific snapshot acceptance",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-offline-snapshot-acceptance",
+      "headRefOid": "89593c927691054a50bf96180b299cdad82d1d05",
+      "mergedAt": "2026-11-06T20:14:15Z",
+      "mergeCommit": {
+        "oid": "18d824fc9df9e9961e2d1897e7fb481f465f15f2"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 262,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/262",
+      "title": "feat(python): nonexecuting plain behavior source authoring",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "feature/python-behavior-source-authoring",
+      "headRefOid": "6ca8eecb7d80fdb6b7209bbd97905b16d67029f9",
+      "mergedAt": "2026-11-06T20:28:13Z",
+      "mergeCommit": {
+        "oid": "1fd759605e45fb384a088a3f4b4e0d305b50605f"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 263,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/263",
+      "title": "fix(python): inspect decoded source data for configured credentials",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "fix/python-source-credential-preflight",
+      "headRefOid": "d56fda6515e96178e74c9f4a2dbde643e577b980",
+      "mergedAt": "2026-11-06T20:36:19Z",
+      "mergeCommit": {
+        "oid": "2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    },
+    {
+      "number": 264,
+      "url": "https://github.com/integratedmodelling/klab-services/pull/264",
+      "title": "docs(python): bounded A+B completion checkpoint and 42-row reconciliation",
+      "state": "MERGED",
+      "baseRefName": "feature/python-experiment-runner",
+      "headRefName": "docs/python-ab-completion-checkpoint",
+      "headRefOid": "f75a294d7133fe3a1c2a97b0769e3db691dac90d",
+      "mergedAt": "2026-11-06T20:47:03Z",
+      "mergeCommit": {
+        "oid": "28e2266daeef9931aaaae94c8eefe6b1b03a607b"
+      },
+      "reviewDecision": "",
+      "in_campaign": true,
+      "in_develop": false
+    }
+  ]
+}

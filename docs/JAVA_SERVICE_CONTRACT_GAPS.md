@@ -1,5 +1,14 @@
 # Java service contract gaps — executable A+B compatibility backlog
 
+**Canonical maintained register:** [Java Service Gap Register](java-service-contract-gaps/README.md),
+with [schema-validated data](java-service-contract-gaps/gaps.yaml),
+[generated status](java-service-contract-gaps/JAVA_GAP_STATUS.md),
+[issue reconciliation](java-service-contract-gaps/ISSUE_RECONCILIATION.md) and
+[separate contract matrix](java-service-contract-gaps/CONTRACT_MATRIX.md).
+The narrative/legacy IDs below preserve campaign evidence, not a second manually
+maintained status register. Fixed PY-* entries remain Python history; canonical
+JAVA-GAP IDs do not relabel those defects as unfinished Java work.
+
 The production SDK is not allowed to silently switch to simulation after a real
 error. Python simulator verification, native Java compatibility and scientific
 Java execution are **independent**. This file itemizes boundaries; the sole current
@@ -27,7 +36,7 @@ This demonstrates that temporal/selection/commit mechanisms have native Java ref
 implementations; do not generalize this IDE's scanner bug into an absence claim about
 Java end-to-end functionality. No Monday walkthrough or live repair is a Python gate.
 
-## Gap register
+## Historical campaign boundary inventory (canonical status linked above)
 
 |ID / classification / owner|A+B/API and exact request contract|Evidence, simulator/Java result, uncertainty and acceptance criterion|
 |---|---|---|

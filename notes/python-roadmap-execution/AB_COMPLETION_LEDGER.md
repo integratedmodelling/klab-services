@@ -61,8 +61,21 @@ Fresh read-only remote inventory:16services issues/10open,242PRs/0open;22campaig
 PRs243–264allmerged/reachable on campaign integration, zero reachable on develop.
 Review report: `POST_AB_DELIVERY_REVIEW.md` (IN_PROGRESS). Read all issue bodies/
 comments and discovered upstream geospatial#10; zero safe immediate closure
-candidates. Registry/tests/structured42-row audit/publication and final report remain
-pending. No issue changes, role grants, services/IDE modifications or science runs.
+candidates. Independent assessment now verified:6COMPLETE bounded implementations,
+34PARTIAL/two excluded; acceptance9BLOCKED_INFRA/23BLOCKED_JAVA/7SIMULATOR_VERIFIED/
+3UNTESTED. Canonical16-gap registry:2confirmed defects/3missingAPI/6provisional/
+5not tested/zero Java-fixed. Fresh3988SDK/107simulator/29governance tests/no skips,
+19gates and48module source/old-installed/new-installed/wheel/sdist parity PASS;
+16linked substitute cases pass (100SDK+36HTTP/capture),16realNOT_RUN/exit3.
+Receipt: `evidence/post-ab-audit-validation-20261106.json`. Fresh wheel installed
+and smoke-tested separately; full suite attribution remains exact prior wheel.
+Seven staging hashes unchanged;74PR delivery provenance retained. Missing historical
+scanner reproducer custody and initial mixed-conftest runner failures retained;
+no SDK or Java workaround. Consolidated `POST_AB_DELIVERY_REVIEW.md` has exact IDs,
+17issue dispositions, evidence limits and decision brief. Governance PR/hostedCI/
+permitted merge, subsequent idempotent keep-open comments/actual URLs and final
+publication remain pending. No issue changes, role grants, services/IDE modifications
+or science runs; stop after review publication for joint roadmap decision.
 
 Source credential preflight correction (active `fix/python-source-credential-preflight`):
 16red tests reproduced quote/backslash-containing synthetic credentials bypassing

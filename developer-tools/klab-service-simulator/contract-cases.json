@@ -1,5 +1,7 @@
 {
   "version": 1,
+  "java_gap_registry": "docs/java-service-contract-gaps/gaps.yaml",
+  "java_gap_policy": "All provisional cases map to immutable canonical gaps; simulator success never upgrades current REAL_NOT_RUN or closes native Java requirements.",
   "contract_classifications": [
     {
       "category": "VERIFIED_JAVA",
