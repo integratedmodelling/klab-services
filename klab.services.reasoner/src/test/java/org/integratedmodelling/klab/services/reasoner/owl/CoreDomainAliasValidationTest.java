@@ -80,4 +80,52 @@ class CoreDomainAliasValidationTest {
         alias("Knowledge", "odo:KnowledgeDomain"), alias("Physical", "odo:PhysicalDomain"),
         alias("Domain", "odo:Domain")).isEmpty());
   }
+  private KimConceptStatementImpl typedAlias(String name, String target, SemanticType... types) {
+    var result = alias(name, target);
+    result.setType(EnumSet.copyOf(List.of(types)));
+    return result;
+  }
+  private OWL genericFixture() {
+    var owl = fixture();
+    var ontology = owl.requireOntology("odo");
+    var axioms = new ArrayList<Axiom>();
+    for (var name : List.of("Quality", "Extent", "Time", "Space", "OtherExtent", "Mass"))
+      axioms.add(Axiom.ClassAssertion(name, EnumSet.of(SemanticType.OBSERVABLE,
+          name.equals("Quality") || name.equals("Mass") ? SemanticType.QUALITY : SemanticType.EXTENT)));
+    ontology.define(axioms);
+    return owl;
+  }
+  @Test void canonicalGenericAliasesAndSpecificQualityWorkInEitherOrder() {
+    var aliases = new KimConceptStatementImpl[]{
+        typedAlias("Q", "odo:Quality", SemanticType.QUALITY, SemanticType.OBSERVABLE),
+        typedAlias("E", "odo:Extent", SemanticType.EXTENT, SemanticType.OBSERVABLE),
+        typedAlias("T", "odo:Time", SemanticType.EXTENT, SemanticType.OBSERVABLE),
+        typedAlias("S", "odo:Space", SemanticType.EXTENT, SemanticType.OBSERVABLE),
+        typedAlias("M", "odo:Mass", SemanticType.MASS, SemanticType.QUALITY, SemanticType.OBSERVABLE)};
+    validate(genericFixture(), aliases);
+    assertTrue(warnings.isEmpty(), warnings.toString());
+    Collections.reverse(Arrays.asList(aliases));
+    validate(genericFixture(), aliases);
+    assertTrue(warnings.isEmpty(), warnings.toString());
+  }
+  @Test void genericAliasesUseResolvedIdentityAndRejectUnknownOrWrongTargets() {
+    var owl = genericFixture();
+    owl.requireOntology("alias").addDelegateConcept("Clock", "alias", owl.getConcept("odo:Time"));
+    validate(owl, typedAlias("T", "alias:Clock", SemanticType.EXTENT));
+    assertTrue(warnings.isEmpty(), warnings.toString());
+    validate(owl, typedAlias("Q", "odo:Missing", SemanticType.QUALITY),
+        typedAlias("E", "odo:OtherExtent", SemanticType.EXTENT),
+        typedAlias("Q2", "odo:Time", SemanticType.QUALITY));
+    assertEquals(3, warnings.size());
+    assertTrue(warnings.stream().allMatch(s -> s.contains("instead of a canonical")));
+  }
+  @Test void genuinelyAmbiguousGenericAndSpecificKindsStillWarn() {
+    validate(genericFixture(),
+        typedAlias("Both", "odo:Quality", SemanticType.QUALITY, SemanticType.EXTENT),
+        typedAlias("Specific", "odo:Mass", SemanticType.MASS, SemanticType.LENGTH, SemanticType.QUALITY),
+        typedAlias("Missing", "odo:Quality", SemanticType.OBSERVABLE));
+    assertEquals(3, warnings.size());
+    assertEquals(2, warnings.stream().filter(s -> s.contains("ambiguous")).count());
+    assertTrue(warnings.stream().anyMatch(s -> s.contains("can't establish")));
+  }
 }

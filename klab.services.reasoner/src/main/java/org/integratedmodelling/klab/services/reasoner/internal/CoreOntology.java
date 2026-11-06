@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
-import com.google.common.collect.Sets;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -113,11 +112,10 @@ public class CoreOntology {
   }
 
   /**
-   * Check that all fundamental concepts are mapped to the root ontology. For now just give a
-   * warning and do not check that they're actually available in the core ontologies mentioned,
-   * which we must do eventually.
+   * Validate root alias kinds, including generic Quality and canonical Extent identities.
+   * Specific declarable kinds take precedence over their inherited generic flags.
    *
-   * <p>TODO implement the logic in the class javadocs
+   * <p>Blanket missing-slot and duplicate-slot warnings remain disabled.
    *
    * @param rootDomain
    * @param scope
@@ -126,7 +124,14 @@ public class CoreOntology {
     Map<SemanticType, String> coreConcepts = new HashMap<>();
     for (var concept : rootDomain.getStatements()) {
       if (concept.getUpperConceptDefined() != null) {
-        var implemented = Sets.intersection(concept.getType(), SemanticType.DECLARABLE_TYPES);
+        var implemented = EnumSet.noneOf(SemanticType.class);
+        implemented.addAll(concept.getType());
+        implemented.retainAll(SemanticType.DECLARABLE_TYPES);
+        // Generic roots are legitimate aliases, but specific declarable kinds take precedence.
+        if (implemented.isEmpty()) {
+          for (var generic : List.of(SemanticType.QUALITY, SemanticType.EXTENT))
+            if (concept.getType().contains(generic)) implemented.add(generic);
+        }
         if (implemented.size() > 1) {
           scope.warn(
               "Inconsistent worldview: the fundamental type for core concept "
@@ -147,6 +152,19 @@ public class CoreOntology {
                   + ")");
         } else {
           var type = implemented.iterator().next();
+          if (type == SemanticType.QUALITY || type == SemanticType.EXTENT) {
+            var canonical = type == SemanticType.QUALITY
+                ? List.of(NS.CORE_QUALITY) : List.of(NS.CORE_EXTENT, "odo:Time", "odo:Space");
+            if (canonical.stream().noneMatch(id -> sameCoreIdentity(concept.getUpperConceptDefined(), id))) {
+              scope.warn("Inconsistent worldview: core alias " + concept.getNamespace() + ":"
+                  + concept.getUrn() + " declares fundamental type " + type + " but targets "
+                  + concept.getUpperConceptDefined() + " instead of a canonical ODO kind");
+              continue;
+            }
+            // Canonical Time and Space are separate Extent specializations.
+            if (type == SemanticType.EXTENT
+                && !sameCoreIdentity(concept.getUpperConceptDefined(), NS.CORE_EXTENT)) continue;
+          }
           // Specialized Domain aliases name distinct canonical ODO classes; they
           // do not each claim the fundamental Domain slot.
           if (type == SemanticType.DOMAIN

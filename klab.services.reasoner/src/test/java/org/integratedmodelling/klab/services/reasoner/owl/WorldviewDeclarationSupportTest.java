@@ -108,6 +108,43 @@ class WorldviewDeclarationSupportTest {
     assertThrows(KlabValidationException.class,()->WorldviewDeclarationSupport.compile(owl,ontology,ontology.getConcept("Domain"),statement,v->owl.getConcept(v.getName())));
     assertEquals(before,ontology.getOWLOntology().getAxiomCount());
   }
+  @Test void bearerFreeConfigurationHasIndependentEvidenceWithoutAMissingBearerWarning() {
+    var owl = owl(); var ontology = owl.requireOntology("audit");
+    declare(ontology, "Domain", SemanticType.DOMAIN, SemanticType.PREDICATE);
+    declare(ontology, "System", SemanticType.CONFIGURATION);
+    declare(ontology, "Quality", SemanticType.QUALITY, SemanticType.OBSERVABLE);
+    var statement = new KimConceptStatementImpl();
+    statement.getObservablesDescribed().add(new PairImpl<>(syntax("System"), KimConceptStatement.DescriptionType.DESCRIBES));
+    WorldviewDeclarationSupport.compile(owl, ontology, ontology.getConcept("Domain"), statement,
+        value -> owl.getConcept(value.getName()));
+    assertTrue(WorldviewDeclarationSupport.unresolvedDescriptionBearers(owl, ontology.getConcept("Domain")).isEmpty());
+    assertTrue(new OWLSemanticClauseSupport(owl).bearerConstraints(ontology.getConcept("Domain")).isEmpty());
+    var annotations = ontology.getOWLOntology().getAnnotationAssertionAxioms(owl.getOWLClass(ontology.getConcept("Domain")).getIRI());
+    assertTrue(annotations.stream().anyMatch(a -> a.getProperty().getIRI().equals(DescriptionBearerSupport.INDEPENDENT_TARGET_STATUS)
+        && a.getValue().asLiteral().orElseThrow().getLiteral().contains("INDEPENDENT_TARGET_UNRESOLVED")));
+    assertTrue(annotations.stream().noneMatch(a -> a.getProperty().getIRI().equals(DescriptionBearerSupport.COMPATIBILITY)));
+    WorldviewDeclarationSupport.compile(owl, ontology, ontology.getConcept("Quality"), statement,
+        value -> owl.getConcept(value.getName()));
+    assertFalse(WorldviewDeclarationSupport.unresolvedDescriptionBearers(owl, ontology.getConcept("Quality")).isEmpty());
+  }
+  @Test void independentConfigurationContradictionStillRejectsBeforeWrites() {
+    var owl = owl(); var ontology = owl.requireOntology("audit");
+    declare(ontology, "Domain", SemanticType.DOMAIN, SemanticType.PREDICATE);
+    declare(ontology, "System", SemanticType.CONFIGURATION);
+    declare(ontology, "Tree", SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    declare(ontology, "Rock", SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    ontology.define(List.of(Axiom.DisjointClasses(new String[]{"audit:Tree", "audit:Rock"})));
+    OWLSemanticClauseSupport.markUniversalBearer(owl, ontology.getConcept("System"),
+        owl.getProperty("odo:isInherentTo"), ontology.getConcept("Tree"), ontology);
+    OWLSemanticClauseSupport.markUniversalBearer(owl, ontology.getConcept("System"),
+        owl.getProperty("odo:isInherentTo"), ontology.getConcept("Rock"), ontology);
+    var statement = new KimConceptStatementImpl();
+    statement.getObservablesDescribed().add(new PairImpl<>(syntax("System"), KimConceptStatement.DescriptionType.DESCRIBES));
+    var before = ontology.getOWLOntology().getAxioms();
+    assertThrows(KlabValidationException.class, () -> WorldviewDeclarationSupport.compile(owl, ontology,
+        ontology.getConcept("Domain"), statement, value -> owl.getConcept(value.getName())));
+    assertEquals(before, ontology.getOWLOntology().getAxioms());
+  }
   private OWL owl() {
     var scope = (org.integratedmodelling.klab.api.scope.Scope) java.lang.reflect.Proxy.newProxyInstance(
         getClass().getClassLoader(), new Class<?>[]{org.integratedmodelling.klab.api.scope.Scope.class},

@@ -19,6 +19,29 @@ class BroadDescriptionContractTest {
   private final OWL owl;
   private final Ontology ontology;
   private final OWLDataFactory f;
+  @Test void pinnedCoreGenericAliasesValidateWithoutWarnings(@org.junit.jupiter.api.io.TempDir Path directory) {
+    var warnings = new ArrayList<String>();
+    var scope = (Scope) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
+        new Class<?>[]{Scope.class}, (self, method, args) -> {
+          if (method.getName().equals("warn")) warnings.add(Arrays.deepToString(args));
+          return null;
+        });
+    var root = new KimOntologyImpl(); root.setUrn("aliases");
+    for (var name : List.of("Quality", "Extent", "Time", "Space", "Mass")) {
+      var alias = new KimConceptStatementImpl(); alias.setNamespace("aliases"); alias.setUrn(name);
+      alias.setUpperConceptDefined("odo:" + name);
+      var kind = name.equals("Quality") || name.equals("Mass") ? SemanticType.QUALITY : SemanticType.EXTENT;
+      alias.setType(EnumSet.of(SemanticType.OBSERVABLE, kind));
+      if (name.equals("Mass")) alias.getType().add(SemanticType.MASS);
+      assertNotNull(owl.getConcept("odo:" + name));
+      root.getStatements().add(alias);
+    }
+    var core = new org.integratedmodelling.klab.services.reasoner.internal.CoreOntology(directory.toFile(), owl, false);
+    core.validateRootDomain(root, scope);
+    Collections.reverse(root.getStatements());
+    core.validateRootDomain(root, scope);
+    assertTrue(warnings.isEmpty(), warnings.toString());
+  }
   BroadDescriptionContractTest() {
     var scope = (Scope) java.lang.reflect.Proxy.newProxyInstance(getClass().getClassLoader(),
         new Class<?>[]{Scope.class}, (self, method, args) -> null);
@@ -291,8 +314,10 @@ class BroadDescriptionContractTest {
         f.getOWLSubClassOfAxiom(type("Pattern"),f.getOWLObjectSomeValuesFrom(property("isInherentTo"),type("Rock")))));
     compile("Domain",description("Pattern"));
     assertTrue(new OWLSemanticClauseSupport(owl).bearerConstraints(c("Domain")).isEmpty());
-    assertTrue(WorldviewDeclarationSupport.unresolvedDescriptionBearers(owl,c("Domain")).stream()
-        .anyMatch(message->message.contains("INDEPENDENT_TARGET_UNRESOLVED")));
+    assertTrue(WorldviewDeclarationSupport.unresolvedDescriptionBearers(owl,c("Domain")).isEmpty());
+    assertTrue(ontology.getOWLOntology().getAnnotationAssertionAxioms(type("Domain").getIRI()).stream()
+        .anyMatch(a -> a.getProperty().getIRI().equals(DescriptionBearerSupport.INDEPENDENT_TARGET_STATUS)
+            && a.getValue().asLiteral().orElseThrow().getLiteral().contains("INDEPENDENT_TARGET_UNRESOLVED")));
     withDl(r->{assertTrue(r.isConsistent());assertTrue(r.isSatisfiable(type("Domain")));});
   }
 

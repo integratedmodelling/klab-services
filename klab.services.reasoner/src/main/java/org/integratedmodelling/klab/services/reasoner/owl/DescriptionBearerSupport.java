@@ -10,6 +10,7 @@ final class DescriptionBearerSupport {
   static final IRI PROVENANCE = IRI.create("urn:klab:validation:bearer-provenance");
   static final IRI COMPATIBILITY = IRI.create("urn:klab:validation:bearer-compatibility");
   static final IRI TARGET_STATUS = IRI.create("urn:klab:validation:description-bearer-target-status");
+  static final IRI INDEPENDENT_TARGET_STATUS = IRI.create("urn:klab:validation:description-independent-target-status");
   private DescriptionBearerSupport() {}
 
   static List<OWLAxiom> prepare(OWL owl, Concept owner, Concept authoredBearer,
@@ -56,6 +57,7 @@ final class DescriptionBearerSupport {
     if (property == null) throw new KlabValidationException("Missing ontology property odo:isInherentTo");
     var inherent = property.getOWLEntity().asOWLObjectProperty();
     var targetStatuses = new ArrayList<String>();
+    var independentStatuses = new ArrayList<String>();
     for (var target : independentlyCheckedDescriptions) {
       checkpoint.run();
       var constraints = support.bearerConstraints(target,checkpoint);
@@ -65,7 +67,7 @@ final class DescriptionBearerSupport {
       var targetStatus = validateConjunction(owl, support, target, constraints, semantic, inherent,checkpoint);
       if (constraints.stream().anyMatch(b -> !b.semantic()))
         targetStatus = OWLSemanticClauseSupport.Compatibility.UNRESOLVED;
-      targetStatuses.add(target.getUrn() + " " + target.getType()
+      independentStatuses.add(target.getUrn() + " " + target.getType()
           + " : INDEPENDENT_TARGET_" + targetStatus.name());
     }
     if (authoredBearer != null)
@@ -115,15 +117,20 @@ final class DescriptionBearerSupport {
     // Check inherited-only declarations as well as local descriptions and applicability.
     validateWitnesses(support, own, derived, inherent, owner.getUrn(),checkpoint);
     var status = validateConjunction(owl, support, owner, own, derived, inherent,checkpoint);
-    if (evidence.isEmpty() && targetStatuses.isEmpty()) return List.of();
+    if (evidence.isEmpty() && targetStatuses.isEmpty() && independentStatuses.isEmpty()) return List.of();
     var source = owl.getOWLClass(owner).getIRI();
     var result = new ArrayList<OWLAxiom>();
+    for (var independentStatus : independentStatuses)
+      result.add(f.getOWLAnnotationAssertionAxiom(f.getOWLAnnotationProperty(INDEPENDENT_TARGET_STATUS),
+          source, f.getOWLLiteral(independentStatus)));
     for (var targetStatus : targetStatuses)
       result.add(f.getOWLAnnotationAssertionAxiom(f.getOWLAnnotationProperty(TARGET_STATUS),
           source, f.getOWLLiteral(targetStatus)));
     if (derived.isEmpty()) {
-      result.add(f.getOWLAnnotationAssertionAxiom(f.getOWLAnnotationProperty(COMPATIBILITY),
-          source, f.getOWLLiteral("UNRESOLVED")));
+      // Independent target checks do not assert or require an owner bearer.
+      if (!evidence.isEmpty() || !targetStatuses.isEmpty())
+        result.add(f.getOWLAnnotationAssertionAxiom(f.getOWLAnnotationProperty(COMPATIBILITY),
+            source, f.getOWLLiteral("UNRESOLVED")));
       return result;
     }
     if (unresolvedTarget) status = OWLSemanticClauseSupport.Compatibility.UNRESOLVED;
