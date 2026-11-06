@@ -49,6 +49,16 @@ Java end-to-end functionality. No Monday walkthrough or live repair is a Python 
 
 ## Request/response and ownership rules
 
+Temporal export increment (RC-P2.2/CAP09/15): Python now forwards the native
+`storageEvent/storageStart/storageEnd` fields for explicit TEMPORAL_TRANSITION and
+records an immutable requested slice. Controller/BaseService/Utils.Data.asPOD are
+source evidence only: generic POD coercion may canonicalize event keys. Finite
+SIM-TEMPORAL-EXPORT-001 reuses frozen bytes with a provisional event assignment;
+this proves neither native temporal history nor revision/window leases. Actual
+Java compatibility needs authorized matching retained temporal state and receipts,
+not IDE repair or a simulator fallback. PR253's async association fix is remotely
+merged at716dbca5c; its older “fix active” row is historical implementation context.
+
 Native sources: `ServicesAPI`, `KlabServiceController`, `KlabJobController`, Resources
 CRUD/provider controllers, `ScopeRequest`, ObservationImpl, GeometryImpl,
 StorageScan.Point, KnowledgeGraphQuery/LinkImpl and actual read receipts. Each

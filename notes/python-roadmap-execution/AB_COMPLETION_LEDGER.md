@@ -22,6 +22,25 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
+Temporal export pass on `feature/python-temporal-export-selection` (unpublished):
+two red tests reproduced absent `slice=` on both public facades. Optional explicit
+TEMPORAL_TRANSITION selection now propagates through native streaming and both
+analysis helpers; immutable `requested_slice` is requested metadata only.152focused
+tests PASS, including exact Java-long boundaries, mutable-input snapshot isolation,
+unsupported/credential/control-key refusal before HTTP, and422/no-unsliced-retry.
+Existing nonuniform HTTP acceptance also passes selected/unselected sync/async paths
+with unchanged frozen data; no endpoint added or oracle changed. Full packaged gates
+PASS:3705full SDK tests, all18coverage gates,100%lines/branches in sync/async
+exports and analysis,93packaged simulator tests, lint and source/wheel/sdist byte
+parity (47SDK modules/20simulator files).42original criteria checked unchanged.
+Receipt: `evidence/ab-temporal-export-validation-20261106.json`.
+Implementation is not yet accepted delivery. Source POD coercion and
+genuine Java temporal-state/history/window/revision limits remain explicit.
+PR253 remotely MERGED at716dbca5c3ad2cd1d7860e124ce40e81cb027ecc,
+2026-11-06T18:31:54Z, after hosted SDK/core/Windows/simulator/scientific/build/Jenkins
+checks passed. No independent maintainer review is claimed. Python work remains
+independent of the IDE snapshot; no live check/scientific Job/repair was needed.
+
 |Item|Implementation/public API, verification, delivery|Remaining / next action|
 |---|---|---|
 |D01 finished-Job envelope|Shared Job/AsyncJob decoder guard,26newcases;324focused tests reverified;18checker tests reverified; prior3579wheel-extracted tests/17coverage gates/lint/build/46file parity bound by existing receipts|[PR243](https://github.com/integratedmodelling/klab-services/pull/243) **MERGED**15:39:32Z, merge`b9ee02b91bf18b916c68b18d870a685bca10c282`; exact-head checks including Python3.11/12/13,core-only,Windows,build andJenkins PASS; no required approval bypass, self-review not human approval. Current work fast-forwarded onto verified merge|
@@ -77,7 +96,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P1.4 — A actionable readiness/trust diagnostics|P; Connection.refresh/wait_ready/client; S(slice) SIM-DISCOVERY-001|Native capabilities/status + connection tests; N outage/mixed-version matrix; add fault scenarios without rerouting|
 |RC-P1.5 — A requested options visible in actual plan|P; ObservationRequest/options; S(slice) SIM-SELECTION-001|ResolutionConstraint/Dataflow DTOs; #200/N/Sactual bounded plans; N remaining observer/project/scenario/grid cases; extend supported options only|
 |RC-P2.1 — A nonuniform multi-shard scientific export|P; S(slice) SIM-GRID-001/SIM-USGS-001/SIM-EXPORT-001 exact nonuniform native TIFF and sync/async atomic export; multishard simulator NOT_RUN|StorageScan/Geometry/export DTOs and frozen oracle; B(JAVA-SCANNER-001) IDE; multishard/category/time scenarios still required|
-|RC-P2.2 — A time/window selection, precision, revision and masks|P; fetch_data/ScanSlice/descriptors; SIM-GRID-001 partial|StorageScan.Point + PR223/224/226/230; B(#123remote lease contract); add explicit time/mask/slice cases, preserve unknown revision|
+|RC-P2.2 — A time/window selection, precision, revision and masks|P; fetch_data/ScanSlice/descriptors; SIM-GRID-001 + SIM-TEMPORAL-EXPORT-001 selected sync/async native export and requested-slice association|StorageScan.Point + PR223/224/226/230; controller/BaseService temporal query source only, not Java execution; B(#123remote lease contract). Unsupported selection fails before HTTP; missing state422 never retries unsliced; genuine temporal/window/revision acceptance separate|
 |RC-P2.3 — A independent real-provider accuracy|P; provider-reference runner; S(slice) SIM-USGS-001 authentic recorded cells only|Pinned original oracle/TIFF; B(JAVA-SCANNER-001/#130), not scientific Java output; recorded handling verified, genuine matched provider acceptance separate|
 |RC-P2.4 — A representative bounded stream/interrupt|P; S(slice) SIM-EXPORT-001 sync/async truncation/media/denial/byte-limit controls preserve original outputs|Native export controller; #198socket64MiB/PR206Java1Mcell; N representative provider soak; small recorded simulation is not throughput acceptance|
 |RC-P2.5 — A faithful raster/xarray and categorical views|P; S(slice) SIM-ADAPTERS-001 nonuniform raster/xarray float64/masks/CRS/centres/units and pandas exact missingness; category/time/vector simulator remain partial|Independent pre-existing N-oracle; native adapter checks; fixture admission SIMULATED_PROVISIONAL. No inferred categories/time or guessed georeferencing; delivery active|

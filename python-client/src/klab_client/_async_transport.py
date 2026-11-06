@@ -103,13 +103,13 @@ class AsyncTransport(_TransportPolicy):
         return self._response(result, service, method, route, response=response, ambiguous=ambiguous)
 
     @asynccontextmanager
-    async def stream(self, service, route, *, media_type, scope=None, service_id=None):
+    async def stream(self, service, route, *, media_type, scope=None, service_id=None, params=None):
         async with self._slots:
-            async with self._stream(service, route, media_type=media_type, scope=scope, service_id=service_id) as response:
+            async with self._stream(service, route, media_type=media_type, scope=scope, service_id=service_id, params=params) as response:
                 yield response
 
     @asynccontextmanager
-    async def _stream(self, service, route, *, media_type, scope=None, service_id=None):
+    async def _stream(self, service, route, *, media_type, scope=None, service_id=None, params=None):
         """Origin-bound unread GET response; caller owns bounded async iteration."""
         endpoint = self.endpoint(service)
         headers = self._headers(route, scope=scope, service_id=service_id)
@@ -119,7 +119,7 @@ class AsyncTransport(_TransportPolicy):
             headers["Authorization"] = credential
         try:
             async with self._http.stream("GET", endpoint.url.rstrip("/") + route,
-                    headers=headers, timeout=self.timeout) as response:
+                    headers=headers, timeout=self.timeout, params=params) as response:
                 if not 200 <= response.status_code < 300:
                     error = {400: InvalidRequestError, 401: AuthenticationError,
                              403: AuthorizationError, 404: MissingAssetError,

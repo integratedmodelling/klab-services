@@ -13,7 +13,7 @@ pytest.importorskip("pandas", reason="scientific adapter extra required")
 rio = pytest.importorskip("rasterio", reason="scientific adapter extra required")
 pytest.importorskip("xarray", reason="scientific adapter extra required")
 
-from klab_client import (AsyncClient, Client, ObservationRequest, RectangularGeometry,
+from klab_client import (AsyncClient, Client, ObservationRequest, RectangularGeometry, ScanSlice,
                          async_export_for_analysis, async_fetch_provenance, fetch_provenance)
 from klab_client.analysis import export_for_analysis, open_raster, trace_analysis
 from klab_client.errors import InvalidRequestError, UnsupportedOperationError
@@ -24,7 +24,8 @@ from test_vertical import client_args, control, geometry
 
 
 @pytest.mark.parametrize("mode", ["sync", "async"])
-def test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace(mode, tmp_path):
+@pytest.mark.parametrize("selected", [None, ScanSlice("TEMPORAL_TRANSITION", "fixture:transition", 0, 1)])
+def test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace(mode, selected, tmp_path):
     # The expected data predates this simulator and is not read from its implementation.
     oracle = json.loads((REPO / "python-client/tests/fixtures/nonuniform-export.json").read_text())
     expected = np.array([[np.nan if value is None else value for value in row] for row in oracle["north_first"]], dtype="float64")
@@ -39,7 +40,11 @@ def test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_t
                     context = await session.create_context()
                     try:
                         observation = await (await context.observe(proposal)).result(timeout=2)
-                        artifact = await async_export_for_analysis(observation, path, media_type=MEDIA)
+                        artifact = await async_export_for_analysis(observation, path, media_type=MEDIA, slice=selected)
+                        assert artifact.export.requested_slice == selected
+                        with pytest.raises(InvalidRequestError):
+                            await observation.export_to_file(path, media_type=MEDIA, overwrite=True,
+                                slice=ScanSlice("TEMPORAL_TRANSITION", "fixture:missing", 0, 1))
                         analysis = open_raster(artifact)
                         assert analysis.artifact.observation == observation.to_handle()
                         traced = trace_analysis(analysis, await async_fetch_provenance(observation))
@@ -55,7 +60,11 @@ def test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_t
                 context = session.create_context()
                 try:
                     observation = context.observe(proposal).result(timeout=2)
-                    artifact = export_for_analysis(observation, path)
+                    artifact = export_for_analysis(observation, path, slice=selected)
+                    assert artifact.export.requested_slice == selected
+                    with pytest.raises(InvalidRequestError):
+                        observation.export_to_file(path, media_type=MEDIA, overwrite=True,
+                            slice=ScanSlice("TEMPORAL_TRANSITION", "fixture:missing", 0, 1))
                     analysis = open_raster(artifact)
                     assert analysis.artifact.observation == observation.to_handle()
                     traced = trace_analysis(analysis, fetch_provenance(observation))

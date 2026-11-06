@@ -31,6 +31,36 @@ Numerical correctness requires the [corrected component](../component-patches/ge
 advertisement or HTTP success alone does not certify it. Python never silently
 repairs native bytes. Closing local objects does not release remote state.
 
+## Explicit temporal export selection
+
+Both `observation.export_to_file(..., slice=selected)` and the sync/async analysis
+helpers accept the existing `ScanSlice` (or its exact four-field wire mapping):
+
+```python
+from klab_client import ScanSlice
+
+selected = ScanSlice("TEMPORAL_TRANSITION", "month:2014-01", 1388534400000, 1391212800000)
+artifact = await async_export_for_analysis(observation, "january.tif", slice=selected)
+assert artifact.export.requested_slice == selected
+```
+
+This forwards only native `storageEvent`, `storageStart`, `storageEnd` query fields.
+Exact Java-long bounds are stringified without float conversion. Selection is
+snapshotted before capability I/O; `ExportResult.requested_slice` is immutable
+**requested metadata**, not server-confirmed commitment, history, or a revision lease.
+Omitting `slice` preserves the exporter default and records `None`, not proven
+initialization. Explicit INITIALIZATION/INPUT_CHANGE/EVENT and extension fields
+fail before HTTP; keys must be bounded control-free UTF-8 without configured
+credential material. Server errors never retry without selection.
+
+Native source references: `KlabServiceController.exportAsset` forwards query fields
+through `Utils.Data.asPOD`; `BaseService.exportResolvedAsset` builds a temporal
+`StorageScan.Slice`. Generic POD coercion can canonicalize numeric/Boolean-looking
+event keys on Java: the client records its requested key, not an assertion that the
+server preserves its spelling. These are source contracts, **not executed Java
+compatibility**. Spatial windows, revision leases, history discovery and genuine
+temporal scientific accuracy require separately attributed native evidence.
+
 ## Native async export association
 
 `async_export_for_analysis` awaits an async-bound observation's ordinary native

@@ -1,11 +1,14 @@
 """Exact immutable recorded bytes, not a local scientific exporter."""
 from importlib.resources import files
+from urllib.parse import parse_qs, urlsplit
 
 from .fixtures import authentic_fixture, nonuniform_fixture
 from .state import ContractError
 
 MEDIA = "image/tiff;application=geotiff"
 SCHEMA = "simulator.native.geotiff"
+# RC-P2.2 finite assignment to existing bytes, NOT genuine native temporal history.
+TEMPORAL_QUERY = {"storageEvent": ["fixture:transition"], "storageStart": ["0"], "storageEnd": ["1"]}
 
 
 def export_schemas():
@@ -14,7 +17,10 @@ def export_schemas():
         "mediaTypes": [MEDIA], "extensions": ["tif"], "description": "Frozen native TIFF; fixture delivery only"}]}
 
 
-def export_bytes(state, headers):
+def export_bytes(state, headers, original_path=""):
+    query = parse_qs(urlsplit(original_path).query, keep_blank_values=True)
+    if query and (state.scenario != "nonuniform-export" or query != TEMPORAL_QUERY):
+        raise ContractError(422, "Selected state is unavailable; no unselected fallback")
     if state.origin != "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" and state.scenario != "nonuniform-export":
         raise ContractError(406, "No exporter is advertised for this synthetic observation")
     if headers.get("Accept") != MEDIA or headers.get("Accept-Encoding") != "identity":

@@ -148,6 +148,10 @@ data decoding, general chunk/window access, automatic arbitrary query/consumer g
 conversion, general pandas/multidimensional adapters, privileged server administration, full Modeler
 UI emulation and Java API parity. These are explicit boundaries, not empty success.
 
+Sync/native-async exports and analysis helpers accept explicit temporal `slice=`;
+`ExportResult.requested_slice` records the request, not a committed revision. Only
+source-confirmed TEMPORAL_TRANSITION query fields are supported; no unsliced retry.
+
 ## Connection orchestration
 
 Typed recorded graph pages: `GraphBrowser` and `GraphPage`, reusing immutable

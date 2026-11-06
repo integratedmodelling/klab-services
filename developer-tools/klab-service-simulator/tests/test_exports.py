@@ -12,6 +12,19 @@ from conftest import launch
 from test_vertical import client_args, control, geometry
 
 
+@pytest.mark.parametrize("query", ["storageEvent=fixture%3Atransition", "storageStart=0&storageEnd=1",
+    "storageEvent=fixture%3Amissing&storageStart=0&storageEnd=1",
+    "storageEvent=fixture%3Atransition&storageStart=0&storageEnd=1&storageEnd=1",
+    "storageEvent=fixture%3Atransition&storageStart=0&storageEnd=1&revision=1"])
+def test_temporal_fixture_assignment_refuses_incomplete_duplicate_or_unknown_selection(query):
+    from types import SimpleNamespace
+    from klab_simulator.exports import export_bytes
+    from klab_simulator.state import ContractError
+    with pytest.raises(ContractError) as error:
+        export_bytes(SimpleNamespace(scenario="nonuniform-export"), {}, "/runtime/export/OBSERVATION/test?" + query)
+    assert error.value.status == 422
+
+
 def request():
     return ObservationRequest("geography:Elevation in m", geometry=geometry(authentic_fixture()))
 

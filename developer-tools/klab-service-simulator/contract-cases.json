@@ -28,6 +28,18 @@
   },
   "cases": [
     {
+      "id": "SIM-TEMPORAL-EXPORT-001",
+      "rows": ["RC-P2.2", "CAP-09", "CAP-15"],
+      "api": "Observation.export_to_file and sync/async export_for_analysis with slice=; ExportResult.requested_slice",
+      "routes": ["GET /runtime/export/OBSERVATION/{urn}"],
+      "request": "storageEvent=fixture:transition, storageStart=0, storageEnd=1; explicit TEMPORAL_TRANSITION only",
+      "expected": "Exact unchanged nonuniform TIFF/oracle; requested metadata retained; missing state fails422 and preserves file without unsliced retry",
+      "source": "KlabServiceController.exportAsset; BaseService.exportResolvedAsset; Utils.Data.asPOD (source only)",
+      "confidence": "SIMULATED_PROVISIONAL; finite event assignment is not genuine temporal history, commitment or revision lease",
+      "simulator_test": "test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+      "java_status": "NOT_RUN; query POD coercion may canonicalize numeric/Boolean event keys"
+    },
+    {
       "id": "SIM-DISCOVERY-001",
       "rows": [
         "RC-P1.1",

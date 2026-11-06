@@ -171,7 +171,7 @@ class Transport(_TransportPolicy):
         return self._response(result, service, method, route, response=response, ambiguous=ambiguous)
 
     @contextmanager
-    def stream(self, service, route, *, media_type, scope=None, service_id=None):
+    def stream(self, service, route, *, media_type, scope=None, service_id=None, params=None):
         """Origin-bound GET stream; errors never buffer or echo binary response bodies."""
         endpoint = self.endpoint(service)
         if not route.startswith("/") or ".." in route or route.startswith("//"):
@@ -186,7 +186,7 @@ class Transport(_TransportPolicy):
             headers["klab-service"] = service_id
         try:
             with self._http.stream("GET", endpoint.url.rstrip("/") + route, headers=headers,
-                                   timeout=self.timeout) as response:
+                                   timeout=self.timeout, params=params) as response:
                 if not 200 <= response.status_code < 300:
                     error = {400: InvalidRequestError, 401: AuthenticationError,
                         403: AuthorizationError, 404: MissingAssetError,

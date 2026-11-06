@@ -326,7 +326,7 @@ class State:
                        if context == root and urn == f"{root}.{identity}"]
             if len(matches) != 1:
                 raise ContractError(404, "Observation is not materialized in the selected context")
-            return export_bytes(self, headers)
+            return export_bytes(self, headers, original_path)
         if service == "runtime" and method == "POST" and route == "/createContext":
             self._owner(self.sessions, scope, principal)
             configuration = (data or {}).get("configuration", {})
