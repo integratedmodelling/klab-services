@@ -28,6 +28,18 @@
   },
   "cases": [
     {
+      "id": "SIM-OFFLINE-SNAPSHOT-001",
+      "rows": ["RC-P1.2", "CAP-12", "CAP-18"],
+      "api": "ScientificData.dumps/loads in a fresh SDK-only process after owned scope release",
+      "routes": ["Existing Runtime observation and StorageScan.Point read routes; none during offline reload"],
+      "request": "Save two bounded public-API cell snapshots covering all400 frozen synthetic cells, release owned scopes, then inspect with all socket audit events forbidden",
+      "expected": "Exact frozen values/offsets, preserved geometry/source units/scope identity, stable snapshot bytes/hashes, unknown-version rejection, zero service requests during offline inspection",
+      "source": "Existing versioned scientific snapshot contract; original synthetic-oracle.json unchanged",
+      "confidence": "SIMULATED_PROVISIONAL production of source cells; offline format/metadata verification, never remote authorization/revision/retention or Java science",
+      "simulator_test": "test_offline_snapshots.py::test_fresh_sdk_only_process_inspects400_frozen_cells_offline_after_owned_release",
+      "java_status": "NOT_RUN; no simulator source/endpoint or production SDK change"
+    },
+    {
       "id": "SIM-SCOPE-SELECTION-001",
       "rows": ["RC-P1.5", "CAP-03", "CAP-04", "CAP-18"],
       "api": "Context/AsyncContext selected scopes; within; raw Runtime.query_knowledge_graph",
