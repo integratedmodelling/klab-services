@@ -66,8 +66,11 @@ integration after parent PR262 remotely MERGED at
 1fd759605e45fb384a088a3f4b4e0d305b50605f, 2026-11-06T20:28:13Z;
 all applicable hosted checks passed, including DTO-wire (not parser acceptance).
 No independent maintainer review is claimed. Parent merge ancestry incorporated;
-fresh final-head hosted checks and permitted PR263 merge remain pending.
-The post-A+B review remains queued; final 42-row reconciliation is unfinished.
+fresh final-head hosted checks passed. PR263 remotely MERGED at
+2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d, 2026-11-06T20:36:19Z;
+build42288687261, SDK42288692246, simulator/notebook/scientific42288692233,
+DTO-wire42288692318 and Jenkins all PASS. The post-A+B review remains queued;
+final 42-row reconciliation/checkpoint publication is the last active delivery.
 
 Nonexecuting behavior-source ADD pass (active `feature/python-behavior-source-authoring`):
 two before-fix tests reproduced Authoring/AsyncAuthoring refusing a plain BEHAVIOR
@@ -385,10 +388,11 @@ result. The sequential post-A+B independent review remains QUEUED_NOT_STARTED.
 4. Scope restore/deadline/cancellation/concurrency/partial-refresh and notebook matrix.
 5. Finite supported semantic/authoring/behavior cases and missing public APIs revealed
    by contracts; label simulator assumptions and retained Java gaps per row.
-6. Exact combined integration/release checkpoint and full40-row Python assessment;
+6. Exact combined integration/release checkpoint and all42-original-row assessment;
    assess Java/scientific compatibility separately. Do not stop after a PR.
 
-Remaining estimated implementation scope: **not yet bounded**;35incomplete parent
+Historical estimate before the supported-operation reconciliation below:
+implementation scope **not yet bounded**;35incomplete parent
 criteria overlap, not35separate features. Contract inventory must distinguish
 delivered code, genuine Python gaps and external guarantees before making a size
 or completion claim. Small protocol regressions cannot substitute for this inventory.
@@ -408,6 +412,125 @@ or completion claim. Small protocol regressions cannot substitute for this inven
   approval/protection. User now authorizes normal publication, not bypass.
 
 ## Completion assessment
+
+### Supported-operation reconciliation — final campaign candidate, not yet accepted
+
+Candidate includes remotely merged PR243–263; latest campaign integration is
+2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d.
+This is the active A+B campaign's own completion assessment, **not the queued
+independent post-A+B audit**. That audit, issue discovery/actions and permanent gap
+registry have not started. The original 42 criteria and their full-parent statuses
+are not rewritten. No row is promoted to complete merely because its bounded Python
+slice works. All paths below are under `python-client/src/klab_client/` and tests
+under `python-client/tests/unit/` unless qualified. Shared full-suite evidence is
+`evidence/ab-source-credential-validation-20261106.json` (3988 SDK, 19 exact gates,
+106 separate HTTP simulator tests). Final genuinely pip-installed SDK verification
+also PASS:3988SDK tests/all19exact coverage gates/107HTTP simulator tests, zero
+skips, lint and48source-to-installed-module byte parity. Actual outside-checkout
+core import verifies no automatic simulator/scientific-extra imports. Wheel SHA256:
+`fec27854ab139cbbbc1aafd19d5e6bc7a16008e870fd0a0beb11c873e1ea5291`.
+Receipt: `evidence/ab-final-installed-validation-20261106.json`.
+Added an executable assessment invariant checking all42unique referenced IDs,
+40READY bounded slices/two C exclusions, preserved non-completion language and
+existence of named unit-test files; this accounts for test107. Release-readiness
+checker returns expected exit3 with all8gates retained: scientific reference BLOCKED,
+scale/server compatibility NOT_RUN, full release security/lifecycle UNKNOWN. Local
+offline/coverage/package PASS is not product-release authorization. Existing
+sanitized USGS oracle projection3fe5383b, native TIFF2c9fcd07 and nonuniform TIFF
+f9cbe08d hashes rechecked unchanged. Original private oracle22ed9057 is a distinct
+custody object; an initial receipt hash assertion confused it with the projection,
+failed closed and was corrected after manifest inspection, without fixture edits.
+No SDK/simulator source changed for this checkpoint; hosted checkpoint delivery
+remains pending before campaign final result and sequential audit transition.
+
+Final actual-install attempt history (not passing acceptance): fresh pip installation
+and outside-checkout core import passed, but the new venv initially lacked Rasterio
+(three SDK collection errors/one skip). Explicitly borrowing existing test packages
+then exposed host base NumPy/SciPy ABI incompatibility and missing Jupyter data:
+3970 SDK passed/18 failed; simulator 102 passed/4 failed on the same ABI mismatch.
+Disabled host base site-packages in this **new disposable venv only**, retained
+borrowed test dependencies via a new venv-only pth, and selected the existing Jupyter
+data path explicitly. Existing environments are unchanged; no SDK workaround or
+test exclusion was added. Final installed SDK rerun PASS:3988tests, zero skips,
+one expected Rasterio negative-test warning,85.46s. Final simulator rerun PASS:
+107tests/zero skips,70.39s including the assessment invariant; all19gates and lint
+PASS. The preceding106test rerun also passed before this extra invariant.
+Hosted checkpoint delivery
+remains pending. This is not fresh dependency
+installation/isolation certification.
+
+The initial simulator run also exposed its overly broad ledger-definition parser
+when the new status-reference table reused original IDs (98 passed/1 failed/1 skip).
+Scoped that invariant to the original definition table; all 42 unique IDs/exact
+wording/count assertions remain intact. No acceptance criterion is waived.
+
+Disposition **READY** means the supported Python slice has implementation and
+regression evidence, with no additional independently justified Python change
+identified by this pass. It does **not** mean COMPLETE for the original parent,
+REAL_VERIFIED, public release, or that native scientific requirements disappear.
+**EXCLUDED** applies only to the two original C rows. Remaining work is stated
+explicitly rather than converted into an unsupported API or broader simulator.
+
+| Original ID | Public implementation / concrete regression files | Disposition and remaining full-parent acceptance |
+|---|---|---|
+|RC-P0|`Client`, `connect`, `Connection.catalog/refresh`; public-api/contracts/support matrix; `test_connection_guards.py`, `test_existing_java_compatibility.py`|READY bounded inventory/diagnostics; maintained mixed-version support decisions and actual deployment matrix remain unverified.|
+|RC-P1.1|`HubCertificateProvider`, `IssuedTokenProvider`, `DeploymentProfile`, `connect`; `test_connection.py`, `test_onboarding_journey.py`|READY provider/onboarding seams; genuine production Hub/issuer/license/roles walkthrough requires operator-approved tuple, not another simulated issuer.|
+|RC-P1.2|`to_handle/save_handle/load_handle/restore_handle`, both clients' restore methods; `test_saved_handles.py`, `test_async_saved_handles.py`; SIM-RESTORE-001|READY reattachment without disposal/replay; in-flight restart retention/history/incarnation remains native contract and execution evidence.|
+|RC-P1.3|`Connection.refresh`, typed auth/expiry errors and context attach; `test_shared_context_readers.py`, `test_connection_guards.py`|READY trust/expiry/private denial controls; broad positive collaborator roles/expiry deployment matrix remains unverified.|
+|RC-P1.4|`Connection.refresh/wait_ready`, immutable catalog and selected origin pins; `test_connection.py`, `test_connection_guards.py`|READY outage/stale/identity-change diagnostics; deployed mixed-version recovery acceptance is distinct.|
+|RC-P1.5|`ObservationRequest`, `ObservationOptions`, `ResolutionConstraint`, `GridOptions`, focus/observer tokens; `test_typed_requests.py`, `test_request_plan_acceptance.py`, `test_scope_selection_guards.py`|READY supported wire options and early refusal; actual material project/observer/grid plan-effect matrix remains unproven; no forced-model consumer invented.|
+|RC-P2.1|`Observation.fetch_data/export`, async equivalents and advertised formats; `test_exports.py`, `test_async_exports.py`, `test_nonuniform_export_oracle.py`|READY bounded reads/native bytes; multi-shard served scientific fixture and genuine scanner/exporter acceptance remain incomplete.|
+|RC-P2.2|`ScanSlice`, `ScientificData`, `ExportResult.requested_slice`; `test_scan_slices.py`, `test_temporal_exports.py`, `test_scientific_tables.py`|READY supported selectors/precision/masks; remote stable window/revision leases and genuine temporal producer evidence remain absent/unverified.|
+|RC-P2.3|Provider-reference workflow/runner, `tools/workflows/` and functional acceptance tools; `test_nonuniform_export_oracle.py`, `test_scientific_scenario.py`|READY verification tools; independent admitted provider/model/datum/reference tuple and scanner failure block real accuracy acceptance. Recorded TIFF handling is not science execution.|
+|RC-P2.4|Bounded atomic sync/async export, cancellation/error preservation; `test_exports.py`, `test_async_exports.py`, `test_native_stream_workload.py`|READY stream/budget/interrupt behavior; representative provider soak/hardware-specific capacity remains unverified.|
+|RC-P2.5|`open_raster`, `to_dataframe`, `open_vector`, analysis association helpers; `test_scientific_analysis.py`, `test_scientific_tables.py`, `test_vector_analysis.py`|READY declared scalar/rectilinear raster/vector subset; general categorical dictionaries/time/multidimensional mediation need authoritative mappings and fixtures, not guessed semantics.|
+|RC-P3.1|`GraphProjection`/`AsyncGraphProjection`, invalidation/refetch; `test_graph_projection.py`, `test_async_graph.py`, `test_notifications.py`|READY honest stale/partial views; authoritative committed two-client convergence cannot be established without native commit/version protocol.|
+|RC-P3.2|Both graph browsers/projections refresh; `test_graph_projection.py`, `test_async_graph.py`; SIM-REFRESH-001|READY bounded outage/denial/refetch behavior; inherited accepted explicit refresh remains bounded, not complete replay.|
+|RC-P3.3|`Job`/`AsyncJob`, handle/binding checks; `test_job_binding.py`, `test_job_result_envelope.py`, `test_deleted_state_recovery.py`|READY deadline/cancel/empty/unknown/no-replay behavior; durable restart/history/incarnation acceptance remains native.|
+|RC-P3.4|`fetch_provenance`, `async_fetch_provenance`, execution evidence helpers; `test_provenance.py`, `test_async_provenance.py`, `test_async_execution_evidence.py`|READY partial plans versus recorded effects; complete historical/revision-pinned lineage and semantic-update science remain incomplete.|
+|RC-P3.5|Native `AsyncClient`, `ExperimentRunner`, local own-wait cancellation; `test_experiment_runner.py`, `test_async_notebook_guards.py`; SIM-NOTEBOOK-001|READY actual packaged-kernel simulated concurrency and bounded native historical slices; full deployment multi-principal/committed-race notebook acceptance remains unverified.|
+|RC-P4.1|`SemanticExplorer`/`AsyncSemanticExplorer`, `ResourceInspector`/async; `test_semantic_explorer.py`, `test_async_semantic_explorer.py`, `test_resource_inspector.py`|READY supported canonical/hierarchy/predicate/authority and inert asset reads; full applicability/revision/access/modern candidate-protocol compatibility remains unverified.|
+|RC-P4.2|`SourcePreviews`/async, `Authoring.parse`/async; `test_source_previews.py`, `test_async_source_previews.py`, `test_source_credential_preflight.py`|READY exact source/DTO and explicit unknown revision; semantic revision and live draft-persistence matrix are distinct from parser success.|
+|RC-P4.3|`ResourceImporter`/async, `Authoring`/async ADD; `test_resource_imports.py`, `test_model_source_authoring.py`; SIM-IMPORT-001/SIM-INPUT-BINDING-001|READY bounded advertised uploads/source association/input receipt; positive retained Java upload needs approved resource custody/cleanup; generic annotation/immutable lineage not established. Original NOT_IMPLEMENTED snapshot is not current supported-slice status.|
+|RC-P4.4|`Authoring`/async create methods, `ProjectLock`/async; `test_authoring.py`, `test_project_locks.py`, `test_behavior_authoring.py`|READY explicit ADD/lock acknowledgements; generic accepted-source revision conflict/history/publication is not solved by principal-shared locks. Specialized rejected-ontology sourceVersion contract does not justify blind overwrite.|
+|RC-P4.5|`AgentPreviews`/async, `AgentExecutions`/async deferred registration, `DeferredAgent`, `AgentChannel`, status/control journal; `test_agent_execution.py`, `test_async_agent_registration.py`, `test_agent_messaging.py`, `test_agent_control.py`|READY supported BEHAVIOR/control/AMQP wire subset; managed Runtime/principal-incarnation/independent cleanup acceptance remains unverified. Broker is explicitly synchronous/thread-affine, not hidden async threads.|
+|RC-P5|No worker/local runtime API added|EXCLUDED C; separate product decision, not a current Python backlog item.|
+|RC-R1|Package/fixture/CI/coverage plus bounded Java/N/S tools; `test_scientific_test_inventory.py`, `test_feature_coverage.py`, `test_workflow_validation.py`|READY layered regression execution; scheduled pinned scientific worker/artifacts/default adoption/cadence remains infrastructure approval/evidence.|
+|RC-R2|`tools/check_release_readiness.py`, support policy; `test_release_readiness.py`, `test_release_demos.py`|READY build/evidence checker; public version/support/security-owner/publication decisions and genuine release gates remain blocked. No tag/upload is authorized by passing tests alone.|
+|CAP-01|Credential/profile/connect operations and RC-P1.1 tests|READY explicit reacquisition and trust pins; actual issuer/license/optional secret-store support requires selected contract and operator provisioning.|
+|CAP-02|`Connection.catalog/refresh/wait_ready/initialize_peers`; `test_connection.py`, `test_connection_guards.py`|READY explicit selected peers and capability changes; mixed deployed support matrix remains unverified.|
+|CAP-03|`Endpoint`, origin-qualified clients/handles; `test_runtime_binding.py`, `test_connected_workflow_safety.py`, `test_scope_selection_guards.py`|READY configured routing and early foreign-binding refusal; composition/migration/automatic failover is native platform scope, not implemented here.|
+|CAP-04|Typed requests/context/focus/register/query facades; `test_typed_requests.py`, `test_scope_selection_guards.py`, `test_client.py`, `test_async_client.py`|READY supported typed operations; actual option/relationship scientific effects remain independently unverified.|
+|CAP-05|Sync/async semantic explorers and `KnowledgeState`; `test_semantic_explorer.py`, `test_async_semantic_explorer.py`, `test_semantic_dependencies.py`|READY supported remote semantic subset; complete composition/maintained revision requires verified native contracts, not local inference.|
+|CAP-06|Typed `ExecutionEvidence`, provenance/dataflow decoders and async helpers; `test_execution_evidence.py`, `test_async_execution_evidence.py`|READY bounded accepted plan/effect distinction retained; complete lineage remains RC-P3.4.|
+|CAP-07|Jobs/experiments/native async; `test_async_client.py`, `test_job_binding.py`, `test_experiment_runner.py`|READY bounded concurrency/polling/cancellation; native durable lifecycle and broader multi-principal acceptance remain.|
+|CAP-08|`ScientificData`, exact DTO decoding and tables; `test_scientific_tables.py`, `test_read_semantics_isolation.py`, `test_client.py`|READY NUMBER/BOOLEAN/TEXT supported bounded read subset; simulator numeric slice does not replace real tests of other types.|
+|CAP-09|Native exports, `ScanSlice`, metadata/read descriptors; `test_temporal_exports.py`, `test_exports.py`, `test_scientific_analysis.py`|READY supported native transport/selection; categories/time/multi-shard/revision producer and scanner/exporter gaps remain.|
+|CAP-10|Both graph browsers/projections and partial provenance; `test_graph.py`, `test_async_graph.py`, `test_graph_projection.py`|READY partial/stale/refetch/cancellation behavior; authoritative versions/commit remain native.|
+|CAP-11|`ActivityNotifications`, explicit polling/refetch; `test_notifications.py`, `test_graph_projection.py`|READY best-effort scope hints/dedup/gaps/cleanup uncertainty; no durable cursor, ordering or gap-free resync contract invented.|
+|CAP-12|`ScientificData.dumps/loads`; `test_scientific_snapshots.py`; SIM-OFFLINE-SNAPSHOT-001 fresh socket-forbidden SDK process|READY accepted local inspection reinforced; saved origin is not current authorization, revision, graph history or queued replay.|
+|CAP-13|Resources services/inspectors/import schema views; `test_resource_inspector.py`, `test_async_resource_inspector.py`, `test_native_codelist_retrieval.py`|READY supported read/query/schema subset; provider dependencies/applicability/modern projections require actual native evidence.|
+|CAP-14|Authoring/import/preview/agent/lock APIs listed above; `test_authoring.py`, `test_behavior_authoring.py`, `test_project_locks.py`, `test_agent_execution.py`|READY supported explicit operations; parser/source ADD is not agent start, generic conditional editing or publication.|
+|CAP-15|Raster/vector/tabular adapters plus native async notebooks; `test_vector_analysis.py`, `test_scientific_analysis.py`, `test_notebook_demos.py`; SIM-ADAPTERS-001/SIM-NOTEBOOK-001|READY optional verified-data subset; unsupported category/time/multidimensional mappings remain explicit, no dependency imported automatically.|
+|CAP-16|Package/build/support checker, CI and exact tuple tools; `test_connected_distribution.py`, `test_release_readiness.py`, `test_workflow_validation.py`|READY implementation/evidence tools; release approval, maintained compatibility, scheduled L4 and provider scale remain distinct.|
+|CAP-17|No worker/provider SDK shipped|EXCLUDED C; same boundary as RC-P5.|
+|CAP-18|Transport/origin/no-replay/redaction/optional-import invariants; `test_review_findings.py`, `test_source_credential_preflight.py`, `test_runtime_binding.py`|READY current regression invariants; no simulation fallback from failed real service, no simulator distribution in SDK; unknown future contracts are not certified.|
+
+**Reconciliation candidate result:** 42 original IDs accounted for: 40 READY
+supported Python slices, 2 EXCLUDED C. This is not 40 complete acceptance rows.
+The broader original rows remain partial/blocked/unverified except their explicitly
+accepted bounded subsets. No newly identified independently supported Python API
+gap remains after merged PR263; that bounded engineering conclusion is subject to
+checkpoint delivery and subsequent independent review. It is not a
+claim that all native APIs are wrapped or all potential future client work is done.
+
+No additional simulator implementation is justified merely by older NOT_RUN markers
+in the historical table. Unit/MockTransport/native wire and attributed historical
+Java acceptance may already exercise supported operations. Broader real producer,
+role/issuer, commit/retention, source-version/publication and scientific requirements
+cannot be completed by finite simulation or unsafe client emulation. Those remain
+visible acceptance obligations. The final checkpoint will record remote delivery,
+package provenance and limitations before automatically starting the queued review.
 
 Production async-analysis correction (active `feature/python-async-analysis-export`):
 two red tests reproduced a missing public awaited association helper and the sync
