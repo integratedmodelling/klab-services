@@ -1,5 +1,31 @@
 {
   "version": 1,
+  "contract_classifications": [
+    {
+      "category": "VERIFIED_JAVA",
+      "cases": ["SIM-SELECTION-001", "REPLAY-001", "SIM-INPUT-BINDING-001"],
+      "properties": "Captured semantic/model read DTOs and historical empty/Error result; historically accepted resource-as-observable namespace source form only",
+      "evidence": "Pinned replay-cases.json per-capture original SHA/UTC; historical prepared-namespace-parse.json. This does not verify the surrounding simulated lifecycle, admission or computation."
+    },
+    {
+      "category": "SIMULATED_PROVISIONAL",
+      "cases": "ALL",
+      "properties": "All finite scheduling, private admission, synthetic grid/offset assumptions, metadata projections, exact-source compiler substitute, fault controls and replay authentication/missing-route policy unless a narrower verified property is cited",
+      "evidence": "Scenario implementation and isolated SDK tests; native Java source shapes alone do not prove observed Java behavior. PROVISIONAL_SIMULATOR_CONTRACT in older confidence strings is an alias for this category."
+    },
+    {
+      "category": "JAVA_INCOMPATIBLE",
+      "cases": ["SIM-GRID-001", "SIM-USGS-001", "SIM-INPUT-BINDING-001"],
+      "properties": "Successful complete numerical workflow differs from the actual preserved USGS Java attempt, whose FINISHED Job delivered empty/Error after the null-scanner failure; applies to that attributed environment/workflow, not all Java runtimes",
+      "evidence": "MODELER_REAL_DEM_REMEDIATION_REPORT.md section12; pinned historical failed Job result. A simulator success cannot clear this observed difference."
+    }
+  ],
+  "staging_reference": {
+    "project": "klab.staging.vxii",
+    "access": "LOCAL_READ_ONLY_SOURCE_AVAILABLE",
+    "receipt": "notes/python-roadmap-execution/evidence/ab-staging-vxii-source-reference-20261106.json",
+    "execution": "Owner-confirmed working Java workflows; inspected source here, no new Java run or wire capture. Do not promote all simulator assumptions from source inspection alone."
+  },
   "cases": [
     {
       "id": "SIM-DISCOVERY-001",
@@ -220,6 +246,18 @@
       "confidence": "SOURCE_ENVELOPE; schema simulator.native.geotiff and finite applicability/fault injection PROVISIONAL_SIMULATOR_CONTRACT; bytes AUTHENTIC_FIXTURE_SIMULATED_DELIVERY",
       "simulator_test": "test_exports.py::test_exact_pinned_native_export_preserves_original400cells_and_metadata",
       "java_status": "NOT_RUN in this slice; preserved scanner failure remains; small recorded export does not establish real Runtime science or representative-scale provider throughput"
+    },
+    {
+      "id": "SIM-INPUT-BINDING-001",
+      "rows": ["RC-P4.3", "RC-P4.4", "CAP-13", "CAP-14"],
+      "api": "ResourceImporter/AsyncResourceImporter; Authoring/AsyncAuthoring; Resolver.resolve; Context.observe; fetch_data",
+      "routes": ["POST /resources/import/{schema}/{urn}", "POST /resources/parseAsset/NAMESPACE", "PUT /resources/api/v1/submit/{kind}/ADD?urn={urn}", "POST /resolver/api/v1/resolve", "POST /runtime/api/v1/submit"],
+      "request": "Exact declared semantic-source fixture binding the private admitted resource; new owned workspace/project/document with literal consent; native authentic grid",
+      "expected": "No compute before admission; plan explicitly names bound model and resource;400recorded authentic cells match independent oracle; input receipt matches uploaded SHA/count; retained ADD assets require explicit simulator-owned cleanup",
+      "source": "Historical prepared-namespace-parse.json native source form; source-derived ADD contracts and original Authoring APIs; native multipart/ResourceSet/Resolver contracts",
+      "confidence": "NATIVE_SOURCE_FORM; exact fixture parser/admission/model selection/metadata.input PROVISIONAL_SIMULATOR_CONTRACT; not a compiler or immutable lineage guarantee",
+      "simulator_test": "test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt",
+      "java_status": "NOT_RUN in this slice; real positive import needs approved cleanup tuple and actual Runtime remains blocked by scanner defect; no scientific Java promotion"
     }
   ]
 }

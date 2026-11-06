@@ -105,6 +105,7 @@ def test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup(sim
     report = control(simulator)
     assert report["counts"] == {"sessions": 0, "contexts": 0, "jobs": 0, "observations": 0}
     assert all(row["backend"] == "SIMULATED" for row in report["trace"])
+    assert all(row["contract_category"] == "SIMULATED_PROVISIONAL" for row in report["trace"])
     assert all(row["fixture_origin"] == "SYNTHETIC_SIMULATOR" for row in report["trace"])
     assert "sim-token-" not in json.dumps(report)
 

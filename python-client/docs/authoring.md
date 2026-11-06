@@ -3,8 +3,10 @@
 **Controlled namespace-only acceptance passed on the rebuilt backend tuple below;
 this is not permission to write to retained deployments.** This is a bounded
 extension of the existing Resources API, not the complete editing/publishing SDK.
-Only synchronous Client, NAMESPACE source, and new workspace/project/
-document creation are admitted. No running deployment/worldview change or parser port.
+`Authoring` (Client) and `AsyncAuthoring` (AsyncClient) admit NAMESPACE source and
+new workspace/project/document creation with shared safety checks. Native async
+awaits transport directly, without thread wrappers. No running deployment/worldview
+change or parser port.
 Server prerequisites merged separately in PRs #114 and #115. Final client-head
 checks are still required before PR #110 can merge.
 
@@ -33,6 +35,23 @@ project/workspace cleanup and read-only restart persistence. That server operati
 refuses nonempty workspaces and never cascades. No general cleanup across arbitrary
 server versions is claimed. There is no automatic rollback/deletion hidden
 in a context manager, and no remote resource upload/import here.
+
+Native async uses the same consent, exact-source, identity, bounded-response and
+uncertain-write rules:
+
+```python
+from klab_client import AsyncAuthoring
+
+author = AsyncAuthoring(async_client)
+parsed = await author.parse("namespace python.my_draft;\n")
+workspace = await author.create_workspace("my-new-owned-workspace", allow_write=True)
+project = await author.create_project(workspace, "my-new-owned-project", allow_write=True)
+receipt = await author.create_document(parsed, project, allow_write=True)
+```
+
+The facade adds no permission, compiler, automatic cleanup or retry. The separate
+development simulator exercises finite exact-source imports/bindings over HTTP;
+that is Python contract evidence, not new live Java admission/scientific evidence.
 
 The caller must have user authorization plus CREATE/project privileges
 on the explicitly configured Resources service. In the pinned Java ScopeManager,

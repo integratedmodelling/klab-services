@@ -23,7 +23,7 @@ from klab_client.client import Client, Context, Session, Job, JobStatus, Scienti
 from klab_client.tables import to_dataframe
 from klab_client.graph import GraphBrowser, GraphPage
 from klab_client.graph_projection import GraphProjection, GraphProjectionView, ProjectedGraphPage
-from klab_client.authoring import Authoring, AuthoringReceipt, ParsedSource
+from klab_client.authoring import AsyncAuthoring, Authoring, AuthoringReceipt, ParsedSource
 from klab_client.source_previews import SourcePreview, SourcePreviews, AsyncSourcePreviews
 from klab_client.agents import AgentPreviews, AgentSourcePreview
 from klab_client.agent_status import AgentStatusSnapshot, decode_agent_status
@@ -65,7 +65,7 @@ __all__ = [
     "ResourceImporter", "AsyncResourceImporter", "ImportFormat", "ImportSubmission",
     "ScanSlice",
     "ActivityNotifications", "ActivityNotification", "NotificationBroker",
-    "Authoring", "AuthoringReceipt", "ParsedSource",
+    "AsyncAuthoring", "Authoring", "AuthoringReceipt", "ParsedSource",
     "SourcePreview", "SourcePreviews", "AsyncSourcePreviews",
     "AgentPreviews", "AgentSourcePreview",
     "AgentStatusSnapshot", "decode_agent_status",

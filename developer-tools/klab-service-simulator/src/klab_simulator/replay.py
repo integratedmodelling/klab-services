@@ -6,6 +6,7 @@ import hashlib
 from urllib.parse import unquote, urlsplit
 
 from .state import ContractError, State
+from .contracts import SIMULATED_PROVISIONAL, VERIFIED_JAVA
 
 
 class ReplayState(State):
@@ -18,6 +19,14 @@ class ReplayState(State):
         self.cases = json.loads(raw)
         if len(self.cases) > 64:
             raise ValueError("Replay case budget exceeded")
+
+    def _contract_category(self, method, path, body, status):
+        route = unquote(urlsplit(path).path)
+        if status == 200 and not urlsplit(path).query and any(
+                case["method"] == method and case["path"] == route
+                and body == (case.get("request_text") or "").encode() for case in self.cases):
+            return VERIFIED_JAVA  # Payload provenance only; backend remains REPLAY.
+        return SIMULATED_PROVISIONAL  # Replay auth/control/missing-case policy is ours.
 
     def _request(self, method, path, headers, body):
         if urlsplit(path).query:

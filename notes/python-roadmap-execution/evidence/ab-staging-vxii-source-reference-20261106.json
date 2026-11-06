@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-06",
+  "project": "klab.staging.vxii",
+  "access": "LOCAL_READ_ONLY_SOURCE_AVAILABLE",
+  "root": "$HOME/.klab/services/resources/workspaces/klab.staging.vxii",
+  "owner_report": "Ferdinando confirmed working self-contained Java end-to-end workflows; user supplied this confirmation during the active campaign",
+  "performed": "Read-only source/harness inspection and bounded file hashing; no services, Jobs, testsuites or repairs executed",
+  "observed_java_execution_here": false,
+  "files": [
+    {"path": "META-INF/manifest.json", "sha256": "30a48c6365ad0f8328a927a069bb4fea2962caabec661ad6ba37a80a1cc60c93"},
+    {"path": "testcases/klab/staging/vxii/testsuite.kactors", "sha256": "d219ac9f08c9082c78074ee25b4dd520b66d07a056688f433b1c4d2e8bcddc6e"},
+    {"path": "src/staging/vxii/basic.kim", "sha256": "c2ef48d4d9de5203c05c414a9ca541223546d011d96115738f5906ae90557cd3"},
+    {"path": "src/staging/vxii/test/process/basic.kim", "sha256": "a35d4ed1cee6016769f7726a91abef2e3b85384bb36ecae421d6ef00bc328dc6"},
+    {"path": "src/staging/vxii/test/lut/basic.kim", "sha256": "0959529a550cca500aa668e51bd6546ed3c07ae6aca4daa442d8f9ac252f7422"},
+    {"path": "docs/selection-acceptance.md", "sha256": "2d7225c1399b8ec1d119bdc44fe655a99d255ae910ba9ca88b33515012d6daa7"},
+    {"path": "docs/query-acceptance.md", "sha256": "fec23eb655be7a97f69b0dd773f7fde2e9b3fb991f1ec7b4f316053aab0c28b7"}
+  ],
+  "reference_sequences": [
+    {"action": "resolve_quality", "lines": "74-86", "sequence": "context.new; submit terrestrial Region with explicit support and !observer; submit elevation within that committed Region with namespace staging.vxii.basic and project klab.staging.vxii; assert viable and no nodata", "use": "Reference initialization/focus/lexical-scope workflow, not guessed REST field names"},
+    {"action": "storage_views", "lines": "112-129", "sequence": "Explicit projected5x4 Region at100m; scoped elevation; grid/membership checks; D2_XY,D2_YX,D2_XInvY indexed scans and millimetre mediation", "use": "Reference scientific adapter/scan matrix; current native-initialization simulator guard is a finite limitation, not a claim Java lacks mediation"},
+    {"action": "monthly_process", "lines": "134-149", "sequence": "Region2014/daily request; monthly Erosion model; query process/elevation; focus Region; twelve calendar-month supports and relative minus10m transitions plus process provenance", "use": "Reference temporal/slice assertions; do not reproduce random terrain, replace Java scheduling or claim missing Java temporal support"},
+    {"action": "selected_model_input", "lines": "348-360", "sequence": "Recover the consumer's committed local selected-input receipt, independently inspect membership and compare numeric count", "use": "Reference distinction between actual bound input and an unrelated post-hoc query; simulator metadata.input remains explicitly provisional, not equivalent to the native selection receipt"}
+  ],
+  "limitations": "Source availability and owner confirmation are retained separately from execution receipts. Authoritative native operation/receipt tests exist in repository; this pass has not run them or captured matching HTTP calls. No blocking dependency on Monday walkthrough."
+}
