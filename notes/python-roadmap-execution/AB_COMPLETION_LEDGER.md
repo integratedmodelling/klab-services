@@ -82,7 +82,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P2.4 — A representative bounded stream/interrupt|P; S(slice) SIM-EXPORT-001 sync/async truncation/media/denial/byte-limit controls preserve original outputs|Native export controller; #198socket64MiB/PR206Java1Mcell; N representative provider soak; small recorded simulation is not throughput acceptance|
 |RC-P2.5 — A faithful raster/xarray and categorical views|P; analysis/tables/vector; SIM-GRID-001/SIM-USGS-001 partial|Native formats, PR204GeoJSON and frozen metadata; N category/time/vector simulator; implement faithful served fixtures only|
 |RC-P3.1 — A committed two-client race convergence|P; projection/invalidation/refetch; simulator race NOT_RUN|KnowledgeGraphQuery/activity hint contracts; B(JAVA-COMMIT-001/#126); test honest stale/refetch, label provisional ordering explicitly|
-|RC-P3.2 — A disconnect and honest partial refresh|P for new simulator acceptance; existing bounded acceptance retained; simulator disconnect NOT_RUN|#199actual outage/restart/refetch; add simulator disconnect and explicit partial refresh, never durable replay|
+|RC-P3.2 — A disconnect and honest partial refresh|S(slice) SIM-REFRESH-001 actual HTTP403/500/disconnect invalidates retained pages, explicit one-page refetch leaves others stale/partial|#199actual bounded outage/refetch retained; simulator faults SIMULATED_PROVISIONAL; no global resync/durable replay or rechecked authorization claim; delivery active|
 |RC-P3.3 — A cancel/expiry/restart/no replay|P; Job/AsyncJob/binding; S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001 zero-deadline resume, finite EMPTY expiry, concurrent cancellation|Native JobManager/status/boolean empty; PR243MERGEDb9ee02b91; B(JAVA-RETENTION-001); Java retention/incarnation/restart still pending|
 |RC-P3.4 — A explain actual dependencies and semantic effects|P; provenance/evidence/activity APIs; S(slice) SIM-PROVENANCE-001|Native query/LinkImpl and PR239/240real bounded views; B(JAVA-COMMIT-001); simulate explicit partial plans/recorded effects, no historical lineage claim|
 |RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; async vertical only, notebook/races NOT_RUN|PR210/211/225real bounded acceptance; N integrated multiprincipal notebook; reuse workflows with simulator concurrency/cancel controls|
@@ -149,6 +149,18 @@ or completion claim. Small protocol regressions cannot substitute for this inven
   approval/protection. User now authorizes normal publication, not bypass.
 
 ## Completion assessment
+
+Partial-refresh increment (active `feature/python-simulator-partial-refresh`): the
+existing production graph APIs now have actual simulator HTTP denial/500/disconnect
+cases with positive recovery. All pages become stale on failed refresh; explicit
+one-page refetch does not mark other pages current, consistency remains UNKNOWN,
+local retained data remains NOT_RECHECKED authorization, and clear does not dispose
+remote state. Test-only bounded fault controls are SIMULATED_PROVISIONAL. PR249 is
+open atb2851e997 with hosted CI/review pending; no feature-branch merge bypass.
+Validation:72tests against both current extracted wheels, fatal-error lint and
+16-file source/wheel/sdist parity PASS. Receipt:
+`evidence/ab-simulator-refresh-validation-20261106.json`. This does not establish
+Java committed-version ordering, durable replay or a full-parent RC-P3.1 closure.
 
 Active source-binding pass: the public native async gap in source authoring was
 implemented as `AsyncAuthoring`, sharing exact-source/consent/identity/confirmation
