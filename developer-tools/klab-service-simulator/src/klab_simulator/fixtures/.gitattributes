@@ -1,0 +1,3 @@
+# Preserve captured Windows bytes and treat their CRLF as line endings, not dirt.
+*.json -text whitespace=cr-at-eol
+*.tif -text

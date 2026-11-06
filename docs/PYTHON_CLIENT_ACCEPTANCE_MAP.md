@@ -1,5 +1,10 @@
 # Python roadmap acceptance map — 3 November 2026
 
+Ongoing completion/progress and independent Python/simulator/Java/science dimensions
+are maintained only in [AB_COMPLETION_LEDGER.md](../notes/python-roadmap-execution/AB_COMPLETION_LEDGER.md).
+The42criterion definitions below remain authoritative; dated delivery narratives
+are historical snapshots, not automatic roadmap completion or current blockers.
+
 ## 6 November reconciliation — no primary acceptance promotion
 
 The [full outstanding-issue ledger](../notes/python-roadmap-execution/AB_OUTSTANDING_ISSUE_RECONCILIATION.md)

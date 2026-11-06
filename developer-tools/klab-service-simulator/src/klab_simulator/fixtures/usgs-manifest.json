@@ -1,0 +1,10 @@
+{
+  "origin": "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY",
+  "originalOracleSha256": "22ed905702f9e8bed9dc6a98f07ff7762877459c55cb50e581ec1a6fa7519b76",
+  "projection": "Only private source/crop paths redacted; all400frozen scientific values/metadata unchanged",
+  "oracleSha256": "3fe5383b15232a3e09bf5188c9bfef41439d2fbac929970d6b682bf52e580607",
+  "cropSha256": "2c9fcd0748b9ef3d8c036a59af5c1419a826ba14262a3a80d089b1d59023fb26",
+  "sourceSha256": "026ec5429ddb1197b46247dd97832e2abe246be112e7133f4fce5029fea50de5",
+  "licence": "USGS3DEP UnitedStates government data; verify publisher rights for any downstream additions",
+  "scientificJavaExecution": "NOT_VERIFIED; replaying authenticcells is not a JavaRuntime result"
+}

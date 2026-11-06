@@ -1,0 +1,309 @@
+[
+  {
+    "id": "REPLAY-SEM",
+    "method": "POST",
+    "path": "/reasoner/api/v1/resolve/observable",
+    "request_text": "geography:Elevation in m",
+    "status": 200,
+    "payload": {
+      "@CLASS": "org.integratedmodelling.common.knowledge.ObservableImpl",
+      "semantics": {
+        "@CLASS": "org.integratedmodelling.common.knowledge.ConceptImpl",
+        "urn": "geography:Elevation",
+        "metadata": {
+          "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+          "delegate": {
+            "klab:conceptDefinition": "geography:Elevation",
+            "klab:referenceName": "geography__elevation",
+            "rdfs:comment": "Elevation of an Earth surface above sea level.",
+            "klab:baseDeclaration": "true"
+          },
+          "unnamedKeys": []
+        },
+        "type": [
+          "QUALITY",
+          "EXTENSIVE",
+          "QUANTIFIABLE",
+          "OBSERVABLE",
+          "LENGTH"
+        ],
+        "namespace": "geography",
+        "name": "Elevation",
+        "referenceName": "geography__elevation",
+        "isAbstract": false,
+        "collective": false,
+        "annotations": [
+          {
+            "@CLASS": "org.integratedmodelling.klab.api.lang.AnnotationImpl",
+            "delegate": {
+              "#name": "fixme",
+              "_p1": "This seems wrong rather than unconventional. But this is important and we should articulate it properly."
+            },
+            "unnamedKeys": [
+              "_p1"
+            ]
+          },
+          {
+            "@CLASS": "org.integratedmodelling.klab.api.lang.AnnotationImpl",
+            "delegate": {
+              "#name": "colormap",
+              "_p1": "terrain",
+              "center": 0,
+              "min": -10935,
+              "max": 8849
+            },
+            "unnamedKeys": [
+              "_p1"
+            ]
+          }
+        ],
+        "notifications": [],
+        "contextualization": "MEASURE",
+        "nonSemanticId": 0
+      },
+      "contextualization": "MEASURE",
+      "artifactType": "NUMBER",
+      "isAbstract": false,
+      "urn": "geography:Elevation in m",
+      "unit": {
+        "@CLASS": "org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl",
+        "definition": "m",
+        "contextual": false,
+        "unitless": false,
+        "aggregatedDimensions": {}
+      },
+      "optional": false,
+      "generic": false,
+      "resolutionDirectives": [],
+      "annotations": [],
+      "referenceName": "geography__elevation",
+      "name": "elevation",
+      "metadata": {
+        "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+        "delegate": {},
+        "unnamedKeys": []
+      },
+      "genericComponents": [],
+      "specializedComponents": []
+    },
+    "source": "REAL_JAVA_CAPTURE",
+    "build": "202610301844",
+    "original_body_sha256": "6325944e5deedc906abc8e61f2748922a5240f57ca520cdd5333a54ff548f38f",
+    "capture_utc": "2026-11-06T16:18:00.934653+00:00",
+    "backend_when_served": "REPLAY",
+    "scientific_execution": false
+  },
+  {
+    "id": "REPLAY-MODEL",
+    "method": "GET",
+    "path": "/resources/api/v1/retrieve/MODEL/scientific.examples.usgs_virginia.elevation-quantifier",
+    "request_text": null,
+    "status": 200,
+    "payload": {
+      "@CLASS": "org.integratedmodelling.klab.api.lang.kim.impl.KimModelImpl",
+      "offsetInDocument": 186,
+      "length": 88,
+      "annotations": [],
+      "deprecated": false,
+      "projectName": "scientific.usgs.virginia",
+      "serviceId": "4fa96242-5fa1-4647-ba24-cdc8b29e7549",
+      "metadata": {
+        "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+        "delegate": {},
+        "unnamedKeys": []
+      },
+      "namespace": "scientific.examples.usgs_virginia",
+      "scope": "PUBLIC",
+      "notifications": [],
+      "documentClass": "NAMESPACE",
+      "dependencies": [],
+      "observables": [
+        {
+          "@CLASS": "org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl",
+          "offsetInDocument": 250,
+          "length": 24,
+          "annotations": [],
+          "deprecated": false,
+          "projectName": "scientific.usgs.virginia",
+          "metadata": {
+            "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+            "delegate": {},
+            "unnamedKeys": []
+          },
+          "namespace": "scientific.examples.usgs_virginia",
+          "scope": "PUBLIC",
+          "notifications": [],
+          "documentClass": "NAMESPACE",
+          "semantics": {
+            "@CLASS": "org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl",
+            "offsetInDocument": 250,
+            "length": 19,
+            "annotations": [],
+            "deprecated": false,
+            "projectName": "scientific.usgs.virginia",
+            "metadata": {
+              "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+              "delegate": {},
+              "unnamedKeys": []
+            },
+            "namespace": "scientific.examples.usgs_virginia",
+            "scope": "PUBLIC",
+            "notifications": [],
+            "documentClass": "NAMESPACE",
+            "type": [
+              "OBSERVABLE",
+              "QUALITY",
+              "EXTENSIVE",
+              "LENGTH",
+              "QUANTIFIABLE"
+            ],
+            "declaredSubjective": false,
+            "observable": {
+              "@CLASS": "org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl",
+              "offsetInDocument": 250,
+              "length": 19,
+              "annotations": [],
+              "deprecated": false,
+              "metadata": {
+                "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+                "delegate": {},
+                "unnamedKeys": []
+              },
+              "namespace": "geography",
+              "scope": "PUBLIC",
+              "notifications": [],
+              "documentClass": "NAMESPACE",
+              "name": "geography:Elevation",
+              "type": [
+                "OBSERVABLE",
+                "QUALITY",
+                "EXTENSIVE",
+                "LENGTH",
+                "QUANTIFIABLE"
+              ],
+              "declaredSubjective": false,
+              "about": [],
+              "traits": [],
+              "roles": [],
+              "negated": false,
+              "urn": "geography:Elevation",
+              "operands": [],
+              "collective": false,
+              "pattern": false,
+              "patternVariables": [],
+              "valueOperators": [],
+              "contextualization": "MEASURE",
+              "argumentType": []
+            },
+            "about": [],
+            "traits": [],
+            "roles": [],
+            "negated": false,
+            "urn": "geography:Elevation",
+            "operands": [],
+            "collective": false,
+            "pattern": false,
+            "patternVariables": [],
+            "valueOperators": [],
+            "contextualization": "MEASURE",
+            "argumentType": []
+          },
+          "unit": "m",
+          "resolutionDirectives": [],
+          "valueOperators": [],
+          "optional": false,
+          "codeName": "elevation",
+          "generic": false,
+          "referenceName": "geography__elevation",
+          "global": false,
+          "exclusive": false,
+          "urn": "geography:Elevation in m",
+          "patternVariables": []
+        }
+      ],
+      "resourceUrns": [
+        {
+          "@CLASS": "org.integratedmodelling.klab.api.knowledge.Urn",
+          "urn": "resources.eric.lumsden:staging:usgs:virginia20211229",
+          "fullUrn": "resources.eric.lumsden:staging:usgs:virginia20211229",
+          "parameters": {}
+        }
+      ],
+      "learningModel": false,
+      "urn": "scientific.examples.usgs_virginia.elevation-quantifier",
+      "contextualization": [],
+      "inactive": false
+    },
+    "source": "REAL_JAVA_CAPTURE",
+    "build": "202610301844",
+    "original_body_sha256": "15b3807280d4e551dfba033b45a3a273332da77bed6847d5a9205d9f8291c1b3",
+    "capture_utc": "2026-11-06T16:18:00.950458+00:00",
+    "backend_when_served": "REPLAY",
+    "scientific_execution": false
+  },
+  {
+    "id": "REPLAY-SCANNER-STATUS",
+    "method": "GET",
+    "path": "/runtime/jobs/status/9",
+    "request_text": null,
+    "status": 200,
+    "payload": {
+      "status": "FINISHED"
+    },
+    "source": "HISTORICAL_STATUS_REPORT_NOT_WIRE_CAPTURE",
+    "evidence": "MODELER_REAL_DEM_REMEDIATION_REPORT.md#12",
+    "backend_when_served": "REPLAY",
+    "scientific_execution": false
+  },
+  {
+    "id": "REPLAY-SCANNER-EMPTY",
+    "method": "GET",
+    "path": "/runtime/jobs/retrieve/9",
+    "request_text": null,
+    "status": 200,
+    "payload": {
+      "@CLASS": "org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl",
+      "participants": [],
+      "annotations": [],
+      "annotationPriorities": {},
+      "metadata": {
+        "@CLASS": "org.integratedmodelling.klab.api.collections.impl.MetadataImpl",
+        "delegate": {},
+        "unnamedKeys": []
+      },
+      "id": -1,
+      "transientId": 346,
+      "parentTransientId": 0,
+      "childrenCount": 0,
+      "parentId": -1,
+      "histograms": {},
+      "resolvedCoverage": 0.0,
+      "eventTimestamps": [],
+      "substantialQuality": false,
+      "notifications": [
+        {
+          "@CLASS": "org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl",
+          "message": "Contextualization of geography:Elevation in m failed",
+          "level": "Error",
+          "timestamp": 1793934490781,
+          "mode": "Normal",
+          "interactivity": "BATCH"
+        },
+        {
+          "@CLASS": "org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl",
+          "message": "Contextualization of (OBS) (O) geography:Elevation in m [null#400]* failed",
+          "level": "Error",
+          "timestamp": 1793934490779,
+          "mode": "Normal",
+          "interactivity": "BATCH"
+        }
+      ],
+      "empty": true
+    },
+    "source": "REAL_JAVA_CAPTURE_HISTORICAL",
+    "original_body_sha256": "ea16e21982fbacde27000295962fd3a7b452efd85e93be6fa399c675f77c938d",
+    "evidence": "MODELER_REAL_DEM_REMEDIATION_REPORT.md#12",
+    "backend_when_served": "REPLAY",
+    "scientific_execution": false
+  }
+]

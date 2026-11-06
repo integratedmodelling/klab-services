@@ -4,6 +4,10 @@
   `notes/python-roadmap-execution/MODELER_IDE_STATE.md` and its timestamps. Run its
   bounded read-only check only when the task needs live Modeler gates. Python-only
   work must not depend on IDE readiness; unavailable gates do not authorize repair.
+- Maintain `notes/python-roadmap-execution/AB_COMPLETION_LEDGER.md` as the single
+  ongoing A+B campaign ledger. Simulator verification, real Java compatibility and
+  scientific Java execution are distinct. Never silently fall back from real
+  services to simulation, and never ship simulator code in the production SDK.
 
 - Give development-pass updates directly in chat. Never require the user to open
   a separate document to understand what was done or the current status.
