@@ -7,7 +7,7 @@ from typing import Mapping
 from .client import Client
 from .dto import check_notifications, object_payload, required_text
 from .errors import InvalidRequestError, ProtocolError, UnsupportedOperationError
-from ._inspection import freeze
+from ._inspection import freeze, _reject_credential_leaves
 
 BEHAVIOR_CLASS = "org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl"
 AGENT_CLASS = "org.integratedmodelling.common.runtime.actors.AgentImpl"
@@ -58,6 +58,8 @@ class AgentPreviews:
             raise InvalidRequestError("Agent preview payload exceeded the response byte budget")
         if self.client.transport.redact(encoded) != encoded:
             raise InvalidRequestError("Agent preview values must not contain configured credential material")
+        _reject_credential_leaves(value, self.client.transport.redact,
+            "Agent preview values must not contain configured credential material")
 
     def _identity(self):
         resources = self.client.resources.capabilities(max_response_bytes=self.max_response_bytes)

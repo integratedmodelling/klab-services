@@ -45,6 +45,25 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
+Source credential preflight correction (active `fix/python-source-credential-preflight`):
+16red tests reproduced quote/backslash-containing synthetic credentials bypassing
+serialized-JSON-only checks in sync/native-async Authoring and AgentPreviews.
+Secret-bearing source reached MockTransport capability lookup, parser DTOs could
+be accepted or forwarded to mocked Runtime translation. This is local protocol
+evidence, **not an observed real credential leak or Java defect**. Read-only
+SourcePreviews already inspected decoded leaves and passed eight control cases.
+Extracted its bounded/cycle-free validated-JSON leaf check into shared pure helper
+and reused it for authoring/agent preview (including deferred-registration's shared
+validation). Do not rewrite source or metadata to hide credential-bearing data.
+Expanded42case matrix covers decoded values/keys, both facades, clean quoted-source
+positive controls and sanitized errors;379focused regressions PASS. Final exact
+wheel verification:3988SDK tests/all19exact gates/106simulator tests and lint PASS;
+100%lines+branches in `_inspection`, authoring, agents and source_previews;48source
+modules match wheel/sdist bytes and42original criteria remain unchanged. Receipt:
+`evidence/ab-source-credential-validation-20261106.json`. No simulator route/source,
+Java service, role or live source change. Publication/hosted delivery pending;
+PR262 remains open for normal hosted CI. The post-A+B review remains queued.
+
 Nonexecuting behavior-source ADD pass (active `feature/python-behavior-source-authoring`):
 two before-fix tests reproduced Authoring/AsyncAuthoring refusing a plain BEHAVIOR
 source draft despite the native KlabDocument ADD contract. Added exact-source DTO

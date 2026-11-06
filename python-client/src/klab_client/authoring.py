@@ -12,7 +12,7 @@ from .client import Client
 from .dto import check_notifications, object_payload, required_text
 from .errors import (InvalidRequestError, ProtocolError, ServerError,
                      SubmissionOutcomeUnknown, TransportError, UnsupportedOperationError)
-from ._inspection import freeze, text
+from ._inspection import freeze, text, _reject_credential_leaves
 from .evidence import _plain
 
 DOCUMENTS = {
@@ -80,6 +80,8 @@ class Authoring:
             raise InvalidRequestError("Authoring payload exceeded the configured byte budget")
         if self.client.transport.redact(encoded) != encoded:
             raise InvalidRequestError("Authoring identity/source must not contain configured credential material")
+        _reject_credential_leaves(value, self.client.transport.redact,
+            "Authoring identity/source must not contain configured credential material")
 
     def parse(self, source, *, kind="NAMESPACE"):
         self._source(source, kind)

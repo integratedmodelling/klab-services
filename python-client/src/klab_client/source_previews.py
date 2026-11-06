@@ -6,7 +6,7 @@ import re
 from types import MappingProxyType
 from typing import Mapping
 
-from ._inspection import freeze
+from ._inspection import freeze, _reject_credential_leaves
 from .client import Client
 from .dto import check_notifications, object_payload, required_text
 from .errors import InvalidRequestError, ProtocolError, UnsupportedOperationError
@@ -60,17 +60,8 @@ class SourcePreviews:
             raise ProtocolError("Parser preview exceeds the response budget")
         # Inspect decoded leaves too: JSON escaping must not hide a quoted or
         # non-ASCII credential from the check before source transmission.
-        pending = [value]
-        while pending:
-            item = pending.pop()
-            if isinstance(item, str):
-                if self._transport.redact(item) != item:
-                    raise InvalidRequestError("Preview identity/source must not contain configured credential material")
-            elif isinstance(item, dict):
-                pending.extend(item)
-                pending.extend(item.values())
-            elif isinstance(item, (list, tuple)):
-                pending.extend(item)
+        _reject_credential_leaves(value, self._transport.redact,
+            "Preview identity/source must not contain configured credential material")
 
     def _before_identity(self):
         if self._client.transport is not self._transport:
