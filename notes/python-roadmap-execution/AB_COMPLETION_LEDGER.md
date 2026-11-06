@@ -86,7 +86,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P3.3 — A cancel/expiry/restart/no replay|P; Job/AsyncJob/binding; S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001 zero-deadline resume, finite EMPTY expiry, concurrent cancellation|Native JobManager/status/boolean empty; PR243MERGEDb9ee02b91; B(JAVA-RETENTION-001); Java retention/incarnation/restart still pending|
 |RC-P3.4 — A explain actual dependencies and semantic effects|P; provenance/evidence/activity APIs; S(slice) SIM-PROVENANCE-001|Native query/LinkImpl and PR239/240real bounded views; B(JAVA-COMMIT-001); simulate explicit partial plans/recorded effects, no historical lineage claim|
 |RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; async vertical only, notebook/races NOT_RUN|PR210/211/225real bounded acceptance; N integrated multiprincipal notebook; reuse workflows with simulator concurrency/cancel controls|
-|RC-P4.1 — B meaning-based asset applicability/version/access|P; semantic/resource inspectors; S(slice) SIM-SELECTION-001/REPLAY-001|J(read) native captures; B(JAVA-CANDIDATES-001) newer protocol not advertised; extend implemented semantic/asset routes without Python reasoning|
+|RC-P4.1 — B meaning-based asset applicability/version/access|P; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-SEMANTICS-001/SIM-INSPECTION-001; sync/async finite canonical search, stale candidates, hierarchy/predicates and inert asset advertisements|VERIFIED_JAVA limited captured reads; new fixture answers SIMULATED_PROVISIONAL. Newer candidates protocol historical advertisement gap remains, not a forced Python selection API|
 |RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; simulator NOT_RUN|Native parseAsset DTOs, PR201/228real parsers; N maintained revision; add finite parser/fault/stale cases, no compiler port|
 |RC-P4.3 — B import/annotate/compute with input provenance|S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001: public sync/async upload, semantic source ADD, bound plan,400recorded cells/input receipt|PR244/249 merged, AsyncAuthoring delivered. SIMULATED_PROVISIONAL admission/input projection; JAVA_INCOMPATIBLE historical scanner; B(JAVA-RESOURCE-CLEANUP-001). No general native annotation/immutable lineage claim|
 |RC-P4.4 — B authorized edit/publish/conflict|P; Authoring/new AsyncAuthoring ADD; S(slice) SIM-INPUT-BINDING-001 exact-source/new workspace/project/document; no update/publish/conflict closure|Native CRUD and PR209/222real ADD; SIMULATED_PROVISIONAL finite parser/admission; remote locks/history/conditional edits remain contract inspection, not assumed absent|
@@ -98,7 +98,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-02 — A explicit catalog/selection/health and peer initialization|P; Connection catalog/selection/init; S(slice) SIM-DISCOVERY-001|Native capabilities/status/scope advertisement; N changing-capability/outage matrix; add finite controls|
 |CAP-03 — A/B configured origin-qualified routing|P; endpoints/handles; S(slice) SIM-LIFECYCLE-001 wrong-service refusal|Native scope/service identity; B(#124migration/composition); keep whole-workflow backend ownership, no automatic failover|
 |CAP-04 — A typed scope/observe/register/query/focus/grid|P; typed request/scope APIs; SIM-LIFECYCLE-001/SIM-GRID-001 partial|Native typed option/geometry contracts; N relationships/focus/full option matrix; extend supported cases|
-|CAP-05 — B semantic search/predicates/composition/revision objects|P; semantic facades; SIM-SELECTION-001/REPLAY-001 basic lookup|J(read) actual semantic capture; N broader predicates/composition/revision; finite vocabulary only, no ontology engine|
+|CAP-05 — B semantic search/predicates/composition/revision objects|P; S(slice) SIM-SEMANTICS-001 concept/observable, canonical authority paging, hierarchy/predicates, stale worldview refusal; broader composition/revision remains|VERIFIED_JAVA limited actual captured lookup; SIMULATED_PROVISIONAL finite SIM vocabulary, no local reasoning; absent reliable revision stays unknown|
 |CAP-06 — A typed plans versus execution|S(slice) SIM-SELECTION-001/SIM-PROVENANCE-001; inherited bounded acceptance retained|Native Dataflow/LinkImpl; PR239/240; full lineage remains RC-P3.4, no replay or scientific promotion|
 |CAP-07 — A jobs, polling, cancellation, sync/async and bounded concurrency|S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001: zero deadlines, resume, expiry distinct from cancellation, four concurrent async contexts|Native JobManager/Job routes; PR243merged; B(JAVA-RETENTION-001); finite retention is not Java durability|
 |CAP-08 — A exact sparse NUMBER/BOOLEAN/TEXT and explicit missingness|S(slice) SIM-GRID-001numeric/zero/negative/null/NaN; existing bounded acceptance retained|StorageScan.Point/text contract; N simulator Boolean/TEXT variants; preserve exact missingness and declared precision|
@@ -150,7 +150,25 @@ or completion claim. Small protocol regressions cannot substitute for this inven
 
 ## Completion assessment
 
-Scientific adapter increment (`feature/python-simulator-scientific-adapters`):
+Finite semantic/asset increment (active `feature/python-simulator-semantics`):
+86tests/lint pass locally. Public sync/async semantic facades now traverse native-shaped
+concept lookup, canonical authority paging with ambiguous labels, explicit selection,
+inert documentation, declared hierarchy/boolean predicates and stale-worldview refusal.
+UNAVAILABLE/UNSUPPORTED remain distinct from successful empty results. Reasoner
+worldviewId is supplied; no knowledgeRevision is invented. Public resource inspectors
+resolve advertised models/resources while retaining unknown selection/dependency
+completeness; inert provider URLs never reroute or expand credential trust. All new
+fixture answers are SIMULATED_PROVISIONAL, not verified Java ontology/provider facts.
+Final validation:86tests against both current extracted wheels, fatal-error lint and
+20-file source/wheel/sdist byte parity PASS. Receipt:
+`evidence/ab-simulator-semantics-validation-20261106.json`. No production SDK change.
+Per the user's priority clarification, further simulator additions require a named
+documented A+B client acceptance test; realism/breadth alone is not a work item.
+PR251 remotely MERGED at `013fda33e02880369e3280203801f8bf67f3a2ec`
+(18:07:24Z), hosted core3.11/3.13, dedicated scientific adapters, build and Jenkins
+passed. Current branch fast-forwarded to accepted integration preserving semantic edits.
+
+Scientific adapter increment (MERGED_BOUNDED PR251):
 initial native materialization of the pre-existing independent 4x5 N-oracle is
 separately pinned SYNTHETIC_SIMULATOR data, not a rewritten expected oracle or USGS
 substitute. The simulator serves frozen bytes with no scientific runtime dependencies.

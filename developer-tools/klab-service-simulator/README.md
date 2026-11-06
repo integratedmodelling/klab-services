@@ -82,6 +82,24 @@ working-workflow confirmation is retained separately from our source inspection;
 no new Java run or wire capture was performed. No Monday walkthrough dependency is
 introduced. Staging's generated terrain is not substituted for either frozen oracle.
 
+Finite semantic exploration uses the ordinary `SemanticExplorer` /
+`AsyncSemanticExplorer`: declared concept/observable lookup, a three-concept
+synthetic hierarchy/predicate table and two `SIM` authority codes with the same
+display label. Paging and explicit canonical-code selection are required; labels
+never auto-select a concept. Documentation remains an inert URL descriptor (no
+fetch/credential forwarding). `semantic-unavailable` returns native-shaped
+UNAVAILABLE, while unknown authority names return UNSUPPORTED, not empty success.
+All vocabulary/answers are SIMULATED_PROVISIONAL and not a real authority catalogue
+or ontology compiler. `worldviewId` is supplied; absent knowledgeRevision remains
+unknown. Authenticated test-only worldview change invalidates stored candidates;
+fresh search is required without inventing revision/durable semantic leases.
+
+`ResourceInspector` / `AsyncResourceInspector` can inspect advertised model meaning,
+listed resources and native-shaped resolve results. Catalog advertisements are not
+Resolver selection/execution or complete dependencies. Synthetic provider URLs in
+ResourceSet.services are inert descriptors and never expand configured endpoint
+trust or cause automatic requests to remote hosts.
+
 - **simulated (default):** finite coherent local state. Trace backend SIMULATED.
 - **replay:** `--mode replay`; exact pinned sanitized Reasoner/model reads and the
   historical failed Runtime result. Trace backend REPLAY. No session creation or

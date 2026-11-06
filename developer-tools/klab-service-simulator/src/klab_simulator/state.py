@@ -20,7 +20,7 @@ MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
-SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export")
+SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable")
 
 
 class ContractError(Exception):
@@ -49,6 +49,7 @@ class State:
         self.sessions, self.contexts, self.jobs, self.observations = {}, {}, {}, {}
         self.imported_resources = {}
         self.query_faults = {}
+        self.worldview_id = "synthetic"
         from .authoring import AuthoringState
         self.authoring = AuthoringState(self)
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
@@ -181,6 +182,9 @@ class State:
                 else:
                     self.query_faults[control["scope"]] = control["mode"]
                 return True, "application/json"
+            if method == "POST" and path == "/__sim__/changeWorldview":
+                self.worldview_id = "synthetic-next"
+                return True, "application/json"
             if method == "POST" and path == "/__sim__/reset":
                 self.sessions.clear()
                 self.contexts.clear()
@@ -189,6 +193,7 @@ class State:
                 self.imported_resources.clear()
                 self.query_faults.clear()
                 self.authoring.reset()
+                self.worldview_id = "synthetic"
                 self.next_context = self.next_job = self.next_observation = 1
                 return True, "application/json"
             raise ContractError(404, "Unknown test control")
@@ -205,7 +210,7 @@ class State:
             from .resource_imports import schemas
             from .exports import export_schemas
             return {"serviceId": self.service_ids[service], "type": service.upper(), "version": "simulator-0.1.0",
-                    "worldviewUrn": "synthetic", "consistent": True,
+                    "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                     "importSchemata": schemas() if service == "resources" else {},
                     "exportSchemata": export_schemas() if service == "runtime" and (
                         self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" or self.scenario == "nonuniform-export") else {}}, "application/json"
@@ -221,7 +226,7 @@ class State:
             data = json.loads(body) if body and headers.get("Content-Type", "").startswith("application/json") else None
         except (ValueError, UnicodeError):
             raise ContractError(400, "Invalid JSON request") from None
-        if data is not None and not isinstance(data, dict):
+        if data is not None and not isinstance(data, dict) and not (service == "reasoner" and route == "/api/v1/subsumes"):
             raise ContractError(400, "A JSON object is required")
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
@@ -231,6 +236,11 @@ class State:
             if body.decode() != "geography:Elevation in m":
                 raise ContractError(404, "Observable not in finite simulator vocabulary")
             return observable(), "application/json"
+        if service == "reasoner":
+            from .semantics import respond
+            semantic = respond(self, method, route, original_path, data, body)
+            if semantic is not None:
+                return semantic
         if service == "resources":
             authored = self.authoring.request(method, route, original_path, principal, body)
             if authored is not None:
@@ -256,7 +266,9 @@ class State:
                 self.jobs[(service, identity)].update(import_urn=urn, import_source=source)
                 return identity, "application/json"
             catalog = {"PROJECT": [{"urn": "simulator.project"}], "NAMESPACE": [{"urn": "simulator"}],
-                "MODEL": [{"urn": MODEL, "projectName": "simulator.project", "namespace": "simulator"}],
+                "MODEL": [{"urn": MODEL, "projectName": "simulator.project", "namespace": "simulator",
+                    "observables": [{"urn": "geography:Elevation in m", "unit": "m", "optional": False}],
+                    "dependencies": [], "resourceUrns": ["simulator:fixture:elevation"]}],
                 "RESOURCE": [{"urn": "simulator:fixture:elevation", "adapterType": "raster"}]}
             from .authoring import MODEL as INPUT_MODEL, NAMESPACE, RESOURCE
             namespace = self.authoring.assets.get(("NAMESPACE", NAMESPACE))
@@ -264,13 +276,26 @@ class State:
                 payload = deepcopy(namespace["payload"])
                 catalog["NAMESPACE"].append(payload)
                 catalog["MODEL"].append({"urn": INPUT_MODEL, "namespace": NAMESPACE,
-                                         "projectName": payload["projectName"]})
+                    "projectName": payload["projectName"], "resourceUrns": [RESOURCE],
+                    "observables": [{"urn": "geography:Elevation in m", "unit": "m", "optional": False}], "dependencies": []})
             for kind, entries in catalog.items():
                 if method == "GET" and route == "/api/v1/list/" + kind:
                     if kind == "RESOURCE":
                         entries = entries + [deepcopy(row["asset"]) for row in self.imported_resources.values()
                                              if row["owner"] == principal]
                     return entries, "application/json"
+                resolve_prefix = "/api/v1/resolve/" + kind + "/"
+                if method == "GET" and route.startswith(resolve_prefix):
+                    urn = route[len(resolve_prefix):]
+                    if kind == "RESOURCE" and urn in self.imported_resources:
+                        selected = [self._owner(self.imported_resources, urn, principal)["asset"]]
+                    else:
+                        selected = [row for row in entries if row["urn"] == urn]
+                    if not selected:
+                        raise ContractError(404, "Missing finite catalog asset")
+                    return {"empty": False, "results": [{"resourceUrn": urn, "knowledgeClass": kind,
+                        "serviceId": self.service_ids["resources"]}],
+                        "services": {self.service_ids["resources"]: "https://catalog.invalid/resources"}}, "application/json"
                 prefix = "/api/v1/retrieve/" + kind + "/"
                 if method == "GET" and route.startswith(prefix):
                     urn = route[len(prefix):]
