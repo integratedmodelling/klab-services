@@ -1,0 +1,31 @@
+{
+  "proposal_schema": "classpath:/schemas/llm/domain-context-proposal.schema.json",
+  "context_pack_version": "1.3",
+  "proposal": {
+    "id": "draft", "revision_id": "draft-r1", "title": "Review draft",
+    "iteration": 1, "supersedes_revision": null, "status": "draft", "generated_at": "2000-01-01",
+    "scope": {
+      "domain": "draft", "purpose": "draft", "requested_tier": 1, "target_community": "draft",
+      "tier_1_context_required": true, "tier_1_context_status": "missing",
+      "included": [], "excluded": [], "spatial_context": null, "temporal_context": null, "intended_scales": []
+    },
+    "source_policy": {"authority_criteria": [], "inference_policy": "Preserve authored inputs; editor must articulate and validate proposed assets"},
+    "sources": [], "existing_ontologies": [], "root_scope_aliases": [], "evidence": [],
+    "assets": [], "dependency_order": [], "upstream_gaps": [], "root_domain_gaps": [],
+    "iteration_control": {"current_iteration": 1, "previous_revision_id": null, "next_iteration": 2,
+      "state": "open_for_feedback", "unresolved_feedback_ids": [], "proposed_action_ids": [], "applied_action_ids": []},
+    "actions": [],
+    "orthogonality_review": {"hard_unambiguity_gate_passed": false, "pairwise_review_complete": false,
+      "matrix": [], "unresolved_ambiguities": [], "unresolved_overlaps": []},
+    "validation": {"schema_valid": false, "references_resolve": false, "acyclic": false,
+      "requested_tier_valid": false, "mandatory_tier_1_context_present": false, "tier_ancestry_valid": false,
+      "orthogonality_reviewed": false, "internally_unambiguous": false, "named_composition_reviews_complete": false,
+      "semantic_review": "not_recorded", "syntax_validation": "not_recorded",
+      "warnings": ["Preparation only: asset articulation, import context and independent validation remain required.",
+        "Review annotations and BOOTSTRAP text are authored claims, not technical validation or community acceptance.",
+        "Tier-1 context requirement is conservative and must be reviewed by the editor."]},
+    "corpus_feedback": {"state": "open", "coverage_comments": [], "structural_comments": [],
+      "cross_cutting_issues": [], "decisions": [], "requested_changes": []},
+    "change_log": []
+  }
+}
