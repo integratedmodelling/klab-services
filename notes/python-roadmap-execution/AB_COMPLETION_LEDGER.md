@@ -22,6 +22,24 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
+Native project-lock pass (active `feature/python-project-locks`): red public-API test
+reproduced missing sync/native-async project locking. Added explicit allow_write
+consent, strict native booleans, immutable acknowledgements, Resources binding checks,
+serialized async admission and conservative unknown outcomes/no blind retry or
+automatic unlock. Source inspection confirms administrator-only controller methods
+and principal-shared WorkspaceManager ownership, not per-editor exclusivity/leases.
+No unversioned overwrite, source mutation, live lock, role grant or Java run occurred.
+SIM-PROJECT-LOCK-001 is the named RC-P4.4/CAP14 reason for adding only its two native
+routes and finite synthetic administrator credentials. Final64focused/3866full
+packaged SDK tests, all19coverage gates (new project_locks gate included),100%new
+module lines+branches,101packaged simulator tests, lint and wheel/sdist/source byte
+parity (48SDK/20simulator files) PASS;42original criteria unchanged.
+Receipt: `evidence/ab-project-lock-validation-20261106.json`, including native source
+hashes attributed as source-only evidence. Publication/hosted acceptance pending.
+PR258 remotely MERGED at1010c82f480bfc3e665a5d1fcd63b19ad49eed27,
+2026-11-06T19:25:19Z after all hosted SDK/core/Windows/simulator/scientific/notebook/
+build/Jenkins checks passed; no independent maintainer review is claimed.
+
 Integrated notebook acceptance pass (active `feature/python-notebook-http-acceptance`):
 named RC-P3.5/CAP15 test now uses an actual exact-interpreter private kernel with
 the current ordinary SDK and existing isolated HTTP routes. Top-level await,
@@ -187,7 +205,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P4.1 — B meaning-based asset applicability/version/access|P; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-SEMANTICS-001/SIM-INSPECTION-001; sync/async finite canonical search, stale candidates, hierarchy/predicates and inert asset advertisements|VERIFIED_JAVA limited captured reads; new fixture answers SIMULATED_PROVISIONAL. Newer candidates protocol historical advertisement gap remains, not a forced Python selection API|
 |RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; simulator NOT_RUN|Native parseAsset DTOs, PR201/228real parsers; N maintained revision; add finite parser/fault/stale cases, no compiler port|
 |RC-P4.3 — B import/annotate/compute with input provenance|S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001: public sync/async upload, semantic source ADD, bound plan,400recorded cells/input receipt|PR244/249 merged, AsyncAuthoring delivered. SIMULATED_PROVISIONAL admission/input projection; JAVA_INCOMPATIBLE historical scanner; B(JAVA-RESOURCE-CLEANUP-001). No general native annotation/immutable lineage claim|
-|RC-P4.4 — B authorized edit/publish/conflict|P; Authoring/new AsyncAuthoring ADD; S(slice) SIM-INPUT-BINDING-001 exact-source/new workspace/project/document; no update/publish/conflict closure|Native CRUD and PR209/222real ADD; SIMULATED_PROVISIONAL finite parser/admission; remote locks/history/conditional edits remain contract inspection, not assumed absent|
+|RC-P4.4 — B authorized edit/publish/conflict|P; Authoring/AsyncAuthoring ADD + new ProjectLock/AsyncProjectLock native boolean acknowledgement; S(slice) SIM-INPUT-BINDING-001/SIM-PROJECT-LOCK-001; no source update/publish/conflict closure|Native CRUD and PR209/222real ADD; source admin locks are principal-shared, not editor/revision leases; SIMULATED_PROVISIONAL parser/role/lock state. Generic history/conditional edits remain separate; specialized native rejected-ontology source-version guards exist, not generalized to all documents or falsely called Java-executed|
 |RC-P4.5 — B behavior invocation/outcomes/reconnect|P; agent execution/control/status/journal/messaging; native AsyncAgentPreviews + new AsyncAgentExecutions deferred registration; simulator NOT_RUN|Native agent contracts/managed real slices; B(#125principal/incarnation/cleanup); async protocol/admission/cancellation/identity tests do not prove execution/reconnect or async broker operation; continue supported outcomes without worker SDK|
 |RC-P5 — C separate scoped worker product|EXCLUDED_C|#127separate product; never an A+B completion gate|
 |RC-R1 — A/B continuous evidence layers|P; SDK/fixture/wheel/CI layers; SIM case suite + REPLAY-001|3651SDK tests/18gates; PR243/244merged; simulator CI active; preserve errors/uncertainty and add per-row acceptance|

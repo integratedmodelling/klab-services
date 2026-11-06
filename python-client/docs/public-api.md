@@ -219,6 +219,11 @@ Connection exposes `identity/profile/catalog/selected/client`, synchronous
 errors. See [profiles, providers, lifecycle and examples](connection-layer.md).
 ## Native async source authoring
 
+`ProjectLock` / `AsyncProjectLock` expose explicitly consented native Resources
+administrator lock/unlock booleans with immutable `ProjectLockReceipt`. They are
+principal-shared acknowledgements, not editor leases, revision fencing, automatic
+cleanup or permission to overwrite source. See [project lock limits](project-locks.md).
+
 Graph browsing/partial refresh have native awaited `AsyncGraphBrowser.neighbors`
 and `AsyncGraphProjection.load`, returning the existing immutable page/view types.
 Local view/invalidate/clear remain synchronous, never authorization or revision

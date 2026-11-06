@@ -8,6 +8,14 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-PROJECT-LOCK-001 (RC-P4.4/CAP14) requires exactly the native project lock/unlock
+routes. Finite `sim-token-admin-alice`/`sim-token-admin-bob` credentials model the
+controller's administrator guard, with explicit principal-shared booleans and
+different-principal contention. These roles/state are SIMULATED_PROVISIONAL, not
+production identity grants or editor/revision leases. Existing explicit ADD creates
+the bounded project; no source overwrite, history, implicit unlock or broader admin
+endpoint is simulated. Lock state is reported only by the existing test control.
+
 Named RC-P3.5/CAP15 notebook acceptance reuses existing HTTP routes and the existing
 exact-interpreter private-kernel helper. Install SDK `[notebook,local]` to run it;
 dedicated `notebook-client` CI requires those imports instead of silently skipping.

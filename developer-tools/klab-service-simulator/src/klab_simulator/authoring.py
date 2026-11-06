@@ -20,9 +20,31 @@ class AuthoringState:
     def __init__(self, state):
         self.state = state
         self.assets = {}
+        self.project_locks = {}
 
     def reset(self):
         self.assets.clear()
+        self.project_locks.clear()
+
+    def project_lock(self, route, principal):
+        # SIM-PROJECT-LOCK-001 only. Principal-shared booleans, not editor leases.
+        parts = route.split("/")
+        if len(parts) != 6:
+            raise ContractError(422, "One simple local project identifier is required")
+        action, project = parts[-2:]
+        projects = [key for kind, key in self.assets if kind == "PROJECT" and key.split("/", 1)[-1] == project]
+        if len(projects) != 1:
+            return False, "application/json"
+        owner = self.project_locks.get(project)
+        if action == "lock":
+            if owner not in (None, principal):
+                return False, "application/json"
+            self.project_locks[project] = principal
+            return True, "application/json"
+        if owner != principal:
+            return False, "application/json"
+        del self.project_locks[project]
+        return True, "application/json"
 
     def binding(self, scope, owner):
         row = self.assets.get(("NAMESPACE", NAMESPACE))
@@ -45,7 +67,7 @@ class AuthoringState:
             return None
         parts = route.split("/")
         if len(parts) != 6 or parts[-1] != "ADD" or parts[-2] not in ("WORKSPACE", "PROJECT", "NAMESPACE"):
-            raise ContractError(501, "Only bounded explicit ADD operations are simulated; no overwrite/history/lock protocol")
+            raise ContractError(501, "Only bounded explicit ADD operations are simulated; no source overwrite/history protocol")
         kind = parts[-2]
         urns = parse_qs(urlsplit(original_path).query).get("urn", [])
         if len(urns) != 1 or not 0 < len(urns[0]) <= 256:

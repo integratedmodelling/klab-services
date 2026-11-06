@@ -98,6 +98,9 @@ jobs:
       - name: Bounded resource upload coverage
         run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/imports.py
         working-directory: python-client
+      - name: Explicit native project lock coverage
+        run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/project_locks.py
+        working-directory: python-client
       - run: python -m ruff check src tests examples tools --select E9,F63,F7,F82
         working-directory: python-client
       - run: python -m build
