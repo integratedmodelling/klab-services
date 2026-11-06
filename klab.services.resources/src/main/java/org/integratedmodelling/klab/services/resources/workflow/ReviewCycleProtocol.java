@@ -45,7 +45,7 @@ final class ReviewCycleProtocol {
       }
       if (editor(flow, workflow, actor) || !rounds.isEmpty()) result.add(new Cycle(cycle.id(),
           cycle.sourceStateId(), cycle.sourceFlowRevision(), cycle.candidate(), cycle.openedBy(),
-          cycle.openedAt(), cycle.closedAt(), rounds));
+          cycle.openedAt(), cycle.closedAt(), rounds, cycle.closedFlowRevision()));
     }
     return result;
   }
@@ -197,7 +197,8 @@ final class ReviewCycleProtocol {
   private static void replace(Flow flow, Cycle cycle, List<Round> rounds, Instant closedAt) {
     var cycles = new ArrayList<>(flow.getReviewCycles());
     cycles.set(cycles.indexOf(cycle), new Cycle(cycle.id(), cycle.sourceStateId(), cycle.sourceFlowRevision(),
-        cycle.candidate(), cycle.openedBy(), cycle.openedAt(), closedAt, rounds));
+        cycle.candidate(), cycle.openedBy(), cycle.openedAt(), closedAt, rounds,
+        closedAt == null ? null : flow.getRevision() + 1));
     flow.setReviewCycles(cycles);
   }
   // The aggregate JSON mapper rounds sub-microsecond numeric timestamps; persist stable milliseconds.

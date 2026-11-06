@@ -49,7 +49,12 @@ public final class ReviewCycles {
   }
   public record Cycle(String id, String sourceStateId, long sourceFlowRevision,
       ProposalReview.Candidate candidate, String openedBy, Instant openedAt,
-      Instant closedAt, List<Round> rounds) implements Serializable {
+      Instant closedAt, List<Round> rounds, Long closedFlowRevision) implements Serializable {
+    public Cycle(String id, String sourceStateId, long sourceFlowRevision,
+        ProposalReview.Candidate candidate, String openedBy, Instant openedAt,
+        Instant closedAt, List<Round> rounds) {
+      this(id, sourceStateId, sourceFlowRevision, candidate, openedBy, openedAt, closedAt, rounds, null);
+    }
     public Cycle { rounds = List.copyOf(rounds); }
   }
 }

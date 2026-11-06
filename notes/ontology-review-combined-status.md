@@ -1,5 +1,9 @@
 # Ontology review: combined pilot checkpoint
 
+Historical checkpoint `9ec81e2c152`. Current progress and remaining gates are recorded
+in [the durable review status](ontology-review-durable-status.md); the concurrency and
+text-only limitations below describe that earlier checkpoint.
+
 6 November 2026. Working copy: `task-7/services-pilot`, branch
 `ontology-review-pilot`, based on published Services develop `212548f761`.
 The task-8 round implementation `9d4146e8c3` was imported without conflicts as
