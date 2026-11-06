@@ -156,6 +156,8 @@ class Job:
             check_notifications(payload, self.client.transport.redact)
         except ServerError as error:
             raise JobFailedError(self.id, str(error)) from None
+        if "empty" in payload and type(payload["empty"]) is not bool:
+            raise ProtocolError("Job result empty must be a boolean")
         if payload.get("empty"):
             raise JobFailedError(self.id, "Server returned an empty scientific result")
         return self._decoder(payload) if self._decoder else payload
