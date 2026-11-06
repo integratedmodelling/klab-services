@@ -1,5 +1,10 @@
 # Collaboration requirements
 
+- Before Python-client A+B work, consult
+  `notes/python-roadmap-execution/MODELER_IDE_STATE.md` and its timestamps. Run its
+  bounded read-only check only when the task needs live Modeler gates. Python-only
+  work must not depend on IDE readiness; unavailable gates do not authorize repair.
+
 - Give development-pass updates directly in chat. Never require the user to open
   a separate document to understand what was done or the current status.
 - Each substantive status update must explain: the current PR state, what changed

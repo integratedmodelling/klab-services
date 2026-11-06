@@ -1,0 +1,18 @@
+{
+  "utc": "2026-11-06T14:33:19.022447+00:00",
+  "checks": [
+    {
+      "route": "repos/integratedmodelling/klab-services/actions/runners",
+      "exit": 1,
+      "http": "403",
+      "runner_count": null
+    },
+    {
+      "route": "repos/integratedmodelling/klab-services/actions/permissions",
+      "exit": 1,
+      "http": "403",
+      "runner_count": null
+    }
+  ],
+  "interpretation": "Permission failure means unavailable evidence, not proof no runner exists. No runner configured or workflow dispatched."
+}

@@ -1,0 +1,99 @@
+{
+  "utc": "2026-11-06T14:26:15.461473+00:00",
+  "source": "573a51d46896a4733450a4f81da512566aa864bf plus local audit-only files",
+  "environment": "Modeler 202610301844; no context/session/job creation",
+  "authentication": "existing native owner server-key plus native identity; values excluded",
+  "checks": [
+    {
+      "check": "reasoner-capabilities",
+      "status": "PASS",
+      "value": "570b4341-cd02-4e27-a77f-dc35352ffc0d"
+    },
+    {
+      "check": "resources-capabilities",
+      "status": "PASS",
+      "value": "4fa96242-5fa1-4647-ba24-cdc8b29e7549"
+    },
+    {
+      "check": "semantic-elevation",
+      "status": "FAIL",
+      "error_type": "AttributeError"
+    },
+    {
+      "check": "list-PROJECT",
+      "status": "PASS",
+      "value": [
+        "imod",
+        "scientific.usgs.virginia"
+      ]
+    },
+    {
+      "check": "list-MODEL",
+      "status": "PASS",
+      "value": [
+        "scientific.examples.usgs_virginia.elevation-quantifier"
+      ]
+    },
+    {
+      "check": "list-RESOURCE",
+      "status": "PASS",
+      "value": [
+        "resources.eric.lumsden:staging:usgs:virginia20211229"
+      ]
+    },
+    {
+      "check": "retrieve-MODEL",
+      "status": "PASS",
+      "value": "scientific.examples.usgs_virginia.elevation-quantifier"
+    },
+    {
+      "check": "retrieve-RESOURCE",
+      "status": "PASS",
+      "value": "resources.eric.lumsden:staging:usgs:virginia20211229"
+    }
+  ],
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/reasoner/public/capabilities",
+      "service": "reasoner"
+    },
+    {
+      "method": "GET",
+      "path": "/resources/public/capabilities",
+      "service": "resources"
+    },
+    {
+      "method": "POST",
+      "path": "/reasoner/api/v1/resolve/observable",
+      "service": "reasoner"
+    },
+    {
+      "method": "GET",
+      "path": "/resources/api/v1/list/PROJECT",
+      "service": "resources"
+    },
+    {
+      "method": "GET",
+      "path": "/resources/api/v1/list/MODEL",
+      "service": "resources"
+    },
+    {
+      "method": "GET",
+      "path": "/resources/api/v1/list/RESOURCE",
+      "service": "resources"
+    },
+    {
+      "method": "GET",
+      "path": "/resources/api/v1/retrieve/MODEL/scientific.examples.usgs_virginia.elevation-quantifier",
+      "service": "resources"
+    },
+    {
+      "method": "GET",
+      "path": "/resources/api/v1/retrieve/RESOURCE/resources.eric.lumsden:staging:usgs:virginia20211229",
+      "service": "resources"
+    }
+  ],
+  "scientific_submissions": 0,
+  "mutations": 0
+}

@@ -1,0 +1,64 @@
+{
+  "utc": "2026-11-06T14:34:59.785529+00:00",
+  "base": "573a51d46896a4733450a4f81da512566aa864bf",
+  "tests": [
+    {
+      "receipt": "ab-offline-suite-equipped.xml",
+      "sha256": "ff918ff427483287c92a56f87f649af34a7b24ca4fe8cdc5c4562cd5aee7ffac",
+      "tests": 3579,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "custody": "private ab-audit-20261106/ab-offline-suite-equipped.xml"
+    },
+    {
+      "receipt": "ab-offline-suite-wheel.xml",
+      "sha256": "2e8ec0ee56bbc7cb6f747000dcfb66ef47931b570fff69153e1f8717f4ae233d",
+      "tests": 3579,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "custody": "private ab-audit-20261106/ab-offline-suite-wheel.xml"
+    },
+    {
+      "receipt": "ab-offline-suite.xml",
+      "sha256": "8fc20ae6dc5af54a641c8b4f3a81be11cbc0581b83a6fbfddeb00f74d38781c8",
+      "tests": 4,
+      "failures": 0,
+      "errors": 3,
+      "skipped": 1,
+      "custody": "private ab-audit-20261106/ab-offline-suite.xml"
+    },
+    {
+      "receipt": "job-envelope-before.xml",
+      "sha256": "5e1cd891d1949045d63eaf49e4ceed3b4fa78272f7f4fad129ff225f94986070",
+      "tests": 26,
+      "failures": 16,
+      "errors": 0,
+      "skipped": 0,
+      "custody": "private ab-audit-20261106/job-envelope-before.xml"
+    },
+    {
+      "receipt": "job-envelope-focused.xml",
+      "sha256": "35d14e6425f0e9de00ea41092f862d69879b4241c57c33090c64def1bb3241e3",
+      "tests": 324,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "custody": "private ab-audit-20261106/job-envelope-focused.xml"
+    }
+  ],
+  "checker_tests": 18,
+  "focused_sdk_tests": 324,
+  "full_wheel_extracted_tests": 3579,
+  "coverage_gates": 17,
+  "lint": "PASS E9,F63,F7,F82",
+  "setup_failures_preserved": [
+    "Default interpreter missing rasterio: collection errors; not a code regression",
+    "Source import equipped run: 3576 pass,3 noneditable-SDK preflight guard failures; guards not relaxed",
+    "First build interpreter missing setuptools; existing build-equipped interpreter succeeded without installs"
+  ],
+  "scientific_jobs": 0,
+  "services_modified": 0,
+  "delivery": "local only; no new PR, push or merge"
+}

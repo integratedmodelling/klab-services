@@ -1,0 +1,7 @@
+{
+  "utc": "2026-11-06T14:30:54.561262+00:00",
+  "method": "sdist and wheel built without isolation using existing build tools; wheel extracted for tests, no package installation/environment modification",
+  "wheel_sha256": "df198a204d28f0c8d28eae40d41eb7e546b92dc5489a12231b6c9c6d25bc7508",
+  "source_parity_files": 46,
+  "status": "PASS"
+}

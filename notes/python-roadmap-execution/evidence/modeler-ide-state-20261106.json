@@ -1,0 +1,454 @@
+{
+  "schema_version": 1,
+  "checker_version": "1",
+  "collected_utc": "2026-11-06T14:20:57.464274Z",
+  "mode": "deep-read-only",
+  "environment": "local-modeler-8091-8094",
+  "machine_id": "8d13557398bb",
+  "services": [
+    {
+      "name": "reasoner",
+      "endpoint": "http://127.0.0.1:8091/reasoner",
+      "checked_utc": "2026-11-06T14:20:57.464274Z",
+      "pid": 27844,
+      "parent_pid": 54460,
+      "cwd": "$HOME\\.klab\\distribution\\klab\\1.0.0-SNAPSHOT\\develop\\202610301844\\klab.server.reasoner",
+      "java": "$HOME\\AppData\\Local\\Programs\\Temurin21\\jdk-21.0.12.1+1\\bin\\java.exe",
+      "build": "202610301844",
+      "modeler_parent": true,
+      "serviceId": "570b4341-cd02-4e27-a77f-dc35352ffc0d",
+      "operational": true,
+      "available": true,
+      "connected": true,
+      "health": "UP",
+      "transport": {
+        "status": {
+          "check": "PASS",
+          "http": 200
+        },
+        "health": {
+          "check": "PASS",
+          "http": 200
+        }
+      },
+      "semantics": {
+        "worldview": "imod",
+        "consistent": true,
+        "validation": "accepted:2:ready",
+        "candidate": {
+          "acceptedGeneration": 2,
+          "beanStatus": "INVALID",
+          "logicalStatus": "NOT_RUN"
+        },
+        "warnings": []
+      },
+      "components": [
+        {
+          "id": "internal.local.service.component",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "alpha1",
+            "constraints": []
+          },
+          "adapters": []
+        },
+        {
+          "id": "klab.authority.land",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "SNAPSHOT",
+            "constraints": []
+          },
+          "adapters": []
+        },
+        {
+          "id": "klab.authority.pubchem",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "SNAPSHOT",
+            "constraints": []
+          },
+          "adapters": []
+        },
+        {
+          "id": "klab.authority.taxa",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "SNAPSHOT",
+            "constraints": []
+          },
+          "adapters": []
+        },
+        {
+          "id": "klab.authority.un",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "SNAPSHOT",
+            "constraints": []
+          },
+          "adapters": []
+        }
+      ],
+      "check": "PASS",
+      "archives": []
+    },
+    {
+      "name": "resources",
+      "endpoint": "http://127.0.0.1:8092/resources",
+      "checked_utc": "2026-11-06T14:20:57.464274Z",
+      "pid": 48596,
+      "parent_pid": 54460,
+      "cwd": "$HOME\\.klab\\distribution\\klab\\1.0.0-SNAPSHOT\\develop\\202610301844\\klab.server.resources",
+      "java": "$HOME\\AppData\\Local\\Programs\\Temurin21\\jdk-21.0.12.1+1\\bin\\java.exe",
+      "build": "202610301844",
+      "modeler_parent": true,
+      "serviceId": "4fa96242-5fa1-4647-ba24-cdc8b29e7549",
+      "operational": true,
+      "available": true,
+      "connected": true,
+      "health": "UP",
+      "transport": {
+        "status": {
+          "check": "PASS",
+          "http": 200
+        },
+        "health": {
+          "check": "PASS",
+          "http": 200
+        }
+      },
+      "semantics": {
+        "worldview": "imod",
+        "consistent": null,
+        "validation": null,
+        "candidate": {},
+        "warnings": []
+      },
+      "components": [
+        {
+          "id": "internal.local.service.component",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "alpha1",
+            "constraints": []
+          },
+          "adapters": []
+        },
+        {
+          "id": "klab.component.geospatial",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "SNAPSHOT",
+            "constraints": []
+          },
+          "adapters": [
+            "raster",
+            "stac",
+            "wcs",
+            "wfs"
+          ]
+        }
+      ],
+      "check": "PASS",
+      "archives": [
+        {
+          "name": "upload8490828984562184208.jar",
+          "sha256": "e7d470f69943e93ce48e9669bad6a41b618dfbe0e7bc748076e010583daef644"
+        }
+      ]
+    },
+    {
+      "name": "resolver",
+      "endpoint": "http://127.0.0.1:8093/resolver",
+      "checked_utc": "2026-11-06T14:20:57.464274Z",
+      "pid": 53144,
+      "parent_pid": 54460,
+      "cwd": "$HOME\\.klab\\distribution\\klab\\1.0.0-SNAPSHOT\\develop\\202610301844\\klab.server.resolver",
+      "java": "$HOME\\AppData\\Local\\Programs\\Temurin21\\jdk-21.0.12.1+1\\bin\\java.exe",
+      "build": "202610301844",
+      "modeler_parent": true,
+      "serviceId": "85406374-4413-4503-a651-054b88c3f7d0",
+      "operational": true,
+      "available": true,
+      "connected": true,
+      "health": "UP",
+      "transport": {
+        "status": {
+          "check": "PASS",
+          "http": 200
+        },
+        "health": {
+          "check": "PASS",
+          "http": 200
+        }
+      },
+      "semantics": {
+        "worldview": null,
+        "consistent": null,
+        "validation": null,
+        "candidate": {},
+        "warnings": []
+      },
+      "components": [
+        {
+          "id": "internal.local.service.component",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "alpha1",
+            "constraints": []
+          },
+          "adapters": []
+        }
+      ],
+      "check": "PASS",
+      "archives": []
+    },
+    {
+      "name": "runtime",
+      "endpoint": "http://127.0.0.1:8094/runtime",
+      "checked_utc": "2026-11-06T14:20:57.464274Z",
+      "pid": 14188,
+      "parent_pid": 54460,
+      "cwd": "$HOME\\.klab\\distribution\\klab\\1.0.0-SNAPSHOT\\develop\\202610301844\\klab.server.runtime",
+      "java": "$HOME\\AppData\\Local\\Programs\\Temurin21\\jdk-21.0.12.1+1\\bin\\java.exe",
+      "build": "202610301844",
+      "modeler_parent": true,
+      "serviceId": "100bf613-81b4-4347-8194-aec59a615959",
+      "operational": true,
+      "available": true,
+      "connected": true,
+      "health": "UP",
+      "transport": {
+        "status": {
+          "check": "PASS",
+          "http": 200
+        },
+        "health": {
+          "check": "PASS",
+          "http": 200
+        }
+      },
+      "semantics": {
+        "worldview": null,
+        "consistent": null,
+        "validation": null,
+        "candidate": {},
+        "warnings": []
+      },
+      "components": [
+        {
+          "id": "internal.local.service.component",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "alpha1",
+            "constraints": []
+          },
+          "adapters": []
+        },
+        {
+          "id": "klab.component.geospatial",
+          "version": {
+            "major": 1,
+            "minor": 0,
+            "build": 0,
+            "modifier": "SNAPSHOT",
+            "constraints": []
+          },
+          "adapters": [
+            "stac",
+            "wcs",
+            "wfs"
+          ]
+        }
+      ],
+      "check": "PASS",
+      "archives": [
+        {
+          "name": "upload11291277258589446333.jar",
+          "sha256": "e7d470f69943e93ce48e9669bad6a41b618dfbe0e7bc748076e010583daef644"
+        }
+      ]
+    }
+  ],
+  "catalogs": {
+    "PROJECT": {
+      "check": "PASS",
+      "count": 2,
+      "identities": [
+        {
+          "urn": "imod"
+        },
+        {
+          "urn": "scientific.usgs.virginia"
+        }
+      ]
+    },
+    "NAMESPACE": {
+      "check": "PASS",
+      "count": 1,
+      "identities": [
+        {
+          "urn": "scientific.examples.usgs_virginia",
+          "projectName": "scientific.usgs.virginia"
+        }
+      ]
+    },
+    "MODEL": {
+      "check": "PASS",
+      "count": 1,
+      "identities": [
+        {
+          "urn": "scientific.examples.usgs_virginia.elevation-quantifier",
+          "projectName": "scientific.usgs.virginia"
+        }
+      ]
+    },
+    "RESOURCE": {
+      "check": "PASS",
+      "count": 1,
+      "identities": [
+        {
+          "urn": "resources.eric.lumsden:staging:usgs:virginia20211229",
+          "adapterType": "raster"
+        }
+      ]
+    },
+    "RESOURCE_ADAPTER": {
+      "check": "PASS",
+      "count": 4,
+      "identities": [
+        {
+          "urn": "raster",
+          "name": "raster"
+        },
+        {
+          "urn": "stac",
+          "name": "stac"
+        },
+        {
+          "urn": "wcs",
+          "name": "wcs"
+        },
+        {
+          "urn": "wfs",
+          "name": "wfs"
+        }
+      ]
+    }
+  },
+  "historical_evidence": {
+    "checked_utc": "2026-11-06T03:11:16Z",
+    "report": "MODELER_REAL_DEM_REMEDIATION_REPORT.md#12-remaining-failures--smallest-next-action",
+    "gates": {
+      "G3": "PASS_HISTORICAL",
+      "G4": "PASS_HISTORICAL",
+      "G5": "FAILED_HISTORICAL_NULL_SCANNER",
+      "G6": "NOT_RUN",
+      "G7": "NOT_RUN",
+      "G8": "SEPARATE_ENVIRONMENT_REQUIRED"
+    }
+  },
+  "blocker": {
+    "id": "JAVA-REMOTE-SCANNER",
+    "state": "UNVERIFIED_CURRENT",
+    "last_reproduced_utc": "2026-11-06T03:11:16Z"
+  },
+  "drift": [],
+  "graphdb": {
+    "check": "PASS",
+    "health": "UP",
+    "pid": 38696,
+    "parent_pid": 54460,
+    "cwd": "$HOME\\.klab\\distribution\\klab\\1.0.0-SNAPSHOT\\develop\\202610301844\\klab.support.graphdb",
+    "java": "$HOME\\AppData\\Local\\Programs\\Temurin21\\jdk-21.0.12.1+1\\bin\\java.exe",
+    "build": "202610301844",
+    "modeler_parent": true,
+    "plugins": [
+      {
+        "name": "neo4j-spatial-server-plugin-2025.10.0-with-dependencies.jar",
+        "sha256": "83c9d31deebcc5a951f11832ffbc58692a2795a461baba480efe74cafbeeff6b"
+      }
+    ]
+  },
+  "spatial": {
+    "check": "PASS",
+    "result": {
+      "procedure_count": 48,
+      "required": true,
+      "layers_read": true,
+      "layer_count": 0
+    },
+    "exit": 0,
+    "method": "SHOW PROCEDURES + spatial.layers; READ session"
+  },
+  "retrievals": {
+    "RESOURCE": {
+      "check": "PASS",
+      "urn": "resources.eric.lumsden:staging:usgs:virginia20211229",
+      "serviceId": "4fa96242-5fa1-4647-ba24-cdc8b29e7549",
+      "source_sha256": "026ec5429ddb1197b46247dd97832e2abe246be112e7133f4fce5029fea50de5"
+    },
+    "MODEL": {
+      "check": "PASS",
+      "urn": "scientific.examples.usgs_virginia.elevation-quantifier",
+      "serviceId": "4fa96242-5fa1-4647-ba24-cdc8b29e7549"
+    }
+  },
+  "archived_evidence": {
+    "reference/oracle.json": {
+      "check": "PASS",
+      "sha256": "22ed905702f9e8bed9dc6a98f07ff7762877459c55cb50e581ec1a6fa7519b76",
+      "interpretation": "archived, not a fresh scientific execution"
+    },
+    "evidence/spatial-corrected-elevation-job-result.json": {
+      "check": "PASS",
+      "sha256": "ea16e21982fbacde27000295962fd3a7b452efd85e93be6fa399c675f77c938d",
+      "interpretation": "archived, not a fresh scientific execution",
+      "empty": true,
+      "notification_levels": [
+        "Error",
+        "Error"
+      ]
+    },
+    "evidence/spatial-final-preservation.json": {
+      "check": "PASS",
+      "sha256": "b6a6020c9275baba16b6cee4b88ab03698cf23a06000889c7cba73d75df5c9b1",
+      "interpretation": "archived, not a fresh scientific execution"
+    }
+  },
+  "native_fixture": {
+    "check": "PASS"
+  },
+  "gates": {
+    "G0": "PASS",
+    "G1": "PASS",
+    "G2": "PASS",
+    "G3": "UNKNOWN",
+    "G4": "UNKNOWN",
+    "G5": "UNKNOWN",
+    "G6": "UNKNOWN",
+    "G7": "UNKNOWN",
+    "G8": "NOT_APPLICABLE"
+  },
+  "baseline_freshness": "PASS",
+  "source_sha256": "76b84a7f2cc63152f5e166a3854e9cb47289d70b0a3372ca7422794f9726ce8e",
+  "repository_commit": "573a51d46896a4733450a4f81da512566aa864bf"
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "checker_version": "2",
+  "collected_utc": "2026-11-06T14:33:00.039591Z",
+  "mode": "offline",
+  "environment": "local-modeler-8091-8094",
+  "machine_id": "8d13557398bb",
+  "services": [],
+  "catalogs": {},
+  "historical_evidence": {
+    "checked_utc": "2026-11-06T03:11:16Z",
+    "report": "MODELER_REAL_DEM_REMEDIATION_REPORT.md#12-remaining-failures--smallest-next-action",
+    "gates": {
+      "G3": "PASS_HISTORICAL",
+      "G4": "PASS_HISTORICAL",
+      "G5": "FAILED_HISTORICAL_NULL_SCANNER",
+      "G6": "NOT_RUN",
+      "G7": "NOT_RUN",
+      "G8": "SEPARATE_ENVIRONMENT_REQUIRED"
+    }
+  },
+  "blocker": {
+    "id": "JAVA-REMOTE-SCANNER",
+    "state": "UNVERIFIED_CURRENT",
+    "last_reproduced_utc": "2026-11-06T03:11:16Z"
+  },
+  "drift": [],
+  "gates": {
+    "G0": "UNKNOWN",
+    "G1": "UNKNOWN",
+    "G2": "UNKNOWN",
+    "G3": "UNKNOWN",
+    "G4": "UNKNOWN",
+    "G5": "UNKNOWN",
+    "G6": "UNKNOWN",
+    "G7": "UNKNOWN",
+    "G8": "NOT_APPLICABLE"
+  },
+  "baseline_freshness": "PASS",
+  "source_sha256": "c1f42fca18f38a3c14257b0c7d44e36031b45317c0ae3d61f16c14d1f4ede0b6",
+  "repository_commit": "573a51d46896a4733450a4f81da512566aa864bf"
+}
