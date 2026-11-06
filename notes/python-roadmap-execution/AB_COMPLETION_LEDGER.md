@@ -22,6 +22,16 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
+PR256 hosted native-wire CI failed before Qpid/interop tests:
+runs42275002080/42275042424 cannot resolve the declared packaging plugin
+`org.integratedmodelling:klab.product:1.0.1-SNAPSHOT`. AgentStatusWireTest and
+AgentMessagingWireTest passed first; AgentChannelInteropTest did not execute.
+Applied the same immutable official-source bootstrap already accepted in build.yml
+and runtime-notifications.yml, pin0c80acb1f16a1d405f888cf99286d6e365293559.
+No dependency version/source, Java product, test expectation or local IDE changed.
+Required fresh CI evidence pending; do not merge/bypass or infer native-wire success.
+Async graph work remains local and is not staged in this workflow correction.
+
 Awaited deferred-registration pass (active `feature/python-async-agent-registration`):
 red test reproduced missing AsyncAgentExecutions. Native awaited registration now
 shares source/parser/receipt/fixed-flag validation with the synchronous creator;
