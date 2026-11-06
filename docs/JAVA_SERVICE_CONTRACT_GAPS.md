@@ -49,6 +49,18 @@ Java end-to-end functionality. No Monday walkthrough or live repair is a Python 
 
 ## Request/response and ownership rules
 
+Project-lock increment (RC-P4.4/CAP14): source-confirmed native GET project lock/
+unlock routes return boolean from an ADMINISTRATOR controller. WorkspaceManager
+shares ownership by stable authenticated principal; they are not editor-exclusive
+leases or revision fencing. ProjectLock/AsyncProjectLock now expose consented,
+origin-bound acknowledgements with no implicit unlock/retry. SIM-PROJECT-LOCK-001
+adds only the routes required by that acceptance case; synthetic roles/finite lock
+state remain SIMULATED_PROVISIONAL. No real project was locked or edited.
+Native rejected-ontology authoring selectors do include sourceVersion checks;
+generic accepted-document updates reject those selectors and lack the same source
+version contract. This source distinction is not generalized absence of native
+editing and not executed Java compatibility or authorization for blind overwrite.
+
 SIM-NOTEBOOK-001 (RC-P3.5/CAP15) now executes the current SDK in an actual owned
 exact-interpreter notebook kernel, while its service flow stays explicitly simulated.
 Existing routes verify local wait cancellation with a surviving same-Job wait,

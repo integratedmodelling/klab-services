@@ -160,7 +160,8 @@ class State:
                 raise ContractError(403, "Test controls disabled or unauthorized")
             if method == "GET" and path == "/__sim__/state":
                 return {"counts": self.counts(), "resources": len(self.imported_resources),
-                        "authoring_assets": len(self.authoring.assets), "trace": list(self.trace)}, "application/json"
+                        "authoring_assets": len(self.authoring.assets),
+                        "project_locks": len(self.authoring.project_locks), "trace": list(self.trace)}, "application/json"
             if method == "POST" and path == "/__sim__/expireJobs":
                 for job in self.jobs.values():
                     job["expired"] = True
@@ -214,7 +215,8 @@ class State:
                     "importSchemata": schemas() if service == "resources" else {},
                     "exportSchemata": export_schemas() if service == "runtime" and (
                         self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" or self.scenario == "nonuniform-export") else {}}, "application/json"
-        principal = {"sim-token-alice": "alice", "sim-token-bob": "bob"}.get(headers.get("Authorization"))
+        principal = {"sim-token-alice": "alice", "sim-token-bob": "bob",
+                     "sim-token-admin-alice": "alice", "sim-token-admin-bob": "bob"}.get(headers.get("Authorization"))
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
         scope = headers.get("klab-scope", "")
@@ -242,6 +244,10 @@ class State:
             if semantic is not None:
                 return semantic
         if service == "resources":
+            if method == "GET" and route.startswith(("/api/v1/project/lock/", "/api/v1/project/unlock/")):
+                if headers.get("Authorization") not in ("sim-token-admin-alice", "sim-token-admin-bob"):
+                    raise ContractError(403, "Synthetic administrator role required by native admin contract")
+                return self.authoring.project_lock(route, principal)
             authored = self.authoring.request(method, route, original_path, principal, body)
             if authored is not None:
                 return authored

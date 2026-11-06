@@ -28,6 +28,18 @@
   },
   "cases": [
     {
+      "id": "SIM-PROJECT-LOCK-001",
+      "rows": ["RC-P4.4", "CAP-14", "CAP-18"],
+      "api": "ProjectLock/AsyncProjectLock.acquire/release; ProjectLockReceipt",
+      "routes": ["GET /resources/api/v1/project/lock/{urn}", "GET /resources/api/v1/project/unlock/{urn}"],
+      "request": "Explicit allow_write=True, known simple project, configured Resources credentials; finite synthetic administrator role",
+      "expected": "Exact boolean acknowledgement; non-admin403; competing principal false; same-principal shared acquisition true; explicit release; close never implicitly unlocks",
+      "source": "ServicesAPI.RESOURCES; ResourceAdminController @Secured ADMINISTRATOR and boolean methods; WorkspaceManager.projectLockOwner/lockProject/unlockProject (source only)",
+      "confidence": "SIMULATED_PROVISIONAL roles/finite ownership; no editor lease, fencing, revision history or overwrite permission",
+      "simulator_test": "test_project_locks.py::test_native_project_lock_principal_sharing_and_explicit_release",
+      "java_status": "NOT_RUN; no live project was locked or edited"
+    },
+    {
       "id": "SIM-NOTEBOOK-001",
       "rows": ["RC-P3.5", "CAP-07", "CAP-15"],
       "api": "Actual top-level-await kernel: AsyncClient, AsyncJob.result, restore_handle, fetch_data, AsyncGraphProjection.load",
