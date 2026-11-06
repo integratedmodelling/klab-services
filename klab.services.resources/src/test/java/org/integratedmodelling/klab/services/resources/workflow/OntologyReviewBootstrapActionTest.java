@@ -46,13 +46,16 @@ class OntologyReviewBootstrapActionTest {
 
   final class Fixture {
     final WorkflowManagerAuthorizationTest.MemoryStore store = new WorkflowManagerAuthorizationTest.MemoryStore();
-    final WorkflowManager manager = new WorkflowManager(store);
+    final WorkflowManager manager;
+    final KActorsBehavior behavior;
     final ResourcesService resources = mock(ResourcesService.class);
     final ResourceInfo info = mock(ResourceInfo.class);
     final UserScope editor;
     final Flow flow;
     final String stage;
-    Fixture(String bootstrap) throws Exception {
+    Fixture(String bootstrap) throws Exception { this(bootstrap, null); }
+    Fixture(String bootstrap, org.integratedmodelling.klab.resources.WorkflowStore actualStore) throws Exception {
+      manager = new WorkflowManager(actualStore == null ? store : actualStore);
       var identity = new ProposalReviewProtocolTest().scope("editor", "EDITOR");
       editor = mock(UserScope.class);
       when(editor.getUser()).thenReturn(identity.getUser());
@@ -67,7 +70,7 @@ class OntologyReviewBootstrapActionTest {
       when(resources.retrieve("test.ontology", KimOntology.class, editor)).thenReturn(ontology);
       if (bootstrap != null) when(resources.retrieve("test-project/BOOTSTRAP.md", ProjectMaterial.class, editor))
           .thenReturn(new ProjectMaterial("test-project", "BOOTSTRAP.md", bootstrap.getBytes(StandardCharsets.UTF_8)));
-      var behavior = behavior();
+      behavior = behavior();
       manager.setBehaviorBridge(new WorkflowBehaviorBridge(() -> new AgentCompiler.Resolver() {}, owner -> null, () -> behavior));
       var initial = Flow.State.create(); initial.setSchemaId("editing"); initial.setAssetUrn("test.ontology");
       initial.setPermissionsOwnerUrn("test.ontology"); initial.setAssetType(KlabAsset.KnowledgeClass.ONTOLOGY);

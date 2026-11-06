@@ -40,7 +40,7 @@ verified mailbox, explicit consent and current round authorization, but no live 
 Persisted intents are not delivered editor notices. Recipient metadata is excluded from user views
 and Git history. See `notes/ontology-review-worker-status.md` for verification and deployment limits.
 
-Checks cover independent managers, real database conditional writes and separate-process ownership, actual Nitrite/RocksDB close/reopen, scoped EngineAuthorization objects at the HTTP controller boundary, disposable Git repositories and browser fixtures. They do not establish live JWT/identity-provider login or deployed multi-user behavior. See `notes/ontology-review-durable-status.md` for evidence and remaining gates.
+Checks cover independent managers, real database conditional writes and separate-process ownership, actual Nitrite/RocksDB close/reopen, scoped EngineAuthorization objects at the HTTP controller boundary, disposable Git repositories and browser fixtures. An isolated four-principal browser scenario also exercises the real review component, k.Actors bootstrap, native workflow storage, integrated proposal, closure/restart and fake notices. It uses explicit simulated authenticated scopes, not live login. See `notes/ontology-review-e2e-status.md` for exact coverage and remaining gates.
 
 Run the focused reactor checks with a writable isolated test home:
 
