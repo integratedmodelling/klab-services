@@ -1,5 +1,13 @@
 # Explicit ADD-only source authoring
 
+Plain `BEHAVIOR` source drafts now use the same sync/native-async parse and ADD
+flow. This persists source only and never registers, compiles or starts an agent.
+See [behavior draft limits](behavior-source-authoring.md) for strict subtype,
+existing-source-selector and consent checks and separate source/simulator/Java
+evidence. Apps/scripts/testcases, ontology policy, updates and publication are not
+added by this increment. Historical namespace acceptance below is not new behavior
+draft Java compatibility.
+
 **Controlled namespace-only acceptance passed on the rebuilt backend tuple below;
 this is not permission to write to retained deployments.** This is a bounded
 extension of the existing Resources API, not the complete editing/publishing SDK.

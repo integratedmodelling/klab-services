@@ -52,7 +52,8 @@ def test_read_only_native_document_identity_and_source_receipt(kind):
         assert SOURCE not in repr(preview)
         with pytest.raises(InvalidRequestError): Authoring(api).create_document(preview, None, allow_write=True)
     assert [call.url.path for call in calls] == ["/public/capabilities", "/parseAsset/" + kind, "/public/capabilities"]
-    assert set(DOCUMENTS) == {"NAMESPACE", "OBSERVATION_STRATEGY_DOCUMENT"}
+    assert set(DOCUMENTS) == {"NAMESPACE", "OBSERVATION_STRATEGY_DOCUMENT", "BEHAVIOR"}
+    assert "ONTOLOGY" not in DOCUMENTS  # Its distinct write/project policy remains unsupported.
     assert not any("submit" in call.url.path or "instantiate" in call.url.path for call in calls)
     with pytest.raises(TypeError): DOCUMENT_CLASSES["OTHER"] = "unverified"
 

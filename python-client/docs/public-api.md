@@ -220,6 +220,11 @@ Connection exposes `identity/profile/catalog/selected/client`, synchronous
 errors. See [profiles, providers, lifecycle and examples](connection-layer.md).
 ## Native async source authoring
 
+`Authoring.parse(..., kind="BEHAVIOR")` and native awaited `AsyncAuthoring.parse`
+now admit plain behavior drafts for consented `create_document` ADD in a confirmed
+newly created project. Returns source persistence acknowledgements, never an Agent
+or execution/compilation proof. See [behavior source authoring](behavior-source-authoring.md).
+
 Shared scope selection now validates positive Java-long focus/observer IDs, exact
 root binding and control-free grammar before I/O. Raw Runtime service methods also
 refuse a Context bound to a foreign Runtime origin/known identity. These are local

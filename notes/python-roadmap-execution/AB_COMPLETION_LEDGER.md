@@ -45,6 +45,34 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
+Nonexecuting behavior-source ADD pass (active `feature/python-behavior-source-authoring`):
+two before-fix tests reproduced Authoring/AsyncAuthoring refusing a plain BEHAVIOR
+source draft despite the native KlabDocument ADD contract. Added exact-source DTO
+admission, plain BEHAVIOR subtype checks at both parse/create boundaries, and reuse
+of existing new-project/consent/origin/CREATE receipt/unknown-outcome safeguards.
+No agent registration/compilation/start, overwrite, publication or ontology policy
+change.102focused authoring tests/100%module lines+branches and14targeted HTTP/
+contract-index/import/lock regressions PASS. SIM-BEHAVIOR-DRAFT-001 is the named
+RC-P4.2/P4.4/CAP14 justification for two concrete native parse/ADD variants and one
+literal synthetic source; no general language parsing/execution is simulated.
+Native source evidence: ResourcesProvider.submit KlabDocument ADD,
+WorkspaceManager.createDocument and FileProjectStorage.create's existing-file
+refusal; not new Java execution. Two further red tests reproduced raw malformed
+UTF-8 source exceptions in both authoring facades; intake now rejects them before
+HTTP. Initial full SDK run found four outdated read-preview allowlist assertions
+(3940passed/4failed); updated the declared family set while retaining explicit
+SourcePreview-to-ParsedSource refusal and ontology-write exclusion. Final artifacts
+rebuilt. Final3946packaged SDK tests/all19exact gates/106packaged simulator tests,
+lint and48SDK/20simulator source-wheel-sdist byte parity PASS;42original criteria
+unchanged,100%authoring lines+branches. No failed run is called accepted verification.
+Receipt: `evidence/ab-behavior-authoring-validation-20261106.json`.
+PR261 remotely MERGED at18d824fc9df9e9961e2d1897e7fb481f465f15f2,
+2026-11-06T20:14:15Z after all applicable hosted SDK/core/Windows/simulator/
+scientific/notebook/build/Jenkins checks passed on its final head and integration
+target. No independent maintainer review is claimed. Current behavior publication
+and hosted delivery remain pending. The
+post-A+B audit remains QUEUED_NOT_STARTED.
+
 Fresh-process offline snapshot acceptance pass (active
 `feature/python-offline-snapshot-acceptance`, published PR261):
 CAP12's remaining independently runnable fresh-process check now saves two bounded
@@ -273,7 +301,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P3.4 — A explain actual dependencies and semantic effects|P; provenance/evidence/activity APIs; S(slice) SIM-PROVENANCE-001|Native query/LinkImpl and PR239/240real bounded views; B(JAVA-COMMIT-001); simulate explicit partial plans/recorded effects, no historical lineage claim|
 |RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; S(slice) SIM-NOTEBOOK-001 actual exact-SDK kernel/two contexts/local-only cancelled wait/same-Job surviving wait/reader close/partial graph|PR210/211/225real bounded evidence retained; new kernel executes simulated service flow, not new Java science or positive collaborator ACL; multiprincipal acceptance and authoritative commit races remain distinct|
 |RC-P4.1 — B meaning-based asset applicability/version/access|P; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-SEMANTICS-001/SIM-INSPECTION-001; sync/async finite canonical search, stale candidates, hierarchy/predicates and inert asset advertisements|VERIFIED_JAVA limited captured reads; new fixture answers SIMULATED_PROVISIONAL. Newer candidates protocol historical advertisement gap remains, not a forced Python selection API|
-|RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; simulator NOT_RUN|Native parseAsset DTOs, PR201/228real parsers; N maintained revision; add finite parser/fault/stale cases, no compiler port|
+|RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; active SIM-BEHAVIOR-DRAFT-001 literal-source receipt only|Native parseAsset DTOs, PR201/228real parsers; maintained semantic revision still unknown where absent; no compiler port or Java persistence promotion|
 |RC-P4.3 — B import/annotate/compute with input provenance|S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001: public sync/async upload, semantic source ADD, bound plan,400recorded cells/input receipt|PR244/249 merged, AsyncAuthoring delivered. SIMULATED_PROVISIONAL admission/input projection; JAVA_INCOMPATIBLE historical scanner; B(JAVA-RESOURCE-CLEANUP-001). No general native annotation/immutable lineage claim|
 |RC-P4.4 — B authorized edit/publish/conflict|P; Authoring/AsyncAuthoring ADD + new ProjectLock/AsyncProjectLock native boolean acknowledgement; S(slice) SIM-INPUT-BINDING-001/SIM-PROJECT-LOCK-001; no source update/publish/conflict closure|Native CRUD and PR209/222real ADD; source admin locks are principal-shared, not editor/revision leases; SIMULATED_PROVISIONAL parser/role/lock state. Generic history/conditional edits remain separate; specialized native rejected-ontology source-version guards exist, not generalized to all documents or falsely called Java-executed|
 |RC-P4.5 — B behavior invocation/outcomes/reconnect|P; agent execution/control/status/journal/messaging; native AsyncAgentPreviews + new AsyncAgentExecutions deferred registration; simulator NOT_RUN|Native agent contracts/managed real slices; B(#125principal/incarnation/cleanup); async protocol/admission/cancellation/identity tests do not prove execution/reconnect or async broker operation; continue supported outcomes without worker SDK|
@@ -293,7 +321,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-11 — A/B best-effort scoped events and resync|P; activity notifications/polling/resync; simulator events NOT_RUN|Native activity hints; B(#126durable cursor/replay); test supported hints/gaps only|
 |CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips + SIM-OFFLINE-SNAPSHOT-001 fresh SDK process inspecting saved400cells after owned release, sockets forbidden|ScientificData format/PR196; current HTTP-produced offline acceptance active; saved origin is not current authorization, revision commitment or offline reasoning|
 |CAP-13 — B resources/models read/query/dependency inspection|P; inspectors/services/imports; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-IMPORT-001|J(read) real catalog/model captures; newer candidates schema drift; add implemented resolve/query/dependencies and explicit binding|
-|CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/AsyncAuthoring/AgentPreviews/new AsyncAgentPreviews/agents/imports; S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001; behaviors simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; finite semantic-source admission SIMULATED_PROVISIONAL; awaited preview is nonexecuting protocol evidence only; continue supported behavior/conditional mutation contracts, no compiler/scheduler port|
+|CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/AsyncAuthoring now plain BEHAVIOR draft ADD, previews/agents/imports/project locks; S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001/SIM-PROJECT-LOCK-001 + active SIM-BEHAVIOR-DRAFT-001|Native CRUD/agent DTOs, PR209/222/244merged; finite source admission/persistence SIMULATED_PROVISIONAL; draft ADD/preview is not executing an agent. Generic conditional edits/publication remain separate, no compiler/scheduler port|
 |CAP-15 — A optional NumPy/pandas/xarray/raster/vector and notebooks|P; S(slice) SIM-ADAPTERS-001 raster/xarray/NumPy/pandas + SIM-NOTEBOOK-001 actual owned kernel/native awaited client workflow; vector integrated simulator matrix remains|Independent N-oracle and PR204vector/PR211notebook receipts retained; dedicated CI requires analysis/tabular or notebook/local dependencies without skips; core SDK imports stay optional and no new Java science is inferred|
 |CAP-16 — A/B compatibility, fixtures, package, support/migration/scale|P; CI/wheel/support checker; simulator CI active|3651SDK/18gates/47module parity; N full simulator support matrix; external scheduled worker/#129does not hold Python tests|
 |CAP-17 — C provider SDK / local embedded runtime|EXCLUDED_C|#127separate product|
