@@ -623,7 +623,9 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
         }
         var inherited =
             switch (modifier.getFirst()) {
-              case INHERENT -> reasoner.inherent(ret);
+              // A generated quality subclass has not yet been classified. Validate
+              // its bearer against the established parent, before adding 'of'.
+              case INHERENT -> reasoner.inherent(parent.is(SemanticType.QUALITY) ? parent : ret);
               case ADJACENT -> reasoner.adjacent(ret);
               case CAUSED -> reasoner.caused(ret);
               case CAUSANT -> reasoner.causant(ret);

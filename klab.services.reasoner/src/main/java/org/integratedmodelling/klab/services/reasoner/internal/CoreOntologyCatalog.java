@@ -32,6 +32,12 @@ public final class CoreOntologyCatalog {
   private static final String VERIFIED_ODO_021_SHA256 =
       "06c081d46d9435aeadb4ef086b6a278e868953871cbc87d1debc75e6f8e0ba45";
 
+  // Exact local 0.2.2 candidate; publishing its source history is a separate step.
+  private static final String VERIFIED_ODO_022_RELEASE =
+      "https://raw.githubusercontent.com/integratedmodelling/odo-im/f5e996b42a2d91994d06c11581ce80616d8351d4/releases/0.2.2/odo.owl";
+  private static final String VERIFIED_ODO_022_SHA256 =
+      "008d603a91eb345c4c4e69e8a90267c0f74d39f56a24373e5e9cc5ba251ea549";
+
   private CoreOntologyCatalog() {}
 
   /** Only the distribution's three root documents are protected; extensions remain local. */
@@ -67,6 +73,10 @@ public final class CoreOntologyCatalog {
    */
   static String odoReleaseIdentity(String locator, String capturedSha256) {
     if (locator == null) return null;
+    if (VERIFIED_ODO_022_RELEASE.equals(locator))
+      return VERIFIED_ODO_022_SHA256.equals(capturedSha256)
+          ? "http://integratedmodelling.org/odo/0.2.2"
+          : null;
     if (VERIFIED_ODO_021_RELEASE.equals(locator))
       return VERIFIED_ODO_021_SHA256.equals(capturedSha256)
           ? "http://integratedmodelling.org/odo/0.2.1"

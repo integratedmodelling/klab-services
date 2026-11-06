@@ -411,15 +411,15 @@ class SemanticEnvironmentFactoryTest {
     var factory = new SemanticEnvironmentFactory(directory.resolve("actors"),
         Map.of("odo.owl", CoreOntologyCatalog.bundledOdo()));
     for (var url : List.of(
-        "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.2.1/odo.owl",
+        "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.2.2/odo.owl",
         "https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.1.0/odo.owl",
-        "https://example.org/releases/0.2.1/odo.owl")) {
+        "https://example.org/releases/0.2.2/odo.owl")) {
       var source = world("release-import", false);
       source.getOntologies().getFirst().getOwlImports().add(
           org.integratedmodelling.klab.api.collections.Pair.of("odo", url));
       var result = factory.build(factory.capture(source), () -> false);
       try (var environment = result.state()) {
-        if (url.equals("https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.2.1/odo.owl")) {
+        if (url.equals("https://raw.githubusercontent.com/integratedmodelling/odo-im/master/releases/0.2.2/odo.owl")) {
           assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, result.logicalStatus(), result.diagnostics().toString());
           assertNotNull(environment);
         } else {
@@ -460,7 +460,7 @@ class SemanticEnvironmentFactoryTest {
     var catalog = Files.createDirectories(directory.resolve("catalog"));
     var bundled = CoreOntologyCatalog.bundledOdo();
     assertTrue(new String(bundled, java.nio.charset.StandardCharsets.UTF_8)
-        .contains("http://integratedmodelling.org/odo/0.2.1"));
+        .contains("http://integratedmodelling.org/odo/0.2.2"));
     Files.writeString(catalog.resolve("odo.owl"), "obsolete installed ontology");
     Files.writeString(catalog.resolve("source-catalog.properties"),
         "odo=https://example.org/releases/0.1.0/odo.owl\nodo.sha256=obsolete\n");
@@ -603,12 +603,12 @@ class SemanticEnvironmentFactoryTest {
     assertEquals("http://integratedmodelling.org/odo/0.2.0", CoreOntologyCatalog.odoReleaseIdentity(url,
         "496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57"));
     assertNull(CoreOntologyCatalog.odoReleaseIdentity(url,
-        "06c081d46d9435aeadb4ef086b6a278e868953871cbc87d1debc75e6f8e0ba45"));
+        "008d603a91eb345c4c4e69e8a90267c0f74d39f56a24373e5e9cc5ba251ea549"));
   }
 
   @Test void capturedCandidateUsesItsExactLocatorWithoutFrozenCompatibilityRegistry() throws Exception {
     var url = "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
-        + "1111111111111111111111111111111111111111/releases/0.2.1/odo.owl";
+        + "1111111111111111111111111111111111111111/releases/0.2.2/odo.owl";
     var capturedBytes = (new String(CoreOntologyCatalog.bundledOdo(), java.nio.charset.StandardCharsets.UTF_8)
         + "\n<!-- distinct captured source bytes -->\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
     var hash = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(capturedBytes));
@@ -628,9 +628,9 @@ class SemanticEnvironmentFactoryTest {
     var factory = SemanticEnvironmentFactory.fromLocalCatalog(directory.resolve("actors"), directory.resolve("absent"))
         .withOdoCapture(new OdoImportCapture(directory.resolve("imports"), uri -> CoreOntologyCatalog.bundledOdo()));
     var url = "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
-        + "86e25036b7e7a7d75971ab9f303c8f5f1785e30c/releases/0.2.1/odo.owl";
-    assertEquals("http://integratedmodelling.org/odo/0.2.1",
-        CoreOntologyCatalog.odoReleaseIdentity(url, "06c081d46d9435aeadb4ef086b6a278e868953871cbc87d1debc75e6f8e0ba45"));
+        + "f5e996b42a2d91994d06c11581ce80616d8351d4/releases/0.2.2/odo.owl";
+    assertEquals("http://integratedmodelling.org/odo/0.2.2",
+        CoreOntologyCatalog.odoReleaseIdentity(url, "008d603a91eb345c4c4e69e8a90267c0f74d39f56a24373e5e9cc5ba251ea549"));
     assertNull(CoreOntologyCatalog.odoReleaseIdentity(url, null));
     assertNull(CoreOntologyCatalog.odoReleaseIdentity(url, "0".repeat(64)));
     assertNull(CoreOntologyCatalog.odoReleaseIdentity(url,
@@ -656,11 +656,11 @@ class SemanticEnvironmentFactoryTest {
       assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, frozenExact.logicalStatus(), frozenExact.diagnostics().toString());
       assertNotNull(environment);
     }
-    for (var rejected : List.of(url.replace("86e25036b7e7a7d75971ab9f303c8f5f1785e30c", "0".repeat(40)),
+    for (var rejected : List.of(url.replace("f5e996b42a2d91994d06c11581ce80616d8351d4", "0".repeat(40)),
         url.replace("odo-im/", "wrong-repo/"), url.replace("raw.githubusercontent.com", "example.org"),
-        url.replace("86e25036b7e7a7d75971ab9f303c8f5f1785e30c", "develop"),
-        url.replace("0.2.1/odo.owl", "0.1.1/odo.owl"),
-        url.replace("0.2.1/odo.owl", "latest/odo.owl"), url + "?download=1", url + "#fragment",
+        url.replace("f5e996b42a2d91994d06c11581ce80616d8351d4", "develop"),
+        url.replace("0.2.2/odo.owl", "0.1.1/odo.owl"),
+        url.replace("0.2.2/odo.owl", "latest/odo.owl"), url + "?download=1", url + "#fragment",
         url.replace("/releases/", "/wrong-path/"))) {
       source.getOntologies().getFirst().getOwlImports().clear();
       source.getOntologies().getFirst().getOwlImports().add(
