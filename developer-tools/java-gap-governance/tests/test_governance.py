@@ -16,7 +16,7 @@ SPEC.loader.exec_module(govern)
 
 def test_complete_registry_and_exact_original_acceptance_crosswalk():
     registry, audit, issues = govern.validate()
-    assert len(registry["gaps"]) == 16
+    assert {f"JAVA-GAP-{number:04}" for number in range(1, 17)} <= {gap["id"] for gap in registry["gaps"]}
     assert len(audit["records"]) == 42
     assert len(issues["issues"]) == 17
     assert all(g["current_real_result"] == "REAL_NOT_RUN" for g in registry["gaps"])
@@ -102,7 +102,7 @@ def test_real_mode_reports_not_run_and_never_calls_subprocess_or_simulator(tmp_p
     output = tmp_path / "real.json"
     assert govern.contracts("real", output) == 3
     result = json.loads(output.read_text())
-    assert len(result["cases"]) == 16 and result["fallbacks"] == 0
+    assert len(result["cases"]) == len(govern.expanded()["gaps"]) and result["fallbacks"] == 0
     assert {c["tag"] for c in result["cases"]} == {"REAL_NOT_RUN"}
 
 
@@ -147,3 +147,38 @@ def test_sdk_and_http_simulator_cases_have_separate_pytest_import_namespaces(tmp
 
 def test_generated_reports_do_not_diverge():
     govern.generate(check=True)
+
+
+def test_maintainer_handoff_has_each_gap_once_and_current_counts_with_seed_intact():
+    registry = govern.expanded()
+    path = govern.DATA / "JAVA_GAPS_FOR_FERDINANDO.md"
+    document = path.read_text(encoding="utf-8")
+    block = document.split(govern.HANDOFF_BEGIN)[1].split(govern.HANDOFF_END)[0].strip()
+    assert block == govern.handoff_inventory(registry).strip()
+    for gap in registry["gaps"]:
+        assert block.count("|" + gap["id"] + " — ") == 1
+        assert gap["contract_case"] in block
+        assert gap["observed_java_behavior"] in block
+        assert gap["current_real_result"] in block
+    for preserved in ("Executive summary for Ferdinando", "400/400 exact", "NAD83/EPSG:4269", "NAVD88",
+                      "LOCAL_ENVIRONMENT_REPAIRED", "NullScannerReproducer.java", "not claimed delivered"):
+        assert preserved in document
+
+
+def test_handoff_generation_preserves_narrative_and_refuses_missing_or_duplicate_markers():
+    registry = govern.expanded()
+    text = "Seed before\n" + govern.HANDOFF_BEGIN + "\nold counts\n" + govern.HANDOFF_END + "\nSeed after\n"
+    output = govern.handoff_document(registry, text)
+    assert output.startswith("Seed before\n") and output.endswith("\nSeed after\n")
+    assert "old counts" not in output and "|JAVA_FIXED_VERIFIED|0|" in output
+    for broken in ("no markers", text + govern.HANDOFF_BEGIN):
+        with pytest.raises(ValueError, match="marker pair"):
+            govern.handoff_document(registry, broken)
+
+
+def test_handoff_counts_are_derived_from_registry_not_frozen_sixteen_snapshot():
+    registry = govern.expanded()
+    registry["gaps"] = registry["gaps"][:1]
+    text = govern.handoff_inventory(registry)
+    assert "Registry entries: **1**" in text
+    assert "|CONFIRMED_DEFECT|1|" in text and "|MISSING_API|0|" in text

@@ -4,6 +4,14 @@ This is the permanent contract/governance inventory, **not a Java implementation
 Python implementation, simulation, observed Java compatibility and end-to-end
 science are independent. No production SDK dependency, proxy or fallback is added.
 
+The active full-roadmap directive now includes C. Earlier audit exclusions/stop
+decisions below describe that historical review only, not the current execution
+scope. Maintainer-facing seed and generated all-gap appendix:
+[`JAVA_GAPS_FOR_FERDINANDO.md`](JAVA_GAPS_FOR_FERDINANDO.md). `govern.py generate
+--check` verifies its inventory/status counts against expanded YAML in CI. Every
+new/materially changed simulator contract must update its stable gap and this
+companion in the same feature PR. This is a repository attachment, not claimed sent.
+
 ## Canonical data and evidence
 
 - `gaps.yaml` is canonical JSON-compatible YAML. `defaults` explicitly supplies

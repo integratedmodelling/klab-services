@@ -2,6 +2,19 @@
 
 ## Authority and current decision
 
+### Superseding full-roadmap directive — 2026-11-06 after verified PR266
+
+The user's new self-contained directive authorizes **A+B+C** implementation and
+supersedes the historical audit-stop/C-exclusion boundary below, prospectively.
+This file retains the sole A+B evidence history; full-campaign orchestration and
+next actions are in `FULL_ROADMAP_EXECUTION_LEDGER.md`, not a second divergent
+A+B acceptance ledger. Original42criteria/historical statuses are preserved.
+RC-P5/CAP-17 are now in scope, not retrospectively completed. Install supplied
+Ferdinando handoff with generated registry appendix/count CI check first, then
+continue the next independently executable Python/simulator requirement without
+stopping at a documentation PR or review. No IDE repair/Java product change/study
+replication is authorized as a prerequisite. Current native acceptance stays separate.
+
 ### Sequential execution queue — user directive 2026-11-06
 
 Previous phase: **A+B Service Simulator development — COMPLETED_BOUNDED**.
