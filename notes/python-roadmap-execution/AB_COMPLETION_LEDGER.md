@@ -68,10 +68,10 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P1.3 — A collaborator reads, forbidden writes and expiry diagnosis|P; scope/access/error APIs; S(slice) SIM-LIFECYCLE-001 private denial|Native ACL contracts; S/PR225bounded real principals; N full expiry/collaborator matrix; extend positive controls|
 |RC-P1.4 — A actionable readiness/trust diagnostics|P; Connection.refresh/wait_ready/client; S(slice) SIM-DISCOVERY-001|Native capabilities/status + connection tests; N outage/mixed-version matrix; add fault scenarios without rerouting|
 |RC-P1.5 — A requested options visible in actual plan|P; ObservationRequest/options; S(slice) SIM-SELECTION-001|ResolutionConstraint/Dataflow DTOs; #200/N/Sactual bounded plans; N remaining observer/project/scenario/grid cases; extend supported options only|
-|RC-P2.1 — A nonuniform multi-shard scientific export|P; exports/point reads; S(slice) SIM-GRID-001 + SIM-USGS-001; export/multishard simulator NOT_RUN|StorageScan/Geometry DTOs, frozen oracle; N bounded real export, B(JAVA-SCANNER-001) IDE; implement advertised simulator exports/negative metadata cases|
+|RC-P2.1 — A nonuniform multi-shard scientific export|P; S(slice) SIM-GRID-001/SIM-USGS-001/SIM-EXPORT-001 exact nonuniform native TIFF and sync/async atomic export; multishard simulator NOT_RUN|StorageScan/Geometry/export DTOs and frozen oracle; B(JAVA-SCANNER-001) IDE; multishard/category/time scenarios still required|
 |RC-P2.2 — A time/window selection, precision, revision and masks|P; fetch_data/ScanSlice/descriptors; SIM-GRID-001 partial|StorageScan.Point + PR223/224/226/230; B(#123remote lease contract); add explicit time/mask/slice cases, preserve unknown revision|
 |RC-P2.3 — A independent real-provider accuracy|P; provider-reference runner; S(slice) SIM-USGS-001 authentic recorded cells only|Pinned original oracle/TIFF; B(JAVA-SCANNER-001/#130), not scientific Java output; recorded handling verified, genuine matched provider acceptance separate|
-|RC-P2.4 — A representative bounded stream/interrupt|P; sync/async atomic export; simulator stream NOT_RUN|Native export controller; #198socket64MiB/PR206Java1Mcell; N provider soak; add simulator interruptions/stream integrity, no capacity invention|
+|RC-P2.4 — A representative bounded stream/interrupt|P; S(slice) SIM-EXPORT-001 sync/async truncation/media/denial/byte-limit controls preserve original outputs|Native export controller; #198socket64MiB/PR206Java1Mcell; N representative provider soak; small recorded simulation is not throughput acceptance|
 |RC-P2.5 — A faithful raster/xarray and categorical views|P; analysis/tables/vector; SIM-GRID-001/SIM-USGS-001 partial|Native formats, PR204GeoJSON and frozen metadata; N category/time/vector simulator; implement faithful served fixtures only|
 |RC-P3.1 — A committed two-client race convergence|P; projection/invalidation/refetch; simulator race NOT_RUN|KnowledgeGraphQuery/activity hint contracts; B(JAVA-COMMIT-001/#126); test honest stale/refetch, label provisional ordering explicitly|
 |RC-P3.2 — A disconnect and honest partial refresh|P for new simulator acceptance; existing bounded acceptance retained; simulator disconnect NOT_RUN|#199actual outage/restart/refetch; add simulator disconnect and explicit partial refresh, never durable replay|
@@ -94,7 +94,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-06 — A typed plans versus execution|S(slice) SIM-SELECTION-001/SIM-PROVENANCE-001; inherited bounded acceptance retained|Native Dataflow/LinkImpl; PR239/240; full lineage remains RC-P3.4, no replay or scientific promotion|
 |CAP-07 — A jobs, polling, cancellation, sync/async and bounded concurrency|S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001: zero deadlines, resume, expiry distinct from cancellation, four concurrent async contexts|Native JobManager/Job routes; PR243merged; B(JAVA-RETENTION-001); finite retention is not Java durability|
 |CAP-08 — A exact sparse NUMBER/BOOLEAN/TEXT and explicit missingness|S(slice) SIM-GRID-001numeric/zero/negative/null/NaN; existing bounded acceptance retained|StorageScan.Point/text contract; N simulator Boolean/TEXT variants; preserve exact missingness and declared precision|
-|CAP-09 — A scientific exports/descriptors, time/space/units/categories|P; native export/read descriptors; SIM-GRID-001/SIM-USGS-001 partial|Native formats/Geometry/StorageScan; B(JAVA-SCANNER-001) IDE; simulator exports/time/categories next, not byte synthesis in SDK|
+|CAP-09 — A scientific exports/descriptors, time/space/units/categories|P; S(slice) SIM-GRID-001/SIM-USGS-001/SIM-EXPORT-001 exact native TIFF; time/categories partial|Native formats/Geometry/StorageScan; B(JAVA-SCANNER-001) IDE; time/categories/multishard remain, never synthesize native export bytes in SDK|
 |CAP-10 — A/B typed partial twin graph, stale markers, refresh|P; graph/projection/provenance; S(slice) SIM-PROVENANCE-001|KnowledgeGraphQuery/LinkImpl; B(JAVA-COMMIT-001); add paging/refetch/race cases without authoritative revision claims|
 |CAP-11 — A/B best-effort scoped events and resync|P; activity notifications/polling/resync; simulator events NOT_RUN|Native activity hints; B(#126durable cursor/replay); test supported hints/gaps only|
 |CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips; inherited bounded acceptance retained|ScientificData format/PR196; add fresh-process simulator-produced snapshot inspection, never offline reasoning|
@@ -142,6 +142,19 @@ or completion claim. Small protocol regressions cannot substitute for this inven
 
 ## Completion assessment
 
+Export follow-on (`feature/python-simulator-exports`): 66 simulator tests and lint
+pass locally, adding exact recorded native TIFF sync/async export and deterministic
+interrupted/media-mismatch/denied/byte-limit controls. Original file SHA verifies
+all cells/metadata byte-for-byte; failures preserve existing output, remove partial
+temporaries and keep the owned observation readable. Export identity/applicability
+is provisional; this 2032-byte fixture does not establish scale/soak acceptance.
+All66 tests also pass against both extracted current wheels; all14 simulator
+source/data files match wheel/sdist bytes. Exact artifact receipt:
+`evidence/ab-simulator-exports-validation-20261106.json`.
+PR246 remotely MERGED at `75ac5b7e1eeb899bd9dd4e91d5f442b9d33c80c1`
+(17:22:12Z), hosted simulator3.11/3.13/build/Jenkins passed. PR247 is open and
+retargeted integration, with its separate 56-test packaged receipt retained.
+
 Lifecycle follow-on (active `feature/python-simulator-lifecycle`): 56 simulator tests
 and fatal-error lint pass locally, including two fresh SDK processes restoring saved
 context/Job/observation handles with no remote create/submit/disposal; deterministic
@@ -152,7 +165,7 @@ current wheels; 13-file byte parity/build/lint passed. Receipt:
 `evidence/ab-simulator-lifecycle-validation-20261106.json`. Publication remains active.
 Foundation PR245 is remotely MERGED at `1591c7fdb3edb4cced0aa690072f86f914722711`
 (17:15:59Z), after hosted Python3.11/3.13 simulator/build/Jenkins checks passed.
-Resource follow-on PR246 is open, retargeted to integration; its 50-test checkpoint
+Resource follow-on PR246 is verified merged; its 50-test checkpoint
 remains separately attributed, not silently claimed to cover later lifecycle edits.
 
 Resource simulator follow-on (active branch `feature/python-simulator-resource-imports`):

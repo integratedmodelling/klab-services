@@ -161,6 +161,18 @@ The test-only authenticated `POST /__sim__/expireJobs` control yields native EMP
 status (JobManager.status source), distinct from confirmed cancellation or a released
 context's 404. Expiry control/timing is provisional, not Java durable retention.
 
+Recorded native exports are advertised only for `usgs-recorded` and the dedicated
+`export-interrupted`, `export-media-mismatch`, `export-denied` fault scenarios.
+The schema identity `simulator.native.geotiff` is explicitly simulator-only; the
+native capability/`GET /export/OBSERVATION/{urn}`/Accept/scope/Runtime-binding shapes
+are reused, not a claim that installed Java advertises that identity. Delivery
+serves the **unchanged pinned original TIFF**, not a Python-generated terrain grid.
+Sync/async file SHA checks cover every original byte (all cells and metadata).
+Fault tests deterministically truncate the advertised stream or deny/change its
+media type; atomic publication preserves existing output and removes temporary
+files. Byte-limit rejection also leaves the owned observation readable. These
+small recorded files test protocol/atomicity, not representative-scale throughput.
+
 For executable read-contract comparison use `python -m klab_simulator.compare`:
 provide a flat JSON map of the four endpoint URLs (the startup descriptor's
 `endpoints` member), an explicit model URN, mode and credential environment-variable

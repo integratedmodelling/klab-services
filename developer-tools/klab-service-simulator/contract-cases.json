@@ -208,6 +208,18 @@
       "confidence": "SOURCE_CONTRACT; finite process retention and test-only expiry schedule PROVISIONAL_SIMULATOR_CONTRACT",
       "simulator_test": "test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state",
       "java_status": "Prior bounded retained completed-Job restoration exists; current Java durability/incarnation/in-flight restart NOT_YET_TESTED; no scientific promotion"
+    },
+    {
+      "id": "SIM-EXPORT-001",
+      "rows": ["RC-P2.1", "RC-P2.4", "CAP-09", "CAP-18"],
+      "api": "Client/AsyncClient.export_formats; Observation.export_to_file",
+      "routes": ["GET /runtime/public/capabilities", "GET /runtime/export/OBSERVATION/{urn}"],
+      "request": "Native advertised OBSERVATION/STREAM capability shape, explicit Accept and identity encoding, owner scope and home Runtime klab-service; max byte budget",
+      "expected": "Exact pinned original TIFF SHA; no partial publication or overwrite on interruption, wrong media, denial or byte-limit failure; state stays readable",
+      "source": "Native export capability/route contracts; exports.py and async export implementation; immutable native TIFF and independently frozen oracle",
+      "confidence": "SOURCE_ENVELOPE; schema simulator.native.geotiff and finite applicability/fault injection PROVISIONAL_SIMULATOR_CONTRACT; bytes AUTHENTIC_FIXTURE_SIMULATED_DELIVERY",
+      "simulator_test": "test_exports.py::test_exact_pinned_native_export_preserves_original400cells_and_metadata",
+      "java_status": "NOT_RUN in this slice; preserved scanner failure remains; small recorded export does not establish real Runtime science or representative-scale provider throughput"
     }
   ]
 }

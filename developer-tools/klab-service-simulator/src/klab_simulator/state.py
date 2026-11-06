@@ -17,6 +17,8 @@ GEO = "org.integratedmodelling.klab.api.geometry.impl.GeometryImpl"
 MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
+EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
+SCENARIOS += EXPORT_SCENARIOS
 
 
 class ContractError(Exception):
@@ -54,7 +56,7 @@ class State:
         self.origin = "SYNTHETIC_SIMULATOR"
         if scenario == "zero-negative-nodata":
             self.values[:4] = [0, -7.5, None, "NaN"]
-        if scenario == "usgs-recorded":
+        if scenario == "usgs-recorded" or scenario in EXPORT_SCENARIOS:
             from .fixtures import authentic_fixture
             fixture = authentic_fixture()
             self.values = [x for row in fixture["allCellsNorthToSouthWestToEast"] for x in row]
@@ -159,9 +161,11 @@ class State:
                 return {"serviceId": self.service_ids[service], "serviceType": service.upper(),
                         "available": True, "operational": True, "connected": True}, "application/json"
             from .resource_imports import schemas
+            from .exports import export_schemas
             return {"serviceId": self.service_ids[service], "type": service.upper(), "version": "simulator-0.1.0",
                     "worldviewUrn": "synthetic", "consistent": True,
-                    "importSchemata": schemas() if service == "resources" else {}, "exportSchemata": {}}, "application/json"
+                    "importSchemata": schemas() if service == "resources" else {},
+                    "exportSchemata": export_schemas() if service == "runtime" and self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" else {}}, "application/json"
         principal = {"sim-token-alice": "alice", "sim-token-bob": "bob"}.get(headers.get("Authorization"))
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
@@ -234,6 +238,17 @@ class State:
                 raise ContractError(429, "Simulator session budget exceeded")
             self.sessions[identity] = {"owner": principal}
             return identity, "text/plain"
+        if service == "runtime" and method == "GET" and route.startswith("/export/OBSERVATION/"):
+            from .exports import export_bytes
+            root, _ = self._context(scope, principal)
+            if headers.get("klab-service") != self.service_ids["runtime"]:
+                raise ContractError(403, "Export requires the bound originating Runtime identity")
+            urn = route[len("/export/OBSERVATION/"):]
+            matches = [row for (context, identity), row in self.observations.items()
+                       if context == root and urn == f"{root}.{identity}"]
+            if len(matches) != 1:
+                raise ContractError(404, "Observation is not materialized in the selected context")
+            return export_bytes(self, headers)
         if service == "runtime" and method == "POST" and route == "/createContext":
             self._owner(self.sessions, scope, principal)
             configuration = (data or {}).get("configuration", {})
