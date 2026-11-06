@@ -22,6 +22,24 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
+Integrated notebook acceptance pass (active `feature/python-notebook-http-acceptance`):
+named RC-P3.5/CAP15 test now uses an actual exact-interpreter private kernel with
+the current ordinary SDK and existing isolated HTTP routes. Top-level await,
+two owned contexts/Jobs, local-only waiter cancellation with another same-Job wait,
+same-principal reader restoration/close and partial graph refresh are tested together.
+Kernel identity/shutdown, credential-free output, no cancellation/recreation and
+owned-scope cleanup are asserted. No simulator source/endpoint or production SDK
+change, no positive collaborator ACL or Java science claim.97packaged tests PASS
+with zero skips, including the actual kernel case; lint and47SDK/20simulator
+source-to-current-wheel byte parity PASS; all42criterion wordings unchanged.
+Prior3802SDK/18gate verification is reused only for that byte-identical production
+SDK, not called a new suite. Receipt:
+`evidence/ab-notebook-http-validation-20261106.json`. A mandatory-dependency notebook
+CI job is added; hosted delivery pending. PR257 remotely MERGED at
+052c729cba3cae5bfe5057e68c40501ea1e96718,2026-11-06T19:14:58Z,
+after applicable hosted SDK/core/Windows/simulator/scientific/build/Jenkins checks
+passed. No independent maintainer review is claimed.
+
 Native awaited graph pass (active `feature/python-async-graph-browser`): two red
 tests reproduced absent AsyncGraphBrowser/AsyncGraphProjection. Shared pure
 selection/membership/query/page/retention validation now serves native awaited
@@ -165,7 +183,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P3.2 — A disconnect and honest partial refresh|S(slice) SIM-REFRESH-001 sync/native-async HTTP403/500/disconnect invalidates retained pages, explicit one-page refetch leaves others stale/partial|#199actual bounded outage/refetch retained; simulator faults SIMULATED_PROVISIONAL; native AsyncGraphBrowser/AsyncGraphProjection implementation active; no global resync/durable replay or rechecked authorization claim|
 |RC-P3.3 — A cancel/expiry/restart/no replay|P; Job/AsyncJob/binding; S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001 zero-deadline resume, finite EMPTY expiry, concurrent cancellation|Native JobManager/status/boolean empty; PR243MERGEDb9ee02b91; B(JAVA-RETENTION-001); Java retention/incarnation/restart still pending|
 |RC-P3.4 — A explain actual dependencies and semantic effects|P; provenance/evidence/activity APIs; S(slice) SIM-PROVENANCE-001|Native query/LinkImpl and PR239/240real bounded views; B(JAVA-COMMIT-001); simulate explicit partial plans/recorded effects, no historical lineage claim|
-|RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; async vertical only, notebook/races NOT_RUN|PR210/211/225real bounded acceptance; N integrated multiprincipal notebook; reuse workflows with simulator concurrency/cancel controls|
+|RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; S(slice) SIM-NOTEBOOK-001 actual exact-SDK kernel/two contexts/local-only cancelled wait/same-Job surviving wait/reader close/partial graph|PR210/211/225real bounded evidence retained; new kernel executes simulated service flow, not new Java science or positive collaborator ACL; multiprincipal acceptance and authoritative commit races remain distinct|
 |RC-P4.1 — B meaning-based asset applicability/version/access|P; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-SEMANTICS-001/SIM-INSPECTION-001; sync/async finite canonical search, stale candidates, hierarchy/predicates and inert asset advertisements|VERIFIED_JAVA limited captured reads; new fixture answers SIMULATED_PROVISIONAL. Newer candidates protocol historical advertisement gap remains, not a forced Python selection API|
 |RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; simulator NOT_RUN|Native parseAsset DTOs, PR201/228real parsers; N maintained revision; add finite parser/fault/stale cases, no compiler port|
 |RC-P4.3 — B import/annotate/compute with input provenance|S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001: public sync/async upload, semantic source ADD, bound plan,400recorded cells/input receipt|PR244/249 merged, AsyncAuthoring delivered. SIMULATED_PROVISIONAL admission/input projection; JAVA_INCOMPATIBLE historical scanner; B(JAVA-RESOURCE-CLEANUP-001). No general native annotation/immutable lineage claim|
@@ -188,7 +206,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips; inherited bounded acceptance retained|ScientificData format/PR196; add fresh-process simulator-produced snapshot inspection, never offline reasoning|
 |CAP-13 — B resources/models read/query/dependency inspection|P; inspectors/services/imports; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-IMPORT-001|J(read) real catalog/model captures; newer candidates schema drift; add implemented resolve/query/dependencies and explicit binding|
 |CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/AsyncAuthoring/AgentPreviews/new AsyncAgentPreviews/agents/imports; S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001; behaviors simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; finite semantic-source admission SIMULATED_PROVISIONAL; awaited preview is nonexecuting protocol evidence only; continue supported behavior/conditional mutation contracts, no compiler/scheduler port|
-|CAP-15 — A optional NumPy/pandas/xarray/raster/vector and notebooks|P; S(slice) SIM-ADAPTERS-001 raster/xarray/NumPy/pandas, plus core numeric slice; vector/notebook integrated simulator matrix remains|Independent N-oracle and PR204vector/PR211notebook receipts; new dedicated CI requires analysis/tabular dependencies, core SDK imports stay optional|
+|CAP-15 — A optional NumPy/pandas/xarray/raster/vector and notebooks|P; S(slice) SIM-ADAPTERS-001 raster/xarray/NumPy/pandas + SIM-NOTEBOOK-001 actual owned kernel/native awaited client workflow; vector integrated simulator matrix remains|Independent N-oracle and PR204vector/PR211notebook receipts retained; dedicated CI requires analysis/tabular or notebook/local dependencies without skips; core SDK imports stay optional and no new Java science is inferred|
 |CAP-16 — A/B compatibility, fixtures, package, support/migration/scale|P; CI/wheel/support checker; simulator CI active|3651SDK/18gates/47module parity; N full simulator support matrix; external scheduled worker/#129does not hold Python tests|
 |CAP-17 — C provider SDK / local embedded runtime|EXCLUDED_C|#127separate product|
 |CAP-18 — A/B safe architecture and irreversible-contract boundaries|S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/REPLAY-001; accepted invariant retained|Native origin/identity/no-replay contracts; regression each increment; REAL never silently becomes SIMULATED|

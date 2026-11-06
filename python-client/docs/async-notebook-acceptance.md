@@ -1,5 +1,22 @@
 # Actual native async notebook acceptance
 
+## Current isolated HTTP notebook regression (separate evidence)
+
+`developer-tools/klab-service-simulator/tests/test_notebook_client.py` now runs the
+ordinary current SDK in an actual owned exact-interpreter kernel with top-level
+await. Two finite simulated Jobs/contexts complete despite cancelling one local
+wait; another waiter on the same Job survives. A second same-principal client
+restores an observation and closes without disposing it. Native awaited graph
+refresh remains explicitly partial/UNKNOWN. The test verifies exact SDK import,
+kernel shutdown, credential-free outputs, two submissions only, zero remote Job
+cancellations and explicit owned context/session cleanup. It adds no endpoint.
+
+Dedicated `notebook-client` CI requires notebook/local dependencies and runs this
+case without optional skips. It is **SIMULATED service acceptance with a real
+kernel**, not a new Java computation, arbitrary notebook/browser GUI support,
+durable recovery guarantee or positive collaborator-access test. Original served
+Q8b scientific and principal evidence below remains historical and distinct.
+
 ## Q8b contract — before implementation
 
 Basea83d9643dd776a3df3cba87d026800feb390565b; branch

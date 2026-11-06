@@ -28,6 +28,18 @@
   },
   "cases": [
     {
+      "id": "SIM-NOTEBOOK-001",
+      "rows": ["RC-P3.5", "CAP-07", "CAP-15"],
+      "api": "Actual top-level-await kernel: AsyncClient, AsyncJob.result, restore_handle, fetch_data, AsyncGraphProjection.load",
+      "routes": ["Existing Runtime scope/submit/Job/query/attach/release routes only"],
+      "request": "Two owned contexts/Jobs; cancel one local wait while another waits for the same Job; same-principal reader restores observation and closes locally",
+      "expected": "Exact interpreter/SDK identity and kernel shutdown; surviving waits and independent context complete; four frozen synthetic endpoint cells; no remote Job cancellation/recreation; explicit scope cleanup and partial graph refresh",
+      "source": "Planning guide RC-P3.5/CAP15; existing exact-interpreter workflows.async_notebook kernel helper; public async client contracts",
+      "confidence": "SIMULATED_PROVISIONAL service behavior; actual owned notebook/kernel execution, not Java science, GUI support or collaborator ACL verification",
+      "simulator_test": "test_notebook_client.py::test_owned_exact_sdk_kernel_await_shared_job_local_cancellation_reader_close_and_partial_graph",
+      "java_status": "NOT_RUN; historical native notebook evidence remains separately attributed"
+    },
+    {
       "id": "SIM-TEMPORAL-EXPORT-001",
       "rows": ["RC-P2.2", "CAP-09", "CAP-15"],
       "api": "Observation.export_to_file and sync/async export_for_analysis with slice=; ExportResult.requested_slice",
