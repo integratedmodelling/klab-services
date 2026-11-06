@@ -49,6 +49,14 @@ Java end-to-end functionality. No Monday walkthrough or live repair is a Python 
 
 ## Request/response and ownership rules
 
+Native awaited graph correction (RC-P3.2/P3.5/CAP10): AsyncGraphBrowser and
+AsyncGraphProjection reuse existing bounded typed membership/LINK queries, pure
+decoding and partial retention. Both facades now snapshot relationship selections
+before I/O. Cancellation and generation-race tests preserve stale markers; existing
+HTTP fault controls prove awaited403/500/disconnect handling without adding an
+endpoint. This is Python/simulator evidence only; native commit/revision/order and
+current authorization remain unestablished, not inferred from cached data.
+
 Native awaited deferred-registration correction (RC-P4.5/CAP14):
 AsyncAgentExecutions shares exact consent/parser/identity/result checks and deferred
 compile flags, with same-object async admission serialization. Protocol tests enforce

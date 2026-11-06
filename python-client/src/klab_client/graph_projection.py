@@ -6,7 +6,7 @@ from threading import RLock
 
 from .evidence import _plain
 from .errors import InvalidRequestError, ProtocolError
-from .graph import GRAPH_RELATIONSHIPS, GraphBrowser, GraphPage
+from .graph import GRAPH_RELATIONSHIPS, GraphBrowser, AsyncGraphBrowser, GraphPage
 from .handles import to_handle
 
 
@@ -51,8 +51,11 @@ class GraphProjection:
     bounds retention; pages are never merged into a supposed coherent snapshot.
     """
     def __init__(self, browser, *, max_pages=16, max_retained_json_bytes=4 * 1024 * 1024):
-        if not isinstance(browser, GraphBrowser):
-            raise InvalidRequestError("GraphProjection requires an explicit GraphBrowser")
+        if not isinstance(browser, GraphBrowser) or isinstance(browser, AsyncGraphBrowser):
+            raise InvalidRequestError("GraphProjection requires an explicit synchronous GraphBrowser")
+        self._configure(browser, max_pages, max_retained_json_bytes)
+
+    def _configure(self, browser, max_pages, max_retained_json_bytes):
         if type(max_pages) is not int or not 1 <= max_pages <= 32:
             raise InvalidRequestError("Graph projection retains 1..32 pages")
         if (type(max_retained_json_bytes) is not int
@@ -103,30 +106,33 @@ class GraphProjection:
                 generation = self._generation
             page = self._browser.neighbors(anchor, direction=direction,
                                             relationships=relationships, offset=offset)
-            size = _page_bytes(page)
-            if size > self._max_bytes:
-                raise ProtocolError("Graph page exceeds retained JSON budget; not cached")
-            key = (page.anchor.kind, page.anchor.id, page.anchor.urn,
-                   page.direction, page.relationships, page.offset)
-            with self._lock:
-                self._binding()
-                newer = self._pages.get(key)
-                if newer is not None and newer[1] > generation:
-                    # A slower pre-invalidation read cannot replace a refreshed page.
-                    return ProjectedGraphPage(page, generation, True, size)
-                old = self._pages.pop(key, None)
-                if old is not None:
-                    self._bytes -= old[2]
-                while self._pages and (len(self._pages) >= self._max_pages
-                                       or self._bytes + size > self._max_bytes):
-                    _, removed = self._pages.popitem(last=False)
-                    self._bytes -= removed[2]
-                self._pages[key] = (page, generation, size)
-                self._bytes += size
-                return ProjectedGraphPage(page, generation, generation != self._generation, size)
+            return self._retain(page, generation)
         except BaseException:
             self.invalidate("READ_FAILED")
             raise
+
+    def _retain(self, page, generation):
+        size = _page_bytes(page)
+        if size > self._max_bytes:
+            raise ProtocolError("Graph page exceeds retained JSON budget; not cached")
+        key = (page.anchor.kind, page.anchor.id, page.anchor.urn,
+               page.direction, page.relationships, page.offset)
+        with self._lock:
+            self._binding()
+            newer = self._pages.get(key)
+            if newer is not None and newer[1] > generation:
+                # A slower pre-invalidation read cannot replace a refreshed page.
+                return ProjectedGraphPage(page, generation, True, size)
+            old = self._pages.pop(key, None)
+            if old is not None:
+                self._bytes -= old[2]
+            while self._pages and (len(self._pages) >= self._max_pages
+                                   or self._bytes + size > self._max_bytes):
+                _, removed = self._pages.popitem(last=False)
+                self._bytes -= removed[2]
+            self._pages[key] = (page, generation, size)
+            self._bytes += size
+            return ProjectedGraphPage(page, generation, generation != self._generation, size)
 
     def clear(self):
         """Forget only this object's retained pages, never release remote resources."""
@@ -134,3 +140,27 @@ class GraphProjection:
             self._pages.clear()
             self._bytes = 0
             self.invalidate()
+
+
+class AsyncGraphProjection(GraphProjection):
+    """Await explicit page refreshes; local view/invalidate/clear remain synchronous.
+
+    Local locks protect only pure retained-state sections and are never held over
+    network awaits. No cache authorization, revision lease or hidden thread facade.
+    """
+    def __init__(self, browser, *, max_pages=16, max_retained_json_bytes=4 * 1024 * 1024):
+        if not isinstance(browser, AsyncGraphBrowser):
+            raise InvalidRequestError("AsyncGraphProjection requires an explicit AsyncGraphBrowser")
+        self._configure(browser, max_pages, max_retained_json_bytes)
+
+    async def load(self, anchor, *, direction="both", relationships=GRAPH_RELATIONSHIPS, offset=0):
+        try:
+            with self._lock:
+                self._binding()
+                generation = self._generation
+            page = await self._browser.neighbors(anchor, direction=direction,
+                                                relationships=relationships, offset=offset)
+            return self._retain(page, generation)
+        except BaseException:
+            self.invalidate("READ_FAILED")
+            raise

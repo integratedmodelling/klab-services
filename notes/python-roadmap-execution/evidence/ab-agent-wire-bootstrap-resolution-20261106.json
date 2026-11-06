@@ -1,0 +1,13 @@
+{
+  "pr": 256,
+  "corrected_head": "d53158e08bab0edce1b94d17bcf27852e2b2e5aa",
+  "passing_native_wire_runs": [42275450321, 42275461095],
+  "source_bootstrap_pin": "integratedmodelling/klab.product@0c80acb1f16a1d405f888cf99286d6e365293559",
+  "all_other_applicable_hosted_checks": "PASS",
+  "remote_state": "MERGED",
+  "merge_commit": "c5d138b242acb54242366601693259c1d2de22aa",
+  "merged_at": "2026-11-06T19:05:39Z",
+  "evidence_scope": "Existing real owned Qpid/production Java AMQP wire tests, not managed Runtime lifecycle or scientific execution",
+  "local_java_ide_touched": false,
+  "independent_maintainer_review_claimed": false
+}

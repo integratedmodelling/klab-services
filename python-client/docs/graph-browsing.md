@@ -1,5 +1,21 @@
 # Typed recorded graph browsing
 
+Native awaited counterpart:
+
+```python
+from klab_client import AsyncGraphBrowser
+
+browser = AsyncGraphBrowser(async_context, max_links=16)
+page = await browser.neighbors(observation, direction="incoming", relationships=["MEASURED"])
+```
+
+The async facade shares pure selection, membership, query and page validation,
+awaits transport directly and rechecks context binding after each read. Mutable
+relationship input is snapshotted before membership I/O. Cancellation never returns
+a fabricated page, retries, recreates work or releases scopes. No hidden thread or
+event loop is used. Sync/async browsers require matching clients and return the same
+immutable partial GraphPage; neither creates a revision lease or authoritative lineage.
+
 `GraphBrowser` provides explicit bounded read-only pages of links incident to a
 known observation, activity, actuator or cohort in one configured context. It
 reuses existing `ProvenanceNode`/`ProvenanceLink` decoding and the Runtime
