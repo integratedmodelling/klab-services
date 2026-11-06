@@ -27,7 +27,7 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 |D01 finished-Job envelope|Shared Job/AsyncJob decoder guard,26newcases;324focused tests reverified;18checker tests reverified; prior3579wheel-extracted tests/17coverage gates/lint/build/46file parity bound by existing receipts|[PR243](https://github.com/integratedmodelling/klab-services/pull/243) **MERGED**15:39:32Z, merge`b9ee02b91bf18b916c68b18d870a685bca10c282`; exact-head checks including Python3.11/12/13,core-only,Windows,build andJenkins PASS; no required approval bypass, self-review not human approval. Current work fast-forwarded onto verified merge|
 |E01 IDE refresh|15:33:52Z checker v2 read-only deep refresh: G0/G1/G2PASS, identity drift[], no context/session/Job. Private receipt `ab-audit-20261106/campaign-start-state.json`|G3/G4 historical only; G5 historical null scanner failure, freshUNKNOWN; G6/G7UNKNOWN; no numeric or UI promotion|
 |D02 resource imports (MERGED_BOUNDED)|Current native Resources advertises RESOURCE/STREAM raster.geotiff.import andresources.legacy.files. Shared sync/native-async API, explicit consent, bounded byte hashing, native-long acknowledgement, scoped Resources Jobs/no retries.72focused/3651full SDK tests,18gates/lint/build/47module byte parity PASS|[PR244](https://github.com/integratedmodelling/klab-services/pull/244) **MERGED**16:40:01Z at`b618bd96ecab818279006b17f700598217d77e09`; all hosted Python3.11/12/13/core/Windows/build/Jenkins checks passed. Positive Java upload still needs approved disposable/retained-resource tuple; no supported owned-resource deletion found. Full import/annotation/compute remains separate|
-|D03 simulator foundation (active)|Separate dev/test package `developer-tools/klab-service-simulator`, four services/ephemeral port, deterministic Jobs, scope ownership, independent400synthetic cells and400frozen USGS recorded cells. Real-process SDK HTTP tests check everyvalue/metadata/centre/provenance/cleanup; native async, replay, malformed/empty/failure/cancel, HTTP500no-fallback, bounded state and42criterion-wording checks.41tests and fatal-error lint PASS|Not Java science. Simulated/replay service modes and direct real read-comparison configuration are explicit; hybrid deferred. Normal package/CI publication next, then resource/streaming/lifecycle breadth; no all40-parent completion claim|
+|D03 simulator foundation (MERGED_BOUNDED)|Separate dev/test package, four services/ephemeral port, deterministic Jobs, ownership,400synthetic/400recorded authentic cells, replay and failure cases.41packaged tests/lint/parity passed; hosted Python3.11/3.13/build/Jenkins passed|PR245 remotely MERGED at1591c7fdb on2026-11-06T17:15:59Z. Not Java science or all40-parent completion; resource/lifecycle/export/authoring breadth continues|
 
 Evidence references: [initial reconciliation](AB_OUTSTANDING_ISSUE_RECONCILIATION.md),
 [IDE contract](MODELER_IDE_STATE.md), [historical scanner handoff](MODELER_REAL_DEM_REMEDIATION_REPORT.md#12-remaining-failures--smallest-next-action),
@@ -64,7 +64,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |---|---|---|
 |RC-P0 — A/B operation inventory and compatibility diagnostics|P; Client/connection/service inventory; S(slice) SIM-DISCOVERY-001|KlabServiceController/SDK transport + prior CI; N mixed-version matrix; extend changed-capability diagnostics|
 |RC-P1.1 — A supported onboarding through computation|P; connect/profiles/certificate/token; S(slice) SIM-DISCOVERY-001 + SIM-GRID-001|Native scope/capability DTOs, PR205TESTHub; genuine Hub/issuer/license external; finish simulator certificate path, never relabel TESTHub production|
-|RC-P1.2 — A fresh-process restoration without disposal|P; Handle/Client/AsyncClient restoration; SIM-LIFECYCLE-001 partial, fresh-process simulator case NOT_RUN|Native scopes/Jobs; PR203/218real retained completedJob; B(JAVA-RETENTION-001); extend simulator restore without create/dispose|
+|RC-P1.2 — A fresh-process restoration without disposal|S(slice) SIM-RESTORE-001: separate SDK processes restore retained context/Job/observation without create/submit/release|Native handle/scope/Job contracts; PR203/218real retained completedJob; B(JAVA-RETENTION-001) durability/incarnation remains separate; full parent not closed by finite simulator retention|
 |RC-P1.3 — A collaborator reads, forbidden writes and expiry diagnosis|P; scope/access/error APIs; S(slice) SIM-LIFECYCLE-001 private denial|Native ACL contracts; S/PR225bounded real principals; N full expiry/collaborator matrix; extend positive controls|
 |RC-P1.4 — A actionable readiness/trust diagnostics|P; Connection.refresh/wait_ready/client; S(slice) SIM-DISCOVERY-001|Native capabilities/status + connection tests; N outage/mixed-version matrix; add fault scenarios without rerouting|
 |RC-P1.5 — A requested options visible in actual plan|P; ObservationRequest/options; S(slice) SIM-SELECTION-001|ResolutionConstraint/Dataflow DTOs; #200/N/Sactual bounded plans; N remaining observer/project/scenario/grid cases; extend supported options only|
@@ -75,7 +75,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P2.5 — A faithful raster/xarray and categorical views|P; analysis/tables/vector; SIM-GRID-001/SIM-USGS-001 partial|Native formats, PR204GeoJSON and frozen metadata; N category/time/vector simulator; implement faithful served fixtures only|
 |RC-P3.1 — A committed two-client race convergence|P; projection/invalidation/refetch; simulator race NOT_RUN|KnowledgeGraphQuery/activity hint contracts; B(JAVA-COMMIT-001/#126); test honest stale/refetch, label provisional ordering explicitly|
 |RC-P3.2 — A disconnect and honest partial refresh|P for new simulator acceptance; existing bounded acceptance retained; simulator disconnect NOT_RUN|#199actual outage/restart/refetch; add simulator disconnect and explicit partial refresh, never durable replay|
-|RC-P3.3 — A cancel/expiry/restart/no replay|P; Job/AsyncJob/binding; S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001|Native status enum/boolean empty; PR243MERGEDb9ee02b91; B(JAVA-RETENTION-001); extend deadlines/expiry/restart and cancellation races|
+|RC-P3.3 — A cancel/expiry/restart/no replay|P; Job/AsyncJob/binding; S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001 zero-deadline resume, finite EMPTY expiry, concurrent cancellation|Native JobManager/status/boolean empty; PR243MERGEDb9ee02b91; B(JAVA-RETENTION-001); Java retention/incarnation/restart still pending|
 |RC-P3.4 — A explain actual dependencies and semantic effects|P; provenance/evidence/activity APIs; S(slice) SIM-PROVENANCE-001|Native query/LinkImpl and PR239/240real bounded views; B(JAVA-COMMIT-001); simulate explicit partial plans/recorded effects, no historical lineage claim|
 |RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; async vertical only, notebook/races NOT_RUN|PR210/211/225real bounded acceptance; N integrated multiprincipal notebook; reuse workflows with simulator concurrency/cancel controls|
 |RC-P4.1 — B meaning-based asset applicability/version/access|P; semantic/resource inspectors; S(slice) SIM-SELECTION-001/REPLAY-001|J(read) native captures; B(JAVA-CANDIDATES-001) newer protocol not advertised; extend implemented semantic/asset routes without Python reasoning|
@@ -92,7 +92,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-04 — A typed scope/observe/register/query/focus/grid|P; typed request/scope APIs; SIM-LIFECYCLE-001/SIM-GRID-001 partial|Native typed option/geometry contracts; N relationships/focus/full option matrix; extend supported cases|
 |CAP-05 — B semantic search/predicates/composition/revision objects|P; semantic facades; SIM-SELECTION-001/REPLAY-001 basic lookup|J(read) actual semantic capture; N broader predicates/composition/revision; finite vocabulary only, no ontology engine|
 |CAP-06 — A typed plans versus execution|S(slice) SIM-SELECTION-001/SIM-PROVENANCE-001; inherited bounded acceptance retained|Native Dataflow/LinkImpl; PR239/240; full lineage remains RC-P3.4, no replay or scientific promotion|
-|CAP-07 — A jobs, polling, cancellation, sync/async and bounded concurrency|P; Job/AsyncJob; S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001|Native enum/Job routes; PR243merged; B(JAVA-RETENTION-001); extend concurrency/deadline/race cases|
+|CAP-07 — A jobs, polling, cancellation, sync/async and bounded concurrency|S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001: zero deadlines, resume, expiry distinct from cancellation, four concurrent async contexts|Native JobManager/Job routes; PR243merged; B(JAVA-RETENTION-001); finite retention is not Java durability|
 |CAP-08 — A exact sparse NUMBER/BOOLEAN/TEXT and explicit missingness|S(slice) SIM-GRID-001numeric/zero/negative/null/NaN; existing bounded acceptance retained|StorageScan.Point/text contract; N simulator Boolean/TEXT variants; preserve exact missingness and declared precision|
 |CAP-09 — A scientific exports/descriptors, time/space/units/categories|P; native export/read descriptors; SIM-GRID-001/SIM-USGS-001 partial|Native formats/Geometry/StorageScan; B(JAVA-SCANNER-001) IDE; simulator exports/time/categories next, not byte synthesis in SDK|
 |CAP-10 — A/B typed partial twin graph, stale markers, refresh|P; graph/projection/provenance; S(slice) SIM-PROVENANCE-001|KnowledgeGraphQuery/LinkImpl; B(JAVA-COMMIT-001); add paging/refetch/race cases without authoritative revision claims|
@@ -142,6 +142,19 @@ or completion claim. Small protocol regressions cannot substitute for this inven
 
 ## Completion assessment
 
+Lifecycle follow-on (active `feature/python-simulator-lifecycle`): 56 simulator tests
+and fatal-error lint pass locally, including two fresh SDK processes restoring saved
+context/Job/observation handles with no remote create/submit/disposal; deterministic
+zero deadlines/resume; four-context native-async cancellation isolation; native EMPTY
+expiry versus a released-scope 404. Explicit test-only expiry is provisional and does
+not assert Java retention periods. All56 tests also pass against both extracted
+current wheels; 13-file byte parity/build/lint passed. Receipt:
+`evidence/ab-simulator-lifecycle-validation-20261106.json`. Publication remains active.
+Foundation PR245 is remotely MERGED at `1591c7fdb3edb4cced0aa690072f86f914722711`
+(17:15:59Z), after hosted Python3.11/3.13 simulator/build/Jenkins checks passed.
+Resource follow-on PR246 is open, retargeted to integration; its 50-test checkpoint
+remains separately attributed, not silently claimed to cover later lifecycle edits.
+
 Resource simulator follow-on (active branch `feature/python-simulator-resource-imports`):
 public sync/async imports now exercise the pinned TIFF through multipart upload,
 Resources Job, owned catalog/retrieve and matching source SHA/count. Cancellation,
@@ -149,8 +162,8 @@ cross-principal denial, duplicate/pending URNs, malformed/multiple fields and bo
 pending reservations have executable tests. This is a partial RC-P4.3/CAP13/14 slice,
 not input annotation/model-bound scientific execution. Native schema/envelope shapes
 are sourced; suggested URN/hash metadata/context-release cleanup are provisional.
-Foundation [PR245](https://github.com/integratedmodelling/klab-services/pull/245) is
-published at `ba5f4d825`; hosted CI is pending, not represented as merged.
+Foundation [PR245](https://github.com/integratedmodelling/klab-services/pull/245) was
+published at `ba5f4d825` and is now remotely verified merged at `1591c7fdb`.
 Follow-on verification: 50 tests against both extracted current wheels, fatal-error
 lint and 13-file source/wheel/sdist byte parity PASS. Receipt:
 `evidence/ab-simulator-imports-validation-20261106.json`. Multipart self-review found
@@ -163,7 +176,8 @@ simulator source/data files match both wheel and sdist byte-for-byte. Receipt:
 `evidence/ab-simulator-foundation-validation-20261106.json`. Simulator wheel SHA256
 `93cc8eee28936fe45298eea14c6f67674c08a774b95d7c2c5713d7a790d1a10a`.
 This supersedes stale earlier simulator builds, not the pinned scientific fixtures.
-Self-review is not independent maintainer approval; hosted CI/publication is pending.
+Self-review is not independent maintainer approval. Hosted CI subsequently passed
+and foundation PR245 was verified merged; later slices retain their own gates.
 
 NOT_COMPLETE. Each row needs a final supported implementation and verification
 disposition; RUNNABLE items above remain engineering work. Implementation completion

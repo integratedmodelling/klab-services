@@ -151,6 +151,16 @@ Default CI installs both packages cleanly and runs pure state, HTTP SDK and repl
 tests on Python3.11/3.13with no Java/IDE/Neo4j/production credentials or paid services.
 The ongoing `AB_COMPLETION_LEDGER.md` tracks remaining rows and actual PR merges.
 
+Lifecycle acceptance now runs two separate SDK processes against one retained
+simulator process: secret-free context/Job/observation handles restore without any
+create/submit/release during restoration, and closing either SDK does not dispose
+remote state. Explicit cleanup is performed afterward by the owning test. Zero-time
+wait deadlines preserve the exact Job for later result/cancellation without replay;
+four concurrent native-async contexts isolate one cancelled Job from three successes.
+The test-only authenticated `POST /__sim__/expireJobs` control yields native EMPTY
+status (JobManager.status source), distinct from confirmed cancellation or a released
+context's 404. Expiry control/timing is provisional, not Java durable retention.
+
 For executable read-contract comparison use `python -m klab_simulator.compare`:
 provide a flat JSON map of the four endpoint URLs (the startup descriptor's
 `endpoints` member), an explicit model URN, mode and credential environment-variable
