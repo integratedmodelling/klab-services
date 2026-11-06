@@ -6,11 +6,11 @@ advertised RESOURCE/STREAM schemas; explicitly consented uploads return an
 See [resource imports](resource-imports.md) for examples and the separate native
 admission gate. No component installation or implicit scientific execution.
 
-Local dependent candidate: `await async_fetch_execution_evidence(async_observation)`
+`await async_fetch_execution_evidence(async_observation)`
 awaits bounded recorded provenance and scoped activity reads, returning the existing
 immutable `ExecutionEvidence`. Plans are not execution/commit proof and absent
-diagrams remain explicit. It depends on unpublished native async provenance; neither
-feature is yet accepted integration delivery. See
+diagrams remain explicit. It uses native async provenance present in the campaign
+integration; this is not a claim of complete lineage or real Java science. See
 [dependent async evidence contract](native-async-execution-evidence.md).
 
 `await async_fetch_provenance(async_observation, limit=64, offset=0)` explicitly
@@ -145,7 +145,8 @@ See [vector budgets, identities and limits](vector-analysis.md).
 
 Remaining unsupported capabilities include Avro worker contextualization and job
 data decoding, general chunk/window access, automatic arbitrary query/consumer geometry
-conversion, general pandas/multidimensional adapters, privileged server administration, full Modeler
+conversion, general pandas/multidimensional adapters, privileged server administration
+beyond the explicitly supported project lock operations, full Modeler
 UI emulation and Java API parity. These are explicit boundaries, not empty success.
 
 Sync/native-async exports and analysis helpers accept explicit temporal `slice=`;

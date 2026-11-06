@@ -1,0 +1,24 @@
+{
+  "utc": "2026-11-06T20:03:45.849217+00:00",
+  "base": "61ba48db89bc984b2722d70c30fe1372c105abd5",
+  "packaged_simulator_tests": 104,
+  "skipped": 0,
+  "artifacts": {
+    "sdk": {
+      "parity_files": 48,
+      "wheel_sha256": "b2651cb9b4acb798d6cd50c6186480a0fcc8d818f59677a0e0934354dbbacec8"
+    },
+    "simulator": {
+      "parity_files": 20,
+      "wheel_sha256": "f22be6534bb165da9cdb72983c9be389bd55d7397df6cf402c234f69f9e6c8a8"
+    }
+  },
+  "lint": "PASS",
+  "original_criteria_unchanged": 42,
+  "production_sdk_or_simulator_source_changed": false,
+  "new_endpoints": 0,
+  "reused_unchanged_sdk_validation": "3904SDK tests/19exact gates: ab-scope-selection-validation-20261106.json; byte-identical current SDK artifact, not a new SDK run",
+  "offline_acceptance": "Fresh exact-interpreter SDK process after owned scope release; socket audit events forbidden,400original synthetic oracle cells/offsets, preserved geometry/source units/origin metadata, exact snapshot hashes and unknown-version rejection",
+  "real_java_science": "NOT_RUN",
+  "authorization_or_revision_claim": false
+}

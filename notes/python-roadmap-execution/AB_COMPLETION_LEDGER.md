@@ -45,6 +45,34 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
+Fresh-process offline snapshot acceptance pass (active
+`feature/python-offline-snapshot-acceptance`, published PR261):
+CAP12's remaining independently runnable fresh-process check now saves two bounded
+public SDK reads covering400unchanged frozen synthetic cells, explicitly releases
+owned scopes and reloads them in a fresh exact-interpreter SDK process. Socket audit
+events are forbidden; exact cells/offsets, stable snapshot bytes/hashes, metadata and
+unknown-version rejection are checked without contacting a service. No production
+SDK/simulator source/route or scientific oracle change.104packaged simulator tests
+PASS with zero skips, including fresh-process offline and actual notebook cases;
+lint and48SDK/20simulator source-to-current-wheel byte parity PASS;42original
+criteria unchanged. Prior3904SDK/19gate verification is reused only for the exact
+unchanged SDK artifact, not described as a new SDK suite. Receipt:
+`evidence/ab-offline-snapshot-validation-20261106.json`. Hosted delivery pending;
+this is A+B acceptance work, not the queued post-A+B issue/governance audit.
+PR260 remotely MERGED at4a0753e48389543146bb8fb0f508c121ea71e720,
+2026-11-06T20:06:35Z after all applicable hosted SDK/core/Windows/simulator/
+scientific/notebook/build/Jenkins checks passed. No independent maintainer review
+is claimed. PR261 is retargeted from the scope branch to campaign integration;
+fresh checks on its updated merge ancestry are required before merging.
+
+Actual current SDK installation smoke also PASS: pip `--no-index --no-deps`
+installed exact wheelb2651cb9b4acb798d6cd50c6186480a0fcc8d818f59677a0e0934354dbbacec8
+into a new temporary venv; import outside checkout verified package location and
+no automatic simulator/scientific-extra imports. The venv inherits host packages,
+so this is **not dependency-isolation certification**. No existing environment
+was modified. Sanitized receipt:
+`evidence/ab-current-sdk-install-smoke-20261106.json`.
+
 Scope-selection correction pass (active `feature/python-scope-selection-guards`):
 14red sync/async tests reproduced out-of-Java-long focused views, inconsistent or
 empty selected tokens, observer-bearing root IDs and retained configuration/root
@@ -263,7 +291,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-09 — A scientific exports/descriptors, time/space/units/categories|P; S(slice) SIM-GRID-001/SIM-USGS-001/SIM-EXPORT-001 exact native TIFF; time/categories partial|Native formats/Geometry/StorageScan; B(JAVA-SCANNER-001) IDE; time/categories/multishard remain, never synthesize native export bytes in SDK|
 |CAP-10 — A/B typed partial twin graph, stale markers, refresh|P; sync/native-async graph/projection/provenance; S(slice) SIM-PROVENANCE-001/SIM-REFRESH-001; cancellation/generation race controls|KnowledgeGraphQuery/LinkImpl; B(JAVA-COMMIT-001); awaited page/refetch implementation is bounded, not authoritative revision/event replay|
 |CAP-11 — A/B best-effort scoped events and resync|P; activity notifications/polling/resync; simulator events NOT_RUN|Native activity hints; B(#126durable cursor/replay); test supported hints/gaps only|
-|CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips; inherited bounded acceptance retained|ScientificData format/PR196; add fresh-process simulator-produced snapshot inspection, never offline reasoning|
+|CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips + SIM-OFFLINE-SNAPSHOT-001 fresh SDK process inspecting saved400cells after owned release, sockets forbidden|ScientificData format/PR196; current HTTP-produced offline acceptance active; saved origin is not current authorization, revision commitment or offline reasoning|
 |CAP-13 — B resources/models read/query/dependency inspection|P; inspectors/services/imports; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-IMPORT-001|J(read) real catalog/model captures; newer candidates schema drift; add implemented resolve/query/dependencies and explicit binding|
 |CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/AsyncAuthoring/AgentPreviews/new AsyncAgentPreviews/agents/imports; S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001; behaviors simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; finite semantic-source admission SIMULATED_PROVISIONAL; awaited preview is nonexecuting protocol evidence only; continue supported behavior/conditional mutation contracts, no compiler/scheduler port|
 |CAP-15 — A optional NumPy/pandas/xarray/raster/vector and notebooks|P; S(slice) SIM-ADAPTERS-001 raster/xarray/NumPy/pandas + SIM-NOTEBOOK-001 actual owned kernel/native awaited client workflow; vector integrated simulator matrix remains|Independent N-oracle and PR204vector/PR211notebook receipts retained; dedicated CI requires analysis/tabular or notebook/local dependencies without skips; core SDK imports stay optional and no new Java science is inferred|
@@ -272,6 +300,25 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-18 — A/B safe architecture and irreversible-contract boundaries|S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/REPLAY-001; accepted invariant retained|Native origin/identity/no-replay contracts; regression each increment; REAL never silently becomes SIMULATED|
 
 ## Ordered runnable engineering queue
+
+### Current implementation inventory refinement (not the queued post-A+B audit)
+
+Do not treat every historical simulator NOT_RUN marker as permission to build a
+second backend. User priority is remaining Python behavior and named acceptance;
+protocol/unit/packaged/native evidence remain separate. The following checks locate
+concrete code/test evidence before deciding another implementation is needed:
+
+| Area still named in campaign queue | Current implementation and bounded tests inspected | Remaining decision / acceptance boundary |
+|---|---|---|
+| Scope/options | `requests.py`, `client.py`, `api/services.py`, `async_client.py`; `test_typed_requests.py`, `test_request_plan_acceptance.py`, `test_scope_selection_guards.py` | PR260 corrects reproduced local token/routing defects. Native material project/observer/grid plan effects remain separately unproven; serializing requested options is not plan execution. Do not invent forced-model APIs. |
+| Compatibility/onboarding | `connection.py`, `connection_models.py`, `credentials.py`, `_bootstrap.py`; `test_connection.py`, `test_connection_guards.py` cover mixed capabilities, certificate bounds/TLS, trust-preserving expiry renewal, withdrawn peers, stale observations, identity drift and credential rotation | Additional HTTP simulator certificate/expiry endpoints are not a prerequisite for implemented provider/diagnostic behavior. Production issuer/license and maintained version policy still require actual contracts and approvals; final support/package assessment remains pending. |
+| Events/refresh | `notifications.py`, `graph_projection.py`; `test_notifications.py` explicitly covers duplicate/out-of-order hints, no inferred ordering, queue limits, wrong scope, connection loss, no auto-reconnect, cleanup uncertainty and interruption; native async graph tests cover cancellation/generation races | Receiver remains intentionally caller-driven synchronous AMQP, not an async thread facade. No documented durable cursor/replay/commit protocol has been established for Python; do not invent one or call refetch authoritative convergence. Native interoperability/science acceptance distinct. |
+| Safe editing/publication | `authoring.py`, `project_locks.py`, source previews and imports; existing ADD/consent/ambiguity tests and PR259 | Principal-shared locks do not solve generic source conflicts. Specialized rejected-ontology sourceVersion guards must not be generalized to accepted documents. No blind generic overwrite/publish wrapper merely to claim completeness; supported safe operations and unresolved native contracts must be itemized at final checkpoint. |
+| Offline retained data | `_scientific_snapshot.py`; existing unit/same-process checks plus current SIM-OFFLINE-SNAPSHOT-001 | Fresh-process acceptance after remote cleanup now verified locally; normal publication/CI/merge pending. Saved origin/bytes are not permission, live retention or a revision lease. |
+
+This refinement is **not final implementation closure**: finish active deliveries
+and reconcile every original row/public-operation boundary before a final A+B
+result. The sequential post-A+B independent review remains QUEUED_NOT_STARTED.
 
 1. Publish separately packaged simulator foundation (PR243/244verified merged),
    pinned authentic fixture/replay, CI and

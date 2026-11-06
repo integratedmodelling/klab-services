@@ -8,6 +8,14 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-OFFLINE-SNAPSHOT-001 completes the fresh-process CAP12 regression using existing
+routes only. Two bounded SDK read snapshots preserve all400 frozen synthetic cells;
+after owned scopes are released, a fresh SDK process reloads them with every socket
+audit event forbidden. Snapshot bytes/offsets/geometry/source metadata and rejection
+of unknown versions are checked. This offline inspection is neither live permission,
+retained-server state, a revision lease nor Java scientific execution. No simulator
+source behavior, route, oracle or production SDK change is needed.
+
 SIM-PROJECT-LOCK-001 (RC-P4.4/CAP14) requires exactly the native project lock/unlock
 routes. Finite `sim-token-admin-alice`/`sim-token-admin-bob` credentials model the
 controller's administrator guard, with explicit principal-shared booleans and
