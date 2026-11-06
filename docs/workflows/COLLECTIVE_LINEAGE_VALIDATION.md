@@ -1,21 +1,32 @@
-# Collective lineage consumer alignment
+# Collective lineage and Energy consumer alignment
 
-This isolated candidate replaces only the bundled ODO with numbered 0.2.1 from
-local ODO commit ede866637f505dfb882b7b9427a8f21f27922093. The exact SHA-256 is
-d6ca3d02d560d6af7f5b8d44e97befca64050fef4b832e97d4381da7630d8f78.
-Historical releases and existing immutable admission checks are unchanged.
-Production import capture continues to validate the authored ODO source and
-version; no hash-admission waiver or broad fallback is introduced.
+The isolated bundle is ODO 0.2.1 from local release commit
+86e25036b7e7a7d75971ab9f303c8f5f1785e30c, SHA-256
+06c081d46d9435aeadb4ef086b6a278e868953871cbc87d1debc75e6f8e0ba45.
+It supplies the collective roots and corrects Energy to extensive while retaining
+its abstract status and joule unit. Historical releases and immutable admission
+checks are unchanged; no hash waiver or broad fallback is introduced.
 
-The existing 46 CoreDomainAliasValidationTest, WorldviewDeclarationSupportTest
-and BroadDescriptionContractTest cases pass with klab.test.core.directory set to
-the candidate core directory. They use the existing compiled classes at this
-branch's baseline 197a60a37ba3483b7d3f62fa93a510241a22e652. No Java source changes
-are required for the additive roots; no clean reactor build is claimed.
+Energy additionally requires the quantitative-within task's language API category
+correction. The old installed API still classifies Energy as intensive. The paired
+SemanticSyntax.java used read-only for the private test overlay has SHA-256
+6a0027dd3e2da269178a20bd786c76eccf9fa4d29a836b8446b17ccffc685535.
+The normal paired language artifact must be rebuilt before integration.
 
-IMOD's isolated current-toolchain fixture additionally passes 65 lineage and
-nonimplication checks against the exact candidate bytes. Its full-world replay
-remains blocked by incompatible/incomplete historical authority captures, so
-this change is not certified for full-world activation. IMOD's decision record
-2026-11-06-collective-lineage.md gives the validation scope and remaining work.
-No push, deployment, restart or original-checkout modification is part of this candidate.
+All 48 CoreDomainAliasValidationTest, WorldviewDeclarationSupportTest,
+BroadDescriptionContractTest and EnergyReleaseMeasurementTest cases pass with
+the candidate core directory and paired language API. The new OWL regression
+fails against historical ODO 0.2.0 as expected. Existing compiled Services classes
+are from baseline 197a60a37ba3483b7d3f62fa93a510241a22e652; the new measurement
+test is compiled privately. No clean reactor build is claimed.
+
+IMOD's isolated fixture passes 72 lineage/Energy checks. Its full-world baseline
+and candidate pass 14/14 and 72/72 checks with consistent OWL and zero unsatisfiable
+classes; the three existing Time/Space and Period/Frequency diagnostics are
+unchanged. Owned public chemical answers were refreshed in a private capture;
+an audited legacy-source read adapter removes only obsolete empty arrays after
+verifying the original proof hash. Actual replay blocks external networking.
+IMOD's decision record documents the exact scope and the separate unsuccessful
+native persistence roundtrip. No services or original checkouts were modified.
+
+No push, merge, deployment or restart is part of this candidate.
