@@ -131,7 +131,7 @@ class Transport(_TransportPolicy):
                 service_id: str | None = None, json=None, text: str | None = None,
                 params=None, response: str = "json", ambiguous: bool = False,
                  timeout: float | None = None, deadline: float | None = None,
-                 max_response_bytes: int | None = None):
+                  max_response_bytes: int | None = None, files=None):
         endpoint = self.endpoint(service)
         headers = self._headers(route, response=response, scope=scope, service_id=service_id,
                                 text=text, max_response_bytes=max_response_bytes)
@@ -142,7 +142,7 @@ class Transport(_TransportPolicy):
             if deadline is not None and time.monotonic() >= deadline:
                 raise TransportError("Request waiting deadline expired")
             with self._http.stream(method, endpoint.url.rstrip("/") + route,
-                                        headers=headers, json=json,
+                                         headers=headers, json=json, files=files,
                                         content=text.encode() if text is not None else None,
                                          params=params, timeout=timeout or self.timeout) as streamed:
                 if max_response_bytes is not None and streamed.headers.get("content-encoding", "identity").lower() != "identity":

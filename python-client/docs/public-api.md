@@ -1,5 +1,11 @@
 # Existing public scaffold method inventory
 
+Resource file imports: `ResourceImporter` / `AsyncResourceImporter` discover
+advertised RESOURCE/STREAM schemas; explicitly consented uploads return an
+`ImportSubmission` with a Resources Job and actual uploaded-byte hash/count.
+See [resource imports](resource-imports.md) for examples and the separate native
+admission gate. No component installation or implicit scientific execution.
+
 Local dependent candidate: `await async_fetch_execution_evidence(async_observation)`
 awaits bounded recorded provenance and scoped activity reads, returning the existing
 immutable `ExecutionEvidence`. Plans are not execution/commit proof and absent
