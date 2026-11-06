@@ -6,7 +6,10 @@ const state = { id: "stage-1", schemaId: "editing", status: "OPEN", attachments:
 const flow = { id: "flow-1", assetUrn: "test.ontology", revision: 3, states: { "stage-1": state }, currentStateIds: ["stage-1"] };
 const content: Record<string, string> = {};
 const context = { api: {
+  text: async (path: string) => btoa(content[path.split("/").at(-1)!]),
   get: async (path: string) => {
+    if (path.endsWith("/review-cycles")) return { revision: flow.revision, cycles: [],
+      canManage: !location.search.includes("reader"), identity: "editor", contributableRoundIds: [] };
     if (path.includes("/attachments/")) return btoa(content[path.split("/").at(-1)!]);
     if (path.endsWith("/actions")) {
       if (location.search.includes("reader")) throw new Error("403 Forbidden");

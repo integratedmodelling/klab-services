@@ -3,12 +3,13 @@ import { accessToken, invalidateServiceAuthentication } from "./auth";
 export interface ServiceApi {
   get<T = Record<string, unknown>>(path: string, authenticated?: boolean): Promise<T>;
   request<T = unknown>(path: string, init?: RequestInit): Promise<T>;
+  text?(path: string, init?: RequestInit): Promise<string>;
 }
 
-async function request<T>(path: string, init: RequestInit = {},
-                          authenticated = !path.startsWith("public/")): Promise<T> {
+async function send(path: string, init: RequestInit = {},
+                    authenticated = !path.startsWith("public/")): Promise<Response> {
   const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
+  if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
   // Public dashboard data remains available even when the hub or sign-in is unavailable.
   const token = authenticated ? await accessToken() : undefined;
@@ -19,11 +20,19 @@ async function request<T>(path: string, init: RequestInit = {},
     if (token && response.status === 401) invalidateServiceAuthentication();
     throw new Error(`${response.status} ${response.statusText}`);
   }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  return response;
+}
+
+async function request<T>(path: string, init: RequestInit = {}, authenticated = !path.startsWith("public/")): Promise<T> {
+  const response = await send(path, init, authenticated);
+  return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }
 
 export const serviceApi: ServiceApi = {
   get: (path, authenticated) => request(path, {}, authenticated),
   request,
+  text: async (path, init = {}) => {
+    const headers = new Headers(init.headers); headers.set("Accept", "text/plain");
+    return (await send(path, { ...init, headers })).text();
+  },
 };

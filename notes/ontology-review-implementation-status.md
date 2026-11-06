@@ -1,5 +1,8 @@
 # Ontology review pilot: bootstrap checkpoint
 
+Historical bootstrap checkpoint at `7de6c188c`. The newer integrated round/UI result
+and verification are in `ontology-review-combined-status.md` alongside this note.
+
 6 November 2026. Authoritative working copy: `task-7/services-pilot`, branch
 `ontology-review-pilot`, descended from published Services develop
 `212548f761ada2b5eecaac013191be0d5ce4152d`. This is a real-history clone made
