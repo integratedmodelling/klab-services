@@ -5,9 +5,10 @@ import type { ReviewCycle, ReviewView } from "../review-model";
 
 const props = defineProps<{ context: DashboardContext; flowId: string; sourceStateId?: string;
   proposalAttachmentId?: string; ontologyAttachmentId?: string; candidateDirty?: boolean; candidateLoading?: boolean }>();
-const emit = defineEmits<{ candidate: [value: ReviewCycle]; revision: [value: number]; dirty: [value: boolean] }>();
+const emit = defineEmits<{ candidate: [value: ReviewCycle]; revision: [value: number]; dirty: [value: boolean]; accessLost: [] }>();
 const view = ref<ReviewView>(), cycleId = ref(""), roundId = ref(""), contributor = ref("");
 const draftId = ref(""), text = ref(""), original = ref(""), busy = ref(false), error = ref("");
+const selectionNotice = ref("");
 const proposalDocument = ref(""), ontologySource = ref(""), replaceOntology = ref(false), proposalFilter = ref("");
 let generation = 0;
 const endpoint = computed(() => `api/v1/flows/${encodeURIComponent(props.flowId)}/review-cycles`);
@@ -23,7 +24,10 @@ const canContribute = computed(() => !!round.value && !!view.value?.contributabl
 const fingerprint = () => JSON.stringify([text.value, proposalDocument.value, replaceOntology.value, ontologySource.value]);
 const dirty = computed(() => fingerprint() !== original.value);
 watch(dirty, value => emit("dirty", value));
-function failed(cause: unknown) { error.value = cause instanceof Error ? cause.message : String(cause); }
+function failed(cause: unknown) {
+  error.value = cause instanceof Error ? cause.message : String(cause);
+  if (error.value.startsWith("403")) { view.value = undefined; emit("accessLost"); }
+}
 function updateLocation() {
   const url = new URL(window.location.href);
   if (cycleId.value) url.searchParams.set("cycle", cycleId.value); else url.searchParams.delete("cycle");
@@ -34,13 +38,24 @@ function clearDraft() {
   draftId.value = ""; text.value = ""; proposalDocument.value = ""; ontologySource.value = "";
   replaceOntology.value = false; original.value = fingerprint();
 }
-function selectRound() { contributor.value = ""; proposalFilter.value = ""; clearDraft(); updateLocation(); }
+function resetRoundDraft() { contributor.value = ""; proposalFilter.value = ""; clearDraft(); }
+function selectRound() {
+  selectionNotice.value = ""; resetRoundDraft(); updateLocation();
+  if (cycle.value && round.value) emit("candidate", cycle.value); else emit("accessLost");
+}
 function selectCycle() {
   const requested = new URL(window.location.href).searchParams;
   const requestedRound = requested.get("cycle") === cycleId.value ? requested.get("round") : null;
-  roundId.value = cycle.value?.rounds.find(r => r.id === requestedRound)?.id || cycle.value?.rounds.at(-1)?.id || "";
-  selectRound();
-  if (cycle.value) emit("candidate", cycle.value);
+  const admitted = cycle.value?.rounds.find(r => r.id === requestedRound);
+  roundId.value = admitted?.id || (requestedRound ? "" : cycle.value?.rounds.at(-1)?.id || "");
+  resetRoundDraft();
+  if (requestedRound && !admitted) {
+    selectionNotice.value = "The requested iteration is unavailable to this account. Choose an authorized iteration to continue.";
+    emit("accessLost"); // Preserve the requested URL; do not silently turn a protected link into another stage.
+  } else {
+    selectionNotice.value = ""; updateLocation();
+    if (cycle.value) emit("candidate", cycle.value);
+  }
 }
 function selectDraft() {
   const draft = ownDrafts.value.find(c => c.id === draftId.value);
@@ -49,12 +64,23 @@ function selectDraft() {
   original.value = fingerprint();
 }
 function accept(next: ReviewView) {
+  const retainedCycle = next.cycles.find(c => c.id === cycleId.value);
+  const contextLost = !!cycleId.value && (!retainedCycle || (!!roundId.value && !retainedCycle.rounds.some(r => r.id === roundId.value)));
   view.value = next; emit("revision", next.revision);
+  if (contextLost) {
+    contributor.value = ""; proposalFilter.value = "";
+    selectionNotice.value = "The selected review context is no longer available. Retain or discard private work before choosing an authorized iteration.";
+    emit("accessLost"); return; // Keep the draft's original cycle/round IDs; never redirect its contents to another audience.
+  }
   if (!next.cycles.some(c => c.id === cycleId.value)) {
     const requested = new URL(window.location.href).searchParams.get("cycle");
+    if (requested && !next.cycles.some(c => c.id === requested)) {
+      cycleId.value = ""; roundId.value = "";
+      selectionNotice.value = "The requested review cycle is unavailable to this account. Choose an authorized cycle to continue.";
+      emit("accessLost"); return;
+    }
     cycleId.value = next.cycles.find(c => c.id === requested)?.id || next.cycles.at(-1)?.id || ""; selectCycle();
   }
-  else if (!cycle.value?.rounds.some(r => r.id === roundId.value)) { roundId.value = cycle.value?.rounds.at(-1)?.id || ""; }
   if (!contributors.value.includes(contributor.value)) contributor.value = "";
 }
 async function refresh() {
@@ -92,9 +118,17 @@ function openCycle() {
 }
 function save(submit: boolean) { return command("SAVE_CONTRIBUTION", { contributionId: draftId.value || null, text: text.value, submit,
   proposal: proposalDocument.value.trim() ? { document: proposalDocument.value, ontologySource: replaceOntology.value ? ontologySource.value : null } : null }); }
+function downloadFeedback() {
+  const url = URL.createObjectURL(new Blob([JSON.stringify({ cycleId: cycleId.value, roundId: roundId.value,
+    text: text.value, proposal: proposalDocument.value || null, ontologySource: replaceOntology.value ? ontologySource.value : null }, null, 2)],
+  { type: "application/json" }));
+  const link = document.createElement("a"); link.href = url; link.download = "private-review-feedback.json"; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 watch(() => props.flowId, () => {
   generation++;
   view.value = undefined; cycleId.value = ""; roundId.value = "";
+  selectionNotice.value = "";
   contributor.value = ""; proposalFilter.value = ""; clearDraft(); refresh();
 }, { immediate: true });
 </script>
@@ -103,6 +137,7 @@ watch(() => props.flowId, () => {
   <section class="review-rounds" aria-label="Review rounds and contributions">
     <h2>Rounds and feedback</h2>
     <p v-if="error" role="alert">{{ error }} Your unsaved feedback has been kept. Refresh rounds before retrying a conflict.</p>
+    <p v-if="selectionNotice" role="status">{{ selectionNotice }}</p>
     <div class="controls">
       <button :disabled="busy" @click="refresh">Refresh rounds</button>
       <button v-if="view?.canManage" :disabled="busy || dirty || candidateDirty || !proposalAttachmentId || !sourceStateId" @click="openCycle">Start cycle from selected proposal</button>
@@ -110,6 +145,7 @@ watch(() => props.flowId, () => {
     <template v-if="view">
       <p v-if="!view.cycles.length">No review cycles have been opened.</p>
       <label v-else>Proposal and cycle <select v-model="cycleId" aria-label="Feedback proposal" :disabled="busy || dirty" @change="selectCycle">
+        <option v-if="!cycle" value="">Choose an authorized proposal and cycle</option>
         <option v-for="item in view.cycles" :key="item.id" :value="item.id">{{ item.candidate.proposalId }} · {{ item.candidate.revisionId }} · {{ item.id.slice(0, 8) }} · {{ item.closedAt ? 'Closed' : 'Open' }}</option>
       </select></label>
       <template v-if="cycle">
@@ -145,21 +181,24 @@ watch(() => props.flowId, () => {
             <p v-else>Retains the candidate's ontology source.</p>
           </details>
         </article>
-        <fieldset v-if="canContribute" :disabled="busy || candidateLoading">
-          <legend>Your feedback</legend>
-          <label>Draft <select v-model="draftId" aria-label="Your contribution draft" :disabled="dirty" @change="selectDraft">
-            <option value="">New contribution</option><option v-for="item in ownDrafts" :key="item.id" :value="item.id">{{ item.id.slice(0, 8) }} · {{ item.updatedAt }}</option>
-          </select></label>
-          <textarea v-model="text" aria-label="Your feedback" maxlength="16000" rows="7" />
-          <label>Alternative proposal JSON or YAML (optional)<textarea v-model="proposalDocument" aria-label="Your alternative proposal" maxlength="4194304" rows="10" /></label>
-          <label v-if="proposalDocument.trim()"><input v-model="replaceOntology" type="checkbox" />Include alternative ontology source</label>
-          <textarea v-if="proposalDocument.trim() && replaceOntology" v-model="ontologySource" aria-label="Your alternative ontology source" maxlength="2097152" rows="7" />
-          <div class="controls"><button :disabled="(!text.trim() && !proposalDocument.trim()) || !dirty" @click="save(false)">Save private draft</button>
-            <button :disabled="!text.trim() && !proposalDocument.trim()" @click="save(true)">Submit feedback</button></div>
-          <p>Incomplete proposals can be saved privately. Submission requires a valid document schema and a fresh revision ID for changed inputs. Submitted text and proposals remain immutable; later corrections are new contributions.</p>
-        </fieldset>
       </template>
     </template>
+        <fieldset v-if="canContribute || dirty" :disabled="busy || candidateLoading">
+          <legend>Your feedback</legend>
+          <p v-if="!canContribute" role="status">This iteration no longer accepts your feedback. Your unsaved private work is retained below for download or copying.</p>
+          <label>Draft <select v-model="draftId" aria-label="Your contribution draft" :disabled="dirty || !canContribute" @change="selectDraft">
+            <option value="">New contribution</option><option v-for="item in ownDrafts" :key="item.id" :value="item.id">{{ item.id.slice(0, 8) }} · {{ item.updatedAt }}</option>
+          </select></label>
+          <textarea v-model="text" aria-label="Your feedback" :readonly="!canContribute" maxlength="16000" rows="7" />
+          <label>Alternative proposal JSON or YAML (optional)<textarea v-model="proposalDocument" aria-label="Your alternative proposal" :readonly="!canContribute" maxlength="4194304" rows="10" /></label>
+          <label v-if="proposalDocument.trim()"><input v-model="replaceOntology" :disabled="!canContribute" type="checkbox" />Include alternative ontology source</label>
+          <textarea v-if="proposalDocument.trim() && replaceOntology" v-model="ontologySource" aria-label="Your alternative ontology source" :readonly="!canContribute" maxlength="2097152" rows="7" />
+          <div class="controls"><button :disabled="!canContribute || (!text.trim() && !proposalDocument.trim()) || !dirty" @click="save(false)">Save private draft</button>
+            <button :disabled="!canContribute || (!text.trim() && !proposalDocument.trim())" @click="save(true)">Submit feedback</button>
+            <button v-if="dirty" @click="downloadFeedback">Download private feedback draft</button>
+            <button v-if="dirty && !canContribute" @click="clearDraft">Discard unsaved feedback</button></div>
+          <p>Incomplete proposals can be saved privately. Submission requires a valid document schema and a fresh revision ID for changed inputs. Submitted text and proposals remain immutable; later corrections are new contributions.</p>
+        </fieldset>
   </section>
 </template>
 

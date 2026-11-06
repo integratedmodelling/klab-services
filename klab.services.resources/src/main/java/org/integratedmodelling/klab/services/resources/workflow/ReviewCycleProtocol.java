@@ -80,16 +80,8 @@ final class ReviewCycleProtocol {
       }
     }
     if (candidate == null) fail("An exact reviewed candidate is required");
-    // A human revision label must not identify different scientific inputs across cycles.
-    for (var previous : flow.getReviewCycles()) {
-      var bound = previous.candidate();
-      if (Objects.equals(bound.proposalId(), candidate.proposalId())
-          && Objects.equals(bound.revisionId(), candidate.revisionId())
-          && (!Objects.equals(bound.proposal().checksum(), candidate.proposal().checksum())
-              || !Objects.equals(bound.ontology() == null ? null : bound.ontology().checksum(),
-                  candidate.ontology() == null ? null : candidate.ontology().checksum())))
-        fail("Changed proposal or ontology bytes require a fresh proposal revision ID");
-    }
+    // Submitted alternatives bind revision identities just as frozen candidates do.
+    ReviewContributionProposal.requireFreshIdentity(flow, candidate);
     var cycles = new ArrayList<>(flow.getReviewCycles());
     cycles.add(new Cycle(UUID.randomUUID().toString(), stateId, flow.getRevision(), candidate,
         actor.getIdentity(), now(), null, List.of()));
@@ -114,22 +106,24 @@ final class ReviewCycleProtocol {
     if (!admitted(workflow, actor, round.audience()))
       throw new KlabResourceAccessException("Review audience does not admit this participant");
     if (round.closedAt() != null) fail("Review round is closed");
+    var contributions = new ArrayList<>(round.contributions());
+    Contribution prior = null;
+    if (contributionId != null) {
+      prior = contributions.stream().filter(c -> contributionId.equals(c.id())).findFirst()
+          .orElseThrow(() -> new KlabIllegalStateException("Unknown contribution"));
+      if (!Objects.equals(actor.getIdentity(), prior.owner()))
+        throw new KlabResourceAccessException("Contribution belongs to another participant");
+      if (prior.submitted()) fail("Submitted feedback is immutable; add a new contribution");
+    } else if (contributions.size() >= 256) fail("Contribution limit reached");
     text = text == null ? "" : text;
     if ((text.isBlank() && (proposalInput == null || proposalInput.document() == null || proposalInput.document().isBlank()))
         || text.length() > ProposalReview.MAX_RATIONALE_CHARS)
       fail("Feedback or an alternative proposal is required; feedback must fit the rationale limit");
     var proposal = ReviewContributionProposal.snapshot(proposalInput, cycle, submit);
     if (submit) ReviewContributionProposal.requireFreshIdentity(flow, proposal, contributionId);
-    var contributions = new ArrayList<>(round.contributions());
     if (contributionId == null) {
-      if (contributions.size() >= 256) fail("Contribution limit reached");
       contributions.add(new Contribution(UUID.randomUUID().toString(), actor.getIdentity(), text, submit, now(), proposal));
     } else {
-      var prior = contributions.stream().filter(c -> contributionId.equals(c.id())).findFirst()
-          .orElseThrow(() -> new KlabIllegalStateException("Unknown contribution"));
-      if (!Objects.equals(actor.getIdentity(), prior.owner()))
-        throw new KlabResourceAccessException("Contribution belongs to another participant");
-      if (prior.submitted()) fail("Submitted feedback is immutable; add a new contribution");
       contributions.set(contributions.indexOf(prior), new Contribution(prior.id(), prior.owner(), text, submit, now(), proposal));
     }
     long bytes = flow.getReviewCycles().stream().flatMap(c -> c.rounds().stream())

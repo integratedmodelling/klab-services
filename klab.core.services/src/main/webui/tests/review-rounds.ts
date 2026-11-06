@@ -2,6 +2,9 @@ import { createApp, h } from "vue";
 import ResourcesReview from "../../../../../klab.services.resources.server/src/main/webui/extensions/ResourcesReview.vue";
 import type { ReviewView } from "../../../../../klab.services.resources.server/src/main/webui/review-model";
 const calls: unknown[] = []; Object.assign(window, { calls });
+let denied = false;
+let holdCandidates = new URL(location.href).searchParams.has("delay-candidate");
+const pendingCandidates: (() => void)[] = [];
 const view: ReviewView = { revision: 7, canManage: false, identity: "community-user", contributableRoundIds: ["community-1", "community-2"],
   cycles: [1, 2].map(index => ({ id: `cycle-${index}`, sourceStateId: "stage-1",
     candidate: { proposalId: "ontology-review", revisionId: `r${index}`, proposal: { attachmentId: `proposal-${index}`, checksum: "fixture" } },
@@ -11,9 +14,18 @@ const view: ReviewView = { revision: 7, canManage: false, identity: "community-u
       { id: "own-draft", owner: "community-user", text: "My private draft", submitted: false, updatedAt: "2026-11-06T12:00:02Z" },
       { id: "other-draft", owner: "community-user", text: "My second private draft", submitted: false, updatedAt: "2026-11-06T12:00:03Z" },
     ] : [{ id: "second", owner: "Alice", text: "Second proposal feedback", submitted: true, updatedAt: "2026-11-06T13:00:00Z" }] }] })) };
+if (new URL(location.href).searchParams.has("overlap")) {
+  view.cycles[0].rounds[0].audience = "REVIEWER";
+  view.cycles[0].rounds.push({ id: "public-1", audience: "COMMUNITY", contributions: [] });
+  view.contributableRoundIds.push("public-1");
+}
 const context = { api: {
-  text: async (path: string) => btoa(JSON.stringify({ proposal: { id: "ontology-review", revision_id: path.endsWith("proposal-1") ? "r1" : "r2" } })),
+  text: async (path: string) => {
+    if (holdCandidates) await new Promise<void>(resolve => pendingCandidates.push(resolve));
+    return btoa(JSON.stringify({ proposal: { id: "ontology-review", revision_id: path.endsWith("proposal-1") ? "r1" : "r2" } }));
+  },
   get: async (path: string) => {
+    if (denied && path.endsWith("/review-cycles")) throw new Error("403 Forbidden");
     if (path.includes("/attachments/")) return btoa(JSON.stringify({ proposal: { id: "ontology-review", revision_id: path.endsWith("proposal-1") ? "r1" : "r2" } }));
     if (path.endsWith("/review-cycles")) return structuredClone(view);
     if (path.includes("?")) return [];
@@ -32,4 +44,17 @@ const context = { api: {
     return structuredClone(view);
   },
 } };
+Object.assign(window, { reviewFixture: {
+  closeRound(id: string) {
+    for (const cycle of view.cycles) for (const round of cycle.rounds) if (round.id === id) round.closedAt = "2026-11-06T15:00:00Z";
+    view.contributableRoundIds = view.contributableRoundIds.filter(value => value !== id); view.revision++;
+  },
+  revoke() { denied = true; },
+  hideRound(id: string) {
+    for (const cycle of view.cycles) cycle.rounds = cycle.rounds.filter(round => round.id !== id);
+    view.contributableRoundIds = view.contributableRoundIds.filter(value => value !== id); view.revision++;
+  },
+  pendingCandidates() { return pendingCandidates.length; },
+  releaseCandidates() { holdCandidates = false; pendingCandidates.splice(0).forEach(resolve => resolve()); },
+} });
 createApp({ render: () => h(ResourcesReview, { context: context as never }) }).mount("#app");

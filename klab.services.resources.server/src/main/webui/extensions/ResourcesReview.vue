@@ -34,6 +34,12 @@ function keepDraft(): boolean {
   error.value = "Save your feedback or save/download your edited proposal before changing the view."; return true;
 }
 function reviewRevision(revision: number) { if (flow.value) flow.value.revision = revision; }
+function reviewAccessLost() {
+  if (canEdit.value) return; // Preserve an editor's own editable candidate for recovery.
+  reviewCandidateGeneration++; reviewedCycle.value = undefined; flow.value = undefined; actions.value = [];
+  busy.value = false;
+  proposalText.value = ""; originalText.value = ""; selectedProposal.value = ""; selectedContext.value = ""; contextText.value = "";
+}
 async function reviewCandidate(cycle: ReviewCycle) {
   reviewedCycle.value = cycle;
   if (flow.value) return; // Keep an editor's current draft intact when filtering historical feedback.
@@ -63,19 +69,27 @@ async function attachmentBase64(path: string): Promise<string> {
   return body.startsWith('"') ? JSON.parse(body) as string : body;
 }
 async function loadProposal() {
+  const generation = reviewCandidateGeneration;
   busy.value = true; error.value = "";
   try {
     const text = selectedProposal.value ? await attachmentText(selectedProposal.value) : "";
+    if (generation !== reviewCandidateGeneration) return;
     try { proposalText.value = JSON.stringify(JSON.parse(text), null, 2); }
     catch { proposalText.value = text; }
     originalText.value = proposalText.value;
   }
-  catch (cause) { failed(cause); } finally { busy.value = false; }
+  catch (cause) { if (generation === reviewCandidateGeneration) failed(cause); }
+  finally { if (generation === reviewCandidateGeneration) busy.value = false; }
 }
 async function loadContext() {
+  const generation = reviewCandidateGeneration;
   busy.value = true; error.value = "";
-  try { contextText.value = selectedContext.value ? await attachmentText(selectedContext.value) : ""; }
-  catch (cause) { failed(cause); } finally { busy.value = false; }
+  try {
+    const text = selectedContext.value ? await attachmentText(selectedContext.value) : "";
+    if (generation === reviewCandidateGeneration) contextText.value = text;
+  }
+  catch (cause) { if (generation === reviewCandidateGeneration) failed(cause); }
+  finally { if (generation === reviewCandidateGeneration) busy.value = false; }
 }
 async function loadFlow() {
   if (keepDraft() || !flowId.value) return;
@@ -186,7 +200,7 @@ onMounted(async () => {
         <ReviewCyclesPanel :context="context" :flow-id="flowId" :source-state-id="stage?.id"
           :proposal-attachment-id="stage ? selectedProposal : undefined"
           :ontology-attachment-id="stage?.attachments.find(a => a.type === 'candidate-ontology')?.id"
-          :candidate-dirty="dirty" :candidate-loading="busy" @candidate="reviewCandidate" @revision="reviewRevision" @dirty="feedbackDirty = $event" />
+          :candidate-dirty="dirty" :candidate-loading="busy" @candidate="reviewCandidate" @revision="reviewRevision" @dirty="feedbackDirty = $event" @access-lost="reviewAccessLost" />
         <details v-if="stage"><summary>Comments and source context</summary>
         <label>Attachment <select v-model="selectedContext" aria-label="Context attachment" :disabled="busy" @change="loadContext">
           <option value="">No context selected</option>

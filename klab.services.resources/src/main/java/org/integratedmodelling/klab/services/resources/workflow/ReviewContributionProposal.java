@@ -41,20 +41,29 @@ final class ReviewContributionProposal {
 
   static void requireFreshIdentity(Flow flow, ProposalSnapshot proposal, String replacingId) {
     if (proposal == null) return;
+    requireFreshIdentity(flow, proposal.proposalId(), proposal.revisionId(), proposal.documentChecksum(), proposal.ontologyChecksum(), replacingId);
+  }
+  static void requireFreshIdentity(Flow flow, ProposalReview.Candidate candidate) {
+    requireFreshIdentity(flow, candidate.proposalId(), candidate.revisionId(), candidate.proposal().checksum(),
+        candidate.ontology() == null ? null : candidate.ontology().checksum(), null);
+  }
+  private static void requireFreshIdentity(Flow flow, String proposedId, String proposedRevision,
+      String proposedDocument, String proposedSource, String replacingId) {
     for (var cycle : flow.getReviewCycles()) {
       var candidate = cycle.candidate();
-      check(proposal, candidate.proposalId(), candidate.revisionId(), candidate.proposal().checksum(),
+      check(proposedId, proposedRevision, proposedDocument, proposedSource, candidate.proposalId(), candidate.revisionId(), candidate.proposal().checksum(),
           candidate.ontology() == null ? null : candidate.ontology().checksum());
       for (var round : cycle.rounds()) for (var prior : round.contributions())
         if (prior.submitted() && prior.proposal() != null && !Objects.equals(prior.id(), replacingId)) {
           var other = prior.proposal();
-          check(proposal, other.proposalId(), other.revisionId(), other.documentChecksum(), other.ontologyChecksum());
+          check(proposedId, proposedRevision, proposedDocument, proposedSource, other.proposalId(), other.revisionId(), other.documentChecksum(), other.ontologyChecksum());
         }
     }
   }
-  private static void check(ProposalSnapshot proposed, String id, String revision, String document, String source) {
-    if (Objects.equals(proposed.proposalId(), id) && Objects.equals(proposed.revisionId(), revision)
-        && (!Objects.equals(proposed.documentChecksum(), document) || !Objects.equals(proposed.ontologyChecksum(), source)))
+  private static void check(String proposedId, String proposedRevision, String proposedDocument, String proposedSource,
+      String id, String revision, String document, String source) {
+    if (Objects.equals(proposedId, id) && Objects.equals(proposedRevision, revision)
+        && (!Objects.equals(proposedDocument, document) || !Objects.equals(proposedSource, source)))
       throw new KlabIllegalStateException("Changed proposal or ontology bytes require a fresh proposal revision ID");
   }
   static long bytes(Contribution contribution) {

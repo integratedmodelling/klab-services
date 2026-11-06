@@ -101,14 +101,17 @@ final class ReviewWorkflowNotifications {
   static boolean admitted(Flow flow, Workflow workflow, Event event, WorkflowParticipant recipient) {
     if (!Objects.equals(flow.getId(), event.flowId()) || !recipient.isAuthenticated()
         || !event.recipients().contains(recipientId(recipient.getIdentity()))) return false;
-    if (ReviewCycleProtocol.editor(flow, workflow, recipient)) return true;
-    if (event.kind() == Kind.CONTRIBUTION_SUBMITTED) return false;
+    boolean editor = ReviewCycleProtocol.editor(flow, workflow, recipient);
     for (var cycle : flow.getReviewCycles()) {
       if (event.stageId().equals("cycle/" + cycle.id()))
-        return cycle.rounds().stream().anyMatch(r -> ReviewCycleProtocol.admitted(workflow, recipient, r.audience())
-            && r.contributions().stream().anyMatch(c -> c.submitted() && Objects.equals(c.owner(), recipient.getIdentity())));
-      for (var round : cycle.rounds()) if (event.stageId().equals("round/" + round.id()))
-        return ReviewCycleProtocol.admitted(workflow, recipient, round.audience());
+        return event.kind() == Kind.CYCLE_CLOSED && cycle.closedAt() != null && (editor
+            || cycle.rounds().stream().anyMatch(r -> ReviewCycleProtocol.admitted(workflow, recipient, r.audience())
+                && r.contributions().stream().anyMatch(c -> c.submitted() && Objects.equals(c.owner(), recipient.getIdentity()))));
+      for (var round : cycle.rounds()) if (event.stageId().equals("round/" + round.id())) {
+        if (event.kind() != Kind.ROUND_OPENED && event.kind() != Kind.ROUND_CLOSED && event.kind() != Kind.CONTRIBUTION_SUBMITTED) return false;
+        if (event.kind() == Kind.ROUND_CLOSED && round.closedAt() == null) return false;
+        return editor || event.kind() != Kind.CONTRIBUTION_SUBMITTED && ReviewCycleProtocol.admitted(workflow, recipient, round.audience());
+      }
     }
     return false;
   }

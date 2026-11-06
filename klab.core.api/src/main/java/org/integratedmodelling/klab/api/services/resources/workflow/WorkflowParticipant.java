@@ -17,8 +17,9 @@ import org.integratedmodelling.klab.api.scope.ServiceSideScope;
  *
  * <p>Group custom properties use the {@value #ROLES_PROPERTY}, {@value
  * #PERMITTED_WORKFLOWS_PROPERTY}, {@value #DISALLOWED_TRANSITIONS_PROPERTY}, and {@value
- * #MAX_RESPONSE_HOURS_PROPERTY} keys. Values that contain several items are comma separated. Public
- * review additionally requires the identity data flag {@value #KNOWN_REAL_PERSON_PROPERTY}.
+ * #MAX_RESPONSE_HOURS_PROPERTY} keys. Values that contain several items are comma separated.
+ * Community review-cycle admission requires an authenticated, nonanonymous identity; legacy
+ * workflow PUBLIC-group admission has its own known-person policy.
  */
 public class WorkflowParticipant implements Serializable {
 
