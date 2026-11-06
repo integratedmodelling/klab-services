@@ -1028,10 +1028,32 @@ quality UpstreamArea
 ```
 
 This example uses `of` for the native bearer; it does not mean a container of
-Watersheds. `within` is not part of a stand-alone observable statement. Hosts may
-admit it through `ContextualizedExpression`; worldview declaration shorthand is a
-separate supported use, described under observational containment below. Do not use
-that shorthand to supply a quality's native bearer.
+Watersheds. Hosts admit observational context through `ContextualizedExpression`;
+worldview declaration shorthand is described under observational containment below.
+Neither supplies a quality's native bearer.
+
+An observable can also describe a partial extensive physical quantity:
+
+```observable
+chemistry:Oxygen within chemistry:Air physics:Volume in m3;
+```
+
+The form is `<identity> within <identity> <extensive-physical-property>`.
+It measures the first identity's portion of the substantial identified by the second,
+observed in its own right. Both identities retain their order. The example remains a
+Volume in cubic metres; it is not a ratio, proportion or concentration. Energy is
+extensive. Eligibility is determined by membership in ODO's
+`ExtensivePhysicalProperty` hierarchy, including inherited specializations.
+Intensive and nonphysical properties are invalid; no separate substance whitelist
+is applied. The parser checks the expression's shape and identity operands;
+semantic validation checks authoritative ODO ancestry. Energy requires a core
+ontology with the corrected extensive classification.
+
+This quantitative form is independent of observational containment of substantials.
+It introduces neither physical parthood nor a way to extract a number from a whole's
+measurement. Parsing and semantic declaration do not compute the portion. Current
+matching requires the same ordered identity pair; a model must supply the requested
+partial quantity directly. See [implementation boundaries](QUANTITATIVE_CONTAINMENT_PENDING.md).
 
 ## 11. Common query patterns
 
@@ -1091,8 +1113,9 @@ Check that:
 - `each` reflects the intended distributed observation;
 - units, currencies, ranges, and filters are compatible with the semantics;
 - optionality and local names serve only their host-level purpose;
-- `within` appears only in a supported host contextualized expression or worldview
-  containment specialization, and is not used as a quality's native bearer;
+- quantitative `within` has two ordered identities and an extensive physical property;
+- observational `within` uses a supported host or worldview containment construct;
+- `within` does not replace a quality's native bearer;
 - `{{ ... }}` is used whenever the host expects a semantic literal;
 - metadata does not substitute for semantic distinctions; and
 - both the parser and Reasoner validate the expression.
@@ -1254,7 +1277,8 @@ an authored contained endpoint; the container may inherit the declaration throug
 asserted named parents. Thus Region-to-Stream admits a Reach-native quantity when Reach
 specializes Stream, while Region-to-Reach does not admit every Stream quantity.
 Separate declared member types cannot jointly invent a common bearer identity.
-Anonymous bearer expressions without a single named witness remain unsupported for
+Boolean bearer expressions may supply named witness candidates, but one candidate
+must prove the complete conjunction. Expressions without such a witness remain unsupported for
 this contextual route. Other activity families retain their existing checks.
 
 This permission performs no discovery and demands no recursive binding or completed

@@ -49,6 +49,8 @@ public final class AnnotationCollector {
     result = merge(result, syntax.getAnnotations());
     // Include concepts in semantic clauses and logical/operator operands as well.
     var components = new ArrayList<>(syntax.getOperands());
+    if (syntax.getPortionIdentity() != null) components.add(syntax.getPortionIdentity());
+    if (syntax.getWholeIdentity() != null) components.add(syntax.getWholeIdentity());
     for (var modifier : syntax.getModifiers()) components.add(modifier.getSecond());
     if (syntax.getComparisonConcept() != null) components.add(syntax.getComparisonConcept());
     components.sort(Comparator.comparingInt(KimConcept::getOffsetInDocument));

@@ -20,7 +20,7 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 public final class SemanticEnvironmentFactory
     implements CandidatePublicationCoordinator.Builder<Worldview, SemanticEnvironment> {
   public static final String CONFIGURATION_REVISION =
-      "semantic-staged-declarations-v12-model-dependency-revision-admission-bearer-identity-boolean-source-application-membership-identity-closure-core-alignment-generic-quality-canonical-aliases-configured-authority-snapshots-temporal-derivatives-nested-rates-affine-scales-canonical-rate-identity-verified-aliases-mixed-operators-verified-immutable-odo-authority-owned-subsumption-observer-contract-v1-authority-lexical-families-v1-role-family-conjunction-v1-concrete-selection-v1-qualified-inherent-grouping-v1";
+      "semantic-staged-declarations-v12-model-dependency-revision-admission-bearer-identity-boolean-source-application-membership-identity-closure-core-alignment-generic-quality-canonical-aliases-configured-authority-snapshots-temporal-derivatives-nested-rates-affine-scales-canonical-rate-identity-verified-aliases-mixed-operators-verified-immutable-odo-authority-owned-subsumption-observer-contract-v1-authority-lexical-families-v1-role-family-conjunction-v1-concrete-selection-v1-qualified-inherent-grouping-v1-observational-containment-source-v1-odo021-frozen-release-pin-v1";
   private final Path assetRoot;
   private final Map<String, byte[]> core;
   private final String dependencyRevision;
@@ -226,6 +226,8 @@ public final class SemanticEnvironmentFactory
     digest.update(
         org.integratedmodelling.klab.services.reasoner.OperandGuards.CONTRACT_REVISION.getBytes(
             java.nio.charset.StandardCharsets.UTF_8));
+    digest.update(org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.CONTRACT_REVISION.getBytes(
+        java.nio.charset.StandardCharsets.UTF_8));
     digest.update(authorities.revision().getBytes(java.nio.charset.StandardCharsets.UTF_8));
     dependencyRevision = HexFormat.of().formatHex(digest.digest());
   }

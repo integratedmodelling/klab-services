@@ -27,10 +27,12 @@ public final class ContextualRequestAdmission {
       var declaredMember = restriction.getFiller().asOWLClass();
       if (!ObservationalContainmentSupport.supportedPair(
           owl.getConceptFor(declaration.getSubClass().asOWLClass()), owl.getConceptFor(declaredMember))) continue;
-      for (var bound : bounds) {
-        if (bound.filler().isAnonymous()) continue;
-        var nativeBearer = owl.getConceptFor(bound.filler().asOWLClass());
-        if (nativeBearer == null || clauses.clauseCompatibility(request, SemanticRole.INHERENT, nativeBearer)
+      for (var namedWitness : bounds.stream()
+          .flatMap(bound -> namedBearerCandidates(bound.filler()))
+          .distinct().toList()) {
+        var nativeBearer = owl.getConceptFor(namedWitness);
+        if (nativeBearer == null || !owl.isSatisfiable(nativeBearer)
+            || clauses.clauseCompatibility(request, SemanticRole.INHERENT, nativeBearer)
             != OWLSemanticClauseSupport.Compatibility.COMPATIBLE) continue;
         var visited = new java.util.HashSet<org.semanticweb.owlapi.model.OWLClass>();
         var parents = new java.util.ArrayDeque<Concept>();
@@ -45,5 +47,17 @@ public final class ContextualRequestAdmission {
       }
     }
     return false;
+  }
+
+  /** Named leaves of positive boolean bounds are candidates, never proofs on their own.
+   * Do not descend into complements or restrictions and invent a native bearer from a filler. */
+  static java.util.stream.Stream<org.semanticweb.owlapi.model.OWLClass> namedBearerCandidates(
+      org.semanticweb.owlapi.model.OWLClassExpression expression) {
+    if (!expression.isAnonymous()) return java.util.stream.Stream.of(expression.asOWLClass());
+    if (expression instanceof org.semanticweb.owlapi.model.OWLObjectIntersectionOf intersection)
+      return intersection.operands().flatMap(ContextualRequestAdmission::namedBearerCandidates);
+    if (expression instanceof org.semanticweb.owlapi.model.OWLObjectUnionOf union)
+      return union.operands().flatMap(ContextualRequestAdmission::namedBearerCandidates);
+    return java.util.stream.Stream.empty();
   }
 }

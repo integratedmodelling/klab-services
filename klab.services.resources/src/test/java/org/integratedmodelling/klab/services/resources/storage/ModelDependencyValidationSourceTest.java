@@ -25,9 +25,12 @@ class ModelDependencyValidationSourceTest {
       thing Region is imod:Areal imod:Location;
       thing Unknown is imod:Subject;
       thing Elsewhere is imod:Subject;
+      thing Stream is imod:Subject within imod:Region;
       abstract length Height is imod:Length requires identity (imod:Areal or imod:Volumetric);
       length Value is imod:Height of imod:Location;
       length RegionalValue is imod:Height of imod:Region;
+      length StreamValue is imod:Length of imod:Stream;
+      process StreamProcess is imod:Process of imod:Stream;
       process Acting is imod:Process of imod:Elsewhere affects imod:RegionalValue;
       process Unrelated is imod:Process of imod:Elsewhere;
       process ActingUnqualified is imod:Process of imod:Elsewhere affects imod:Value;
@@ -64,6 +67,34 @@ class ModelDependencyValidationSourceTest {
     return new DocumentSemanticValidator(fixture.environment().actor()).validate(parse(fixture, source));
   }
 
+  @Test void generalContainedOutputsRecordSourceObligationsWithoutAuthorizingExecution() throws Exception {
+    try (var f = fixture()) {
+      var actor = f.environment().actor();
+      var graph = actor.owl().getOntology("imod").getOWLOntology();
+      int before = graph.getAxiomCount();
+      for (var output : List.of("StreamValue in m", "StreamProcess")) {
+        var document = parse(f, "model imod:" + output + " observing imod:RegionalValue in m;");
+        var source = new DocumentSemanticValidator(actor, false);
+        var diagnostics = source.validate(document);
+        assertTrue(diagnostics.stream().noneMatch(n -> n.getLevel() == Notification.Level.Error),
+            diagnostics.toString());
+        assertEquals(1, source.getConditionalModelContexts().size());
+        assertEquals(List.of("imod:Region"),
+            source.getConditionalModelContexts().getFirst().requiredContextAlternatives());
+        for (var actual : List.of("imod:Region", "imod:Stream", "imod:Elsewhere")) {
+          var execution = new DocumentSemanticValidator(actor, true, false, actual).validate(document);
+          assertTrue(execution.stream().anyMatch(n -> n.getLevel() == Notification.Level.Error),
+              "Source permission must not authorize unbridged execution in " + actual + ": " + execution);
+        }
+      }
+      assertEquals("imod:Stream", actor.inherent(actor.resolveConcept("imod:StreamValue")).getUrn());
+      assertEquals("imod:Stream", actor.inherent(actor.resolveConcept("imod:StreamProcess")).getUrn());
+      assertEquals(before, graph.getAxiomCount());
+      var undeclared = validate(f, "model imod:Unrelated observing imod:RegionalValue in m;");
+      assertTrue(undeclared.stream().anyMatch(n -> n.getLevel() == Notification.Level.Error));
+    }
+  }
+
   @Test void modeledRegionSuppliesInheritedBearerIdentityWithoutMutatingDependency() throws Exception {
     try (var f = fixture()) {
       var actor = f.environment().actor();
@@ -81,6 +112,27 @@ class ModelDependencyValidationSourceTest {
       var secondary = new DocumentSemanticValidator(actor, true).validate(secondaryDocument);
       assertTrue(secondary.stream().noneMatch(n -> n.getLevel() == Notification.Level.Error), secondary.toString());
       assertTrue(actor.resolveConcept("imod:Value").isAbstract());
+    }
+  }
+
+  @Test void mixedOutputsCannotBorrowASingleOutputConditionalPermission() throws Exception {
+    try (var f = fixture()) {
+      var document = parse(f, "model imod:StreamValue in m observing imod:RegionalValue in m;");
+      var primary = (org.integratedmodelling.klab.api.lang.kim.KimModel) document.getStatements().getFirst();
+      var secondary = (org.integratedmodelling.klab.api.lang.kim.KimModel)
+          parse(f, "model imod:StreamProcess;").getStatements().getFirst();
+      primary.getObservables().add(secondary.getObservables().getFirst());
+      var actor = f.environment().actor();
+      for (boolean executable : List.of(false, true)) {
+        var validator = new DocumentSemanticValidator(actor, executable, false, executable ? "imod:Region" : null);
+        var diagnostics = validator.validate(document);
+        assertTrue(diagnostics.stream().anyMatch(n -> n.getLevel() == Notification.Level.Error
+            && n.getMessage().startsWith("MODEL_DEPENDENCY_")), diagnostics.toString());
+        assertTrue(validator.getConditionalModelContexts().isEmpty());
+        assertTrue(validator.getPendingModelContexts().isEmpty());
+      }
+      assertEquals("imod:Stream", actor.inherent(actor.resolveConcept("imod:StreamValue")).getUrn());
+      assertEquals("imod:Stream", actor.inherent(actor.resolveConcept("imod:StreamProcess")).getUrn());
     }
   }
 

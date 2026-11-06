@@ -72,6 +72,58 @@ class ContextualRequestAdmissionTest {
     contains("Region", "Stream"); contains("Region", "Basin");
     assertFalse(admits("Joint", "Region"));
   }
+  @Test void booleanBoundsRequireOneNamedWitnessForTheCompleteConjunction() {
+    var f = owl.manager.getOWLDataFactory();
+    var property = owl.getProperty("odo:isInherentTo").getOWLEntity().asOWLObjectProperty();
+    graph.define(List.of(Axiom.ClassAssertion("BooleanQuality",
+        EnumSet.of(SemanticType.QUALITY, SemanticType.OBSERVABLE))));
+    var either = f.getOWLObjectUnionOf(owl.getOWLClass(c("Stream")), owl.getOWLClass(c("Basin")));
+    owl.manager.addAxiom(graph.getOWLOntology(), f.getOWLSubClassOfAxiom(
+        owl.getOWLClass(c("BooleanQuality")), f.getOWLObjectSomeValuesFrom(property, either)));
+    contains("Region", "Stream");
+    assertTrue(admits("BooleanQuality", "Region"), "Stream proves the complete union");
+    bearer("BooleanQuality", "Basin");
+    assertFalse(admits("BooleanQuality", "Region"), "A union arm cannot waive another bound");
+    contains("Region", "Basin");
+    assertTrue(admits("BooleanQuality", "Region"), "Basin alone now proves both clauses");
+
+    graph.define(List.of(Axiom.ClassAssertion("IntersectionQuality",
+        EnumSet.of(SemanticType.QUALITY, SemanticType.OBSERVABLE))));
+    var both = f.getOWLObjectIntersectionOf(owl.getOWLClass(c("Stream")), owl.getOWLClass(c("Reach")));
+    owl.manager.addAxiom(graph.getOWLOntology(), f.getOWLSubClassOfAxiom(
+        owl.getOWLClass(c("IntersectionQuality")), f.getOWLObjectSomeValuesFrom(property, both)));
+    assertTrue(admits("IntersectionQuality", "Region"), "Reach specializes Stream and proves both");
+    assertFalse(admits("IntersectionQuality", "Other"));
+  }
+  @Test void complementsAndPropertyFillersAreNotNativeWitnessCandidates() {
+    var f = owl.manager.getOWLDataFactory();
+    assertTrue(ContextualRequestAdmission.namedBearerCandidates(
+        f.getOWLObjectComplementOf(owl.getOWLClass(c("Stream")))).toList().isEmpty());
+    assertTrue(ContextualRequestAdmission.namedBearerCandidates(f.getOWLObjectSomeValuesFrom(
+        owl.getProperty("odo:isInherentTo").getOWLEntity().asOWLObjectProperty(),
+        owl.getOWLClass(c("Stream")))).toList().isEmpty());
+  }
+  @Test void unsatisfiableUnionArmCannotSupplyAVacuousNativeWitness() throws Exception {
+    var f = owl.manager.getOWLDataFactory();
+    graph.define(List.of(Axiom.ClassAssertion("EitherQuality",
+        EnumSet.of(SemanticType.QUALITY, SemanticType.OBSERVABLE))));
+    owl.manager.addAxiom(graph.getOWLOntology(), f.getOWLSubClassOfAxiom(
+        owl.getOWLClass(c("EitherQuality")), f.getOWLObjectSomeValuesFrom(
+            owl.getProperty("odo:isInherentTo").getOWLEntity().asOWLObjectProperty(),
+            f.getOWLObjectUnionOf(owl.getOWLClass(c("Stream")), owl.getOWLClass(c("Basin"))))));
+    owl.manager.addAxiom(graph.getOWLOntology(),
+        f.getOWLSubClassOfAxiom(owl.getOWLClass(c("Stream")), f.getOWLNothing()));
+    contains("Region", "Stream");
+    var dl = new org.semanticweb.HermiT.Reasoner.ReasonerFactory()
+        .createReasoner(graph.getOWLOntology());
+    var field = OWL.class.getDeclaredField("reasoner"); field.setAccessible(true); field.set(owl, dl);
+    try {
+      assertTrue(owl.isSatisfiable(c("EitherQuality")), "Basin keeps the request satisfiable");
+      assertFalse(admits("EitherQuality", "Region"), "An impossible Stream is no native witness");
+      contains("Region", "Basin"); dl.flush();
+      assertTrue(admits("EitherQuality", "Region"), "A separately declared live arm is sufficient");
+    } finally { dl.dispose(); field.set(owl, null); }
+  }
   @Test void processAdmissionAndUnchangedOtherActivityAndMissingContextPaths() {
     graph.define(List.of(Axiom.ClassAssertion("Transport",EnumSet.of(SemanticType.PROCESS,SemanticType.OBSERVABLE))));
     bearer("Transport","Basin");

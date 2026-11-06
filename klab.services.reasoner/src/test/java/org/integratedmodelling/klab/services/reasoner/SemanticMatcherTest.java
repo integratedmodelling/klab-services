@@ -20,6 +20,42 @@ import org.junit.jupiter.api.Test;
 class SemanticMatcherTest {
 
   @Test
+  void quantitativeContainmentMatchesOnlyTheSameOrderedIdentityPair() {
+    var graph=new FakeOperations();
+    var target=predicate("PartialTarget");var candidate=predicate("PartialCandidate");
+    graph.parents.put(candidate,List.of(target));
+    String portion=org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.PORTION;
+    String whole=org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.WHOLE;
+    target.getMetadata().put(portion,"test:Oxygen");target.getMetadata().put(whole,"test:Air");
+    candidate.getMetadata().put(portion,"test:Oxygen");candidate.getMetadata().put(whole,"test:Air");
+    var matcher=new SemanticMatcher(graph);
+    assertTrue(matcher.semanticDistance(target,candidate)>=0);
+    candidate.getMetadata().put(portion,"test:Air");candidate.getMetadata().put(whole,"test:Oxygen");graph.revision++;
+    assertTrue(matcher.semanticDistance(target,candidate)<0);
+    candidate.getMetadata().remove(portion);candidate.getMetadata().remove(whole);graph.revision++;
+    assertTrue(matcher.semanticDistance(target,candidate)<0);
+    assertTrue(matcher.semanticDistance(candidate,target)<0);
+  }
+
+  @Test
+  void quantitativePairsAreCheckedInComparisonAndModifierComponents() {
+    for (var path : List.of("relativeTo","goal","compresent")) {
+      var g=new FakeOperations();var target=concept("Target");var candidate=concept("Candidate");
+      var head=concept("Head");g.heads.put(target,head);g.heads.put(candidate,head);
+      var required=concept("RequiredPartial");var supplied=concept("SuppliedPartial");
+      setFiller(g,path,target,required);setFiller(g,path,candidate,supplied);
+      g.parents.put(supplied,List.of(required));
+      String portion=org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.PORTION;
+      String whole=org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.WHOLE;
+      required.getMetadata().put(portion,"test:Oxygen");required.getMetadata().put(whole,"test:Air");
+      supplied.getMetadata().put(portion,"test:Air");supplied.getMetadata().put(whole,"test:Oxygen");
+      assertTrue(new SemanticMatcher(g).semanticDistance(target,candidate)<0,path);
+      supplied.getMetadata().put(portion,"test:Oxygen");supplied.getMetadata().put(whole,"test:Air");g.revision++;
+      assertTrue(new SemanticMatcher(g).semanticDistance(target,candidate)>=0,path);
+    }
+  }
+
+  @Test
   void assertedDistanceUsesShortestPathAndTerminatesOnCycles() {
     var graph = new FakeOperations();
     Concept root = concept("Root");

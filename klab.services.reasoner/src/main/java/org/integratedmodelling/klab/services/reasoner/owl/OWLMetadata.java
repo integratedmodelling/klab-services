@@ -50,6 +50,8 @@ public class OWLMetadata extends MetadataImpl implements Metadata {
   public static HashMap<String, String> metadataVocabulary = new HashMap<>();
 
   static {
+    metadataVocabulary.put(QuantitativeContainmentSupport.PORTION, QuantitativeContainmentSupport.PORTION);
+    metadataVocabulary.put(QuantitativeContainmentSupport.WHOLE, QuantitativeContainmentSupport.WHOLE);
     metadataVocabulary.put(OWLRDFVocabulary.RDFS_LABEL.getIRI().toString(), Vocabulary.RDFS_LABEL);
     metadataVocabulary.put(
         OWLRDFVocabulary.RDFS_COMMENT.getIRI().toString(), Vocabulary.RDFS_COMMENT);

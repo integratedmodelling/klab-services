@@ -11,7 +11,7 @@ import org.junit.jupiter.api.io.TempDir;
 class OdoImportCaptureTest {
   @TempDir Path directory;
   static final String URL = "https://raw.githubusercontent.com/integratedmodelling/odo-im/"
-      + "df5980e36d921233cc66b0bb270a2a36f86ccfce/releases/0.2.0/odo.owl";
+      + "86e25036b7e7a7d75971ab9f303c8f5f1785e30c/releases/0.2.1/odo.owl";
   private byte[] remote() throws Exception {
     return (new String(CoreOntologyCatalog.bundledOdo(), StandardCharsets.UTF_8)
         + "\n<!-- authoritative publication differs from distribution -->\n").getBytes(StandardCharsets.UTF_8);
@@ -37,7 +37,7 @@ class OdoImportCaptureTest {
     assertEquals("BUNDLED_OFFLINE", captured.source());
     assertArrayEquals(CoreOntologyCatalog.bundledOdo(), captured.bytes());
     assertThrows(IllegalArgumentException.class,
-        () -> offline.capture(URL.replace("/0.2.0/", "/9.9.9/"), CoreOntologyCatalog.bundledOdo()));
+        () -> offline.capture(URL.replace("/0.2.1/", "/9.9.9/"), CoreOntologyCatalog.bundledOdo()));
   }
   @Test void reachableInvalidDocumentDoesNotSilentlyUseCachedOrBundledBytes() throws Exception {
     new OdoImportCapture(directory, uri -> CoreOntologyCatalog.bundledOdo()).capture(URL, CoreOntologyCatalog.bundledOdo());
@@ -56,6 +56,6 @@ class OdoImportCaptureTest {
   void liveDeclaredPublicationIsRetrievedRatherThanUsingFallback() throws Exception {
     var captured = new OdoImportCapture(directory).capture(URL, CoreOntologyCatalog.bundledOdo());
     assertEquals("REMOTE", captured.source());
-    assertEquals("5c020dac9bd9d1cd4f9673b8075cf08f75ecc7194c74378bdb8f0498110ddba3", captured.sha256());
+    assertEquals("06c081d46d9435aeadb4ef086b6a278e868953871cbc87d1debc75e6f8e0ba45", captured.sha256());
   }
 }

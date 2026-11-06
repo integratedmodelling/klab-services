@@ -102,6 +102,9 @@ public final class SemanticLabels {
       base = concept == null ? expression(syntax.getName()) : singularLabel(concept);
     } else base = describe(syntax.getObservable(), resolve, true);
     if (base == null) base = "Concept";
+    if (syntax.getPortionIdentity() != null && syntax.getWholeIdentity() != null)
+      base = describe(syntax.getPortionIdentity(), resolve, false) + " within "
+          + lower(describe(syntax.getWholeIdentity(), resolve, false)) + " " + lower(base);
     if (syntax.getSemanticModifier() != null)
       base = unary(syntax.getSemanticModifier(), base, describe(syntax.getComparisonConcept(), resolve, true));
     var predicates = new ArrayList<String>();

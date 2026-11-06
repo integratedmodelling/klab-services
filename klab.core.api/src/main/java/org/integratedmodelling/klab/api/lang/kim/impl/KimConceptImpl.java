@@ -31,6 +31,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   private KimConcept observable;
   private KimConcept parent;
   private KimConcept inherent;
+  private KimConcept portionIdentity;
+  private KimConcept wholeIdentity;
+  @Override public KimConcept getPortionIdentity() { return portionIdentity; }
+  @Override public KimConcept getWholeIdentity() { return wholeIdentity; }
+  public void setPortionIdentity(KimConcept value) { portionIdentity = value; urn = null; }
+  public void setWholeIdentity(KimConcept value) { wholeIdentity = value; urn = null; }
   private List<KimConcept> about = new ArrayList<>();
   private KimConcept goal;
   private KimConcept causant;
@@ -77,6 +83,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.observable = other.observable;
     this.parent = other.parent;
     this.inherent = other.inherent;
+    this.portionIdentity = other.portionIdentity;
+    this.wholeIdentity = other.wholeIdentity;
     this.about.addAll(other.about);
     this.goal = other.goal;
     this.causant = other.causant;
@@ -165,6 +173,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     ret.parent = null;
     ret.observable = map(observable, childPath(path, "observable"), transform);
     ret.inherent = map(inherent, childPath(path, "inherent"), transform);
+    ret.portionIdentity = map(portionIdentity, childPath(path, "portionIdentity"), transform);
+    ret.wholeIdentity = map(wholeIdentity, childPath(path, "wholeIdentity"), transform);
     ret.goal = map(goal, childPath(path, "goal"), transform);
     ret.causant = map(causant, childPath(path, "causant"), transform);
     ret.caused = map(caused, childPath(path, "caused"), transform);
@@ -808,7 +818,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         && name == null && semanticModifier == null && selector() == null && !negated
         && traits.isEmpty() && roles.isEmpty() && getModifiers().isEmpty()
         && about.isEmpty() && valueOperators.isEmpty() && operands.isEmpty()
-        && comparisonConcept == null && authority == null && authorityTerm == null) {
+        && comparisonConcept == null && portionIdentity == null && wholeIdentity == null && authority == null && authorityTerm == null) {
       this.urn = child.finalizeDefinition();
       this.contextualization = Contextualization.forSemantics(this);
       return this.urn;
@@ -842,6 +852,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       ret.append(ret.isEmpty() ? "" : " ").append("not");
     }
 
+    if (portionIdentity != null || wholeIdentity != null) {
+      if (portionIdentity == null || wholeIdentity == null)
+        throw new IllegalStateException("Quantitative within requires both identity operands");
+      ret.append(ret.isEmpty() ? "" : " ").append(((KimConceptImpl) portionIdentity).finalizeDefinition())
+          .append(" within ").append(((KimConceptImpl) wholeIdentity).finalizeDefinition());
+    }
     traits.sort(
         (o1, o2) ->
             ((KimConceptImpl) o1)
@@ -954,7 +970,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     boolean trivial = semanticModifier == null
         && (observable == null || observable.getSemanticModifier() == null)
         && getModifiers().isEmpty() && valueOperators.isEmpty() && about.isEmpty()
-        && operands.isEmpty() && !negated;
+        && operands.isEmpty() && portionIdentity == null && wholeIdentity == null && !negated;
 
     if (trivial) {
       var allTraits = type.contains(SemanticType.PREDICATE);

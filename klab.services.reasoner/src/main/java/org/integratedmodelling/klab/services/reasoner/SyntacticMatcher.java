@@ -63,6 +63,8 @@ public class SyntacticMatcher {
       return false;
     }
 
+    if (!org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.sameOperands(
+        candidate.asConcept(), pattern.asConcept())) return false;
     if (isAtomic(pattern.getUrn())) {
       return reasonerService.is(candidate, pattern);
     }
@@ -99,6 +101,18 @@ public class SyntacticMatcher {
         pattern.asConcept());
   }
 
+  private static KimConcept quantitativeHead(KimConcept syntax) {
+    for (var current = syntax; current != null && current.getSemanticModifier() == null;
+        current = current.getObservable()) {
+      if (current.getPortionIdentity() != null || current.getWholeIdentity() != null) return current;
+    }
+    return null;
+  }
+
+  private static String identityUrn(KimConcept identity) {
+    return identity == null ? null : identity.getUrn();
+  }
+
   private boolean matchConcepts(
       KimConcept candidate,
       KimConcept pattern,
@@ -119,6 +133,13 @@ public class SyntacticMatcher {
     if (pattern.isNegated() != candidate.isNegated()) {
       return false;
     }
+
+    var candidateHead = quantitativeHead(candidate);
+    var patternHead = quantitativeHead(pattern);
+    // Named aliases may expose the pair only through their compiled annotations, checked above.
+    if (candidateHead != null && patternHead != null
+        && (!java.util.Objects.equals(identityUrn(candidateHead.getPortionIdentity()), identityUrn(patternHead.getPortionIdentity()))
+            || !java.util.Objects.equals(identityUrn(candidateHead.getWholeIdentity()), identityUrn(patternHead.getWholeIdentity())))) return false;
 
     if (pattern.is(SemanticType.UNION) || pattern.is(SemanticType.INTERSECTION)) {
 

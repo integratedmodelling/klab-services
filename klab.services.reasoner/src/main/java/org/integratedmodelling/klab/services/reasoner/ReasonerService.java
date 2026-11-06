@@ -5169,6 +5169,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return null;
       } else {
         ontology.add(Axiom.SubClass(declared.getNamespace() + ":" + declared.getName(), mainId));
+        org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.inherit(
+            owl, main, declared);
         ((ConceptImpl) main)
             .setAnnotations(
                 AnnotationCollector.merge(declared.getAnnotations(), concept.getAnnotations()));
@@ -5434,6 +5436,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       return null;
     }
 
+    org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.validate(
+        owl, main, concept, this::declareConcept);
     var builder = SemanticsBuilder.create(main, this, monitor);
 
     // TODO annotations
@@ -5449,6 +5453,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     // Unary operators wrap the full operand, including its own collectivity. This flag belongs
     // to the outer expression and must not erase the operand before it is wrapped.
     builder.collective(concept.isCollective());
+    if (concept.getPortionIdentity() != null || concept.getWholeIdentity() != null)
+      builder.quantitativeWithin(concept.getPortionIdentity(), concept.getWholeIdentity());
 
     //        if (concept.getDistributedInherent() != null) {
     //            builder.withDistributedInherency(true);

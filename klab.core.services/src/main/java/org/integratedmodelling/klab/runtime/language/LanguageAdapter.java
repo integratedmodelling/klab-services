@@ -343,6 +343,10 @@ public class LanguageAdapter {
     }
     ret.getPatternVariables().addAll(semantics.getPatternVariables());
 
+    if (semantics.getPortionIdentity() != null) {
+      ret.setPortionIdentity(adaptSemantics(semantics.getPortionIdentity(), namespace, projectName, documentClass));
+      ret.setWholeIdentity(adaptSemantics(semantics.getWholeIdentity(), namespace, projectName, documentClass));
+    }
     if (semantics.getHeadExpression() != null) {
       ret.setObservable(
           adaptSemantics(semantics.getHeadExpression(), namespace, projectName, documentClass));

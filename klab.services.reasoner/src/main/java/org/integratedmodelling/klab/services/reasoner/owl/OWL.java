@@ -2063,7 +2063,9 @@ public class OWL {
             NS.DISPLAY_LABEL_PROPERTY,
             org.integratedmodelling.common.knowledge.SemanticLabels.expression(urn)));
     ontology.define(ax);
-    return ontology.getConcept(name);
+    var specialized = ontology.getConcept(name);
+    QuantitativeContainmentSupport.inherit(this, specialized, ret);
+    return specialized;
   }
 
   /** Presentation metadata is independent of generated OWL and reference identifiers. */

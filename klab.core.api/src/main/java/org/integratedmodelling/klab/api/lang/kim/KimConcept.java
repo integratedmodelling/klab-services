@@ -22,6 +22,10 @@ import java.util.Set;
  * @author ferdinando.villa
  */
 public interface KimConcept extends KlabStatement {
+  /** Ordered identities of a partial extensive physical quantity, separate from native inherency. */
+  default KimConcept getPortionIdentity() { return null; }
+  default KimConcept getWholeIdentity() { return null; }
+
 
   enum Expression {
     SINGLETON,

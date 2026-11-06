@@ -234,6 +234,8 @@ public class SemanticMatcher {
       Map<Concept, Concept> resolvedAbstractPredicates,
       Scope scope) {
 
+    if (!org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.sameOperands(from, to))
+      return -50;
     if (from.is(SemanticType.PREDICATE) && to.is(SemanticType.PREDICATE)
         && from.getDescriptionType() != null && to.getDescriptionType() != null
         && from.getDescriptionType() != to.getDescriptionType()) return -50;
@@ -552,6 +554,8 @@ public class SemanticMatcher {
   private int distance(Concept from, Concept to, boolean acceptAbsent) {
 
     int ret = 0;
+    if (from != null && to != null
+        && !org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.sameOperands(from, to)) return -50;
     if (from == null && to != null) {
       ret = acceptAbsent ? 50 : -50;
     } else if (from != null && to == null) {

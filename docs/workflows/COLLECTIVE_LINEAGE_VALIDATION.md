@@ -1,32 +1,42 @@
-# Collective lineage and Energy consumer alignment
+# Coordinated collective, Energy and containment integration
 
-The isolated bundle is ODO 0.2.1 from local release commit
-86e25036b7e7a7d75971ab9f303c8f5f1785e30c, SHA-256
-06c081d46d9435aeadb4ef086b6a278e868953871cbc87d1debc75e6f8e0ba45.
-It supplies the collective roots and corrects Energy to extensive while retaining
-its abstract status and joule unit. Historical releases and immutable admission
-checks are unchanged; no hash waiver or broad fallback is introduced.
+The bundle uses ODO 0.2.1 from exact release commit
+`86e25036b7e7a7d75971ab9f303c8f5f1785e30c`, SHA-256
+`06c081d46d9435aeadb4ef086b6a278e868953871cbc87d1debc75e6f8e0ba45`.
+It supplies the collective roots and classifies Energy as extensive, preserving
+its abstract status and joule unit. Historical numbered releases remain unchanged;
+the mutable latest alias remains retired. The exact release commit must be
+published without rewriting its history before its authored raw URL is usable.
 
-Energy additionally requires the quantitative-within task's language API category
-correction. The old installed API still classifies Energy as intensive. The paired
-SemanticSyntax.java used read-only for the private test overlay has SHA-256
-6a0027dd3e2da269178a20bd786c76eccf9fa4d29a836b8446b17ccffc685535.
-The normal paired language artifact must be rebuilt before integration.
+Build the normal Languages artifacts from commit
+`70802816dc0035d7fc8f41b5d81377fc2d25133f` before compiling these Services changes.
+All five inherited language runtime artifacts must come from that build.
+The earlier paired API overlay is historical evidence, not an integration artifact.
+The coordinated change includes ordered quantitative containment, ODO extensive
+physical property eligibility, separate reviewed observational declaration
+validation and request-admission rules, and the corrected Energy consumer.
 
-All 48 CoreDomainAliasValidationTest, WorldviewDeclarationSupportTest,
-BroadDescriptionContractTest and EnergyReleaseMeasurementTest cases pass with
-the candidate core directory and paired language API. The new OWL regression
-fails against historical ODO 0.2.0 as expected. Existing compiled Services classes
-are from baseline 197a60a37ba3483b7d3f62fa93a510241a22e652; the new measurement
-test is compiled privately. No clean reactor build is claimed.
+Factory fixtures target bundled 0.2.1 while retaining historical 0.1.1/0.2.0
+mapping checks. Frozen-byte compatibility admits the exact 0.2.1 URL/hash pair;
+captured imports use their actual captured locator and bytes. The two paths are
+tested separately, including rejection of mixed hashes, changed bytes, wrong
+commits, paths, queries and fragments. No hash waiver or broad fallback is added.
 
-IMOD's isolated fixture passes 72 lineage/Energy checks. Its full-world baseline
-and candidate pass 14/14 and 72/72 checks with consistent OWL and zero unsatisfiable
-classes; the three existing Time/Space and Period/Frequency diagnostics are
-unchanged. Owned public chemical answers were refreshed in a private capture;
-an audited legacy-source read adapter removes only obsolete empty arrays after
-verifying the original proof hash. Actual replay blocks external networking.
-IMOD's decision record documents the exact scope and the separate unsuccessful
-native persistence roundtrip. No services or original checkouts were modified.
+Final verification must run the factory/import suites, core-domain aliases,
+worldview declarations, description dispatch, Energy measurements, quantitative
+syntax/serialization/matching/reasoning, observational admission and source model
+regressions. The IMOD fixture and complete authority-backed replay must use the
+same normally built language JARs and compiled Services commit. Its earlier
+read-adapter capture evidence remains under IMOD's collective-lineage review
+followup; native persistent-catalogue roundtrip is still a separate limitation.
 
-No push, merge, deployment or restart is part of this candidate.
+Quantitative declarations preserve measurement type and units but do not compute
+a portion. Nested quantitative composition fails closed. Collective lineage does
+not establish membership, collection or observational containment. Runtime
+contextualization still requires its separate model/bridge guards. The existing
+Time/Space and Period/Frequency diagnostics are not repaired by this integration.
+
+Publication order is ODO exact history and byte verification, normal paired
+Languages artifacts, combined Services, then IMOD whose immutable ODO import is
+publicly retrievable. No push, deployment, activation or service restart is part
+of this local candidate.

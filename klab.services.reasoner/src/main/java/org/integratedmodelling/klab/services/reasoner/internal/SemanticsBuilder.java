@@ -412,6 +412,14 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
   }
 
   // TODO use a cache
+  /** Retain ordered partial-quantity operands while replaying parsed syntax. */
+  public SemanticsBuilder quantitativeWithin(KimConcept portion, KimConcept whole) {
+    syntax.setPortionIdentity(portion);
+    syntax.setWholeIdentity(whole);
+    syntax.resetDefinition();
+    return this;
+  }
+
   private Concept buildConcept(KimConcept kimConcept) {
 
     if (kimConcept == null) {
@@ -496,17 +504,23 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     var roles = kimConcept.getRoles();
     var ontology = reasoner.owl().getOntology(ret.getNamespace());
 
+    org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.validate(
+        reasoner.owl(), ret, kimConcept, this::buildConcept);
+
     var attributes = new ArrayList<Concept>();
     var realms = new ArrayList<Concept>();
     var identities = new ArrayList<Concept>();
     var acceptedRoles = new ArrayList<Concept>();
     var appliedPredicates = new ArrayList<Concept>();
 
-    if ((valueOperators.size() + modifiers.size() + traits.size()) + roles.size() > 0) {
+    if ((valueOperators.size() + modifiers.size() + traits.size()) + roles.size() > 0
+        || kimConcept.getPortionIdentity() != null || kimConcept.getWholeIdentity() != null) {
 
       var parent = ret;
       ret = (ConceptImpl) reasoner.owl().makeSubclass(ret, definition);
 
+      org.integratedmodelling.klab.services.reasoner.owl.QuantitativeContainmentSupport.apply(
+          reasoner.owl(), ret, kimConcept, this::buildConcept);
       Set<Concept> baseTraits = new HashSet<>();
       // add traits and the proper axioms for each (move restrictions to OWL, handle the base trait)
       for (var trait : Utils.Collections.join(roles, traits)) {

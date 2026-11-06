@@ -171,12 +171,18 @@ class ConditionalModelContextSourceTest {
       assertTrue(errors(new DocumentSemanticValidator(f.environment().actor()).validate(joint)));
     }
   }
-  @Test void permissionUnitProofAndExplicitAbstractnessRemainObligations() throws Exception {
+  @Test void sourcePermissionIsSeparateFromExecutableUnitProofAndExplicitAbstractness() throws Exception {
     try(var f=fixture(false,true)) {
       assertTrue(errors(new DocumentSemanticValidator(f.environment().actor()).validate(parse(f,"model imod:Gradient observing imod:Elevation in m;"))));
     }
     try(var f=fixture(true,false)) {
-      assertTrue(errors(new DocumentSemanticValidator(f.environment().actor()).validate(parse(f,"model imod:Gradient observing imod:Elevation in m;"))));
+      var document=parse(f,"model imod:Gradient observing imod:Elevation in m;");
+      var source=new DocumentSemanticValidator(f.environment().actor());
+      var diagnostics=source.validate(document);
+      assertFalse(errors(diagnostics),diagnostics.toString());
+      assertFalse(source.getConditionalModelContexts().isEmpty());
+      assertTrue(errors(new DocumentSemanticValidator(f.environment().actor(),true,false,"imod:Region").validate(document)),
+          "Source possibility cannot supply missing canonical unity for execution");
     }
     try(var f=fixture(true,true)) {
       for(var unit:List.of("degree_angle","rad","m")) {
@@ -187,7 +193,11 @@ class ConditionalModelContextSourceTest {
           .validate(parse(f,"model imod:Gradient observing imod:AbstractValue in m;"))));
       for(var head:List.of("AngularGradient","LengthGradient")) {
         var claimedUnity=parse(f,"model imod:"+head+" observing imod:Elevation in m;");
-        assertTrue(errors(new DocumentSemanticValidator(f.environment().actor()).validate(claimedUnity)),
+        var source=new DocumentSemanticValidator(f.environment().actor());
+        var diagnostics=source.validate(claimedUnity);
+        assertFalse(errors(diagnostics),diagnostics.toString());
+        assertFalse(source.getConditionalModelContexts().isEmpty());
+        assertTrue(errors(new DocumentSemanticValidator(f.environment().actor(),true,false,"imod:Region").validate(claimedUnity)),
             "Canonical unity metadata cannot make "+head+" a semantic Ratio");
       }
     }

@@ -683,21 +683,24 @@ public class DocumentSemanticValidator
 
   private Concept conditionalSubject(
       KimModel model, Concept output, List<KimObservable> occurrences) {
-    // First bounded route: semantic Ratio specialization, canonical unity and no output unit.
-    // Missing
-    // metadata never means unitless; unitful conditional routes await semantic unit validation.
-    var ratio =
-        reasoner
-            .owl()
-            .getConcept(
-                org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS.CORE_RATIO);
-    if (ratio == null
-        || !reasoner.is(output, ratio)
-        || model.getObservables().size() != 1
-        || model.getObservables().stream()
-            .anyMatch(o -> o.getUnit() != null && !o.getUnit().isBlank())
-        || !org.integratedmodelling.klab.services.reasoner.owl.ConditionalModelContextSupport
-            .explicitlyUnitless(reasoner.owl(), output)) return null;
+    // Source obligations describe semantic possibility, independently of units or execution.
+    // Executable admission retains its bounded Ratio route until general unit validation and
+    // typed native-member execution are available. A source descriptor cannot discharge it.
+    if (model.getObservables().size() != 1
+        || !(output.is(SemanticType.QUALITY) || output.is(SemanticType.PROCESS))) return null;
+    if (executableModels) {
+      var ratio =
+          reasoner
+              .owl()
+              .getConcept(
+                  org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS.CORE_RATIO);
+      if (ratio == null
+          || !reasoner.is(output, ratio)
+          || model.getObservables().stream()
+              .anyMatch(o -> o.getUnit() != null && !o.getUnit().isBlank())
+          || !org.integratedmodelling.klab.services.reasoner.owl.ConditionalModelContextSupport
+              .explicitlyUnitless(reasoner.owl(), output)) return null;
+    }
     var inputs = new ArrayList<Concept>();
     for (var occurrence : occurrences) {
       if (occurrence.getSemantics() == null) continue;

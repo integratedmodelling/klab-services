@@ -78,7 +78,9 @@ public final class ExpressionStatus {
     if (value == null || !visited.add(value)) return false;
     if (value instanceof KimConcept c) {
       if (c.getObservable() == null && leafTypes.apply(c).contains(SemanticType.SUBJECTIVE)) return true;
-      return isSubjective(c.getObservable(), leafTypes, visited)
+      return isSubjective(c.getPortionIdentity(), leafTypes, visited)
+          || isSubjective(c.getWholeIdentity(), leafTypes, visited)
+          || isSubjective(c.getObservable(), leafTypes, visited)
           || isSubjective(c.getTraits(), leafTypes, visited)
           || isSubjective(c.getRoles(), leafTypes, visited)
           || isSubjective(c.getAbout(), leafTypes, visited)
