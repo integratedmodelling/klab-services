@@ -323,6 +323,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
+  public org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View getReviewCycles(
+      String flowId, UserScope scope) {
+    return workflowManager.getReviewCycles(flowId, scope);
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View reviewCycle(
+      String flowId, org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Command command,
+      UserScope scope) {
+    return workflowManager.reviewCycle(flowId, command, scope);
+  }
+
+  @Override
   public boolean deleteFlow(String flowId, UserScope scope) {
     return workflowManager.deleteFlow(flowId, scope);
   }

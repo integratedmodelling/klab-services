@@ -37,6 +37,9 @@ public class WorkflowParticipant implements Serializable {
   private Set<String> disallowedTransitions = new LinkedHashSet<>();
   private Long maxResponseHours;
   private boolean knownRealPerson;
+  private boolean authenticated;
+
+  public boolean isAuthenticated() { return authenticated; }
 
   public static WorkflowParticipant from(UserScope scope) {
     if (scope == null || scope.getUser() == null) {
@@ -45,6 +48,8 @@ public class WorkflowParticipant implements Serializable {
     var user = scope.getUser();
     var ret = new WorkflowParticipant();
     ret.identity = user.getUsername();
+    ret.authenticated = user.isAuthenticated() && !user.isAnonymous()
+        && ret.identity != null && !ret.identity.isBlank();
     ret.email = user.getEmailAddress();
     ret.knownRealPerson =
         user.isAuthenticated()
@@ -83,9 +88,6 @@ public class WorkflowParticipant implements Serializable {
     if (scope instanceof ServiceSideScope serviceScope
         && serviceScope.isAuthorized(CRUDOperation.ADMINISTER)) {
       ret.roles.add(WorkflowRole.ADMIN);
-    }
-    if (ret.roles.isEmpty() && ret.knownRealPerson) {
-      ret.roles.add(WorkflowRole.REVIEWER);
     }
     return ret;
   }

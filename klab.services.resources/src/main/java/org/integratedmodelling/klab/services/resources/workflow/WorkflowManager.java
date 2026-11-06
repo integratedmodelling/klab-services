@@ -504,6 +504,44 @@ public class WorkflowManager {
     return project(flow, workflow, participant);
   }
 
+  /** Narrow review projection: community access never grants access to unrelated workflow stages. */
+  public org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View getReviewCycles(
+      String id, UserScope scope) {
+    var actor = WorkflowParticipant.from(scope);
+    if (!actor.isAuthenticated()) throw access(id);
+    var flow = requiredFlow(id);
+    return new org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View(
+        flow.getRevision(), ReviewCycleProtocol.visible(flow, requiredWorkflowVersion(flow), actor));
+  }
+
+  /** Atomic within this manager/process; every review command must name the observed flow revision. */
+  public synchronized org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View reviewCycle(
+      String id, org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Command command,
+      UserScope scope) {
+    var actor = WorkflowParticipant.from(scope);
+    if (!actor.isAuthenticated()) throw access(id);
+    var flow = Utils.Json.parseObject(Utils.Json.asString(requiredFlow(id)), Flow.class);
+    var workflow = requiredWorkflowVersion(flow);
+    if (!ProposalReviewProtocol.enabled(workflow))
+      throw new KlabIllegalStateException("Review cycles require a proposal-review workflow");
+    if (command == null || command.operation() == null || command.expectedRevision() != flow.getRevision())
+      throw new KlabIllegalStateException("Review command requires the current flow revision");
+    switch (command.operation()) {
+      case OPEN_CYCLE -> ReviewCycleProtocol.openCycle(flow, workflow, actor, command.sourceStateId());
+      case OPEN_ROUND -> ReviewCycleProtocol.openRound(flow, workflow, actor, command.cycleId(), command.audience());
+      case SAVE_CONTRIBUTION -> ReviewCycleProtocol.contribute(flow, workflow, actor, command.cycleId(),
+          command.roundId(), command.contributionId(), command.text(), command.submit());
+      case CLOSE_ROUND -> {
+        if (command.roundId() == null) throw new KlabIllegalArgumentException("A round ID is required");
+        ReviewCycleProtocol.close(flow, workflow, actor, command.cycleId(), command.roundId());
+      }
+      case CLOSE_CYCLE -> ReviewCycleProtocol.close(flow, workflow, actor, command.cycleId(), null);
+    }
+    persistMutation(flow, workflow);
+    return new org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View(
+        flow.getRevision(), ReviewCycleProtocol.visible(flow, workflow, actor));
+  }
+
   /** Delete a flow aggregate, its attachment payloads, and its target-asset catalog entry. */
   public synchronized boolean deleteFlow(String id, UserScope scope) {
     var participant = WorkflowParticipant.from(scope);
@@ -973,6 +1011,8 @@ public class WorkflowManager {
     Flow copy = Utils.Json.parseObject(Utils.Json.asString(stored), Flow.class);
     copy.setBehaviorCheckpoint(null);
     copy.getStates().values().forEach(state -> state.setBehaviorCheckpoint(null));
+    // Apply privacy even to public flows and owners: another author's drafts never leave the server.
+    copy.setReviewCycles(ReviewCycleProtocol.visible(stored, workflow, participant));
     if (stored.isPublicRead()) return copy;
     boolean adminOrOwner =
         participant.getRoles().contains(WorkflowRole.ADMIN)

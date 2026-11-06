@@ -124,6 +124,18 @@ public interface ResourcesService extends KlabService {
     throw new UnsupportedOperationException("Workflow actions are not supported");
   }
 
+  /** Read only the review rounds and submitted feedback admitted for this caller. */
+  default org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View getReviewCycles(
+      String flowId, UserScope scope) {
+    throw new UnsupportedOperationException("Review cycles are not supported");
+  }
+
+  default org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View reviewCycle(
+      String flowId, org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Command command,
+      UserScope scope) {
+    throw new UnsupportedOperationException("Review cycles are not supported");
+  }
+
   /** Store an attachment payload in the workflow persistence backend. */
   Flow.Attachment addFlowAttachment(
       String flowId, String stateId, Flow.AttachmentUpload upload, UserScope scope);

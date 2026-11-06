@@ -18,6 +18,11 @@ import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns
 
 /** Persistent active or closed instance of a {@link Workflow}. */
 public class FlowImpl implements Flow {
+  private List<org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Cycle> reviewCycles = new ArrayList<>();
+  public List<org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Cycle> getReviewCycles() { return reviewCycles; }
+  public void setReviewCycles(List<org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Cycle> value) {
+    reviewCycles = value == null ? new ArrayList<>() : new ArrayList<>(value);
+  }
   private WorkflowBehavior.Checkpoint behaviorCheckpoint;
   public WorkflowBehavior.Checkpoint getBehaviorCheckpoint() { return behaviorCheckpoint; }
   public void setBehaviorCheckpoint(WorkflowBehavior.Checkpoint value) { behaviorCheckpoint = value; }

@@ -10,6 +10,9 @@ import org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImp
 
 /** Persistent active or closed instance of a {@link Workflow}. */
 public interface Flow extends KlabAsset {
+  /** Server-owned review extension, independent of legacy stage ownership and decisions. */
+  List<ReviewCycles.Cycle> getReviewCycles();
+  void setReviewCycles(List<ReviewCycles.Cycle> cycles);
   WorkflowBehavior.Checkpoint getBehaviorCheckpoint();
   void setBehaviorCheckpoint(WorkflowBehavior.Checkpoint checkpoint);
 
