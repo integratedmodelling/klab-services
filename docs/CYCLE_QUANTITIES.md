@@ -18,6 +18,12 @@ immutable source pin and digest. Live URL verification stays opt-in until
 publication. The same numbered ODO source history must be published before
 activating the IMOD import. This change starts no service and publishes nothing.
 
-The existing Duration consumer EXTENSIVE flag versus ODO intensive ancestry is
-recorded separately in IMOD's cycle-quantity pending decisions. This work does
-not redefine Duration aggregation semantics.
+Duration and Period are intensive in both the paired Languages categories and
+ODO ancestry. Ordinary event duration remains a measurable quantity in seconds.
+Quantitative `within` requires extensive physical-property ancestry and therefore
+rejects Duration, Period and their inherited specializations, even with stale
+EXTENSIVE consumer flags. Source parsing alone does not establish that eligibility.
+
+This alignment adds no numerical aggregation implementation, automatic summation,
+reciprocal calculation or temporal decomposition rule. Existing measurement and
+unit-conversion paths remain in use.
