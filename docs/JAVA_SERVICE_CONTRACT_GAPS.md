@@ -49,6 +49,16 @@ Java end-to-end functionality. No Monday walkthrough or live repair is a Python 
 
 ## Request/response and ownership rules
 
+Scope-selection correction (RC-P1.5/CAP03/04/18): shared Python validation now
+rejects out-of-positive-Java-long focus/observer values, root/token inconsistencies,
+observer-bearing root configurations and control characters before I/O. Raw Runtime
+service methods check bound Context origin/known Runtime identity; matching-backend
+requests use current credentials and still require server ACLs. Eighteen before-fix
+protocol tests reproduced local acceptance/unintended MockTransport requests, not an
+observed real credential leak or Java defect. Existing HTTP query routes verify
+same-principal reads and different-principal private denial; no new simulator route
+or behavior, membership guarantee, incarnation or revision authority is introduced.
+
 Project-lock increment (RC-P4.4/CAP14): source-confirmed native GET project lock/
 unlock routes return boolean from an ADMINISTRATOR controller. WorkspaceManager
 shares ownership by stable authenticated principal; they are not editor-exclusive

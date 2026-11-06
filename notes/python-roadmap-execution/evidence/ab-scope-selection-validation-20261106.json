@@ -1,0 +1,128 @@
+{
+  "utc": "2026-11-06T19:58:36.777537+00:00",
+  "base": "d51f89bbe66df0f319fb2081c5c8fd0fd0830b47",
+  "before_fix_failures": {
+    "invalid_selection": 14,
+    "foreign_context_routed_to_mock_transport": 4
+  },
+  "focused_tests": 840,
+  "additional_independent_defensive_guard_tests": 2,
+  "full_packaged_sdk_tests": 3904,
+  "coverage_gates": [
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/requests.py --new-module src/klab_client/handles.py --new-module src/klab_client/exports.py --new-module src/klab_client/connection.py --new-module src/klab_client/connection_models.py --new-module src/klab_client/credentials.py --new-module src/klab_client/_bootstrap.py --new-module src/klab_client/analysis.py --new-module src/klab_client/provenance.py --new-module src/klab_client/semantics.py --new-module src/klab_client/_inspection.py --new-module src/klab_client/inspection.py --new-module src/klab_client/evidence.py --new-module src/klab_client/experiments.py --new-module tools/workflows/discover_compare_explain.py --new-module tools/workflows/milestone.py --new-module tools/workflows/deployment.py --new-module tools/build_milestone_deliverable.py --new-module tools/run_milestone_acceptance.py --new-module tools/run_milestone_throughput.py --new-module tools/restore_milestone_results.py --new-module tools/workflows/resource_inspection.py --new-module tools/run_resource_inspector_acceptance.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_async_transport.py --new-module src/klab_client/async_client.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/vector.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/tables.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_scientific_snapshot.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/graph.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/graph_projection.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module tools/check_release_readiness.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/authoring.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/notifications.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/source_previews.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agents.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agent_status.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agent_control.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_agent_wire.py --new-module src/klab_client/agent_messaging.py --new-module src/klab_client/agent_execution.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module tools/prepare_runtime_fixture.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_job_binding.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/imports.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/project_locks.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    }
+  ],
+  "packaged_simulator_tests": 103,
+  "lint": "PASS",
+  "unchanged_exact_criteria": 42,
+  "build": {
+    "parity_files": 48,
+    "artifacts": {
+      "klab_python_client-0.1.0-py3-none-any.whl": "b2651cb9b4acb798d6cd50c6186480a0fcc8d818f59677a0e0934354dbbacec8",
+      "klab_python_client-0.1.0.tar.gz": "7927477c5e9a2216073d1b9c041470a019385955a37c322a3e998fc774836e35"
+    }
+  },
+  "verified_parity_modules": 48,
+  "artifact_sha256": {
+    "klab_python_client-0.1.0-py3-none-any.whl": "b2651cb9b4acb798d6cd50c6186480a0fcc8d818f59677a0e0934354dbbacec8",
+    "klab_python_client-0.1.0.tar.gz": "7927477c5e9a2216073d1b9c041470a019385955a37c322a3e998fc774836e35"
+  },
+  "simulator_wheel_sha256": "f22be6534bb165da9cdb72983c9be389bd55d7397df6cf402c234f69f9e6c8a8",
+  "new_simulator_routes_or_source_behavior": false,
+  "java_execution": "NOT_RUN",
+  "real_credential_leak_observed": false,
+  "evidence_scope": "Local validation and isolated HTTP routing/private denial; source Java long parsing is not executed Java compatibility; no membership/authorization/revision guarantee"
+}

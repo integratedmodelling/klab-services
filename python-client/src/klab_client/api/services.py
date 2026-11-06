@@ -101,11 +101,17 @@ class _RemoteService:
             raise ConfigurationError("Construct service implementations through Client with explicit endpoints")
         return self.client
 
+    def _bound_scope_token(self, scope):
+        from klab_client.client import Context, scope_token
+        client = self._require_client()
+        if self.service == "runtime" and isinstance(scope, Context):
+            client._validate_context_binding(scope)
+        return scope_token(scope)
+
     def _request(self, method, route, scope=None, **kwargs):
-        from klab_client.client import scope_token
-        self._require_client()
-        return self.client.transport.request(self.service, method, route, scope=scope_token(scope),
-                                             service_id=self.client.runtime_service_id, **kwargs)
+        token = self._bound_scope_token(scope)
+        return self.client.transport.request(self.service, method, route, scope=token,
+                                              service_id=self.client.runtime_service_id, **kwargs)
 
     def _checked(self, payload, label):
         from klab_client.dto import check_notifications, object_payload

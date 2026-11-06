@@ -204,3 +204,18 @@ third-party approval is implied. The two earlier failed attempts remain failed.
 Before merge, require final-head CI and verify that documentation closeout has not
 changed the live-tested executable tree. Start the next roadmap feature only after
 normal merge, or explicitly record a real blocker and change of sequence.
+## Scope-selection correctness
+
+Both client facades reject focus/observer identifiers outside positive Java-long
+bounds before HTTP. Explicit selected tokens must retain their configuration's
+root context; empty tokens do not silently mean default selection. A server root
+ID cannot embed an observer selection. Control characters are refused. Mutating
+the retained configuration into a different root cannot relabel an existing view.
+Opaque nonidentity configuration extensions remain untouched.
+
+Raw Runtime service calls with a bound Context also check its configured Runtime
+origin and known identity before transmission, just like higher-level graph APIs.
+A Context from another client on the same backend is not automatically forbidden,
+but the request uses the current client's credentials and server ACLs still decide
+access. Passing these checks proves neither membership nor permission, incarnation,
+revision commitment or genuine Java execution.

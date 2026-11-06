@@ -219,6 +219,11 @@ Connection exposes `identity/profile/catalog/selected/client`, synchronous
 errors. See [profiles, providers, lifecycle and examples](connection-layer.md).
 ## Native async source authoring
 
+Shared scope selection now validates positive Java-long focus/observer IDs, exact
+root binding and control-free grammar before I/O. Raw Runtime service methods also
+refuse a Context bound to a foreign Runtime origin/known identity. These are local
+consistency checks, not server authorization or a revision lease.
+
 `ProjectLock` / `AsyncProjectLock` expose explicitly consented native Resources
 administrator lock/unlock booleans with immutable `ProjectLockReceipt`. They are
 principal-shared acknowledgements, not editor leases, revision fencing, automatic

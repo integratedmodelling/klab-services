@@ -153,8 +153,9 @@ class _AsyncService(_RemoteService):
         super().__init__(client)
 
     async def _request(self, method, route, scope=None, **kwargs):
+        token = self._bound_scope_token(scope)
         return await self.client.transport.request(self.service, method, route,
-            scope=scope_token(scope), service_id=self.client.runtime_service_id, **kwargs)
+            scope=token, service_id=self.client.runtime_service_id, **kwargs)
 
     async def capabilities(self, scope=None, *, max_response_bytes=None):
         payload = self._checked(await self._request("GET", "/public/capabilities", scope,
