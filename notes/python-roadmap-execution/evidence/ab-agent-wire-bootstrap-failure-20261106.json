@@ -1,0 +1,13 @@
+{
+  "pr": 256,
+  "head": "ee5cf60db9918a95fb62f895eaa864be54f47d69",
+  "failed_runs": [42275002080, 42275042424],
+  "classification": "CI_BUILD_BOOTSTRAP_MISSING",
+  "missing_artifact": "org.integratedmodelling:klab.product:jar:1.0.1-SNAPSHOT",
+  "tests_before_failure": {"AgentStatusWireTest": "PASS", "AgentMessagingWireTest": "PASS"},
+  "AgentChannelInteropTest": "NOT_RUN",
+  "repair_scope": "Use existing build/runtime-notifications immutable official-source plugin bootstrap; no service or product change",
+  "official_plugin_source": "integratedmodelling/klab.product@0c80acb1f16a1d405f888cf99286d6e365293559",
+  "fresh_ci_after_correction": "PENDING",
+  "local_java_ide_touched": false
+}

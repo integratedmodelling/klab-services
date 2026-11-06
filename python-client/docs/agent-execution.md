@@ -8,6 +8,33 @@ scientific algorithm is invented.
 
 ## Explicit registration and attachment
 
+Native awaited registration uses the same deferred/unbound contract:
+
+```python
+from klab_client import AsyncAgentExecutions
+
+creation = AsyncAgentExecutions(async_context, principal_key=operator_principal_key,
+                               runtime_incarnation=operator_incarnation)
+agent = await creation.create(behavior_source, allow_execute=True)
+```
+
+Only registration HTTP is async. The returned `DeferredAgent` retains **explicit,
+synchronous, thread-affine broker methods**; do not call blocking broker reads from
+an async notebook event loop. No async AMQP facade or hidden worker is claimed.
+`agent.close()` is local detachment only, never remote stop/disposal.
+
+An async lock serializes attempts on the same creator. Cancellation before native
+instantiate admission leaves a later explicit attempt available; cancellation at
+or after admission permanently consumes that creator, even while checking the
+response identity. A cancelled wait cannot prove rollback or authorize recreation
+through a new object. It raises CancelledError normally, not a fabricated receipt.
+Context binding is rechecked across awaited capability reads before submission
+and before success. Other unconfirmed post-admission errors report
+SubmissionOutcomeUnknown and cannot be replayed on that creator. Parser, source,
+consent, identity, fixed flags and receipt validation are shared with sync code.
+Protocol/cancellation tests are Python evidence, not new live Java compilation,
+broker execution, durable exactly-once semantics or scientific acceptance.
+
 ```python
 from klab_client import AgentExecutions, NotificationBroker
 

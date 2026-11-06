@@ -22,6 +22,34 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
+PR256 hosted native-wire CI failed before Qpid/interop tests:
+runs42275002080/42275042424 cannot resolve the declared packaging plugin
+`org.integratedmodelling:klab.product:1.0.1-SNAPSHOT`. AgentStatusWireTest and
+AgentMessagingWireTest passed first; AgentChannelInteropTest did not execute.
+Applied the same immutable official-source bootstrap already accepted in build.yml
+and runtime-notifications.yml, pin0c80acb1f16a1d405f888cf99286d6e365293559.
+No dependency version/source, Java product, test expectation or local IDE changed.
+Required fresh CI evidence pending; do not merge/bypass or infer native-wire success.
+Async graph work remains local and is not staged in this workflow correction.
+
+Awaited deferred-registration pass (active `feature/python-async-agent-registration`):
+red test reproduced missing AsyncAgentExecutions. Native awaited registration now
+shares source/parser/receipt/fixed-flag validation with the synchronous creator;
+one async lock serializes same-object admission. Cancellation after admission never
+allows resend, including during final identity checks. Context binding is rechecked
+across awaits before submission/success. Return value retains explicit synchronous
+thread-affine broker methods; no async AMQP/hidden thread is claimed. No new simulator
+endpoint or live Java compilation/execution/cleanup was needed.157focused/3767full
+packaged SDK tests, all18gates,100%agent execution/preview lines+branches,
+93packaged simulator regressions, lint and47module wheel/sdist/source byte parity
+PASS. Receipt: `evidence/ab-async-agent-registration-validation-20261106.json`.
+PR255 remotely MERGED at2a979754fc6fc30116e14e33545f7f9dca8f4bc4,
+2026-11-06T18:54:43Z, after all hosted SDK/core/Windows/simulator/scientific/build/
+Jenkins checks passed. No independent maintainer review is claimed. Next independently
+demonstrated inventory gap: GraphBrowser explicitly rejects async contexts despite
+native AsyncContext query support; use existing typed-query routes, no broadening
+of graph/revision authority. Full A+B implementation/acceptance remains IN_PROGRESS.
+
 Native awaited behavior-preview pass (active `feature/python-async-agent-previews`):
 red public-API test reproduced the missing AsyncAgentPreviews counterpart. Added
 native awaited parse/translation and shared pure identity/source/result/receipt
@@ -125,7 +153,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; simulator NOT_RUN|Native parseAsset DTOs, PR201/228real parsers; N maintained revision; add finite parser/fault/stale cases, no compiler port|
 |RC-P4.3 — B import/annotate/compute with input provenance|S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001: public sync/async upload, semantic source ADD, bound plan,400recorded cells/input receipt|PR244/249 merged, AsyncAuthoring delivered. SIMULATED_PROVISIONAL admission/input projection; JAVA_INCOMPATIBLE historical scanner; B(JAVA-RESOURCE-CLEANUP-001). No general native annotation/immutable lineage claim|
 |RC-P4.4 — B authorized edit/publish/conflict|P; Authoring/new AsyncAuthoring ADD; S(slice) SIM-INPUT-BINDING-001 exact-source/new workspace/project/document; no update/publish/conflict closure|Native CRUD and PR209/222real ADD; SIMULATED_PROVISIONAL finite parser/admission; remote locks/history/conditional edits remain contract inspection, not assumed absent|
-|RC-P4.5 — B behavior invocation/outcomes/reconnect|P; agent execution/control/status/journal/messaging; new native AsyncAgentPreviews nonexecuting translation, simulator NOT_RUN|Native agent contracts/managed real slices; B(#125principal/incarnation/cleanup); async protocol/cancellation/identity tests do not prove execution/reconnect; continue supported outcomes without worker SDK|
+|RC-P4.5 — B behavior invocation/outcomes/reconnect|P; agent execution/control/status/journal/messaging; native AsyncAgentPreviews + new AsyncAgentExecutions deferred registration; simulator NOT_RUN|Native agent contracts/managed real slices; B(#125principal/incarnation/cleanup); async protocol/admission/cancellation/identity tests do not prove execution/reconnect or async broker operation; continue supported outcomes without worker SDK|
 |RC-P5 — C separate scoped worker product|EXCLUDED_C|#127separate product; never an A+B completion gate|
 |RC-R1 — A/B continuous evidence layers|P; SDK/fixture/wheel/CI layers; SIM case suite + REPLAY-001|3651SDK tests/18gates; PR243/244merged; simulator CI active; preserve errors/uncertainty and add per-row acceptance|
 |RC-R2 — A/B supported public release|P tooling/docs; simulator release readiness NOT_RUN|Native support decisions not encoded by tests; B(#129approval), packaging independently runnable; final exact package/support assessment required|

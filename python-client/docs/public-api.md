@@ -223,6 +223,10 @@ Agent source preview also has an explicit awaited `AsyncAgentPreviews.preview`
 counterpart to `AgentPreviews`, with the same nonexecuting flags and immutable
 receipt. See [source-only preview](agent-source-preview.md); neither returns a
 running agent or introduces thread-backed broker operations.
+Deferred behavior registration has native awaited `AsyncAgentExecutions.create`
+with matching AsyncContext and explicit consent/assertions; same-object attempts
+serialize and cannot resend an admitted registration. Broker methods remain
+explicitly synchronous. See [registration limits](agent-execution.md).
 
 `AsyncAuthoring` is the awaited counterpart of `Authoring`: parse, create_workspace,
 create_project and create_document. It shares ADD-only consent, exact-source,
