@@ -34,6 +34,9 @@ class ReviewCyclePersistenceTest {
       view = manager.reviewCycle(flowId, new Command(view.revision(), Operation.OPEN_ROUND, null, cycleId, null, Audience.REVIEWER, null, null, false), editor);
       String round = view.cycles().getFirst().rounds().getFirst().id();
       view = manager.reviewCycle(flowId, new Command(view.revision(), Operation.SAVE_CONTRIBUTION, null, cycleId, round, null, null, "Persistent reviewer feedback", true), reviewer);
+      view = manager.reviewCycle(flowId, new Command(view.revision(), Operation.SAVE_CONTRIBUTION,
+          null, cycleId, round, null, null, "Alternative proposal", true, null, null,
+          new ProposalInput(ReviewContributionProposalTest.document("r2"), "ontology test.ontology;")), reviewer);
       view = manager.reviewCycle(flowId, new Command(view.revision(), Operation.CLOSE_CYCLE, null, cycleId, null, null, null, null, false), editor);
       closed = view.cycles().getFirst();
       proposal = manager.getReviewArtifact(flowId, cycleId, closed.candidate().proposal().attachmentId(), reviewer);
@@ -45,6 +48,9 @@ class ReviewCyclePersistenceTest {
       assertTrue(view.contributableRoundIds().isEmpty());
       var saved = view.cycles().getFirst().rounds().getFirst().contributions().getFirst();
       assertEquals("reviewer", saved.owner()); assertEquals("Persistent reviewer feedback", saved.text());
+      var alternative = view.cycles().getFirst().rounds().getFirst().contributions().getLast().proposal();
+      assertEquals(ReviewContributionProposalTest.document("r2"), alternative.document());
+      assertEquals("ontology test.ontology;", alternative.ontologySource());
       assertArrayEquals(proposal, manager.getReviewArtifact(flowId, cycleId, closed.candidate().proposal().attachmentId(), reviewer));
     } finally { store.shutdown(); }
   }

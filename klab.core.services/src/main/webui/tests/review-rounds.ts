@@ -25,7 +25,8 @@ const context = { api: {
     const round = view.cycles.find(c => c.id === command.cycleId)!.rounds.find(r => r.id === command.roundId)!;
     view.revision++;
     const contribution = { id: command.contributionId || `new-${view.revision}`, owner: view.identity,
-      text: command.text, submitted: command.submit, updatedAt: "2026-11-06T14:00:00Z" };
+      text: command.text, submitted: command.submit, updatedAt: "2026-11-06T14:00:00Z",
+      proposal: command.proposal ? { ...command.proposal, documentChecksum: "fixture", proposalId: "alternative", revisionId: "r3", schemaCheck: { status: "PASS" } } : undefined };
     if (command.contributionId) round.contributions = round.contributions.map(c => c.id === command.contributionId ? contribution : c);
     else round.contributions.push(contribution);
     return structuredClone(view);

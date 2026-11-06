@@ -63,3 +63,27 @@ test("conflicts keep unsaved feedback and never automatically retry", async ({ p
   const calls = await page.evaluate(() => (window as unknown as { calls: unknown[] }).calls);
   expect(calls).toHaveLength(1);
 });
+
+test("alternative proposals resume privately and filter beside the unchanged candidate", async ({ page }) => {
+  await page.goto("/tests/review-rounds.html?flow=flow-1&stage=stage-1");
+  const source = "ontology test;\n// proposed source";
+  const proposal = '{"proposal":{"id":"alternative","revision_id":"r3"}}';
+  await page.getByLabel("Your alternative proposal", { exact: true }).fill(proposal);
+  await page.getByLabel("Include alternative ontology source").check();
+  await page.getByLabel("Your alternative ontology source", { exact: true }).fill(source);
+  await page.getByRole("button", { name: "Save private draft", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Save private draft", exact: true })).toBeDisabled();
+  await page.getByLabel("Your contribution draft").selectOption("");
+  await expect(page.getByLabel("Your alternative proposal", { exact: true })).toHaveValue("");
+  await page.getByLabel("Your contribution draft").selectOption("new-8");
+  await expect(page.getByLabel("Your alternative proposal", { exact: true })).toHaveValue(proposal);
+  await expect(page.getByLabel("Your alternative ontology source", { exact: true })).toHaveValue(source);
+  await page.getByRole("button", { name: "Submit feedback", exact: true }).click();
+  await page.getByLabel("Contribution proposal", { exact: true }).selectOption("new-8");
+  await page.getByText("Alternative alternative", { exact: false }).click();
+  await expect(page.getByLabel("Proposal by community-user", { exact: true })).toHaveValue(proposal);
+  await expect(page.getByLabel("Ontology source by community-user", { exact: true })).toHaveValue(source);
+  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/"r2"/);
+  const calls = await page.evaluate(() => (window as unknown as { calls: unknown[] }).calls);
+  expect(calls[1]).toMatchObject({ command: { contributionId: "new-8", submit: true, proposal: { document: proposal, ontologySource: source } } });
+});

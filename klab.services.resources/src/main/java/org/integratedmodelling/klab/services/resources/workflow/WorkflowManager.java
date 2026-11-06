@@ -534,7 +534,7 @@ public class WorkflowManager {
     return kbox.getWorkflowAttachment(attachmentId).clone();
   }
 
-  /** Atomic within this manager/process; every review command must name the observed flow revision. */
+  /** Store-conditional aggregate mutation; every command names the observed flow revision. */
   public synchronized org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View reviewCycle(
       String id, org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Command command,
       UserScope scope) {
@@ -559,7 +559,7 @@ public class WorkflowManager {
           command.proposalAttachmentId(), command.ontologyAttachmentId(), kbox::getWorkflowAttachment);
       case OPEN_ROUND -> ReviewCycleProtocol.openRound(flow, workflow, actor, command.cycleId(), command.audience());
       case SAVE_CONTRIBUTION -> ReviewCycleProtocol.contribute(flow, workflow, actor, command.cycleId(),
-          command.roundId(), command.contributionId(), command.text(), command.submit());
+          command.roundId(), command.contributionId(), command.text(), command.submit(), command.proposal());
       case CLOSE_ROUND -> {
         if (command.roundId() == null) throw new KlabIllegalArgumentException("A round ID is required");
         ReviewCycleProtocol.close(flow, workflow, actor, command.cycleId(), command.roundId());

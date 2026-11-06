@@ -8,15 +8,20 @@ const props = defineProps<{ context: DashboardContext; flowId: string; sourceSta
 const emit = defineEmits<{ candidate: [value: ReviewCycle]; revision: [value: number]; dirty: [value: boolean] }>();
 const view = ref<ReviewView>(), cycleId = ref(""), roundId = ref(""), contributor = ref("");
 const draftId = ref(""), text = ref(""), original = ref(""), busy = ref(false), error = ref("");
+const proposalDocument = ref(""), ontologySource = ref(""), replaceOntology = ref(false), proposalFilter = ref("");
+let generation = 0;
 const endpoint = computed(() => `api/v1/flows/${encodeURIComponent(props.flowId)}/review-cycles`);
 const cycle = computed(() => view.value?.cycles.find(c => c.id === cycleId.value));
 const round = computed(() => cycle.value?.rounds.find(r => r.id === roundId.value));
 const entries = computed(() => round.value?.contributions || []);
 const contributors = computed(() => [...new Set(entries.value.map(c => c.owner))].sort());
-const filtered = computed(() => entries.value.filter(c => !contributor.value || c.owner === contributor.value));
+const proposals = computed(() => entries.value.filter(c => c.proposal));
+const filtered = computed(() => entries.value.filter(c => (!contributor.value || c.owner === contributor.value)
+  && (!proposalFilter.value || (proposalFilter.value === "comments" ? !c.proposal : c.id === proposalFilter.value))));
 const ownDrafts = computed(() => entries.value.filter(c => !c.submitted && c.owner === view.value?.identity));
 const canContribute = computed(() => !!round.value && !!view.value?.contributableRoundIds.includes(round.value.id));
-const dirty = computed(() => text.value !== original.value);
+const fingerprint = () => JSON.stringify([text.value, proposalDocument.value, replaceOntology.value, ontologySource.value]);
+const dirty = computed(() => fingerprint() !== original.value);
 watch(dirty, value => emit("dirty", value));
 function failed(cause: unknown) { error.value = cause instanceof Error ? cause.message : String(cause); }
 function updateLocation() {
@@ -25,7 +30,11 @@ function updateLocation() {
   if (roundId.value) url.searchParams.set("round", roundId.value); else url.searchParams.delete("round");
   window.history.replaceState({}, "", url);
 }
-function selectRound() { contributor.value = ""; draftId.value = ""; text.value = ""; original.value = ""; updateLocation(); }
+function clearDraft() {
+  draftId.value = ""; text.value = ""; proposalDocument.value = ""; ontologySource.value = "";
+  replaceOntology.value = false; original.value = fingerprint();
+}
+function selectRound() { contributor.value = ""; proposalFilter.value = ""; clearDraft(); updateLocation(); }
 function selectCycle() {
   const requested = new URL(window.location.href).searchParams;
   const requestedRound = requested.get("cycle") === cycleId.value ? requested.get("round") : null;
@@ -33,7 +42,12 @@ function selectCycle() {
   selectRound();
   if (cycle.value) emit("candidate", cycle.value);
 }
-function selectDraft() { text.value = ownDrafts.value.find(c => c.id === draftId.value)?.text || ""; original.value = text.value; }
+function selectDraft() {
+  const draft = ownDrafts.value.find(c => c.id === draftId.value);
+  text.value = draft?.text || ""; proposalDocument.value = draft?.proposal?.document || "";
+  replaceOntology.value = draft?.proposal?.ontologySource != null; ontologySource.value = draft?.proposal?.ontologySource || "";
+  original.value = fingerprint();
+}
 function accept(next: ReviewView) {
   view.value = next; emit("revision", next.revision);
   if (!next.cycles.some(c => c.id === cycleId.value)) {
@@ -44,12 +58,14 @@ function accept(next: ReviewView) {
   if (!contributors.value.includes(contributor.value)) contributor.value = "";
 }
 async function refresh() {
+  const current = generation;
   busy.value = true; error.value = "";
-  try { accept(await props.context.api.get<ReviewView>(endpoint.value)); }
-  catch (cause) { failed(cause); } finally { busy.value = false; }
+  try { const next = await props.context.api.get<ReviewView>(endpoint.value); if (current === generation) accept(next); }
+  catch (cause) { if (current === generation) failed(cause); } finally { if (current === generation) busy.value = false; }
 }
 async function command(operation: string, extra: Record<string, unknown> = {}) {
   if (!view.value) return;
+  const current = generation;
   busy.value = true; error.value = "";
   try {
     const next = await props.context.api.request<ReviewView>(endpoint.value, {
@@ -57,26 +73,29 @@ async function command(operation: string, extra: Record<string, unknown> = {}) {
       body: JSON.stringify({ expectedRevision: view.value.revision, operation, cycleId: cycleId.value || null,
         roundId: roundId.value || null, ...extra }),
     });
+    if (current !== generation) return;
     accept(next);
     if (operation === "OPEN_CYCLE") { cycleId.value = next.cycles.at(-1)?.id || ""; selectCycle(); }
     if (operation === "OPEN_ROUND") { roundId.value = cycle.value?.rounds.at(-1)?.id || ""; selectRound(); }
     if (operation === "SAVE_CONTRIBUTION") {
-      if (extra.submit) { draftId.value = ""; text.value = ""; original.value = ""; }
+      if (extra.submit) { clearDraft(); }
       else {
         draftId.value = typeof extra.contributionId === "string" ? extra.contributionId : ownDrafts.value.at(-1)?.id || draftId.value;
-        original.value = text.value;
+        original.value = fingerprint();
       }
     }
-  } catch (cause) { failed(cause); } finally { busy.value = false; }
+  } catch (cause) { if (current === generation) failed(cause); } finally { if (current === generation) busy.value = false; }
 }
 function openCycle() {
   return command("OPEN_CYCLE", { sourceStateId: props.sourceStateId, proposalAttachmentId: props.proposalAttachmentId,
     ontologyAttachmentId: props.ontologyAttachmentId || null });
 }
-function save(submit: boolean) { return command("SAVE_CONTRIBUTION", { contributionId: draftId.value || null, text: text.value, submit }); }
+function save(submit: boolean) { return command("SAVE_CONTRIBUTION", { contributionId: draftId.value || null, text: text.value, submit,
+  proposal: proposalDocument.value.trim() ? { document: proposalDocument.value, ontologySource: replaceOntology.value ? ontologySource.value : null } : null }); }
 watch(() => props.flowId, () => {
+  generation++;
   view.value = undefined; cycleId.value = ""; roundId.value = "";
-  contributor.value = ""; draftId.value = ""; text.value = ""; original.value = ""; refresh();
+  contributor.value = ""; proposalFilter.value = ""; clearDraft(); refresh();
 }, { immediate: true });
 </script>
 
@@ -108,12 +127,23 @@ watch(() => props.flowId, () => {
           <label>Contributor <select v-model="contributor" aria-label="Feedback contributor" :disabled="busy">
             <option value="">All contributors</option><option v-for="owner in contributors" :key="owner" :value="owner">{{ owner }}</option>
           </select></label>
+          <label>Contribution proposal <select v-model="proposalFilter" aria-label="Contribution proposal" :disabled="busy">
+            <option value="">All proposals and comments</option><option value="comments">Comments only</option>
+            <option v-for="item in proposals" :key="item.id" :value="item.id">{{ item.owner }} · {{ item.proposal?.proposalId || 'Incomplete draft' }} · {{ item.proposal?.revisionId || item.id.slice(0, 8) }}</option>
+          </select></label>
           <button v-if="view.canManage && round && !round.closedAt && !cycle.closedAt" :disabled="busy || dirty" @click="command('CLOSE_ROUND')">Close iteration</button>
         </div>
         <p v-if="round" role="status">Showing {{ filtered.length }} of {{ entries.length }} visible contributions. Submitted feedback is shared within this iteration; drafts remain private.</p>
         <article v-for="item in filtered" :key="item.id" class="contribution">
           <header><strong>{{ item.owner }}</strong> · {{ item.submitted ? 'Submitted' : 'Your private draft' }} · <time>{{ item.updatedAt }}</time></header>
           <p>{{ item.text }}</p>
+          <details v-if="item.proposal">
+            <summary>Alternative {{ item.proposal.proposalId || 'draft' }} · {{ item.proposal.revisionId || 'incomplete' }} · Document schema {{ item.proposal.schemaCheck.status }}</summary>
+            <p>Against this iteration's frozen candidate. Document schema checks do not imply scientific approval.</p>
+            <textarea :value="item.proposal.document" :aria-label="`Proposal by ${item.owner}`" readonly rows="12" />
+            <textarea v-if="item.proposal.ontologySource != null" :value="item.proposal.ontologySource" :aria-label="`Ontology source by ${item.owner}`" readonly rows="7" />
+            <p v-else>Retains the candidate's ontology source.</p>
+          </details>
         </article>
         <fieldset v-if="canContribute" :disabled="busy || candidateLoading">
           <legend>Your feedback</legend>
@@ -121,9 +151,12 @@ watch(() => props.flowId, () => {
             <option value="">New contribution</option><option v-for="item in ownDrafts" :key="item.id" :value="item.id">{{ item.id.slice(0, 8) }} · {{ item.updatedAt }}</option>
           </select></label>
           <textarea v-model="text" aria-label="Your feedback" maxlength="16000" rows="7" />
-          <div class="controls"><button :disabled="!text.trim() || !dirty" @click="save(false)">Save private draft</button>
-            <button :disabled="!text.trim()" @click="save(true)">Submit feedback</button></div>
-          <p>Submitting preserves this text as history. Later corrections are new contributions.</p>
+          <label>Alternative proposal JSON or YAML (optional)<textarea v-model="proposalDocument" aria-label="Your alternative proposal" maxlength="4194304" rows="10" /></label>
+          <label v-if="proposalDocument.trim()"><input v-model="replaceOntology" type="checkbox" />Include alternative ontology source</label>
+          <textarea v-if="proposalDocument.trim() && replaceOntology" v-model="ontologySource" aria-label="Your alternative ontology source" maxlength="2097152" rows="7" />
+          <div class="controls"><button :disabled="(!text.trim() && !proposalDocument.trim()) || !dirty" @click="save(false)">Save private draft</button>
+            <button :disabled="!text.trim() && !proposalDocument.trim()" @click="save(true)">Submit feedback</button></div>
+          <p>Incomplete proposals can be saved privately. Submission requires a valid document schema and a fresh revision ID for changed inputs. Submitted text and proposals remain immutable; later corrections are new contributions.</p>
         </fieldset>
       </template>
     </template>

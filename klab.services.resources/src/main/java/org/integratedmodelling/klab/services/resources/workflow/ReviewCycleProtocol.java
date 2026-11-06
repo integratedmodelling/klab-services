@@ -108,31 +108,35 @@ final class ReviewCycleProtocol {
   }
 
   static void contribute(Flow flow, Workflow workflow, WorkflowParticipant actor, String cycleId,
-      String roundId, String contributionId, String text, boolean submit) {
+      String roundId, String contributionId, String text, boolean submit, ProposalInput proposalInput) {
     var cycle = cycle(flow, cycleId);
     var round = round(cycle, roundId);
     if (!admitted(workflow, actor, round.audience()))
       throw new KlabResourceAccessException("Review audience does not admit this participant");
     if (round.closedAt() != null) fail("Review round is closed");
-    if (text == null || text.isBlank() || text.length() > ProposalReview.MAX_RATIONALE_CHARS)
-      fail("Contribution text is required and must fit the rationale limit");
+    text = text == null ? "" : text;
+    if ((text.isBlank() && (proposalInput == null || proposalInput.document() == null || proposalInput.document().isBlank()))
+        || text.length() > ProposalReview.MAX_RATIONALE_CHARS)
+      fail("Feedback or an alternative proposal is required; feedback must fit the rationale limit");
+    var proposal = ReviewContributionProposal.snapshot(proposalInput, cycle, submit);
+    if (submit) ReviewContributionProposal.requireFreshIdentity(flow, proposal, contributionId);
     var contributions = new ArrayList<>(round.contributions());
     if (contributionId == null) {
       if (contributions.size() >= 256) fail("Contribution limit reached");
-      contributions.add(new Contribution(UUID.randomUUID().toString(), actor.getIdentity(), text, submit, now()));
+      contributions.add(new Contribution(UUID.randomUUID().toString(), actor.getIdentity(), text, submit, now(), proposal));
     } else {
       var prior = contributions.stream().filter(c -> contributionId.equals(c.id())).findFirst()
           .orElseThrow(() -> new KlabIllegalStateException("Unknown contribution"));
       if (!Objects.equals(actor.getIdentity(), prior.owner()))
         throw new KlabResourceAccessException("Contribution belongs to another participant");
       if (prior.submitted()) fail("Submitted feedback is immutable; add a new contribution");
-      contributions.set(contributions.indexOf(prior), new Contribution(prior.id(), prior.owner(), text, submit, now()));
+      contributions.set(contributions.indexOf(prior), new Contribution(prior.id(), prior.owner(), text, submit, now(), proposal));
     }
-    long characters = flow.getReviewCycles().stream().flatMap(c -> c.rounds().stream())
-        .flatMap(r -> r.contributions().stream()).mapToLong(c -> c.text().length()).sum()
-        - round.contributions().stream().mapToLong(c -> c.text().length()).sum()
-        + contributions.stream().mapToLong(c -> c.text().length()).sum();
-    if (characters > ProposalReview.MAX_STAGE_BYTES / 2) fail("Review feedback aggregate size limit reached");
+    long bytes = flow.getReviewCycles().stream().flatMap(c -> c.rounds().stream())
+        .flatMap(r -> r.contributions().stream()).mapToLong(ReviewContributionProposal::bytes).sum()
+        - round.contributions().stream().mapToLong(ReviewContributionProposal::bytes).sum()
+        + contributions.stream().mapToLong(ReviewContributionProposal::bytes).sum();
+    if (bytes > ProposalReview.MAX_STAGE_BYTES) fail("Review feedback aggregate size limit reached");
     var rounds = new ArrayList<>(cycle.rounds());
     rounds.set(rounds.indexOf(round), new Round(round.id(), round.audience(), round.openedBy(),
         round.openedAt(), null, contributions));
