@@ -510,8 +510,28 @@ public class WorkflowManager {
     var actor = WorkflowParticipant.from(scope);
     if (!actor.isAuthenticated()) throw access(id);
     var flow = requiredFlow(id);
+    var workflow = requiredWorkflowVersion(flow);
+    var visible = ReviewCycleProtocol.visible(flow, workflow, actor);
+    if (!ReviewCycleProtocol.editor(flow, workflow, actor) && visible.isEmpty()) throw access(id);
     return new org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View(
-        flow.getRevision(), ReviewCycleProtocol.visible(flow, requiredWorkflowVersion(flow), actor));
+        flow.getRevision(), visible, ReviewCycleProtocol.editor(flow, workflow, actor), actor.getIdentity(),
+        ReviewCycleProtocol.contributableRounds(visible, workflow, actor));
+  }
+
+  /** Only the exact proposal/source bound to an admitted cycle can cross this narrow endpoint. */
+  public byte[] getReviewArtifact(String flowId, String cycleId, String attachmentId, UserScope scope) {
+    var actor = WorkflowParticipant.from(scope);
+    if (!actor.isAuthenticated()) throw access(flowId);
+    var flow = requiredFlow(flowId);
+    var cycle = ReviewCycleProtocol.visible(flow, requiredWorkflowVersion(flow), actor).stream()
+        .filter(c -> Objects.equals(c.id(), cycleId)).findFirst().orElseThrow(() -> access(cycleId));
+    var candidate = cycle.candidate();
+    var artifact = Objects.equals(candidate.proposal().attachmentId(), attachmentId) ? candidate.proposal()
+        : candidate.ontology() != null && Objects.equals(candidate.ontology().attachmentId(), attachmentId) ? candidate.ontology() : null;
+    if (artifact == null) throw access(attachmentId);
+    ReviewCycleProtocol.artifact(flow, artifact, artifact.equals(candidate.proposal())
+        ? "application/vnd.klab.proposal+yaml" : "application/vnd.klab.ontology", kbox::getWorkflowAttachment);
+    return kbox.getWorkflowAttachment(attachmentId).clone();
   }
 
   /** Atomic within this manager/process; every review command must name the observed flow revision. */
@@ -522,12 +542,21 @@ public class WorkflowManager {
     if (!actor.isAuthenticated()) throw access(id);
     var flow = Utils.Json.parseObject(Utils.Json.asString(requiredFlow(id)), Flow.class);
     var workflow = requiredWorkflowVersion(flow);
-    if (!ProposalReviewProtocol.enabled(workflow))
+    if (!ProposalReviewProtocol.enabled(workflow) && !Boolean.TRUE.equals(workflow.getMetadata().get("reviewCycles")))
       throw new KlabIllegalStateException("Review cycles require a proposal-review workflow");
-    if (command == null || command.operation() == null || command.expectedRevision() != flow.getRevision())
+    if (command == null || command.operation() == null)
+      throw new KlabIllegalArgumentException("A review command and operation are required");
+    if (command.operation() == org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Operation.SAVE_CONTRIBUTION) {
+      boolean admitted = ReviewCycleProtocol.visible(flow, workflow, actor).stream()
+          .filter(c -> Objects.equals(c.id(), command.cycleId())).flatMap(c -> c.rounds().stream())
+          .anyMatch(r -> Objects.equals(r.id(), command.roundId()) && ReviewCycleProtocol.admitted(workflow, actor, r.audience()));
+      if (!admitted) throw access(id);
+    } else ReviewCycleProtocol.requireEditor(flow, workflow, actor);
+    if (command.expectedRevision() != flow.getRevision())
       throw new KlabIllegalStateException("Review command requires the current flow revision");
     switch (command.operation()) {
-      case OPEN_CYCLE -> ReviewCycleProtocol.openCycle(flow, workflow, actor, command.sourceStateId());
+      case OPEN_CYCLE -> ReviewCycleProtocol.openCycle(flow, workflow, actor, command.sourceStateId(),
+          command.proposalAttachmentId(), command.ontologyAttachmentId(), kbox::getWorkflowAttachment);
       case OPEN_ROUND -> ReviewCycleProtocol.openRound(flow, workflow, actor, command.cycleId(), command.audience());
       case SAVE_CONTRIBUTION -> ReviewCycleProtocol.contribute(flow, workflow, actor, command.cycleId(),
           command.roundId(), command.contributionId(), command.text(), command.submit());
@@ -538,8 +567,10 @@ public class WorkflowManager {
       case CLOSE_CYCLE -> ReviewCycleProtocol.close(flow, workflow, actor, command.cycleId(), null);
     }
     persistMutation(flow, workflow);
+    var visible = ReviewCycleProtocol.visible(flow, workflow, actor);
     return new org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View(
-        flow.getRevision(), ReviewCycleProtocol.visible(flow, workflow, actor));
+        flow.getRevision(), visible, ReviewCycleProtocol.editor(flow, workflow, actor), actor.getIdentity(),
+        ReviewCycleProtocol.contributableRounds(visible, workflow, actor));
   }
 
   /** Delete a flow aggregate, its attachment payloads, and its target-asset catalog entry. */
@@ -547,7 +578,7 @@ public class WorkflowManager {
     var participant = WorkflowParticipant.from(scope);
     var flow = requiredFlow(id);
     var workflow = requiredWorkflowVersion(flow);
-    if (ProposalReviewProtocol.enabled(workflow))
+    if (ProposalReviewProtocol.enabled(workflow) || !flow.getReviewCycles().isEmpty())
       throw new KlabIllegalStateException("Proposal review stages and evidence use the transition lifecycle; direct create/delete/reopen is blocked");
     boolean administrator = participant.getRoles().contains(WorkflowRole.ADMIN);
     boolean editorCreator =
@@ -589,7 +620,7 @@ public class WorkflowManager {
     var flow = requiredActiveFlow(flowId);
     var workflow = requiredWorkflowVersion(flow);
     try (var behaviorAttachments = new BehaviorAttachments(flow, workflow, participant)) {
-      if (ProposalReviewProtocol.enabled(workflow))
+      if (ProposalReviewProtocol.enabled(workflow) || Boolean.TRUE.equals(workflow.getMetadata().get("reviewCycles")))
         throw new KlabIllegalStateException("Proposal review stages and evidence use the transition lifecycle; direct create/delete/reopen is blocked");
       var schema = requiredStateSchema(workflow, state == null ? null : state.getSchemaId());
       requireManager(workflow, schema, participant);
@@ -649,6 +680,8 @@ public class WorkflowManager {
     var flow = requiredActiveFlow(flowId);
     var state = requiredState(flow, stateId);
     var workflow = requiredWorkflowVersion(flow);
+    if (flow.getReviewCycles().stream().anyMatch(c -> Objects.equals(c.sourceStateId(), stateId)))
+      throw new KlabIllegalStateException("A review cycle's source stage is immutable provenance");
     if (ProposalReviewProtocol.enabled(workflow))
       throw new KlabIllegalStateException("Proposal review stages and evidence use the transition lifecycle; direct create/delete/reopen is blocked");
     requireManager(workflow, requiredStateSchema(workflow, state.getSchemaId()), participant);
@@ -823,6 +856,8 @@ public class WorkflowManager {
     var participant = WorkflowParticipant.from(scope);
     var flow = requiredActiveFlow(flowId);
     var workflow = requiredWorkflowVersion(flow);
+    if (ReviewCycleProtocol.references(flow, attachmentId))
+      throw new KlabIllegalStateException("An artifact bound to a review cycle is immutable");
     if (flow.getStates().values().stream().anyMatch(s -> s.getProposalReview() != null
         && (attachmentId.equals(s.getProposalReview().candidate().proposal().attachmentId())
             || (s.getProposalReview().candidate().ontology() != null
@@ -1403,6 +1438,8 @@ public class WorkflowManager {
     public boolean remove(Flow.State stage, String id) {
       if (stage.getStatus() == Flow.StateStatus.CLOSED)
         throw new KlabIllegalStateException("Attachments cannot be removed from a closed stage");
+      if (ReviewCycleProtocol.references(flow, id))
+        throw new KlabIllegalStateException("An artifact bound to a review cycle is immutable");
       if (flow.getStates().values().stream().anyMatch(state -> state.getProposalReview() != null
           && (Objects.equals(id, state.getProposalReview().candidate().proposal().attachmentId())
               || (state.getProposalReview().candidate().ontology() != null

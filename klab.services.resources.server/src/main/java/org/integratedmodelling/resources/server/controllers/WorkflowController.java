@@ -134,6 +134,14 @@ public class WorkflowController {
         .body(resourcesServer.klabService().reviewCycle(flowId, command, userScope(principal)));
   }
 
+  @GetMapping(ServicesAPI.RESOURCES.FLOW + "/review-cycles/{cycleId}/attachments/{attachmentId}")
+  public ResponseEntity<String> reviewArtifact(@PathVariable String flowId, @PathVariable String cycleId,
+      @PathVariable String attachmentId, Principal principal) {
+    return ResponseEntity.ok().header("Cache-Control", "private, no-store")
+        .body(Base64.getEncoder().encodeToString(resourcesServer.klabService()
+            .getReviewArtifact(flowId, cycleId, attachmentId, userScope(principal))));
+  }
+
   @Operation(
       summary = "Delete a flow",
       description = "Delete a flow and its attachments as its editor/creator or an administrator")
@@ -218,8 +226,21 @@ public class WorkflowController {
   }
 
   private UserScope userScope(Principal principal) {
-    if (principal instanceof EngineAuthorization authorization
+    if (principal instanceof EngineAuthorization authorization && authorization.isAuthenticated()
         && authorization.getScope() instanceof UserScope scope) return scope;
     throw new KlabAuthorizationException("A valid user scope is required for workflow operations");
+  }
+
+  @org.springframework.web.bind.annotation.ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class)
+  public ResponseEntity<org.springframework.http.ProblemDetail> deniedWorkflowAccess() {
+    return ResponseEntity.status(403).contentType(MediaType.APPLICATION_PROBLEM_JSON)
+        .body(org.springframework.http.ProblemDetail.forStatusAndDetail(org.springframework.http.HttpStatus.FORBIDDEN, "Access denied"));
+  }
+
+  @org.springframework.web.bind.annotation.ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException.class)
+  public ResponseEntity<org.springframework.http.ProblemDetail> invalidWorkflowState() {
+    return ResponseEntity.status(409).contentType(MediaType.APPLICATION_PROBLEM_JSON)
+        .body(org.springframework.http.ProblemDetail.forStatusAndDetail(org.springframework.http.HttpStatus.CONFLICT,
+            "Workflow state changed or this operation is no longer valid; refresh before retrying"));
   }
 }

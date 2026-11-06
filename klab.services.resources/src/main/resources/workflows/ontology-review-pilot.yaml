@@ -1,7 +1,9 @@
 id: ontology-review-pilot
-version: "0.1"
+version: "0.2"
 name: Ontology community review pilot
-description: Prepare an editor-controlled ontology review draft. Review rounds will follow.
+description: Editor-led ontology review with attributed reviewer and community rounds.
+metadata:
+  reviewCycles: true
 behavior: klab.workflow.ontology_review
 assetTypes: [ONTOLOGY]
 states:

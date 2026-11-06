@@ -56,6 +56,7 @@ public class WorkflowParticipant implements Serializable {
             && !user.isAnonymous()
             && ret.email != null
             && !ret.email.isBlank()
+            && user.getData() != null
             && Boolean.parseBoolean(String.valueOf(user.getData().get(KNOWN_REAL_PERSON_PROPERTY)));
 
     Collection<Group> userGroups =

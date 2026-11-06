@@ -336,6 +336,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
+  public byte[] getReviewArtifact(String flowId, String cycleId, String attachmentId, UserScope scope) {
+    return workflowManager.getReviewArtifact(flowId, cycleId, attachmentId, scope);
+  }
+
+  @Override
   public boolean deleteFlow(String flowId, UserScope scope) {
     return workflowManager.deleteFlow(flowId, scope);
   }

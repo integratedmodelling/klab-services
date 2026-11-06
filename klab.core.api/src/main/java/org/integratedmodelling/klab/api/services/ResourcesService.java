@@ -136,6 +136,10 @@ public interface ResourcesService extends KlabService {
     throw new UnsupportedOperationException("Review cycles are not supported");
   }
 
+  default byte[] getReviewArtifact(String flowId, String cycleId, String attachmentId, UserScope scope) {
+    throw new UnsupportedOperationException("Review artifacts are not supported");
+  }
+
   /** Store an attachment payload in the workflow persistence backend. */
   Flow.Attachment addFlowAttachment(
       String flowId, String stateId, Flow.AttachmentUpload upload, UserScope scope);

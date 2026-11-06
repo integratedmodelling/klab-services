@@ -14,9 +14,13 @@ import org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles
 final class ReviewCycleProtocol {
   private ReviewCycleProtocol() {}
 
-  static boolean editor(Workflow workflow, WorkflowParticipant actor) {
-    return actor.isAuthenticated() && actor.isWorkflowPermitted(workflow)
-        && (actor.getRoles().contains(WorkflowRole.EDITOR) || actor.getRoles().contains(WorkflowRole.ADMIN));
+  static boolean editor(Flow flow, Workflow workflow, WorkflowParticipant actor) {
+    if (!actor.isAuthenticated() || !actor.isWorkflowPermitted(workflow)) return false;
+    if (actor.getRoles().contains(WorkflowRole.ADMIN)) return true;
+    return actor.getRoles().contains(WorkflowRole.EDITOR)
+        && (Objects.equals(flow.getOwner(), actor.getIdentity()) || flow.getStates().values().stream()
+            .anyMatch(state -> Objects.equals(state.getOwner(), actor.getIdentity())
+                || state.getAssignees().contains(actor.getIdentity())));
   }
 
   static boolean admitted(Workflow workflow, WorkflowParticipant actor, Audience audience) {
@@ -24,8 +28,8 @@ final class ReviewCycleProtocol {
         || (actor.getRoles().contains(WorkflowRole.REVIEWER) && actor.isWorkflowPermitted(workflow)));
   }
 
-  static void requireEditor(Workflow workflow, WorkflowParticipant actor) {
-    if (!editor(workflow, actor)) throw new KlabResourceAccessException("Workflow editor required");
+  static void requireEditor(Flow flow, Workflow workflow, WorkflowParticipant actor) {
+    if (!editor(flow, workflow, actor)) throw new KlabResourceAccessException("Flow owner or assigned workflow editor required");
   }
 
   static List<Cycle> visible(Flow flow, Workflow workflow, WorkflowParticipant actor) {
@@ -33,25 +37,48 @@ final class ReviewCycleProtocol {
     for (var cycle : flow.getReviewCycles()) {
       var rounds = new ArrayList<Round>();
       for (var round : cycle.rounds()) {
-        if (!editor(workflow, actor) && !admitted(workflow, actor, round.audience())) continue;
+        if (!editor(flow, workflow, actor) && !admitted(workflow, actor, round.audience())) continue;
         var contributions = round.contributions().stream()
             .filter(c -> c.submitted() || Objects.equals(c.owner(), actor.getIdentity())).toList();
         rounds.add(new Round(round.id(), round.audience(), round.openedBy(), round.openedAt(),
             round.closedAt(), contributions));
       }
-      if (editor(workflow, actor) || !rounds.isEmpty()) result.add(new Cycle(cycle.id(),
+      if (editor(flow, workflow, actor) || !rounds.isEmpty()) result.add(new Cycle(cycle.id(),
           cycle.sourceStateId(), cycle.sourceFlowRevision(), cycle.candidate(), cycle.openedBy(),
           cycle.openedAt(), cycle.closedAt(), rounds));
     }
     return result;
   }
 
-  static void openCycle(Flow flow, Workflow workflow, WorkflowParticipant actor, String stateId) {
-    requireEditor(workflow, actor);
+  static List<String> contributableRounds(List<Cycle> visible, Workflow workflow, WorkflowParticipant actor) {
+    return visible.stream().filter(c -> c.closedAt() == null).flatMap(c -> c.rounds().stream())
+        .filter(r -> r.closedAt() == null && admitted(workflow, actor, r.audience())).map(Round::id).toList();
+  }
+
+  static void openCycle(Flow flow, Workflow workflow, WorkflowParticipant actor, String stateId,
+      String proposalId, String ontologyId, java.util.function.Function<String, byte[]> payload) {
+    requireEditor(flow, workflow, actor);
     if (flow.getReviewCycles().size() >= 256) fail("Review cycle limit reached");
     var state = flow.getStates().get(stateId);
-    if (state == null || state.getProposalReview() == null) fail("An exact reviewed candidate is required");
-    var candidate = state.getProposalReview().candidate();
+    if (state == null) fail("A source stage is required");
+    ProposalReview.Candidate candidate;
+    if (proposalId != null) {
+      if (state.getStatus() != Flow.StateStatus.OPEN || !flow.getCurrentStateIds().contains(stateId))
+        fail("New candidates require a current open editing stage");
+      var proposal = artifact(state, proposalId, "application/vnd.klab.proposal+yaml", payload);
+      var ontology = ontologyId == null ? null : artifact(state, ontologyId, "application/vnd.klab.ontology", payload);
+      var check = ProposalSchemaValidator.bundled().validate(payload.apply(proposalId));
+      if (check.status() != ProposalReview.CheckStatus.PASS) fail("Candidate proposal must pass the bundled document schema");
+      candidate = ProposalReviewProtocol.readCandidate(proposal, ontology, payload);
+    } else {
+      if (ontologyId != null) fail("A proposal attachment is required");
+      candidate = state.getProposalReview() == null ? null : state.getProposalReview().candidate();
+      if (candidate != null) {
+        // Recheck payload identity before creating another durable reference, including closed flows.
+        artifact(flow, candidate.proposal(), "application/vnd.klab.proposal+yaml", payload);
+        if (candidate.ontology() != null) artifact(flow, candidate.ontology(), "application/vnd.klab.ontology", payload);
+      }
+    }
     if (candidate == null) fail("An exact reviewed candidate is required");
     var cycles = new ArrayList<>(flow.getReviewCycles());
     cycles.add(new Cycle(UUID.randomUUID().toString(), stateId, flow.getRevision(), candidate,
@@ -61,7 +88,7 @@ final class ReviewCycleProtocol {
 
   static void openRound(Flow flow, Workflow workflow, WorkflowParticipant actor, String cycleId,
       Audience audience) {
-    requireEditor(workflow, actor);
+    requireEditor(flow, workflow, actor);
     var cycle = cycle(flow, cycleId);
     if (audience == null) fail("Review audience is required");
     if (cycle.rounds().size() >= 256) fail("Review round limit reached");
@@ -103,7 +130,7 @@ final class ReviewCycleProtocol {
   }
 
   static void close(Flow flow, Workflow workflow, WorkflowParticipant actor, String cycleId, String roundId) {
-    requireEditor(workflow, actor);
+    requireEditor(flow, workflow, actor);
     var cycle = cycle(flow, cycleId);
     Instant now = now();
     var rounds = new ArrayList<>(cycle.rounds());
@@ -119,6 +146,29 @@ final class ReviewCycleProtocol {
 
   private static Round closed(Round round, Instant now) {
     return new Round(round.id(), round.audience(), round.openedBy(), round.openedAt(), now, round.contributions());
+  }
+  static boolean references(Flow flow, String attachmentId) {
+    return flow.getReviewCycles().stream().anyMatch(c -> c.candidate().proposal().attachmentId().equals(attachmentId)
+        || c.candidate().ontology() != null && c.candidate().ontology().attachmentId().equals(attachmentId));
+  }
+
+  private static ProposalReview.Artifact artifact(Flow.State state, String id, String media,
+      java.util.function.Function<String, byte[]> payload) {
+    var descriptor = state.getAttachments().stream().filter(a -> Objects.equals(id, a.getId())).findFirst()
+        .orElseThrow(() -> new KlabIllegalStateException("Candidate attachment must belong to the source stage"));
+    byte[] bytes = payload.apply(id);
+    if (!media.equals(descriptor.getMediaType()) || bytes == null
+        || !Objects.equals(descriptor.getChecksum(), ProposalReviewProtocol.digest(bytes)))
+      fail("Candidate attachment media or checksum mismatch");
+    return new ProposalReview.Artifact(id, descriptor.getChecksum());
+  }
+
+  static void artifact(Flow flow, ProposalReview.Artifact ref, String media,
+      java.util.function.Function<String, byte[]> payload) {
+    var state = flow.getStates().values().stream().filter(s -> s.getAttachments().stream()
+        .anyMatch(a -> Objects.equals(ref.attachmentId(), a.getId()))).findFirst()
+        .orElseThrow(() -> new KlabIllegalStateException("Candidate artifact is unavailable"));
+    if (!ref.equals(artifact(state, ref.attachmentId(), media, payload))) fail("Candidate checksum mismatch");
   }
   private static Cycle cycle(Flow flow, String id) {
     var cycle = flow.getReviewCycles().stream().filter(c -> c.id().equals(id)).findFirst()

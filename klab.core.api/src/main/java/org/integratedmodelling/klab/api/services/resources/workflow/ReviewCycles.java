@@ -12,9 +12,16 @@ public final class ReviewCycles {
   /** expectedRevision is mandatory; refresh and explicitly retry after a conflict. */
   public record Command(long expectedRevision, Operation operation, String sourceStateId,
       String cycleId, String roundId, Audience audience, String contributionId, String text,
-      boolean submit) implements Serializable {}
-  public record View(long revision, List<Cycle> cycles) implements Serializable {
-    public View { cycles = List.copyOf(cycles); }
+      boolean submit, String proposalAttachmentId, String ontologyAttachmentId) implements Serializable {
+    public Command(long expectedRevision, Operation operation, String sourceStateId, String cycleId,
+        String roundId, Audience audience, String contributionId, String text, boolean submit) {
+      this(expectedRevision, operation, sourceStateId, cycleId, roundId, audience, contributionId, text, submit, null, null);
+    }
+  }
+  public record View(long revision, List<Cycle> cycles, boolean canManage, String identity,
+      List<String> contributableRoundIds) implements Serializable {
+    public View(long revision, List<Cycle> cycles) { this(revision, cycles, false, null, List.of()); }
+    public View { cycles = List.copyOf(cycles); contributableRoundIds = List.copyOf(contributableRoundIds); }
   }
   public record Contribution(String id, String owner, String text, boolean submitted,
       Instant updatedAt) implements Serializable {}

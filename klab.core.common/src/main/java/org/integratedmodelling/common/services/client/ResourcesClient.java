@@ -258,6 +258,27 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
   }
 
   @Override
+  public org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View getReviewCycles(String flowId, UserScope scope) {
+    return client.withScope(scope).get(ServicesAPI.RESOURCES.FLOW + "/review-cycles",
+        org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View.class, "flowId", flowId);
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View reviewCycle(String flowId,
+      org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Command command, UserScope scope) {
+    return client.withScope(scope).postRequired(ServicesAPI.RESOURCES.FLOW + "/review-cycles", command,
+        org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View.class, "flowId", flowId);
+  }
+
+  @Override
+  public byte[] getReviewArtifact(String flowId, String cycleId, String attachmentId, UserScope scope) {
+    String encoded = client.withScope(scope).get(ServicesAPI.RESOURCES.FLOW
+        + "/review-cycles/{cycleId}/attachments/{attachmentId}", String.class,
+        "flowId", flowId, "cycleId", cycleId, "attachmentId", attachmentId);
+    return Base64.getDecoder().decode(encoded);
+  }
+
+  @Override
   public Flow transitionFlow(String flowId, Flow.TransitionRequest request, UserScope scope) {
     return client
         .withScope(scope)

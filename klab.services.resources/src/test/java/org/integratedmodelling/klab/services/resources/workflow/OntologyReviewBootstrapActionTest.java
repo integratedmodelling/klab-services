@@ -44,7 +44,7 @@ class OntologyReviewBootstrapActionTest {
     return LanguageAdapter.INSTANCE.adaptBehavior(syntax, "test-project", new ArrayList<>(), 1);
   }
 
-  private final class Fixture {
+  final class Fixture {
     final WorkflowManagerAuthorizationTest.MemoryStore store = new WorkflowManagerAuthorizationTest.MemoryStore();
     final WorkflowManager manager = new WorkflowManager(store);
     final ResourcesService resources = mock(ResourcesService.class);
