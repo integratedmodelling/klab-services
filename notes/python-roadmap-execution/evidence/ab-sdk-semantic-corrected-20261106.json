@@ -1,0 +1,10 @@
+{
+  "utc": "2026-11-06T14:26:43.001964+00:00",
+  "check": "semantic-elevation",
+  "status": "PASS",
+  "semantics": "geography:Elevation",
+  "reason_for_correction": "Initial probe incorrectly accessed ObservableImpl.urn; SDK call completed, projection error in audit probe, not a client defect. Original receipt preserved.",
+  "read_only_calls": 1,
+  "scientific_submissions": 0,
+  "mutations": 0
+}

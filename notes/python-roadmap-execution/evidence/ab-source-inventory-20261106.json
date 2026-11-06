@@ -1,0 +1,2605 @@
+{
+  "utc": "2026-11-06T14:23:19.862141+00:00",
+  "base": "573a51d46896a4733450a4f81da512566aa864bf",
+  "acceptance_rows": [
+    "| RC-P0 | A/B operation inventory and compatibility diagnostics | PARTIAL | public-api/contracts; transport tests; I/L | Exhaustive operation/feature and mixed-version inventory; support decisions #129; P1 |",
+    "| RC-P1.1 | A supported onboarding through computation | PARTIAL | connection/credentials/requests; #84/#85; controlled connection tests; S | Actual supported Hub/license end-user walkthrough still unverified; deployment credentials/consent; P1 |",
+    "| RC-P1.2 | A fresh-process restoration without disposal | PARTIAL | handles/client; #86/#139; Q1 local installed actualJava completedJob/observation/focus/20cells and no-disposal controls pass atd8ae23b3d (not merged) | Full in-flight/restart/history retention remains #89; bounded local acceptance not whole criterion; P1 |",
+    "| RC-P1.3 | A collaborator reads, forbidden writes and expiry diagnosis | PARTIAL | transport/context ACLs; connection-access tests and historical controlled positive controls | Current integrated private-parent/stale-vs-forbidden matrix #89; P1 |",
+    "| RC-P1.4 | A actionable readiness/trust diagnostics | PARTIAL | connection/catalog origin guards; connection HTTP tests | Supported-deployment provider outage/recovery and mixed capabilities; #129; P1 |",
+    "| RC-P1.5 | A requested options visible in actual plan | PARTIAL | #200 installed actual-Java baseline/namespace/scenario model URNs and independent executed values, actual geometry/focus, normalized grid configuration and zero-HTTP unsupported/conflicting rejections pass | Full observer/project/material-dependency and executed-grid matrix remains unproven; forced model explicitly unsupported; no complete-lineage claim; P1 |",
+    "| RC-P2.1 | A nonuniform multi-shard scientific export | PARTIAL | #197 portable actual-Java single-shard oracle:20 asymmetric cells/two missing/zero/negative/float64/units/coordinates pass with pinned corrected exporter; published exporter failure preserved | Full multi-shard served fixture remains unproven; Boolean/category/time/revision claims not inferred; public exporter issue#10; P1 |",
+    "| RC-P2.2 | A time/window selection, precision, revision and masks | PARTIAL | explicit point slice/geometry and raster descriptors | Remote selection/revision contract #123 plus adapter; not internal scan API; P1 |",
+    "| RC-P2.3 | A independent real-provider accuracy | BLOCKED_EXTERNAL | provider-reference runner exists; historical failures retained | Frozen admitted model/data/datum/tolerance references #130 absent; obtain artifacts then run unchanged scientific query; P1 |",
+    "| RC-P2.4 | A representative bounded stream/interrupt | IMPLEMENTED_UNVERIFIED | #198 actual-socket64MiB synthetic body: exact bytes,664481-byte Python peak,819200-byte observed RSS growth; eager control and six failures/cleanup pass | Real Java/provider workload and sustained memory/soak remain unverified; controlled HTTP evidence is not a deployed scientific capacity claim; P1 |",
+    "| RC-P2.5 | A faithful raster/xarray and categorical views | PARTIAL | analysis/tables; adapter tests and historical controlled raster evidence | Broader served categorical dictionary/worldview and vector adapters; #123/#130; P1 |",
+    "| RC-P3.1 | A committed two-client race convergence | PARTIAL | graph_projection/notifications; #136 hint invalidation and dedup tests | Authoritative commit/version contract #126 plus reconciliation/race fixture; P2 |",
+    "| RC-P3.2 | A disconnect and honest partial refresh | ACCEPTED | #199 installed actual-Java owned outage/restart: two retained selections invalidated, owner reattaches/refetches one, other stays stale; metadata/UNKNOWN preserved; real private attach/release denials pass | Bounded explicit refresh only; no durable replay/convergence or whole RC-P3.1 claim |",
+    "| RC-P3.3 | A cancel/expiry/restart/no replay | PARTIAL | client/async/_job_binding; #139; cancellation and drift tests | Retained history/incarnation contract and deployed expiry/restart chain #89; P1 |",
+    "| RC-P3.4 | A explain actual dependencies and semantic effects | PARTIAL | evidence/provenance; recorded neighborhoods/tests; S | Full lineage and semantic-update execution fixture; Java extraction gaps, not portable replay; P2 |",
+    "| RC-P3.5 | A bounded notebook concurrency and own-wait cancellation | IMPLEMENTED_UNVERIFIED | async/experiments; #105, runner tests and controlled results | Exact supported integrated multi-principal notebook/race acceptance; no new backend defect established; P1 |",
+    "| RC-P4.1 | B meaning-based asset applicability/version/access | PARTIAL | semantics/inspection; semantic/resource controlled results | Capability-aware full applicability/history/access matrix; actual Resources projections; P2 |",
+    "| RC-P4.2 | B revision-aware parse/validate | PARTIAL | authoring/source_previews; #141 DTO/stale tests; Q5 local actualJava four-family valid/invalid/source-identity proof at96f6b0b24 (merge pending) | Authoritative knowledge-revision/semantic validation matrix remains; parser receipt not authoring persistence; P2 |",
+    "| RC-P4.3 | B import/annotate/compute with input provenance | NOT_IMPLEMENTED | native export/inspection are reusable, not import workflow | Enumerate implemented schemas/routes before client import; real Java annotation contract; P2 |",
+    "| RC-P4.4 | B authorized edit/publish/conflict | PARTIAL | authoring namespace ADD, source previews, honest unsupported errors | Safe edit/lock/version/history/publication contracts plus client slices; #129; P2 |",
+    "| RC-P4.5 | B behavior invocation/outcomes/reconnect | PARTIAL | #134/#135/#138; agents/status/journal/AMQP tests; M READY/RUNNING/STOPPED | Production principal/incarnation provisioning and independent remote cleanup UNKNOWN #125; P2 |",
+    "| RC-P5 | C separate scoped worker product | DEFERRED_APPROVED | Explicitly excluded by this assignment; no worker SDK | Future execution/isolation/publication contracts #127; not remote-client completion gate; P3 |",
+    "| RC-R1 | A/B continuous evidence layers | PARTIAL | I: 2772 installed offline/225 selected Java; S/M; hosted checks | Portable fixture, mixed services and workload-specific failures; retain distinct layers; P1 |",
+    "| RC-R2 | A/B supported public release | PARTIAL | support-and-release/check_release_readiness and tests | Maintainer scope/version/publication approval #129 and provider/scale evidence; packaging is not release; P2 |",
+    "| CAP-01 | A certificate/token providers, profiles, renewal seam | PARTIAL | connection/_bootstrap/credentials; connection tests; historical controlled exchange | Actual Hub acceptance RC-P1.1; optional selected secret-store and Engine attachment only on verified contract; P1 |",
+    "| CAP-02 | A explicit catalog/selection/health and peer initialization | PARTIAL | connection_models/connection; origin and readiness tests; S selection | Broader provider/mixed-version verification RC-P1.4; no global discovery assumption; P1 |",
+    "| CAP-03 | A/B configured origin-qualified routing | PARTIAL | client/handles/inspection and binding tests; #139; S | Multi-provider partial failures; migration/failover/ownership platform #124 not provided; P2 |",
+    "| CAP-04 | A typed scope/observe/register/query/focus/grid | PARTIAL | requests/client; #84/#85; typed tests; S computation | Supported option matrix RC-P1.5, collections/relationships and lifecycle distinctions; P1 |",
+    "| CAP-05 | B semantic search/predicates/composition/revision objects | PARTIAL | semantics/dto; semantic-explorer tests and controlled records | Full supported semantic operations and maintained knowledge-revision acceptance; P2 |",
+    "| CAP-06 | A typed plans versus execution | ACCEPTED | evidence/provenance; tests; S actual partial plans and activity effects; L merged | Bounded read-only evidence only; RC-P3.4 owns complete lineage/replay gap |",
+    "| CAP-07 | A jobs, polling, cancellation, sync/async and bounded concurrency | PARTIAL | client/async_client/experiments; #105/#139; I | Retention/incarnation and notebook verification RC-P3.3/5; no replay after ambiguity; P1 |",
+    "| CAP-08 | A exact sparse NUMBER/BOOLEAN/TEXT and explicit missingness | ACCEPTED | dto/client/tables; scientific-table tests; I and S actual numeric reads | Bounded 1..256 samples, wire-null distinct from finite validity; no bulk or guessed coordinates |",
+    "| CAP-09 | A scientific exports/descriptors, time/space/units/categories | PARTIAL | exports/analysis/tables; reader/oracle/stream tests | RC-P2.1/2/5; preserve native bytes and unknown revision, no Python mediation guess; P1 |",
+    "| CAP-10 | A/B typed partial twin graph, stale markers, refresh | PARTIAL | graph/projection/provenance; #136 tests; S | Authoritative versions and integrated disconnect/refresh verification; RC-P3.1/2; P1 |",
+    "| CAP-11 | A/B best-effort scoped events and resync | PARTIAL | notifications; #136; controlled activity records | Bounded notification accepted portions do not establish durable cursors/retention #126; P2 |",
+    "| CAP-12 | A offline snapshot inspection, never queued replay | ACCEPTED | ScientificData.dumps/loads; #196 merged240d1a1f4; 2818 installed tests/16 coverage gates and fresh-process core-only demo pass; review below | Bounded local NUMBER/BOOLEAN/TEXT inspection only; no remote revision/authentication or graph snapshot claim; no Java dependency |",
+    "| CAP-13 | B resources/models read/query/dependency inspection | PARTIAL | inspection/services; resource-inspector tests and controlled records | Full supported dependency/routing/export schema matrix; RC-P4.1/3/4; P2 |",
+    "| CAP-14 | B authoring/behaviors actual authorized operations | PARTIAL | authoring/agents/agent_execution; #138/#141; M | RC-P4.2\u20135 contracts/validation, no compiler or scheduler port; P2 |",
+    "| CAP-15 | A optional NumPy/pandas/xarray/raster/vector and notebooks | PARTIAL | analysis/tables; #106; reader/scalar precision tests | General vectors/time/categories and verified notebook presentation; optional extras remain optional; P2 |",
+    "| CAP-16 | A/B compatibility, fixtures, package, support/migration/scale | PARTIAL | package/workflow and release checker; I/L | RC-P0/R1/R2, explicit async export/restore not delivered; maintain evidence by exact tuple; P1 |",
+    "| CAP-17 | C provider SDK / local embedded runtime | DEFERRED_APPROVED | Explicit assignment exclusion, same boundary as RC-P5 | Future #127, no Python algorithm/server replacement; P3 |",
+    "| CAP-18 | A/B safe architecture and irreversible-contract boundaries | ACCEPTED | Existing origin guards, codecs, no replay, explicit errors, optional imports; I and regression tests | Ongoing invariant for each change, not certification of unknown future operations |"
+  ],
+  "acceptance_count": 42,
+  "source_findings": [
+    {
+      "file": "python-client/tests/integration/test_async_notebook_kernel.py",
+      "line": 9,
+      "text": "nbformat = pytest.importorskip(\"nbformat\")"
+    },
+    {
+      "file": "python-client/tests/integration/test_async_notebook_kernel.py",
+      "line": 10,
+      "text": "pytest.importorskip(\"nbclient\")"
+    },
+    {
+      "file": "python-client/tests/integration/test_milestone_notebook_kernel.py",
+      "line": 10,
+      "text": "pytest.importorskip(\"nbclient\")"
+    },
+    {
+      "file": "python-client/tests/unit/test_local_tools.py",
+      "line": 100,
+      "text": "pytest.importorskip(\"cryptography\")"
+    },
+    {
+      "file": "python-client/tests/unit/test_scientific_analysis.py",
+      "line": 14,
+      "text": "np = pytest.importorskip(\"numpy\")"
+    },
+    {
+      "file": "python-client/tests/unit/test_scientific_analysis.py",
+      "line": 15,
+      "text": "rio = pytest.importorskip(\"rasterio\")"
+    },
+    {
+      "file": "python-client/tests/unit/test_scientific_analysis.py",
+      "line": 16,
+      "text": "pytest.importorskip(\"xarray\")"
+    }
+  ],
+  "tracker": {
+    "issues": {
+      "utc": "2026-11-06T14:13:31.350226+00:00",
+      "command": [
+        "gh",
+        "issue",
+        "list",
+        "--state",
+        "all",
+        "--limit",
+        "300",
+        "--json",
+        "number,title,state,labels,url,updatedAt"
+      ],
+      "exit": 0,
+      "data": [
+        {
+          "labels": [],
+          "number": 193,
+          "state": "OPEN",
+          "title": "Track legacy synthetic fixture incompatibility with current ODO and source validation",
+          "updatedAt": "2026-11-04T18:01:54Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/193"
+        },
+        {
+          "labels": [],
+          "number": 147,
+          "state": "CLOSED",
+          "title": "Baseline Java acceptance inventory: semantic, temporal and lifecycle regressions block Python integration",
+          "updatedAt": "2026-11-04T00:55:29Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147"
+        },
+        {
+          "labels": [],
+          "number": 145,
+          "state": "CLOSED",
+          "title": "Repair baseline core-service test setup for Java-only builds and authority selection",
+          "updatedAt": "2026-11-03T17:40:51Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/145"
+        },
+        {
+          "labels": [],
+          "number": 144,
+          "state": "OPEN",
+          "title": "Remote Context observation reads reach unsupported lifecycle-currentness default",
+          "updatedAt": "2026-11-03T17:52:02Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/144"
+        },
+        {
+          "labels": [],
+          "number": 142,
+          "state": "CLOSED",
+          "title": "Baseline Java test failure: required POST error-detail expectation contradicts status-only implementation",
+          "updatedAt": "2026-11-03T17:25:59Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/142"
+        },
+        {
+          "labels": [],
+          "number": 130,
+          "state": "OPEN",
+          "title": "Provide PaL operational artifacts and independent original-study reference contracts",
+          "updatedAt": "2026-11-03T03:22:19Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/130"
+        },
+        {
+          "labels": [],
+          "number": 129,
+          "state": "OPEN",
+          "title": "Record Python release support/version decisions and scientific/backend publication gates",
+          "updatedAt": "2026-11-03T03:22:14Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/129"
+        },
+        {
+          "labels": [],
+          "number": 127,
+          "state": "OPEN",
+          "title": "Specify provider/worker SDK role, execution and backend integration contracts",
+          "updatedAt": "2026-11-03T02:30:27Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/127"
+        },
+        {
+          "labels": [],
+          "number": 126,
+          "state": "OPEN",
+          "title": "Define durable notification replay/resync contract beyond best-effort Python hints",
+          "updatedAt": "2026-11-03T14:32:09Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/126"
+        },
+        {
+          "labels": [],
+          "number": 125,
+          "state": "OPEN",
+          "title": "Complete Python agent execution/control and confirmed terminal cleanup beyond source preview",
+          "updatedAt": "2026-11-03T17:10:30Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125"
+        },
+        {
+          "labels": [],
+          "number": 124,
+          "state": "OPEN",
+          "title": "Specify and implement twin composition/migration contracts required by Python federation",
+          "updatedAt": "2026-11-03T01:51:01Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/124"
+        },
+        {
+          "labels": [],
+          "number": 123,
+          "state": "OPEN",
+          "title": "Backend prerequisite: versioned remote scan/block/slice contract for Python access",
+          "updatedAt": "2026-11-03T01:51:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/123"
+        },
+        {
+          "labels": [
+            {
+              "id": "LA_kwDOJG27CM8AAAABOFZ1VQ",
+              "name": "enhancement",
+              "description": "New feature or request",
+              "color": "a2eeef"
+            }
+          ],
+          "number": 91,
+          "state": "CLOSED",
+          "title": "Python client: stream observation exports to files",
+          "updatedAt": "2026-10-13T19:52:51Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/91"
+        },
+        {
+          "labels": [
+            {
+              "id": "LA_kwDOJG27CM8AAAABOFZ1VQ",
+              "name": "enhancement",
+              "description": "New feature or request",
+              "color": "a2eeef"
+            },
+            {
+              "id": "LA_kwDOJG27CM8AAAACeTq-og",
+              "name": "java",
+              "description": "Pull requests that update java code",
+              "color": "ffa221"
+            }
+          ],
+          "number": 89,
+          "state": "OPEN",
+          "title": "Validate Python client integration with cross-service identity and shared-session permissions",
+          "updatedAt": "2026-11-03T17:53:30Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89"
+        },
+        {
+          "labels": [
+            {
+              "id": "LA_kwDOJG27CM8AAAABOFZ1VQ",
+              "name": "enhancement",
+              "description": "New feature or request",
+              "color": "a2eeef"
+            }
+          ],
+          "number": 88,
+          "state": "CLOSED",
+          "title": "Python client: save and restore context, observation and job handles",
+          "updatedAt": "2026-10-12T01:10:42Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/88"
+        },
+        {
+          "labels": [
+            {
+              "id": "LA_kwDOJG27CM8AAAABOFZ1VQ",
+              "name": "enhancement",
+              "description": "New feature or request",
+              "color": "a2eeef"
+            }
+          ],
+          "number": 87,
+          "state": "CLOSED",
+          "title": "Python client: add typed observation requests and context options",
+          "updatedAt": "2026-10-12T01:10:39Z",
+          "url": "https://github.com/integratedmodelling/klab-services/issues/87"
+        }
+      ]
+    },
+    "prs": {
+      "utc": "2026-11-06T14:13:32.801573+00:00",
+      "command": [
+        "gh",
+        "pr",
+        "list",
+        "--state",
+        "all",
+        "--limit",
+        "300",
+        "--json",
+        "number,title,state,baseRefName,headRefName,mergedAt,url,updatedAt"
+      ],
+      "exit": 0,
+      "data": [
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "docs/java-admission-19-study-readiness",
+          "mergedAt": "2026-11-06T00:06:26Z",
+          "number": 242,
+          "state": "MERGED",
+          "title": "docs: Java admission decisions and all 19 research application readiness",
+          "updatedAt": "2026-11-06T00:06:48Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/242"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-next-scientific-handoff",
+          "mergedAt": "2026-11-05T22:31:01Z",
+          "number": 241,
+          "state": "MERGED",
+          "title": "docs(python): reconcile bounded scientific delivery and external acceptance gates",
+          "updatedAt": "2026-11-05T22:31:09Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/241"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-async-execution-evidence",
+          "mergedAt": "2026-11-05T22:16:06Z",
+          "number": 240,
+          "state": "MERGED",
+          "title": "feat(python): deliver native async recorded execution evidence after provenance",
+          "updatedAt": "2026-11-05T22:16:13Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/240"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-async-recorded-provenance",
+          "mergedAt": "2026-11-05T22:07:39Z",
+          "number": 239,
+          "state": "MERGED",
+          "title": "feat(python): deliver native async recorded provenance on accepted integration",
+          "updatedAt": "2026-11-05T22:07:45Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/239"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-scientific-worker-admission",
+          "mergedAt": "2026-11-05T21:57:56Z",
+          "number": 238,
+          "state": "MERGED",
+          "title": "test(python): admit pinned isolated N S workers with honest periodic gate",
+          "updatedAt": "2026-11-05T21:58:03Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/238"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-scientific-workflow-binding",
+          "mergedAt": "2026-11-05T21:11:41Z",
+          "number": 237,
+          "state": "MERGED",
+          "title": "fix(testing): bind manifest science to the actual workflow before execution",
+          "updatedAt": "2026-11-05T21:11:58Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/237"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-scientific-acceptance-handoff",
+          "mergedAt": "2026-11-05T21:16:23Z",
+          "number": 236,
+          "state": "MERGED",
+          "title": "docs(testing): finalize scientific acceptance evidence and truthful milestone handoff",
+          "updatedAt": "2026-11-05T21:16:34Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/236"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-scientific-test-selection",
+          "mergedAt": "2026-11-05T20:46:10Z",
+          "number": 235,
+          "state": "MERGED",
+          "title": "test(python): select conservatively and index scientific acceptance evidence",
+          "updatedAt": "2026-11-05T20:47:40Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/235"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-scientific-scenario-n",
+          "mergedAt": "2026-11-05T20:37:08Z",
+          "number": 234,
+          "state": "MERGED",
+          "title": "test(python): execute independent nonuniform Java scientific acceptance",
+          "updatedAt": "2026-11-05T20:40:08Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/234"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-scientific-scenario-s",
+          "mergedAt": "2026-11-05T20:37:57Z",
+          "number": 233,
+          "state": "MERGED",
+          "title": "test(python): verify selected Java models outputs and private denial",
+          "updatedAt": "2026-11-05T20:40:10Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/233"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-scientific-scenario-contract",
+          "mergedAt": "2026-11-05T20:42:21Z",
+          "number": 232,
+          "state": "MERGED",
+          "title": "test(python): add thin scientific scenario contracts and evidence inventory",
+          "updatedAt": "2026-11-05T20:47:39Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/232"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-async-semantic-exploration",
+          "mergedAt": "2026-11-05T15:55:11Z",
+          "number": 231,
+          "state": "MERGED",
+          "title": "Support native async checked semantic exploration",
+          "updatedAt": "2026-11-05T15:56:36Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/231"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/python-indexed-source-id-long-bounds",
+          "mergedAt": "2026-11-05T15:38:06Z",
+          "number": 230,
+          "state": "MERGED",
+          "title": "Reject indexed read source IDs outside the native positive-long domain",
+          "updatedAt": "2026-11-05T15:40:22Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/230"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-native-codelist-retrieval",
+          "mergedAt": "2026-11-05T15:27:12Z",
+          "number": 229,
+          "state": "MERGED",
+          "title": "Support retrieval-only native CODELIST assets in both Python facades",
+          "updatedAt": "2026-11-05T15:27:44Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/229"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-async-source-previews",
+          "mergedAt": "2026-11-05T15:11:26Z",
+          "number": 228,
+          "state": "MERGED",
+          "title": "Support native async non-authoring four-family source previews",
+          "updatedAt": "2026-11-05T15:11:33Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/228"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-async-resource-inspection",
+          "mergedAt": "2026-11-05T14:42:47Z",
+          "number": 227,
+          "state": "MERGED",
+          "title": "Support native async resource inspection and strict native null asset responses",
+          "updatedAt": "2026-11-05T14:47:27Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/227"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/python-indexed-offset-long-bounds",
+          "mergedAt": "2026-11-05T14:09:27Z",
+          "number": 226,
+          "state": "MERGED",
+          "title": "Reject indexed offsets outside the native signed-long domain",
+          "updatedAt": "2026-11-05T14:09:37Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/226"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-shared-context-readers",
+          "mergedAt": "2026-11-05T13:56:57Z",
+          "number": 225,
+          "state": "MERGED",
+          "title": "Validate ACL-authorized concurrent native context readers",
+          "updatedAt": "2026-11-05T13:57:06Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/225"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/python-indexed-read-semantics-isolation",
+          "mergedAt": "2026-11-05T13:35:56Z",
+          "number": 224,
+          "state": "MERGED",
+          "title": "Isolate indexed-read semantics from caller mutation",
+          "updatedAt": "2026-11-05T13:36:14Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/224"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-native-scan-slices",
+          "mergedAt": "2026-11-05T13:14:58Z",
+          "number": 223,
+          "state": "MERGED",
+          "title": "Support faithful native scan slices in sync and async reads",
+          "updatedAt": "2026-11-05T13:15:16Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/223"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-model-source-authoring",
+          "mergedAt": "2026-11-05T10:32:37Z",
+          "number": 222,
+          "state": "MERGED",
+          "title": "Verify owned model source authoring and advertised identity",
+          "updatedAt": "2026-11-05T10:32:59Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/222"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/keyed-dictionary-snapshot-api",
+          "mergedAt": "2026-11-05T09:34:38Z",
+          "number": 221,
+          "state": "MERGED",
+          "title": "Expose immutable durable dictionary snapshots to keyed data consumers",
+          "updatedAt": "2026-11-05T09:35:37Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/221"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-deleted-state-recovery-acceptance",
+          "mergedAt": "2026-11-05T09:16:32Z",
+          "number": 220,
+          "state": "MERGED",
+          "title": "Verify deleted-state recovery refusal with surviving context positive controls",
+          "updatedAt": "2026-11-05T09:16:52Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/220"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-native-async-export",
+          "mergedAt": "2026-11-05T09:00:06Z",
+          "number": 219,
+          "state": "MERGED",
+          "title": "Stream advertised native async exports with atomic failure-safe publication",
+          "updatedAt": "2026-11-05T09:00:22Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/219"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-native-async-handle-restoration",
+          "mergedAt": "2026-11-05T08:30:21Z",
+          "number": 218,
+          "state": "MERGED",
+          "title": "Restore saved context observation and retained Job handles through native async APIs",
+          "updatedAt": "2026-11-05T08:30:36Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/218"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-current-model-plan-acceptance",
+          "mergedAt": "2026-11-05T08:03:44Z",
+          "number": 217,
+          "state": "MERGED",
+          "title": "Verify current model advertisements against actual successful served plans and cells",
+          "updatedAt": "2026-11-05T08:04:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/217"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-canonical-hierarchy-acceptance",
+          "mergedAt": "2026-11-05T07:41:26Z",
+          "number": 216,
+          "state": "MERGED",
+          "title": "Verify authored canonical core-alias hierarchy without semantic changes",
+          "updatedAt": "2026-11-05T07:41:40Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/216"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "diagnostic/python-current-hierarchy-snapshot",
+          "mergedAt": "2026-11-05T07:27:26Z",
+          "number": 215,
+          "state": "MERGED",
+          "title": "Capture bounded current hierarchy evidence and preserve canonical-alias diagnosis",
+          "updatedAt": "2026-11-05T07:27:41Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/215"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-current-compatibility-evidence",
+          "mergedAt": "2026-11-05T07:10:15Z",
+          "number": 214,
+          "state": "MERGED",
+          "title": "Reconcile current compatibility and exact integrated evidence without release promotion",
+          "updatedAt": "2026-11-05T07:10:29Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/214"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/python-fixture-authority-health",
+          "mergedAt": "2026-11-05T06:54:55Z",
+          "number": 213,
+          "state": "MERGED",
+          "title": "Restore owned TEST authority readiness with explicit health response",
+          "updatedAt": "2026-11-05T06:55:13Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/213"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-managed-agent-preflight",
+          "mergedAt": "2026-11-05T06:40:53Z",
+          "number": 212,
+          "state": "MERGED",
+          "title": "Add opt-in authenticated owned Hub federation lookup prerequisite",
+          "updatedAt": "2026-11-05T06:41:07Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/212"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-async-notebook-acceptance",
+          "mergedAt": "2026-11-05T06:25:59Z",
+          "number": 211,
+          "state": "MERGED",
+          "title": "Verify actual installed native async notebook journey and cleanup",
+          "updatedAt": "2026-11-05T06:26:15Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/211"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-async-own-wait-acceptance",
+          "mergedAt": "2026-11-05T06:10:23Z",
+          "number": 210,
+          "state": "MERGED",
+          "title": "Verify bounded native async own-wait cancellation and explicit attachment",
+          "updatedAt": "2026-11-05T06:10:34Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/210"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-strategy-source-authoring",
+          "mergedAt": "2026-11-05T05:41:58Z",
+          "number": 209,
+          "state": "MERGED",
+          "title": "Add one bounded ADD-only strategy draft source family",
+          "updatedAt": "2026-11-05T05:42:09Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/209"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/ci-routing-plugin-bootstrap",
+          "mergedAt": "2026-11-05T05:12:43Z",
+          "number": 208,
+          "state": "MERGED",
+          "title": "Bootstrap pinned packaging plugin in routing CI",
+          "updatedAt": "2026-11-05T05:12:50Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/208"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/resource-access-forbidden",
+          "mergedAt": "2026-11-05T05:20:01Z",
+          "number": 207,
+          "state": "MERGED",
+          "title": "Return explicit forbidden outcomes for project grant denials",
+          "updatedAt": "2026-11-05T05:20:12Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/207"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-native-stream-workload",
+          "mergedAt": "2026-11-05T04:34:49Z",
+          "number": 206,
+          "state": "MERGED",
+          "title": "Verify bounded actual Java native numerical stream workload",
+          "updatedAt": "2026-11-05T04:35:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/206"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-onboarding-journey",
+          "mergedAt": "2026-11-05T04:13:39Z",
+          "number": 205,
+          "state": "MERGED",
+          "title": "Verify current-tuple controlled onboarding and fresh-process science",
+          "updatedAt": "2026-11-05T04:13:51Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/205"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-vector-analysis",
+          "mergedAt": "2026-11-05T03:43:29Z",
+          "number": 204,
+          "state": "MERGED",
+          "title": "Add bounded optional native GeoJSON analysis",
+          "updatedAt": "2026-11-05T03:43:41Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/204"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-fresh-process-recovery",
+          "mergedAt": "2026-11-05T03:23:39Z",
+          "number": 203,
+          "state": "MERGED",
+          "title": "Verify installed fresh-process completed-work recovery",
+          "updatedAt": "2026-11-05T03:23:50Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/203"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/ci-pinned-packaging-bootstrap",
+          "mergedAt": "2026-11-05T03:00:46Z",
+          "number": 202,
+          "state": "MERGED",
+          "title": "Bootstrap packaging plugin from pinned official source in CI",
+          "updatedAt": "2026-11-05T03:01:21Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/202"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-source-parser-acceptance",
+          "mergedAt": "2026-11-05T03:11:59Z",
+          "number": 201,
+          "state": "MERGED",
+          "title": "Verify source previews against actual Resources parsers",
+          "updatedAt": "2026-11-05T03:12:13Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/201"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-request-plan-acceptance",
+          "mergedAt": "2026-11-04T22:22:57Z",
+          "number": 200,
+          "state": "MERGED",
+          "title": "Python: real Java request-option to served-plan acceptance",
+          "updatedAt": "2026-11-04T22:23:16Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/200"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-partial-refresh-acceptance",
+          "mergedAt": "2026-11-04T22:09:11Z",
+          "number": 199,
+          "state": "MERGED",
+          "title": "Python: owned disconnect and partial graph refetch acceptance",
+          "updatedAt": "2026-11-04T22:09:21Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/199"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-export-stream-reliability",
+          "mergedAt": "2026-11-04T21:54:19Z",
+          "number": 198,
+          "state": "MERGED",
+          "title": "Python: actual-socket export interruption and memory acceptance",
+          "updatedAt": "2026-11-04T21:54:57Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/198"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-nonuniform-export-oracle",
+          "mergedAt": "2026-11-04T21:35:38Z",
+          "number": 197,
+          "state": "MERGED",
+          "title": "Python: portable nonuniform Java export oracle and owned acceptance",
+          "updatedAt": "2026-11-04T21:36:03Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/197"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-scientific-read-snapshots",
+          "mergedAt": "2026-11-04T20:46:39Z",
+          "number": 196,
+          "state": "MERGED",
+          "title": "Python: reconcile roadmap and preserve scientific reads for offline inspection",
+          "updatedAt": "2026-11-04T20:49:59Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/196"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/isolated-local-federation-broker-20261104",
+          "mergedAt": "2026-11-04T18:47:07Z",
+          "number": 195,
+          "state": "MERGED",
+          "title": "Federation: configure an explicit operator-owned broker URI",
+          "updatedAt": "2026-11-04T18:47:08Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/195"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/h2gis-host-baseline-20261104",
+          "mergedAt": "2026-11-04T18:32:13Z",
+          "number": 194,
+          "state": "MERGED",
+          "title": "Dependencies: align host H2 with H2GIS 1.5 API",
+          "updatedAt": "2026-11-04T18:32:14Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/194"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "integration/python-backend-closeout-20261104",
+          "mergedAt": "2026-11-04T18:03:12Z",
+          "number": 192,
+          "state": "MERGED",
+          "title": "Integration: bring verified backend prerequisites to Python delivery",
+          "updatedAt": "2026-11-04T18:03:12Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/192"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/selected-query-input-closeout-20261104",
+          "mergedAt": "2026-11-04T17:54:10Z",
+          "number": 191,
+          "state": "MERGED",
+          "title": "Runtime: bind selected query inputs to issued transaction evidence",
+          "updatedAt": "2026-11-04T17:54:10Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/191"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/empty-ontology-change",
+          "mergedAt": "2026-11-04T00:52:28Z",
+          "number": 190,
+          "state": "MERGED",
+          "title": "fix(reasoner): ignore empty ontology change notifications in bounds memo",
+          "updatedAt": "2026-11-04T00:52:28Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/190"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/selection-submission-fixtures",
+          "mergedAt": "2026-11-04T00:33:52Z",
+          "number": 189,
+          "state": "MERGED",
+          "title": "test(runtime): stabilize selection submission fixtures",
+          "updatedAt": "2026-11-04T00:33:53Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/189"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/producer-classification-cycle",
+          "mergedAt": "2026-11-04T00:09:01Z",
+          "number": 188,
+          "state": "MERGED",
+          "title": "Test: admit producer classification dependency fixture cycle",
+          "updatedAt": "2026-11-04T00:09:34Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/188"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/collective-prerequisite-cycles",
+          "mergedAt": "2026-11-04T00:04:28Z",
+          "number": 187,
+          "state": "MERGED",
+          "title": "Test: admit collective prerequisite fixture resolution cycle",
+          "updatedAt": "2026-11-04T00:09:34Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/187"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/collective-remaining-fixtures",
+          "mergedAt": "2026-11-04T00:00:03Z",
+          "number": 186,
+          "state": "MERGED",
+          "title": "Test: admit the native-context fixture resolution cycle",
+          "updatedAt": "2026-11-04T00:09:34Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/186"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/local-adapter-fixture",
+          "mergedAt": "2026-11-03T23:53:48Z",
+          "number": 185,
+          "state": "MERGED",
+          "title": "Test: supply successful encoding in local adapter geometry fixtures",
+          "updatedAt": "2026-11-04T00:09:34Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/185"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/remaining-classification-transaction",
+          "mergedAt": "2026-11-03T23:49:21Z",
+          "number": 184,
+          "state": "MERGED",
+          "title": "Test: bind classification callback scope and currentness fixture",
+          "updatedAt": "2026-11-04T00:09:35Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/184"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/characterization-lifecycle-currentness",
+          "mergedAt": "2026-11-03T23:43:33Z",
+          "number": 183,
+          "state": "MERGED",
+          "title": "Test: supply current recipient for characterization lifecycle fixture",
+          "updatedAt": "2026-11-04T00:09:34Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/183"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/provisional-scope-fixture",
+          "mergedAt": "2026-11-03T23:35:33Z",
+          "number": 182,
+          "state": "MERGED",
+          "title": "Test: identify provisional scope and current candidate fixture",
+          "updatedAt": "2026-11-03T23:36:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/182"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/classification-execution-fixture",
+          "mergedAt": "2026-11-03T23:29:36Z",
+          "number": 181,
+          "state": "MERGED",
+          "title": "Test: supply current observation in classification cache fixture",
+          "updatedAt": "2026-11-03T23:36:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/181"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/configuration-input-currentness",
+          "mergedAt": "2026-11-03T23:25:27Z",
+          "number": 180,
+          "state": "MERGED",
+          "title": "Test: supply existing configuration currentness in prepared input fixture",
+          "updatedAt": "2026-11-03T23:36:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/180"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/discovery-snapshot-currentness",
+          "mergedAt": "2026-11-03T23:20:03Z",
+          "number": 179,
+          "state": "MERGED",
+          "title": "Test: supply current observation snapshots for discovery receipt fixtures",
+          "updatedAt": "2026-11-03T23:36:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/179"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/runtime-cycle-remaining-fixtures",
+          "mergedAt": "2026-11-03T23:11:34Z",
+          "number": 178,
+          "state": "MERGED",
+          "title": "Test: supply current process for queued cycle admission fixture",
+          "updatedAt": "2026-11-03T23:12:06Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/178"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/configuration-readset-fixture",
+          "mergedAt": "2026-11-03T23:07:05Z",
+          "number": 177,
+          "state": "MERGED",
+          "title": "Test: identify the configuration overlay fixture context",
+          "updatedAt": "2026-11-03T23:12:04Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/177"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/graph-direction-fixtures",
+          "mergedAt": "2026-11-03T23:02:05Z",
+          "number": 176,
+          "state": "MERGED",
+          "title": "Test: supply current assets in graph link direction fixture",
+          "updatedAt": "2026-11-03T23:12:04Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/176"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/occurrence-executor-fixtures",
+          "mergedAt": "2026-11-03T22:57:52Z",
+          "number": 175,
+          "state": "MERGED",
+          "title": "Test: supply exact process-birth activity ownership in executor fixtures",
+          "updatedAt": "2026-11-03T23:12:05Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/175"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/runtime-annotation-fixture",
+          "mergedAt": "2026-11-03T22:51:43Z",
+          "number": 174,
+          "state": "MERGED",
+          "title": "Test: supply observable in runtime annotation merge fixture",
+          "updatedAt": "2026-11-03T23:12:06Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/174"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/observation-view-fixtures",
+          "mergedAt": "2026-11-03T22:47:25Z",
+          "number": 173,
+          "state": "MERGED",
+          "title": "Test: supply root cycle admission for observation view queries",
+          "updatedAt": "2026-11-03T23:12:05Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/173"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/observer-reference-currentness",
+          "mergedAt": "2026-11-03T22:40:12Z",
+          "number": 172,
+          "state": "MERGED",
+          "title": "Test: supply current observer reference and focus fixtures",
+          "updatedAt": "2026-11-03T23:12:05Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/172"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/reference-parent-currentness-fixture",
+          "mergedAt": "2026-11-03T22:34:28Z",
+          "number": 171,
+          "state": "MERGED",
+          "title": "Test: initialize reference parent currentness and geometry fixtures",
+          "updatedAt": "2026-11-03T23:12:05Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/171"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/atomic-selection-lifecycle-fixtures",
+          "mergedAt": "2026-11-03T22:23:28Z",
+          "number": 170,
+          "state": "MERGED",
+          "title": "Test: admit root cycles in atomic selection lifecycle fixtures",
+          "updatedAt": "2026-11-03T22:24:01Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/170"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/collective-selection-followup",
+          "mergedAt": "2026-11-03T22:09:26Z",
+          "number": 169,
+          "state": "MERGED",
+          "title": "Fix: retain currentness for exact staged observation link replacements",
+          "updatedAt": "2026-11-03T22:24:01Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/169"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/collective-atomic-fixtures",
+          "mergedAt": "2026-11-03T21:57:26Z",
+          "number": 168,
+          "state": "MERGED",
+          "title": "Fix: retain currentness of owned attributed observation read views",
+          "updatedAt": "2026-11-03T22:24:01Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/168"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/collective-currentness-fixtures",
+          "mergedAt": "2026-11-03T21:46:15Z",
+          "number": 167,
+          "state": "MERGED",
+          "title": "Test: supply current member identities in collective query fixtures",
+          "updatedAt": "2026-11-03T21:55:20Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/167"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/scheduler-currentness-fixtures",
+          "mergedAt": "2026-11-03T21:35:24Z",
+          "number": 166,
+          "state": "MERGED",
+          "title": "Test: supply current observations in scheduler registration and recompute fixtures",
+          "updatedAt": "2026-11-03T21:55:21Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/166"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/runtime-cycle-fixtures",
+          "mergedAt": "2026-11-03T21:27:01Z",
+          "number": 165,
+          "state": "MERGED",
+          "title": "Test: restore classifier cycle ownership and graph currentness fixtures",
+          "updatedAt": "2026-11-03T21:55:21Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/165"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/resolver-query-fixtures",
+          "mergedAt": "2026-11-03T21:02:46Z",
+          "number": 164,
+          "state": "MERGED",
+          "title": "Test: supply admission and source identity in Resolver query fixtures",
+          "updatedAt": "2026-11-03T21:21:57Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/164"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/semantic-restart-identity",
+          "mergedAt": "2026-11-03T20:48:00Z",
+          "number": 163,
+          "state": "MERGED",
+          "title": "Test: use canonical dependency obligations in restart identity fixture",
+          "updatedAt": "2026-11-03T20:50:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/163"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/staged-query-accounting",
+          "mergedAt": "2026-11-03T20:39:48Z",
+          "number": 162,
+          "state": "MERGED",
+          "title": "Fix: defer emergence closure indexing until declaration staging completes",
+          "updatedAt": "2026-11-03T20:46:24Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/162"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/process-context-fixture",
+          "mergedAt": "2026-11-03T20:29:43Z",
+          "number": 161,
+          "state": "MERGED",
+          "title": "Test: provide service scope for process contextualization validation",
+          "updatedAt": "2026-11-03T20:38:44Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/161"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/document-validation-fixtures",
+          "mergedAt": "2026-11-03T20:23:23Z",
+          "number": 160,
+          "state": "MERGED",
+          "title": "Test: supply document-validation capabilities with unknown dependency proof",
+          "updatedAt": "2026-11-03T20:28:19Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/160"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/authority-bootstrap-fixture",
+          "mergedAt": "2026-11-03T20:16:48Z",
+          "number": 159,
+          "state": "MERGED",
+          "title": "Test: initialize captured catalog in authority bootstrap fixture",
+          "updatedAt": "2026-11-03T20:21:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/159"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/configured-snapshot-admission",
+          "mergedAt": "2026-11-03T20:11:41Z",
+          "number": 158,
+          "state": "MERGED",
+          "title": "Fix: restore configured authority snapshots before candidate admission",
+          "updatedAt": "2026-11-03T20:15:30Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/158"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/project-validation-caller-fixture",
+          "mergedAt": "2026-11-03T20:06:42Z",
+          "number": 157,
+          "state": "MERGED",
+          "title": "Test: verify caller-aware ontology project validation",
+          "updatedAt": "2026-11-03T20:09:41Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/157"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/reasoner-publication-fixtures",
+          "mergedAt": "2026-11-03T20:01:39Z",
+          "number": 156,
+          "state": "MERGED",
+          "title": "Fix: deduplicate copied Reasoner update diagnostics by source occurrence",
+          "updatedAt": "2026-11-03T20:05:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/156"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/reasoner-cancellation-fixtures",
+          "mergedAt": "2026-11-03T19:53:27Z",
+          "number": 155,
+          "state": "MERGED",
+          "title": "Test: initialize real refinement support in cancellation fixture",
+          "updatedAt": "2026-11-03T19:59:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/155"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/authority-fixture-publication",
+          "mergedAt": "2026-11-03T19:42:07Z",
+          "number": 154,
+          "state": "MERGED",
+          "title": "Test: publish authority registry fixture before server resolution",
+          "updatedAt": "2026-11-03T19:43:51Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/154"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/resources-remaining-fixtures",
+          "mergedAt": "2026-11-03T19:37:44Z",
+          "number": 153,
+          "state": "MERGED",
+          "title": "Test: restore builder fixtures with real OWL helpers and Agent observers",
+          "updatedAt": "2026-11-03T19:40:26Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/153"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/authoring-fixture-identity",
+          "mergedAt": "2026-11-03T19:30:33Z",
+          "number": 152,
+          "state": "MERGED",
+          "title": "Test: align startup identity in authoring storage fixture",
+          "updatedAt": "2026-11-03T19:36:28Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/152"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/pipeline-admission-fixtures",
+          "mergedAt": "2026-11-03T19:24:11Z",
+          "number": 151,
+          "state": "MERGED",
+          "title": "Test: retain real admission receipts and DTOs in resolver pipeline fixtures",
+          "updatedAt": "2026-11-03T19:27:36Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/151"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/resources-semantic-fixtures",
+          "mergedAt": "2026-11-03T19:06:50Z",
+          "number": 150,
+          "state": "MERGED",
+          "title": "Test: supply explicit semantic contracts in Resources fixtures",
+          "updatedAt": "2026-11-03T19:22:28Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/150"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/temporal-fixture-lifecycle",
+          "mergedAt": "2026-11-03T18:16:47Z",
+          "number": 149,
+          "state": "MERGED",
+          "title": "Test: restore lifecycle-aware cache and temporal fixtures",
+          "updatedAt": "2026-11-03T19:05:51Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/149"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/remote-observation-currentness",
+          "mergedAt": "2026-11-03T17:53:56Z",
+          "number": 148,
+          "state": "MERGED",
+          "title": "Runtime: revalidate remote observation currentness using authorized asset reads",
+          "updatedAt": "2026-11-03T18:01:19Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/148"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/core-test-fixtures",
+          "mergedAt": "2026-11-03T17:40:49Z",
+          "number": 146,
+          "state": "MERGED",
+          "title": "Test: repair core-service publication, UI and shutdown fixtures",
+          "updatedAt": "2026-11-03T18:01:19Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/146"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/required-post-error-contract",
+          "mergedAt": "2026-11-03T17:25:58Z",
+          "number": 143,
+          "state": "MERGED",
+          "title": "Test: align required POST failures with existing status-only contract",
+          "updatedAt": "2026-11-03T18:01:19Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/143"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-source-previews",
+          "mergedAt": "2026-11-04T18:31:36Z",
+          "number": 141,
+          "state": "MERGED",
+          "title": "Python: read-only source previews without expanding authoring writes",
+          "updatedAt": "2026-11-04T18:31:36Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/141"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/python-fixture-copy-order",
+          "mergedAt": "2026-11-04T18:15:49Z",
+          "number": 140,
+          "state": "MERGED",
+          "title": "Python: deterministic Runtime-fixture copy order and failure evidence",
+          "updatedAt": "2026-11-04T18:15:50Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/140"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-job-binding",
+          "mergedAt": "2026-11-04T18:31:30Z",
+          "number": 139,
+          "state": "MERGED",
+          "title": "Python: prevent sync and async Job identity rebinding",
+          "updatedAt": "2026-11-04T18:31:31Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/139"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-agent-amqp",
+          "mergedAt": "2026-11-04T18:56:26Z",
+          "number": 138,
+          "state": "MERGED",
+          "title": "Python: deferred agent registration and explicit native AMQP lifecycle",
+          "updatedAt": "2026-11-04T18:56:26Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/138"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "docs/python-roadmap-acceptance-map",
+          "mergedAt": "2026-11-04T18:31:25Z",
+          "number": 137,
+          "state": "MERGED",
+          "title": "Map structured Python roadmap acceptance, internal work and tracking gaps",
+          "updatedAt": "2026-11-04T18:31:25Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/137"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-graph-projection",
+          "mergedAt": "2026-11-04T18:16:06Z",
+          "number": 136,
+          "state": "MERGED",
+          "title": "Python: bounded partial graph projection with explicit invalidation and refresh",
+          "updatedAt": "2026-11-04T18:16:07Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/136"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-agent-control-journal",
+          "mergedAt": "2026-11-04T18:31:19Z",
+          "number": 135,
+          "state": "MERGED",
+          "title": "Python: bound one-shot agent control journal and lifecycle evidence",
+          "updatedAt": "2026-11-04T18:31:19Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/135"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-agent-status",
+          "mergedAt": "2026-11-04T18:16:01Z",
+          "number": 134,
+          "state": "MERGED",
+          "title": "Python: bounded read-only Java agent status payload decoding",
+          "updatedAt": "2026-11-04T18:16:01Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/134"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "docs/agent-ready-roadmap-handoffs",
+          "mergedAt": "2026-11-04T18:15:55Z",
+          "number": 133,
+          "state": "MERGED",
+          "title": "Make issue89 and125 handoffs accurate and reproducible",
+          "updatedAt": "2026-11-04T18:15:55Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/133"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/local-runtime-cold-scope",
+          "mergedAt": "2026-11-03T04:39:53Z",
+          "number": 132,
+          "state": "MERGED",
+          "title": "Restore cold owner contexts through their exact hosting Runtime",
+          "updatedAt": "2026-11-03T04:39:54Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/132"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/native-reconnect-parent",
+          "mergedAt": "2026-11-03T04:01:59Z",
+          "number": 131,
+          "state": "MERGED",
+          "title": "Reconnect native contexts to their actual parent without creating default sessions",
+          "updatedAt": "2026-11-03T04:02:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/131"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/cached-scope-runtime-origin",
+          "mergedAt": "2026-11-03T03:01:00Z",
+          "number": 128,
+          "state": "MERGED",
+          "title": "Reject explicit Runtime origin mismatches on cached sessions and contexts",
+          "updatedAt": "2026-11-03T03:01:00Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/128"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/semantic-generation-restoration",
+          "mergedAt": "2026-11-03T01:46:50Z",
+          "number": 122,
+          "state": "MERGED",
+          "title": "Preserve accepted semantic generation when exact admission input returns",
+          "updatedAt": "2026-11-03T01:46:50Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/122"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "docs/semantic-query-contract-review",
+          "mergedAt": "2026-11-03T01:22:30Z",
+          "number": 121,
+          "state": "MERGED",
+          "title": "Review preserved Elevation query and effective-bearer acceptance contract",
+          "updatedAt": "2026-11-03T01:22:30Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/121"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/model-resolution-admission",
+          "mergedAt": "2026-11-03T01:22:18Z",
+          "number": 120,
+          "state": "MERGED",
+          "title": "Diagnose model-resolution admission without scientific changes",
+          "updatedAt": "2026-11-03T01:22:19Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/120"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/model-transport-serialization",
+          "mergedAt": "2026-11-02T21:30:42Z",
+          "number": 119,
+          "state": "MERGED",
+          "title": "Respect outer flush ownership in native model serialization",
+          "updatedAt": "2026-11-02T21:30:42Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/119"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "test/runtime-fixture-compatibility",
+          "mergedAt": "2026-11-03T02:03:17Z",
+          "number": 118,
+          "state": "MERGED",
+          "title": "Pinned synthetic Runtime fixture variants, preserving original and oracle",
+          "updatedAt": "2026-11-03T02:03:17Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/118"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/runtime-notification-routing",
+          "mergedAt": "2026-11-03T02:03:21Z",
+          "number": 117,
+          "state": "MERGED",
+          "title": "Explicit context-isolated Runtime activity notification routing",
+          "updatedAt": "2026-11-03T02:03:21Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/117"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/broker-context-authorization",
+          "mergedAt": "2026-11-02T18:09:05Z",
+          "number": 116,
+          "state": "MERGED",
+          "title": "Opt-in context-isolated broker authorization profile",
+          "updatedAt": "2026-11-02T18:09:05Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/116"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/service-error-handler-registration",
+          "mergedAt": "2026-11-02T15:33:41Z",
+          "number": 115,
+          "state": "MERGED",
+          "title": "Fix duplicate Spring authorization exception handler registration",
+          "updatedAt": "2026-11-02T15:33:41Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/115"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "fix/resources-empty-workspace-delete",
+          "mergedAt": "2026-11-02T15:40:50Z",
+          "number": 114,
+          "state": "MERGED",
+          "title": "Authorize and persist empty workspace descriptor deletion",
+          "updatedAt": "2026-11-02T15:40:51Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/114"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-support-gates",
+          "mergedAt": "2026-11-02T13:21:43Z",
+          "number": 113,
+          "state": "MERGED",
+          "title": "Add bounded release-evidence checks and explicit Python support matrix",
+          "updatedAt": "2026-11-02T13:21:43Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/113"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-federation-contracts",
+          "mergedAt": null,
+          "number": 112,
+          "state": "CLOSED",
+          "title": "Audit broader Python federation and twin composition gates",
+          "updatedAt": "2026-11-03T01:53:23Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/112"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-agent-contracts",
+          "mergedAt": "2026-11-03T02:42:10Z",
+          "number": 111,
+          "state": "MERGED",
+          "title": "Bounded source-only agent preview; execution lifecycle tracked separately",
+          "updatedAt": "2026-11-03T02:42:10Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/111"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-authoring",
+          "mergedAt": "2026-11-02T15:45:35Z",
+          "number": 110,
+          "state": "MERGED",
+          "title": "Add namespace-only owned source authoring (cleanup blocked)",
+          "updatedAt": "2026-11-02T15:45:35Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/110"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-data-access-contracts",
+          "mergedAt": null,
+          "number": 109,
+          "state": "CLOSED",
+          "title": "Audit blocked Python window, chunk and temporal access contracts",
+          "updatedAt": "2026-11-03T01:53:24Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/109"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-event-contracts",
+          "mergedAt": "2026-11-03T02:15:42Z",
+          "number": 108,
+          "state": "MERGED",
+          "title": "Bounded best-effort activity notifications (durable recovery remains deferred)",
+          "updatedAt": "2026-11-03T02:15:43Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/108"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-graph-browsing",
+          "mergedAt": "2026-11-02T05:59:22Z",
+          "number": 107,
+          "state": "MERGED",
+          "title": "Add bounded typed recorded graph navigation",
+          "updatedAt": "2026-11-02T05:59:22Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/107"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-scientific-tables",
+          "mergedAt": "2026-11-02T05:42:16Z",
+          "number": 106,
+          "state": "MERGED",
+          "title": "Add precision-preserving pandas views for indexed scientific reads",
+          "updatedAt": "2026-11-02T05:42:16Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/106"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-native-async",
+          "mergedAt": "2026-11-02T05:06:49Z",
+          "number": 105,
+          "state": "MERGED",
+          "title": "Add bounded native async observation, job and point-read workflows",
+          "updatedAt": "2026-11-02T05:06:50Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/105"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/pal-assumption-explicit-demo",
+          "mergedAt": "2026-11-02T04:00:25Z",
+          "number": 104,
+          "state": "MERGED",
+          "title": "Preserve PaL research and add real-input functional prerequisite tests",
+          "updatedAt": "2026-11-02T04:00:25Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/104"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "ED-23-429-http-error-on-klab-services",
+          "mergedAt": "2026-10-29T10:52:11Z",
+          "number": 103,
+          "state": "MERGED",
+          "title": "ED-23 429 http error on klab services",
+          "updatedAt": "2026-10-29T10:52:45Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/103"
+        },
+        {
+          "baseRefName": "feature/python-experiment-runner",
+          "headRefName": "feature/python-milestone-delivery",
+          "mergedAt": "2026-11-01T15:46:14Z",
+          "number": 102,
+          "state": "MERGED",
+          "title": "Python tooling: workflow acceptance, notebook and evidence infrastructure",
+          "updatedAt": "2026-11-01T17:23:39Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/102"
+        },
+        {
+          "baseRefName": "feature/python-discover-compare-explain-integration",
+          "headRefName": "feature/python-semantic-explorer",
+          "mergedAt": "2026-10-30T23:22:56Z",
+          "number": 101,
+          "state": "MERGED",
+          "title": "Python F1: revision-aware semantic explorer",
+          "updatedAt": "2026-11-01T17:23:40Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/101"
+        },
+        {
+          "baseRefName": "feature/python-execution-evidence",
+          "headRefName": "feature/python-experiment-runner",
+          "mergedAt": "2026-11-01T04:10:22Z",
+          "number": 100,
+          "state": "MERGED",
+          "title": "Python F4: bounded independent experiment runner",
+          "updatedAt": "2026-11-01T13:15:33Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/100"
+        },
+        {
+          "baseRefName": "feature/python-discover-compare-explain-integration",
+          "headRefName": "feature/python-resource-inspector",
+          "mergedAt": "2026-10-30T23:51:52Z",
+          "number": 99,
+          "state": "MERGED",
+          "title": "Python F2: bounded resource and model inspection",
+          "updatedAt": "2026-11-01T17:23:39Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/99"
+        },
+        {
+          "baseRefName": "feature/python-discover-compare-explain-integration",
+          "headRefName": "feature/python-execution-evidence",
+          "mergedAt": "2026-11-01T03:04:03Z",
+          "number": 98,
+          "state": "MERGED",
+          "title": "Python F3: scoped recorded execution evidence",
+          "updatedAt": "2026-11-01T13:15:31Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/98"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "feature/python-client-ide-throughput",
+          "mergedAt": "2026-10-17T19:44:04Z",
+          "number": 97,
+          "state": "MERGED",
+          "title": "Current Python/Java compatibility and connected live contract tests",
+          "updatedAt": "2026-11-01T17:23:39Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/97"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "docs/python-java-compatibility-reproduction",
+          "mergedAt": "2026-10-16T14:02:10Z",
+          "number": 96,
+          "state": "MERGED",
+          "title": "Document exact tests for Java compatibility blocker reproduction",
+          "updatedAt": "2026-11-01T17:23:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/96"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "feature/python-client-develop-acceptance",
+          "mergedAt": "2026-10-16T13:53:14Z",
+          "number": 95,
+          "state": "MERGED",
+          "title": "Python-only develop compatibility acceptance and blocker report",
+          "updatedAt": "2026-11-01T17:23:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/95"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "feature/python-client-scientific-analysis-provenance",
+          "mergedAt": "2026-10-15T16:28:38Z",
+          "number": 94,
+          "state": "MERGED",
+          "title": "Python: scientific analysis, provenance and reliability polish",
+          "updatedAt": "2026-11-01T17:23:39Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/94"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "feature/python-client-connection",
+          "mergedAt": "2026-10-15T00:59:50Z",
+          "number": 93,
+          "state": "MERGED",
+          "title": "Add Engine-like Python connections and verified functional recovery",
+          "updatedAt": "2026-11-01T17:23:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/93"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "feature/python-client-stream-exports",
+          "mergedAt": "2026-10-13T19:50:59Z",
+          "number": 92,
+          "state": "MERGED",
+          "title": "Stream observation exports and organize functional workflow tests",
+          "updatedAt": "2026-11-01T17:23:39Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/92"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "feature/python-client-federation-integration",
+          "mergedAt": "2026-11-01T00:31:28Z",
+          "number": 90,
+          "state": "MERGED",
+          "title": "Integrate develop cross-service identity and permissions with Python client foundation",
+          "updatedAt": "2026-11-01T17:23:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/90"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "feature/python-client-saved-handles",
+          "mergedAt": "2026-10-12T01:08:20Z",
+          "number": 86,
+          "state": "MERGED",
+          "title": "Python: save and restore scoped scientific handles",
+          "updatedAt": "2026-10-12T01:08:21Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/86"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "feature/python-client-typed-observe",
+          "mergedAt": "2026-10-12T01:02:59Z",
+          "number": 85,
+          "state": "MERGED",
+          "title": "Python: add typed scientist-facing observation requests",
+          "updatedAt": "2026-10-12T01:02:59Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/85"
+        },
+        {
+          "baseRefName": "feature/python-client",
+          "headRefName": "feature/python-client",
+          "mergedAt": "2026-10-07T17:08:58Z",
+          "number": 84,
+          "state": "MERGED",
+          "title": "Python: add a synchronous scientific client with explicit scope and job lifecycle",
+          "updatedAt": "2026-11-01T13:15:28Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/84"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "codex/proposal-review-backend",
+          "mergedAt": "2026-10-04T06:50:26Z",
+          "number": 83,
+          "state": "MERGED",
+          "title": "Bind ontology review decisions to exact candidates and preserve review evidence",
+          "updatedAt": "2026-10-04T06:52:09Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/83"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "fix/request-submission-cancellation",
+          "mergedAt": "2026-10-03T14:43:06Z",
+          "number": 82,
+          "state": "MERGED",
+          "title": "Runtime: propagate request-owned submission cancellation",
+          "updatedAt": "2026-10-03T14:43:06Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/82"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/bulk-shard-io",
+          "mergedAt": "2026-10-03T14:42:06Z",
+          "number": 81,
+          "state": "MERGED",
+          "title": "Storage: accelerate durable shard I/O with bounded bulk transfers",
+          "updatedAt": "2026-11-01T13:15:26Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/81"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/bounded-shard-execution",
+          "mergedAt": "2026-10-03T14:40:35Z",
+          "number": 80,
+          "state": "MERGED",
+          "title": "Runtime: add shared execution limits for compute-intensive workloads",
+          "updatedAt": "2026-10-03T14:40:35Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/80"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "chore/conveyor-packaging-cleanup",
+          "mergedAt": "2026-10-04T06:04:02Z",
+          "number": 79,
+          "state": "MERGED",
+          "title": "Build: clean up HTTP and logging dependencies",
+          "updatedAt": "2026-10-04T06:04:02Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/79"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/revise-service-initialization",
+          "mergedAt": "2026-06-27T09:37:45Z",
+          "number": 78,
+          "state": "MERGED",
+          "title": "feature/revise-service-initialization",
+          "updatedAt": "2026-06-27T10:05:12Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/78"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "hotfix/service-startup-logic",
+          "mergedAt": "2026-06-11T12:35:43Z",
+          "number": 77,
+          "state": "MERGED",
+          "title": "Enhance service lifecycle management, cohort handling, and status synchronization:",
+          "updatedAt": "2026-06-11T12:52:33Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/77"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "hotfix/git-operations",
+          "mergedAt": "2026-06-09T17:03:17Z",
+          "number": 76,
+          "state": "MERGED",
+          "title": "Merge collective geometries into cohort and store in transition (still unhandled at commit)",
+          "updatedAt": "2026-06-09T17:08:06Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/76"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/create-default-observer",
+          "mergedAt": "2026-05-12T12:35:31Z",
+          "number": 75,
+          "state": "MERGED",
+          "title": "feature/create-default-observer",
+          "updatedAt": "2026-05-12T12:40:27Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/75"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "refactor/hm-gt-upgrade",
+          "mergedAt": "2026-04-30T07:48:37Z",
+          "number": 71,
+          "state": "MERGED",
+          "title": "Refactor/hm gt upgrade",
+          "updatedAt": "2026-04-30T07:48:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/71"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "refactor/hm-gt-upgrade",
+          "mergedAt": "2026-04-29T12:23:04Z",
+          "number": 70,
+          "state": "MERGED",
+          "title": "Refactor/hm gt upgrade",
+          "updatedAt": "2026-04-29T13:42:54Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/70"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/use-execution-scope",
+          "mergedAt": "2026-04-15T09:16:01Z",
+          "number": 69,
+          "state": "MERGED",
+          "title": "Refactor: Replace `DescriptionType` with `Contextualization` across APIs and implementations; introduce execution logic with generalized contextualization scope",
+          "updatedAt": "2026-04-15T09:21:09Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/69"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/restore-run-logic",
+          "mergedAt": "2026-04-13T05:34:54Z",
+          "number": 68,
+          "state": "MERGED",
+          "title": "Refactor AbstractExecutor to manage storage locally, add vertex handling in DigitalTwinImpl, and fix type ambiguity in SchedulerImpl",
+          "updatedAt": "2026-04-13T05:41:37Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/68"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/align-sharding-strategies",
+          "mergedAt": "2026-04-09T17:28:10Z",
+          "number": 67,
+          "state": "MERGED",
+          "title": "Remove unused lazy properties in `ExpressionBase`, handle errors in `ScalarComputationGroovy` compilation",
+          "updatedAt": "2026-04-09T17:28:28Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/67"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/update-compiled-expressions",
+          "mergedAt": "2026-04-08T15:14:09Z",
+          "number": 66,
+          "state": "MERGED",
+          "title": "Refactor scalar computation, improve sharding strategy handling, and enhance notification integration",
+          "updatedAt": "2026-04-08T15:14:23Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/66"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/health-load-monitoring",
+          "mergedAt": "2026-04-07T10:05:25Z",
+          "number": 65,
+          "state": "MERGED",
+          "title": "Add system health metrics & CPU load sampling to services",
+          "updatedAt": "2026-04-07T10:05:40Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/65"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.neo4j-neo4j-cypher-dsl-parser-2025.2.6",
+          "mergedAt": null,
+          "number": 64,
+          "state": "CLOSED",
+          "title": "Bump org.neo4j:neo4j-cypher-dsl-parser from 2024.1.0 to 2025.2.6",
+          "updatedAt": "2026-05-04T23:57:56Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/64"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.eclipse.rdf4j-rdf4j-rio-datatypes-5.2.2",
+          "mergedAt": null,
+          "number": 62,
+          "state": "CLOSED",
+          "title": "Bump org.eclipse.rdf4j:rdf4j-rio-datatypes from 4.3.9 to 5.2.2",
+          "updatedAt": "2026-05-04T23:57:59Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/62"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/geotools.version-34.3",
+          "mergedAt": null,
+          "number": 61,
+          "state": "CLOSED",
+          "title": "Bump geotools.version from 28.0 to 34.3",
+          "updatedAt": "2026-04-29T10:20:14Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/61"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "hotfix/next",
+          "mergedAt": "2026-04-06T18:56:31Z",
+          "number": 59,
+          "state": "MERGED",
+          "title": "Argument binding in `AbstractExecutor`, and observation adaptation logic.",
+          "updatedAt": "2026-04-06T19:31:20Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/59"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "feature/next",
+          "mergedAt": "2026-04-06T07:14:30Z",
+          "number": 58,
+          "state": "MERGED",
+          "title": "feature/next",
+          "updatedAt": "2026-04-06T07:17:33Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/58"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "codex/create-spring-application-with-neo4j-support",
+          "mergedAt": "2026-02-27T08:47:01Z",
+          "number": 57,
+          "state": "MERGED",
+          "title": "Add localhost-only Spring Boot module with embedded Neo4j and capabilities/health endpoints",
+          "updatedAt": "2026-02-27T08:47:17Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/57"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "codex/create-base-classes-for-k.lab-python-client",
+          "mergedAt": "2026-02-10T08:58:39Z",
+          "number": 56,
+          "state": "MERGED",
+          "title": "Codex-generated pull request",
+          "updatedAt": "2026-11-01T17:23:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/56"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.springframework.data-spring-data-neo4j-7.3.9",
+          "mergedAt": null,
+          "number": 54,
+          "state": "CLOSED",
+          "title": "Bump org.springframework.data:spring-data-neo4j from 7.3.2 to 7.3.9",
+          "updatedAt": "2026-04-06T07:25:31Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/54"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.springframework.data-spring-data-neo4j-7.3.8",
+          "mergedAt": null,
+          "number": 53,
+          "state": "CLOSED",
+          "title": "Bump org.springframework.data:spring-data-neo4j from 7.3.2 to 7.3.8",
+          "updatedAt": "2025-02-17T19:46:46Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/53"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.springframework.data-spring-data-neo4j-7.3.7",
+          "mergedAt": null,
+          "number": 52,
+          "state": "CLOSED",
+          "title": "Bump org.springframework.data:spring-data-neo4j from 7.3.2 to 7.3.7",
+          "updatedAt": "2025-01-20T19:22:38Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/52"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.slf4j-slf4j-api-2.0.16",
+          "mergedAt": null,
+          "number": 51,
+          "state": "CLOSED",
+          "title": "Bump org.slf4j:slf4j-api from 2.0.11 to 2.0.16",
+          "updatedAt": "2026-04-06T07:25:32Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/51"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.springframework.data-spring-data-neo4j-7.3.6",
+          "mergedAt": null,
+          "number": 50,
+          "state": "CLOSED",
+          "title": "Bump org.springframework.data:spring-data-neo4j from 7.3.2 to 7.3.6",
+          "updatedAt": "2024-12-16T19:40:43Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/50"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/spring.version-6.2.0",
+          "mergedAt": null,
+          "number": 49,
+          "state": "CLOSED",
+          "title": "Bump spring.version from 6.1.14 to 6.2.0",
+          "updatedAt": "2026-04-06T07:25:31Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/49"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/spring-boot.version-3.4.0",
+          "mergedAt": null,
+          "number": 48,
+          "state": "CLOSED",
+          "title": "Bump spring-boot.version from 3.3.5 to 3.4.0",
+          "updatedAt": "2026-04-06T07:25:30Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/48"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/commons-io-commons-io-2.18.0",
+          "mergedAt": null,
+          "number": 47,
+          "state": "CLOSED",
+          "title": "Bump commons-io:commons-io from 2.11.0 to 2.18.0",
+          "updatedAt": "2026-04-06T07:25:29Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/47"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/geotools.version-31.4",
+          "mergedAt": null,
+          "number": 46,
+          "state": "CLOSED",
+          "title": "Bump geotools.version from 28.0 to 31.4",
+          "updatedAt": "2024-11-26T17:40:36Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/46"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.springframework.data-spring-data-neo4j-7.4.0",
+          "mergedAt": null,
+          "number": 45,
+          "state": "CLOSED",
+          "title": "Bump org.springframework.data:spring-data-neo4j from 7.3.2 to 7.4.0",
+          "updatedAt": "2024-11-19T11:26:58Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/45"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.tomcat.embed-tomcat-embed-core-11.0.1",
+          "mergedAt": null,
+          "number": 44,
+          "state": "CLOSED",
+          "title": "Bump org.apache.tomcat.embed:tomcat-embed-core from 10.1.25 to 11.0.1",
+          "updatedAt": "2024-11-19T11:27:27Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/44"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.maven.plugins-maven-compiler-plugin-3.13.0",
+          "mergedAt": "2024-11-19T09:10:53Z",
+          "number": 43,
+          "state": "MERGED",
+          "title": "Bump org.apache.maven.plugins:maven-compiler-plugin from 3.7.0 to 3.13.0",
+          "updatedAt": "2024-11-19T09:10:57Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/43"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.eclipse.jgit-org.eclipse.jgit-7.0.0.202409031743-r",
+          "mergedAt": null,
+          "number": 42,
+          "state": "CLOSED",
+          "title": "Bump org.eclipse.jgit:org.eclipse.jgit from 6.7.0.202309050840-r to 7.0.0.202409031743-r",
+          "updatedAt": "2024-11-19T11:27:52Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/42"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/geotools.version-32.1",
+          "mergedAt": null,
+          "number": 41,
+          "state": "CLOSED",
+          "title": "Bump geotools.version from 28.0 to 32.1",
+          "updatedAt": "2024-11-18T15:00:43Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/41"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.commons-commons-lang3-3.17.0",
+          "mergedAt": "2024-11-19T08:35:19Z",
+          "number": 40,
+          "state": "MERGED",
+          "title": "Bump org.apache.commons:commons-lang3 from 3.12.0 to 3.17.0",
+          "updatedAt": "2024-11-19T08:35:23Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/40"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.lucene-lucene-queryparser-10.0.0",
+          "mergedAt": null,
+          "number": 39,
+          "state": "CLOSED",
+          "title": "Bump org.apache.lucene:lucene-queryparser from 9.11.1 to 10.0.0",
+          "updatedAt": "2024-11-18T14:59:25Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/39"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.codehaus.groovy-groovy-3.0.23",
+          "mergedAt": "2024-11-18T15:18:36Z",
+          "number": 38,
+          "state": "MERGED",
+          "title": "Bump org.codehaus.groovy:groovy from 3.0.20 to 3.0.23",
+          "updatedAt": "2024-11-18T15:18:39Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/38"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/com.github.mwiede-jsch-0.2.21",
+          "mergedAt": "2024-11-12T05:13:41Z",
+          "number": 37,
+          "state": "MERGED",
+          "title": "Bump com.github.mwiede:jsch from 0.2.17 to 0.2.21",
+          "updatedAt": "2024-11-12T05:13:45Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/37"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.lucene-lucene-core-10.0.0",
+          "mergedAt": null,
+          "number": 36,
+          "state": "CLOSED",
+          "title": "Bump org.apache.lucene:lucene-core from 9.11.1 to 10.0.0",
+          "updatedAt": "2024-11-12T05:12:18Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/36"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.httpcomponents-httpclient-osgi-4.5.14",
+          "mergedAt": "2024-11-12T05:26:54Z",
+          "number": 35,
+          "state": "MERGED",
+          "title": "Bump org.apache.httpcomponents:httpclient-osgi from 4.5.13 to 4.5.14",
+          "updatedAt": "2024-11-12T05:26:58Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/35"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.flowable-flowable-spring-boot-starter-7.1.0",
+          "mergedAt": "2024-11-12T05:43:09Z",
+          "number": 34,
+          "state": "MERGED",
+          "title": "Bump org.flowable:flowable-spring-boot-starter from 7.0.1 to 7.1.0",
+          "updatedAt": "2024-11-12T05:43:13Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/34"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/com.google.protobuf-protobuf-java-3.25.5",
+          "mergedAt": "2024-11-12T05:56:08Z",
+          "number": 33,
+          "state": "MERGED",
+          "title": "Bump com.google.protobuf:protobuf-java from 3.24.4 to 3.25.5",
+          "updatedAt": "2024-11-12T05:56:11Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/33"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/com.google.protobuf-protobuf-java-4.28.3",
+          "mergedAt": null,
+          "number": 32,
+          "state": "CLOSED",
+          "title": "Bump com.google.protobuf:protobuf-java from 3.24.4 to 4.28.3",
+          "updatedAt": "2024-11-05T08:33:51Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/32"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/args4j-args4j-2.37",
+          "mergedAt": "2024-11-05T08:17:25Z",
+          "number": 31,
+          "state": "MERGED",
+          "title": "Bump args4j:args4j from 2.33 to 2.37",
+          "updatedAt": "2024-11-05T08:17:30Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/31"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.commons-commons-exec-1.4.0",
+          "mergedAt": "2024-11-05T08:23:58Z",
+          "number": 30,
+          "state": "MERGED",
+          "title": "Bump org.apache.commons:commons-exec from 1.3 to 1.4.0",
+          "updatedAt": "2024-11-05T08:24:01Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/30"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.maven.plugins-maven-javadoc-plugin-3.11.1",
+          "mergedAt": "2024-11-05T08:39:11Z",
+          "number": 29,
+          "state": "MERGED",
+          "title": "Bump org.apache.maven.plugins:maven-javadoc-plugin from 3.6.2 to 3.11.1",
+          "updatedAt": "2024-11-05T08:39:15Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/29"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.tika-tika-core-3.0.0",
+          "mergedAt": "2024-11-05T08:32:31Z",
+          "number": 28,
+          "state": "MERGED",
+          "title": "Bump org.apache.tika:tika-core from 2.9.0 to 3.0.0",
+          "updatedAt": "2024-11-05T08:32:34Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/28"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.neo4j-neo4j-graphql-java-1.9.1",
+          "mergedAt": "2024-10-29T11:40:03Z",
+          "number": 27,
+          "state": "MERGED",
+          "title": "Bump org.neo4j:neo4j-graphql-java from 1.9.0 to 1.9.1",
+          "updatedAt": "2024-10-29T11:40:06Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/27"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.glassfish.tyrus.bundles-tyrus-standalone-client-2.2.0",
+          "mergedAt": "2024-10-29T11:59:59Z",
+          "number": 26,
+          "state": "MERGED",
+          "title": "Bump org.glassfish.tyrus.bundles:tyrus-standalone-client from 2.1.5 to 2.2.0",
+          "updatedAt": "2024-10-29T12:00:03Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/26"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.bitbucket.b_c-jose4j-0.9.6",
+          "mergedAt": "2024-10-29T11:25:28Z",
+          "number": 25,
+          "state": "MERGED",
+          "title": "Bump org.bitbucket.b_c:jose4j from 0.9.4 to 0.9.6",
+          "updatedAt": "2024-10-29T11:25:31Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/25"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/spring-boot.version-3.3.5",
+          "mergedAt": "2024-10-29T10:41:03Z",
+          "number": 24,
+          "state": "MERGED",
+          "title": "Bump spring-boot.version from 3.3.1 to 3.3.5",
+          "updatedAt": "2024-10-29T10:41:06Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/24"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/geotools.version-32.0",
+          "mergedAt": null,
+          "number": 23,
+          "state": "CLOSED",
+          "title": "Bump geotools.version from 28.0 to 32.0",
+          "updatedAt": "2024-11-02T17:10:16Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/23"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/avro.version-1.12.0",
+          "mergedAt": "2024-10-28T18:57:05Z",
+          "number": 22,
+          "state": "MERGED",
+          "title": "Bump avro.version from 1.11.3 to 1.12.0",
+          "updatedAt": "2024-10-28T18:57:08Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/22"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/spring.version-6.1.14",
+          "mergedAt": "2024-10-28T18:57:33Z",
+          "number": 21,
+          "state": "MERGED",
+          "title": "Bump spring.version from 6.1.10 to 6.1.14",
+          "updatedAt": "2024-10-28T18:57:37Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/21"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.bouncycastle-bcprov-jdk15on-1.70",
+          "mergedAt": "2024-10-28T18:58:06Z",
+          "number": 20,
+          "state": "MERGED",
+          "title": "Bump org.bouncycastle:bcprov-jdk15on from 1.69 to 1.70",
+          "updatedAt": "2024-10-28T18:58:10Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/20"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.springdoc-springdoc-openapi-starter-webmvc-ui-2.6.0",
+          "mergedAt": "2024-10-28T18:57:51Z",
+          "number": 19,
+          "state": "MERGED",
+          "title": "Bump org.springdoc:springdoc-openapi-starter-webmvc-ui from 2.5.0 to 2.6.0",
+          "updatedAt": "2024-10-28T18:57:55Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/19"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.lucene-lucene-core-10.0.0",
+          "mergedAt": "2024-10-28T17:42:24Z",
+          "number": 18,
+          "state": "MERGED",
+          "title": "Bump org.apache.lucene:lucene-core from 9.9.2 to 10.0.0",
+          "updatedAt": "2024-10-28T17:42:28Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/18"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/geotools.version-30.2",
+          "mergedAt": null,
+          "number": 17,
+          "state": "CLOSED",
+          "title": "Bump geotools.version from 28.0 to 30.2",
+          "updatedAt": "2024-10-28T17:51:51Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/17"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.lucene-lucene-core-9.10.0",
+          "mergedAt": null,
+          "number": 16,
+          "state": "CLOSED",
+          "title": "Bump org.apache.lucene:lucene-core from 9.7.0 to 9.10.0",
+          "updatedAt": "2024-10-28T17:07:01Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/16"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.javassist-javassist-3.30.2-GA",
+          "mergedAt": "2024-10-28T17:05:21Z",
+          "number": 15,
+          "state": "MERGED",
+          "title": "Bump org.javassist:javassist from 3.29.2-GA to 3.30.2-GA",
+          "updatedAt": "2024-10-28T17:05:26Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/15"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/com.google.cloud.tools-jib-maven-plugin-3.4.0",
+          "mergedAt": "2024-02-01T15:34:37Z",
+          "number": 14,
+          "state": "MERGED",
+          "title": "Bump com.google.cloud.tools:jib-maven-plugin from 3.3.1 to 3.4.0",
+          "updatedAt": "2024-02-01T15:34:40Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/14"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/org.apache.maven.plugins-maven-dependency-plugin-3.6.1",
+          "mergedAt": null,
+          "number": 13,
+          "state": "CLOSED",
+          "title": "Bump org.apache.maven.plugins:maven-dependency-plugin from 3.2.0 to 3.6.1",
+          "updatedAt": "2024-10-28T17:58:56Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/13"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/org.apache.lucene-lucene-core-9.9.2",
+          "mergedAt": null,
+          "number": 12,
+          "state": "CLOSED",
+          "title": "Bump org.apache.lucene:lucene-core from 9.7.0 to 9.9.2",
+          "updatedAt": "2024-02-26T19:36:33Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/12"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/spring-boot.version-3.2.2",
+          "mergedAt": null,
+          "number": 11,
+          "state": "CLOSED",
+          "title": "Bump spring-boot.version from 3.1.4 to 3.2.2",
+          "updatedAt": "2024-03-05T11:02:47Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/11"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/org.apache.maven.plugins-maven-compiler-plugin-3.12.1",
+          "mergedAt": "2024-01-25T11:35:02Z",
+          "number": 10,
+          "state": "MERGED",
+          "title": "Bump org.apache.maven.plugins:maven-compiler-plugin from 3.7.0 to 3.12.1",
+          "updatedAt": "2024-01-25T11:35:06Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/10"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/org.codehaus.groovy-groovy-3.0.20",
+          "mergedAt": "2024-01-25T11:24:12Z",
+          "number": 9,
+          "state": "MERGED",
+          "title": "Bump org.codehaus.groovy:groovy from 3.0.7 to 3.0.20",
+          "updatedAt": "2024-01-25T11:24:16Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/9"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/org.eclipse.jgit-org.eclipse.jgit-6.8.0.202311291450-r",
+          "mergedAt": "2024-01-24T12:56:27Z",
+          "number": 8,
+          "state": "MERGED",
+          "title": "Bump org.eclipse.jgit:org.eclipse.jgit from 6.5.0.202303070854-r to 6.8.0.202311291450-r",
+          "updatedAt": "2024-01-24T12:56:30Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/8"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/org.codehaus.groovy-groovy-3.0.18",
+          "mergedAt": null,
+          "number": 7,
+          "state": "CLOSED",
+          "title": "Bump groovy from 3.0.7 to 3.0.18",
+          "updatedAt": "2024-01-24T13:03:53Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/7"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/org.eclipse.jgit-org.eclipse.jgit-6.6.0.202305301015-r",
+          "mergedAt": null,
+          "number": 6,
+          "state": "CLOSED",
+          "title": "Bump org.eclipse.jgit from 6.4.0.202211300538-r to 6.6.0.202305301015-r",
+          "updatedAt": "2024-01-24T11:48:10Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/6"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/org.apache.maven.plugins-maven-compiler-plugin-3.11.0",
+          "mergedAt": null,
+          "number": 5,
+          "state": "CLOSED",
+          "title": "Bump maven-compiler-plugin from 3.7.0 to 3.11.0",
+          "updatedAt": "2024-01-25T11:26:41Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/5"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/org.codehaus.groovy-groovy-3.0.17",
+          "mergedAt": null,
+          "number": 4,
+          "state": "CLOSED",
+          "title": "Bump groovy from 3.0.7 to 3.0.17",
+          "updatedAt": "2023-07-03T19:17:35Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/4"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/spring-boot.version-3.0.6",
+          "mergedAt": null,
+          "number": 3,
+          "state": "CLOSED",
+          "title": "Bump spring-boot.version from 2.5.3 to 3.0.6",
+          "updatedAt": "2024-01-29T19:12:15Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/3"
+        },
+        {
+          "baseRefName": "master",
+          "headRefName": "dependabot/maven/org.eclipse.jgit-org.eclipse.jgit-6.5.0.202303070854-r",
+          "mergedAt": null,
+          "number": 2,
+          "state": "CLOSED",
+          "title": "Bump org.eclipse.jgit from 6.4.0.202211300538-r to 6.5.0.202303070854-r",
+          "updatedAt": "2023-06-12T20:05:37Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/2"
+        },
+        {
+          "baseRefName": "develop",
+          "headRefName": "dependabot/maven/io.springfox-springfox-swagger-ui-3.0.0",
+          "mergedAt": null,
+          "number": 1,
+          "state": "CLOSED",
+          "title": "Bump springfox-swagger-ui from 2.9.2 to 3.0.0",
+          "updatedAt": "2024-10-28T18:03:53Z",
+          "url": "https://github.com/integratedmodelling/klab-services/pull/1"
+        }
+      ]
+    },
+    "ci": {
+      "utc": "2026-11-06T14:13:34.141261+00:00",
+      "command": [
+        "gh",
+        "run",
+        "list",
+        "--branch",
+        "feature/python-experiment-runner",
+        "--limit",
+        "10",
+        "--json",
+        "databaseId,name,status,conclusion,headSha,url,createdAt"
+      ],
+      "exit": 0,
+      "data": [
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-06T00:06:29Z",
+          "databaseId": 42134379972,
+          "headSha": "573a51d46896a4733450a4f81da512566aa864bf",
+          "name": "Python client offline checks",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42134379972"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-06T00:06:29Z",
+          "databaseId": 42134380102,
+          "headSha": "573a51d46896a4733450a4f81da512566aa864bf",
+          "name": "Build and test",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42134380102"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-05T22:31:03Z",
+          "databaseId": 42122147454,
+          "headSha": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85",
+          "name": "Python client offline checks",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42122147454"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-05T22:31:03Z",
+          "databaseId": 42122147374,
+          "headSha": "4ea9ad16609d548b8fb795689e9eff33e4e6ea85",
+          "name": "Build and test",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42122147374"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-05T22:16:10Z",
+          "databaseId": 42120029285,
+          "headSha": "5849d7b78ebdd4daa6a836c7985684e522b23fd5",
+          "name": "Python client offline checks",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42120029285"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-05T22:16:10Z",
+          "databaseId": 42120029512,
+          "headSha": "5849d7b78ebdd4daa6a836c7985684e522b23fd5",
+          "name": "Build and test",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42120029512"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-05T22:07:42Z",
+          "databaseId": 42118782140,
+          "headSha": "c16c75427e34133ba973446b18666f18c8b36ad2",
+          "name": "Build and test",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42118782140"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-05T22:07:42Z",
+          "databaseId": 42118782221,
+          "headSha": "c16c75427e34133ba973446b18666f18c8b36ad2",
+          "name": "Python client offline checks",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42118782221"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-05T21:57:59Z",
+          "databaseId": 42117343058,
+          "headSha": "f099ffffa764cb036d570c6918a57066b8781c3f",
+          "name": "Build and test",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42117343058"
+        },
+        {
+          "conclusion": "success",
+          "createdAt": "2026-11-05T21:57:59Z",
+          "databaseId": 42117343120,
+          "headSha": "f099ffffa764cb036d570c6918a57066b8781c3f",
+          "name": "Python client offline checks",
+          "status": "completed",
+          "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42117343120"
+        }
+      ]
+    },
+    "open-prs": {
+      "utc": "2026-11-06T14:13:33.274379+00:00",
+      "command": [
+        "gh",
+        "pr",
+        "list",
+        "--state",
+        "open",
+        "--json",
+        "number,title,baseRefName,headRefName,url"
+      ],
+      "exit": 0,
+      "data": []
+    }
+  }
+}

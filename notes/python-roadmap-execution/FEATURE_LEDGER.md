@@ -1,5 +1,15 @@
 # Current feature ledger — 2026-11-05 UTC
 
+## 6 November current reconciliation
+
+`AB_OUTSTANDING_ISSUE_RECONCILIATION.md` is the complete current42-parent audit at
+accepted573a51d46; `MODELER_IDE_STATE.md` separates IDE gates and timestamps.
+PR201/203/209/210/211/218/219/222/225/238–242 are MERGED bounded deliveries;
+older pending/no-independent-work/ref-blocked snapshots below remain historical.
+Async restoration/export and own-wait/notebook APIs are not outstanding new APIs.
+Current local increment corrects malformed Job-result `empty` boolean handling;
+no primary/scientific/release promotion, and no new push/PR/merge.
+
 ## Java admission / all-19 study milestone — single working queues
 
 |Queue|Item / currentstate|Ownerrole / smallestnextaction / unblocks|

@@ -1,5 +1,24 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+## 6 November — IDE contract and independent A+B correctness pass (local)
+
+Base `573a51d46896a4733450a4f81da512566aa864bf` / PR242 accepted; branch
+`feature/python-ide-state-audit`, no push/PR/merge. Original dirty checkout preserved.
+Both supplied specifications are persisted in `specs/`. `MODELER_IDE_STATE.md`
+and bounded read-only checker preserve historical/current/environment separation.
+Single refresh at14:20:57Z passed G0–G2; G3–G7 not freshly executed. Java scanner
+handoff unchanged; no service restart/install/config/ontology/scientific Jobs.
+
+`AB_OUTSTANDING_ISSUE_RECONCILIATION.md` accounts for all42 parents,16 issue leads/
+history, merged PRs/CI/branches,7 optional-import test findings, N/S/periodic runner
+and19 study gates. Finite SDK model/resource/project reads pass; semantic read passes
+after correcting a probe-only attribute error (original negative receipt retained).
+One Python-owned result-envelope defect reproduced16 failing cases; shared decoder
+fix plus sync/async valid/error/no-replay controls now pass324 focused tests.
+Full offline/coverage/package validation and final review evidence are recorded in
+the reconciliation ledger; no overall A/B or scientific acceptance promotion.
+Publishing needs explicit authorization; no permission inferred from repository WRITE.
+
 ## Java scientific admission and 19-study readiness
 
 Base4ea9ad16609d548b8fb795689e9eff33e4e6ea85; PR238–241 confirmedmerged,

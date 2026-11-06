@@ -1,5 +1,25 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## 6 November reconciliation — no primary acceptance promotion
+
+The [full outstanding-issue ledger](../notes/python-roadmap-execution/AB_OUTSTANDING_ISSUE_RECONCILIATION.md)
+reconciles all24RC+18CAP parents, tracker history, CI, source exclusions, N/S and
+all19 research leads at accepted integration `573a51d46896a4733450a4f81da512566aa864bf`.
+Consult the persistent [IDE contract](../notes/python-roadmap-execution/MODELER_IDE_STATE.md)
+before live-dependent work. One read-only Modeler refresh verified G0–G2; historical
+Spatial/context/Resolver evidence remains distinct from fresh UNKNOWN G3–G7 and the
+historical Java null-scanner failure. SDK catalog/retrieval and semantic reads pass;
+no new scientific Job or original N/S rerun, provider accuracy or study promotion.
+
+RC-P3.3/CAP-07/CAP-18: a reproduced Python protocol gap in optional finished-Job
+`empty` flag handling is corrected locally in the shared sync/async decoder.
+Malformed non-boolean flags now raise ProtocolError rather than being coerced to
+success/JobFailedError; real empty/Error results still raise JobFailedError.
+Missing/false flag compatibility is retained. This is a bounded local regression
+fix, not full lifecycle acceptance or delivery. No new PR/push/merge; primary table
+statuses/counts remain unchanged. PR238–242 are merged; older pending/ref-blocked
+notes below remain historical rather than current publishing blockers.
+
 ## Java admission and all-19 research readiness — no scientific promotion
 
 Assessment at accepted4ea9ad166 reverified the merged N/S worker and original
@@ -570,22 +590,22 @@ rows do not revoke their separately accepted subcapabilities.
 |---|---|---|---|---|
 | RC-P0 | A/B operation inventory and compatibility diagnostics | PARTIAL | public-api/contracts; transport tests; I/L | Exhaustive operation/feature and mixed-version inventory; support decisions #129; P1 |
 | RC-P1.1 | A supported onboarding through computation | PARTIAL | connection/credentials/requests; #84/#85; controlled connection tests; S | Actual supported Hub/license end-user walkthrough still unverified; deployment credentials/consent; P1 |
-| RC-P1.2 | A fresh-process restoration without disposal | PARTIAL | handles/client; #86/#139; Q1 local installed actualJava completedJob/observation/focus/20cells and no-disposal controls pass atd8ae23b3d (not merged) | Full in-flight/restart/history retention remains #89; bounded local acceptance not whole criterion; P1 |
+| RC-P1.2 | A fresh-process restoration without disposal | PARTIAL | handles/client; #86/#139; Q1 bounded completed-Job/fresh-process acceptance delivered PR203; native async restoration PR218 also MERGED at audited573a51d46 | Full in-flight/restart/history retention remains #89; bounded delivery not whole criterion; P1 |
 | RC-P1.3 | A collaborator reads, forbidden writes and expiry diagnosis | PARTIAL | transport/context ACLs; connection-access tests and historical controlled positive controls | Current integrated private-parent/stale-vs-forbidden matrix #89; P1 |
 | RC-P1.4 | A actionable readiness/trust diagnostics | PARTIAL | connection/catalog origin guards; connection HTTP tests | Supported-deployment provider outage/recovery and mixed capabilities; #129; P1 |
 | RC-P1.5 | A requested options visible in actual plan | PARTIAL | #200 installed actual-Java baseline/namespace/scenario model URNs and independent executed values, actual geometry/focus, normalized grid configuration and zero-HTTP unsupported/conflicting rejections pass | Full observer/project/material-dependency and executed-grid matrix remains unproven; forced model explicitly unsupported; no complete-lineage claim; P1 |
 | RC-P2.1 | A nonuniform multi-shard scientific export | PARTIAL | #197 portable actual-Java single-shard oracle:20 asymmetric cells/two missing/zero/negative/float64/units/coordinates pass with pinned corrected exporter; published exporter failure preserved | Full multi-shard served fixture remains unproven; Boolean/category/time/revision claims not inferred; public exporter issue#10; P1 |
 | RC-P2.2 | A time/window selection, precision, revision and masks | PARTIAL | explicit point slice/geometry and raster descriptors | Remote selection/revision contract #123 plus adapter; not internal scan API; P1 |
 | RC-P2.3 | A independent real-provider accuracy | BLOCKED_EXTERNAL | provider-reference runner exists; historical failures retained | Frozen admitted model/data/datum/tolerance references #130 absent; obtain artifacts then run unchanged scientific query; P1 |
-| RC-P2.4 | A representative bounded stream/interrupt | IMPLEMENTED_UNVERIFIED | #198 actual-socket64MiB synthetic body: exact bytes,664481-byte Python peak,819200-byte observed RSS growth; eager control and six failures/cleanup pass | Real Java/provider workload and sustained memory/soak remain unverified; controlled HTTP evidence is not a deployed scientific capacity claim; P1 |
+| RC-P2.4 | A representative bounded stream/interrupt | IMPLEMENTED_UNVERIFIED | #198 actual-socket64MiB synthetic body plus merged PR206 bounded actual Java1,048,576cell native stream/fault evidence; PR219 native async atomic export also MERGED | Representative provider sustained memory/soak remains unverified; bounded stream evidence is not a deployed scientific capacity claim; P1 |
 | RC-P2.5 | A faithful raster/xarray and categorical views | PARTIAL | analysis/tables; adapter tests and historical controlled raster evidence | Broader served categorical dictionary/worldview and vector adapters; #123/#130; P1 |
 | RC-P3.1 | A committed two-client race convergence | PARTIAL | graph_projection/notifications; #136 hint invalidation and dedup tests | Authoritative commit/version contract #126 plus reconciliation/race fixture; P2 |
 | RC-P3.2 | A disconnect and honest partial refresh | ACCEPTED | #199 installed actual-Java owned outage/restart: two retained selections invalidated, owner reattaches/refetches one, other stays stale; metadata/UNKNOWN preserved; real private attach/release denials pass | Bounded explicit refresh only; no durable replay/convergence or whole RC-P3.1 claim |
 | RC-P3.3 | A cancel/expiry/restart/no replay | PARTIAL | client/async/_job_binding; #139; cancellation and drift tests | Retained history/incarnation contract and deployed expiry/restart chain #89; P1 |
 | RC-P3.4 | A explain actual dependencies and semantic effects | PARTIAL | evidence/provenance; recorded neighborhoods/tests; S | Full lineage and semantic-update execution fixture; Java extraction gaps, not portable replay; P2 |
-| RC-P3.5 | A bounded notebook concurrency and own-wait cancellation | IMPLEMENTED_UNVERIFIED | async/experiments; #105, runner tests and controlled results | Exact supported integrated multi-principal notebook/race acceptance; no new backend defect established; P1 |
+| RC-P3.5 | A bounded notebook concurrency and own-wait cancellation | IMPLEMENTED_UNVERIFIED | PR210 own-wait,PR211 native async notebook andPR225 ACL concurrent reader slices MERGED at audited573a51d46 | Complete integrated multi-principal notebook/race acceptance beyond these bounded slices; do not reimplement their delivered APIs; P1 |
 | RC-P4.1 | B meaning-based asset applicability/version/access | PARTIAL | semantics/inspection; semantic/resource controlled results | Capability-aware full applicability/history/access matrix; actual Resources projections; P2 |
-| RC-P4.2 | B revision-aware parse/validate | PARTIAL | authoring/source_previews; #141 DTO/stale tests; Q5 local actualJava four-family valid/invalid/source-identity proof at96f6b0b24 (merge pending) | Authoritative knowledge-revision/semantic validation matrix remains; parser receipt not authoring persistence; P2 |
+| RC-P4.2 | B revision-aware parse/validate | PARTIAL | authoring/source_previews; #141 DTO/stale tests; PR201 actual four-family parser acceptance andPR228 native async source previews MERGED at audited573a51d46 | Authoritative knowledge-revision/semantic validation matrix remains; parser receipt not authoring persistence; P2 |
 | RC-P4.3 | B import/annotate/compute with input provenance | NOT_IMPLEMENTED | native export/inspection are reusable, not import workflow | Enumerate implemented schemas/routes before client import; real Java annotation contract; P2 |
 | RC-P4.4 | B authorized edit/publish/conflict | PARTIAL | authoring namespace ADD, source previews, honest unsupported errors | Safe edit/lock/version/history/publication contracts plus client slices; #129; P2 |
 | RC-P4.5 | B behavior invocation/outcomes/reconnect | PARTIAL | #134/#135/#138; agents/status/journal/AMQP tests; M READY/RUNNING/STOPPED | Production principal/incarnation provisioning and independent remote cleanup UNKNOWN #125; P2 |
@@ -612,7 +632,7 @@ rows do not revoke their separately accepted subcapabilities.
 | CAP-13 | B resources/models read/query/dependency inspection | PARTIAL | inspection/services; resource-inspector tests and controlled records | Full supported dependency/routing/export schema matrix; RC-P4.1/3/4; P2 |
 | CAP-14 | B authoring/behaviors actual authorized operations | PARTIAL | authoring/agents/agent_execution; #138/#141; M | RC-P4.2–5 contracts/validation, no compiler or scheduler port; P2 |
 | CAP-15 | A optional NumPy/pandas/xarray/raster/vector and notebooks | PARTIAL | analysis/tables; #106; reader/scalar precision tests | General vectors/time/categories and verified notebook presentation; optional extras remain optional; P2 |
-| CAP-16 | A/B compatibility, fixtures, package, support/migration/scale | PARTIAL | package/workflow and release checker; I/L | RC-P0/R1/R2, explicit async export/restore not delivered; maintain evidence by exact tuple; P1 |
+| CAP-16 | A/B compatibility, fixtures, package, support/migration/scale | PARTIAL | package/workflow and release checker; PR218 async restoration/PR219 async export MERGED, not outstanding APIs | RC-P0/R1/R2, complete compatibility/release/provider scale and scheduled L4 gates remain; maintain evidence by exact tuple; P1 |
 | CAP-17 | C provider SDK / local embedded runtime | DEFERRED_APPROVED | Explicit assignment exclusion, same boundary as RC-P5 | Future #127, no Python algorithm/server replacement; P3 |
 | CAP-18 | A/B safe architecture and irreversible-contract boundaries | ACCEPTED | Existing origin guards, codecs, no replay, explicit errors, optional imports; I and regression tests | Ongoing invariant for each change, not certification of unknown future operations |
 

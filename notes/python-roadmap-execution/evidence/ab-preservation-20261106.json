@@ -1,0 +1,44 @@
+{
+  "utc": "2026-11-06T14:36:40.995880+00:00",
+  "process_preservation": [
+    {
+      "name": "reasoner",
+      "pid": 27844,
+      "same_parent": true,
+      "same_cwd": true,
+      "running": true
+    },
+    {
+      "name": "resources",
+      "pid": 48596,
+      "same_parent": true,
+      "same_cwd": true,
+      "running": true
+    },
+    {
+      "name": "resolver",
+      "pid": 53144,
+      "same_parent": true,
+      "same_cwd": true,
+      "running": true
+    },
+    {
+      "name": "runtime",
+      "pid": 14188,
+      "same_parent": true,
+      "same_cwd": true,
+      "running": true
+    },
+    {
+      "name": "graphdb",
+      "pid": 38696,
+      "same_parent": true,
+      "same_cwd": true,
+      "running": true
+    }
+  ],
+  "remaining_audit_python_java_processes": [],
+  "visible_windows_for_matched_owned_processes": [],
+  "background_services_launched": 0,
+  "cleanup_actions": "No service or unrelated terminal stopped; test subprocesses completed. Window scan restricted to attributable matching processes."
+}
