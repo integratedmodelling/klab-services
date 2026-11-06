@@ -102,6 +102,37 @@ Replay bytes are also hash-pinned. Never regenerate expected data after a failur
 
 ## State, safety and fidelity limits
 
+### Resource file import slice
+
+`ResourceImporter` / `AsyncResourceImporter` now negotiate the native advertised
+`raster.geotiff.import` RESOURCE/STREAM schema and upload the pinned bundled TIFF
+as multipart `file`, with literal write consent. Poll its Resources Job before
+claiming simulated admission. The returned ResourceSet identifies the resource;
+catalog/retrieve expose it only to its synthetic owner. Acknowledgement alone does
+not materialize it; cancellation does not produce a resource. Duplicate/pending
+URNs, unknown schemas, malformed/multiple file fields and other raster bytes fail.
+This finite importer is not a general GeoTIFF validator or Java raster adapter.
+
+Example using the `client` and `context` above:
+
+```python
+from klab_client import ResourceImporter
+receipt = ResourceImporter(client, context).upload(
+    'developer-tools/klab-service-simulator/src/klab_simulator/fixtures/usgs-native-20x20.tif',
+    urn='simulator:alice:uploaded', schema_id='raster.geotiff.import',
+    media_type='image/tiff;application=geotiff', allow_write=True)
+resource_set = receipt.job.result(timeout=10)
+asset = client.resources.retrieve(resource_set['results'][0]['resourceUrn'], 'RESOURCE')
+assert asset.raw['metadata']['delegate']['sourceSha256'] == receipt.source_sha256
+```
+
+Source-hash metadata, deterministic private admission and deletion on owning context
+release are **PROVISIONAL_SIMULATOR_CONTRACT**, not Java retention/cleanup guarantees.
+No source path/name is retained or logged. At most 32 import slots (including pending
+Jobs) are admitted per isolated process; explicit reset/release clears owned state.
+This verifies upload/catalog/receipt handling, **not** semantic annotation, model
+binding, actual use of uploaded input by Runtime, or the complete RC-P4.3 journey.
+
 At most16sessions/32contexts/128Jobs,4096trace entries,16concurrent request threads,
 1MiBrequest body,3sconnection read timeout. Per-test process isolation. No remote
 requests, credential discovery or external downloads. Test controls are disabled

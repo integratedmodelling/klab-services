@@ -43,6 +43,7 @@ class State:
         self.backend = "SIMULATED"
         self.service_ids = {name: f"sim-{name}-{seed}" for name in SERVICES}
         self.sessions, self.contexts, self.jobs, self.observations = {}, {}, {}, {}
+        self.imported_resources = {}
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -133,12 +134,13 @@ class State:
             if not self.test_mode or headers.get("Authorization") != "sim-admin-control":
                 raise ContractError(403, "Test controls disabled or unauthorized")
             if method == "GET" and path == "/__sim__/state":
-                return {"counts": self.counts(), "trace": list(self.trace)}, "application/json"
+                return {"counts": self.counts(), "resources": len(self.imported_resources), "trace": list(self.trace)}, "application/json"
             if method == "POST" and path == "/__sim__/reset":
                 self.sessions.clear()
                 self.contexts.clear()
                 self.jobs.clear()
                 self.observations.clear()
+                self.imported_resources.clear()
                 self.next_context = self.next_job = self.next_observation = 1
                 return True, "application/json"
             raise ContractError(404, "Unknown test control")
@@ -152,8 +154,10 @@ class State:
             if route.endswith("status"):
                 return {"serviceId": self.service_ids[service], "serviceType": service.upper(),
                         "available": True, "operational": True, "connected": True}, "application/json"
+            from .resource_imports import schemas
             return {"serviceId": self.service_ids[service], "type": service.upper(), "version": "simulator-0.1.0",
-                    "worldviewUrn": "synthetic", "consistent": True, "importSchemata": {}, "exportSchemata": {}}, "application/json"
+                    "worldviewUrn": "synthetic", "consistent": True,
+                    "importSchemata": schemas() if service == "resources" else {}, "exportSchemata": {}}, "application/json"
         principal = {"sim-token-alice": "alice", "sim-token-bob": "bob"}.get(headers.get("Authorization"))
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
@@ -177,14 +181,41 @@ class State:
                 raise ContractError(404, "Observable not in finite simulator vocabulary")
             return observable(), "application/json"
         if service == "resources":
+            if method == "POST" and route.startswith("/import/"):
+                from .resource_imports import SCHEMA, parse_upload
+                root, _ = self._context(scope, principal)
+                parts = route.split("/", 3)
+                if len(parts) != 4 or parts[2] != SCHEMA:
+                    raise ContractError(422, "Importer is not advertised")
+                urn = parts[3]
+                if not re.fullmatch(r"[A-Za-z0-9:_.-]{1,256}", urn):
+                    raise ContractError(422, "Finite importer requires a bounded simple resource URN")
+                if urn in self.imported_resources or any(
+                        key[0] == "resources" and row.get("import_urn") == urn for key, row in self.jobs.items()):
+                    raise ContractError(409, "Resource already present or import pending; overwrite/replay is not supported")
+                if sum("import_urn" in row for row in self.jobs.values()) >= 32:
+                    raise ContractError(429, "Simulator resource budget exceeded")
+                source = parse_upload(headers, body)
+                result = {"empty": False, "notifications": [], "results": [{"resourceUrn": urn,
+                    "knowledgeClass": "RESOURCE", "serviceId": self.service_ids["resources"]}]}
+                identity = self._job(service, root, principal, result)
+                self.jobs[(service, identity)].update(import_urn=urn, import_source=source)
+                return identity, "application/json"
             catalog = {"PROJECT": [{"urn": "simulator.project"}], "NAMESPACE": [{"urn": "simulator"}],
                 "MODEL": [{"urn": MODEL, "projectName": "simulator.project", "namespace": "simulator"}],
                 "RESOURCE": [{"urn": "simulator:fixture:elevation", "adapterType": "raster"}]}
             for kind, entries in catalog.items():
                 if method == "GET" and route == "/api/v1/list/" + kind:
+                    if kind == "RESOURCE":
+                        entries = entries + [deepcopy(row["asset"]) for row in self.imported_resources.values()
+                                             if row["owner"] == principal]
                     return entries, "application/json"
                 prefix = "/api/v1/retrieve/" + kind + "/"
                 if method == "GET" and route.startswith(prefix):
+                    urn = route[len(prefix):]
+                    if kind == "RESOURCE" and urn in self.imported_resources:
+                        row = self._owner(self.imported_resources, urn, principal)
+                        return deepcopy(row["asset"]), "application/json"
                     selected = [x for x in entries if x["urn"] == route[len(prefix):]]
                     if not selected:
                         raise ContractError(404, "Missing finite catalog asset")
@@ -226,6 +257,7 @@ class State:
                 del self.contexts[root]
                 self.jobs = {key: row for key, row in self.jobs.items() if row["scope"] != root}
                 self.observations = {key: row for key, row in self.observations.items() if key[0] != root}
+                self.imported_resources = {key: row for key, row in self.imported_resources.items() if row["scope"] != root}
             return True, "application/json"
         if route.startswith("/jobs/") and method == "GET":
             try:
@@ -251,6 +283,10 @@ class State:
                             and self.scenario not in ("empty-result", "malformed-empty")):
                         result = job["result"]
                         self.observations[(root, result["id"])] = result
+                    if job["status"] == "FINISHED" and service == "resources" and "import_urn" in job:
+                        urn = job["import_urn"]
+                        self.imported_resources[urn] = {"owner": principal, "scope": root,
+                            "asset": {"urn": urn, "adapterType": "raster", "metadata": {"delegate": job["import_source"]}}}
                 return {"status": job["status"]}, "application/json"
             if "/retrieve/" in route:
                 if job["status"] != "FINISHED":

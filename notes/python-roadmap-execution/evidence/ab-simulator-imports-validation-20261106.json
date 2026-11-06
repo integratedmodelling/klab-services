@@ -1,0 +1,16 @@
+{
+  "utc": "2026-11-06T17:13:43.556447+00:00",
+  "base": "ba5f4d8252159e0d637468ffdd6f9a2e18617ec9",
+  "tests": 50,
+  "test_exit": 0,
+  "lint_exit": 0,
+  "source_wheel_sdist_parity_files": 13,
+  "artifacts": {
+    "klab_service_simulator-0.1.0-py3-none-any.whl": "2bd2c4ee836beb92c6958ecab079886acaeec410c5743ba8c7ddcba714e2206e",
+    "klab_service_simulator-0.1.0.tar.gz": "e0d660c7cdec9da84dcdfd5a31a11b18d5486933dc8187b06d9641970dc7399d"
+  },
+  "both_extracted_wheels": true,
+  "production_sdk_changes": false,
+  "java_execution": "NOT_RUN",
+  "full_import_annotation_compute_acceptance": false
+}

@@ -80,7 +80,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; async vertical only, notebook/races NOT_RUN|PR210/211/225real bounded acceptance; N integrated multiprincipal notebook; reuse workflows with simulator concurrency/cancel controls|
 |RC-P4.1 — B meaning-based asset applicability/version/access|P; semantic/resource inspectors; S(slice) SIM-SELECTION-001/REPLAY-001|J(read) native captures; B(JAVA-CANDIDATES-001) newer protocol not advertised; extend implemented semantic/asset routes without Python reasoning|
 |RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; simulator NOT_RUN|Native parseAsset DTOs, PR201/228real parsers; N maintained revision; add finite parser/fault/stale cases, no compiler port|
-|RC-P4.3 — B import/annotate/compute with input provenance|P partial; new ResourceImporter/AsyncResourceImporter; simulator import NOT_RUN|J(read) actual schema/controller contract; PR244MERGEDb618bd96e; B(JAVA-RESOURCE-CLEANUP-001); next add simulated upload→retrieve→explicit binding workflow|
+|RC-P4.3 — B import/annotate/compute with input provenance|P partial; ResourceImporter/AsyncResourceImporter; S(slice) SIM-IMPORT-001 upload/Resources Job/private catalog/hash receipt|J(read) schema/controller; PR244MERGEDb618bd96e; B(JAVA-RESOURCE-CLEANUP-001); simulated explicit annotation/model binding/compute still required, no whole-parent closure|
 |RC-P4.4 — B authorized edit/publish/conflict|P; Authoring workspace/project/document ADD; simulator NOT_RUN|Resources CRUD, PR209/222real bounded ADD; N locks/history/conflict; inspect exact contracts and add supported consent/denial cases|
 |RC-P4.5 — B behavior invocation/outcomes/reconnect|P; agent execution/control/status/journal/messaging; simulator NOT_RUN|Native agent contracts/managed real slices; B(#125principal/incarnation/cleanup); add supported outcomes without worker SDK|
 |RC-P5 — C separate scoped worker product|EXCLUDED_C|#127separate product; never an A+B completion gate|
@@ -98,8 +98,8 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-10 — A/B typed partial twin graph, stale markers, refresh|P; graph/projection/provenance; S(slice) SIM-PROVENANCE-001|KnowledgeGraphQuery/LinkImpl; B(JAVA-COMMIT-001); add paging/refetch/race cases without authoritative revision claims|
 |CAP-11 — A/B best-effort scoped events and resync|P; activity notifications/polling/resync; simulator events NOT_RUN|Native activity hints; B(#126durable cursor/replay); test supported hints/gaps only|
 |CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips; inherited bounded acceptance retained|ScientificData format/PR196; add fresh-process simulator-produced snapshot inspection, never offline reasoning|
-|CAP-13 — B resources/models read/query/dependency inspection|P; inspectors/services; S(slice) SIM-SELECTION-001/REPLAY-001|J(read) real catalog/model captures; newer candidates schema drift; add implemented resolve/query/dependencies and imports|
-|CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/agents; simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; inspect supported mutations and explicit refusal, no compiler/scheduler port|
+|CAP-13 — B resources/models read/query/dependency inspection|P; inspectors/services/imports; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-IMPORT-001|J(read) real catalog/model captures; newer candidates schema drift; add implemented resolve/query/dependencies and explicit binding|
+|CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/agents/imports; S(slice) SIM-IMPORT-001 only; authoring/behaviors simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; inspect supported mutations and explicit refusal, no compiler/scheduler port|
 |CAP-15 — A optional NumPy/pandas/xarray/raster/vector and notebooks|P; optional adapters; SIM-GRID-001core-only numeric slice|PR204actual vector and PR211notebook; N full simulator optional-adapter/presentation matrix; keep imports optional|
 |CAP-16 — A/B compatibility, fixtures, package, support/migration/scale|P; CI/wheel/support checker; simulator CI active|3651SDK/18gates/47module parity; N full simulator support matrix; external scheduled worker/#129does not hold Python tests|
 |CAP-17 — C provider SDK / local embedded runtime|EXCLUDED_C|#127separate product|
@@ -141,6 +141,21 @@ or completion claim. Small protocol regressions cannot substitute for this inven
   approval/protection. User now authorizes normal publication, not bypass.
 
 ## Completion assessment
+
+Resource simulator follow-on (active branch `feature/python-simulator-resource-imports`):
+public sync/async imports now exercise the pinned TIFF through multipart upload,
+Resources Job, owned catalog/retrieve and matching source SHA/count. Cancellation,
+cross-principal denial, duplicate/pending URNs, malformed/multiple fields and bounded
+pending reservations have executable tests. This is a partial RC-P4.3/CAP13/14 slice,
+not input annotation/model-bound scientific execution. Native schema/envelope shapes
+are sourced; suggested URN/hash metadata/context-release cleanup are provisional.
+Foundation [PR245](https://github.com/integratedmodelling/klab-services/pull/245) is
+published at `ba5f4d825`; hosted CI is pending, not represented as merged.
+Follow-on verification: 50 tests against both extracted current wheels, fatal-error
+lint and 13-file source/wheel/sdist byte parity PASS. Receipt:
+`evidence/ab-simulator-imports-validation-20261106.json`. Multipart self-review found
+the email parser permits trailing MIME epilogue data; the importer now rejects it
+and the malformed-multiple-body negative test passes. No scientific oracle changed.
 
 Final foundation artifact checkpoint (2026-11-06T17:07Z): 41 tests passed against
 both extracted current SDK and simulator wheels; fatal-error lint passed; all 12
