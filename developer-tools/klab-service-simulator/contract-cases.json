@@ -196,6 +196,18 @@
       "confidence": "NATIVE_SOURCE_ENVELOPE; fixture admission/hash metadata/suggested-URN retention/context cleanup PROVISIONAL_SIMULATOR_CONTRACT",
       "simulator_test": "test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup",
       "java_status": "NATIVE_SCHEMA_READ_VERIFIED; positive upload NOT_RUN pending disposable/retained-resource approval or supported cleanup; no scientific execution"
+    },
+    {
+      "id": "SIM-RESTORE-001",
+      "rows": ["RC-P1.2", "RC-P3.3", "CAP-07", "CAP-18"],
+      "api": "save_handle/load_handle/Client.restore_handle; Job.result/cancel; AsyncJob.result",
+      "routes": ["POST /runtime/api/v1/connect", "POST /runtime/api/v1/query", "GET /runtime/jobs/status/{id}", "GET /runtime/jobs/retrieve/{id}"],
+      "request": "Secret-free saved context/Job/observation references, configured same Runtime identity, owner credential; fresh SDK process",
+      "expected": "Restore without create/submit/disposal; zero deadline preserves Job without replay; native EMPTY expiry distinct from cancellation; concurrent contexts remain isolated",
+      "source": "SDK handles.py and native scope/query/Job contracts; JobManager.status returns EMPTY for missing result/job",
+      "confidence": "SOURCE_CONTRACT; finite process retention and test-only expiry schedule PROVISIONAL_SIMULATOR_CONTRACT",
+      "simulator_test": "test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state",
+      "java_status": "Prior bounded retained completed-Job restoration exists; current Java durability/incarnation/in-flight restart NOT_YET_TESTED; no scientific promotion"
     }
   ]
 }

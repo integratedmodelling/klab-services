@@ -135,6 +135,10 @@ class State:
                 raise ContractError(403, "Test controls disabled or unauthorized")
             if method == "GET" and path == "/__sim__/state":
                 return {"counts": self.counts(), "resources": len(self.imported_resources), "trace": list(self.trace)}, "application/json"
+            if method == "POST" and path == "/__sim__/expireJobs":
+                for job in self.jobs.values():
+                    job["expired"] = True
+                return True, "application/json"
             if method == "POST" and path == "/__sim__/reset":
                 self.sessions.clear()
                 self.contexts.clear()
@@ -268,6 +272,14 @@ class State:
             root, _ = self._context(scope, principal)
             if job["scope"] != root:
                 raise ContractError(403, "Job belongs to a different context")
+            if job.get("expired"):
+                # JobManager.status returns native EMPTY for absent/expired results;
+                # the test control is provisional, not a Java retention duration.
+                if "/status/" in route:
+                    return {"status": "EMPTY"}, "application/json"
+                if "/cancel/" in route:
+                    return False, "application/json"
+                raise ContractError(409, "Expired result is unavailable; no synthetic replay")
             if "/cancel/" in route:
                 accepted = job["status"] not in ("FINISHED", "ABORTED", "INTERRUPTED")
                 if accepted:
