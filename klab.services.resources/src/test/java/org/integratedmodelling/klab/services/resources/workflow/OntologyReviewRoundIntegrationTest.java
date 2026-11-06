@@ -70,7 +70,15 @@ class OntologyReviewRoundIntegrationTest {
         null, id, null, null, null), fixture.editor);
     var closed = view.cycles().getFirst(); byte[] original = fixture.store.attachments.get(proposal.getId()).clone();
     var json = new com.fasterxml.jackson.databind.ObjectMapper();
-    var next = json.readTree(original); ((com.fasterxml.jackson.databind.node.ObjectNode) next.path("proposal"))
+    var next = json.readTree(original);
+    ((com.fasterxml.jackson.databind.node.ObjectNode) next.path("proposal")).put("title", "Integrated proposal");
+    var reused = Flow.AttachmentUpload.create(); reused.setType("bootstrap-proposal"); reused.setFileName("changed-r1.json");
+    reused.setMediaType("application/vnd.klab.proposal+yaml"); reused.setContent(json.writeValueAsBytes(next));
+    var invalid = fixture.manager.addAttachment(flow.getId(), fixture.stage, reused, fixture.editor);
+    long before = fixture.manager.getReviewCycles(flow.getId(), fixture.editor).revision();
+    assertThrows(KlabIllegalStateException.class, () -> fixture.manager.reviewCycle(flow.getId(), command(before,
+        Operation.OPEN_CYCLE, fixture.stage, null, null, invalid.getId(), null), fixture.editor));
+    ((com.fasterxml.jackson.databind.node.ObjectNode) next.path("proposal"))
         .put("revision_id", "test-r2").put("supersedes_revision", "test-r1");
     var upload = Flow.AttachmentUpload.create(); upload.setType("bootstrap-proposal"); upload.setFileName("r2.json");
     upload.setMediaType("application/vnd.klab.proposal+yaml"); upload.setContent(json.writeValueAsBytes(next));

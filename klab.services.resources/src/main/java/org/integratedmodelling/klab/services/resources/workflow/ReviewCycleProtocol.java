@@ -80,6 +80,16 @@ final class ReviewCycleProtocol {
       }
     }
     if (candidate == null) fail("An exact reviewed candidate is required");
+    // A human revision label must not identify different scientific inputs across cycles.
+    for (var previous : flow.getReviewCycles()) {
+      var bound = previous.candidate();
+      if (Objects.equals(bound.proposalId(), candidate.proposalId())
+          && Objects.equals(bound.revisionId(), candidate.revisionId())
+          && (!Objects.equals(bound.proposal().checksum(), candidate.proposal().checksum())
+              || !Objects.equals(bound.ontology() == null ? null : bound.ontology().checksum(),
+                  candidate.ontology() == null ? null : candidate.ontology().checksum())))
+        fail("Changed proposal or ontology bytes require a fresh proposal revision ID");
+    }
     var cycles = new ArrayList<>(flow.getReviewCycles());
     cycles.add(new Cycle(UUID.randomUUID().toString(), stateId, flow.getRevision(), candidate,
         actor.getIdentity(), now(), null, List.of()));
