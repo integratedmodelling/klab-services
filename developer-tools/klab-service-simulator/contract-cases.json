@@ -1,13 +1,201 @@
 {
   "version": 1,
   "cases": [
-    {"id":"SIM-DISCOVERY-001","rows":["RC-P1.1","RC-P1.4","CAP-01","CAP-02"],"api":"connect / initialize_user_scope","routes":["GET /{service}/public/capabilities","GET /{service}/public/status","POST /{service}/notifyUserScope"],"request":"Native service advertisement envelope; synthetic issued credentials","expected":"Four distinct service identities, origin-bound credentials, scoped initialization","source":"connection.py; Java KlabServiceController/KlabScopeController; prior controlled onboarding receipts","confidence":"SOURCE_AND_PRIOR_JAVA_SLICES","simulator_test":"test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup","java_status":"NOT_YET_TESTED_AT_SIMULATOR_CANDIDATE"},
-    {"id":"SIM-LIFECYCLE-001","rows":["RC-P1.2","RC-P1.3","RC-P3.3","CAP-04","CAP-07","CAP-18"],"api":"create_session/create_context/attach_context/Job/release","routes":["POST /runtime/createSession","POST /runtime/createContext","POST /runtime/api/v1/connect","GET /{service}/jobs/status/{id}","GET /runtime/releaseContext","GET /runtime/releaseSession"],"request":"Native ScopeRequest.configuration; klab-scope and originating klab-service","expected":"Caller session ID retained; private scopes denied; explicit owned cleanup; no automatic replay","source":"SDK lifecycle DTOs; Java native scope and Job controllers","confidence":"SOURCE_CONTRACT; polling schedule and simplified duplicate response PROVISIONAL_SIMULATOR_CONTRACT","simulator_test":"test_state.py::test_clockless_states_materialization_cancellation_and_no_idempotency_invention","java_status":"HISTORICAL_BOUNDED_RECOVERY_ONLY; retention/incarnation pending"},
-    {"id":"SIM-SELECTION-001","rows":["RC-P1.5","RC-P4.1","CAP-05","CAP-06","CAP-13"],"api":"resources.list/retrieve; reasoner.resolve_observable; resolver.resolve","routes":["GET /resources/api/v1/list/MODEL","GET /resources/api/v1/retrieve/MODEL/{urn}","POST /reasoner/api/v1/resolve/observable","POST /resolver/api/v1/resolve"],"request":"Native observation and resolutionConstraints envelope, bound context","expected":"Catalog candidate distinct from actual finite simulated RESOLVED Dataflow","source":"Current Resources/Reasoner captures; Resolver Dataflow DTO and actual historical selection handoff","confidence":"DTO_SOURCE_AND_CAPTURES; finite model choice PROVISIONAL_SIMULATOR_CONTRACT","simulator_test":"test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup","java_status":"CATALOG_AND_SEMANTIC_CAPTURE_VERIFIED; selection historical only"},
-    {"id":"SIM-GRID-001","rows":["RC-P2.1","RC-P2.2","RC-P2.5","CAP-08","CAP-09","CAP-15"],"api":"ObservationRequest; Context.observe; Observation.fetch_data; ScientificData.dumps/loads","routes":["POST /runtime/api/v1/submit","GET /runtime/jobs/retrieve/{id}","POST /runtime/api/v1/observation/value"],"request":"20x20native geometry; StorageScan.Point sourceId/offset/slice/semantics/curve","expected":"Every400synthetic cells, declared geometry/centres/metres/precision, exact serialization","source":"StorageScan.Point and ObservationImpl Java DTOs; immutable synthetic-oracle.json","confidence":"WIRE_SOURCE; synthetic formula/grid metadata projection PROVISIONAL_SIMULATOR_CONTRACT","simulator_test":"test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup","java_status":"JAVA_INTEGRATION_BLOCKED: confirmed null scanner on authentic IDE resource; simulator is not a fix"},
-    {"id":"SIM-USGS-001","rows":["RC-P2.1","RC-P2.3","RC-P2.5","RC-R1"],"api":"AsyncContext.observe / Observation.fetch_data","routes":["POST /runtime/api/v1/submit","POST /runtime/api/v1/observation/value"],"request":"Pinned EPSG:4269native20x20recorded-data fixture, no resampling","expected":"400/400frozen authentic float32 values delivered by simulation, never Java Runtime attribution","source":"Original frozen oracle22ed9057…; sanitized-path projection3fe5383b…; exact crop2c9fcd07…; full hashes in manifest","confidence":"AUTHENTIC_IMMUTABLE_FIXTURE; delivery SIMULATED","simulator_test":"test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[usgs-recorded]","java_status":"SCIENTIFICALLY_VERIFIED_ON_JAVA=FALSE"},
-    {"id":"SIM-PROVENANCE-001","rows":["RC-P3.4","CAP-06","CAP-10"],"api":"fetch_provenance / async_fetch_provenance","routes":["POST /runtime/api/v1/query"],"request":"Bounded typed observation membership then LINK query with limit/offset","expected":"Actual simulated MEASURED relation, owner-bound target, partial/unknown consistency retained","source":"Java KnowledgeGraphQuery/LinkImpl; SDK provenance contract","confidence":"DTO_SOURCE; fixture relation is SIMULATED not historical full lineage","simulator_test":"test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[elevation]","java_status":"Prior PR239/240bounded evidence exists; full lineage remains pending"},
-    {"id":"SIM-FAULTS-001","rows":["RC-P3.3","CAP-07","CAP-18"],"api":"Job.result/cancel/status","routes":["GET /runtime/jobs/status/{id}","GET /runtime/jobs/cancel/{id}","GET /runtime/jobs/retrieve/{id}"],"request":"Finite failure/cancellation/malformed-empty scenarios","expected":"JobFailedError/JobCancelledError/ProtocolError; no numeric success or replay","source":"Java Job status enum; ObservationImpl.boolean empty; merged Python PR243","confidence":"SOURCE_CONTRACT; deterministic race schedule PROVISIONAL_SIMULATOR_CONTRACT","simulator_test":"test_vertical.py::test_deliberate_job_failures_are_visible_and_cleanup_is_owned","java_status":"Historical real empty/Error captured; no new Java fault execution"},
-    {"id":"REPLAY-001","rows":["RC-P4.1","RC-P3.3","RC-R1","CAP-18"],"api":"Reasoner.resolve_observable; Resources.retrieve; Job.result","routes":["POST /reasoner/api/v1/resolve/observable","GET /resources/api/v1/retrieve/MODEL/{urn}","GET /runtime/jobs/status/9","GET /runtime/jobs/retrieve/9"],"request":"Exact pinned sanitized capture route/body; synthetic replay authentication only","expected":"Captured successes and historical empty/Error remain visible; unknown routes501; no fallback","source":"replay-cases.json pinned SHA21fc00c7…; each capture has original body SHA and attribution; status comes from historical report, not a new wire capture","confidence":"REAL_CAPTURE_REPLAY plus explicitly identified historical status control","simulator_test":"test_replay.py::test_pinned_semantic_model_and_historical_empty_result","java_status":"READ_CAPTURES_VERIFIED; Runtime failure historical not re-executed"}
+    {
+      "id": "SIM-DISCOVERY-001",
+      "rows": [
+        "RC-P1.1",
+        "RC-P1.4",
+        "CAP-01",
+        "CAP-02"
+      ],
+      "api": "connect / initialize_user_scope",
+      "routes": [
+        "GET /{service}/public/capabilities",
+        "GET /{service}/public/status",
+        "POST /{service}/notifyUserScope"
+      ],
+      "request": "Native service advertisement envelope; synthetic issued credentials",
+      "expected": "Four distinct service identities, origin-bound credentials, scoped initialization",
+      "source": "connection.py; Java KlabServiceController/KlabScopeController; prior controlled onboarding receipts",
+      "confidence": "SOURCE_AND_PRIOR_JAVA_SLICES",
+      "simulator_test": "test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+      "java_status": "NOT_YET_TESTED_AT_SIMULATOR_CANDIDATE"
+    },
+    {
+      "id": "SIM-LIFECYCLE-001",
+      "rows": [
+        "RC-P1.2",
+        "RC-P1.3",
+        "RC-P3.3",
+        "CAP-04",
+        "CAP-07",
+        "CAP-18"
+      ],
+      "api": "create_session/create_context/attach_context/Job/release",
+      "routes": [
+        "POST /runtime/createSession",
+        "POST /runtime/createContext",
+        "POST /runtime/api/v1/connect",
+        "GET /{service}/jobs/status/{id}",
+        "GET /runtime/releaseContext",
+        "GET /runtime/releaseSession"
+      ],
+      "request": "Native ScopeRequest.configuration; klab-scope and originating klab-service",
+      "expected": "Caller session ID retained; private scopes denied; explicit owned cleanup; no automatic replay",
+      "source": "SDK lifecycle DTOs; Java native scope and Job controllers",
+      "confidence": "SOURCE_CONTRACT; polling schedule and simplified duplicate response PROVISIONAL_SIMULATOR_CONTRACT",
+      "simulator_test": "test_state.py::test_clockless_states_materialization_cancellation_and_no_idempotency_invention",
+      "java_status": "HISTORICAL_BOUNDED_RECOVERY_ONLY; retention/incarnation pending"
+    },
+    {
+      "id": "SIM-SELECTION-001",
+      "rows": [
+        "RC-P1.5",
+        "RC-P4.1",
+        "CAP-05",
+        "CAP-06",
+        "CAP-13"
+      ],
+      "api": "resources.list/retrieve; reasoner.resolve_observable; resolver.resolve",
+      "routes": [
+        "GET /resources/api/v1/list/MODEL",
+        "GET /resources/api/v1/retrieve/MODEL/{urn}",
+        "POST /reasoner/api/v1/resolve/observable",
+        "POST /resolver/api/v1/resolve"
+      ],
+      "request": "Native observation and resolutionConstraints envelope, bound context",
+      "expected": "Catalog candidate distinct from actual finite simulated RESOLVED Dataflow",
+      "source": "Current Resources/Reasoner captures; Resolver Dataflow DTO and actual historical selection handoff",
+      "confidence": "DTO_SOURCE_AND_CAPTURES; finite model choice PROVISIONAL_SIMULATOR_CONTRACT",
+      "simulator_test": "test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+      "java_status": "CATALOG_AND_SEMANTIC_CAPTURE_VERIFIED; selection historical only"
+    },
+    {
+      "id": "SIM-GRID-001",
+      "rows": [
+        "RC-P2.1",
+        "RC-P2.2",
+        "RC-P2.5",
+        "CAP-08",
+        "CAP-09",
+        "CAP-15"
+      ],
+      "api": "ObservationRequest; Context.observe; Observation.fetch_data; ScientificData.dumps/loads",
+      "routes": [
+        "POST /runtime/api/v1/submit",
+        "GET /runtime/jobs/retrieve/{id}",
+        "POST /runtime/api/v1/observation/value"
+      ],
+      "request": "20x20native geometry; StorageScan.Point sourceId/offset/slice/semantics/curve",
+      "expected": "Every400synthetic cells, declared geometry/centres/metres/precision, exact serialization",
+      "source": "StorageScan.Point and ObservationImpl Java DTOs; immutable synthetic-oracle.json",
+      "confidence": "WIRE_SOURCE; synthetic formula/grid metadata projection PROVISIONAL_SIMULATOR_CONTRACT",
+      "simulator_test": "test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+      "java_status": "JAVA_INTEGRATION_BLOCKED: confirmed null scanner on authentic IDE resource; simulator is not a fix"
+    },
+    {
+      "id": "SIM-USGS-001",
+      "rows": [
+        "RC-P2.1",
+        "RC-P2.3",
+        "RC-P2.5",
+        "RC-R1"
+      ],
+      "api": "AsyncContext.observe / Observation.fetch_data",
+      "routes": [
+        "POST /runtime/api/v1/submit",
+        "POST /runtime/api/v1/observation/value"
+      ],
+      "request": "Pinned EPSG:4269native20x20recorded-data fixture, no resampling",
+      "expected": "400/400frozen authentic float32 values delivered by simulation, never Java Runtime attribution",
+      "source": "Original frozen oracle22ed9057\u00e2\u20ac\u00a6; sanitized-path projection3fe5383b\u00e2\u20ac\u00a6; exact crop2c9fcd07\u00e2\u20ac\u00a6; full hashes in manifest",
+      "confidence": "AUTHENTIC_IMMUTABLE_FIXTURE; delivery SIMULATED",
+      "simulator_test": "test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[usgs-recorded]",
+      "java_status": "SCIENTIFICALLY_VERIFIED_ON_JAVA=FALSE"
+    },
+    {
+      "id": "SIM-PROVENANCE-001",
+      "rows": [
+        "RC-P3.4",
+        "CAP-06",
+        "CAP-10"
+      ],
+      "api": "fetch_provenance / async_fetch_provenance",
+      "routes": [
+        "POST /runtime/api/v1/query"
+      ],
+      "request": "Bounded typed observation membership then LINK query with limit/offset",
+      "expected": "Actual simulated MEASURED relation, owner-bound target, partial/unknown consistency retained",
+      "source": "Java KnowledgeGraphQuery/LinkImpl; SDK provenance contract",
+      "confidence": "DTO_SOURCE; fixture relation is SIMULATED not historical full lineage",
+      "simulator_test": "test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[elevation]",
+      "java_status": "Prior PR239/240bounded evidence exists; full lineage remains pending"
+    },
+    {
+      "id": "SIM-FAULTS-001",
+      "rows": [
+        "RC-P3.3",
+        "CAP-07",
+        "CAP-18"
+      ],
+      "api": "Job.result/cancel/status",
+      "routes": [
+        "GET /runtime/jobs/status/{id}",
+        "GET /runtime/jobs/cancel/{id}",
+        "GET /runtime/jobs/retrieve/{id}"
+      ],
+      "request": "Finite failure/cancellation/malformed-empty scenarios",
+      "expected": "JobFailedError/JobCancelledError/ProtocolError; no numeric success or replay",
+      "source": "Java Job status enum; ObservationImpl.boolean empty; merged Python PR243",
+      "confidence": "SOURCE_CONTRACT; deterministic race schedule PROVISIONAL_SIMULATOR_CONTRACT",
+      "simulator_test": "test_vertical.py::test_deliberate_job_failures_are_visible_and_cleanup_is_owned",
+      "java_status": "Historical real empty/Error captured; no new Java fault execution"
+    },
+    {
+      "id": "REPLAY-001",
+      "rows": [
+        "RC-P4.1",
+        "RC-P3.3",
+        "RC-R1",
+        "CAP-18"
+      ],
+      "api": "Reasoner.resolve_observable; Resources.retrieve; Job.result",
+      "routes": [
+        "POST /reasoner/api/v1/resolve/observable",
+        "GET /resources/api/v1/retrieve/MODEL/{urn}",
+        "GET /runtime/jobs/status/9",
+        "GET /runtime/jobs/retrieve/9"
+      ],
+      "request": "Exact pinned sanitized capture route/body; synthetic replay authentication only",
+      "expected": "Captured successes and historical empty/Error remain visible; unknown routes501; no fallback",
+      "source": "replay-cases.json pinned SHA21fc00c7\u00e2\u20ac\u00a6; each capture has original body SHA and attribution; status comes from historical report, not a new wire capture",
+      "confidence": "REAL_CAPTURE_REPLAY plus explicitly identified historical status control",
+      "simulator_test": "test_replay.py::test_pinned_semantic_model_and_historical_empty_result",
+      "java_status": "READ_CAPTURES_VERIFIED; Runtime failure historical not re-executed"
+    },
+    {
+      "id": "SIM-IMPORT-001",
+      "rows": [
+        "RC-P4.3",
+        "CAP-13",
+        "CAP-14",
+        "CAP-18"
+      ],
+      "api": "ResourceImporter/AsyncResourceImporter.upload; Resources.list/retrieve; Job.status/result/cancel",
+      "routes": [
+        "GET /resources/public/capabilities",
+        "POST /resources/import/{schema}/{urn}",
+        "GET /resources/jobs/status/{id}",
+        "GET /resources/jobs/retrieve/{id}",
+        "GET /resources/api/v1/retrieve/RESOURCE/{urn}"
+      ],
+      "request": "Explicit consent, native advertised RESOURCE/STREAM schema, one multipart file, owner-bound klab-scope; pinned TIFF only",
+      "expected": "Matching source SHA/count receipt; Resources Job materializes private catalog only on FINISHED; denial/cancel/duplicate/malformed remain visible; bounded owned cleanup",
+      "source": "ServicesAPI.IMPORT; KlabServiceController.uploadAsset; BaseService.importAsset; merged production imports.py and actual multipart HTTP tests; pinned crop SHA2c9fcd07...",
+      "confidence": "NATIVE_SOURCE_ENVELOPE; fixture admission/hash metadata/suggested-URN retention/context cleanup PROVISIONAL_SIMULATOR_CONTRACT",
+      "simulator_test": "test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup",
+      "java_status": "NATIVE_SCHEMA_READ_VERIFIED; positive upload NOT_RUN pending disposable/retained-resource approval or supported cleanup; no scientific execution"
+    }
   ]
 }
