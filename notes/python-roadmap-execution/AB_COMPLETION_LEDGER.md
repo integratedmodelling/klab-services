@@ -2,6 +2,29 @@
 
 ## Authority and current decision
 
+### Sequential execution queue — user directive 2026-11-06
+
+Current phase: **A+B Service Simulator development — IN_PROGRESS**. Finish all
+remaining independent A+B implementation, tests, PRs, CI and permitted merges;
+do not prematurely declare completion to trigger the review.
+
+Next phase: **QUEUED_NOT_STARTED**, automatically after this campaign's final
+completion checkpoint/result, without another user prompt. Execute
+[`specs/KLAB_POST_AB_REVIEW_ISSUES_JAVA_GAP_GOVERNANCE_SPEC.md`](specs/KLAB_POST_AB_REVIEW_ISSUES_JAVA_GAP_GOVERNANCE_SPEC.md).
+This repository copy preserves the supplied full audit phases, issue migration
+policy, gap schema concepts, executable evidence matrix and required report.
+On recovery/context reset: read this queue and linked specification; if A+B is
+still active, resume it, not the review. At final A+B checkpoint record its exact
+HEAD/PR/CI/row evidence, then transition next phase to IN_PROGRESS and begin the
+read-only independent inventory. Never execute the phases concurrently.
+
+Review scope includes live discovery of candidate issues #89/#123/#124/#125/#126/
+#127/#129/#130/#144/#193 and additional relevant issues; no issue action occurs
+merely by queueing this instruction. Establish registry/tests/cross-references
+before any safe, permitted issue retirement; simulation never fixes Java defects.
+No roadmap C, historical research replication or Java remediation. After the full
+post-A+B review, **STOP and present results for a joint roadmap decision**.
+
 Standing user directive6November2026: finish all independently implementable A+B
 work, publish normal reviewable contributions, satisfy CI/protections/required
 approvals, continue across milestones. C is excluded. Do not repair the Java IDE.
@@ -21,6 +44,20 @@ develop advanced to212548f76 (not silently adopted). Repository WRITE; integrati
 branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
+
+Scope-selection correction pass (active `feature/python-scope-selection-guards`):
+14red sync/async tests reproduced out-of-Java-long focused views, inconsistent or
+empty selected tokens, observer-bearing root IDs and retained configuration/root
+drift being accepted locally. Four more red tests showed raw Runtime queries reached
+MockTransport despite foreign-bound context origin/known ID; no real server or
+credential leak is claimed. Reused existing signed-long validation, guarded exact
+root/control-free grammar and shared Runtime scope-binding checks before I/O.
+840focused tests plus two existing-route HTTP same-backend/current-credential and
+foreign-binding/private-denial cases PASS. No new simulator source behavior or
+endpoint, no Java call, no membership/permission/revision claim. Full packaged gates
+pending. PR259 remotely MERGED atbe22818169852902a29fe077635e649426485689,
+2026-11-06T19:39:17Z after all hosted SDK/core/Windows/simulator/scientific/notebook/
+build/Jenkins checks passed; no independent maintainer review claimed.
 
 Native project-lock pass (active `feature/python-project-locks`): red public-API test
 reproduced missing sync/native-async project locking. Added explicit allow_write
