@@ -1,5 +1,27 @@
 # Source-only agent preview
 
+## Native awaited preview
+
+```python
+from klab_client import AsyncAgentPreviews
+
+preview = await AsyncAgentPreviews(async_client).preview(behavior_source)
+print(preview.java_code)  # generated source, NOT compiled/executed Java
+```
+
+The awaited facade shares the synchronous source, identity, credential, payload
+and result checks and fixed nonexecution flags. It awaits ordinary AsyncClient
+transport directly; no worker thread, hidden loop, broker, session, disposal, or
+automatic request retry is introduced. Cancellation stops the local wait, not
+proof of remote rollback; lost responses never become a successful preview.
+Only a matching AsyncClient is accepted; AgentPreviews remains sync-only.
+
+Native async protocol tests are new Python evidence. Historical served synchronous
+translation below is retained, not relabelled as new async Java execution or science.
+No simulator endpoint is needed for this implementation correction. Grammar and
+semantic validation remain server responsibilities; no Python k.Actors parser or
+compiler is introduced. See `docs/AGENTS.md` for the language authority hierarchy.
+
 PR111 now implements a bounded, nonexecuting slice of the agent roadmap. Full
 remote lifecycle/control remains incomplete; this API does not return an Agent.
 The final implementation passes45 source-derived cases and2,208 total tests, nine

@@ -219,6 +219,11 @@ Connection exposes `identity/profile/catalog/selected/client`, synchronous
 errors. See [profiles, providers, lifecycle and examples](connection-layer.md).
 ## Native async source authoring
 
+Agent source preview also has an explicit awaited `AsyncAgentPreviews.preview`
+counterpart to `AgentPreviews`, with the same nonexecuting flags and immutable
+receipt. See [source-only preview](agent-source-preview.md); neither returns a
+running agent or introduces thread-backed broker operations.
+
 `AsyncAuthoring` is the awaited counterpart of `Authoring`: parse, create_workspace,
 create_project and create_document. It shares ADD-only consent, exact-source,
 origin/identity, confirmation and no-replay guards. See [authoring](authoring.md).

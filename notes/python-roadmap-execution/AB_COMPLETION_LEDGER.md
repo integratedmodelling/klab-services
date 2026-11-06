@@ -22,7 +22,23 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
-Temporal export pass on `feature/python-temporal-export-selection` (unpublished):
+Native awaited behavior-preview pass (active `feature/python-async-agent-previews`):
+red public-API test reproduced the missing AsyncAgentPreviews counterpart. Added
+native awaited parse/translation and shared pure identity/source/result/receipt
+validation, preserving all fixed nonexecution flags. No k.Actors compiler, broker,
+execution control or simulator endpoint is introduced. Cancellation/lost-response
+tests require no retry or cleanup writes; drift at either identity recheck fails.
+Two further red tests reproduced raw UnicodeEncodeError for malformed UTF-8 source
+on both facades; intake now reports InvalidRequestError before HTTP. Final packaged
+validation:124focused/3734full SDK tests, all18gates,100%agents lines/branches,
+93simulator regressions against both current wheels, lint and47module source/wheel/
+sdist parity PASS.42criteria unchanged. Receipt:
+`evidence/ab-async-agent-preview-validation-20261106.json`.
+This is bounded Python implementation, not full behavior/reconnect/Java acceptance.
+
+Temporal export pass on `feature/python-temporal-export-selection` (MERGED_BOUNDED
+PR254 atb532cd779f3f5919144fec770e3fd3e35894b2d8,2026-11-06T18:47:09Z,
+all hosted SDK/core/Windows/simulator/scientific/build/Jenkins checks passed):
 two red tests reproduced absent `slice=` on both public facades. Optional explicit
 TEMPORAL_TRANSITION selection now propagates through native streaming and both
 analysis helpers; immutable `requested_slice` is requested metadata only.152focused
@@ -34,7 +50,7 @@ PASS:3705full SDK tests, all18coverage gates,100%lines/branches in sync/async
 exports and analysis,93packaged simulator tests, lint and source/wheel/sdist byte
 parity (47SDK modules/20simulator files).42original criteria checked unchanged.
 Receipt: `evidence/ab-temporal-export-validation-20261106.json`.
-Implementation is not yet accepted delivery. Source POD coercion and
+Bounded implementation delivery accepted. Source POD coercion and
 genuine Java temporal-state/history/window/revision limits remain explicit.
 PR253 remotely MERGED at716dbca5c3ad2cd1d7860e124ce40e81cb027ecc,
 2026-11-06T18:31:54Z, after hosted SDK/core/Windows/simulator/scientific/build/Jenkins
@@ -109,7 +125,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; simulator NOT_RUN|Native parseAsset DTOs, PR201/228real parsers; N maintained revision; add finite parser/fault/stale cases, no compiler port|
 |RC-P4.3 — B import/annotate/compute with input provenance|S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001: public sync/async upload, semantic source ADD, bound plan,400recorded cells/input receipt|PR244/249 merged, AsyncAuthoring delivered. SIMULATED_PROVISIONAL admission/input projection; JAVA_INCOMPATIBLE historical scanner; B(JAVA-RESOURCE-CLEANUP-001). No general native annotation/immutable lineage claim|
 |RC-P4.4 — B authorized edit/publish/conflict|P; Authoring/new AsyncAuthoring ADD; S(slice) SIM-INPUT-BINDING-001 exact-source/new workspace/project/document; no update/publish/conflict closure|Native CRUD and PR209/222real ADD; SIMULATED_PROVISIONAL finite parser/admission; remote locks/history/conditional edits remain contract inspection, not assumed absent|
-|RC-P4.5 — B behavior invocation/outcomes/reconnect|P; agent execution/control/status/journal/messaging; simulator NOT_RUN|Native agent contracts/managed real slices; B(#125principal/incarnation/cleanup); add supported outcomes without worker SDK|
+|RC-P4.5 — B behavior invocation/outcomes/reconnect|P; agent execution/control/status/journal/messaging; new native AsyncAgentPreviews nonexecuting translation, simulator NOT_RUN|Native agent contracts/managed real slices; B(#125principal/incarnation/cleanup); async protocol/cancellation/identity tests do not prove execution/reconnect; continue supported outcomes without worker SDK|
 |RC-P5 — C separate scoped worker product|EXCLUDED_C|#127separate product; never an A+B completion gate|
 |RC-R1 — A/B continuous evidence layers|P; SDK/fixture/wheel/CI layers; SIM case suite + REPLAY-001|3651SDK tests/18gates; PR243/244merged; simulator CI active; preserve errors/uncertainty and add per-row acceptance|
 |RC-R2 — A/B supported public release|P tooling/docs; simulator release readiness NOT_RUN|Native support decisions not encoded by tests; B(#129approval), packaging independently runnable; final exact package/support assessment required|
@@ -126,7 +142,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-11 — A/B best-effort scoped events and resync|P; activity notifications/polling/resync; simulator events NOT_RUN|Native activity hints; B(#126durable cursor/replay); test supported hints/gaps only|
 |CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips; inherited bounded acceptance retained|ScientificData format/PR196; add fresh-process simulator-produced snapshot inspection, never offline reasoning|
 |CAP-13 — B resources/models read/query/dependency inspection|P; inspectors/services/imports; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-IMPORT-001|J(read) real catalog/model captures; newer candidates schema drift; add implemented resolve/query/dependencies and explicit binding|
-|CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/new AsyncAuthoring/agents/imports; S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001; behaviors simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; finite semantic-source admission SIMULATED_PROVISIONAL; continue supported behavior/conditional mutation contracts, no compiler/scheduler port|
+|CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/AsyncAuthoring/AgentPreviews/new AsyncAgentPreviews/agents/imports; S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001; behaviors simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; finite semantic-source admission SIMULATED_PROVISIONAL; awaited preview is nonexecuting protocol evidence only; continue supported behavior/conditional mutation contracts, no compiler/scheduler port|
 |CAP-15 — A optional NumPy/pandas/xarray/raster/vector and notebooks|P; S(slice) SIM-ADAPTERS-001 raster/xarray/NumPy/pandas, plus core numeric slice; vector/notebook integrated simulator matrix remains|Independent N-oracle and PR204vector/PR211notebook receipts; new dedicated CI requires analysis/tabular dependencies, core SDK imports stay optional|
 |CAP-16 — A/B compatibility, fixtures, package, support/migration/scale|P; CI/wheel/support checker; simulator CI active|3651SDK/18gates/47module parity; N full simulator support matrix; external scheduled worker/#129does not hold Python tests|
 |CAP-17 — C provider SDK / local embedded runtime|EXCLUDED_C|#127separate product|

@@ -6,7 +6,7 @@ import json
 import httpx
 import pytest
 
-from klab_client import Client, Endpoint
+from klab_client import AsyncClient, Client, Endpoint
 from klab_client.agents import AgentPreviews, AGENT_CLASS, BEHAVIOR_CLASS
 from klab_client.errors import (InvalidRequestError, ProtocolError, ServerError,
                                 TransportError, UnsupportedOperationError)
@@ -14,7 +14,7 @@ from klab_client.errors import (InvalidRequestError, ProtocolError, ServerError,
 SOURCE = "behavior python.preview\n\naction main:\n  print('preview')\n"
 
 
-def setup(*, parsed_change=None, result_change=None, drop=None, identity_change=None):
+def setup(*, parsed_change=None, result_change=None, drop=None, identity_change=None, async_mode=False):
     calls = []
     counts = {"resources": 0, "runtime": 0}
     def handler(request):
@@ -44,7 +44,8 @@ def setup(*, parsed_change=None, result_change=None, drop=None, identity_change=
         if result_change:
             payload.update(result_change)
         return httpx.Response(200, json=payload)
-    client = Client("https://runtime.invalid", credential="runtime-secret",
+    client_type = AsyncClient if async_mode else Client
+    client = client_type("https://runtime.invalid", credential="runtime-secret",
                     resources=Endpoint("https://resources.invalid", "resources-secret"),
                     http_transport=httpx.MockTransport(handler))
     return client, calls
@@ -104,7 +105,7 @@ def test_sync_client_required():
         AgentPreviews(None)
 
 
-@pytest.mark.parametrize("source", [None, " ", "x" * 101, "resources-secret"])
+@pytest.mark.parametrize("source", [None, " ", "x" * 101, "resources-secret", "bad\ud800source"])
 def test_invalid_source_is_never_transmitted(source):
     api, calls = setup()
     with api, pytest.raises(InvalidRequestError):
@@ -112,7 +113,7 @@ def test_invalid_source_is_never_transmitted(source):
     assert not calls
 
 
-@pytest.mark.parametrize("value", [object(), float("nan")])
+@pytest.mark.parametrize("value", [object(), float("nan"), "bad\ud800value"])
 def test_non_json_values_rejected(value):
     api, calls = setup()
     with api, pytest.raises(InvalidRequestError):
