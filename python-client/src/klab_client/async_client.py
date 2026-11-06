@@ -403,10 +403,10 @@ class AsyncClient:
         from ._async_exports import export_formats
         return await export_formats(self, observation)
 
-    async def export_to_file(self, observation, path, *, media_type, overwrite=False, max_bytes=None):
+    async def export_to_file(self, observation, path, *, media_type, overwrite=False, max_bytes=None, slice=None):
         from ._async_exports import export_to_file
         return await export_to_file(self, observation, path, media_type=media_type,
-            overwrite=overwrite, max_bytes=max_bytes)
+            overwrite=overwrite, max_bytes=max_bytes, slice=slice)
 
     async def aclose(self):
         await self.transport.aclose()

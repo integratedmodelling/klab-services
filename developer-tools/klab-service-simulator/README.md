@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+RC-P2.2 temporal export acceptance reuses the existing `nonuniform-export` route
+and frozen TIFF bytes. Only the finite assignment `fixture:transition`, start0/end1
+is available; other/missing/duplicate query fields or unavailable selected states
+fail422, never fall back to an unselected result. This assignment is
+SIMULATED_PROVISIONAL, not native temporal history or temporal scientific accuracy.
+No new endpoint, regenerated oracle, or Java execution is involved.
+
 ```powershell
 python -m pip install ./python-client './developer-tools/klab-service-simulator[test]'
 python -m klab_simulator --port 38000 --scenario elevation --seed 7

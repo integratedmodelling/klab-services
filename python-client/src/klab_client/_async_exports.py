@@ -7,7 +7,7 @@ from urllib.parse import quote
 from .client import scope_token
 from .errors import InvalidRequestError, ProtocolError, UnsupportedOperationError
 from .exports import (CHUNK_BYTES, ExportIOError, ExportResult, _bound_observation,
-                      _formats, _length, _media, _validate_size)
+                      _export_parameters, _formats, _length, _media, _validate_size)
 
 
 async def export_formats(client, observation):
@@ -17,10 +17,12 @@ async def export_formats(client, observation):
     return _formats(capabilities.raw)
 
 
-async def export_to_file(client, observation, path, *, media_type, overwrite=False, max_bytes=None):
+async def export_to_file(client, observation, path, *, media_type, overwrite=False, max_bytes=None, slice=None):
     expected_type, expected_parameters = _media(media_type, InvalidRequestError)
     if type(overwrite) is not bool or (max_bytes is not None and (type(max_bytes) is not int or max_bytes <= 0)):
         raise InvalidRequestError("Export requires boolean overwrite and an optional positive byte limit")
+    _bound_observation(client, observation)
+    selected, parameters = _export_parameters(slice, client.transport.redact)
     try:
         destination = Path(path)
         if "\x00" in os.fspath(destination):
@@ -42,7 +44,8 @@ async def export_to_file(client, observation, path, *, media_type, overwrite=Fal
         temporary = Path(name)
         try:
             async with client.transport.stream("runtime", "/export/OBSERVATION/" + urn, media_type=media_type,
-                    scope=scope_token(context), service_id=client._known_runtime_identity(context.configuration)) as response:
+                    scope=scope_token(context), service_id=client._known_runtime_identity(context.configuration),
+                    **({"params": parameters} if parameters else {})) as response:
                 actual_type, actual_parameters = _media(response.headers.get("content-type"), ProtocolError)
                 if actual_type != expected_type or any(actual_parameters.get(k) != v for k, v in expected_parameters.items()):
                     raise ProtocolError("Export response representation differs from the request")
@@ -95,4 +98,4 @@ async def export_to_file(client, observation, path, *, media_type, overwrite=Fal
                 if failure is None:
                     raise ExportIOError("Export temporary cleanup failed; inspect the requested destination") from None
                 failure.add_note("Export temporary cleanup failed: OSError")
-    return ExportResult(destination, written, media_type, formats[0].schema_id)
+    return ExportResult(destination, written, media_type, formats[0].schema_id, selected)

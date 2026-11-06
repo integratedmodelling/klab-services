@@ -133,12 +133,13 @@ class ObservationImpl(Observation):
             raise UnsupportedOperationError("Data retrieval requires a remotely bound observation")
         return self._context.fetch_data(self, offsets, curve=curve, slice=slice, semantics=semantics)
 
-    def export_to_file(self, path, *, media_type, overwrite=False, max_bytes=None):
+    def export_to_file(self, path, *, media_type, overwrite=False, max_bytes=None, slice=None):
         """Use the bound Runtime's advertised exporter; no remote lifecycle action."""
         from klab_client.errors import UnsupportedOperationError
         if self._context is None:
             raise UnsupportedOperationError("Export requires a remotely bound observation")
-        return self._context.client.export_to_file(self, path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes)
+        return self._context.client.export_to_file(self, path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes,
+                                                   **({"slice": slice} if slice is not None else {}))
 
     def to_handle(self):
         """Create a reference from a bound observation, never serialize cached authority."""

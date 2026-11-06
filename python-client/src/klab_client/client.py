@@ -520,10 +520,10 @@ class Client:
         from .exports import export_formats
         return export_formats(self, observation)
 
-    def export_to_file(self, observation, path, *, media_type, overwrite=False, max_bytes=None):
+    def export_to_file(self, observation, path, *, media_type, overwrite=False, max_bytes=None, slice=None):
         """Stream a native observation representation into an atomically published file."""
         from .exports import export_to_file
-        return export_to_file(self, observation, path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes)
+        return export_to_file(self, observation, path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes, slice=slice)
 
     def close(self):
         """Close local connections only. Remote scopes require explicit release."""

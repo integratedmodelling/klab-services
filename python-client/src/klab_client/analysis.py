@@ -53,11 +53,12 @@ def _digest(path):
     return digest.hexdigest()
 
 
-def export_for_analysis(observation, path, *, media_type="image/tiff;application=geotiff", overwrite=False, max_bytes=None):
+def export_for_analysis(observation, path, *, media_type="image/tiff;application=geotiff", overwrite=False, max_bytes=None, slice=None):
     """Reuse native export, preserving exact bytes and existing saved-reference semantics."""
     from .client import Client
     reference, units = _analysis_reference(observation, Client)
-    result = observation.export_to_file(path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes)
+    result = observation.export_to_file(path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes,
+                                       **({"slice": slice} if slice is not None else {}))
     return _artifact(result, reference, units)
 
 
@@ -72,7 +73,7 @@ def _artifact(result, reference, units):
     return AnalysisArtifact(result, reference, datetime.now(timezone.utc), units, _digest(result.path))
 
 
-async def async_export_for_analysis(observation, path, *, media_type="image/tiff;application=geotiff", overwrite=False, max_bytes=None):
+async def async_export_for_analysis(observation, path, *, media_type="image/tiff;application=geotiff", overwrite=False, max_bytes=None, slice=None):
     """Await native export with the same exact-byte association, never a revision lease.
 
     Remote streaming is native async. Local hashing uses bounded synchronous64KiB
@@ -80,7 +81,8 @@ async def async_export_for_analysis(observation, path, *, media_type="image/tiff
     """
     from .async_client import AsyncClient
     reference, units = _analysis_reference(observation, AsyncClient)
-    result = await observation.export_to_file(path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes)
+    result = await observation.export_to_file(path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes,
+                                             **({"slice": slice} if slice is not None else {}))
     return _artifact(result, reference, units)
 
 

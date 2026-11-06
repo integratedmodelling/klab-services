@@ -10,6 +10,7 @@ from urllib.parse import quote
 from .api.runtime import ObservationImpl
 from .client import Client, Context, scope_token
 from .errors import InvalidRequestError, KlabError, ProtocolError, UnsupportedOperationError
+from .scan_slices import ScanSlice, _slice_to_wire
 
 CHUNK_BYTES = 65536
 _MEDIA = re.compile(r"^[A-Za-z0-9!#$%&'+.^_`|~-]+/[A-Za-z0-9!#$%&'+.^_`|~-]+$")
@@ -33,6 +34,27 @@ class ExportResult:
     bytes_written: int
     media_type: str
     schema_id: str
+    requested_slice: ScanSlice | None = None
+
+
+def _export_parameters(slice, redact):
+    """Only the existing BaseService temporal-transition export contract."""
+    if slice is None:
+        return None, {}
+    wire = _slice_to_wire(slice)
+    if set(wire) != {"type", "key", "start", "end"}:
+        raise UnsupportedOperationError("Export has no contract for slice extension metadata")
+    if wire["type"] != "TEMPORAL_TRANSITION":
+        raise UnsupportedOperationError("Native selected exports support TEMPORAL_TRANSITION only; omit slice for the exporter default")
+    key = wire["key"]
+    try:
+        encoded = key.encode("utf-8")
+    except UnicodeError:
+        raise InvalidRequestError("Export event key must be bounded valid UTF-8 text") from None
+    if len(encoded) > 4096 or any(ord(char) < 32 or ord(char) == 127 for char in key) or redact(key) != key:
+        raise InvalidRequestError("Export event key must be bounded, control-free and contain no credential material")
+    selected = ScanSlice(wire["type"], key, wire["start"], wire["end"])
+    return selected, {"storageEvent": key, "storageStart": str(selected.start), "storageEnd": str(selected.end)}
 
 
 def _media(value, error):
@@ -116,11 +138,13 @@ def _validate_size(written, length):
         raise ProtocolError("Export is empty or differs from its declared byte count")
 
 
-def export_to_file(client, observation, path, *, media_type, overwrite=False, max_bytes=None):
+def export_to_file(client, observation, path, *, media_type, overwrite=False, max_bytes=None, slice=None):
     """Download exactly one advertised representation; never recreate or release remote work."""
     expected_type, expected_parameters = _media(media_type, InvalidRequestError)
     if type(overwrite) is not bool or (max_bytes is not None and (type(max_bytes) is not int or max_bytes <= 0)):
         raise InvalidRequestError("Export requires boolean overwrite and an optional positive byte limit")
+    _context(client, observation)
+    selected, parameters = _export_parameters(slice, client.transport.redact)
     try:
         destination = Path(path)
         if "\x00" in os.fspath(destination):
@@ -142,7 +166,8 @@ def export_to_file(client, observation, path, *, media_type, overwrite=False, ma
         temporary = Path(name)
         try:
             with client.transport.stream("runtime", "/export/OBSERVATION/" + urn, media_type=media_type,
-                    scope=scope_token(context), service_id=client._known_runtime_identity(context.configuration)) as response:
+                    scope=scope_token(context), service_id=client._known_runtime_identity(context.configuration),
+                    **({"params": parameters} if parameters else {})) as response:
                 actual_type, actual_parameters = _media(response.headers.get("content-type"), ProtocolError)
                 if actual_type != expected_type or any(actual_parameters.get(k) != v for k, v in expected_parameters.items()):
                     raise ProtocolError("Export response representation differs from the request")
@@ -195,4 +220,4 @@ def export_to_file(client, observation, path, *, media_type, overwrite=False, ma
                 if failure is None:
                     raise ExportIOError("Export temporary cleanup failed; inspect the requested destination") from None
                 failure.add_note("Export temporary cleanup failed: OSError")
-    return ExportResult(destination, written, media_type, formats[0].schema_id)
+    return ExportResult(destination, written, media_type, formats[0].schema_id, selected)
