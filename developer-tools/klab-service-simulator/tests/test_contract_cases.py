@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import json
+import re
 
 from klab_simulator.compare import readiness_matches, run
 from klab_simulator.contracts import CONTRACT_CATEGORIES
@@ -33,6 +34,11 @@ def test_ledger_preserves_every_original42criterion_wording_without_waiver():
             fields = line.split("|")
             expected[fields[1].strip()] = fields[2].strip()
     ledger = (REPO / "notes/python-roadmap-execution/AB_COMPLETION_LEDGER.md").read_text(encoding="utf-8")
+    # Only the authoritative requirement-wording table defines these criteria.
+    # Later operation/status tables may reference the same IDs without redefining
+    # them; still require every original definition exactly once in this section.
+    ledger = ledger.split("Original criterion text below is the exact criterion", 1)[1]
+    ledger = ledger.split("## Ordered runnable engineering queue", 1)[0]
     actual = {}
     for line in ledger.splitlines():
         if line.startswith(("|RC-", "|CAP-")):
@@ -41,6 +47,22 @@ def test_ledger_preserves_every_original42criterion_wording_without_waiver():
             actual[identity] = wording
     assert len(actual) == len(expected) == 42
     assert actual == expected
+
+
+def test_supported_operation_assessment_covers_original_ids_without_parent_promotion():
+    source = (REPO / "docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md").read_text(encoding="utf-8")
+    expected = set(re.findall(r"^\| ((?:RC-|CAP-)[^|]+) \|", source, re.M))
+    ledger = (REPO / "notes/python-roadmap-execution/AB_COMPLETION_LEDGER.md").read_text(encoding="utf-8")
+    section = ledger.split("### Supported-operation reconciliation", 1)[1]
+    section = section.split("Production async-analysis correction", 1)[0]
+    records = re.findall(r"^\|((?:RC-|CAP-)[^|]+)\|([^\n]+)", section, re.M)
+    assert len(records) == len(expected) == 42
+    assert {identity for identity, _ in records} == expected
+    assert {identity for identity, row in records if "EXCLUDED" in row} == {"RC-P5", "CAP-17"}
+    assert sum("READY" in row for _, row in records) == 40
+    assert "not 40 complete acceptance rows" in section
+    for file in set(re.findall(r"`(test_[a-z0-9_]+\.py)`", section)):
+        assert (REPO / "python-client/tests/unit" / file).is_file(), file
 
 
 def test_same_public_read_cases_run_against_explicit_simulator_and_replay():

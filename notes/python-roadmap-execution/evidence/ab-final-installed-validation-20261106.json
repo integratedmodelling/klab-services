@@ -1,0 +1,191 @@
+{
+  "utc": "2026-11-06T20:39:07.604515+00:00",
+  "candidate": "2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d",
+  "suites": {
+    "sdk": {
+      "tests": 3988,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "simulator": {
+      "tests": 107,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "coverage_gates": [
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/requests.py --new-module src/klab_client/handles.py --new-module src/klab_client/exports.py --new-module src/klab_client/connection.py --new-module src/klab_client/connection_models.py --new-module src/klab_client/credentials.py --new-module src/klab_client/_bootstrap.py --new-module src/klab_client/analysis.py --new-module src/klab_client/provenance.py --new-module src/klab_client/semantics.py --new-module src/klab_client/_inspection.py --new-module src/klab_client/inspection.py --new-module src/klab_client/evidence.py --new-module src/klab_client/experiments.py --new-module tools/workflows/discover_compare_explain.py --new-module tools/workflows/milestone.py --new-module tools/workflows/deployment.py --new-module tools/build_milestone_deliverable.py --new-module tools/run_milestone_acceptance.py --new-module tools/run_milestone_throughput.py --new-module tools/restore_milestone_results.py --new-module tools/workflows/resource_inspection.py --new-module tools/run_resource_inspector_acceptance.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_async_transport.py --new-module src/klab_client/async_client.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/vector.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/tables.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_scientific_snapshot.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/graph.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/graph_projection.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module tools/check_release_readiness.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/authoring.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/notifications.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/source_previews.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agents.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agent_status.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agent_control.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_agent_wire.py --new-module src/klab_client/agent_messaging.py --new-module src/klab_client/agent_execution.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module tools/prepare_runtime_fixture.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_job_binding.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/imports.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/project_locks.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    }
+  ],
+  "wheel_sha256": "fec27854ab139cbbbc1aafd19d5e6bc7a16008e870fd0a0beb11c873e1ea5291",
+  "actual_pip_installed_sdk": true,
+  "outside_checkout_core_import": true,
+  "source_installed_module_parity": 48,
+  "core_optional_or_simulator_auto_import": false,
+  "dependency_isolation_certified": false,
+  "dependency_custody": "Disposable venv explicitly borrows pre-existing test-environment site-packages via new venv-only pth and existing Jupyter data via JUPYTER_PATH. Host base site-packages disabled in new venv only; existing environments unchanged. Not a fresh dependency install certification.",
+  "initial_installed_test_attempt": "SDK collection failed with three missing-rasterio errors/one skip. Dependency inheritance then exposed host NumPy/SciPy ABI conflict and missing Jupyter template path:3970passed/18failed. Initial simulator run98passed/1failed/1skipped: new status table exposed overly broad original-wording table parser; scoped its unchanged42-definition assertion to authoritative table. Final XMLs require3988SDK/106simulator with zero skips.",
+  "criteria_exact_unchanged": 42,
+  "preserved_fixture_sha256": {
+    "usgs-oracle.json": "3fe5383b15232a3e09bf5188c9bfef41439d2fbac929970d6b682bf52e580607",
+    "usgs-native-20x20.tif": "2c9fcd0748b9ef3d8c036a59af5c1419a826ba14262a3a80d089b1d59023fb26",
+    "synthetic-nonuniform-native.tif": "f9cbe08df11b4c92f4b8f5691690632b297a6706f30b47ba10a88d726161c8fd"
+  },
+  "oracle_custody": "usgs-oracle.json is the existing sanitized-path projection3fe5383b, not original private oracle22ed9057. An initial receipt assertion mistakenly used the original hash for the projection and correctly failed; helper corrected after manifest inspection, no fixture bytes changed.",
+  "supported_slice_dispositions": {
+    "READY": 40,
+    "EXCLUDED_C": 2
+  },
+  "full_parent_completion_inferred": false,
+  "lint": "PASS",
+  "new_java_execution": "NOT_RUN",
+  "publication": "Development package only; no public tag/upload/support certification",
+  "post_ab_review_started": false,
+  "release_readiness": {
+    "exit": 3,
+    "report": {
+      "candidate": "2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d",
+      "checks": [
+        {
+          "evidence_verified": true,
+          "gate": "offline",
+          "status": "PASS"
+        },
+        {
+          "evidence_verified": true,
+          "gate": "coverage",
+          "status": "PASS"
+        },
+        {
+          "evidence_verified": true,
+          "gate": "core-package",
+          "status": "PASS"
+        },
+        {
+          "evidence_verified": false,
+          "gate": "security-failure",
+          "status": "UNKNOWN"
+        },
+        {
+          "evidence_verified": false,
+          "gate": "owned-lifecycle",
+          "status": "UNKNOWN"
+        },
+        {
+          "evidence_verified": false,
+          "gate": "scientific-reference",
+          "status": "BLOCKED"
+        },
+        {
+          "evidence_verified": false,
+          "gate": "scale",
+          "status": "NOT_RUN"
+        },
+        {
+          "evidence_verified": false,
+          "gate": "server-compatibility",
+          "status": "NOT_RUN"
+        }
+      ],
+      "eligible_for_review": false,
+      "limit": "File identity and supplied states only; human evidence/scientific review and maintainer release authorization still required",
+      "publication_authorized": false
+    },
+    "interpretation": "Incomplete release gates preserved; checker is structural, not certification or publication authorization. Historical Java/security/owned slices are not current full release acceptance."
+  }
+}
