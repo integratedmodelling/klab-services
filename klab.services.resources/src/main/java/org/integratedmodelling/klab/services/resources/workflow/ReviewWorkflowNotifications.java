@@ -133,7 +133,7 @@ final class ReviewWorkflowNotifications {
     try {
       if (value instanceof Map<?, ?> map) for (var entry : map.entrySet()) {
         if (entry.getKey() instanceof String key && reserved(key))
-          throw new KlabIllegalArgumentException("Notification metadata is reserved for the service");
+          throw new KlabIllegalArgumentException("Review operational metadata is reserved for the service");
         requirePublicMetadata(entry.getValue(), path, depth + 1);
       } else if (value instanceof Collection<?> list) for (var item : list) requirePublicMetadata(item, path, depth + 1);
     } finally { path.remove(value); }
@@ -152,6 +152,7 @@ final class ReviewWorkflowNotifications {
     } else if (value instanceof Collection<?> list) list.forEach(ReviewWorkflowNotifications::stripMap);
   }
   private static boolean reserved(String key) {
-    return key.startsWith("klab.review.notification") || key.startsWith("klab:review:notification");
+    return key.startsWith("klab.review.notification") || key.startsWith("klab:review:notification")
+        || key.startsWith("klab.review.archive") || key.startsWith("klab:review:archive");
   }
 }

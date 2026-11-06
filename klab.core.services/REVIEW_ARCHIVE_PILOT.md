@@ -1,85 +1,67 @@
-# Closed review cycle archive pilot
+# Closed review digest pilot
 
-`ReviewCycleArchive.archive(projectRoot, closedCycle, committer)` writes a frozen cycle to the
-ontology host project's additional material and commits it locally. It uses JGit directly and
-does not use the project's general commit/push operation or the k.Actors `write_material` verb.
-Those material verbs already support authenticated project reads/writes, but neither they nor
-`WorkflowBehaviorBridge.Content` provide an archive transaction or a safe scoped commit.
+The default project archive is a minimal digest containing a stable Resources URL to a persistent
+review cycle. Authentication and stage permissions remain enforced by the workflow service.
+The link grants no access. Detailed submitted contributions and private drafts stay in the
+workflow database, including after closure. Digest content contains no contributor identity,
+feedback, candidate/proposal text, aggregate revision, workflow timestamps, audience labels or
+contribution counts. Standard Git commit metadata records the service identity and commit time.
 
-The section is `review-history/<SHA-256 ontology URN>/<SHA-256 workflow ID>/<SHA-256 cycle ID>/`.
-The IDs themselves remain readable in `manifest.json`. It records the closed cycle revision,
-closure timestamp, project, ontology, workflow, source revision and each supplied document's
-contributor, proposal, revision, kind, media type, payload path, size and SHA-256. Binary payloads
-are retained exactly under `revisions/`. Distinct cycles append directories; a new revision of a
-closed cycle is rejected. Generic `ProjectMaterialIO` mutations reject the reserved section
-(case insensitively); listing and reading still work. Direct filesystem/Git administrators can
-change their repositories; retries detect changes to the archived tree, worktree or index.
+`ReviewCycleArchive.archiveDigest` writes `manifest.json` and `digest.md` under
+`review-history/<SHA-256 ontology URN>/<SHA-256 flow UUID>/<SHA-256 cycle UUID>/` and commits only
+those generated paths with a fixed service Git identity. The link accepts canonical opaque flow/
+cycle UUIDs and the trusted advertised Resources base, never request Host headers, credentials,
+tokens, fragments or caller-selected paths. Configure the advertised URL for durable participant
+access. Moving that public URL requires a durable redirect; a retry cannot rewrite an old digest.
 
-## Required workflow integration
+Closing a cycle and its private replay intent use the same database conditional write. Git runs
+after that transaction. `ReviewArchiveOutbox` records bounded private pending jobs, pins the actual
+project/root/link before Git, and persists the returned commit/path/manifest-hash receipt. Metadata
+is reserved against request injection and removed from user projections. Private queue files must
+remain outside projects/Git in the protected service configuration directory.
 
-This helper is not exposed as a public or actor operation. Before invoking it, the service must:
+The provider attempts the closing cycle using the request's authenticated editor scope. The
+manager rechecks workflow control, and WorkspaceManager resolves the ontology's actual host,
+requires material ADD/write authority, rejects read-only storage or another mutation owner, and
+holds its mutation monitor throughout the archive callback. No project/path/committer comes from
+the archive REST request. Git failure never rolls back or falsely reports failure of a committed
+workflow closure. The private queue remains pending/blocked for an explicit authorized retry.
 
-1. Authorize the editor and resolve the ontology's actual hosting, service-owned writable project.
-   Do not accept an arbitrary filesystem path or caller-selected project from an HTTP request.
-2. Persist closure and an archive job atomically, with the frozen workflow/cycle revision as the
-   job's idempotency key. Retain that exact snapshot for retries, including the original closure
-   time. Do not reconstruct it from the current candidate or a later cycle.
-3. Supply every retained candidate/proposal/comment revision and the workflow/event snapshot as
-   entries. Entry IDs identify documents; `(id, revision)` must be unique. Use explicit stable
-   IDs/contributor/proposal fields for the candidate and event snapshot as well. Preserve source
-   provenance in the entries. This helper cannot determine whether supplied history is complete.
-4. Apply an archive visibility policy consistent with the host project's readership. Do not
-   export private drafts or stage-restricted feedback into a broadly readable Git repository.
-   The current pilot intentionally has no implicit redaction or permission-broadening policy.
-5. Invoke the helper with an explicit service/editor committer identity and record its receipt
-   only after return. Store the relative path, manifest hash and actual commit ID. On failure,
-   keep the job pending/failed with its error; do not advertise an archive as committed.
+Startup/periodic replay repairs a lost commit wake-up but never writes projects with cached user
+scopes. Fresh editor requests can inspect or retry exactly one closed cycle through
+`GET/POST {FLOW}/review-cycles/{cycleId}/archive` (`private, no-store`). The closed-cycle UI has
+receipt/retry controls. Status exposes only a generic state and a successful local commit receipt;
+raw paths, exceptions, identity and operational ledger data are not user DTOs. Existing cycles
+created before intent integration are not silently migrated or mutated.
 
-The workflow closure/outbox hook, project resolution/authorization, visibility decision, receipt
-persistence, retry worker and UI links are integration work. No running service or real ontology
-project has been changed by this slice.
+## Commit and recovery boundaries
 
-## Transactions and failures
+The shared writer holds the real Git index lock across verification, scoped tree construction,
+branch compare-and-swap and index publication. It requires an initialized ordinary local repository,
+attached branch and clean index/worktree for a new archive. Unrelated staged/unstaged edits are
+preserved by deferring. Exact completed exports left by an interrupted attempt may be adopted;
+partial/tampered exports, path aliases, ignored paths and unfinished Git operations fail closed.
+Retries return the original introducing commit even after later commits. They never reset, replace
+or remove editor material, invoke hooks, use credentials, contact a remote or push.
 
-The writer holds the actual Git index lock across validation, file export, tree construction,
-branch compare-and-swap and index publication. Competing archives or ordinary Git writers must
-retry after lock contention. Existing index entries are copied exactly, new archive blobs are
-inserted explicitly and the commit is parented to the inspected HEAD. Unrelated worktree edits
-made while the lock is held are never added. A branch change or compare-and-swap failure leaves
-HEAD unchanged by this writer and retains the exported files for inspection/retry.
+Git cannot atomically publish both branch and index. A failure after branch update may leave a
+commit with stale index evidence; the writer refuses success/retry until an operator reconciles
+that condition. A crash after successful Git publication but before receipt storage is recovered
+through exact archive verification without creating another commit. Queue storage failures poison
+the open instance; reopen/replay before another attempt. Closure facts remain the durable source.
+Capacity/retention and protected data backups are deployment responsibilities.
 
-An ordinary initialized repository with an attached branch and a clean index/worktree is required
-for a new archive. Dirty projects, ignored sections, unfinished Git operations, linked worktrees,
-symlinks/path aliases and incomplete/colliding exports are deferred or rejected. The writer
-does not delete, reset, replace user files, run hooks, use credentials, access a remote or push.
+`ReviewCycleArchive.archive(ClosedCycle, ...)` and the frozen full-history mapper remain internal
+opt-in scaffolding for an explicitly authorized readership policy. No runtime/public/default path
+calls them. Their detailed format must never replace this digest default implicitly.
 
-A complete exact untracked export left by a failed commit is retryable automatically. A partial
-export is retained and rejected for operator inspection. An already committed exact archive is
-verified without mutation, even if unrelated files are currently dirty; its original introducing
-commit ID is returned, rather than the current HEAD. Same-cycle changed content is rejected.
+## Verification
 
-Git cannot atomically publish a branch and the index together. A crash or disk failure after the
-branch update and before index publication can leave a real commit with a stale index. The helper
-does not return success if index publication fails; its exception identifies the commit when
-known, and retries reject inconsistent index evidence. Operators must reconcile that condition.
-No speculative reset/repair is attempted.
-
-The export limit is 1,000 document revisions and 32 MiB including the manifest. Individual
-provenance strings are bounded to 4,096 characters. Files use generated ASCII paths, not caller
-filenames. Metadata and content are copied into the closed-cycle input so later byte-array edits
-cannot change the export.
-
-## Validation
-
-The tests use disposable initialized Git repositories, explicit test identities and no remotes.
-Run the two test classes with the normal Services dependencies available:
-
-```shell
-mvn -pl klab.core.services -am -Dtest=ReviewCycleArchiveTest,ProjectMaterialIOTest -Dsurefire.failIfNoSpecifiedTests=false test
-```
-
-Coverage includes attributed revisions, clean status after commit, another cycle, stable retry
-receipts after later commits, changed-snapshot rejection, dirty staged/unstaged preservation,
-index/ref lock contention, failed-commit retry, incomplete exports, worktree/index tampering,
-detached/merge state, ignored archives, bounded payloads, symbolic-link rejection where supported,
-concurrent attempts, and material read/list versus mutation protection.
+Tests use disposable initialized Git repositories and simulated authenticated scopes, with no
+remotes or real projects. `ReviewDigestArchiveTest`, `ReviewWorkflowArchivesTest`,
+`ReviewArchiveWorkerTest`, `ReviewArchiveProviderTest`, `ReviewArchiveProjectAuthorizationTest`
+and the HTTP/browser checks cover disclosure, atomic intents, lost wake-up/restart, receipt
+recovery, original-commit idempotence, single-cycle dispatch, project isolation, current project
+authorization and status/retry controls. Existing archive/material tests retain dirty-work,
+index/ref locks, concurrent attempts, path/tamper and reserved-section coverage. The native/browser
+scenario additionally verifies private archive ledger replay after Nitrite/RocksDB restart.

@@ -567,11 +567,21 @@ public class WorkflowManager {
       case CLOSE_CYCLE -> ReviewCycleProtocol.close(flow, workflow, actor, command.cycleId(), null);
     }
     ReviewWorkflowNotifications.stage(flow, command);
+    ReviewWorkflowArchives.stage(flow, command);
     persistMutation(flow, workflow);
     var visible = ReviewCycleProtocol.visible(flow, workflow, actor);
     return new org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View(
         flow.getRevision(), visible, ReviewCycleProtocol.editor(flow, workflow, actor), actor.getIdentity(),
         ReviewCycleProtocol.contributableRounds(visible, workflow, actor));
+  }
+
+  /** Exact private archive fact for a fresh authorized editor operation. A digest link alone
+   * never supplies this authority. This read does not mutate the closed cycle/revision. */
+  public org.integratedmodelling.klab.resources.ReviewArchiveOutbox.Intent requireReviewArchiveIntent(
+      String flowId, String cycleId, UserScope scope) {
+    var flow = requiredFlow(flowId);
+    ReviewCycleProtocol.requireEditor(flow, requiredWorkflowVersion(flow), WorkflowParticipant.from(scope));
+    return ReviewWorkflowArchives.committedIntent(flow, cycleId);
   }
 
   /** Delete a flow aggregate, its attachment payloads, and its target-asset catalog entry. */

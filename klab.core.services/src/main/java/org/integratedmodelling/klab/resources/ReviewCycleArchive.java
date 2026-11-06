@@ -54,6 +54,51 @@ public final class ReviewCycleArchive {
   /** commitId is the actual reachable commit introducing this archive, including on retries. */
   public record Receipt(Status status, String relativePath, String manifestSha256, String commitId) {}
 
+  /** Default project disclosure: internal routing coordinates plus a trusted Resources base URL.
+   * No caller-controlled text, contributor, proposal, count, timestamp or workflow revision is
+   * accepted for publication. The two UUIDs locate a review; they are never bearer credentials. */
+  public record Digest(String projectName, String ontologyUrn, String workflowId, String cycleId,
+                       String resourcesBase) {
+    public Digest {
+      text(projectName); text(ontologyUrn);
+      workflowId = uuid(workflowId); cycleId = uuid(cycleId);
+      var base = java.net.URI.create(text(resourcesBase));
+      if (!("https".equalsIgnoreCase(base.getScheme()) || "http".equalsIgnoreCase(base.getScheme()))
+          || base.getHost() == null || base.getRawUserInfo() != null || base.getRawQuery() != null
+          || base.getRawFragment() != null || !base.normalize().equals(base))
+        throw new IllegalArgumentException("A trusted absolute Resources base without credentials/query/fragment is required");
+      resourcesBase = base.toASCIIString().replaceAll("/+$", "");
+    }
+    public String link() { return resourcesBase + "/ui/review?flow=" + workflowId + "&cycle=" + cycleId; }
+  }
+
+  private static String uuid(String value) {
+    if (value == null || !value.equals(UUID.fromString(value).toString()))
+      throw new IllegalArgumentException("Canonical opaque review UUID required");
+    return value;
+  }
+
+  public static String relativePath(Digest digest) {
+    return SECTION + "/" + sha(digest.ontologyUrn()) + "/" + sha(digest.workflowId()) + "/" + sha(digest.cycleId());
+  }
+
+  /** Minimal default. Detailed provenance remains in the permission-enforced workflow service.
+   * The fixed service identity prevents publication of an editor's Git identity by inference. */
+  public static Receipt archiveDigest(Path projectRoot, Digest digest) throws IOException {
+    var files = new TreeMap<String, byte[]>();
+    var manifest = new StringBuilder("{\n  \"schema\": \"klab-review-link-digest/1\",");
+    field(manifest, "review", digest.link());
+    manifest.setLength(manifest.length() - 1);
+    manifest.append("\n}\n");
+    files.put("manifest.json", manifest.toString().getBytes(StandardCharsets.UTF_8));
+    files.put("digest.md", ("# Ontology review\n\nA review cycle has closed.\n\n"
+        + "[Consult the persistent review](<" + digest.link() + ">). Sign in to view the stages you are authorized to access.\n"
+        + "The link does not grant access. Detailed contributions remain in the workflow service.\n")
+        .getBytes(StandardCharsets.UTF_8));
+    return write(projectRoot, relativePath(digest), files,
+        new PersonIdent("Ontology review service", "review-service@example.invalid"));
+  }
+
   public static String relativePath(ClosedCycle cycle) {
     return SECTION + "/" + sha(text(cycle.ontologyUrn())) + "/"
         + sha(text(cycle.workflowId())) + "/" + sha(text(cycle.cycleId()));
@@ -70,6 +115,11 @@ public final class ReviewCycleArchive {
     Objects.requireNonNull(committer, "An explicit archive committer is required");
     var files = files(cycle);
     String relative = relativePath(cycle);
+    return write(projectRoot, relative, files, committer);
+  }
+
+  private static Receipt write(Path projectRoot, String relative, SortedMap<String, byte[]> files,
+      PersonIdent committer) throws IOException {
     String manifestHash = sha(files.get("manifest.json"));
     Path root = projectRoot.toRealPath();
     Path target = safePath(root, relative);

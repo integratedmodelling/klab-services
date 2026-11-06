@@ -137,6 +137,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   /** Switchable semantic model catalog; resource/workflow storage remains in ResourcesKBox. */
   private ModelCatalog kbox;
   private volatile org.integratedmodelling.klab.services.resources.workflow.ReviewNotificationWorker reviewNotificationWorker;
+  private volatile org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker reviewArchiveWorker;
 
   // set to true when the connected reasoner becomes operational
   //  private boolean semanticSearchAvailable = false;
@@ -333,7 +334,33 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View reviewCycle(
       String flowId, org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Command command,
       UserScope scope) {
-    return workflowManager.reviewCycle(flowId, command, scope);
+    var result = workflowManager.reviewCycle(flowId, command, scope);
+    if (command.operation() == org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Operation.CLOSE_CYCLE) {
+      // Closure is already committed. Never turn a Git/queue failure into a failed closure response.
+      try { archiveReviewCycle(flowId, command.cycleId(), scope); }
+      catch (RuntimeException deferred) { Logging.INSTANCE.warn("Review digest deferred; closure remains committed"); }
+    }
+    return result;
+  }
+
+  /** Fresh request authority, one frozen cycle and its actual server-owned ontology project.
+   * No paths, public base URLs, commit identities or contribution text are accepted from callers. */
+  public org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker.Status archiveReviewCycle(
+      String flowId, String cycleId, UserScope scope) {
+    var intent = workflowManager.requireReviewArchiveIntent(flowId, cycleId, scope);
+    if (reviewArchiveWorker == null) return new org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker.Status(
+        "PENDING", false, null, null, null);
+    return reviewArchiveWorker.attempt(intent, (job, operation) -> {
+      workflowManager.requireReviewArchiveIntent(job.flowId(), job.cycleId(), scope);
+      workspaceManager.withReviewArchiveProject(job, scope, operation);
+    });
+  }
+
+  public org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker.Status reviewArchiveStatus(
+      String flowId, String cycleId, UserScope scope) {
+    var intent = workflowManager.requireReviewArchiveIntent(flowId, cycleId, scope);
+    return reviewArchiveWorker == null ? new org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker.Status(
+        "PENDING", false, null, null, null) : reviewArchiveWorker.status(intent);
   }
 
   @Override
@@ -411,6 +438,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       reviewNotificationWorker = new org.integratedmodelling.klab.services.resources.workflow.ReviewNotificationWorker(
           resourcesKbox, getConfigurationDirectory(getStartupOptions()).toPath().resolve("private/review-notifications"));
       reviewNotificationWorker.start();
+    }
+    if (reviewArchiveWorker == null) {
+      reviewArchiveWorker = new org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker(
+          resourcesKbox, getConfigurationDirectory(getStartupOptions()).toPath().resolve("private/review-archives"));
+      reviewArchiveWorker.start();
     }
     return true;
   }
@@ -1307,6 +1339,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public boolean shutdown(int secondsToWait) {
+
+    if (reviewArchiveWorker != null) try { reviewArchiveWorker.close(); }
+    catch (RuntimeException incomplete) {
+      Logging.INSTANCE.warn("Archive replay has not stopped; resource stores remain open");
+      return false;
+    }
 
     if (reviewNotificationWorker != null) try { reviewNotificationWorker.close(); }
     catch (RuntimeException incomplete) {

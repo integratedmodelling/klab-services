@@ -142,6 +142,20 @@ public class WorkflowController {
             .getReviewArtifact(flowId, cycleId, attachmentId, userScope(principal))));
   }
 
+  @GetMapping(ServicesAPI.RESOURCES.FLOW + "/review-cycles/{cycleId}/archive")
+  public ResponseEntity<org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker.Status> archiveStatus(
+      @PathVariable String flowId, @PathVariable String cycleId, Principal principal) {
+    return ResponseEntity.ok().header("Cache-Control", "private, no-store")
+        .body(resourcesServer.klabService().reviewArchiveStatus(flowId, cycleId, userScope(principal)));
+  }
+
+  @PostMapping(ServicesAPI.RESOURCES.FLOW + "/review-cycles/{cycleId}/archive")
+  public ResponseEntity<org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker.Status> archiveCycle(
+      @PathVariable String flowId, @PathVariable String cycleId, Principal principal) {
+    return ResponseEntity.ok().header("Cache-Control", "private, no-store")
+        .body(resourcesServer.klabService().archiveReviewCycle(flowId, cycleId, userScope(principal)));
+  }
+
   @Operation(
       summary = "Delete a flow",
       description = "Delete a flow and its attachments as its editor/creator or an administrator")

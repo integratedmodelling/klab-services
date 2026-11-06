@@ -4320,6 +4320,25 @@ public class WorkspaceManager {
     return materialStorage(project, null, false);
   }
 
+  /** Trusted archive adapter for a freshly authenticated, authorized caller. The caller must
+   * separately authorize review management; this boundary resolves the actual ontology host and
+   * holds the same project-manager monitor as material mutation throughout the scoped Git write.
+   * Never bind a cached scope here as a background directory substitute. */
+  public synchronized void withReviewArchiveProject(
+      org.integratedmodelling.klab.resources.ReviewArchiveOutbox.Intent intent, UserScope user,
+      org.integratedmodelling.klab.resources.ReviewArchiveOutbox.Operation operation) throws java.io.IOException {
+    if (user == null || user.getUser() == null || !user.getUser().isAuthenticated() || user.getUser().isAnonymous())
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Authentication required");
+    var ontology = getOntology(intent.ontologyUrn());
+    if (ontology == null || ontology.getProjectName() == null)
+      throw new java.io.IOException("Ontology hosting project is unavailable");
+    String project = ontology.getProjectName();
+    service.requireMaterialWrite(project, org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.ADD, user);
+    var storage = materialStorage(project, user, true);
+    if (storage.isReadOnly() || service.getUrl() == null) throw new java.io.IOException("Writable host and trusted service URL required");
+    operation.archive(project, storage.getRootFolder().toPath(), service.getUrl().toString());
+  }
+
   private FileProjectStorage materialStorage(String project, UserScope user, boolean mutation) {
     var descriptor = projectDescriptors.get(project);
     if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage storage))

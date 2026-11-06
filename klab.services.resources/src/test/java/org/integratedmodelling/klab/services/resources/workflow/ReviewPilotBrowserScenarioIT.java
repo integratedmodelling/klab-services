@@ -68,6 +68,15 @@ class ReviewPilotBrowserScenarioIT {
       assertTrue(manager.getReviewCycles(flow.getId(), actors.get("community")).cycles().stream()
           .flatMap(c -> c.rounds().stream()).allMatch(r -> r.audience() == ReviewCycles.Audience.COMMUNITY));
       assertEquals(Flow.Status.ACTIVE, flow.getStatus(), "Closing review does not accept or publish ontology");
+      // The same private flat-key/string ledger must survive the real Nitrite/RocksDB restart.
+      try (var archives = new org.integratedmodelling.klab.resources.ReviewArchiveOutbox(directory.resolve("archive-replay"), 10)) {
+        assertEquals(2, ReviewWorkflowArchives.replayCommitted(store, archives));
+        assertEquals(0, ReviewWorkflowArchives.replayCommitted(store, archives));
+        assertTrue(archives.items().stream().allMatch(i -> i.status() == org.integratedmodelling.klab.resources.ReviewArchiveOutbox.Status.PENDING));
+      }
+      try (var archives = new org.integratedmodelling.klab.resources.ReviewArchiveOutbox(directory.resolve("archive-replay"), 10)) {
+        assertEquals(0, ReviewWorkflowArchives.replayCommitted(store, archives)); assertEquals(2, archives.items().size());
+      }
     } finally {
       if (browser != null && browser.isAlive()) {
         browser.descendants().forEach(ProcessHandle::destroyForcibly); browser.destroyForcibly();

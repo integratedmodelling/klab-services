@@ -25,6 +25,7 @@ const context = { api: {
     return btoa(JSON.stringify({ proposal: { id: "ontology-review", revision_id: path.endsWith("proposal-1") ? "r1" : "r2" } }));
   },
   get: async (path: string) => {
+    if (path.endsWith("/archive")) return { state: "BLOCKED" };
     if (denied && path.endsWith("/review-cycles")) throw new Error("403 Forbidden");
     if (path.includes("/attachments/")) return btoa(JSON.stringify({ proposal: { id: "ontology-review", revision_id: path.endsWith("proposal-1") ? "r1" : "r2" } }));
     if (path.endsWith("/review-cycles")) return structuredClone(view);
@@ -32,6 +33,7 @@ const context = { api: {
     throw new Error("403 Forbidden");
   },
   request: async (path: string, init: RequestInit) => {
+    if (path.endsWith("/archive")) { calls.push({ path, method: init.method }); return { state: "COMMITTED", commitId: "abc123" }; }
     const command = JSON.parse(String(init.body)); calls.push({ path, command });
     if (location.search.includes("conflict")) throw new Error("409 Conflict");
     const round = view.cycles.find(c => c.id === command.cycleId)!.rounds.find(r => r.id === command.roundId)!;
@@ -44,6 +46,7 @@ const context = { api: {
     return structuredClone(view);
   },
 } };
+if (new URL(location.href).searchParams.has("archive")) { view.canManage = true; view.cycles[0].closedAt = "2026-11-06T15:00:00Z"; }
 Object.assign(window, { reviewFixture: {
   closeRound(id: string) {
     for (const cycle of view.cycles) for (const round of cycle.rounds) if (round.id === id) round.closedAt = "2026-11-06T15:00:00Z";

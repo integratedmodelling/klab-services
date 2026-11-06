@@ -5,6 +5,17 @@ The published develop prerequisite is `212548f761ada2b5eecaac013191be0d5ce4152d`
 The earlier worker and simulated end-to-end checkpoints are preserved. Do not build/test by
 resetting a user's checkout, restarting their services or committing into an ontology project.
 
+In a fresh isolated clone containing the develop prerequisite, inspect the delivery receipt, then:
+
+```powershell
+git bundle verify <ontology-review-digest.bundle>
+git fetch <ontology-review-digest.bundle> refs/heads/ontology-review-digest
+git switch -c pilot-digest FETCH_HEAD
+```
+
+The audit bundle separately preserves `ontology-review-audit`; the digest bundle includes those
+fixes. Use the receipt's exact commit/hash rather than combining overlapping patches twice.
+
 ## Repeatable verification
 
 Requirements: Java 21, Maven, the verified published Languages artifacts, isolated UI node_modules,
@@ -68,11 +79,15 @@ trusted authenticated links, explicit delivery authorization/configuration, rete
 policy and audited privileged reconciliation for uncertain sends. Cached scopes or an email
 address alone do not satisfy that contract. No live identities were available for verification.
 
-The archive visibility choice is settled: default Git content is a minimal digest with links to
-permission-enforced persistent stages. It must not contain private/restricted text, drafts or
-unapproved identities. Complete safe host-project resolution, durable closure/outbox/receipt
-integration, idempotent scoped commits and recovery before enabling that path. Do not invoke the
-old full-history mapping as a public export. No remote push is implied by a local digest commit.
+The archive visibility choice is implemented as a minimal digest with permission-enforced links.
+Verify the advertised Resources base is stable and reachable after login, project write authority
+is intentional, and the host is an initialized ordinary Git repository with a clean index/worktree.
+Check the closed-cycle receipt after automatic close-time attempt. Pending/blocked jobs survive
+restart and require a fresh authorized editor retry; background replay retains no user scope and
+does not write projects. Test real-account/project permission revocation before rollout. Preserve
+private workflow/queue backups together. A branch-published/index-failed condition requires operator
+inspection; no reset/repair is automatic. Do not invoke the old full-history mapper as a public
+export. No remote push is implied by a local digest commit. See the digest status note for evidence.
 
 No push, deployment, service restart, real email, account creation or real-project write is part
 of this handoff's verification commands. Approval to deploy or enable real delivery is separate.

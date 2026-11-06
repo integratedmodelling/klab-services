@@ -9,6 +9,8 @@ const emit = defineEmits<{ candidate: [value: ReviewCycle]; revision: [value: nu
 const view = ref<ReviewView>(), cycleId = ref(""), roundId = ref(""), contributor = ref("");
 const draftId = ref(""), text = ref(""), original = ref(""), busy = ref(false), error = ref("");
 const selectionNotice = ref("");
+const archiveReceipt = ref<{ state: string; commitId?: string; manifestSha256?: string }>();
+watch(cycleId, () => { archiveReceipt.value = undefined; });
 const proposalDocument = ref(""), ontologySource = ref(""), replaceOntology = ref(false), proposalFilter = ref("");
 let generation = 0;
 const endpoint = computed(() => `api/v1/flows/${encodeURIComponent(props.flowId)}/review-cycles`);
@@ -26,7 +28,7 @@ const dirty = computed(() => fingerprint() !== original.value);
 watch(dirty, value => emit("dirty", value));
 function failed(cause: unknown) {
   error.value = cause instanceof Error ? cause.message : String(cause);
-  if (error.value.startsWith("403")) { view.value = undefined; emit("accessLost"); }
+  if (error.value.startsWith("403")) { view.value = undefined; archiveReceipt.value = undefined; emit("accessLost"); }
 }
 function updateLocation() {
   const url = new URL(window.location.href);
@@ -118,6 +120,18 @@ function openCycle() {
 }
 function save(submit: boolean) { return command("SAVE_CONTRIBUTION", { contributionId: draftId.value || null, text: text.value, submit,
   proposal: proposalDocument.value.trim() ? { document: proposalDocument.value, ontologySource: replaceOntology.value ? ontologySource.value : null } : null }); }
+async function archive(retry: boolean) {
+  const current = generation, selected = cycleId.value;
+  if (!cycle.value?.closedAt || !view.value?.canManage) return;
+  busy.value = true; error.value = "";
+  try {
+    const path = `${endpoint.value}/${encodeURIComponent(selected)}/archive`;
+    const receipt = retry ? await props.context.api.request<typeof archiveReceipt.value>(path, { method: "POST" })
+      : await props.context.api.get<typeof archiveReceipt.value>(path);
+    if (current === generation && selected === cycleId.value) archiveReceipt.value = receipt;
+  } catch (cause) { if (current === generation) failed(cause); }
+  finally { if (current === generation) busy.value = false; }
+}
 function downloadFeedback() {
   const url = URL.createObjectURL(new Blob([JSON.stringify({ cycleId: cycleId.value, roundId: roundId.value,
     text: text.value, proposal: proposalDocument.value || null, ontologySource: replaceOntology.value ? ontologySource.value : null }, null, 2)],
@@ -154,6 +168,13 @@ watch(() => props.flowId, () => {
           <button :disabled="busy || dirty" @click="command('OPEN_ROUND', { audience: 'REVIEWER' })">Open reviewer round</button>
           <button :disabled="busy || dirty" @click="command('OPEN_ROUND', { audience: 'COMMUNITY' })">Open community round</button>
           <button :disabled="busy || dirty" @click="command('CLOSE_CYCLE', { roundId: null })">Close cycle</button>
+        </div>
+        <div v-if="view.canManage && cycle.closedAt" class="controls">
+          <button :disabled="busy" @click="archive(false)">Check digest receipt</button>
+          <button :disabled="busy || archiveReceipt?.state === 'COMMITTED'" @click="archive(true)">Retry digest archive</button>
+          <p v-if="archiveReceipt" role="status">Digest archive: {{ archiveReceipt.state }}.
+            <template v-if="archiveReceipt.commitId">Local commit <code>{{ archiveReceipt.commitId }}</code>.</template>
+            Detailed feedback remains in the permission-protected workflow.</p>
         </div>
         <div class="controls">
           <label>Iteration <select v-model="roundId" aria-label="Feedback iteration" :disabled="busy || dirty" @change="selectRound">

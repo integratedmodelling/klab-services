@@ -21,6 +21,29 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 /** Real EngineAuthorization objects at the HTTP controller boundary, not a live JWT/login test. */
 class ReviewCycleHttpPrincipalTest {
+  @Test void archiveStatusAndRetryRequireAuthenticatedPrincipalAndPreserveItsScope() throws Exception {
+    var service = mock(ResourcesProvider.class); var server = mock(ResourcesServer.class); when(server.klabService()).thenReturn(service);
+    var controller = new WorkflowController(); ReflectionTestUtils.setField(controller, "resourcesServer", server);
+    var mvc = MockMvcBuilders.standaloneSetup(controller)
+        .setControllerAdvice(new org.integratedmodelling.klab.services.application.controllers.KlabErrorHandler()).build();
+    String path = "/api/v1/flows/flow-1/review-cycles/cycle-1/archive";
+    mvc.perform(get(path)).andExpect(status().isForbidden());
+    mvc.perform(post(path).principal(principal("editor", false))).andExpect(status().isForbidden());
+    verifyNoInteractions(service);
+    var editor = principal("editor", true); var scope = (UserScope) editor.getScope();
+    when(service.reviewArchiveStatus("flow-1", "cycle-1", scope)).thenReturn(
+        new org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker.Status("PENDING", false, null, null, null));
+    var result = mvc.perform(get(path).principal(editor)).andExpect(status().isOk()).andReturn();
+    assertEquals("private, no-store", result.getResponse().getHeader("Cache-Control"));
+    when(service.archiveReviewCycle("flow-1", "cycle-1", scope)).thenReturn(
+        new org.integratedmodelling.klab.services.resources.workflow.ReviewArchiveWorker.Status("BLOCKED", false, null, null, null));
+    mvc.perform(post(path).principal(editor)).andExpect(status().isOk());
+    verify(service).archiveReviewCycle("flow-1", "cycle-1", scope);
+    var citizen = principal("citizen", true);
+    when(service.archiveReviewCycle("flow-1", "cycle-1", (UserScope) citizen.getScope())).thenThrow(
+        new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Editor required"));
+    mvc.perform(post(path).principal(citizen)).andExpect(status().isForbidden());
+  }
   private EngineAuthorization principal(String name, boolean authenticated) {
     var identity = mock(UserIdentity.class); when(identity.getUsername()).thenReturn(name);
     when(identity.isAuthenticated()).thenReturn(authenticated);

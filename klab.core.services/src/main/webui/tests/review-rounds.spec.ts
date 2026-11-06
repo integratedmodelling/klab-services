@@ -1,5 +1,14 @@
 import { test, expect } from "@playwright/test";
 
+test("closed-cycle editor can inspect and explicitly retry a minimal digest receipt", async ({ page }) => {
+  await page.goto("/tests/review-rounds.html?flow=flow-1&cycle=cycle-1&round=community-1&archive");
+  await page.getByRole("button", { name: "Check digest receipt" }).click();
+  await expect(page.getByText("Digest archive: BLOCKED.")).toBeVisible();
+  await page.getByRole("button", { name: "Retry digest archive" }).click();
+  await expect(page.getByText("abc123")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry digest archive" })).toBeDisabled();
+});
+
 test("dashboard transport reads the server's plain Base64 attachment response", async ({ page }) => {
   await page.goto("/tests/review-rounds.html?flow=flow-1&stage=stage-1");
   await page.route("**/fixture-attachment", async route => {
