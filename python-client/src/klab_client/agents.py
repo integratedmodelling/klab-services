@@ -38,6 +38,9 @@ class AgentPreviews:
     def __init__(self, client, *, max_source_bytes=1024 * 1024, max_response_bytes=2 * 1024 * 1024):
         if not isinstance(client, Client):
             raise InvalidRequestError("Agent previews require a synchronous configured Client")
+        self._configure(client, max_source_bytes, max_response_bytes)
+
+    def _configure(self, client, max_source_bytes, max_response_bytes):
         if (type(max_source_bytes) is not int or not 1 <= max_source_bytes <= 1024 * 1024
                 or type(max_response_bytes) is not int or not 1 <= max_response_bytes <= 16 * 1024 * 1024):
             raise InvalidRequestError("Agent previews require bounded source/response byte budgets")
@@ -48,9 +51,10 @@ class AgentPreviews:
     def _safe(self, value):
         try:
             encoded = json.dumps(value, allow_nan=False, ensure_ascii=False)
-        except (TypeError, ValueError, RecursionError):
-            raise InvalidRequestError("Agent preview values must be finite JSON data") from None
-        if len(encoded.encode("utf-8")) > self.max_response_bytes:
+            size = len(encoded.encode("utf-8"))
+        except (TypeError, ValueError, RecursionError, UnicodeError):
+            raise InvalidRequestError("Agent preview values must be finite UTF-8 JSON data") from None
+        if size > self.max_response_bytes:
             raise InvalidRequestError("Agent preview payload exceeded the response byte budget")
         if self.client.transport.redact(encoded) != encoded:
             raise InvalidRequestError("Agent preview values must not contain configured credential material")
@@ -58,6 +62,9 @@ class AgentPreviews:
     def _identity(self):
         resources = self.client.resources.capabilities(max_response_bytes=self.max_response_bytes)
         runtime = self.client.runtime.capabilities(max_response_bytes=self.max_response_bytes)
+        return self._accept_identity(resources, runtime)
+
+    def _accept_identity(self, resources, runtime):
         binding = (self.client.transport.endpoint("resources").url, resources.service_id,
                    self.client.transport.endpoint("runtime").url, runtime.service_id)
         self._safe(binding)
@@ -66,18 +73,16 @@ class AgentPreviews:
         self._binding = binding
         return binding
 
-    def preview(self, source):
-        """Parse with Resources, then translate once with Runtime's compileOnly option.
-
-        compileOnly means DO_NOT_COMPILE_JAVA, not an executed/verified agent.
-        A lost response is not retried and never establishes translation success.
-        """
-        if not isinstance(source, str) or not source.strip() or len(source.encode("utf-8")) > self.max_source_bytes:
+    def _source(self, source):
+        try:
+            encoded = source.encode("utf-8") if isinstance(source, str) else b""
+        except UnicodeError:
+            raise InvalidRequestError("Agent source must be valid UTF-8 text") from None
+        if not encoded or not source.strip() or len(encoded) > self.max_source_bytes:
             raise InvalidRequestError("Agent source must be nonblank text within its UTF-8 byte budget")
         self._safe(source)
-        binding = self._identity()
-        parsed = self.client.transport.request("resources", "POST", "/parseAsset/BEHAVIOR", text=source,
-                                               max_response_bytes=self.max_response_bytes)
+
+    def _parsed(self, source, parsed, binding):
         parsed = object_payload(parsed, "parsed behavior")
         check_notifications(parsed, self.client.transport.redact)
         parser_source = parsed.get("sourceCode")
@@ -90,11 +95,14 @@ class AgentPreviews:
         if parsed.get("serviceId") != binding[1]:
             raise ProtocolError("Parsed behavior belongs to a different Resources identity")
         self._safe(parsed)
-        self._identity()
-        result = self.client.transport.request("runtime", "POST", "/api/v1/instantiate/agent",
-            json={"behavior": parsed, "compileOnly": True, "reportJavaCode": True,
-                  "doNotStart": True, "doNotBindSession": True, "doNotBindObservation": True,
-                  "observationId": -1}, max_response_bytes=self.max_response_bytes)
+        return parsed, parser_source, urn
+
+    def _request(self, parsed):
+        return {"behavior": parsed, "compileOnly": True, "reportJavaCode": True,
+                "doNotStart": True, "doNotBindSession": True, "doNotBindObservation": True,
+                "observationId": -1}
+
+    def _result(self, result, urn):
         result = object_payload(result, "source-only agent preview")
         check_notifications(result, self.client.transport.redact)
         if result.get("@CLASS") != AGENT_CLASS or result.get("behaviorUrn") != urn:
@@ -106,8 +114,54 @@ class AgentPreviews:
             raise ProtocolError("Runtime did not confirm a viable unregistered unstarted source-only preview")
         code = required_text(result, "javaCode")
         self._safe(result)
-        self._identity()
+        return result, code
+
+    def _receipt(self, source, parser_source, urn, result, code, binding):
         return AgentSourcePreview(urn, hashlib.sha256(source.encode("utf-8")).hexdigest(),
                                   hashlib.sha256(parser_source.encode("utf-8")).hexdigest(),
                                   parser_source != source, code,
-                                  *binding, freeze(result, self.client.transport.redact))
+                                   *binding, freeze(result, self.client.transport.redact))
+
+    def preview(self, source):
+        """Translate once with fixed compileOnly (DO_NOT_COMPILE_JAVA) flags.
+
+        No running/registered agent or automatic retry is created by this client.
+        """
+        self._source(source)
+        binding = self._identity()
+        parsed = self.client.transport.request("resources", "POST", "/parseAsset/BEHAVIOR", text=source,
+                                               max_response_bytes=self.max_response_bytes)
+        parsed, parser_source, urn = self._parsed(source, parsed, binding)
+        self._identity()
+        result = self.client.transport.request("runtime", "POST", "/api/v1/instantiate/agent",
+            json=self._request(parsed), max_response_bytes=self.max_response_bytes)
+        result, code = self._result(result, urn)
+        self._identity()
+        return self._receipt(source, parser_source, urn, result, code, binding)
+
+
+class AsyncAgentPreviews(AgentPreviews):
+    """Native awaited nonexecuting preview; no thread facade, broker or hidden loop."""
+    def __init__(self, client, *, max_source_bytes=1024 * 1024, max_response_bytes=2 * 1024 * 1024):
+        from .async_client import AsyncClient
+        if not isinstance(client, AsyncClient):
+            raise InvalidRequestError("Async agent previews require a configured AsyncClient")
+        self._configure(client, max_source_bytes, max_response_bytes)
+
+    async def _identity(self):
+        resources = await self.client.resources.capabilities(max_response_bytes=self.max_response_bytes)
+        runtime = await self.client.runtime.capabilities(max_response_bytes=self.max_response_bytes)
+        return self._accept_identity(resources, runtime)
+
+    async def preview(self, source):
+        self._source(source)
+        binding = await self._identity()
+        parsed = await self.client.transport.request("resources", "POST", "/parseAsset/BEHAVIOR", text=source,
+                                                     max_response_bytes=self.max_response_bytes)
+        parsed, parser_source, urn = self._parsed(source, parsed, binding)
+        await self._identity()
+        result = await self.client.transport.request("runtime", "POST", "/api/v1/instantiate/agent",
+            json=self._request(parsed), max_response_bytes=self.max_response_bytes)
+        result, code = self._result(result, urn)
+        await self._identity()
+        return self._receipt(source, parser_source, urn, result, code, binding)

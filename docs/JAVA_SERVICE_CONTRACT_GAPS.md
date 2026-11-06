@@ -49,6 +49,13 @@ Java end-to-end functionality. No Monday walkthrough or live repair is a Python 
 
 ## Request/response and ownership rules
 
+Native awaited preview correction (RC-P4.5/CAP14): AsyncAgentPreviews uses the
+existing parseAsset/BEHAVIOR and instantiate/agent compileOnly translation contract,
+sharing fixed nonexecution flags and validation with the sync facade. Mock protocol
+tests cover drift, cancellation, lost responses and malformed source without replay.
+Historical real synchronous source-translation evidence is not new awaited Java
+execution. No simulator behavior or broker lifecycle claim is introduced.
+
 Temporal export increment (RC-P2.2/CAP09/15): Python now forwards the native
 `storageEvent/storageStart/storageEnd` fields for explicit TEMPORAL_TRANSITION and
 records an immutable requested slice. Controller/BaseService/Utils.Data.asPOD are
