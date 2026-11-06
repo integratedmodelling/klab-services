@@ -1,0 +1,16 @@
+{
+  "utc": "2026-11-06T15:47:02.579049+00:00",
+  "mode": "read-only real Modeler capability negotiation in both new public facades",
+  "source_sha256": "ec12cc00bf26560142b4bd4f4cde50c55a2c8785498d2676db776b17fcb079f1",
+  "service_id": "4fa96242-5fa1-4647-ba24-cdc8b29e7549",
+  "build": "202610301844",
+  "schema_ids": [
+    "raster.geotiff.import",
+    "resources.legacy.files"
+  ],
+  "sync_async_parity": "PASS",
+  "request_count": 2,
+  "uploads": 0,
+  "scientific_jobs": 0,
+  "positive_java_import": "NOT_RUN; no supported owned-resource deletion cleanup found"
+}

@@ -59,8 +59,10 @@ from klab_client.requests import (ContextOptions, GridOptions, ObservationOption
     ObservationRequest, RectangularGeometry, ResolutionConstraint)
 from klab_client.notifications import ActivityNotifications, ActivityNotification, NotificationBroker
 from klab_client.scan_slices import ScanSlice
+from klab_client.imports import ResourceImporter, AsyncResourceImporter, ImportFormat, ImportSubmission
 
 __all__ = [
+    "ResourceImporter", "AsyncResourceImporter", "ImportFormat", "ImportSubmission",
     "ScanSlice",
     "ActivityNotifications", "ActivityNotification", "NotificationBroker",
     "Authoring", "AuthoringReceipt", "ParsedSource",
