@@ -145,7 +145,8 @@ See [vector budgets, identities and limits](vector-analysis.md).
 
 Remaining unsupported capabilities include Avro worker contextualization and job
 data decoding, general chunk/window access, automatic arbitrary query/consumer geometry
-conversion, general pandas/multidimensional adapters, privileged server administration, full Modeler
+conversion, general pandas/multidimensional adapters, privileged server administration
+beyond the explicitly supported project lock operations, full Modeler
 UI emulation and Java API parity. These are explicit boundaries, not empty success.
 
 Sync/native-async exports and analysis helpers accept explicit temporal `slice=`;

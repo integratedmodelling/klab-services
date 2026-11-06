@@ -46,7 +46,7 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 ## Delivery and verification log (append within this ledger)
 
 Fresh-process offline snapshot acceptance pass (active
-`feature/python-offline-snapshot-acceptance`, dependent on open scope PR260):
+`feature/python-offline-snapshot-acceptance`, published PR261):
 CAP12's remaining independently runnable fresh-process check now saves two bounded
 public SDK reads covering400unchanged frozen synthetic cells, explicitly releases
 owned scopes and reloads them in a fresh exact-interpreter SDK process. Socket audit
@@ -59,6 +59,19 @@ criteria unchanged. Prior3904SDK/19gate verification is reused only for the exac
 unchanged SDK artifact, not described as a new SDK suite. Receipt:
 `evidence/ab-offline-snapshot-validation-20261106.json`. Hosted delivery pending;
 this is A+B acceptance work, not the queued post-A+B issue/governance audit.
+PR260 remotely MERGED at4a0753e48389543146bb8fb0f508c121ea71e720,
+2026-11-06T20:06:35Z after all applicable hosted SDK/core/Windows/simulator/
+scientific/notebook/build/Jenkins checks passed. No independent maintainer review
+is claimed. PR261 is retargeted from the scope branch to campaign integration;
+fresh checks on its updated merge ancestry are required before merging.
+
+Actual current SDK installation smoke also PASS: pip `--no-index --no-deps`
+installed exact wheelb2651cb9b4acb798d6cd50c6186480a0fcc8d818f59677a0e0934354dbbacec8
+into a new temporary venv; import outside checkout verified package location and
+no automatic simulator/scientific-extra imports. The venv inherits host packages,
+so this is **not dependency-isolation certification**. No existing environment
+was modified. Sanitized receipt:
+`evidence/ab-current-sdk-install-smoke-20261106.json`.
 
 Scope-selection correction pass (active `feature/python-scope-selection-guards`):
 14red sync/async tests reproduced out-of-Java-long focused views, inconsistent or
