@@ -1,5 +1,16 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Active full-roadmap campaign — user directive 6 November 2026
+
+The new A+B+C directive supersedes prior prospective C exclusions and audit-stop
+instructions. RC-P5/CAP-17 are now **IN_SCOPE / NOT_IMPLEMENTED**, not completed.
+The42original definitions and dated statuses below remain historical evidence;
+current per-row work and delivery are in
+[FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),
+with A+B evidence history in the existing sole A+B ledger. Native/scientific/public
+release gates are separate from Python/simulator completion. Maintained native
+handoff: [JAVA_GAPS_FOR_FERDINANDO.md](java-service-contract-gaps/JAVA_GAPS_FOR_FERDINANDO.md).
+
 Ongoing completion/progress and independent Python/simulator/Java/science dimensions
 are maintained only in [AB_COMPLETION_LEDGER.md](../notes/python-roadmap-execution/AB_COMPLETION_LEDGER.md).
 The42criterion definitions below remain authoritative; dated delivery narratives
