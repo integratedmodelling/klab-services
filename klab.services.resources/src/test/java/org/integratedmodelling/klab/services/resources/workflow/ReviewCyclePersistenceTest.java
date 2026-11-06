@@ -44,6 +44,11 @@ class ReviewCyclePersistenceTest {
     store = open();
     try {
       var manager = fixtures.manager(store); var view = manager.getReviewCycles(flowId, reviewer);
+      try (var outbox = new org.integratedmodelling.klab.services.base.ReviewNotificationOutbox(
+          directory.resolve("private-notice-test"), java.time.Clock.systemUTC(), 100, 3, java.time.Duration.ofMinutes(5))) {
+        assertEquals(4, ReviewWorkflowNotifications.replayCommitted(store, outbox));
+        assertEquals(0, ReviewWorkflowNotifications.replayCommitted(store, outbox));
+      }
       assertEquals(closed, view.cycles().getFirst()); assertFalse(view.canManage());
       assertTrue(view.contributableRoundIds().isEmpty());
       var saved = view.cycles().getFirst().rounds().getFirst().contributions().getFirst();

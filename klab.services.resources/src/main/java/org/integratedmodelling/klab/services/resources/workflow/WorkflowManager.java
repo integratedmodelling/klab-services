@@ -566,6 +566,7 @@ public class WorkflowManager {
       }
       case CLOSE_CYCLE -> ReviewCycleProtocol.close(flow, workflow, actor, command.cycleId(), null);
     }
+    ReviewWorkflowNotifications.stage(flow, command);
     persistMutation(flow, workflow);
     var visible = ReviewCycleProtocol.visible(flow, workflow, actor);
     return new org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View(
@@ -666,6 +667,7 @@ public class WorkflowManager {
             || participant.getRoles().contains(WorkflowRole.EDITOR))) {
       current.setOwner(update.getOwner());
     }
+    ReviewWorkflowNotifications.requirePublicMetadata(update.getMetadata());
     current.setMetadata(update.getMetadata());
     current.setUpdatedAt(Instant.now());
     if (current.getStatus() == Flow.StateStatus.CLOSED)
@@ -1016,6 +1018,7 @@ public class WorkflowManager {
 
   private Flow project(Flow stored, Workflow workflow, WorkflowParticipant participant) {
     Flow copy = Utils.Json.parseObject(Utils.Json.asString(stored), Flow.class);
+    ReviewWorkflowNotifications.strip(copy);
     copy.setBehaviorCheckpoint(null);
     copy.getStates().values().forEach(state -> state.setBehaviorCheckpoint(null));
     // Apply privacy even to public flows and owners: another author's drafts never leave the server.
@@ -1114,6 +1117,7 @@ public class WorkflowManager {
   }
 
   private void normalizeNewState(Flow.State state, String flowId, String schemaId, Instant now) {
+    ReviewWorkflowNotifications.requirePublicMetadata(state.getMetadata());
     state.setId(
         state.getId() == null || state.getId().isBlank()
             ? UUID.randomUUID().toString()
@@ -1147,6 +1151,7 @@ public class WorkflowManager {
     ret.setTargetStateId(target);
     ret.setActor(participant.getIdentity());
     ret.setTimestamp(now);
+    ReviewWorkflowNotifications.requirePublicMetadata(metadata);
     ret.setMetadata(metadata == null ? Metadata.create() : Metadata.create(metadata));
     return ret;
   }

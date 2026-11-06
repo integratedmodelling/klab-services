@@ -144,11 +144,15 @@ public class WorkflowBehaviorBridge {
     public String title(String value) { stage.setTitle(value); return value; }
     public String description(String value) { stage.setDescription(value); return value; }
     public Object metadata(String key, Object value) {
+      ReviewWorkflowNotifications.requirePublicMetadata(java.util.Collections.singletonMap(key, value));
       RuntimeAgentBase.portableState(value);
       stage.getMetadata().put(key, value);
       return value;
     }
-    public Object value(String key) { return stage.getMetadata().get(key); }
+    public Object value(String key) {
+      ReviewWorkflowNotifications.requirePublicMetadata(java.util.Collections.singletonMap(key, null));
+      return stage.getMetadata().get(key);
+    }
   }
 
   public Session open(Workflow workflow, Flow flow, Flow.State stage, UserScope caller) {

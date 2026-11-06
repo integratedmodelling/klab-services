@@ -30,7 +30,11 @@ The new pilot supports bootstrap -> saved draft -> frozen cycle -> overlapping r
 
 The candidate pane is a JSON draft editor with text feedback and alternative JSON/YAML proposal/source contributions. Richer comment forms and semantic diffs remain pending. The local Git archive helper and frozen submitted-history mapping are implemented and tested in disposable repositories. Automatic workflow dispatch, host-project authorization/readership policy, durable archive receipts/retry and UI archive links remain pending. No automatic export is enabled: restricted feedback must not become visible through broader project Git access. See `klab.core.services/REVIEW_ARCHIVE_PILOT.md`.
 
-Notification delivery is also pending; persisted contributions are not a delivered editor notice.
+Review submissions and round/cycle changes now persist service-private notification intents in
+the same conditional aggregate write. Draft saves do not notify. Replay and a bounded outbox
+are implemented; delivery remains disabled until a verified account directory, worker lifecycle,
+consent policy and operational health reporting are connected. Persisted intents are not delivered
+editor notices. Recipient metadata is excluded from user views and Git history.
 
 Checks cover independent managers, real database conditional writes and separate-process ownership, actual Nitrite/RocksDB close/reopen, scoped EngineAuthorization objects at the HTTP controller boundary, disposable Git repositories and browser fixtures. They do not establish live JWT/identity-provider login or deployed multi-user behavior. See `notes/ontology-review-durable-status.md` for evidence and remaining gates.
 
