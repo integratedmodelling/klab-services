@@ -49,6 +49,14 @@ Java end-to-end functionality. No Monday walkthrough or live repair is a Python 
 
 ## Request/response and ownership rules
 
+Source credential preflight correction is **PYTHON_BUG**, not a Java gap:
+quote/backslash-containing synthetic configured secrets bypassed serialized-only
+JSON checks in authoring/agent source flows. Sixteen before-fix MockTransport tests
+reproduced unintended preflight requests/DTO acceptance/forwarding; no actual live
+credential disclosure is claimed. Shared decoded-key/value checks now reuse the
+existing read-only-preview policy before acceptance or forwarding. No simulator
+substitute, native contract invention, service repair or source rewrite is involved.
+
 Plain behavior draft creation (RC-P4.2/P4.4/CAP14): Authoring/AsyncAuthoring now
 reuse native BEHAVIOR parse and KlabDocument ADD with exact source/new-project/
 consent/CREATE receipt checks. Plain subtype is validated before any draft write;

@@ -1,5 +1,11 @@
 # Explicit ADD-only source authoring
 
+Source and parsed DTO safety checks inspect decoded string values and object keys,
+not just JSON serialization: quoted/backslash credentials cannot hide behind JSON
+escaping. Rejection occurs before source transmission or acceptance/forwarding of a
+credential-bearing parser result; source is never silently rewritten. Both facades
+share this preflight. Synthetic protocol regressions are not an observed live leak.
+
 Plain `BEHAVIOR` source drafts now use the same sync/native-async parse and ADD
 flow. This persists source only and never registers, compiles or starts an agent.
 See [behavior draft limits](behavior-source-authoring.md) for strict subtype,

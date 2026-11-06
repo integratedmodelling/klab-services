@@ -1,5 +1,11 @@
 # Source-only agent preview
 
+Source/DTO credential preflight checks decoded keys and string values in addition
+to serialized JSON, so quote/backslash escaping cannot conceal configured secret
+material. Sync/native-async previews and deferred registration share the guard;
+unrelated quoted text remains unchanged. No source rewrite, retry, new endpoint or
+Java execution is introduced by this safety correction.
+
 ## Native awaited preview
 
 ```python

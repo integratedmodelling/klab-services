@@ -26,6 +26,25 @@ def text(value, label, maximum=8192):
     return value
 
 
+def _reject_credential_leaves(value, redact, message):
+    """Check decoded leaves after bounded/cycle-free JSON validation by the caller.
+
+    Serialized JSON can escape quotes, slashes or Unicode within a credential.
+    Inspect the actual keys/strings without rewriting source or returned metadata.
+    """
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, str):
+            if redact(item) != item:
+                raise InvalidRequestError(message)
+        elif isinstance(item, dict):
+            pending.extend(item)
+            pending.extend(item.values())
+        elif isinstance(item, (list, tuple)):
+            pending.extend(item)
+
+
 def freeze(value, redact=lambda value: value, depth=0):
     if depth > 32:
         raise ProtocolError("Inspection metadata nesting exceeds 32 levels")
