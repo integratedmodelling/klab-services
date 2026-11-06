@@ -1,5 +1,8 @@
 # Notification integration checkpoint
 
+Historical checkpoint `df454aa4ad48`. Subsequent replay lifecycle, recipient-policy adapter
+and administrative health work are recorded in [the worker status](ontology-review-worker-status.md).
+
 Isolated branch `ontology-review-notifications`, starting at `addbdff193e97`.
 Task-10 source `353b3a785a3a` was imported as `65e83fd26`. Earlier delivery bundles,
 the durable mutation/proposal checkpoint and original task/user checkouts are preserved.

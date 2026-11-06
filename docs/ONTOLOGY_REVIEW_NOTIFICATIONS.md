@@ -4,11 +4,10 @@ This slice is an opt-in library, independent of the review-round integration. It
 worker, send mail, change configuration or modify workflow controllers. It builds on the existing
 service-owned `EmailManager`; its blocking SMTP call remains outside workflow mutations.
 
-The integrated pilot now captures round opening/closure, submitted feedback and cycle closure
-intents atomically through `ReviewWorkflowNotifications`. It provides private replay and exact-round
-reauthorization helpers, but still registers no delivery worker or real transport. The integration
-status and outstanding directory/consent requirements are in
-[`notes/ontology-review-notification-status.md`](../notes/ontology-review-notification-status.md).
+The integrated pilot captures round opening/closure, submitted feedback and cycle closure
+intents atomically through `ReviewWorkflowNotifications`. Resources now owns a replay-only worker
+and administrator health endpoint. No delivery transport is connected. The current lifecycle and
+directory/consent boundary is in [the worker status](../notes/ontology-review-worker-status.md).
 
 ## Integration contract
 

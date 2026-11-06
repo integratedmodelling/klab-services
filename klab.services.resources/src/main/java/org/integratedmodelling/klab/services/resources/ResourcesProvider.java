@@ -136,6 +136,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
 
   /** Switchable semantic model catalog; resource/workflow storage remains in ResourcesKBox. */
   private ModelCatalog kbox;
+  private volatile org.integratedmodelling.klab.services.resources.workflow.ReviewNotificationWorker reviewNotificationWorker;
 
   // set to true when the connected reasoner becomes operational
   //  private boolean semanticSearchAvailable = false;
@@ -404,9 +405,26 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   @Override
-  public boolean initializeService() {
+  public synchronized boolean initializeService() {
     Logging.INSTANCE.setSystemIdentifier("Resources service: ");
+    if (reviewNotificationWorker == null) {
+      reviewNotificationWorker = new org.integratedmodelling.klab.services.resources.workflow.ReviewNotificationWorker(
+          resourcesKbox, getConfigurationDirectory(getStartupOptions()).toPath().resolve("private/review-notifications"));
+      reviewNotificationWorker.start();
+    }
     return true;
+  }
+
+  /** Operational recipient hashes/status only; never a mailbox or message body. */
+  public org.integratedmodelling.klab.services.resources.workflow.ReviewNotificationWorker.Health reviewNotificationHealth(
+      int limit, UserScope scope) {
+    if (scope == null || scope.getUser() == null || !scope.getUser().isAuthenticated()
+        || scope.getUser().isAnonymous() || !isAllowed(CRUDOperation.ADMINISTER, scope))
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("Service administration required");
+    if (reviewNotificationWorker == null)
+      return new org.integratedmodelling.klab.services.resources.workflow.ReviewNotificationWorker.Health(
+          "STOPPED", false, null, null, "NOT_INITIALIZED", 0, Map.of(), List.of());
+    return reviewNotificationWorker.health(limit);
   }
 
   @Override
@@ -1289,6 +1307,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   public boolean shutdown(int secondsToWait) {
+
+    if (reviewNotificationWorker != null) try { reviewNotificationWorker.close(); }
+    catch (RuntimeException incomplete) {
+      Logging.INSTANCE.warn("Notification replay has not stopped; resource stores remain open");
+      return false;
+    }
 
     //    serviceScope()
     //        .send(
