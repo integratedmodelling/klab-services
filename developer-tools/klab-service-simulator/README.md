@@ -8,6 +8,15 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+Named RC-P3.5/CAP15 notebook acceptance reuses existing HTTP routes and the existing
+exact-interpreter private-kernel helper. Install SDK `[notebook,local]` to run it;
+dedicated `notebook-client` CI requires those imports instead of silently skipping.
+The actual kernel exercises two contexts, local-only cancellation with a surviving
+same-Job waiter, same-principal reader restoration/close, and partial graph refresh.
+Kernel/owned-scope cleanup and absence of remote cancellation/recreation are checked.
+This is SIMULATED service acceptance, not Java science, notebook GUI support or a
+positive collaborator ACL guarantee. No simulator endpoint/source behavior is added.
+
 RC-P2.2 temporal export acceptance reuses the existing `nonuniform-export` route
 and frozen TIFF bytes. Only the finite assignment `fixture:transition`, start0/end1
 is available; other/missing/duplicate query fields or unavailable selected states

@@ -49,6 +49,14 @@ Java end-to-end functionality. No Monday walkthrough or live repair is a Python 
 
 ## Request/response and ownership rules
 
+SIM-NOTEBOOK-001 (RC-P3.5/CAP15) now executes the current SDK in an actual owned
+exact-interpreter notebook kernel, while its service flow stays explicitly simulated.
+Existing routes verify local wait cancellation with a surviving same-Job wait,
+two contexts, same-principal reader restore/close, partial graph refresh and cleanup.
+This does not promote historical served notebook receipts, establish positive
+collaborator ACLs, or remove native commit/retention/scientific gaps. No new endpoint
+or simulator source behavior is required by this acceptance test.
+
 Native awaited graph correction (RC-P3.2/P3.5/CAP10): AsyncGraphBrowser and
 AsyncGraphProjection reuse existing bounded typed membership/LINK queries, pure
 decoding and partial retention. Both facades now snapshot relationship selections
