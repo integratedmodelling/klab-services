@@ -15,6 +15,13 @@ continue the next independently executable Python/simulator requirement without
 stopping at a documentation PR or review. No IDE repair/Java product change/study
 replication is authorized as a prerequisite. Current native acceptance stays separate.
 
+Full-roadmap first code pass (C separate package): no A/B SDK source change. Fresh
+genuinely installed SDK regression3988tests PASS/zero skips/74.17s, expected Rasterio
+negative-test warning; prior19coverage gates remain separately attributed, not
+claimed rerun here. Worker/simulator/gap0017 evidence and remaining independent
+work: `FULL_ROADMAP_EXECUTION_LEDGER.md` and
+`evidence/full-roadmap-worker-vertical-20261106.json`. No native/science promotion.
+
 ### Sequential execution queue — user directive 2026-11-06
 
 Previous phase: **A+B Service Simulator development — COMPLETED_BOUNDED**.

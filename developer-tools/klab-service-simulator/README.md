@@ -8,6 +8,17 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-WORKER-001 / JAVA-GAP-0017 now provides a separate experimental worker vertical
+for RC-P5/CAP-17. Install `./python-worker` alongside the ordinary SDK and simulator
+to run the full development suite. The explicitly opt-in `/experimental/worker/v1/`
+proposal is **not a verified native Java endpoint**: owner-scoped tasks, separate
+worker role, claim lease, validated atomic publication/provenance, cancellation,
+failure/release and honest reconnect. The simulator executes no scripts; the separate
+worker runs a trusted operator-selected script in an isolated process. Native ABI,
+durable restart and hardened deployment isolation remain unfinished, not implied by
+synthetic known-answer success. See [worker contract](../../python-worker/README.md)
+and the maintained [Ferdinando handoff](../../docs/java-service-contract-gaps/JAVA_GAPS_FOR_FERDINANDO.md).
+
 SIM-BEHAVIOR-DRAFT-001 (RC-P4.2/P4.4/CAP14) adds only the required native
 BEHAVIOR parse/ADD variants for one literal synthetic draft. It reuses existing
 workspace/project ownership and finite authoring state. Unknown source refuses;

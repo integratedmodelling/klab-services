@@ -182,3 +182,12 @@ def test_handoff_counts_are_derived_from_registry_not_frozen_sixteen_snapshot():
     text = govern.handoff_inventory(registry)
     assert "Registry entries: **1**" in text
     assert "|CONFIRMED_DEFECT|1|" in text and "|MISSING_API|0|" in text
+
+
+def test_current_worker_scope_does_not_rewrite_historical_c_exclusion():
+    _, audit, issues = govern.validate()
+    current = govern.load(govern.local_ref(issues["current_campaign_review_ref"]))["issues"]
+    worker = next(row for row in current if row["number"] == 127)
+    assert worker["disposition"] == "OPEN_OTHER" and worker["java_gap_ids"] == ["JAVA-GAP-0017"]
+    assert "now in implementation scope" in worker["reason"]
+    assert all(row["implementation_status"] == "OUT_OF_SCOPE" for row in audit["records"] if row["acceptance_id"] in ("RC-P5", "CAP-17"))

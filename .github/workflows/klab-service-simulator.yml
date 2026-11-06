@@ -3,9 +3,9 @@ name: Python SDK simulated service contracts
 on:
   workflow_dispatch:
   push:
-    paths: ['developer-tools/klab-service-simulator/**', 'python-client/**', '.github/workflows/klab-service-simulator.yml']
+    paths: ['developer-tools/klab-service-simulator/**', 'python-client/**', 'python-worker/**', '.github/workflows/klab-service-simulator.yml']
   pull_request:
-    paths: ['developer-tools/klab-service-simulator/**', 'python-client/**', '.github/workflows/klab-service-simulator.yml']
+    paths: ['developer-tools/klab-service-simulator/**', 'python-client/**', 'python-worker/**', '.github/workflows/klab-service-simulator.yml']
 
 permissions:
   contents: read
@@ -65,7 +65,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Install production SDK and separately packaged test simulator
-        run: python -m pip install ./python-client './developer-tools/klab-service-simulator[test]' setuptools wheel build ruff
+        run: python -m pip install ./python-client ./python-worker './developer-tools/klab-service-simulator[test]' setuptools wheel build ruff
       - name: Run clockless state, real HTTP SDK vertical, authentic recorded fixture and pinned replay tests
         # Each vertical case owns an ephemeral-port subprocess and terminates it in finally.
         # No Java, IDE, Neo4j, external service, production credential or paid API is used.

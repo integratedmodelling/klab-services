@@ -6,7 +6,10 @@ Active directive: user's self-contained **Single OpenCode directive: complete Py
 A+B+C and maintain all Java gaps in-repository**, received2026-11-06 after PR266.
 It supersedes the prior audit-stop/C-exclusion instructions prospectively. Original
 42IDs, criterion wording and historical statuses are not rewritten. C/RC-P5/CAP-17
-are **now IN_SCOPE, NOT_IMPLEMENTED**; not retrospectively complete or excluded.
+are **now IN_SCOPE, PARTIAL (experimental worker vertical)**; not retrospectively
+complete or excluded. The first handoff commit correctly recorded NOT_IMPLEMENTED
+before worker code existed; the subsequent feature evidence below changes current
+implementation status, not historical acceptance.
 
 This is the full-campaign orchestration ledger. `AB_COMPLETION_LEDGER.md` remains
 the sole A+B evidence history, linked here rather than independently maintaining
@@ -23,12 +26,28 @@ needs no live gates, repair, service changes, scientific Jobs or staging executi
 
 ### Last command / unfinished work / next action
 
-Last completed baseline command: `git switch -c docs/python-full-roadmap-handoff`
-and live open-issue inventory (10services+1geospatial). PR265/266 verified via GitHub.
-Active work: seed installed; generated16-gap companion/count check implementation
-under validation. No new PR yet. No background service launched.
-Next: run governance generate/validate/tests/lint; commit/publish this initial
-handoff gate, then immediately implement the next independent vertical requirement.
+Handoff PR267 remotely MERGED `7c5f90af926aa858fa8444d18fbb4dce4b2513cd`,
+2026-11-06T23:22:30Z after build/schema/substitute/Jenkins checks PASS; no independent
+maintainer review claimed. All16original gap records/IDs preserved;32governance
+tests passed. An initial merge command used a mismatched head and GitHub safely
+refused; corrected using the actual queried head, no bypass/force operation.
+
+Current branch `feat/python-worker-vertical`, parent verified handoff merge7c5f90af9.
+Worker code implemented and installed-tested, not yet published/merged. Fresh
+wheel/sdist/pip-target parity:4worker modules and13simulator modules;43worker unit,
+4realHTTP worker scenarios,111full simulator and33governance tests PASS, zero skips,
+94.04%aggregate line/branch worker coverage, no exclusions. SDK source unchanged.
+Fresh installedSDK regression also PASS3988tests/zero skips/74.17s (expected Rasterio
+negative-test warning); no SDK source change. Fresh installed-process starter PASS:
+known synthetic outputs/atomic publication/zero owned state after cleanup. Linked
+17gap cases SIMULATED_PASS;17current realNOT_RUN/exit3. Typecheck mypy1.20.2 PASS4files,
+schema/generated-handoff/fatal-error lint PASS. Final fresh worker wheel65e04a21…
+and simulator wheelef855f47… have full installed-suite evidence, with exact digests
+in `evidence/full-roadmap-worker-vertical-20261106.json`. No long-running live
+service was launched; tests own local emulators only.
+Next command: commit/push worker vertical PR with
+JAVA-GAP-0017/handoff, then continue durable worker/backend recovery and resource
+isolation or next independent A/B requirement while normal hosted gates run.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
@@ -70,7 +89,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P4.3|PARTIAL delivered imports; SIM-IMPORT-001/SIM-INPUT-BINDING-001|Broader annotation/compute input provenance with owned cleanup; native resource custody gate separate.|
 |RC-P4.4|PARTIAL ADD/locks; SIM-PROJECT-LOCK-001/SIM-BEHAVIOR-DRAFT-001|Explicit conditional revision/edit/history/publication protocol seam; no blind overwrite.|
 |RC-P4.5|PARTIAL native agent control/registration; protocol tests|Complete isolated managed-agent simulator lifecycle, terminal cleanup, reconnect and owner/denial.|
-|RC-P5|IN_SCOPE NOT_IMPLEMENTED; no worker package|Separate worker vertical: declared inputs/outputs, isolation, resource limits, cancellation and atomic publication.|
+|RC-P5|IN_SCOPE PARTIAL; python-worker Field/WorkerClient/execute, SIM-WORKER-001, JAVA-GAP-0017; local installed43unit+4HTTP PASS, merge pending|Initial trusted computation role delivered locally; durable restart, hardened deployment limits/isolation and native backend acceptance remain.|
 |RC-R1|PARTIAL layered CI/test tooling|Install/coverage/contract/handoff CI per feature; external scheduled worker adoption is not local test success.|
 |RC-R2|PARTIAL release checker|Package development artifacts; production release/support/owner approval remains external, no upload inferred.|
 |CAP-01|PARTIAL providers/profiles|Expiry/reacquisition and simulator bootstrap matrix; actual issuer approval external.|
@@ -89,7 +108,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-14|PARTIAL authoring/agent facades|Complete revision-safe authoring and managed lifecycle simulator flows with separate native status.|
 |CAP-15|PARTIAL optional scientific/notebook adapters|Categories/time/multidimensional and coherent notebook examples.|
 |CAP-16|PARTIAL compatibility/package matrix|Fresh wheel/sdk/worker installs, types/lint/coverage and reproducible starter; real deployment/support gates separate.|
-|CAP-17|IN_SCOPE NOT_IMPLEMENTED; historically excluded|Same separate worker package as RC-P5; no compiler/inference/storage port or embedded engine claim.|
+|CAP-17|IN_SCOPE PARTIAL; same separate experimental worker package/tests as RC-P5; merge pending|Complete recovery/resource boundaries and maintained deployment/native transport; no compiler/inference/storage port or embedded engine claim.|
 |CAP-18|COMPLETE current safety invariants|Enforce per change: explicit origins, no mutation replay, no hidden fallback, optional extras and separate simulator.|
 
 ## Execution order and C interpretation
@@ -111,9 +130,13 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 
 ## Live issue review
 
-Fresh live lists currently10services issues (#89,#123–127,#129,#130,#144,#193) and
-one geospatial#10. Full bodies/comments must be refreshed before disposition/action;
-prior comments/conditions remain in canonical issue history. Current new closures0.
+Fresh full bodies/comments inspected2026-11-06T23:20:40Z:10services issues
+(#89,#123–127,#129,#130,#144,#193) and one geospatial#10. Every original body hash
+unchanged; no new obligation comments beyond preserved audit/knownkeep-open links.
+Current receipt: `docs/java-service-contract-gaps/full-roadmap-issues.json`;8
+OPEN_JAVA_REQUIRED and3OPEN_OTHER (#127nowin-scope C,#129release,#130research).
+No fully superseded tracking-only candidates; zero new remote changes/closures.
+Prior comments/conditions remain in canonical issue history; refresh before action.
 New classes: FIXED_REAL, FIXED_PYTHON, TRACKING_MIGRATED, OPEN_JAVA_REQUIRED,
 OPEN_OTHER. No tracking migration is justified until all original obligations and
 exact executable tests have stable gap successors; Java functionality remains open

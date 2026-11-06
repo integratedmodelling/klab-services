@@ -1,0 +1,51 @@
+name: Experimental Python worker contracts (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-worker/**', 'developer-tools/klab-service-simulator/**', 'docs/java-service-contract-gaps/**', '.github/workflows/python-worker.yml']
+  pull_request:
+    paths: ['python-worker/**', 'developer-tools/klab-service-simulator/**', 'docs/java-service-contract-gaps/**', '.github/workflows/python-worker.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '${{ matrix.python }}'
+      - name: Build fresh separate worker wheel and sdist
+        run: |
+          python -m pip install build setuptools wheel
+          python -m build --outdir worker-dist python-worker
+      - name: Install actual wheel and development-only simulator separately
+        run: python -m pip install worker-dist/*.whl './python-client[dev]' './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: Verify package separation before tests
+        working-directory: /tmp
+        run: python -c "import klab_worker,sys; assert all(m not in sys.modules for m in ('klab_simulator','klab_client','numpy','rasterio')); print(klab_worker.__file__)"
+      - name: Worker envelope and trusted-process failure controls
+        run: python -m pytest -q python-worker/tests --cov=klab_worker --cov-branch --cov-report=json:worker-coverage.json --junitxml=worker-tests.xml
+      - name: Coherent SDK scope and real HTTP worker simulator lifecycle
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_worker_vertical.py --cov=klab_worker --cov-branch --cov-append --cov-fail-under=90 --cov-report=json:worker-coverage.json --junitxml=worker-http-tests.xml
+      - name: Fatal-error lint
+        run: python -m ruff check python-worker/src python-worker/tests python-worker/examples --select E9,F63,F7,F82
+      - name: Check typed envelopes and untyped implementation bodies
+        run: python -m mypy --check-untyped-defs python-worker/src
+      - name: Retain honest provisional evidence and fresh package
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: worker-contract-${{ matrix.python }}-native-NOT_RUN
+          path: |
+            worker-dist/*
+            worker-coverage.json
+            worker-tests.xml
+            worker-http-tests.xml
