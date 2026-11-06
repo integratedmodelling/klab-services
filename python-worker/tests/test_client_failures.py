@@ -42,7 +42,8 @@ def test_unknown_task_and_invalid_publication_fail_before_network(monkeypatch):
         pytest.fail("Invalid local request must not reach transport")
     with client(monkeypatch, handler) as worker:
         for callback in (lambda: worker.status("../other"), lambda: worker.submit({}, operation="double"),
-                         lambda: worker.fail(None), lambda: worker.publish({}, {}, implementation_sha256="wrong")):
+                         lambda: worker.fail(None), lambda: worker.publish({}, {}, implementation_sha256="wrong"),
+                         lambda: worker.recover_task("worker-task-1")):
             with pytest.raises(WorkerError): callback()
 
 

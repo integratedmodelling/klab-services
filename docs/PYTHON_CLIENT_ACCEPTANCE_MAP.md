@@ -5,8 +5,11 @@
 The new A+B+C directive supersedes prior prospective C exclusions and audit-stop
 instructions. RC-P5/CAP-17 are now **IN_SCOPE / PARTIAL experimental worker**,
 not completed: separate `python-worker` package and SIM-WORKER-001/JAVA-GAP-0017,
-initial installed43unit+4HTTP controls verified locally; publication/merge and
-durable recovery/deployment isolation/native backend acceptance remain outstanding.
+initial installed43unit+4HTTP controls delivered through mergedPR268/30460119d.
+Follow-up installed durable simulator restart/fencing/recomputation/cleanup pass
+has126simulator tests,15focused recovery,33governance and94.46%worker coverage;
+normal follow-up publication remains pending. Deployment resource/descendant/
+cancellation hardening and native backend/ABI/restart acceptance remain separate.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),

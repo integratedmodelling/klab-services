@@ -8,6 +8,27 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+Opt-in SIM-DURABLE-RESTORE-001 (JAVA-GAP-0004/0017) preserves one wholly simulated
+workflow across owned process restart. Pass `--state-file <owned>.klab-sim.sqlite`
+in an existing private directory **outside live `.klab`**. SQLite synchronous
+transactions/checksummed bounded JSON snapshots retain scopes, Jobs, observations,
+finite authoring/import state and worker task results. The default remains volatile.
+No Authorization credentials or active worker publication leases are stored.
+An OS single-writer lock prevents two simulators sharing a state file. Wrong
+version/scenario/seed, foreign SQLite file, corruption or excessive snapshots fail
+closed, never silently create replacement scientific state. Failed checkpoint
+writes return507 and roll back the in-memory mutation, not a false durable success.
+Real/replay modes reject simulated state files; no hybrid fallback.
+
+On restart, registrations clear and in-flight worker leases become
+RECOVERY_REQUIRED. Published/cancelled outcomes stay retained; old leases cannot
+publish. Recompute requires explicit owner consent via `recover_task`; no automatic
+redelivery/retry. Native Java retention/incarnation/worker semantics remain
+**REAL_NOT_RUN**. The durable test kills/restarts only its owned simulator, restores
+ordinary installed SDK handles on the same explicit origin, checks exact synthetic
+values and fenced worker outcomes, then verifies cleanup remains empty after a
+third process restart. This is not crash-safe native scientific continuation.
+
 SIM-WORKER-001 / JAVA-GAP-0017 now provides a separate experimental worker vertical
 for RC-P5/CAP-17. Install `./python-worker` alongside the ordinary SDK and simulator
 to run the full development suite. The explicitly opt-in `/experimental/worker/v1/`

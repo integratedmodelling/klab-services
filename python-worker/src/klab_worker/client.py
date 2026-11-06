@@ -75,6 +75,11 @@ class WorkerClient:
     def cancel(self, task_id):
         return self._request("POST", "tasks/" + identity(task_id) + "/cancel", {})
 
+    def recover_task(self, task_id, *, allow_recompute=False):
+        if allow_recompute is not True:
+            raise WorkerError("Lost worker outcome requires explicit recomputation consent; no automatic replay")
+        return self._request("POST", "tasks/" + identity(task_id) + "/recover", {"confirm_recompute": True})
+
     def release(self, worker_id):
         return self._request("POST", "release", {"worker_id": identity(worker_id)})
 

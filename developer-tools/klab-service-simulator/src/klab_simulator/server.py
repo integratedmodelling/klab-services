@@ -9,16 +9,21 @@ from urllib.parse import urlsplit
 from .state import State, SCENARIOS, SERVICES
 
 
-def make_server(port=0, *, scenario="elevation", seed=1, test_mode=False, mode="simulated"):
+def make_server(port=0, *, scenario="elevation", seed=1, test_mode=False, mode="simulated", state_file=None):
     if type(port) is not int or not 0 <= port <= 65535 or port in (8091, 8092, 8093, 8094, 8382, 7687):
         raise ValueError("Simulator must use a non-production local port")
     if mode not in ("simulated", "replay"):
         raise ValueError("A simulator server cannot proxy real services or perform hybrid fallback")
+    if state_file is not None and mode != "simulated":
+        raise ValueError("Durable simulator state cannot be used for replay or real mode")
     if mode == "replay":
         from .replay import ReplayState
         state = ReplayState(seed, test_mode)
     else:
         state = State(scenario, seed, test_mode)
+    if state_file is not None:
+        from .persistence import Store
+        state.store = Store(state_file, state)
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
             pass  # Trace never records request bodies or Authorization headers.
@@ -78,7 +83,20 @@ def make_server(port=0, *, scenario="elevation", seed=1, test_mode=False, mode="
             finally:
                 self.slots.release()
 
-    server = BoundedServer(("127.0.0.1", port), Handler)
+        def server_close(self):
+            super().server_close()
+            with state.lock:
+                state.closing = True
+                if state.store is not None:
+                    state.store.close()
+                    state.store = None
+
+    try:
+        server = BoundedServer(("127.0.0.1", port), Handler)
+    except BaseException:
+        if state.store is not None:
+            state.store.close()
+        raise
     server.daemon_threads = True
     server.state = state
     return server
@@ -92,8 +110,11 @@ def main():
     parser.add_argument("--test-mode", action="store_true")
     parser.add_argument("--mode", choices=("simulated", "replay", "real"), default="simulated")
     parser.add_argument("--real-endpoints", type=Path, help="Explicit four-service JSON configuration; never a proxy")
+    parser.add_argument("--state-file", type=Path, help="Opt-in owned .klab-sim.sqlite checkpoint; never live .klab state")
     args = parser.parse_args()
     if args.mode == "real":
+        if args.state_file is not None:
+            parser.error("real mode cannot load simulated state")
         if args.real_endpoints is None or args.real_endpoints.stat().st_size > 16384:
             parser.error("real mode requires a bounded explicit endpoint configuration")
         endpoints = json.loads(args.real_endpoints.read_text())
@@ -106,7 +127,7 @@ def main():
         print(json.dumps({"backend": "REAL", "endpoints": endpoints, "proxy": False,
                           "instruction": "Configure the ordinary SDK directly; failures are not substituted"}), flush=True)
         return
-    server = make_server(args.port, scenario=args.scenario, seed=args.seed, test_mode=args.test_mode, mode=args.mode)
+    server = make_server(args.port, scenario=args.scenario, seed=args.seed, test_mode=args.test_mode, mode=args.mode, state_file=args.state_file)
     print(json.dumps({"backend": server.state.backend, "scenario": server.state.scenario, "seed": args.seed,
         "endpoints": {name: f"http://127.0.0.1:{server.server_port}/{name}" for name in SERVICES},
         "service_ids": server.state.service_ids}), flush=True)

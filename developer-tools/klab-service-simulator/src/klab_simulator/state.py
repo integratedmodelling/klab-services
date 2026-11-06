@@ -8,6 +8,7 @@ from copy import deepcopy
 import json
 import math
 import re
+import sqlite3
 import threading
 from urllib.parse import unquote, urlsplit
 
@@ -45,6 +46,8 @@ class State:
             raise ValueError("Choose a known scenario and bounded integer seed")
         self.scenario, self.seed, self.test_mode = scenario, seed, test_mode
         self.backend = "SIMULATED"
+        self.store = None
+        self.closing = False
         self.service_ids = {name: f"sim-{name}-{seed}" for name in SERVICES}
         self.sessions, self.contexts, self.jobs, self.observations = {}, {}, {}, {}
         self.imported_resources = {}
@@ -137,11 +140,23 @@ class State:
 
     def request(self, method, path, headers, body=b""):
         with self.lock:
+            if self.closing:
+                return 503, {"error": "Owned simulator is closing"}, "application/json"
             status, result, content_type = 200, None, "application/json"
+            if self.store is not None:
+                from .persistence import snapshot
+                before = snapshot(self)
             try:
                 result, content_type = self._request(method, path, headers, body)
             except ContractError as error:
                 status, result = error.status, {"error": error.message}
+            if self.store is not None:
+                try:
+                    self.store.save(self)
+                except (OSError, ValueError, TypeError, RecursionError, sqlite3.Error):
+                    from .persistence import restore
+                    restore(self, before, recovery=False)
+                    status, result, content_type = 507, {"error": "Simulator persistence unavailable; operation not acknowledged"}, "application/json"
             self.trace.append({"backend": self.backend, "scenario": self.scenario, "seed": self.seed,
                 "method": method, "path": urlsplit(path).path,
                 "status": None if content_type == "application/x-simulator-disconnect" else status,
