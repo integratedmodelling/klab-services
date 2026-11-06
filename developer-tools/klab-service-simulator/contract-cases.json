@@ -28,6 +28,18 @@
   },
   "cases": [
     {
+      "id": "SIM-BEHAVIOR-DRAFT-001",
+      "rows": ["RC-P4.2", "RC-P4.4", "CAP-14", "CAP-18"],
+      "api": "Authoring/AsyncAuthoring.parse(kind=BEHAVIOR), create_document with explicit consent and confirmed newly created project",
+      "routes": ["POST /resources/parseAsset/BEHAVIOR", "PUT /resources/api/v1/submit/BEHAVIOR/ADD"],
+      "request": "One exact synthetic plain BEHAVIOR draft only, existing ADD workspace/project ownership and source receipt checks",
+      "expected": "Exact source/project association and CREATE receipt; unknown source refuses; no consent sends no write; duplicate ADD never overwrites; no instantiate/Job/start/broker/unlock side effect",
+      "source": "ResourcesProvider.submit KlabDocument ADD; WorkspaceManager.createDocument; native KActorsBehaviorImpl DTO; docs/AGENTS.md grammar authority (source only)",
+      "confidence": "SIMULATED_PROVISIONAL literal draft parsing/admission/persistence only; not a language parser or Java execution",
+      "simulator_test": "test_behavior_drafts.py::test_nonexecuting_behavior_draft_add_uses_exact_native_source_and_never_instantiates",
+      "java_status": "NOT_RUN; native source persistence/semantic validation requires separate Java evidence"
+    },
+    {
       "id": "SIM-OFFLINE-SNAPSHOT-001",
       "rows": ["RC-P1.2", "CAP-12", "CAP-18"],
       "api": "ScientificData.dumps/loads in a fresh SDK-only process after owned scope release",

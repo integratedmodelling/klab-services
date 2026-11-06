@@ -1,8 +1,9 @@
 """Finite explicit input binding, not a k.IM parser/compiler or local model engine.
 
 The exact source form `model <resource URN> as <observable>;` was accepted in the
-historical USGS namespace receipt. This module accepts ONE declared fixture source;
-all other source is refused, not interpreted. Admission/selection remain provisional.
+historical USGS namespace receipt. This module accepts that one namespace fixture
+and the one nonexecuting BEHAVIOR draft required by SIM-BEHAVIOR-DRAFT-001.
+All other source is refused, not interpreted. Admission/selection remain provisional.
 """
 import json
 from urllib.parse import parse_qs, urlsplit
@@ -14,6 +15,16 @@ RESOURCE = "simulator:alice:uploaded"
 MODEL = NAMESPACE + ".elevation-quantifier"
 SOURCE = f"namespace {NAMESPACE};\nmodel {RESOURCE} as geography:Elevation in m;\n"
 CLASS = "org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl"
+BEHAVIOR = "simulator.draft"
+BEHAVIOR_CLASS = "org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl"
+# Literal synthetic draft only; not parsing, translation, compilation or execution.
+BEHAVIOR_SOURCE = '''behavior simulator.draft
+    "Finite synthetic source-only draft."
+    version 1.0
+
+action main:
+    return 0
+'''
 
 
 class AuthoringState:
@@ -54,6 +65,11 @@ class AuthoringState:
         raise ContractError(422, "Import fixture and explicitly admit its exact semantic source before resolving/computing")
 
     def request(self, method, route, original_path, principal, body):
+        if method == "POST" and route == "/parseAsset/BEHAVIOR":
+            if body != BEHAVIOR_SOURCE.encode("utf-8"):
+                raise ContractError(422, "Only the literal SIM-BEHAVIOR-DRAFT-001 source is admitted; no language parser")
+            return {"@CLASS": BEHAVIOR_CLASS, "urn": BEHAVIOR, "sourceCode": BEHAVIOR_SOURCE,
+                    "behaviorType": "BEHAVIOR", "notifications": [], "metadata": {}}, "application/json"
         if method == "POST" and route == "/parseAsset/NAMESPACE":
             try:
                 source = body.decode("utf-8")
@@ -66,7 +82,7 @@ class AuthoringState:
         if method != "PUT" or not route.startswith("/api/v1/submit/"):
             return None
         parts = route.split("/")
-        if len(parts) != 6 or parts[-1] != "ADD" or parts[-2] not in ("WORKSPACE", "PROJECT", "NAMESPACE"):
+        if len(parts) != 6 or parts[-1] != "ADD" or parts[-2] not in ("WORKSPACE", "PROJECT", "NAMESPACE", "BEHAVIOR"):
             raise ContractError(501, "Only bounded explicit ADD operations are simulated; no source overwrite/history protocol")
         kind = parts[-2]
         urns = parse_qs(urlsplit(original_path).query).get("urn", [])
@@ -94,10 +110,14 @@ class AuthoringState:
         else:
             projects = [row for (asset_kind, key), row in self.assets.items() if asset_kind == "PROJECT"
                         and key.split("/", 1)[-1] == payload.get("projectName") and row["owner"] == principal]
-            if (urn != NAMESPACE or payload.get("urn") != NAMESPACE or payload.get("@CLASS") != CLASS
-                    or payload.get("sourceCode") != SOURCE or len(projects) != 1):
-                raise ContractError(422, "Namespace requires the exact fixture source and one owned project")
-            self.state._owner(self.state.imported_resources, RESOURCE, principal)
+            expected_urn, expected_class, expected_source = ((NAMESPACE, CLASS, SOURCE) if kind == "NAMESPACE"
+                else (BEHAVIOR, BEHAVIOR_CLASS, BEHAVIOR_SOURCE))
+            if (urn != expected_urn or payload.get("urn") != expected_urn or payload.get("@CLASS") != expected_class
+                    or payload.get("sourceCode") != expected_source or len(projects) != 1
+                    or (kind == "BEHAVIOR" and payload.get("behaviorType") != "BEHAVIOR")):
+                raise ContractError(422, "Document requires its exact fixture source and one owned project")
+            if kind == "NAMESPACE":
+                self.state._owner(self.state.imported_resources, RESOURCE, principal)
         self.assets[(kind, urn)] = {"owner": principal, "payload": payload}
         descriptor = {"resourceUrn": urn.split("/", 1)[-1] if kind == "PROJECT" else urn,
             "knowledgeClass": kind, "operation": "CREATE", "serviceId": self.state.service_ids["resources"]}

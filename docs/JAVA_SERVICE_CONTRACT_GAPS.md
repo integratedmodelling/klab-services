@@ -49,6 +49,17 @@ Java end-to-end functionality. No Monday walkthrough or live repair is a Python 
 
 ## Request/response and ownership rules
 
+Plain behavior draft creation (RC-P4.2/P4.4/CAP14): Authoring/AsyncAuthoring now
+reuse native BEHAVIOR parse and KlabDocument ADD with exact source/new-project/
+consent/CREATE receipt checks. Plain subtype is validated before any draft write;
+scripts/apps/testcases and existing-source selectors refuse. No instantiate, agent
+start, compiler, source overwrite or publication is introduced. Named
+SIM-BEHAVIOR-DRAFT-001 supplies only one literal synthetic draft on the two required
+native route variants; admission/persistence remain SIMULATED_PROVISIONAL and
+actual Java persistence/semantic validation NOT_RUN. Ontology creation/editing needs
+its distinct project policy/source-version contracts; no generic equivalence is
+inferred from native behavior document creation or principal-shared project locks.
+
 Scope-selection correction (RC-P1.5/CAP03/04/18): shared Python validation now
 rejects out-of-positive-Java-long focus/observer values, root/token inconsistencies,
 observer-bearing root configurations and control characters before I/O. Raw Runtime

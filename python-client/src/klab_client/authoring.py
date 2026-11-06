@@ -18,6 +18,7 @@ from .evidence import _plain
 DOCUMENTS = {
     "NAMESPACE": "org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl",
     "OBSERVATION_STRATEGY_DOCUMENT": "org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl",
+    "BEHAVIOR": "org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl",
 }
 COLLECTIONS = ("results", "namespaces", "ontologies", "behaviors", "resources", "observationStrategies", "projects")
 
@@ -89,8 +90,12 @@ class Authoring:
 
     def _source(self, source, kind):
         if not isinstance(kind, str) or kind not in DOCUMENTS:
-            raise UnsupportedOperationError("Source authoring admits only NAMESPACE and OBSERVATION_STRATEGY_DOCUMENT; other write contracts remain unverified")
-        if not isinstance(source, str) or not source.strip() or len(source.encode("utf-8")) > self.max_source_bytes:
+            raise UnsupportedOperationError("Source authoring admits NAMESPACE, OBSERVATION_STRATEGY_DOCUMENT and plain BEHAVIOR drafts; other write contracts remain unverified")
+        try:
+            encoded = source.encode("utf-8") if isinstance(source, str) else b""
+        except UnicodeError:
+            raise InvalidRequestError("Authoring source must be valid UTF-8 text") from None
+        if not encoded or not source.strip() or len(encoded) > self.max_source_bytes:
             raise InvalidRequestError("Source must be nonblank text within the configured UTF-8 byte budget")
         self._safe(source)
 
@@ -103,7 +108,13 @@ class Authoring:
         if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*", urn):
             raise ProtocolError("Parser returned an unsafe source URN")
         self._safe(payload)
+        self._behavior_type(kind, payload)
         return ParsedSource(kind, urn, url, identity, freeze(payload, self.client.transport.redact))
+
+    @staticmethod
+    def _behavior_type(kind, payload):
+        if kind == "BEHAVIOR" and payload.get("behaviorType") != "BEHAVIOR":
+            raise UnsupportedOperationError("Only plain BEHAVIOR source drafts are admitted; no app/script/test execution or ownership contract is implied")
 
     def _add(self, kind, urn, body, allow_write):
         self._write_request(urn, body, allow_write)
@@ -178,6 +189,7 @@ class Authoring:
         if self._binding != (parsed.service_url, parsed.service_id):
             raise InvalidRequestError("Parsed source belongs to a different Resources identity")
         payload = object_payload(_plain(parsed.raw), "parsed authoring source")
+        self._behavior_type(parsed.kind, payload)
         if (payload.get("urn") != parsed.urn or payload.get("@CLASS") != DOCUMENTS[parsed.kind]
                 or not isinstance(payload.get("sourceCode"), str)
                 or not isinstance(parsed.urn, str)

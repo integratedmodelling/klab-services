@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-BEHAVIOR-DRAFT-001 (RC-P4.2/P4.4/CAP14) adds only the required native
+BEHAVIOR parse/ADD variants for one literal synthetic draft. It reuses existing
+workspace/project ownership and finite authoring state. Unknown source refuses;
+duplicate ADD cannot overwrite; no instantiate, Job, broker, source update,
+publication or implicit unlock is simulated. This is SIMULATED_PROVISIONAL source
+admission/persistence, not a k.Actors parser, compiler, scheduler or Java execution.
+
 SIM-OFFLINE-SNAPSHOT-001 completes the fresh-process CAP12 regression using existing
 routes only. Two bounded SDK read snapshots preserve all400 frozen synthetic cells;
 after owned scopes are released, a fresh SDK process reloads them with every socket
