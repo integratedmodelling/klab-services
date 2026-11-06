@@ -19,10 +19,15 @@ from .errors import (ConfigurationError, InvalidRequestError, JobCancelledError,
                      JobUnavailableError, ProtocolError, ServerError, SubmissionOutcomeUnknown, TransportError,
                       UnsupportedOperationError, WaitTimeout, WaitCancelled)
 from .transport import Endpoint, Transport, _normalize_service_url
-from .requests import ContextOptions, ObservationOptions, ObservationRequest
+from .requests import ContextOptions, ObservationOptions, ObservationRequest, _positive_id, _selection_id
 from ._job_binding import JobBinding
 
 _TOKEN = re.compile(r"^[^.\s#]+(?:\.[^.\s#]+)?(?:\.[1-9][0-9]*)*(?:#[1-9][0-9]*)?$")
+
+
+def _scope_grammar(token):
+    return (isinstance(token, str) and _TOKEN.fullmatch(token) is not None
+            and not any(ord(char) < 32 or ord(char) == 127 for char in token))
 
 
 def scope_token(scope) -> str | None:
@@ -38,8 +43,17 @@ def scope_token(scope) -> str | None:
         return None
     else:
         token = getattr(scope, "id", None)
-    if not isinstance(token, str) or not _TOKEN.fullmatch(token):
+    if not _scope_grammar(token):
         raise InvalidRequestError("Scope must follow session.context[.observationId...][#observerId] grammar")
+    base, marker, observer = token.partition("#")
+    for identity in base.split(".")[2:]:
+        _selection_id(identity)
+    if marker:
+        _selection_id(observer)
+    if isinstance(scope, Context):
+        configuration = getattr(scope, "configuration", None)
+        if not isinstance(configuration, dict) or configuration.get("id") != ".".join(base.split(".")[:2]):
+            raise InvalidRequestError("Selected scope root differs from the current context configuration")
     return token
 
 
@@ -259,9 +273,12 @@ class Session(SessionScopeImpl):
 class Context(ContextScopeImpl):
     def __init__(self, client, configuration, *, owned=False, token=None):
         id = required_text(configuration, "id")
-        if len(id.split(".")) != 2 or not _TOKEN.fullmatch(id):
+        if len(id.split(".")) != 2 or "#" in id or not _scope_grammar(id):
             raise ProtocolError("Configuration ID must be session.context")
-        super().__init__(user_id=client.agent_name or "", session_id=id.split(".")[0], context_id=token or id)
+        selected = scope_token(id if token is None else token)
+        if ".".join(selected.split("#")[0].split(".")[:2]) != id:
+            raise InvalidRequestError("Selected scope root differs from the context configuration")
+        super().__init__(user_id=client.agent_name or "", session_id=id.split(".")[0], context_id=selected)
         self.client, self.configuration, self.owned = client, configuration, owned
 
     @property
@@ -270,9 +287,7 @@ class Context(ContextScopeImpl):
 
     def within(self, observation: ObservationImpl | int) -> Context:
         """Return a focused view; it does not create or release a remote context."""
-        id = observation.id if isinstance(observation, ObservationImpl) else observation
-        if type(id) is not int or id <= 0:
-            raise InvalidRequestError("Focus requires a positive committed observation ID")
+        id = _positive_id(observation.id if isinstance(observation, ObservationImpl) else observation)
         if isinstance(observation, ObservationImpl) and observation._context is not None:
             bound = observation._context
             if bound.id != self.id:

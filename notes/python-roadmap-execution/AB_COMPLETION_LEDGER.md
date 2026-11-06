@@ -54,8 +54,13 @@ credential leak is claimed. Reused existing signed-long validation, guarded exac
 root/control-free grammar and shared Runtime scope-binding checks before I/O.
 840focused tests plus two existing-route HTTP same-backend/current-credential and
 foreign-binding/private-denial cases PASS. No new simulator source behavior or
-endpoint, no Java call, no membership/permission/revision claim. Full packaged gates
-pending. PR259 remotely MERGED atbe22818169852902a29fe077635e649426485689,
+endpoint, no Java call, no membership/permission/revision claim. Final verification:
+3904packaged SDK tests PASS, all19exact coverage gates PASS without exclusions,
+103packaged simulator tests and fatal-error lint PASS. Two additional pure-boundary
+tests preserve independent defensive checks now masked in public workflows by the
+earlier validation.48source modules match wheel/sdist bytes;42original criteria
+remain unchanged. Receipt: `evidence/ab-scope-selection-validation-20261106.json`.
+Publication/hosted acceptance pending. PR259 remotely MERGED atbe22818169852902a29fe077635e649426485689,
 2026-11-06T19:39:17Z after all hosted SDK/core/Windows/simulator/scientific/notebook/
 build/Jenkins checks passed; no independent maintainer review claimed.
 

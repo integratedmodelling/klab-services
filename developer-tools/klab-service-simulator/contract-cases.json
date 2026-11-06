@@ -28,6 +28,19 @@
   },
   "cases": [
     {
+      "id": "SIM-SCOPE-SELECTION-001",
+      "rows": ["RC-P1.5", "CAP-03", "CAP-04", "CAP-18"],
+      "api": "Context/AsyncContext selected scopes; within; raw Runtime.query_knowledge_graph",
+      "routes": ["Existing POST /runtime/api/v1/query"],
+      "request": "Same-backend bound Context from another client uses current credentials; foreign origin/known Runtime identity, inconsistent root, malformed or out-of-long selection refuses before I/O",
+      "expected": "Authorized same-principal read succeeds; different-principal private read remains403; invalid local binding sends zero query requests; no automatic context recreation/rerouting",
+      "source": "ContextScope.parseScopeId source parses observation path/observer as Java long; existing SDK origin-qualified context contract",
+      "confidence": "SIMULATED_PROVISIONAL private ownership; local scope checks and HTTP routing evidence, not actual Java scope execution or positive collaborator authorization",
+      "simulator_test": "test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http",
+      "additional_simulator_tests": ["test_scope_selection.py::test_native_async_same_backend_read_and_foreign_binding_use_existing_query_route"],
+      "java_status": "NOT_RUN; no new simulator endpoint or source behavior needed"
+    },
+    {
       "id": "SIM-PROJECT-LOCK-001",
       "rows": ["RC-P4.4", "CAP-14", "CAP-18"],
       "api": "ProjectLock/AsyncProjectLock.acquire/release; ProjectLockReceipt",
