@@ -1,0 +1,41 @@
+name: Python SDK simulated service contracts
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['developer-tools/klab-service-simulator/**', 'python-client/**', '.github/workflows/klab-service-simulator.yml']
+  pull_request:
+    paths: ['developer-tools/klab-service-simulator/**', 'python-client/**', '.github/workflows/klab-service-simulator.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  simulator-sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install production SDK and separately packaged test simulator
+        run: python -m pip install ./python-client './developer-tools/klab-service-simulator[test]' setuptools wheel build ruff
+      - name: Run clockless state, real HTTP SDK vertical, authentic recorded fixture and pinned replay tests
+        # Each vertical case owns an ephemeral-port subprocess and terminates it in finally.
+        # No Java, IDE, Neo4j, external service, production credential or paid API is used.
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests --junitxml=simulator-results.xml
+      - name: Simulator syntax and fatal-error lint
+        run: python -m ruff check developer-tools/klab-service-simulator/src developer-tools/klab-service-simulator/tests --select E9,F63,F7,F82
+      - name: Build separate simulator artifacts
+        run: python -m build --no-isolation developer-tools/klab-service-simulator
+      - name: Retain labeled test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-contracts-python-${{ matrix.python }}
+          path: simulator-results.xml
+          if-no-files-found: error

@@ -1,5 +1,9 @@
 # Current program checkpoint — 2026-11-05 UTC
 
+Current continuous A+B campaign: consult `AB_COMPLETION_LEDGER.md`. Dated snapshots
+below are retained history; do not start a new narrative milestone report or treat
+one completed PR as the stopping condition.
+
 ## 6 November — IDE contract and independent A+B correctness pass (local)
 
 Base `573a51d46896a4733450a4f81da512566aa864bf` / PR242 accepted; branch
