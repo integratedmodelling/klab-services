@@ -1,5 +1,8 @@
 # Review cycle pilot
 
+For participant instructions, start with [Try the ontology review pilot](ONTOLOGY_REVIEW_PILOT.md).
+This page is the API and implementation reference.
+
 The pilot combines editor bootstrap with independent review cycles. It does not grant reviewer roles or equate closing a review with accepting or publishing an ontology. `WorkflowParticipant.from` no longer fabricates a reviewer role for a known-person identity with no configured role.
 
 Open an `ontology-review-pilot@0.2` flow from the editor, then enter `<Resources-base>/ui/review?flow=<id>&stage=<id>`. Prepare and edit the candidate, start a cycle from the selected saved proposal, and open reviewer and/or community rounds. The candidate remains editable as a new draft alongside feedback; proposal/cycle, iteration and contributor filters keep the review in context. Community participants use the same authenticated URL and see only the authorized round view. Closed cycles remain consultable and immutable; a later integrated draft can start another cycle.

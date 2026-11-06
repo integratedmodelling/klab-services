@@ -15,6 +15,8 @@ git switch -c pilot-digest FETCH_HEAD
 
 The audit bundle separately preserves `ontology-review-audit`; the digest bundle includes those
 fixes. Use the receipt's exact commit/hash rather than combining overlapping patches twice.
+The later colleague-pilot bundle adds only setup/acceptance documentation to the tested digest
+implementation; fetch its `ontology-review-colleague-pilot` ref when using that newer receipt.
 
 ## Repeatable verification
 
@@ -54,6 +56,12 @@ select `ReviewPilotBrowserScenarioIT,ReviewSecurityAuditTest,WorkflowConditional
 the Maven command above. Source test bridges must never be deployed as authentication endpoints.
 
 ## Before a real-account pilot
+
+No designated test account is available. Preparation continues without creating one or waiting.
+Use existing colleagues later; follow the [setup and real-auth acceptance worksheet](ontology-review-colleague-checks.md).
+Those results remain NOT RUN until exercised through the actual identity provider and service path.
+See [integration readiness](ontology-review-integration-readiness.md) for the remote-base check
+and the exact remaining gates before a user-approved feature-branch push.
 
 - Supply authorized editor, two reviewer and community test identities on an isolated deployment.
   Configure authoritative group grants narrowly: editor/reviewer workflow.roles and

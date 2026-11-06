@@ -22,6 +22,9 @@ For the conceptual and architectural overview, read [docs/KLAB.md](docs/KLAB.md)
 The [reasoner documentation](docs/REASONING.md) covers semantic APIs, assisted observable
 composition, source-aware document validation, knowledge loading and caching.
 
+The [ontology review pilot](ONTOLOGY_REVIEW_PILOT.md) supports editor-led proposal preparation,
+reviewer/community iterations and protected persistent feedback.
+
 To follow the central observation process, start with the
 [observable-to-contextualization mapping](docs/OBSERVABLES.md#12-from-observable-meaning-to-contextualization-type),
 then read [observation strategies](docs/OBSERVATION.md) for worldview strategy selection,
