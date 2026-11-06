@@ -1,6 +1,6 @@
 # Post-A+B independent delivery review
 
-## Verdict — independent assessment verified; publication IN_PROGRESS
+## Verdict — review verified and integrated; final publication receipt pending
 
 Sequential trigger verified: A+B checkpoint PR264 merged at
 `28e2266daeef9931aaaae94c8eefe6b1b03a607b`, 2026-11-06T20:47:03Z;
@@ -83,10 +83,12 @@ maps original conditions to requirements, gaps and actual actions.
 |FIXED_IN_REAL_JAVA (historical closed)|services#142/#145|Preserve prior bounded Java/test corrections; not new audit runs.|
 |DUPLICATE_OR_SUPERSEDED (historical closed)|services#147|Preserve prior closure and successor gates, including#193.|
 
-**New closures0; closure candidates0.** After normal governance merge, recheck live
-state and existing markers, then post keep-open cross-references to11open issues.
-Actual comment URLs must be recorded in `issue-actions.json` and regenerated into
-the reconciliation. No ownership/label/priority changes or automatic reopenings.
+**New closures0; closure candidates0.** Governance PR265 merged at
+`8fe0f449c80ead7b56c07073ec3f2003d4d60ea5`,2026-11-06T21:26:33Z after all
+applicable final-head hosted checks passed. Only afterward, live states and unique
+markers checked and keep-open cross-references posted to11open issues. Actual URLs
+are recorded in `issue-actions.json` and regenerated into the reconciliation.
+No ownership/label/priority changes or automatic reopenings.
 The services repository grants WRITE; external geospatial READ still permits an
 ordinary issue comment if GitHub allows it, not product writes/closure authority.
 
@@ -167,9 +169,32 @@ promote to develop, start C, replicate research, repair Java or publish the SDK 
 
 ## Publication checkpoint
 
-Local implementation/independent verification complete; governance PR/hosted CI and
-permitted merge pending. Then idempotent keep-open comments, actual URL evidence,
-final publication verification and **STOP** for the joint roadmap decision.
+Governance PR[265](https://github.com/integratedmodelling/klab-services/pull/265)
+remotely verified MERGED at `8fe0f449c80ead7b56c07073ec3f2003d4d60ea5`.
+Hosted governance runs42295803240/42295810880, simulator/notebook/scientific
+42295803111/42295810835, build42295803113 and Jenkins passed. No independent
+maintainer review is claimed. Downloaded hosted matrices independently retain
+16SIMULATED_PASS versus16REAL_NOT_RUN; hosted substitute tests100SDK+36HTTP/capture.
+
+Actual keep-open comments (all original obligations remain open):
+[services#89](https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6696053864),
+[#123](https://github.com/integratedmodelling/klab-services/issues/123#issuecomment-6696053325),
+[#124](https://github.com/integratedmodelling/klab-services/issues/124#issuecomment-6696052897),
+[#125](https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6696052496),
+[#126](https://github.com/integratedmodelling/klab-services/issues/126#issuecomment-6696052073),
+[#127](https://github.com/integratedmodelling/klab-services/issues/127#issuecomment-6696051636),
+[#129](https://github.com/integratedmodelling/klab-services/issues/129#issuecomment-6696051223),
+[#130](https://github.com/integratedmodelling/klab-services/issues/130#issuecomment-6696050809),
+[#144](https://github.com/integratedmodelling/klab-services/issues/144#issuecomment-6696050429),
+[#193](https://github.com/integratedmodelling/klab-services/issues/193#issuecomment-6696050039),
+[geospatial#10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10#issuecomment-6696054302).
+
+This final documentation-only receipt records actual actions after governance
+integration; no implementation or scientific fixture changed. Its normal final-head
+CI and permitted remote merge are the remaining publication gate. After verifying
+that merge and final clean/ancestry state, **review is complete: STOP** for the joint
+roadmap decision. Do not infer authorization to implement C, repair Java, replicate
+research, promote develop or publish a release from this receipt.
 
 No roadmap C, historical research replication, Java remediation, public package
 release or develop promotion is started by this review.
