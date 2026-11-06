@@ -29,4 +29,5 @@ def test_pinned_semantic_model_and_historical_empty_result():
         report = control(ready)
         assert report["counts"] == {"sessions": 0, "contexts": 0, "jobs": 0, "observations": 0}
         assert all(row["backend"] == "REPLAY" for row in report["trace"])
+        assert {row["contract_category"] for row in report["trace"]} == {"VERIFIED_JAVA", "SIMULATED_PROVISIONAL"}
         assert "sim-token-" not in json.dumps(report)

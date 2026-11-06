@@ -59,6 +59,29 @@ native async and positive-controlled privacy denial. No Java request occurs.
 
 ## Modes and ownership
 
+Contract evidence uses three independent categories throughout case metadata and
+structured traces:
+
+- **VERIFIED_JAVA**: an attributed observed Java response or authoritative Java
+  harness evidence, restricted to the exact property supported by that evidence.
+  Replaying such a response remains backend **REPLAY**, not live Java execution.
+- **SIMULATED_PROVISIONAL**: proposed behavior where Java evidence is incomplete.
+  Older `PROVISIONAL_SIMULATOR_CONTRACT` wording is an alias. All finite state-machine
+  traces use this category; source-derived DTO shapes alone do not verify behavior.
+- **JAVA_INCOMPATIBLE**: an observed simulator/actual-Java difference, with exact
+  environment and reproduction provenance. The historical USGS empty/Error result
+  versus simulated numerical success remains one such difference; it is not a claim
+  that every Java deployment fails the same way. Untested behavior is not automatically
+  incompatible.
+
+The accessible local `klab.staging.vxii` project was inspected read-only as a
+reference. Its manifest, basic generated terrain, testsuite initialization/focus,
+native storage/mediation, monthly process and actual selected-input receipt patterns
+are attributed by file hashes in the single ledger's evidence directory. Ferdinando's
+working-workflow confirmation is retained separately from our source inspection;
+no new Java run or wire capture was performed. No Monday walkthrough dependency is
+introduced. Staging's generated terrain is not substituted for either frozen oracle.
+
 - **simulated (default):** finite coherent local state. Trace backend SIMULATED.
 - **replay:** `--mode replay`; exact pinned sanitized Reasoner/model reads and the
   historical failed Runtime result. Trace backend REPLAY. No session creation or
@@ -132,6 +155,33 @@ No source path/name is retained or logged. At most 32 import slots (including pe
 Jobs) are admitted per isolated process; explicit reset/release clears owned state.
 This verifies upload/catalog/receipt handling, **not** semantic annotation, model
 binding, actual use of uploaded input by Runtime, or the complete RC-P4.3 journey.
+
+The separately selected `--scenario import-workflow` adds one finite explicit
+semantic-source journey. Use the public `Authoring` / `AsyncAuthoring` APIs to
+parse/admit exactly:
+
+```text
+namespace simulator.uploaded;
+model simulator:alice:uploaded as geography:Elevation in m;
+```
+
+The native `model <resource URN> as <observable>;` source form is evidenced by the
+historically accepted USGS namespace receipt. This fixture does **not** parse other
+k.IM source or run a compiler: other drafts fail loudly. Create a new workspace,
+project, then document through explicitly consented ADD calls. Before the owned
+resource and exact binding are admitted, Resolver/Runtime refuse the workflow.
+Afterward the plan names both the admitted model and uploaded resource, and the
+recorded 400-cell observation exposes a fixture-specific `metadata.input` receipt
+matching resource/model identity and actual uploaded-byte SHA/count. Sync/native
+async tests verify all cells against the unchanged independent oracle.
+
+This establishes the finite Python import/semantic-source/selection/data-handling
+workflow, **not** Java scientific execution, arbitrary source admission, immutable
+historical lineage or a server resource-annotation API. Admission, selection and
+`metadata.input` are PROVISIONAL_SIMULATOR_CONTRACT. The partial recorded MEASURED
+relation remains explicitly partial. ADD assets are retained after SDK/context
+close; the test-owned simulator is explicitly reset after evidence checks, never
+misrepresented as native Java workspace/resource cleanup.
 
 At most16sessions/32contexts/128Jobs,4096trace entries,16concurrent request threads,
 1MiBrequest body,3sconnection read timeout. Per-test process isolation. No remote

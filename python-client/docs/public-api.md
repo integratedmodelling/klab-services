@@ -211,3 +211,8 @@ Connection exposes `identity/profile/catalog/selected/client`, synchronous
 `CredentialExpiredError`, `ConnectionIdentityError`, `ServiceSelectionError`,
 `ReadinessError`, `ProfileIOError` and `CertificateError` supplement existing
 errors. See [profiles, providers, lifecycle and examples](connection-layer.md).
+## Native async source authoring
+
+`AsyncAuthoring` is the awaited counterpart of `Authoring`: parse, create_workspace,
+create_project and create_document. It shares ADD-only consent, exact-source,
+origin/identity, confirmation and no-replay guards. See [authoring](authoring.md).

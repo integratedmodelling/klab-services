@@ -2,17 +2,27 @@ from datetime import datetime, timedelta, timezone
 import json
 
 from klab_simulator.compare import readiness_matches, run
+from klab_simulator.contracts import CONTRACT_CATEGORIES
 from conftest import ROOT, REPO, launch
 
 
 def test_executable_case_index_has_sources_rows_and_real_java_boundaries():
-    cases = json.loads((ROOT / "contract-cases.json").read_text())["cases"]
+    document = json.loads((ROOT / "contract-cases.json").read_text())
+    cases = document["cases"]
     assert len({case["id"] for case in cases}) == len(cases)
     for case in cases:
         assert case["rows"] and case["routes"] and case["source"] and case["confidence"] and case["java_status"]
         file, name = case["simulator_test"].split("::")
         assert "def " + name.split("[")[0] + "(" in (ROOT / "tests" / file).read_text()
     assert all("SCIENTIFICALLY_VERIFIED_ON_JAVA=TRUE" not in case["java_status"] for case in cases)
+    classifications = document["contract_classifications"]
+    assert {row["category"] for row in classifications} == set(CONTRACT_CATEGORIES)
+    for row in classifications:
+        assert row["evidence"] and row["properties"]
+        assert row["cases"] == "ALL" or set(row["cases"]) <= {case["id"] for case in cases}
+    receipt = json.loads((REPO / document["staging_reference"]["receipt"]).read_text())
+    assert receipt["access"] == "LOCAL_READ_ONLY_SOURCE_AVAILABLE"
+    assert receipt["observed_java_execution_here"] is False
 
 
 def test_ledger_preserves_every_original42criterion_wording_without_waiver():

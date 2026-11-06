@@ -1,11 +1,12 @@
 """Source-derived ADD contracts; mocked responses are not actual authoring acceptance."""
 from dataclasses import replace
+import asyncio
 import json
 
 import httpx
 import pytest
 
-from klab_client import Authoring, Client, Endpoint
+from klab_client import AsyncAuthoring, AsyncClient, Authoring, Client, Endpoint
 from klab_client.authoring import DOCUMENTS, ParsedSource
 from klab_client.errors import (AuthorizationError, InvalidRequestError, ProtocolError,
                                ServerError, SubmissionOutcomeUnknown, UnsupportedOperationError)
@@ -13,7 +14,7 @@ from klab_client.errors import (AuthorizationError, InvalidRequestError, Protoco
 SOURCE = "namespace python.authoring;\n"
 
 
-def setup(*, parse=None, write=None, write_status=200, transport_error=False):
+def setup(*, parse=None, write=None, write_status=200, transport_error=False, asynchronous=False):
     calls = []
     def handler(request):
         calls.append(request)
@@ -31,12 +32,100 @@ def setup(*, parse=None, write=None, write_status=200, transport_error=False):
         kind = request.url.path.split("/")[-2]
         urn = request.url.params["urn"]
         return httpx.Response(write_status, content=json.dumps(write if write is not None else [{
-            "workspace": urn.split("/", 1)[0] if kind == "PROJECT" else urn,
+            "empty": False, "workspace": urn.split("/", 1)[0] if kind == "PROJECT" else urn,
             "results": [{"knowledgeClass": kind, "resourceUrn": urn.split("/", 1)[1] if kind == "PROJECT" else urn,
                          "operation": "CREATE", "serviceId": "resources-id"}]}]))
-    client = Client("https://runtime.invalid", resources=Endpoint("https://resources.invalid/resources", "resources-secret"),
+    client_type = AsyncClient if asynchronous else Client
+    client = client_type("https://runtime.invalid", resources=Endpoint("https://resources.invalid/resources", "resources-secret"),
                     http_transport=httpx.MockTransport(handler))
     return client, calls
+
+
+def test_async_authoring_requires_async_client():
+    with pytest.raises(InvalidRequestError):
+        AsyncAuthoring(None)
+
+
+@pytest.mark.parametrize("kind", ["NAMESPACE", "OBSERVATION_STRATEGY_DOCUMENT"])
+def test_native_async_authoring_matches_sync_consent_source_and_receipts(kind):
+    async def run():
+        api, calls = setup(asynchronous=True)
+        async with api:
+            author = AsyncAuthoring(api)
+            with pytest.raises(InvalidRequestError):
+                await author.create_workspace("owned")
+            assert not calls
+            parsed = await author.parse(SOURCE, kind=kind)
+            workspace = await author.create_workspace("owned", allow_write=True)
+            project = await author.create_project(workspace, "project", allow_write=True)
+            receipt = await author.create_document(parsed, project, allow_write=True)
+            assert receipt.urn == parsed.urn and receipt.operation == "CREATE"
+            assert len(author.created) == 3
+            assert json.loads(calls[-1].content)["sourceCode"] == SOURCE
+        assert len(calls) == 8
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("options", [{"transport_error": True}, {"write": []}, {"write_status": 500}])
+def test_async_uncertain_write_is_not_replayed_or_recorded_as_confirmed(options):
+    async def run():
+        api, calls = setup(asynchronous=True, **options)
+        async with api:
+            author = AsyncAuthoring(api)
+            with pytest.raises(SubmissionOutcomeUnknown):
+                await author.create_workspace("owned", allow_write=True)
+            assert not author.created
+        assert sum(request.method == "PUT" for request in calls) == 1
+    asyncio.run(run())
+
+
+def test_async_cancellation_keeps_unknown_write_outcome_without_false_confirmation():
+    async def run():
+        dispatched = asyncio.Event()
+        calls = []
+        async def handler(request):
+            calls.append(request)
+            if request.method == "GET":
+                return httpx.Response(200, json={"serviceId": "resources-id"})
+            dispatched.set()
+            await asyncio.Event().wait()
+        async with AsyncClient("https://runtime.invalid", resources=Endpoint("https://resources.invalid/resources", "resources-secret"),
+                               http_transport=httpx.MockTransport(handler)) as client:
+            author = AsyncAuthoring(client)
+            task = asyncio.create_task(author.create_workspace("owned", allow_write=True))
+            await asyncio.wait_for(dispatched.wait(), timeout=2)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError) as cancellation:
+                await task
+            assert any("outcome unknown" in note for note in cancellation.value.__notes__)
+            assert not author.created
+        assert sum(request.method == "PUT" for request in calls) == 1
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("empty", [None, 0, "false"])
+@pytest.mark.parametrize("mode", ["sync", "async"])
+def test_malformed_native_empty_flag_cannot_confirm_a_write(empty, mode):
+    rows = [{"empty": empty, "results": [{"resourceUrn": "owned", "knowledgeClass": "WORKSPACE",
+        "operation": "CREATE", "serviceId": "resources-id"}]}]
+    if mode == "async":
+        async def run():
+            api, calls = setup(asynchronous=True, write=rows)
+            async with api:
+                author = AsyncAuthoring(api)
+                with pytest.raises(SubmissionOutcomeUnknown):
+                    await author.create_workspace("owned", allow_write=True)
+                assert not author.created
+            assert sum(request.method == "PUT" for request in calls) == 1
+        asyncio.run(run())
+    else:
+        api, calls = setup(write=rows)
+        with api:
+            author = Authoring(api)
+            with pytest.raises(SubmissionOutcomeUnknown):
+                author.create_workspace("owned", allow_write=True)
+            assert not author.created
+        assert sum(request.method == "PUT" for request in calls) == 1
 
 
 @pytest.mark.parametrize("kind", ["NAMESPACE", "OBSERVATION_STRATEGY_DOCUMENT"])

@@ -57,6 +57,14 @@ not erased or silently elevated to complete production acceptance.
 
 Case IDs resolve to exact pytest IDs, native route/DTO evidence, confidence and
 Java status in `developer-tools/klab-service-simulator/contract-cases.json`.
+Contract classifications are a separate required dimension:
+**VERIFIED_JAVA** is limited to attributable observed Java/harness properties;
+**SIMULATED_PROVISIONAL** covers proposed finite behavior where evidence is incomplete
+(alias of older PROVISIONAL_SIMULATOR_CONTRACT); **JAVA_INCOMPATIBLE** requires an
+observed difference, not mere absence of testing. Every row's named cases resolve
+to property-level categories/evidence in that machine-readable index. Rows without
+simulator cases remain untested, not presumed compatible/incompatible. No category
+alone establishes whole-row Python implementation or genuine Java integration.
 NOT_RUN means no simulator case yet; it is runnable backlog, not a waiver.
 Original criterion text below is the exact criterion column of the42-row map.
 
@@ -80,8 +88,8 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; async vertical only, notebook/races NOT_RUN|PR210/211/225real bounded acceptance; N integrated multiprincipal notebook; reuse workflows with simulator concurrency/cancel controls|
 |RC-P4.1 — B meaning-based asset applicability/version/access|P; semantic/resource inspectors; S(slice) SIM-SELECTION-001/REPLAY-001|J(read) native captures; B(JAVA-CANDIDATES-001) newer protocol not advertised; extend implemented semantic/asset routes without Python reasoning|
 |RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; simulator NOT_RUN|Native parseAsset DTOs, PR201/228real parsers; N maintained revision; add finite parser/fault/stale cases, no compiler port|
-|RC-P4.3 — B import/annotate/compute with input provenance|P partial; ResourceImporter/AsyncResourceImporter; S(slice) SIM-IMPORT-001 upload/Resources Job/private catalog/hash receipt|J(read) schema/controller; PR244MERGEDb618bd96e; B(JAVA-RESOURCE-CLEANUP-001); simulated explicit annotation/model binding/compute still required, no whole-parent closure|
-|RC-P4.4 — B authorized edit/publish/conflict|P; Authoring workspace/project/document ADD; simulator NOT_RUN|Resources CRUD, PR209/222real bounded ADD; N locks/history/conflict; inspect exact contracts and add supported consent/denial cases|
+|RC-P4.3 — B import/annotate/compute with input provenance|S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001: public sync/async upload, explicit semantic source ADD, bound Resolver model/resource plan,400recorded cells and input SHA/count|PR244production imports merged; new AsyncAuthoring/source-binding delivery pending. SIMULATED_PROVISIONAL admission/input projection; JAVA_INCOMPATIBLE historical scanner outcome; B(JAVA-RESOURCE-CLEANUP-001). No general native annotation/immutable lineage claim|
+|RC-P4.4 — B authorized edit/publish/conflict|P; Authoring/new AsyncAuthoring ADD; S(slice) SIM-INPUT-BINDING-001 exact-source/new workspace/project/document; no update/publish/conflict closure|Native CRUD and PR209/222real ADD; SIMULATED_PROVISIONAL finite parser/admission; remote locks/history/conditional edits remain contract inspection, not assumed absent|
 |RC-P4.5 — B behavior invocation/outcomes/reconnect|P; agent execution/control/status/journal/messaging; simulator NOT_RUN|Native agent contracts/managed real slices; B(#125principal/incarnation/cleanup); add supported outcomes without worker SDK|
 |RC-P5 — C separate scoped worker product|EXCLUDED_C|#127separate product; never an A+B completion gate|
 |RC-R1 — A/B continuous evidence layers|P; SDK/fixture/wheel/CI layers; SIM case suite + REPLAY-001|3651SDK tests/18gates; PR243/244merged; simulator CI active; preserve errors/uncertainty and add per-row acceptance|
@@ -99,7 +107,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-11 — A/B best-effort scoped events and resync|P; activity notifications/polling/resync; simulator events NOT_RUN|Native activity hints; B(#126durable cursor/replay); test supported hints/gaps only|
 |CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips; inherited bounded acceptance retained|ScientificData format/PR196; add fresh-process simulator-produced snapshot inspection, never offline reasoning|
 |CAP-13 — B resources/models read/query/dependency inspection|P; inspectors/services/imports; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-IMPORT-001|J(read) real catalog/model captures; newer candidates schema drift; add implemented resolve/query/dependencies and explicit binding|
-|CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/agents/imports; S(slice) SIM-IMPORT-001 only; authoring/behaviors simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; inspect supported mutations and explicit refusal, no compiler/scheduler port|
+|CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/new AsyncAuthoring/agents/imports; S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001; behaviors simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; finite semantic-source admission SIMULATED_PROVISIONAL; continue supported behavior/conditional mutation contracts, no compiler/scheduler port|
 |CAP-15 — A optional NumPy/pandas/xarray/raster/vector and notebooks|P; optional adapters; SIM-GRID-001core-only numeric slice|PR204actual vector and PR211notebook; N full simulator optional-adapter/presentation matrix; keep imports optional|
 |CAP-16 — A/B compatibility, fixtures, package, support/migration/scale|P; CI/wheel/support checker; simulator CI active|3651SDK/18gates/47module parity; N full simulator support matrix; external scheduled worker/#129does not hold Python tests|
 |CAP-17 — C provider SDK / local embedded runtime|EXCLUDED_C|#127separate product|
@@ -141,6 +149,39 @@ or completion claim. Small protocol regressions cannot substitute for this inven
   approval/protection. User now authorizes normal publication, not bypass.
 
 ## Completion assessment
+
+Active source-binding pass: the public native async gap in source authoring was
+implemented as `AsyncAuthoring`, sharing exact-source/consent/identity/confirmation
+validation with `Authoring`; transport is awaited directly, not threaded. The finite
+import-workflow now runs sync/async upload→Resources Job→explicit semantic source
+parse/new workspace/project/document ADD→Resolver bound model/resource plan→all400
+recorded cells and input SHA/count receipt. Default source admission and input receipt
+metadata remain SIMULATED_PROVISIONAL, not a general compiler or native lineage proof.
+Final SDK validation:3664 tests, all18coverage gates, authoring module100%lines/branches,
+sdist/wheel and47module source byte parity passed. Both final extracted wheels pass
+69simulator tests; simulator16-file source/wheel/sdist parity and fatal-error lint
+passed. Exact receipts: `evidence/ab-async-authoring-sdk-validation-final-20261106.json`
+and `evidence/ab-simulator-input-binding-validation-20261106.json` (the latter's first
+SDK hash is superseded by the final SDK receipt). Earlier3658validation remains its
+own checkpoint. Self-review additionally tightened malformed nonboolean ResourceSet
+empty acknowledgements in both authoring facades; no false confirmations or replay.
+No Java Jobs submitted. Publication/review/hosted checks remain separate gates.
+
+Ferdinando's `klab.staging.vxii` is locally accessible. Read-only inspection found
+the actual testsuite/manifest/basic/process sources and selected-input/scan references;
+hashes/provenance are in `evidence/ab-staging-vxii-source-reference-20261106.json`.
+Working Java end-to-end workflows are owner-confirmed; this pass inspected source,
+not their execution receipts or live HTTP calls. Initialization is substantial
+terrestrial Region→quality within it with explicit lexical project/namespace;
+staging also asserts native millimetre/curve mediation, committed input receipts and
+calendar-month revisions. These are dependency-order references, not permission to
+copy generated terrain into the independent oracles, infer unavailable wire routes,
+or claim native temporal/commit functionality is missing. Monday is not a blocker.
+
+PR247 remotely MERGED at `f5e31e1cf9d53976dbdc2282c6f4fddc3b19ca30`
+(17:28:32Z); PR248 remotely MERGED at `b1891a64eab456092d6063567c3015580b835140`
+(17:34:24Z), after hosted simulator3.11/3.13/build/Jenkins checks. Active branch
+fast-forwarded to that accepted integration without losing source-binding edits.
 
 Export follow-on (`feature/python-simulator-exports`): 66 simulator tests and lint
 pass locally, adding exact recorded native TIFF sync/async export and deterministic

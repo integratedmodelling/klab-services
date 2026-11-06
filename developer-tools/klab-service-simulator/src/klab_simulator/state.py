@@ -11,6 +11,8 @@ import re
 import threading
 from urllib.parse import unquote, urlsplit
 
+from .contracts import SIMULATED_PROVISIONAL
+
 OBS = "org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl"
 ACT = "org.integratedmodelling.klab.api.provenance.impl.ActivityImpl"
 GEO = "org.integratedmodelling.klab.api.geometry.impl.GeometryImpl"
@@ -18,7 +20,7 @@ MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
-SCENARIOS += EXPORT_SCENARIOS
+SCENARIOS += EXPORT_SCENARIOS + ("import-workflow",)
 
 
 class ContractError(Exception):
@@ -46,6 +48,8 @@ class State:
         self.service_ids = {name: f"sim-{name}-{seed}" for name in SERVICES}
         self.sessions, self.contexts, self.jobs, self.observations = {}, {}, {}, {}
         self.imported_resources = {}
+        from .authoring import AuthoringState
+        self.authoring = AuthoringState(self)
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -56,7 +60,7 @@ class State:
         self.origin = "SYNTHETIC_SIMULATOR"
         if scenario == "zero-negative-nodata":
             self.values[:4] = [0, -7.5, None, "NaN"]
-        if scenario == "usgs-recorded" or scenario in EXPORT_SCENARIOS:
+        if scenario in ("usgs-recorded", "import-workflow") or scenario in EXPORT_SCENARIOS:
             from .fixtures import authentic_fixture
             fixture = authentic_fixture()
             self.values = [x for row in fixture["allCellsNorthToSouthWestToEast"] for x in row]
@@ -116,6 +120,9 @@ class State:
         result = {"@CLASS": OBS, "id": identity, "urn": f"{context}.{identity}", "name": "elevation",
             "observable": observable(), "geometry": deepcopy(geometry), "empty": False, "notifications": [],
             "resolvedCoverage": 1.0, "metadata": {"delegate": {"grid": deepcopy(self.grid)}}}
+        if self.scenario == "import-workflow":
+            owner = self.contexts[context]["owner"]
+            result["metadata"]["delegate"]["input"] = self.authoring.binding(context, owner)
         return result
 
     def request(self, method, path, headers, body=b""):
@@ -127,16 +134,23 @@ class State:
                 status, result = error.status, {"error": error.message}
             self.trace.append({"backend": self.backend, "scenario": self.scenario, "seed": self.seed,
                 "method": method, "path": urlsplit(path).path, "status": status,
-                "workflow": headers.get("klab-scope"), "fixture_origin": self.origin})
+                "workflow": headers.get("klab-scope"), "fixture_origin": self.origin,
+                "contract_category": self._contract_category(method, path, body, status)})
             return status, result, content_type
 
+    def _contract_category(self, method, path, body, status):
+        # Native DTO provenance does not establish the finite state machine as Java.
+        return SIMULATED_PROVISIONAL
+
     def _request(self, method, path, headers, body):
+        original_path = path
         path = unquote(urlsplit(path).path)
         if path.startswith("/__sim__/"):
             if not self.test_mode or headers.get("Authorization") != "sim-admin-control":
                 raise ContractError(403, "Test controls disabled or unauthorized")
             if method == "GET" and path == "/__sim__/state":
-                return {"counts": self.counts(), "resources": len(self.imported_resources), "trace": list(self.trace)}, "application/json"
+                return {"counts": self.counts(), "resources": len(self.imported_resources),
+                        "authoring_assets": len(self.authoring.assets), "trace": list(self.trace)}, "application/json"
             if method == "POST" and path == "/__sim__/expireJobs":
                 for job in self.jobs.values():
                     job["expired"] = True
@@ -147,6 +161,7 @@ class State:
                 self.jobs.clear()
                 self.observations.clear()
                 self.imported_resources.clear()
+                self.authoring.reset()
                 self.next_context = self.next_job = self.next_observation = 1
                 return True, "application/json"
             raise ContractError(404, "Unknown test control")
@@ -189,6 +204,9 @@ class State:
                 raise ContractError(404, "Observable not in finite simulator vocabulary")
             return observable(), "application/json"
         if service == "resources":
+            authored = self.authoring.request(method, route, original_path, principal, body)
+            if authored is not None:
+                return authored
             if method == "POST" and route.startswith("/import/"):
                 from .resource_imports import SCHEMA, parse_upload
                 root, _ = self._context(scope, principal)
@@ -212,6 +230,13 @@ class State:
             catalog = {"PROJECT": [{"urn": "simulator.project"}], "NAMESPACE": [{"urn": "simulator"}],
                 "MODEL": [{"urn": MODEL, "projectName": "simulator.project", "namespace": "simulator"}],
                 "RESOURCE": [{"urn": "simulator:fixture:elevation", "adapterType": "raster"}]}
+            from .authoring import MODEL as INPUT_MODEL, NAMESPACE, RESOURCE
+            namespace = self.authoring.assets.get(("NAMESPACE", NAMESPACE))
+            if namespace and namespace["owner"] == principal and RESOURCE in self.imported_resources:
+                payload = deepcopy(namespace["payload"])
+                catalog["NAMESPACE"].append(payload)
+                catalog["MODEL"].append({"urn": INPUT_MODEL, "namespace": NAMESPACE,
+                                         "projectName": payload["projectName"]})
             for kind, entries in catalog.items():
                 if method == "GET" and route == "/api/v1/list/" + kind:
                     if kind == "RESOURCE":
@@ -332,12 +357,20 @@ class State:
             if data.get("resolutionConstraints"):
                 raise ContractError(422, "Resolution constraints are not implemented by this fixed default-model scenario")
             if service == "resolver":
+                selected_model = MODEL
+                binding = None
+                if self.scenario == "import-workflow":
+                    binding = self.authoring.binding(root, principal)
+                    selected_model = binding["modelUrn"]
                 result = {"resolutionOutcome": "RESOLVED", "empty": False, "notifications": [],
                     "computation": [{"id": -1, "actuatorType": "OBSERVE", "strategyUrn": "simulator.elevation.strategy",
-                                     "computation": [{"urn": MODEL}], "children": []}],
-                    "requirements": {"results": [{"resourceUrn": MODEL, "knowledgeClass": "MODEL",
+                                     "computation": [{"urn": selected_model}], "children": []}],
+                    "requirements": {"results": [{"resourceUrn": selected_model, "knowledgeClass": "MODEL",
                                                   "serviceId": self.service_ids["resources"]}]},
                     "resolvedCoverage": 1.0, "coverage": {"definition": "S2(20,20)"}}
+                if binding:
+                    result["requirements"]["results"].append({"resourceUrn": binding["resourceUrn"],
+                        "knowledgeClass": "RESOURCE", "serviceId": self.service_ids["resources"]})
             else:
                 result = self._observation(root, data["observation"])
             return self._job(service, root, principal, result), "application/json"
