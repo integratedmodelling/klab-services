@@ -55,12 +55,33 @@ def _digest(path):
 
 def export_for_analysis(observation, path, *, media_type="image/tiff;application=geotiff", overwrite=False, max_bytes=None):
     """Reuse native export, preserving exact bytes and existing saved-reference semantics."""
-    if not isinstance(observation, ObservationImpl) or observation._context is None:
-        raise InvalidRequestError("Analysis export requires a bound observation")
-    reference = to_handle(observation)
-    units = observation.units
+    from .client import Client
+    reference, units = _analysis_reference(observation, Client)
     result = observation.export_to_file(path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes)
+    return _artifact(result, reference, units)
+
+
+def _analysis_reference(observation, client_type):
+    if (not isinstance(observation, ObservationImpl)
+            or not isinstance(getattr(observation._context, "client", None), client_type)):
+        raise InvalidRequestError("Analysis export requires an observation bound to the matching sync/async client")
+    return to_handle(observation), observation.units
+
+
+def _artifact(result, reference, units):
     return AnalysisArtifact(result, reference, datetime.now(timezone.utc), units, _digest(result.path))
+
+
+async def async_export_for_analysis(observation, path, *, media_type="image/tiff;application=geotiff", overwrite=False, max_bytes=None):
+    """Await native export with the same exact-byte association, never a revision lease.
+
+    Remote streaming is native async. Local hashing uses bounded synchronous64KiB
+    reads, like the synchronous helper; no scientific extras or thread facade.
+    """
+    from .async_client import AsyncClient
+    reference, units = _analysis_reference(observation, AsyncClient)
+    result = await observation.export_to_file(path, media_type=media_type, overwrite=overwrite, max_bytes=max_bytes)
+    return _artifact(result, reference, units)
 
 
 @dataclass(frozen=True)

@@ -131,10 +131,12 @@ Typed facade: `ObservationRequest`, `ObservationOptions`, `ResolutionConstraint`
 `ContextOptions`, `GridOptions`, `RectangularGeometry`, `Context.observe`, and
 `Session.create_context(options=...)`. See [typed contracts and verification](typed-observe.md).
 
-Scientific analysis: `export_for_analysis`, `open_raster`, `trace_analysis`,
+Scientific analysis: `export_for_analysis`, `async_export_for_analysis`, `open_raster`, `trace_analysis`,
 `AnalysisArtifact`, `RasterDescriptor`, `RasterAnalysis`, `TracedAnalysis`;
 recorded neighborhoods: `fetch_provenance`, `ProvenanceNode`, `ProvenanceLink`,
 `ProvenanceView`. See [supported representations and consistency limits](scientific-analysis.md).
+The explicit awaited export helper preserves the same origin/units/hash association;
+mixing a sync helper with an async observation fails before I/O, never via a hidden loop.
 
 Optional native vector analysis: `open_vector`, `VectorAnalysis` with the `vector`
 extra. Local bounded RFC7946 FeatureCollections only; preserves immutable source

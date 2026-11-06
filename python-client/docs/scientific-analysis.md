@@ -31,6 +31,29 @@ Numerical correctness requires the [corrected component](../component-patches/ge
 advertisement or HTTP success alone does not certify it. Python never silently
 repairs native bytes. Closing local objects does not release remote state.
 
+## Native async export association
+
+`async_export_for_analysis` awaits an async-bound observation's ordinary native
+export and returns the same immutable `AnalysisArtifact` (saved observation identity,
+source units, exported time and actual file SHA). Use it explicitly in a notebook:
+
+```python
+from klab_client import async_export_for_analysis, async_fetch_provenance, open_raster, trace_analysis
+
+artifact = await async_export_for_analysis(observation, "field.tif", max_bytes=64 * 1024**2)
+analysis = open_raster(artifact, max_bytes=128 * 1024**2)  # local optional scientific I/O
+traced = trace_analysis(analysis, await async_fetch_provenance(observation))
+```
+
+The sync helper rejects async-bound observations before creating a coroutine; the
+async helper rejects sync/unbound observations before I/O. No hidden loop/thread
+facade, remote cancellation or disposal is introduced. Network streaming is native
+async; local SHA hashing uses bounded synchronous64KiB file reads. Interruption,
+cancellation, size/media mismatch and atomic publication retain the ordinary export
+semantics and do not produce a successful artifact. A later local hash/read failure
+does not imply rollback of an already exported file. Neither helper establishes a
+committed revision lease or scientific correctness; optional readers remain separate.
+
 ## Scientific reader contract
 
 `open_raster(path)` opens a local artifact without any connection or implied

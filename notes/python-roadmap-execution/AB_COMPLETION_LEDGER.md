@@ -150,7 +150,24 @@ or completion claim. Small protocol regressions cannot substitute for this inven
 
 ## Completion assessment
 
-Finite semantic/asset increment (active `feature/python-simulator-semantics`):
+Production async-analysis correction (active `feature/python-async-analysis-export`):
+two red tests reproduced a missing public awaited association helper and the sync
+helper's AttributeError/unawaited coroutine on an async-bound observation. Added
+`async_export_for_analysis` plus early matching-facade checks, sharing origin/units/
+SHA association rather than adding simulator behavior. Existing HTTP scientific
+acceptance now checks native async artifact and partial-provenance association too.
+80focused/3673full SDK tests, all18coverage gates,100%analysis lines/branches,
+sdist/wheel/47module byte parity/lint and86simulator tests against both current
+wheels PASS. Zero new endpoints; receipt:
+`evidence/ab-async-analysis-export-validation-20261106.json`.
+Next concrete Python gap: native BaseService/controller already carry temporal
+export parameters storageEvent/storageStart/storageEnd, but SDK export facades do
+not expose them. RC-P2.2 is runnable client work for those supported fields, separate
+from unestablished remote window/revision leases; add a named acceptance test first.
+PR252 remotely MERGED at `b873ee42b0428611a61375e87e8a400ae118de97`
+(18:21:26Z), after hosted simulator/scientific/build/Jenkins checks passed.
+
+Finite semantic/asset increment (MERGED_BOUNDED PR252):
 86tests/lint pass locally. Public sync/async semantic facades now traverse native-shaped
 concept lookup, canonical authority paging with ambiguous labels, explicit selection,
 inert documentation, declared hierarchy/boolean predicates and stale-worldview refusal.

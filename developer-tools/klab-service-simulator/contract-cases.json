@@ -274,7 +274,7 @@
     {
       "id": "SIM-ADAPTERS-001",
       "rows": ["RC-P2.1", "RC-P2.5", "CAP-09", "CAP-15"],
-      "api": "Observation.export_to_file; export_for_analysis/open_raster/trace_analysis; ScientificData.to_dataframe",
+      "api": "Observation.export_to_file; export_for_analysis/async_export_for_analysis/open_raster/trace_analysis; ScientificData.to_dataframe",
       "routes": ["GET /runtime/export/OBSERVATION/{urn}", "POST /runtime/api/v1/observation/value", "POST /runtime/api/v1/query"],
       "request": "Native export of independently authored nonuniform4x5fixture; explicit indexed zero/negative/null/NaN reads; bounded optional adapters",
       "expected": "Every20raster values/mask/coordinates, float64 precision/metre units/CRS, exact source SHA association; pandas preserves explicit missingness and repeated offsets; unknown georeferencing/revisions are not guessed",
