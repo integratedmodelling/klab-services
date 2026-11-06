@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://integratedmodelling.org/schemas/java-service-gaps/v1",
+  "title": "Expanded Java service gap register (shared defaults resolved before validation)",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "gaps"],
+  "properties": {"version": {"const": 1}, "gaps": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/gap"}}},
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 12000},
+    "refs": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "confidence": {"enum": ["JAVA_OBSERVED", "HARNESS_EVIDENCED", "SIMULATED_PROVISIONAL", "JAVA_INCOMPATIBLE", "NOT_EVALUATED"]},
+    "result": {"enum": ["SIMULATED_PASS", "REAL_PASS", "REAL_FAIL", "REAL_NOT_RUN", "CONTRACT_DRIFT"]},
+    "api": {
+      "type": "object", "additionalProperties": false,
+      "required": ["method", "path", "request_schema_ref", "expected_response_schema_ref"],
+      "properties": {
+        "method": {"enum": [null, "GET", "POST", "PUT", "DELETE", "PATCH"]},
+        "path": {"type": ["string", "null"], "pattern": "^/"},
+        "request_schema_ref": {"type": ["string", "null"]},
+        "expected_response_schema_ref": {"type": ["string", "null"]}
+      }
+    },
+    "gap": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "legacy_ids", "title", "subsystem", "java_component", "api_contract", "requirement_ids", "original_issues", "python_test_refs", "simulator_scenario_refs", "real_java_test_refs", "reproducer_ref", "observed_java_behavior", "simulator_behavior", "contract_confidence", "java_status", "python_status", "priority", "java_owner", "first_observed", "last_verified", "last_verified_basis", "source_build_or_commit", "resolution_criteria", "links", "notes", "lifecycle", "historical_real_result", "current_real_result", "real_command", "contract_case"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^JAVA-GAP-[0-9]{4}$"},
+        "legacy_ids": {"$ref": "#/$defs/refs"}, "title": {"$ref": "#/$defs/text"},
+        "subsystem": {"$ref": "#/$defs/text"}, "java_component": {"$ref": "#/$defs/text"},
+        "api_contract": {"$ref": "#/$defs/api"},
+        "requirement_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^(RC-|CAP-)"}},
+        "original_issues": {"$ref": "#/$defs/refs"}, "python_test_refs": {"allOf": [{"$ref": "#/$defs/refs"}], "minItems": 1},
+        "simulator_scenario_refs": {"$ref": "#/$defs/refs"}, "real_java_test_refs": {"$ref": "#/$defs/refs"},
+        "reproducer_ref": {"$ref": "#/$defs/text"}, "observed_java_behavior": {"$ref": "#/$defs/text"},
+        "simulator_behavior": {"$ref": "#/$defs/text"}, "contract_confidence": {"$ref": "#/$defs/confidence"},
+        "java_status": {"enum": ["CONFIRMED_DEFECT", "MISSING_API", "CONTRACT_PROVISIONAL", "JAVA_FIXED_VERIFIED", "NOT_TESTED"]},
+        "python_status": {"enum": ["SIMULATOR_VERIFIED", "PROTOCOL_VERIFIED", "NOT_TESTED"]},
+        "priority": {"enum": ["P0", "P1", "P2", "P3"]}, "java_owner": {"$ref": "#/$defs/text"},
+        "first_observed": {"type": ["string", "null"], "format": "date"}, "last_verified": {"type": "string", "format": "date"},
+        "last_verified_basis": {"$ref": "#/$defs/text"}, "source_build_or_commit": {"type": ["string", "null"]},
+        "resolution_criteria": {"allOf": [{"$ref": "#/$defs/refs"}], "minItems": 1},
+        "links": {"$ref": "#/$defs/refs"}, "notes": {"$ref": "#/$defs/text"},
+        "lifecycle": {"enum": ["DISCOVERED", "REPRODUCED", "SPECIFIED", "JAVA_IMPLEMENTING", "REAL_VERIFIED", "CLOSED", "CONTRACT_DISPUTED", "OBSOLETE", "BLOCKED"]},
+        "historical_real_result": {"$ref": "#/$defs/result"}, "current_real_result": {"enum": ["REAL_PASS", "REAL_FAIL", "REAL_NOT_RUN", "CONTRACT_DRIFT"]},
+        "real_command": {"type": ["array", "null"], "items": {"$ref": "#/$defs/text"}},
+        "contract_case": {"type": "string", "pattern": "^GAP-CASE-[0-9]{4}$"}
+      }
+    },
+    "acceptanceRecord": {
+      "type": "object", "additionalProperties": false,
+      "required": ["acceptance_id", "original_requirement", "scope", "public_api", "implementation_paths", "unit_tests", "simulator_tests", "real_java_tests", "science_tests", "prs", "commits", "merge_target", "package_provenance", "contract_confidence", "implementation_status", "acceptance_status", "missing_work", "java_gap_ids", "proof_refs"],
+      "properties": {
+        "acceptance_id": {"type": "string", "pattern": "^(RC-|CAP-)"}, "original_requirement": {"$ref": "#/$defs/text"},
+        "scope": {"enum": ["A", "B", "A/B", "C", "OUT_OF_SCOPE"]},
+        "public_api": {"$ref": "#/$defs/text"}, "implementation_paths": {"$ref": "#/$defs/refs"},
+        "unit_tests": {"$ref": "#/$defs/refs"}, "simulator_tests": {"$ref": "#/$defs/refs"},
+        "real_java_tests": {"$ref": "#/$defs/refs"}, "science_tests": {"$ref": "#/$defs/refs"},
+        "prs": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+        "commits": {"$ref": "#/$defs/refs"},
+        "merge_target": {"type": ["string", "null"]}, "package_provenance": {"$ref": "#/$defs/refs"},
+        "contract_confidence": {"$ref": "#/$defs/confidence"},
+        "implementation_status": {"enum": ["COMPLETE", "PARTIAL", "NOT_IMPLEMENTED", "SUPERSEDED", "OUT_OF_SCOPE"]},
+        "acceptance_status": {"enum": ["REAL_VERIFIED", "SIMULATOR_VERIFIED", "BLOCKED_JAVA", "BLOCKED_INFRA", "FAILED", "UNTESTED"]},
+        "missing_work": {"type": "string"}, "java_gap_ids": {"$ref": "#/$defs/refs"}, "proof_refs": {"$ref": "#/$defs/refs"}
+      }
+    }
+  }
+}

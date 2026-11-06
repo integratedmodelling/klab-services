@@ -1,0 +1,44 @@
+name: Java gap governance (not real Java acceptance)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['docs/java-service-contract-gaps/**', 'developer-tools/java-gap-governance/**', 'developer-tools/klab-service-simulator/**', 'python-client/**', 'docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md', '.github/workflows/java-gap-governance.yml']
+  pull_request:
+    paths: ['docs/java-service-contract-gaps/**', 'developer-tools/java-gap-governance/**', 'developer-tools/klab-service-simulator/**', 'python-client/**', 'docs/PYTHON_CLIENT_ACCEPTANCE_MAP.md', '.github/workflows/java-gap-governance.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  schema-and-substitutes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install development-only validator and ordinary SDK with separate simulator
+        run: python -m pip install 'jsonschema>=4.23,<5' './python-client[dev,analysis,tabular,notebook,local,events]' './developer-tools/klab-service-simulator[test]'
+      - name: Schema, immutable IDs, all original requirements and generated-report drift
+        run: |
+          python developer-tools/java-gap-governance/govern.py validate
+          python developer-tools/java-gap-governance/govern.py generate --check
+          python -m pytest -q developer-tools/java-gap-governance/tests --junitxml=gap-governance-tests.xml
+      - name: Explicit substitute/protocol cases (not Java fixes)
+        run: python developer-tools/java-gap-governance/govern.py contracts --mode simulated --output gap-simulated-results.json
+      - name: Preserve real NOT_RUN and require its non-success exit
+        run: python -c "import subprocess; r=subprocess.run(['python','developer-tools/java-gap-governance/govern.py','contracts','--mode','real','--output','gap-real-NOT_RUN.json']); assert r.returncode == 3"
+      - name: Fatal-error lint of repository-only governance tool
+        run: python -m ruff check developer-tools/java-gap-governance --select E9,F63,F7,F82
+      - name: Retain separate matrices without promoting real Java
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-gap-governance-simulated-vs-real-NOT_RUN
+          path: |
+            gap-governance-tests.xml
+            gap-simulated-results.json
+            gap-real-NOT_RUN.json
+          if-no-files-found: error

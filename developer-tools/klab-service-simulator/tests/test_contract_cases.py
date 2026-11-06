@@ -9,6 +9,7 @@ from conftest import ROOT, REPO, launch
 
 def test_executable_case_index_has_sources_rows_and_real_java_boundaries():
     document = json.loads((ROOT / "contract-cases.json").read_text())
+    assert (REPO / document["java_gap_registry"]).is_file()
     cases = document["cases"]
     assert len({case["id"] for case in cases}) == len(cases)
     for case in cases:

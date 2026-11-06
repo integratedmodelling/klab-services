@@ -1,0 +1,452 @@
+{
+  "utc": "2026-11-06T21:17:45.069554+00:00",
+  "audit_base": "ff99e7395685467f4ed4f8e12ed9b9e25f84dd65",
+  "audited_campaign_head": "28e2266daeef9931aaaae94c8eefe6b1b03a607b",
+  "suites": {
+    "sdk": {
+      "tests": 3988,
+      "skipped": 0,
+      "errors": 0,
+      "failures": 0
+    },
+    "simulator": {
+      "tests": 107,
+      "skipped": 0,
+      "errors": 0,
+      "failures": 0
+    },
+    "governance": {
+      "tests": 29,
+      "skipped": 0,
+      "errors": 0,
+      "failures": 0
+    }
+  },
+  "coverage_gates": [
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/requests.py --new-module src/klab_client/handles.py --new-module src/klab_client/exports.py --new-module src/klab_client/connection.py --new-module src/klab_client/connection_models.py --new-module src/klab_client/credentials.py --new-module src/klab_client/_bootstrap.py --new-module src/klab_client/analysis.py --new-module src/klab_client/provenance.py --new-module src/klab_client/semantics.py --new-module src/klab_client/_inspection.py --new-module src/klab_client/inspection.py --new-module src/klab_client/evidence.py --new-module src/klab_client/experiments.py --new-module tools/workflows/discover_compare_explain.py --new-module tools/workflows/milestone.py --new-module tools/workflows/deployment.py --new-module tools/build_milestone_deliverable.py --new-module tools/run_milestone_acceptance.py --new-module tools/run_milestone_throughput.py --new-module tools/restore_milestone_results.py --new-module tools/workflows/resource_inspection.py --new-module tools/run_resource_inspector_acceptance.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_async_transport.py --new-module src/klab_client/async_client.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/vector.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/tables.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_scientific_snapshot.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/graph.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/graph_projection.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module tools/check_release_readiness.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/authoring.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/notifications.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/source_previews.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agents.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agent_status.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/agent_control.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_agent_wire.py --new-module src/klab_client/agent_messaging.py --new-module src/klab_client/agent_execution.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module tools/prepare_runtime_fixture.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/_job_binding.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/imports.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    },
+    {
+      "command": "python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/project_locks.py",
+      "exit": 0,
+      "output": "New-module 100% line/branch and changed-code coverage gates passed."
+    }
+  ],
+  "simulated_contract_matrix": {
+    "mode": "simulated",
+    "fallbacks": 0,
+    "science": "NOT_RUN",
+    "cases": [
+      {
+        "gap_id": "JAVA-GAP-0001",
+        "case_id": "GAP-CASE-0001",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Frozen authentic400 cells delivered over isolated HTTP; not Runtime-produced science",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0002",
+        "case_id": "GAP-CASE-0002",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Finite private imported resource with provisional test-owned cleanup",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0003",
+        "case_id": "GAP-CASE-0003",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Finite advertised model/catalog answers remain advertisements, not forced model selection",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_semantics.py::test_meaning_based_catalog_inspection_remains_advertisement_not_selection"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0004",
+        "case_id": "GAP-CASE-0004",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Finite retained IDs/expiry, explicit reattachment, zero automatic mutation replay",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_expired_job_empty_status_is_not_confirmed_cancellation",
+          "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0005",
+        "case_id": "GAP-CASE-0005",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Explicit fault/stale/refetch controls, never durable delivery or complete convergence",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+          "python-client/tests/unit/test_notifications.py::test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0006",
+        "case_id": "GAP-CASE-0006",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Bounded point reads and one finite selected export; unsupported read mapping refuses",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_state.py::test_unimplemented_read_mediation_time_or_fill_curve_is_not_synthetic_success"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0007",
+        "case_id": "GAP-CASE-0007",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Reject foreign binding; no composed twin, automatic failover or migration is simulated",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0008",
+        "case_id": "GAP-CASE-0008",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "No agent execution simulator. Linked client MockTransport/transport-policy tests protect deferred registration boundaries only.",
+        "pytest_refs": [
+          "python-client/tests/unit/test_agent_execution.py"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0009",
+        "case_id": "GAP-CASE-0009",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Explicit ADD-only source persistence and principal-shared boolean locks; no update/history/publication substitute",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_native_project_lock_principal_sharing_and_explicit_release",
+          "developer-tools/klab-service-simulator/tests/test_behavior_drafts.py::test_nonexecuting_behavior_draft_add_uses_exact_native_source_and_never_instantiates"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0010",
+        "case_id": "GAP-CASE-0010",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Separately pinned synthetic TIFF has explicit scientific metadata; SDK never repairs native bytes",
+        "pytest_refs": [
+          "python-client/tests/unit/test_nonuniform_export_oracle.py",
+          "developer-tools/java-gap-governance/tests/test_native_export_capture.py::test_historical_native_unit_defect_is_preserved_without_rewriting_values_or_bytes"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0011",
+        "case_id": "GAP-CASE-0011",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Finite SIM vocabulary and stale-worldview refusal, not migration or original semantic acceptance",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_semantics.py::test_changed_worldview_refuses_stored_candidate_and_requires_fresh_search"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0012",
+        "case_id": "GAP-CASE-0012",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Python graph HTTP failures retain honest stale/partial data; does not execute native Java ClientKnowledgeGraph",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_native_awaited_refresh_uses_existing_routes_and_retains_honest_partial_pages"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0013",
+        "case_id": "GAP-CASE-0013",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Clockless controlled polls, exact-source literals, fixed SIM vocabulary, bounded private synthetic state; never local reasoning or Java execution",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "developer-tools/klab-service-simulator/tests/test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0014",
+        "case_id": "GAP-CASE-0014",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Synthetic metadata.grid/UNSPECIFIED offsets and finite event assignment over immutable TIFF; requested_slice is a request only",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+          "developer-tools/klab-service-simulator/tests/test_offline_snapshots.py::test_fresh_sdk_only_process_inspects400_frozen_cells_offline_after_owned_release"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0015",
+        "case_id": "GAP-CASE-0015",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Synthetic issued credentials/private owners/administrator roles test boundaries; no real grants or issuer claims",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http",
+          "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_administrator_role_remains_server_authoritative_and_unknown_project_false_is_not_a_diagnosis"
+        ]
+      },
+      {
+        "gap_id": "JAVA-GAP-0016",
+        "case_id": "GAP-CASE-0016",
+        "tag": "SIMULATED_PASS",
+        "status": "PASS",
+        "current_real": "REAL_NOT_RUN",
+        "assertion_scope": "Partial plans/recorded effects with unknown durable consistency, no historical lineage or coherent snapshot promise",
+        "pytest_refs": [
+          "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+          "python-client/tests/unit/test_async_provenance.py"
+        ]
+      }
+    ],
+    "groups": {
+      "simulator": {
+        "exit": 0,
+        "failed": false,
+        "tests": 36,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0
+      },
+      "sdk": {
+        "exit": 0,
+        "failed": false,
+        "tests": 100,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0
+      }
+    },
+    "assertion_kind": "Explicit HTTP substitutes and client protocol/refusal guards, not missing Java capability acceptance"
+  },
+  "current_real_contract_matrix": {
+    "mode": "real",
+    "fallbacks": 0,
+    "science": "NOT_RUN",
+    "cases": [
+      {
+        "gap_id": "JAVA-GAP-0001",
+        "case_id": "GAP-CASE-0001",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0002",
+        "case_id": "GAP-CASE-0002",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0003",
+        "case_id": "GAP-CASE-0003",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0004",
+        "case_id": "GAP-CASE-0004",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0005",
+        "case_id": "GAP-CASE-0005",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0006",
+        "case_id": "GAP-CASE-0006",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0007",
+        "case_id": "GAP-CASE-0007",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0008",
+        "case_id": "GAP-CASE-0008",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0009",
+        "case_id": "GAP-CASE-0009",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0010",
+        "case_id": "GAP-CASE-0010",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0011",
+        "case_id": "GAP-CASE-0011",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0012",
+        "case_id": "GAP-CASE-0012",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0013",
+        "case_id": "GAP-CASE-0013",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0014",
+        "case_id": "GAP-CASE-0014",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0015",
+        "case_id": "GAP-CASE-0015",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      },
+      {
+        "gap_id": "JAVA-GAP-0016",
+        "case_id": "GAP-CASE-0016",
+        "tag": "REAL_NOT_RUN",
+        "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"
+      }
+    ]
+  },
+  "real_mode_exit": 3,
+  "fresh_audit_artifacts_sha256": {
+    "klab_python_client-0.1.0-py3-none-any.whl": "1bfcc1a6f294ad44e4b20ef44c75c1ea40a9bb3751505df6cd9961ccd3fa7984",
+    "klab_python_client-0.1.0.tar.gz": "29ee676345ce9a53e9df9210afd3a642d169d002e5a82f1278fa4961bfe95e36"
+  },
+  "actual_new_wheel_pip_target_install_smoke": "PASS outside checkout, no optional imports; host dependencies explicit, not dependency-isolation certification",
+  "source_old_installed_new_installed_wheel_sdist_module_parity": 48,
+  "full_suite_attribution": "3988 tests ran against prior genuinely pip-installed wheel fec27854ab139cbbbc1aafd19d5e6bc7a16008e870fd0a0beb11c873e1ea5291; all48SDK module bytes equal newly built/sdist/pip-target modules. New build separately pip-installed/smoke-tested; no fabricated second full run.",
+  "schema_generated_reports_lint": "PASS",
+  "new_java_execution": "NOT_RUN",
+  "scientific_jobs_submitted": 0,
+  "remote_issue_actions_at_verification": 0,
+  "retained_failures": [
+    "Initial case-runner grouping mixed independent conftest namespaces:11collection errors. Separated SDK and simulator subprocesses with explicit hidden-child pipes and regression test; original suites unchanged.",
+    "Initial registry validation found historical NullScannerReproducer.java path absent; removed fabricated executable reference, kept custody gap explicit."
+  ],
+  "no_new_production_sdk_or_java_implementation": true
+}

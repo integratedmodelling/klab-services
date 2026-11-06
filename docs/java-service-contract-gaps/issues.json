@@ -1,0 +1,1108 @@
+{
+  "version": 1,
+  "collected_utc": "2026-11-06T20:48:11Z",
+  "scope": "Complete services issue inventory plus relevant upstream geospatial10. All bodies/comments inspected; original bodies preserved, comments pinned by URL/author/date/hash. No issue edit/closure at snapshot.",
+  "issues": [
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 193,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/193",
+      "title": "Track legacy synthetic fixture incompatibility with current ODO and source validation",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-04T18:01:54Z",
+      "closed_at": null,
+      "original_acceptance_statement": "Consolidation reproduced two distinct legacy-fixture gates without changing their assertions: RuntimeFixtureCompatibilitySourceTest expects bundled ODO SHA256 496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57 (06ae8b36), while current bundled ODO is 5c020dac9bd9d1cd4f9673b8075cf08f75ecc7194c74378bdb8f0498110ddba3 after 0e77650a's additive impliesPredicate property. The original byte assertion still fails; it has not been updated, excluded or relabelled passing. The prior 243-file imod-derived fixture also reports DECLARATION_CLAUSE_SOURCE_INVALID for life:SocialGroup and ecology:Community EMERGES_FROM, plus missing TAXA/CHEM provider descriptors when those components are not installed. These are not evidence of a failed numerical calculation. A separately labelled minimal synthetic worldview, not an imod migration or original-fixture replacement, successfully executed a genuine Java constant model through the installed client: independently checked 100+93/4=123.25m in20 valid cells with EPSG:3857 5x4 bounds, restoration and owned scope/process cleanup. Full evidence strengthening is ongoing. Keep this compatibility issue separate from independently qualifying docs/read-only/deterministic-copy PRs and from the selected-query production defect fixed in merged PR191. Scope of future correction: explicitly version and semantically validate any replacement for the large frozen fixture, preserve original negative/oracle/history, and establish required authority-provider identities. Do not silently replace the old SHA or claim the shared worldview is migrated. Local raw evidence: .consolidation-evidence/resume-ci-20261104 and isolated-science-stack-v4-explicit-ports-20261104; successful separate-fixture run isolated-science-stack-v5-typed-length-20261104.",
+      "body_sha256": "411e44135031627ce228b2644b85497098352412d261d1d9dd1bf3adeceffe45",
+      "comment_refs": [],
+      "requirement_ids": [
+        "RC-P4.1",
+        "RC-P4.2",
+        "CAP-05",
+        "CAP-16"
+      ],
+      "associated_prs": [],
+      "python_test_refs": [
+        "developer-tools/klab-service-simulator/tests/test_semantics.py::test_changed_worldview_refuses_stored_candidate_and_requires_fresh_search"
+      ],
+      "simulator_scenario_refs": [
+        "SIM-SEMANTICS-001"
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0011"
+      ],
+      "disposition": "TRACKED_AS_JAVA_GAP",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Preserve original ODO hash and source-validation negatives. Explicitly version and semantically validate any replacement, establish selected authority identities and original compatibility acceptance; no fixture bytes changed.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 147,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/147",
+      "title": "Baseline Java acceptance inventory: semantic, temporal and lifecycle regressions block Python integration",
+      "state": "CLOSED",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-04T00:55:29Z",
+      "closed_at": "2026-11-04T00:33:54Z",
+      "original_acceptance_statement": "## Executed baseline and integration comparison\n\nControl: services `919dcf4ba92d843cf4c31fdecc5dedd55f3ab920` plus merged #143's test-only HTTP correction (`a58df2cd1`). Temurin21.0.12.1 / Maven3.9.5 / Windows, current language SNAPSHOT artifacts. Diagnostic reactor completed with 4,171 tests, 160 failures, 132 errors, 32 skips.\n\nLocal Python integration candidate f5e72f3d5: 4,357 tests, 161 failures, 132 errors, 32 skips. Comparing exact failing classname/method identities from copied surefire XML gives 291 shared failures. Candidate-only: old HTTP expectation (fixed by #143, not yet incorporated in that run) and pinned ODO hash (upstream added impliesPredicate; documented in #89). Control-only: ServiceSessionScopeTest shared-cache mock lacks the new currentness behavior (corrected in candidate).\n\n## Reproduce the inventory, not an acceptance run\n```sh\n./mvnw -B -pl klab.services.runtime.server,klab.services.resources.server,klab.services.reasoner.server -am -Dmaven.test.failure.ignore=true test\n```\nUse mvnw.cmd on Windows; quote full -D arguments in PowerShell. FAILURE-IGNORE IS DIAGNOSTIC ONLY. The resulting BUILD SUCCESS label does not mean the tests passed. For acceptance, omit that property. Retain every module's target/surefire-reports/TEST-*.xml before running focused tests, which overwrite them.\n\nFor a bounded reproduction use `-Dtest=ClassName -Dsurefire.failIfNoSpecifiedTests=false` and select that class's module with -pl / -am. Reasoner classes live in klab.services.reasoner; storage temporal tests also appear through dependency/test-source wiring in runtime. Consult the emitted module report location. No production credentials or deployed scientific service is needed for these fixture tests; some tests create owned loopback/embedded services.\n\n## Scope and closing evidence\n\nThis issue preserves the complete baseline failing-class inventory so the failures are not misattributed to Python or silently discarded as mocks. #144 tracks the demonstrated remote currentness gap. #145 / PR #146 address three core-test setup defects. Other failures remain UNCLASSIFIED: diagnose whether each is a changed contract, missing fixture wiring, environmental dependency or actual implementation regression before editing it. Preserve scientific expected values and rollback/UNKNOWN semantics. In particular do not blanket-stub isObservationCurrent=true or ResolutionCycles to make classification/temporal suites pass.\n\nRequired evidence per resolved group: exact reproduction; maintained contract/source rationale; positive and negative controls; focused suite without ignored failures. Final integration requires a clean required test path plus the portable live workflow, not merely parity with a failing baseline.\n\n## Baseline failing classes\n- org.integratedmodelling.klab.components.ComponentRegistryAuthorityTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.application.controllers.KlabWebUiControllerTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.scopes.RemoteContextCacheGenerationTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.scopes.ServiceSessionScopeTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.ServiceInstanceShutdownTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.reasoner.internal.CapturedConfiguredAuthorityTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.reasoner.internal.ObserverConstructionTest: 0 failures, 8 errors\n- org.integratedmodelling.klab.services.reasoner.internal.PrivateCompilationCancellationTest: 2 failures, 3 errors\n- org.integratedmodelling.klab.services.reasoner.internal.ReconciliationPrivateCompilationTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.reasoner.internal.RelationshipAxesReasonerTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.reasoner.internal.SemanticEnvironmentFactoryTest: 1 failures, 28 errors\n- org.integratedmodelling.klab.services.reasoner.internal.StagedDeclarationContractTest: 0 failures, 10 errors\n- org.integratedmodelling.klab.services.reasoner.internal.SubtypeInherencyRegressionTest: 0 failures, 2 errors\n- org.integratedmodelling.klab.services.reasoner.OntologyProjectValidationTest: 2 failures, 0 errors\n- org.integratedmodelling.klab.services.reasoner.owl.AuthorityLexicalRootTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.reasoner.owl.BroadDescriptionContractTest: 24 failures, 0 errors\n- org.integratedmodelling.klab.services.reasoner.owl.DocumentSemanticValidatorTest: 2 failures, 0 errors\n- org.integratedmodelling.klab.services.reasoner.owl.ProcessContextualizationSemanticValidationTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.reasoner.SemanticValidationPublicationTest: 1 failures, 2 errors\n- org.integratedmodelling.klab.services.resolver.ResolutionCompilerQueryTest: 1 failures, 1 errors\n- org.integratedmodelling.klab.services.resolver.ContainedTierZeroAcceptanceTest: 0 failures, 3 errors\n- org.integratedmodelling.klab.services.resolver.ObservationPipelineTest: 7 failures, 0 errors\n- org.integratedmodelling.klab.services.resources.lang.ObservableTranslationTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.resources.lang.ObservationAnnotationAdaptationTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.resources.lang.ObservationSemanticAnnotationsTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.resources.lang.RemoteAuthorityMetadataAdmissionTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.resources.lang.SemanticTranslationTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.resources.SemanticSearchAvailabilityTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.resources.storage.AuthoringSourceStorageTest: 6 failures, 0 errors\n- org.integratedmodelling.klab.services.resources.storage.ClassificationSourceAcceptanceTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.runtime.storage.NativeConstantInitializationTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.runtime.storage.ProcessBirthAccountingTest: 3 failures, 0 errors\n- org.integratedmodelling.klab.runtime.storage.TemporalInspectorIntegrityTest: 12 failures, 0 errors\n- org.integratedmodelling.klab.runtime.storage.TemporalProcessIntegrationTest: 12 failures, 2 errors\n- org.integratedmodelling.klab.services.runtime.ClassificationExecutionTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveCompletionQueryTest: 2 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveReductionExecutionTest: 2 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveReductionPipelineTest: 3 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveSelectionAtomicExecutionTest: 3 failures, 1 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveSelectionContinuationTest: 4 failures, 1 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveSelectionDraftReadTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveSelectionExecutionTest: 16 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveSelectionNativeContextTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveSelectionProducerClassificationDependencyTest: 0 failures, 4 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveSelectionSubmissionScopeTest: 3 failures, 2 errors\n- org.integratedmodelling.klab.services.runtime.CollectiveSelectionValidPrerequisiteTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.ConnectionExecutionTest: 0 failures, 2 errors\n- org.integratedmodelling.klab.services.runtime.ConsequenceCharacterizationLifecycleTest: 3 failures, 4 errors\n- org.integratedmodelling.klab.services.runtime.ConsequenceDiscoverySnapshotTest: 0 failures, 2 errors\n- org.integratedmodelling.klab.services.runtime.digitaltwin.ClassificationTransactionTest: 2 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.digitaltwin.DirectTransactionCycleTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.OccurrenceRegistrationTest: 8 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.digitaltwin.scheduler.PreparedConfigurationRecomputeTest: 8 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.LocalAdapterExecutorTest: 3 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.neo4j.ConfigurationDependencyReadSetTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphLinkDirectionTest: 2 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.ObservationAnnotationsRuntimeTest: 0 failures, 1 errors\n- org.integratedmodelling.klab.services.runtime.ObservationViewExportTest: 0 failures, 2 errors\n- org.integratedmodelling.klab.services.runtime.ObserverReferenceSubmissionTest: 4 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.OccurrenceExecutorTest: 0 failures, 2 errors\n- org.integratedmodelling.klab.services.runtime.PreparedConfigurationInputChangeTest: 4 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.ProvisionalObservationScopeTest: 1 failures, 0 errors\n- org.integratedmodelling.klab.services.runtime.ReferenceParentValidationTest: 0 failures, 4 errors\n- org.integratedmodelling.klab.services.runtime.SelectedModelClassifierSubmissionTest: 5 failures, 37 errors\n- org.integratedmodelling.klab.services.scopes.ProspectiveFocusTransportTest: 1 failures, 0 errors\r\n",
+      "body_sha256": "f42df5718c838cbabafc13a391e2ca3ad3466a09a1718b88f96e8e6a7b4e6b41",
+      "comment_refs": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6611804981",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T18:10:47Z",
+          "body_sha256": "0b0edec73da8ba31cb9ccf73c325d7e33f4b4cd2ba29838061c2f59871d8a397"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6612966556",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T19:06:05Z",
+          "body_sha256": "d54ec62523a1afce96640689d3e13498a8321ebea90b20bd97921c7e96e16912"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613362718",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T19:24:02Z",
+          "body_sha256": "87c07a34e26830fabbb19aca5ed3ab492423399852038fba4d74e83321a8a384"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613467278",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T19:29:11Z",
+          "body_sha256": "a1646b267ee42e3e1ef23b94d23940e16c86b235ebe941fc14035a61120fe2cc"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613597838",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T19:35:33Z",
+          "body_sha256": "ec6aa2fac26ca46da8ea0f1116e932f7a7b42f05b9cfb694219626f8826197bd"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613637166",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T19:37:28Z",
+          "body_sha256": "b185213a67d34c2600733217616cb2f9321c5d564748f64a714d7921e05d83c2"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613727444",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T19:41:52Z",
+          "body_sha256": "5ec2ff684fcace09c113f16d820e25fadc3b7acc96592748a8f7bf3f80844392"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613812818",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T19:46:00Z",
+          "body_sha256": "56c0627ce1752615d2b20af9c45a96ab7c4b1f1cd9442877243e3db076a15a9b"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613925925",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T19:51:24Z",
+          "body_sha256": "1d8117f74276032586d6361083e9887fb0ae73ccfbc823574f1ce0ede700cbfa"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614102160",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T20:00:00Z",
+          "body_sha256": "a73ff6dd24899c1955e2d8c2e277ea20b60da572f86cdd27583ef63552af1317"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614204093",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T20:04:57Z",
+          "body_sha256": "0ef47a1d03ea530264a1b0e8b414fe9ee3737a146dc74fa2d8e586276553c620"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614311228",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T20:10:12Z",
+          "body_sha256": "98ad04afabf0944c291983730be20f814a1735d44ed9bbde61335c560ca1239c"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614427724",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T20:16:03Z",
+          "body_sha256": "d4327d59bd1a7c23e114c8b5e0b4320560df10f9dec17f099568770e15dba1ac"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614550923",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T20:22:12Z",
+          "body_sha256": "02bcb9f098357b3851f4f630ff6ab127d56e5940516785a606ee0257bd9d49ba"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614888913",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T20:39:14Z",
+          "body_sha256": "42084231fc7204425a218190ee86a3c0a9e23ac92fb0d64391d00f3290c1b6b3"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615039564",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T20:46:52Z",
+          "body_sha256": "d9635b833af2ded4644cca920f3bc629b79d260032c83888525fc3a2ccadd0e8"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615114635",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T20:50:40Z",
+          "body_sha256": "c6d6039f2dace44dddafd744811f5e2418d0641a477179527aa6804f90f9d7f7"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615314353",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T21:00:42Z",
+          "body_sha256": "f25546edf34b50d5a88af2f3555e53bee281e8da5a3a587af418c9117a2f2b99"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615501091",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T21:09:44Z",
+          "body_sha256": "55be375326ed97cb6c427bb1fdbe84532bb99c8011a556ed67f482b80c7cee29"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615629921",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T21:16:19Z",
+          "body_sha256": "3d959232c3e60ec747189624caede697d307095d11623b05cba8ee5a6f8eef95"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615742827",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T21:22:08Z",
+          "body_sha256": "b9c9a6a0a0d8adba91f29ab62a9d6c9e66807799ff25180ea832dff6fecd9e02"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615805274",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T21:25:24Z",
+          "body_sha256": "364b152191842ae34642010ef4ad7f11938965d02ea366fbf97142a7b0cf49ec"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615958394",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T21:33:22Z",
+          "body_sha256": "7505d5e8e45a853f1992348e0d42ad1dba69a2289b3402af2569bd5d0e21b5da"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616169593",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T21:44:27Z",
+          "body_sha256": "c2a451a9b18fd68c4563c1a06e341d884495d6a1ad4574213312a56e20e8feee"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616337726",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T21:53:00Z",
+          "body_sha256": "cc0867fc4220cd00bff11652e0fcab09f5bd241defc3c49001c3f73ded17a0e5"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616391022",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T21:55:44Z",
+          "body_sha256": "e2acb3759bfb2b46c2fb20b8ff6877f0d19ef5fc4099f461b65394a828f771bb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616566457",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T22:04:57Z",
+          "body_sha256": "ae20b52a5b434214c8a0d64e875fae498f62c82bdefc4af4c26edb4905d37bfc"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616615021",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T22:07:28Z",
+          "body_sha256": "a4eb5966f67eb46b4dd4c034ffe5845648cb63f5bc811a697e62b2823bec34d9"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616776301",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T22:15:52Z",
+          "body_sha256": "ddc0de05a5c3c4df8f858252a674d0782c58701252b909f4dace8b779f5625bb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616851417",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T22:19:48Z",
+          "body_sha256": "481b7841d4511bb1ba37d4b7afb5c2dc409dfa503f007f4da628151eb53c7a50"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616887190",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T22:21:32Z",
+          "body_sha256": "5a723f20c5c67c2c41816f69c0b61f72c482887072f510fc6533e24824b70995"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616956072",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T22:24:26Z",
+          "body_sha256": "5d0475d3d498b3b484ae2923fc248e4566f096c4696519e273a620764e06d54b"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617055251",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T22:28:21Z",
+          "body_sha256": "4246d6561a909f191b19ca78db29ea8ae76a717c9e38c722170f04c0cd9f7138"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617272022",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T22:38:07Z",
+          "body_sha256": "51d60953fcee40668ec41d24dd272bd500325f2b4da3653ee168f35763d0579c"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617377252",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T22:44:01Z",
+          "body_sha256": "e12a661a4f5b552d1752ea0923d9bf0750ed257cc9d44303f55bd5ea254059db"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617870628",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T23:12:31Z",
+          "body_sha256": "13572e2203e2722051f0b0ac4775f0f1eaf9338e7abd0d00eaf4d2e9fa921399"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617933831",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T23:16:20Z",
+          "body_sha256": "cc4b3157f4b7cb74234db44695059887a20d13633da91e2f6867d9f94bd6f8f6"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6618261395",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T23:36:19Z",
+          "body_sha256": "2c90dee134f5ebf936dfb8693d57e30688e72b6676ffda7368c7c9de8e5b66f5"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6618321659",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T23:40:12Z",
+          "body_sha256": "c95420bd3fa88ebd40ecd01f3e58003782d1ac09a9f80dfe4dfac9303a1539eb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6618800483",
+          "author": "Dobbes",
+          "created_at": "2026-11-04T00:09:51Z",
+          "body_sha256": "50ad46d3ce9f3ab50c2fd7bbe6e80fd6c2dfe56af2dddab29b9ee6809bc7ea54"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619114944",
+          "author": "Dobbes",
+          "created_at": "2026-11-04T00:28:54Z",
+          "body_sha256": "9c24ac2b6c327af921174e0537cec5680d55abf1247c5d6c2dd53dea5b7655e0"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619199387",
+          "author": "Dobbes",
+          "created_at": "2026-11-04T00:34:10Z",
+          "body_sha256": "8e6423d59c06f28a990494840085b7be966e4a33b426c306aefcaddc3a592334"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619335395",
+          "author": "Dobbes",
+          "created_at": "2026-11-04T00:42:51Z",
+          "body_sha256": "40ade52e7d03972fdcc9d5a79096b0f0804e1d74530bc06aa13f38e0d5d2d93a"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619416869",
+          "author": "Dobbes",
+          "created_at": "2026-11-04T00:48:12Z",
+          "body_sha256": "8ead7ac7d05dde9026936ad8bac2d4e9ca66f90da60d751a107b438d06436fb1"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619513981",
+          "author": "Dobbes",
+          "created_at": "2026-11-04T00:54:40Z",
+          "body_sha256": "00ff41b3e65883a4ce3a6e9f9731b0d1314c4a665ad8c204e0c3837103fe43d9"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619526360",
+          "author": "Dobbes",
+          "created_at": "2026-11-04T00:55:29Z",
+          "body_sha256": "fdbdd8fa419856b8d974c17c5b74786454da1a55e0e73fb37d34f958281bffa6"
+        }
+      ],
+      "requirement_ids": [
+        "RC-R1",
+        "CAP-16"
+      ],
+      "associated_prs": [
+        143,
+        146,
+        189
+      ],
+      "python_test_refs": [],
+      "simulator_scenario_refs": [],
+      "java_gap_ids": [],
+      "disposition": "DUPLICATE_OR_SUPERSEDED",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Already closed historical inventory; specific successor fixes/193 preserve remaining requirements. No reopening or claim all historical failures fixed by simulator.",
+      "closure_candidate": false,
+      "action": "PRESERVE_EXISTING_CLOSURE_NO_REOPEN"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 145,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/145",
+      "title": "Repair baseline core-service test setup for Java-only builds and authority selection",
+      "state": "CLOSED",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T17:40:51Z",
+      "closed_at": "2026-11-03T17:40:51Z",
+      "original_acceptance_statement": "## Baseline core-service tests prevent an ordinary Java-only test run\n\nReproduced on services `919dcf4ba92d843cf4c31fdecc5dedd55f3ab920` plus only #143's unrelated HTTP-test correction, and on the Python integration candidate. Temurin21.0.12.1, Maven3.9.5, Windows.\n\n```sh\n./mvnw -B -pl klab.core.services -am -Dtest=ComponentRegistryAuthorityTest,KlabWebUiControllerTest,ServiceInstanceShutdownTest -Dsurefire.failIfNoSpecifiedTests=false test\n```\nUse mvnw.cmd on Windows; quote complete -D arguments in PowerShell. No service deployment or credentials required. Retain XML reports in klab.core.services/target/surefire-reports.\n\n### Three reproduced failures and source findings\n1. ComponentRegistryAuthorityTest.reasonerHostsDiscoveredAuthority:80 expects getAuthority(\"test.authority\") to return TestAuthority, but receives null. registerAuthority records descriptors/constructors; getAuthority uses selected defaults or bootstrap providers. Review the current authority-selection contract and model that selection in the fixture rather than introducing arbitrary implicit defaults.\n2. KlabWebUiControllerTest.servesADeclaredInstalledComponentModuleAsJavascript:76 constructs the classpath-loading controller, which throws because index.html is absent. Java-only builds intentionally omit the optional webui profile (see pom.xml). The same class already uses the injected-HTML constructor in its other unit test. Use that constructor for this component-module unit test, retaining content type, nosniff and exact bytes assertions; separately test built assets under the webui profile.\n3. ServiceInstanceShutdownTest.stopBeforeServiceCreationClosesMaintenanceScheduler:23 asserts scheduler shutdown, but its invocation of instance.stop is commented out on line22. Production stop shuts down the scheduler before checking the service. Restore the invocation and preserve ordering/idempotence tests rather than weaken the shutdown assertion.\n\nClosing evidence: each defect corrected under its maintained contract and all affected tests pass without ignored failures. Source findings above are diagnosis, not implemented fixes. RemoteContextCacheGenerationTest's separate production-client lifecycle gap is tracked in #144. Broader semantic diagnostic inventories are still running; this issue is not a complete failure inventory.\r\n",
+      "body_sha256": "40acb6bac405686280bea1da505d1b05779b3881d727d6c9a0a112ed37a94c17",
+      "comment_refs": [],
+      "requirement_ids": [
+        "RC-R1"
+      ],
+      "associated_prs": [
+        143,
+        146
+      ],
+      "python_test_refs": [],
+      "simulator_scenario_refs": [],
+      "java_gap_ids": [],
+      "disposition": "FIXED_IN_REAL_JAVA",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Already closed after fixture/setup corrections under maintained contracts; historical Java test evidence, not a new full-reactor pass.",
+      "closure_candidate": false,
+      "action": "PRESERVE_EXISTING_CLOSURE_NO_REOPEN"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 144,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/144",
+      "title": "Remote Context observation reads reach unsupported lifecycle-currentness default",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T17:52:02Z",
+      "closed_at": null,
+      "original_acceptance_statement": "## Reproduced remote-scope lifecycle compatibility failure\n\nAt upstream `919dcf4ba92d843cf4c31fdecc5dedd55f3ab920`, the existing `RemoteContextCacheGenerationTest.scopedTransportAdmissionFetchesOnlyNamedFocusWhenVirtualCompletionCarriesNoInvalidation` throws UnsupportedOperationException at line 34. Also reproduced on the Python upstream-integration candidate. A control checkout with only merged #143's unrelated HTTP-test correction gives the same error.\n\n### Reproduce\n```sh\ngit clone https://github.com/integratedmodelling/klab-services.git remote-currentness-repro\ncd remote-currentness-repro\ngit checkout --detach 919dcf4ba92d843cf4c31fdecc5dedd55f3ab920\n./mvnw -B -pl klab.core.services -am -Dtest=RemoteContextCacheGenerationTest -Dsurefire.failIfNoSpecifiedTests=false test\n```\nJDK21 and Maven required; use mvnw.cmd on Windows and quote complete -D arguments in PowerShell. The fixture constructs a real ClientKnowledgeGraph around a mocked RuntimeClient; no deployment, tokens, model or remote mutation is needed. Expected both tests pass; actual selected class has one error: `Authoritative observation lifecycle status is unavailable`. Preserve surefire XML/logs.\n\n### Source chain\n- `klab.core.services/.../scopes/ServiceContextScope.java#getObservation(long)` now invokes `digitalTwin.getKnowledgeGraph().isObservationCurrent(reference, this)` before using its cache, and checks the returned observation again.\n- `klab.core.api/.../data/KnowledgeGraph.java:1050` defaults that method to throwing UnsupportedOperationException.\n- `klab.core.common/.../client/digitaltwin/ClientKnowledgeGraph.java` has no override, so a normal remote graph reaches that default.\n- Existing test: `klab.core.services/src/test/java/org/integratedmodelling/klab/services/scopes/RemoteContextCacheGenerationTest.java:25-49`; error occurs on its first root.getObservation call, before semantic invalidation checks.\n\n### Required resolution\nEstablish the maintained authorized remote currentness contract or explicitly restrict this operation with a supported alternative. Reuse implemented Runtime lifecycle capabilities if available; do not invent an HTTP route or trust caller-authored currentness flags. Preserve current/ceased distinction, scope/transaction ownership and stale-cache rejection. Add transport/negative controls and rerun the existing cache-generation fixture without removing the original semantic-binding assertions. A real deployed reproduction is still outstanding; the executed evidence is this in-process production-client path.\n\nThis is a demonstrated Java compatibility gap, separate from Python retained-Job/incarnation contracts and #142's resolved stale HTTP test. It has not been waived for integration acceptance.\r\n",
+      "body_sha256": "ce8e6f063b18036ab3a0095411c55137765a79305effc5ebff474dcbf610ac9b",
+      "comment_refs": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/144#issuecomment-6611413159",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T17:52:02Z",
+          "body_sha256": "9678e83d7a410cd480766b86410ded9bf017520742a246948597873c70d82e23"
+        }
+      ],
+      "requirement_ids": [
+        "RC-P3.2",
+        "CAP-10"
+      ],
+      "associated_prs": [
+        143
+      ],
+      "python_test_refs": [
+        "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_native_awaited_refresh_uses_existing_routes_and_retains_honest_partial_pages"
+      ],
+      "simulator_scenario_refs": [
+        "SIM-REFRESH-001"
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0012"
+      ],
+      "disposition": "PARTIALLY_ADDRESSED",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "PR148 bounded native correction is merged; current Python simulation does not execute ClientKnowledgeGraph. Keep original paired-runtime/currentness/ceased/transaction/stale/old-runtime and deployed acceptance requirements open.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 142,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/142",
+      "title": "Baseline Java test failure: required POST error-detail expectation contradicts status-only implementation",
+      "state": "CLOSED",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T17:25:59Z",
+      "closed_at": "2026-11-03T17:25:59Z",
+      "original_acceptance_statement": "Reproduced on unchanged upstream `919dcf4ba92d843cf4c31fdecc5dedd55f3ab920` and the Python upstream-integration candidate, with Temurin 21.0.12.1 / Maven 3.9.5 / Windows. Test and implementation are unchanged between those trees.\n\n## Fresh-checkout reproduction\n```sh\ngit clone https://github.com/integratedmodelling/klab-services.git quiet-http-repro\ncd quiet-http-repro\ngit checkout --detach 919dcf4ba92d843cf4c31fdecc5dedd55f3ab920\n./mvnw -B -pl klab.core.common -am -Dtest=QuietHttpPostTest -Dsurefire.failIfNoSpecifiedTests=false test\n```\nWindows: use mvnw.cmd; PowerShell must quote complete -D arguments. No credentials, data or deployed services needed: the test owns and closes a loopback HTTP server.\n\nExpected: 3 tests pass. Actual: 3 run, 1 failure, 0 errors/skips. `QuietHttpPostTest.requiredCommandsStillReportHttpStatusAndStructuredErrorDetails` line 84 expects `HTTP 502: Invalid configuration`; production `postRequired` returns the status-only message `POST /structured failed with HTTP 502`. The preceding HTML gateway assertion passes. Preserve XML in klab.core.common/target/surefire-reports/TEST-org.integratedmodelling.common.utils.QuietHttpPostTest.xml.\n\n## Source diagnosis and next action\n- klab.core.common/src/test/java/org/integratedmodelling/common/utils/QuietHttpPostTest.java:68-85 sends a nested body/detail JSON error.\n- klab.core.common/src/main/java/org/integratedmodelling/common/utils/Utils.java:1968-1977 constructs status-only exceptions without inspecting the response body. This is not a Content-Type decoding failure.\n\nConfirm the maintained error-disclosure contract. If status-only errors are intentional, replace the stale detail assertion with explicit payload-nondisclosure tests (including credential-bearing bodies), retaining status/route and quiet/interruption behavior. If structured details are required, specify sanitization/bounds before restoring disclosure. Do not merely weaken the assertion to green a build.\n\nUpstream CI run 41661233832 skips tests; green packaging is not evidence this passes. This failure blocks broad Java acceptance of the Python integration candidate and has not been waived. Closing evidence: explicit contract rationale, focused positive/negative regressions and passing common-module suite.\r\n",
+      "body_sha256": "b624b5fe16c0087a6314d4d12c8993dd7e8e5c0474a890d50c0d0c417fb8f8be",
+      "comment_refs": [],
+      "requirement_ids": [
+        "RC-R1"
+      ],
+      "associated_prs": [
+        143
+      ],
+      "python_test_refs": [],
+      "simulator_scenario_refs": [],
+      "java_gap_ids": [],
+      "disposition": "FIXED_IN_REAL_JAVA",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Already closed after explicit status-only nondisclosure contract/test correction; historical bounded Java evidence, not a new audit execution.",
+      "closure_candidate": false,
+      "action": "PRESERVE_EXISTING_CLOSURE_NO_REOPEN"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 130,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/130",
+      "title": "Provide PaL operational artifacts and independent original-study reference contracts",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T03:22:19Z",
+      "closed_at": null,
+      "original_acceptance_statement": "## Original-study acceptance needs operational artifacts and independent references\n\nPR #104 merged real-input Radiation prerequisite QA, not Java-backed PaL execution\nor original-study reproduction. Later synthetic-v3 numerical/activity acceptance\ndoes not replace that requirement. This issue tracks the external scientific/input\ncontracts needed to continue the original-study roadmap without inventing meaning.\n\n### Required versioned contracts/artifacts\n\n- The intended operational PaL model/resource revision and full dependency closure,\n  including model identity, external resources, vegetation/taxonomy choices and any\n  required R environment/packages. Existing archive recovery is not served admission.\n- Authoritative grids, CRS, extent, temporal support and transformations; normalization,\n  interpolation/resampling and missingness rules; numerical precision/tolerances.\n- Physical units/provenance, particularly Radiation input semantics. A metadata label\n  or client-side conversion must not substitute for an agreed scientific contract.\n- Independent original expected outputs or documented reference-code execution,\n  including nonuniform fields, valid zero, missing cells and relevant variations.\n\n### Preserved fidelity limits\n\nThe original `geography:Elevation in m` synthetic fixture also remains unaccepted:\nserved source admission reports unresolved identity obligations. The explicit\n`geography:Elevation of (earth:Terrestrial earth:Region) in m` v3 fixture is a\nseparately labelled new synthetic contract, not a silent repair of the original.\nPR120/121 preserve that evidence; no semantic rule/core ontology/model/oracle bytes\nwere changed to manufacture original acceptance. Decide intended original-source\nsemantics separately if that original contract must be admitted.\n\n### Path to unblock\n\nProvide pinned operational artifacts and agree the units/grid/time/reference\ncontracts, then run a separately bounded Java-backed fixture with independent\nreadback, privacy/recovery and owned cleanup. Until then, keep prerequisite QA,\nsynthetic execution and original-study reproduction as three different outcomes.\nThis issue authorizes no producer outreach, dataset publication, scientific-meaning\nchange, backend deployment or algorithm port into Python.\n",
+      "body_sha256": "2d1629be770d4c7a0f7024afb1d20a01468a820c0df95cdf3f1136300d5098dc",
+      "comment_refs": [],
+      "requirement_ids": [
+        "RC-P2.3"
+      ],
+      "associated_prs": [
+        104
+      ],
+      "python_test_refs": [],
+      "simulator_scenario_refs": [],
+      "java_gap_ids": [],
+      "disposition": "RESEARCH_OR_INFRA",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Keep open for original operational PaL/model/resource/R closure, authoritative units/grid/time/transforms/missingness/precision, independent original outputs/tolerances and rights. No original-study rerun or semantic substitution in this review.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 129,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/129",
+      "title": "Record Python release support/version decisions and scientific/backend publication gates",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T03:22:14Z",
+      "closed_at": null,
+      "original_acceptance_statement": "## Python release/publication gate: evidence and maintainer decisions\n\nRelease-evidence/support tooling merged in #113, but structural eligibility is not\npublication authorization. This issue tracks the remaining roadmap gate, not a\nrequest to publish a package, create a tag or deploy a backend automatically.\n\n### Implemented evidence versus unfinished acceptance\n\nBounded client features now include async, indexed tables, graph navigation,\nnamespace-only ADD authoring, best-effort activity hints and nonexecuting agent\nsource preview. PR #108's genuine synthetic-v3 run verifies two Job results,20 cells\nat123.25 metres, automatic activity hints, isolation and cleanup. It is not PaL\nreproduction, a repaired original bare-query fixture, durable notifications,\ncomposed twins, a worker SDK or production/scale validation. PR #128 corrects\nexplicit cached Runtime-origin affinity; broader identity/rollout issue #89 stays open.\n\n### Required maintainer decisions and evidence\n\n- Choose the actual release/integration branch and exact source/artifact versions.\n  Merging feature PRs into their feature targets is not promotion to develop or a tag.\n- Declare supported Python/backend/component versions and enabled optional profiles,\n  including native/client transport requirements and opt-in broker provisioning.\n- Supply accepted backend/scientific, restart/identity and scale/soak evidence for\n  the advertised support claims. Preserve FAIL/UNKNOWN and unrun cases explicitly.\n- Decide maintenance ownership, supported compatibility ranges and distribution\n  channel. Authentication/dependency changes and publication need their own scope.\n- Verify the exact distributable, optional dependency boundaries, checksums and\n  support-matrix evidence against the selected backend stack before approval.\n\nClient release tooling is independently implemented. Independent development may\ncontinue, but do not fabricate support evidence, relabel a synthetic result as a\npublished study or let a green structural checker publish automatically. Close this\ngate only after the explicit version/support decisions and approval are recorded.\n",
+      "body_sha256": "1eb65cc9f7b8275e615f2467b1c6412e5f3426e8c6a82135e7b62b06bffc061b",
+      "comment_refs": [],
+      "requirement_ids": [
+        "RC-P0",
+        "RC-R2",
+        "CAP-16"
+      ],
+      "associated_prs": [
+        108,
+        113,
+        128
+      ],
+      "python_test_refs": [
+        "developer-tools/klab-service-simulator/tests/test_behavior_drafts.py::test_nonexecuting_behavior_draft_add_uses_exact_native_source_and_never_instantiates",
+        "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_administrator_role_remains_server_authoritative_and_unknown_project_false_is_not_a_diagnosis",
+        "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_native_project_lock_principal_sharing_and_explicit_release",
+        "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http"
+      ],
+      "simulator_scenario_refs": [
+        "SIM-BEHAVIOR-DRAFT-001",
+        "SIM-DISCOVERY-001",
+        "SIM-INPUT-BINDING-001",
+        "SIM-PROJECT-LOCK-001",
+        "SIM-SCOPE-SELECTION-001"
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0009",
+        "JAVA-GAP-0015"
+      ],
+      "disposition": "NEEDS_MAINTAINER_DECISION",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Keep open for integration/release target, exact supported tuples/profiles, science/restart/scale evidence, maintenance/security/distribution owner and explicit publication approval. Structural checker and feature merges do not authorize release.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 127,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/127",
+      "title": "Specify provider/worker SDK role, execution and backend integration contracts",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T02:30:27Z",
+      "closed_at": null,
+      "original_acceptance_statement": "## Provider/worker SDK: product and execution specification required\n\nTracks the remaining provider/worker roadmap item. The current Python client\nconsumes maintained service APIs; it is not an implemented worker registration,\nexecution, resource-publication or provider SDK. No scientific algorithms should\nbe ported into Python to bypass the existing Java runtime.\n\nBefore implementation, choose and version the supported role and contract:\n\n1. Resource adapter/provider, computation worker, job executor or component/plugin\n   authoring are distinct products. Select the initial supported role and backend.\n2. Specify capability registration/discovery, API/ABI versions, principal identity,\n   credential provisioning, ownership and trusted execution/isolation boundary.\n3. Specify invocation/lease/acknowledgement, cancellation, result commit, duplicate\n   delivery, idempotency and ambiguous-outcome handling without automatic replay.\n4. Define data/value/mask/geometry/time/unit/dictionary transport, version pinning,\n   byte/memory/concurrency budgets and scientific validation responsibilities.\n5. Define package/signature/provenance, lifecycle cleanup, restart and observability.\n\nAcceptance needs an independently owned actual backend/worker fixture, nonuniform\nknown-answer and missingness fixtures, rejected identities/versions/budgets,\ncancellation/transport-loss/restart/duplicate cases and verified cleanup. A local\ncallable executor or fabricated registration route is not backend integration.\n\nThe next concrete action is an agreed product/execution specification and linked\nbackend contracts. Provider deployment, production credentials, package publication\nand scientific-meaning changes remain separately authorized. This issue does not\nauthorize them or relabel specification as a delivered SDK.\n",
+      "body_sha256": "41063f2dace0915516ff71d9368face94aa3cd94397fcd427b6ca1e95ae16644",
+      "comment_refs": [],
+      "requirement_ids": [
+        "RC-P5",
+        "CAP-17"
+      ],
+      "associated_prs": [],
+      "python_test_refs": [],
+      "simulator_scenario_refs": [],
+      "java_gap_ids": [],
+      "disposition": "OUT_OF_SCOPE_C",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Excluded C. Role/API/ABI/lease/isolation/data/commit/package/lifecycle product specification and real worker fixture remain a future joint decision, not a duplicate.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 126,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/126",
+      "title": "Define durable notification replay/resync contract beyond best-effort Python hints",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T14:32:09Z",
+      "closed_at": null,
+      "original_acceptance_statement": "## Deferred roadmap feature: durable notification recovery\n\nPR #108 is merged as bounded best-effort activity hints. Run18 verifies genuine\nRuntime delivery, isolation and cleanup, not durable replay or continuity. It\ndeliberately reports continuity and upstream overflow UNKNOWN and never reconnects\nautomatically. This issue tracks the separate unfinished feature.\n\n### Required maintained backend contract\n\n- Explicit event identity and ordering scope, Runtime incarnation and authorization.\n- Retention, replay cursor/watermark identity, bounded page/byte limits and expiry.\n- Snapshot-plus-stream/resync semantics that detect gaps and do not silently merge\n  epochs, permission changes or different contexts/owners.\n- Observable overflow/loss semantics and revocation behavior.\n- Distinguish transport acknowledgement, durable event commit and authoritative\n  scientific/Job state. Activity messages alone are not authoritative state.\n\nThe existing transient messaging exchange/IDs are not evidence of this protocol.\nPublish the maintained versioned contract or scope the required backend work before\nimplementing a Python replay adapter; do not infer endpoints or reuse message IDs\nas cursors. This is a contract dependency, not a claim that client development is done.\n\n### Client work and acceptance after the contract is available\n\nImplement explicit bounded recovery/resync with no implicit mutation replay. Test\nduplicates, disorder, lost events, cursor expiry, queue overflow, restart/incarnation,\npermission revocation, wrong origins/principals and reconnect cleanup on independently\nowned fixtures. Maintain UNKNOWN when evidence cannot establish continuity. Existing\nbest-effort behavior must remain supported without implying new guarantees.\n",
+      "body_sha256": "1ba4ff4b2508d4a6a8323d8b23bddfb99346030b72202285a218fdeae11e0cb2",
+      "comment_refs": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/126#issuecomment-6606525095",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T14:32:09Z",
+          "body_sha256": "aa75267af487f56f4624ed96d3aca2c27dee944f95ddc76998cdd0df818aa32f"
+        }
+      ],
+      "requirement_ids": [
+        "RC-P3.1",
+        "RC-P3.4",
+        "CAP-10",
+        "CAP-11"
+      ],
+      "associated_prs": [
+        108
+      ],
+      "python_test_refs": [
+        "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+        "python-client/tests/unit/test_async_provenance.py",
+        "python-client/tests/unit/test_notifications.py::test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints"
+      ],
+      "simulator_scenario_refs": [
+        "SIM-PROVENANCE-001",
+        "SIM-REFRESH-001"
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0005",
+        "JAVA-GAP-0016"
+      ],
+      "disposition": "TRACKED_AS_JAVA_GAP",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Best-effort hints and sync/async honest stale/refetch are delivered. Keep native cursor/order/incarnation/retention/snapshot-gap/overflow/revocation contract and subsequent bounded real recovery acceptance open.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 125,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/125",
+      "title": "Complete Python agent execution/control and confirmed terminal cleanup beyond source preview",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T17:10:30Z",
+      "closed_at": null,
+      "original_acceptance_statement": "# #125 — Python agent execution/control: accurate implementation handoff\n\nUpdated 3 November 2026. **OPEN unfinished client implementation and genuine live\nacceptance, with transport/provisioning decisions. Not a reproduced Java defect and\nnot an external-only blocker.** No new stop/status HTTP endpoint is assumed.\n\n## Current accepted state\n\nPin `e09a7de7cac6b48526fd8b7ac72879abb36a77a3` on\n`feature/python-experiment-runner`. #111 is **MERGED** at\n`19668515a7307aec4b1e671207f5b2d595572a14`, not still underway.\nIt implements only `AgentPreviews` / `AgentSourcePreview`: server parsing plus\nsource-only translation. It fixes `compileOnly`, `doNotStart`, `doNotBindSession`,\n`doNotBindObservation`, `reportJavaCode` true, `observationId=-1`. This does not\ncompile Java, register/start an agent, create a private session or control a broker.\n\nExisting Java already implements agent compilation, registration, lifecycle\nmessages, status and stop. Do not label these absent merely because Python has no\nexecution handle. #108's activity reader is not an agent-control channel.\n\n## Reproduce the current Python boundary (safe, offline)\n\nPrerequisites: Git and Python3.11+. From a fresh pinned checkout:\n\n```sh\ngit clone https://github.com/integratedmodelling/klab-services.git klab-issue125\ncd klab-issue125\ngit checkout --detach e09a7de7cac6b48526fd8b7ac72879abb36a77a3\npython -m venv .venv\n# Activate .venv for your platform, then:\npython -m pip install -e './python-client[dev]'\npython -m pytest -q python-client/tests/unit/test_agent_previews.py\npython -c \"import klab_client; assert hasattr(klab_client, 'AgentPreviews'); assert not hasattr(klab_client, 'AgentExecution'); assert not hasattr(klab_client.AgentPreviews, 'start'); assert not hasattr(klab_client.AgentPreviews, 'stop'); print('SOURCE_PREVIEW_ONLY_NO_EXECUTION_HANDLE')\"\n```\n\nExpected at the pinned baseline:45 tests PASS and the marker above. These checks\nreproduce the missing public execution/control surface, **not** a server failure.\nA new implementation should deliberately replace the absence assertions with its\npositive execution-handle tests. It must not simply rename preview as execution.\n\n## Reproduce existing Java lifecycle behavior without a broker\n\nPrerequisites: JDK21, `JAVA_HOME`, Maven wrapper and declared Maven repositories.\nFrom the same checkout (`mvnw.cmd` on Windows):\n\nIn Windows PowerShell quote each complete `-D...` argument, including\n`'-Dsurefire.failIfNoSpecifiedTests=false'`, to avoid its property-name splitting.\nAn `Unknown lifecycle phase \".failIfNoSpecifiedTests=false\"` failure is shell\nargument parsing, not an agent or compiler failure.\n\n```sh\n./mvnw -B -pl klab.core.services -am -Dtest=AgentInstantiationRequestSerializationTest,AgentEventBusTest,RuntimeAgentBaseTest,AgentRegistryTest -Dsurefire.failIfNoSpecifiedTests=false test\n```\n\nExpected: all selected tests PASS; inspect module `target/surefire-reports/` for\nfailures/errors/skips. No external Hub, original worldview/project, credentials or\nscientific Job is required. AgentRegistry tests compile/register owned test agents\ninside the test JVM; AMQP is mocked where used. They are not real broker ACL or\nPython lifecycle acceptance. Record source, JDK/Maven and resolved dependency\nidentities. Failed SNAPSHOT resolution is a setup failure; do not mix closures.\n\n**Actual repeat on3 November:**45 Python preview tests pass. The common Java module\nruns five selected tests successfully (four serialization, one event-bus), then\n`klab.core.services:compile` fails before `RuntimeAgentBaseTest`/`AgentRegistryTest`\nwith `LanguageAdapter.java:2006 EXTENT cannot be resolved` and line2007 `ATTRIBUTE`\nlikewise. This is not an observed agent lifecycle failure.\n\nMinimal Java reproduction: `./mvnw -B -pl klab.core.services -am -DskipTests compile`.\nTriggering language dependency:\n`org.integratedmodelling:org.integratedmodelling.languages.observable:1.0.0-SNAPSHOT`,\nSHA256 `db1a58cc9a3ab8f3f56db1855b9cc3812edc352154d377883031558c23db88af`.\nInspect it with:\n\n```sh\njavap -classpath \"$HOME/.m2/repository/org/integratedmodelling/org.integratedmodelling.languages.observable/1.0.0-SNAPSHOT/org.integratedmodelling.languages.observable-1.0.0-SNAPSHOT.jar\" 'org.integratedmodelling.languages.api.ConceptDeclarationSyntax$RequiresType'\n```\n\nActual constants are `IDENTITY`, `REALM`, `AUTHORITY`; the pinned services source\nalso needs `EXTENT` and `ATTRIBUTE`. The accepted earlier artifact hash was\n`4b89ef600e5d620eaf18553170d11b49f5dd78f93914402d3901e4832f5edcf1`.\nAll five language SNAPSHOT JARs changed; complete hashes and repeated command\noutcomes are in `notes/roadmap-handoff-verification-20261103.json` and the current\n#89 body. That JSON is a [PR133 documentation addition](https://github.com/integratedmodelling/klab-services/blob/89ad51a2a80210ff785c6ac3a58e3b009e9890e3/notes/roadmap-handoff-verification-20261103.json),\nnot part of the pinned executable baseline. Establish a coherent maintained source/artifact pair; do not remove\nscientific cases, mix old closures or overwrite someone else's Maven cache.\nReport changed artifact bytes/outcomes honestly if this exact trigger no longer\nresolves. Python state/transport development can continue independently; this build\nfailure is not justification for calling all of #125 external.\n\nSpecific executable evidence:\n\n- `AgentRegistryTest#sourceOnlyTranslationDoesNotCreateAnInstanceOrClassEntry`:\n  unchanged registered-agent/class counts, viable Java source, null agent URN.\n- `AgentRegistryTest#managedAgentsAreSingleUseAndExplicitStopIsTerminal`:\n  start once; repeated start rejected; stop terminal; registry entry removed.\n- `AgentRegistryTest#remoteStopUsesManagedCleanupAndRemovesTheRuntimeSubscription`:\n  client stop dispatch reaches managed cleanup, registry and subscriptions removed;\n  client alive=false. This test uses mocked AMQP and must retain that label.\n- `AgentEventBusTest`, `RuntimeAgentBaseTest`: existing wire/state/message behavior;\n  adapt these contracts rather than porting compiler or scheduler logic to Python.\n\n## Exact source map for an implementing/fixing agent\n\n1. Python current surface:\n   `python-client/src/klab_client/agents.py`, exports in\n   `python-client/src/klab_client/__init__.py`,\n   `python-client/tests/unit/test_agent_previews.py`.\n2. Request DTO:\n   `klab.core.common/src/main/java/org/integratedmodelling/klab/rest/AgentInstantiationRequest.java`.\n3. Existing controller:\n   `klab.services.runtime.server/src/main/java/org/integratedmodelling/klab/services/runtime/server/controllers/RuntimeServerController.java#instantiateAgent`.\n   Route `POST /api/v1/instantiate/agent`; `compileOnly` maps to\n   `DO_NOT_COMPILE_JAVA`, not the same as a compiled deferred agent.\n4. Existing runtime creation/ownership:\n   `klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/RuntimeService.java#compileAndRunAgent`.\n5. Registry/lifecycle implementation:\n   `klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/kactors/compiler/runtime/AgentRegistry.java`;\n   registry tests at the same package under `src/test/java`.\n6. Java remote handle:\n   `klab.core.common/src/main/java/org/integratedmodelling/common/runtime/actors/AgentImpl.java`:\n   `connect`, `connectOwned`, `start`, `stop`, `receiveMessage`, `disconnect`.\n   `stop()` returns publication success, not terminal cleanup confirmation.\n7. Wire/state types:\n   `klab.core.api/src/main/java/org/integratedmodelling/klab/api/actors/RuntimeAgent.java#Status`,\n   `klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/runtime/Message.java`.\n   Inspect `AgentStarted`, `AgentStopped`, `AgentStatusChanged`, `AgentFailed` and\n   `AgentStatusRequested`; never treat activity Job hints as these messages.\n8. Transport:\n   `klab.core.common/src/main/java/org/integratedmodelling/common/runtime/actors/AgentEventBus.java`,\n   `klab.core.common/src/main/java/org/integratedmodelling/common/authentication/scope/AMQPChannel.java#forAgent`.\n   Agent URN/federation/broker identity and Runtime incarnation are distinct from\n   a bare numeric observation ID. Transport state is not serialized in AgentImpl.\n9. Language/lifecycle reference: `docs/AGENTS.md` sections4.3 and10;\n   `python-client/docs/agent-source-preview.md` and its committed result JSON.\n\n## Work the client agent can do now\n\n- [ ] Implement an origin/principal/Runtime-incarnation-bound execution handle and\n  immutable status/descriptor decoding against the existing wire types.\n- [ ] Model not-started, request sent, observed running, terminal stopped/failed,\n  transport-lost/unknown and local detached separately. A boolean send result is\n  not observed termination; an alive=false descriptor alone is not completion proof.\n- [ ] Bound source/DTO/message bytes, queues, waits and operations. Reject wrong\n  origin/URN/principal/incarnation and malformed lifecycle envelopes.\n- [ ] Single-transmission instantiate/start/stop policy with explicit unknown\n  outcomes; no automatic mutation replay or implicit restart after service restart.\n- [ ] Separate local broker detachment from confirmed remote stop and from explicit\n  owned private-session disposal. Preserve original source-preview guarantees.\n- [ ] Add deterministic tests for the state machine and protocol adapter, then\n  genuinely served acceptance. No placeholder handle counts as full delivery.\n\n## Decisions / backend changes only if a concrete gap is demonstrated\n\nChoose supported behavior kinds and the exact safe broker profile: origin/TLS,\nminimal publish/read ACLs, agent exchange/queue ownership, credential provisioning,\nterminal status and incarnation identity. Current context reader credentials do\nnot grant agent publication; HTTP tokens are not broker credentials. Runtime-created\nscript/app/testcase private sessions need explicit ownership and cleanup semantics.\n\nAn agent may propose and test the missing broker profile separately; it must not\nweaken the accepted context profile or declare a Java blocker from an enum/path\nconstant alone. If a maintained Java operation actually fails, extend the selected\nJava tests with a minimal red case and record expected/actual wire/status, exact\ncommit, command and input in this issue **before** claiming a server defect.\n\n## Required real fixture and closing criteria\n\nThe live agent-control fixture is **not yet implemented/accepted**. Do not require\nanother agent to retrieve a private temporary folder or rerun a historical mutation.\nCommit a portable fixture with generated test credentials, source-matched launch\ninputs and isolated temporary state. Use one finite non-scientific agent first,\nthen a bounded persistent agent; no default observer or scientific Job is needed.\n\nDemonstrate finite completion, persistent stop with genuine terminal status,\nfailure, startup cancellation, duplicate stop, transport loss, wrong principal/\nscope, Runtime restart/incarnation and queue/agent/private-session cleanup.\nUse positive credential controls to distinguish denial from missing transport.\nCap wall time, agents, scopes, bytes and messages; retain a mutation-intent journal.\nNever resend an ambiguous mutation or call HTTP closure a remote stop. Independently\nverify only owned resources are removed and unrelated sessions/twins remain intact.\n\nClose #125 only when the actual Python execution/control implementation, tests,\nserved lifecycle acceptance, owned cleanup and documentation are merged. Source\npreview, local mock tests, product decisions or a Java test passing alone cannot\nclose this feature. Durable recovery is separately #126, not automatically a\nprerequisite for every explicitly bounded best-effort lifecycle slice.\n",
+      "body_sha256": "225871c87ef16ece028f5502374e4204ede195b6a8d14c4a1549a0955b67533d",
+      "comment_refs": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6605129955",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T13:30:34Z",
+          "body_sha256": "f05d590de261136b34984ddf968f403da44aea50cb32b71bd8738b43f647b318"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6606049141",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T14:11:52Z",
+          "body_sha256": "380cd594ca47a694a19eb4035642cbbcfba72bee0d3e3c7ce762c9bca42600c0"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6609122938",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T16:11:55Z",
+          "body_sha256": "426ec5d8f8b053ff6730709f973771c8c0eb1243e49b8c69fa8abe00ea302074"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6610098558",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T16:51:57Z",
+          "body_sha256": "dac0cd1ed5a2c097dbf86d21ff05d7f5aea9a51c0d9b5ad8aa5a403bb82c59e0"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6610521458",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T17:10:30Z",
+          "body_sha256": "fcd416bd811dda4ffb2ed83921657a7d45a181bd8a7639fe07dcd0dc17fddb7a"
+        }
+      ],
+      "requirement_ids": [
+        "RC-P4.5",
+        "CAP-14"
+      ],
+      "associated_prs": [
+        108,
+        111
+      ],
+      "python_test_refs": [
+        "python-client/tests/unit/test_agent_execution.py"
+      ],
+      "simulator_scenario_refs": [],
+      "java_gap_ids": [
+        "JAVA-GAP-0008"
+      ],
+      "disposition": "PARTIALLY_ADDRESSED",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Current Python registration/status/journal/native AMQP and awaited registration are delivered; old source-preview-only absence assertion is obsolete for current head. Keep open for portable managed Runtime finite/persistent/failure/cancel/duplicate/transport-loss/principal/incarnation/private-session/independent cleanup acceptance. Wire interop is not managed execution.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 124,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/124",
+      "title": "Specify and implement twin composition/migration contracts required by Python federation",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T01:51:01Z",
+      "closed_at": null,
+      "original_acceptance_statement": "## Product/backend prerequisite for broader Python federation\n\nTracks the unimplemented composition/migration/recovery feature behind audit PR #112.\nExplicit trusted cross-service routing already works and is not being relabelled\nas twin composition or failover.\n\n### Source evidence\n\nThe audit at `bb4f62ce01bb41d93f506ee34c19687b401d8640` found both\n`ClientContextScope.connect(ContextScope)` and `ServiceContextScope.connect(ContextScope)`\nreturning null. `docs/DISTRIBUTED_TWINS.md` describes distinct proposed composition,\nidentity, snapshot/watermark/replay and source-data ownership contracts. Runtime\ncontext attachment/reconstruction is not evidence of a maintained composed-twin,\nmigration or failover API. This is source evidence, not a claim about every deployment.\n\n### Required product/backend decisions and implementation\n\n- Select the operation: composition, multi-runtime selection, migration, failover,\n  or replicated updates; do not hide different semantics behind a generic wrapper.\n- Specify source namespace/observation identity, immutable storage versions,\n  authorization and unit/worldview/dictionary/geometry/time compatibility.\n- Define source changes, snapshot/watermark/replay bounds, gaps, expiry and revocation.\n- Define idempotency and ambiguous mutation outcomes without automatic resubmission.\n- Define disconnection, cleanup and independent ownership: detaching a composed client\n  must not release or delete its source twin.\n\nThe independent source/contract audit is retained in #112. A broader Python SDK\nadapter requires the selected maintained backend contract; wrapping a stub or\nreimplementing scientific composition in Python is not an acceptable substitute.\n\n### Acceptance\n\nUse two separately owned Runtime fixtures with overlapping numeric asset IDs and\nindependently verified sources. Cover correct/wrong principal and origin, source\nrevocation, semantic/unit mismatch, nonuniform values/missingness/time support,\ndropped connection, restart/incarnation changes, expired replay, safe disposal and\nambiguous mutations without replay. The full feature remains incomplete until this\ncontract and acceptance exist; the audit does not establish federation execution.\n",
+      "body_sha256": "53e6423e9a72ac03d5caf65cb05d7ec212d1787060068ae3daec582de1dc7788",
+      "comment_refs": [],
+      "requirement_ids": [
+        "CAP-03"
+      ],
+      "associated_prs": [
+        112
+      ],
+      "python_test_refs": [
+        "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http"
+      ],
+      "simulator_scenario_refs": [
+        "SIM-LIFECYCLE-001",
+        "SIM-SCOPE-SELECTION-001"
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0007"
+      ],
+      "disposition": "TRACKED_AS_JAVA_GAP",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Keep authoritative product ticket: choose composition/migration/failover operation, identity/storage/authorization/scientific compatibility, snapshot/replay/revocation, ambiguity and independently owned detach/cleanup, then two-owned-Runtime acceptance.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 123,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/123",
+      "title": "Backend prerequisite: versioned remote scan/block/slice contract for Python access",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-03T01:51:00Z",
+      "closed_at": null,
+      "original_acceptance_statement": "## Backend prerequisite for Python window/chunk/time access\n\nTracks the unimplemented feature behind audit PR #109. This is not a regression in\nthe supported Python point-read or pandas surfaces, and the audit is not an\nimplementation of snapshot chunks.\n\n### Source evidence\n\nThe audit at `bb4f62ce01bb41d93f506ee34c19687b401d8640` found internal Java\n`StorageScan` plans, revisions, slices, masks, budgets and dictionaries. The published\nRuntime `READ_VALUE` controller accepts `StorageScan.Point` and returns scalar text.\nIt does not expose a maintained remote plan/open/read-block/close/revision-lease\ncontract. This is source evidence, not a negative probe of every deployed server.\n\n### Required backend contract/implementation\n\n- Authorized plan/description and immutable source revision identity.\n- Discoverable admitted temporal slices, including initialization, transitions and events.\n- Bounded block/window selectors with declared traversal, axes, CRS, dtype, dictionary,\n  coverage and missingness semantics.\n- Pinned lifetime, expiry/conflict handling, cancellation, explicit close, ownership\n  and restart/resume behavior.\n- Versioned value/mask/descriptor transport and byte/partition budgets.\n\nThe maintainer/backend decision is whether to publish an existing maintained\nimplementation or specify and implement this server addition. No endpoint or\nscientific resampling/mediation algorithm should be invented in Python.\n\n### Client development and acceptance\n\nThe independent source/contract audit is retained in #109. Supported bounded point\nreads and precision-preserving tabular adapters remain available, but repeated\npoints are not an atomic or revision-pinned chunk. A full Python block transport\nadapter depends on this backend contract.\n\nAcceptance needs independent nonuniform, missing-cell and valid-zero fixtures;\nprecision/unit/dictionary/coordinate/time alignment; fail-closed permission,\nrevision/expiry cases; and verified owned cleanup. Reopen implementation work against\nthe agreed versioned contract; do not mark the chunk feature complete from the audit.\n",
+      "body_sha256": "c35b261e905691cf936b0b88727ad0a019d3270bf4bd2caf3983165c0f65a9bb",
+      "comment_refs": [],
+      "requirement_ids": [
+        "RC-P2.2",
+        "CAP-09"
+      ],
+      "associated_prs": [
+        109
+      ],
+      "python_test_refs": [
+        "developer-tools/klab-service-simulator/tests/test_offline_snapshots.py::test_fresh_sdk_only_process_inspects400_frozen_cells_offline_after_owned_release",
+        "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+        "developer-tools/klab-service-simulator/tests/test_state.py::test_unimplemented_read_mediation_time_or_fill_curve_is_not_synthetic_success"
+      ],
+      "simulator_scenario_refs": [
+        "SIM-ADAPTERS-001",
+        "SIM-EXPORT-001",
+        "SIM-GRID-001",
+        "SIM-OFFLINE-SNAPSHOT-001",
+        "SIM-TEMPORAL-EXPORT-001",
+        "SIM-USGS-001"
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0014"
+      ],
+      "disposition": "TRACKED_AS_JAVA_GAP",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Keep authoritative native ticket: plan/immutable revision, discoverable slices, bounded typed blocks/masks/axes/dictionaries, lease/expiry/cancellation/close/ownership/restart and versioned budgets remain; supported point/selected-export requests are not atomic chunks.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 91,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/91",
+      "title": "Python client: stream observation exports to files",
+      "state": "CLOSED",
+      "author": "Dobbes",
+      "assignees": [
+        "Dobbes"
+      ],
+      "labels": [
+        "enhancement"
+      ],
+      "updated_at": "2026-10-13T19:52:51Z",
+      "closed_at": "2026-10-13T19:52:51Z",
+      "original_acceptance_statement": "## Current published review candidate — 13 October 2026\n\nPR #92 is updated at **c0267e052a762f6f58c28fa9db5bcef5d990cc0b**, targeting `feature/python-client` at base `90bebb5f35e60ad002f106c8d655e66d7e00d89d`. The review fixes are committed/pushed, and the working tree is clean.\n\n- Shared checks remain active under optimization; owned cleanup attempts both releases and preserves primary failures; invalid paths fail before HTTP.\n- Both GeoJSON files validate complete rectangle topology and source ID/URN. Regressions reject clustered/crossed/holed geometry and incorrect fresh-process attribution while accepting legitimate ring ordering.\n- Fresh full offline regression: **630 tests each** on Windows Python 3.12 and installed Linux Python 3.11/3.12/3.13, with source identity, coverage, lint and package gates.\n- Exact clean published head: **seven local functional tests**, graph-retaining Runtime restart/access checks, all computation/read and numerical export modes passed. Exact-head compute c1/c2/c4 verified 8/9/14, repeated read verified 40, numerical serial/repeated export verified 4/10; zero failures and cleanup confirmed.\n- Exact-head GeoJSON also passed against the unchanged genuine published component. Numerical evidence uses the explicitly hashed separately corrected local component; its Java review/publication and #89/#90 rollout remain separate.\n- Exact-head hosted Python 3.11/3.12/3.13, Maven packaging and Jenkins are green. Maven packaging skips Java tests; no full Java reactor or external provider/reference accuracy is claimed.\n\nFull review/commands: `python-client/docs/exports-verification.md` and [the publication review](https://github.com/integratedmodelling/klab-services/pull/92#issuecomment-6152965931). Guide recommendation: **Ready for maintainer review of the bounded Python contribution**. GitHub reports conflict-free/mergeable; no approved maintainer review is recorded and no merge was performed. This issue stays open pending review/merge. Earlier candidate/publication details below are historical checkpoints.\n\n## Terminology and deployment boundary\n\n**Cross-service identity and permissions** means the Reasoner, Resources, Resolver and Runtime services carrying the correct caller/context information while enforcing each context's own access rules. An **identity-sharing group** is the backend membership grouping used by shared-session policy; membership does not grant access to every context.\n\nThe completed local live checks ran cooperating services on one machine. The remaining nonlocal shared-session checks use two independently authenticated members and separate native Java processes. These are specific identity/permission checks, not evidence that cooperation across separately deployed installations is fully validated. Broader separate-deployment verification remains unfinished.\n\nExisting source identifiers, branch names and documentation filenames containing `Federation` or `federation` are retained as exact technical references.\n\n## Roadmap and useful outcome\n\nPriority 1 of the next bounded Python-client contributions: stream a committed observation through an existing advertised exporter into a local file without buffering the whole response. This starts [the roadmap's scientific data interface](https://github.com/integratedmodelling/klab-services/blob/feature/python-client/docs/PYTHON_CLIENT_ROADMAP.md#build-the-scientific-data-interface-around-a-declared-view) and the export portion of Phase 2.\n\nFoundation: merged typed-request PR #85 / issue #87 and saved-handles PR #86 / issue #88. New work starts from combined integration commit `90bebb5f35e60ad002f106c8d655e66d7e00d89d` on `feature/python-client`. Server cross-service identity and permissions work remains separate under #89 / draft PR #90.\n\n## Bounded scope\n\n- Wrap the existing `GET /export/{class}/{urn}` route for bound native observations and explicit requested media types.\n- Inspect current advertised exporter schemas/capabilities. Report unsupported or ambiguous choices clearly instead of inventing an exporter or following advertised remote origins.\n- Stream into a same-directory temporary file with bounded chunk memory; publish only after successful completion and applicable media-type/length checks.\n- Default no-clobber behavior, explicit overwrite policy, interruption/failure cleanup and clear local/remote errors.\n- Preserve Runtime/context identity, configured credentials/origins and explicit remote lifecycle. No resubmission, implicit release or automatic retry.\n- One working example using an exporter actually installed in the authorized test environment.\n\n## Main uncertainty to resolve first\n\nWhich observation exporter is installed and usable in the reference environment? Source presence or an advertisement alone is insufficient: establish its actual scoped export behavior. A dependency/setup failure is Blocked, not proof of a client defect or a passing scientific test.\n\n## Acceptance criteria\n\n- [x] Trace capability/schema discovery and export request fields to current Java contracts; identify the exact client base and tested server/component revisions.\n- [x] A scientist can select a supported advertised observation representation and stream it to a requested file using a simple synchronous API.\n- [x] Client memory does not grow with response size; successful streaming never calls full-response buffering APIs. Test incremental delivery, not merely a bytes round-trip.\n- [x] Verify applicable response media type and declared byte count before publication. Truncation, wrong representation, interrupted transfer, disk/write/publication failure and cleanup behave explicitly.\n- [x] Existing valid files survive failed/interrupted exports; concurrent/default no-clobber saves cannot silently overwrite another result. Caller destinations and missing parents are handled explicitly.\n- [x] Invalid binding, untrusted origin/redirect, unavailable exporter, 401/403/404, binary-Accept error responses and malformed protocol data remain distinct; diagnostics do not persist or echo credentials.\n- [x] Maintained focused tests and existing coverage/lint/package gates pass on Python 3.11/3.12/3.13; core dependencies stay small, with scientific readers optional.\n- [x] Execute one scoped live observation export through a genuine installed exporter. Check independently known data/coordinate or representation properties appropriate to that format; state absent CRS/units/validity metadata honestly.\n- [x] Document usage, scope, exporter availability and limits; review against Eric's `KLAB_CLI_Contribution_Review.md`, distinguishing reproduced defects, uncertainty and optional improvements.\n- [x] Commit and push the issue-scoped branch only after required checks pass. The original publication followed the initial no-PR instruction; the user subsequently authorized combined PR #92. Keep the issue open pending review/merge.\n\n## Explicit exclusions / later ranked work\n\nNo new bulk/window/chunk server protocol, typed Resolver plans/diagnostics, resource/model catalog, provenance graph, broad semantic-object redesign, general scientific metadata model, Rasterio/xarray adapter, export re-encoding, production provider accuracy or rollout across separately deployed services. Those ranked follow-ups may reference this transport/file foundation later; they are not completed by this issue.\n\n## Review and validation policy\n\nKeep the implementation simple and consistent with current client/transport/error/DTO conventions. Tests should expose plausible failures and the actual promised workflow. High coverage, HTTP success or a completed Job is not proof of scientific correctness. Record exact commands, candidates, outcomes and authorized fixture cleanup. No production credentials/data are needed.\n\n## Original export checkpoint and verified candidate\n\nCommitted and pushed **6b73dd9dfaf173e9f9603bf155bbca851d59b480** on `feature/python-client-stream-exports`, based on combined integration `90bebb5f3`. No PR was opened at that original checkpoint, as then requested; the combined follow-up is now PR #92.\n\n- 550 maintained tests passed on Windows Python 3.12 and fresh installed-package Linux Python 3.11/3.12/3.13 (8 live tests selected separately).\n- New exports module has 131 statements / 56 branches fully covered without exclusions. Changed-code, existing module, lint and package gates passed.\n- Bounded-memory generated 64 MiB response, concurrent no-clobber, interruption, short/zero writes, HTTP/representation/length/byte-limit and cleanup controls passed.\n- Core-only installed Python 3.11 wheel smoke passed with live HTTP forbidden.\n- Fresh committed-candidate live acceptance passed against explicit server `244883d7b` and unchanged official component `1.0-20260926.083046-222` (archive SHA-256 e7d470f69943e93ce48e9669bad6a41b618dfbe0e7bc748076e010583daef644). It verified native GeoJSON identity, all independently calculated geographic corners and the generic saved-handle example in another Python process. All owned JVMs/listeners were cleaned.\n- Hosted [Python matrix run 38200119713](https://github.com/integratedmodelling/klab-services/actions/runs/38200119713) is green at this exact SHA; hosted build run 38200119711 also passed.\n\nReview: `python-client/docs/stream-exports-review.md`, following Eric's contribution guide. Usage/limits: `python-client/docs/stream-exports.md`. Full Python-branch summary and pseudocode: `notes/python-client/python-branch-summary.md`.\n\nThe source-component build attempt was Blocked by its obsolete annotation/API mismatch; the genuine published distribution resolved setup without modifying scientific algorithms. GeoJSON rounds this fixture to six decimal degrees; the reference tolerance is explicitly 1e-6 degree. This verifies substantial geometry, not raster values/units/masks, all advertised formats or provider accuracy.\n\nClosest wider workflow: typed controlled numerical field → save handle → fresh-process restore → native advertised GeoTIFF → independent reader validates coordinate mapping, dtype/precision, known values, valid zero/missingness and provided metadata. It is proposed, not claimed complete. No new server protocol or adapter API was added to this issue.\n",
+      "body_sha256": "84bc61fb4a179ddbb2009cdb90d54636e709d1080e96cf9f4aac96baf3c3a047",
+      "comment_refs": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/91#issuecomment-6153913994",
+          "author": "Dobbes",
+          "created_at": "2026-10-13T19:52:50Z",
+          "body_sha256": "05f0bd6ab59f155a4c4915eab4d05da7000262df0c97c28ffcb1562675aa44a3"
+        }
+      ],
+      "requirement_ids": [
+        "RC-P2.1",
+        "RC-P2.4",
+        "CAP-09"
+      ],
+      "associated_prs": [
+        85,
+        86,
+        90,
+        92
+      ],
+      "python_test_refs": [],
+      "simulator_scenario_refs": [],
+      "java_gap_ids": [],
+      "disposition": "FIXED_IN_PYTHON",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Already closed by merged stream exporter implementation. No reopening; official exporter defects/provider scale are separate.",
+      "closure_candidate": false,
+      "action": "PRESERVE_EXISTING_CLOSURE_NO_REOPEN"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 89,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/89",
+      "title": "Validate Python client integration with cross-service identity and shared-session permissions",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [
+        "enhancement",
+        "java"
+      ],
+      "updated_at": "2026-11-03T17:53:30Z",
+      "closed_at": null,
+      "original_acceptance_statement": "# #89 — cross-service identity: current status and reproducible handoff\n\nUpdated 3 November 2026. **OPEN acceptance/integration work, not an assertion that\nall remaining work is external or requires a Java change.** This body supersedes\nthe old status; historical comments and failed evidence are retained.\n\n## Exact source and delivered corrections\n\nUse integration branch `feature/python-experiment-runner` at\n`e09a7de7cac6b48526fd8b7ac72879abb36a77a3` for this handoff. This is not a tag,\npublication or promotion to `develop`.\n\n| PR | State | Delivered scope |\n| --- | --- | --- |\n| #90 | MERGED `d86f9927d32aba983060760fdc9953feaf532631` | Shared integration and request-local authority; not still draft |\n| #128 | MERGED `94447b8d8ce8328754c78c0875d2aed6ce495b4e` | Deny explicit cached Runtime-origin mismatch |\n| #131 | MERGED `802e8cce2ce1648f79ce766f5cd3f2cc400ac535` | Native reconnect uses descriptor parent without creating unrelated default session |\n| #132 | MERGED `e09a7de7cac6b48526fd8b7ac72879abb36a77a3` | Cold owner restoration on exact local Runtime, registered-root host binding and bounded disposal diagnostics |\n\n## Reproduce current Java behavior without a deployment\n\nPrerequisites: Git, JDK21 (`JAVA_HOME` set), Maven wrapper and network access to the\nrepositories declared in `pom.xml`. Run from the repository root. No user tokens,\nHub, scientific datasets, broker or persistent service is needed for these selected\ntests. Tests that use loopback HTTP own and close their listeners.\n\n```sh\ngit clone https://github.com/integratedmodelling/klab-services.git klab-issue89\ncd klab-issue89\ngit checkout --detach e09a7de7cac6b48526fd8b7ac72879abb36a77a3\njava -version\n./mvnw -version\n./mvnw -B -pl klab.services.runtime.server -am -Dtest=FederatedIdentityTransportTest,NativeReconnectParentTest,ClientScopeCreationTest,ClientScopeShutdownTest,FederationSessionIdentityTest,IdentityHeaderValidationTest,TokenAuthorizationFilterTest,LocalRuntimeColdScopeTest,CachedScopeRuntimeOriginTest,ScopeManagerTest,ServiceSessionScopeTest,ManagedScopeAccessTest,UserScopeAdvertisementTest,RuntimeContextReleaseTest,RuntimeContextAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false test\n```\n\nOn Windows use `mvnw.cmd` instead of `./mvnw`; in PowerShell quote every complete\n`-D...` argument, e.g. `'-Dsurefire.failIfNoSpecifiedTests=false'`. Otherwise\nPowerShell can split the dotted property and Maven reports `Unknown lifecycle\nphase \".failIfNoSpecifiedTests=false\"` before any test runs. Expected fixed behavior: selected\ntests PASS, no ignored failures. Inspect each module's `target/surefire-reports/`\nfor counts/errors/skips; reactor modules with no matching selected tests may run\nzero tests. This is a selected regression suite, **not** a full Java-suite claim.\nSnapshot dependencies can change: retain `dependency:tree`, resolved JAR SHA256s,\nJava/Maven versions and the source commit with a reproduction. An unavailable or\nincompatible language SNAPSHOT is setup evidence, not reproduction of this bug;\ndo not combine old dependency closures to force a run.\n\n### Current repeated build failure — exact dependency trigger\n\nThe command above was actually repeated on3 November in a fresh worktree at the\npinned source. **It currently fails at `klab.core.services:compile`, before that\nmodule's tests**, with the resolved language artifacts below. Do not report this\nrepeat as PASS or count the earlier green CI as current dependency compatibility.\n\nMinimal reproduction (same JDK21/setup, no services):\n\n```sh\n./mvnw -B -pl klab.core.services -am -DskipTests compile\njavap -classpath \"$HOME/.m2/repository/org/integratedmodelling/org.integratedmodelling.languages.observable/1.0.0-SNAPSHOT/org.integratedmodelling.languages.observable-1.0.0-SNAPSHOT.jar\" 'org.integratedmodelling.languages.api.ConceptDeclarationSyntax$RequiresType'\n```\n\nResolved artifact: `org.integratedmodelling:org.integratedmodelling.languages.observable:1.0.0-SNAPSHOT`,\nSHA256 `db1a58cc9a3ab8f3f56db1855b9cc3812edc352154d377883031558c23db88af`.\n`javap` exposes only `IDENTITY`, `REALM`, `AUTHORITY`. Services source\n`klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/language/LanguageAdapter.java`\nlines2006/2007 also refers to `EXTENT`/`ATTRIBUTE`, so the actual compiler errors are:\n\n```text\nLanguageAdapter.java:2006 EXTENT cannot be resolved or is not a field\nLanguageAdapter.java:2007 ATTRIBUTE cannot be resolved or is not a field\n```\n\nHistorical accepted observable artifact SHA256 was\n`4b89ef600e5d620eaf18553170d11b49f5dd78f93914402d3901e4832f5edcf1`.\nAll five integratedmodelling language JARs changed at the same SNAPSHOT coordinates;\nsee `notes/roadmap-handoff-verification-20261103.json` for all current/historical\nhashes ([PR133 evidence addition](https://github.com/integratedmodelling/klab-services/blob/89ad51a2a80210ff785c6ac3a58e3b009e9890e3/notes/roadmap-handoff-verification-20261103.json),\nnot a file already present at the pinned executable baseline).\nThe cause of replacement and correct supported source/artifact pairing are\nnot proven. Do not overwrite another user's Maven cache, recover arbitrary old\nJARs or remove scientific requirement cases to make compilation pass.\n\nNext Java/build agent: establish a coherent maintained `klab-services` /\n`klab-languages` revision pair supporting the required semantic contract, record\nsource commits and artifact hashes, rerun this compile and the selected suites,\nand demonstrate that identity/realm/extent/attribute/authority behavior is preserved\nor obtain explicit approval for a semantic change. If the artifact bytes differ,\nreport the new hash/enum and actual outcome rather than assuming this exact failure.\nThis is now a demonstrated build prerequisite, **not** proof that the remaining\ndeployment acceptance gates require new Java behavior.\n\n### Reproduce the repaired cached-origin defect (red/green)\n\nThis isolates a proven defect, not a hypothetical remaining failure. Save the\nfollowing as `repro_cached_origin.py` outside the checkout. It creates a *new*\ndetached worktree and copies only the committed regression test into it, leaving\nthe accepted checkout and original evidence untouched:\n\n```python\nfrom pathlib import Path\nimport subprocess\nimport sys\nrepo = Path(sys.argv[1]).resolve()\nscratch = Path(sys.argv[2]).resolve()\nassert not scratch.exists(), \"Use a fresh worktree; never reset existing work\"\nbase = \"19668515a7307aec4b1e671207f5b2d595572a14\"\nfixed = \"e09a7de7cac6b48526fd8b7ac72879abb36a77a3\"\ntest = \"klab.core.services/src/test/java/org/integratedmodelling/klab/services/scopes/CachedScopeRuntimeOriginTest.java\"\nsubprocess.run([\"git\", \"worktree\", \"add\", \"--detach\", str(scratch), base], cwd=repo, check=True)\ndata = subprocess.check_output([\"git\", \"show\", f\"{fixed}:{test}\"], cwd=repo)\ntarget = scratch / test\ntarget.parent.mkdir(parents=True, exist_ok=True)\ntarget.write_bytes(data)\n```\n\nRun `python repro_cached_origin.py /absolute/path/klab-issue89 /new/path/issue89-red`.\nThen from that scratch worktree:\n\n```sh\n./mvnw -B -pl klab.core.services -am '-Dtest=CachedScopeRuntimeOriginTest#sessionAThenB+sessionBThenA+contextAThenB+contextBThenA+directSessionAThenB+directSessionBThenA' -Dsurefire.failIfNoSpecifiedTests=false test\n```\n\nExpected baseline: six failures, `Expected ...KlabAuthorizationException to be\nthrown, but nothing was thrown`. Run the same selection on the fixed checkout:\nsix PASS. No remote mutations or scientific Jobs are submitted. Keep the red XML\nand logs; this is not permission to reset or replay an old live run.\n\n## Java change locations and regression expectations\n\nPaths are relative to the pinned checkout:\n\n- `klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ScopeManager.java`:\n  `getScope`, `getOrCreateSessionScope`, `requireCachedRuntimeOrigin`,\n  `findOriginatingRuntime`. Explicit origin mismatch must fail before cached reuse;\n  exact self Runtime may use its authorized persisted lookup without caller ads.\n- `klab.core.common/src/main/java/org/integratedmodelling/common/services/client/RuntimeClient.java`:\n  `connectContext`. Returned descriptor context/Runtime must match; no\n  `getUserSession` call to manufacture an unrelated parent during reconnect.\n- `klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ServiceContextScope.java`:\n  `forRequest`, `closeContextResources`. Request authority and registered-root\n  lifecycle ownership are different; local host binding is not parent ownership.\n- `klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/RuntimeService.java`:\n  `getConfiguration`, `declareContextScope`, `releaseContext`. Preserve persisted\n  ACL checks and caller identity; close the registered root, not a request copy.\n- `klab.core.services/src/main/java/org/integratedmodelling/klab/services/application/security/`:\n  `EngineAuthorization`, `ServiceAuthorizationManager`, `TokenAuthorizationFilter`.\n  Headers are assertions, not replacement credentials.\n\nExecutable test files are under the matching module's `src/test/java`, with names\nin the command above. Focused repros:\n\n- `NativeReconnectParentTest#reconnectUsesTheAuthorizedDescriptorParentNotTheCallersDefaultSession`\n  failed on `94447b8d8...`: expected `actual-parent`, got `caller-default`.\n- `NativeReconnectParentTest#reconnectDoesNotNeedDefaultSessionCreationCapability`\n  failed on that baseline with an unexpected `getUserSession` call.\n- `LocalRuntimeColdScopeTest#hostingRuntimeResolvesItsOwnOriginWithoutUserServiceAdvertisements`\n  and `#coldOwnerContextCanUseHostAuthorizedConfigurationWithoutReAdvertising`\n  failed on `802e8cce2...` with null origin/context. Copy the fixed test into a fresh\n  baseline worktree using the same byte-preserving procedure above to reproduce.\n- `LocalRuntimeColdScopeTest#coldRegisteredRootRetainsItsExactLocalHostForDisposal`\n  failed on `988d48f33ef1472616c581d03e35c10d02ded9a0` with\n  `KlabServiceAccessException: No suitable service for request of RuntimeService`\n  at `ServiceContextScope.closeContextResources`. It passes after exact host binding.\n\n## Acceptance ledger — do not infer more than the evidence\n\n- [x] Integration published/merged (#90), not production promotion.\n- [x] Controlled nonlocal-group default-session workflow in separate ordinary native\n  Java processes, both creation orders, including a second process for one username\n  (#131, fresh26/27).\n- [x] Controlled graph-retaining **single Runtime** restart in both creation orders,\n  cold owner access and native owner/outsider reconnect, owner/Runtime/group metadata,\n  privacy/sharing/public-exclusion and complete fresh cleanup (#132, fresh32/33).\n- [x] Explicit cached-origin denial, fixed local regressions and bounded HTTP\n  matching/wrong/matching200/403/200 (#128).\n- [x] Ordinary shared-session release denied; privileged owned cleanup confirmed in\n  those fixtures. This is not every private-session disposal case.\n- [ ] Job ownership/roles across the full nonlocal matrix; the recent membership\n  and restart runs deliberately submitted **zero scientific Jobs**.\n- [ ] Full invalid/expired-credential and missing-scope deployment matrix with\n  distinct outcomes and positive credential controls. Unit tests do not substitute.\n- [ ] Two independently deployed Runtime same-wire-ID fixture (both request orders,\n  wrong principal/origin, cold and warm caches). Mock origins are not this fixture.\n- [ ] Complete private-parent/disposal authority matrix, including collaborator-first\n  restoration beyond the recorded owner/outsider cases.\n- [ ] Broader unchanged-latest-baseline versus candidate Java comparison, including\n  authority/language tests with all failures/skips reported, and rollout support\n  decisions. Do not waive a baseline failure or claim every Java test passed.\n\nFor each unchecked gate, the next agent must first add a bounded fixture/test that\ndemonstrates the exact unsupported/failing behavior; do not assume a Java fix is\nrequired. Retain expected/actual status, source/dependency identities, owned mutation\nreceipts and independent cleanup before proposing a correction.\n\n## Committed evidence versus portable reproduction\n\nCommitted evidence is available at the pinned revision:\n`notes/cached-scope-runtime-origin.md`, `notes/native-reconnect-parent.md`,\n`notes/local-runtime-cold-scope.md` and their `*-results-20261103.json` files.\nHistorical live runner scripts and private isolated graphs are **not a fresh-clone\ndeployment recipe**; they must not be required from an author's temporary folder.\nThe commands above reproduce the Java regressions portably, not the full historical\nlive stack. Vendoring a sanitized, source-matched live fixture is remaining test\ninfrastructure work under this issue, not an external Java blocker.\n\nEarlier runs24/25/28/29/31 remain overall FAIL with unconfirmed historical disposals.\nFresh later success does not repair those records. Never restart retained graphs,\nretry an ambiguous mutation, weaken ACLs or use a server key as an ordinary-user\npositive control. Review recorded so far is author/agent-conducted, not independent\nmaintainer approval. Broader composition/migration is #124, not this issue.\n",
+      "body_sha256": "bee88d7348741971cf767e7825da72f750c8f7b94394e42316f8b167d46f1040",
+      "comment_refs": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6109274331",
+          "author": "Dobbes",
+          "created_at": "2026-10-11T12:59:08Z",
+          "body_sha256": "e62f7acab7d0b8d32e5f155d4acc481b0b39a9a51b99403074a14a68c8b958d4"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6593909779",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T02:30:37Z",
+          "body_sha256": "549dc1013ad77f89597943ba89781da5e93a9b0f01f1cb6e6b9a122ed8d7102b"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6594255196",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T02:55:06Z",
+          "body_sha256": "3f69823e6a8457091016b8c3036fb634aeb4ccac6f3c2fc31f8a6d7d22124fcb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6594335340",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T03:01:11Z",
+          "body_sha256": "5983107213a6429d38222a8a10a6479b47fec63fe716f100552dc24ccd0235a1"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6594863243",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T03:41:39Z",
+          "body_sha256": "0b6fe1ab5d2997401a72b86f2bad5d043bfe875bf492c3fd07d2039b3d89f962"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6595093045",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T03:59:50Z",
+          "body_sha256": "bfe80fa17db3d6d30dbdeb955268b296d3293e7034b38a12a31e59e6ca5995dd"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6595188788",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T04:07:10Z",
+          "body_sha256": "b2fca29f9aa780b3510ad60f6cc1e3329ab2788c6f6144c1fc1e801770039d58"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6595585072",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T04:37:53Z",
+          "body_sha256": "0a6a2fa51e64fe7c7ad3bcb893dffd4237f0ea0fd5af674bde893dad10d14d97"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6595618025",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T04:40:37Z",
+          "body_sha256": "927ba256a5913b1649cfc45743c2de37b094e4953260e17bd7acbd160a53a6bd"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6605209836",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T13:34:17Z",
+          "body_sha256": "747a6bb7756f7934d670bfe113231167cafba83459db6bad98acce5900bb1a89"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6609514875",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T16:26:59Z",
+          "body_sha256": "0d008529b5d9d20dee2e8f3cc9b40410ecf947cb4fd7488134e04772fd48a8b6"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6609901761",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T16:43:26Z",
+          "body_sha256": "244c23cf9067bd114a31d1393307a2e5a6c1fcf0d174bca12d7b16d792b7a12f"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6610518747",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T17:10:23Z",
+          "body_sha256": "f6c3ed85cedf2128c7c2f1be13ab0a09dd4ae461446fda9989b50f4fa6723a90"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6611031444",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T17:33:50Z",
+          "body_sha256": "1fbc8c0390171e1e6b20a1391bfbc8d286fbe328f99dd1131a9ac92b0cabc951"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6611044678",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T17:34:28Z",
+          "body_sha256": "3f0ec47591984fd8dc8095ce5caa18c303f17bb4ef2706fc71637cbec54d386e"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6611442762",
+          "author": "Dobbes",
+          "created_at": "2026-11-03T17:53:30Z",
+          "body_sha256": "f10dcce1827cf49116331aff670b522b8d80de10acbfd2ecfb544ff04c6e9200"
+        }
+      ],
+      "requirement_ids": [
+        "RC-P1.2",
+        "RC-P1.3",
+        "RC-P3.3",
+        "CAP-03",
+        "CAP-07"
+      ],
+      "associated_prs": [
+        90,
+        128,
+        131,
+        132
+      ],
+      "python_test_refs": [
+        "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_expired_job_empty_status_is_not_confirmed_cancellation",
+        "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state",
+        "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_administrator_role_remains_server_authoritative_and_unknown_project_false_is_not_a_diagnosis",
+        "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http"
+      ],
+      "simulator_scenario_refs": [
+        "SIM-DISCOVERY-001",
+        "SIM-FAULTS-001",
+        "SIM-LIFECYCLE-001",
+        "SIM-PROJECT-LOCK-001",
+        "SIM-RESTORE-001",
+        "SIM-SCOPE-SELECTION-001"
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0004",
+        "JAVA-GAP-0015"
+      ],
+      "disposition": "PARTIALLY_ADDRESSED",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Keep open: complete nonlocal Job ownership/roles, invalid/expired credential positive controls, two deployed same-ID Runtimes both orders/caches, private-parent/disposal matrix and broader supported rollout remain. Historical compile failure is not assumed current after later integration.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 88,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/88",
+      "title": "Python client: save and restore context, observation and job handles",
+      "state": "CLOSED",
+      "author": "Dobbes",
+      "assignees": [
+        "Dobbes"
+      ],
+      "labels": [
+        "enhancement"
+      ],
+      "updated_at": "2026-10-12T01:10:42Z",
+      "closed_at": "2026-10-12T01:10:42Z",
+      "original_acceptance_statement": "## Roadmap and useful outcome\r\r\n\r\r\nDeliver the saved-reference slice of [Phase 1: Complete the everyday observation workflow](https://github.com/integratedmodelling/klab-services/blob/feature/python-client/docs/PYTHON_CLIENT_ROADMAP.md#phase-1--complete-the-everyday-observation-workflow): close a Python process and restore permitted context, observation and job references using separately supplied credentials, without recreating or disposing of existing work.\r\r\n\r\r\nImplementation/tracking PR: #86. Integration target: `feature/python-client` in this repository. This issue is independent of typed observation requests.\r\r\n\r\r\n## Scope\r\r\n\r\r\n- Strict, versioned JSON `Handle` schema, source-object capture, offline inspection/load/save and explicit authenticated restoration.\r\r\n- Exact home Runtime, executing peer, root/focus/observer, observation/job and supported decoder identity.\r\r\n- Atomic no-clobber/explicit-overwrite file policy, current scoped asset/access verification and existing Job/error/lifecycle semantics.\r\r\n\r\r\n## Acceptance criteria\r\r\n\r\r\n- [x] Version-1 reference schema round-trips all supported kinds and rejects unknown/missing/duplicate fields, invalid IDs/types/versions/decoders, oversized/nonfinite/truncated/non-UTF-8 JSON and authority snapshots.\r\r\n- [x] Capture/load/save/inspection remain offline. Stable identities must already be known; callable decoders/import paths and scientific DTO snapshots are not serialized as authority.\r\r\n- [x] Configured credentials are rejected in raw and bounded percent-encoded string representations; invalid UTF-8/excessive decoding depth fail without echoing credentials or contacting HTTP.\r\r\n- [x] Capture and normal Runtime/Resolver submission reject conflicting known client/scope/configuration identities before rebinding or HTTP; contradictory caches fail explicitly, while same-Runtime second clients and documented legacy unknown IDs remain supported.\r\r\n- [x] Capture/submission/restoration use consistent URL equivalence, including uppercase schemes, explicit default ports and trailing slashes; distinct base paths remain distinct and only caller-configured endpoints are used.\r\r\n- [x] Supported helpers declare decoder meaning explicitly. Resolver Dataflow jobs route to Resolver, Runtime observation jobs route to Runtime, and unspecified custom decoders are not inferred to be supported Dataflows.\r\r\n- [x] Restoration verifies capabilities, exact root, current scoped graph membership and observer semantics; freshly decoded results preserve scope identity and do not acquire disposal ownership.\r\r\n- [x] Restoration checks job status once and distinguishes unavailable/failed/interrupted/finished work without submit/create/release/cancel or automatic retry.\r\r\n- [x] Atomic save preserves existing files on partial/failed/interrupted writes and reports cleanup failures honestly. POSIX mode and Windows ACL guarantees are documented accurately.\r\r\n- [x] Maintained regressions, fresh-process tests, unexcluded 100% new-module line/branch coverage and changed-code gates pass. Python 3.11/3.12/3.13 installed-package, lint, wheel/sdist and core-only wheel checks pass against the exact published candidate.\r\r\n- [x] Real isolated fresh-process acceptance preserves original jobs/results, nonuniform values/zero/missingness, pending-job timeout recovery, peer routing, collaborator-positive/private-negative access and deletion/untrusted-origin controls. Record exact source identities and cleanup.\r\r\n- [x] All reviewed local fixes/tests/docs are included in the PR, and published check/evidence descriptions match its actual head. Revisit the complete checklist before closing this issue.\r\r\n\r\r\n## Current status\r\n\r\nPR #86 is **open for review** at published commit `288d3aba6baf3990e156168ece4badd13b03ed33`. The current candidate includes the earlier reviewed corrections plus shared Runtime identity validation before focus and scientific reads. The guide review's reproduced focus/read relabelling gap is fixed and covered by maintained negative controls.\r\n\r\nFresh evidence at this exact commit:\r\n- 330 maintained tests passed on Windows Python 3.12 and fresh installed-package Linux Python 3.11/3.12/3.13; 22 independent vectors passed per version.\r\n- New module: 316 statements / 134 branches, unexcluded 100% coverage. Shared changed-code gates, lint and wheel/sdist builds passed.\r\n- A fresh core-only Windows Python 3.11 installed wheel rejected foreign focus/reads with HTTP forbidden.\r\n- Fresh live acceptance and independent controls passed against server commit `244883d7b04f1eae2cc22e799575d33a9bdb2a43`; cleanup confirmed all owned JVM exits and fixture ports.\r\n- Hosted Python 3.11/3.12/3.13 jobs passed: [run 38164788858](https://github.com/integratedmodelling/klab-services/actions/runs/38164788858).\r\n\r\nThe client implementation and published-candidate checks are complete for this bounded issue. **Maintainer review and merge remain pending, so the issue stays open.** Server integration is draft PR #90 / issue #89, targeting the same `feature/python-client` branch. Neither client feature is stacked on the other; full federation promotion remains separate.\r\n\r\n## Boundaries\r\r\n\r\r\nPython-process recovery is not durable job retention across Runtime restart, resumable simulation, offline authoritative snapshots, automatic migration, durable event replay or full federation certification. Related server/promotion gate: #89. The typed-request feature (#87) is not an implementation dependency.\r\r\n",
+      "body_sha256": "587990b5a5fa72083d3d0d7027b9271660caa7dc1daf6bc2c7706650836e467a",
+      "comment_refs": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/88#issuecomment-6109140230",
+          "author": "Dobbes",
+          "created_at": "2026-10-11T12:42:58Z",
+          "body_sha256": "d7e0c3a7a8296690ed79385fcd52f03406b2c2c62906eb08824b1fc4c11d3d59"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/88#issuecomment-6109274019",
+          "author": "Dobbes",
+          "created_at": "2026-10-11T12:59:06Z",
+          "body_sha256": "389b966c49c8b27da059aaba05fa8ca0455283b4e034b9a3c0bbd5ceecbfbeb8"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/88#issuecomment-6112435461",
+          "author": "Dobbes",
+          "created_at": "2026-10-11T18:47:48Z",
+          "body_sha256": "cd854916ee1b4a1aacb5940a5725fc29dad94712524790446b1f68e39011cbdb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/88#issuecomment-6115979188",
+          "author": "Dobbes",
+          "created_at": "2026-10-12T01:10:41Z",
+          "body_sha256": "c201334df7ffdbf037bb49ff266d9a7f4c77749c4b679beb28967dfe45d20b28"
+        }
+      ],
+      "requirement_ids": [
+        "RC-P1.2",
+        "CAP-07"
+      ],
+      "associated_prs": [
+        86,
+        90
+      ],
+      "python_test_refs": [],
+      "simulator_scenario_refs": [],
+      "java_gap_ids": [],
+      "disposition": "FIXED_IN_PYTHON",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Already closed by merged saved-reference implementation. No reopening; durable history/incarnation remains separate.",
+      "closure_candidate": false,
+      "action": "PRESERVE_EXISTING_CLOSURE_NO_REOPEN"
+    },
+    {
+      "repository": "integratedmodelling/klab-services",
+      "number": 87,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/87",
+      "title": "Python client: add typed observation requests and context options",
+      "state": "CLOSED",
+      "author": "Dobbes",
+      "assignees": [
+        "Dobbes"
+      ],
+      "labels": [
+        "enhancement"
+      ],
+      "updated_at": "2026-10-12T01:10:39Z",
+      "closed_at": "2026-10-12T01:10:39Z",
+      "original_acceptance_statement": "## Roadmap and useful outcome\r\r\n\r\r\nDeliver the typed-request slice of [Phase 1: Complete the everyday observation workflow](https://github.com/integratedmodelling/klab-services/blob/feature/python-client/docs/PYTHON_CLIENT_ROADMAP.md#phase-1--complete-the-everyday-observation-workflow): submit supported scientific observations without manually constructing Java discriminator/nested DTO dictionaries.\r\r\n\r\r\nImplementation/tracking PR: #85. Integration target: `feature/python-client` in this repository. This issue is independent of the saved-handles implementation.\r\r\n\r\r\n## Scope\r\r\n\r\r\n- `ObservationRequest`, `ObservationOptions`, `ResolutionConstraint`, `ContextOptions`, `GridOptions`, and bounded square-cell EPSG:3857 `RectangularGeometry`.\r\r\n- `Context.observe()` accepting typed requests, remotely resolved observables, or definition text resolved by the configured Reasoner.\r\r\n- Typed context creation and implemented namespace/project/scenario/observer options through existing Java contracts.\r\r\n- Preserve raw submission compatibility, existing Job/error semantics, exact scope selection and explicit lifecycle.\r\r\n\r\r\n## Acceptance criteria\r\r\n\r\r\n- [x] The PR includes the supported facades, exports, examples, and accurate API/source-map documentation; unsupported forced-model/arbitrary constraints fail explicitly.\r\r\n- [x] Defensive submission snapshots retain input semantics after caller mutation; nested read-only metadata/extensions can be reused, and copying lexical options does not duplicate generated constraints or discard bound-observer validation.\r\r\n- [x] Bound observers require AGENT semantics and compatible root/Runtime binding, including differing known Runtime IDs at the same URL. Contradictory known context identities fail locally.\r\r\n- [x] All existing nested focus/observer selection tokens are positive signed-64-bit IDs, validated before Reasoner or Runtime HTTP. Conflicting selections fail explicitly.\r\r\n- [x] Typed/raw context settings cannot be mixed ambiguously; grid settings apply only to explicit context creation. Existing raw submission, Job outcomes, timeout recovery, cancellation and explicit release behavior remain compatible.\r\r\n- [x] Maintained regressions cover the above failures before HTTP and successful boundaries; new production module has unexcluded 100% executable line/branch coverage and changed production lines/arcs pass their separate gate.\r\r\n- [x] Python 3.11/3.12/3.13 installed-package checks, targeted lint, wheel/sdist and core-only installed-wheel checks pass against the exact published candidate.\r\r\n- [x] Real isolated acceptance proves geometry/readback, valid zero/missingness, scenario/namespace/project effects and zero-HTTP rejection of a computed non-agent observer. Record exact client/server source identities and cleanup.\r\r\n- [x] All reviewed local fixes/tests/docs are included in the PR, and published check/evidence descriptions match its actual head. Revisit the complete checklist before closing this issue.\r\r\n\r\r\n## Current status\r\n\r\nPR #85 is **open for review** at published commit `df9e8b9f15880b6d618e61ccbf4118f8050256ca`. The current candidate includes the earlier reviewed corrections plus shared Runtime identity validation before focus and scientific reads. The guide review's reproduced focus/read relabelling gap is fixed and covered by maintained negative controls.\r\n\r\nFresh evidence at this exact commit:\r\n- 297 maintained tests passed on Windows Python 3.12 and fresh installed-package Linux Python 3.11/3.12/3.13; 21 independent vectors passed per version.\r\n- New module: 268 statements / 114 branches, unexcluded 100% coverage. Shared changed-code gates, lint and wheel/sdist builds passed.\r\n- A fresh core-only Windows Python 3.11 installed wheel rejected foreign focus/reads with HTTP forbidden.\r\n- Fresh live acceptance and independent controls passed against server commit `244883d7b04f1eae2cc22e799575d33a9bdb2a43`; cleanup confirmed all owned JVM exits and fixture ports.\r\n- Hosted Python 3.11/3.12/3.13 jobs passed: [run 38164787611](https://github.com/integratedmodelling/klab-services/actions/runs/38164787611).\r\n\r\nThe client implementation and published-candidate checks are complete for this bounded issue. **Maintainer review and merge remain pending, so the issue stays open.** Server integration is draft PR #90 / issue #89, targeting the same `feature/python-client` branch. Neither client feature is stacked on the other; full federation promotion remains separate.\r\n\r\n## Boundaries\r\r\n\r\r\nThis issue does not deliver onboarding/renewal, global discovery, forced model selection, full plan/provenance browsing, scientific export, async execution, provider SDKs, or full federation promotion. Related server/promotion gate: #89. The saved-handles feature (#88) is not an implementation dependency.\r\r\n",
+      "body_sha256": "e12f98054e0f7303d265880d3d2819eb16e689122d5a847e085f358fe950f3f6",
+      "comment_refs": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/87#issuecomment-6109140293",
+          "author": "Dobbes",
+          "created_at": "2026-10-11T12:42:58Z",
+          "body_sha256": "7b897889943e8f24e0ca496b79bfbca38f226fe32143e9cb73e942e13a6b3338"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/87#issuecomment-6109273699",
+          "author": "Dobbes",
+          "created_at": "2026-10-11T12:59:03Z",
+          "body_sha256": "7e75f10fabd9f6e221756ebc1ec2f11ade5ee229878c22e167ef40ffe50cd886"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/87#issuecomment-6112434717",
+          "author": "Dobbes",
+          "created_at": "2026-10-11T18:47:44Z",
+          "body_sha256": "38496aab384c55a9d3700beca8415af2ae0be0e8d140da7fd90b6588efaf3025"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/87#issuecomment-6115978844",
+          "author": "Dobbes",
+          "created_at": "2026-10-12T01:10:39Z",
+          "body_sha256": "3cc623548313fcac53a10d36dd931eb130180fa49bc5d6412ca85ec24feb8b23"
+        }
+      ],
+      "requirement_ids": [
+        "RC-P1.5",
+        "CAP-04"
+      ],
+      "associated_prs": [
+        85,
+        90
+      ],
+      "python_test_refs": [],
+      "simulator_scenario_refs": [],
+      "java_gap_ids": [],
+      "disposition": "FIXED_IN_PYTHON",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Already closed by merged typed-request implementation. No reopening or new closure; full option/science matrix remains separately tracked.",
+      "closure_candidate": false,
+      "action": "PRESERVE_EXISTING_CLOSURE_NO_REOPEN"
+    },
+    {
+      "repository": "integratedmodelling/klab.component.geospatial",
+      "number": 10,
+      "url": "https://github.com/integratedmodelling/klab.component.geospatial/issues/10",
+      "title": "Native continuous GeoTIFF export omits observation measurement units",
+      "state": "OPEN",
+      "author": "Dobbes",
+      "assignees": [],
+      "labels": [],
+      "updated_at": "2026-11-01T15:39:11Z",
+      "closed_at": null,
+      "original_acceptance_statement": "## Summary\r\n\r\nNative continuous GeoTIFF export loses the observation's measurement units. A resolved `geography:Elevation in m` observation reports `m` in the Python observation metadata, but the unmodified exported GeoTIFF has `rasterio.DatasetReader.units == (None,)`, no band tags and no measurement-unit metadata. This prevents independent consumers from identifying the numerical unit from the file.\r\n\r\nFound during [klab-services PR #102](https://github.com/integratedmodelling/klab-services/pull/102). The client correctly fails its explicit native-unit validation; this report does not request a Python fallback that inserts metadata or labels an incomplete native export as verified.\r\n\r\n## Exact tested environment\r\n\r\n- Java services: `integratedmodelling/klab-services` commit `a0a013a188fb752907f2d143a61b86f4a9cb0a0b`.\r\n- JDK release: `21.0.12.1`, Windows.\r\n- Component: `org.integratedmodelling:klab.component.geospatial:1.0-20261025.094856-223`, classifier `component`, extension `kar`.\r\n- Component archive SHA-256: `c5192eec7fe1d47a5b4a4750c334ea3ff88520afe8d096e04c8640c3cfb289c6`.\r\n- [Published archive](https://central.sonatype.com/repository/maven-snapshots/org/integratedmodelling/klab.component.geospatial/1.0-SNAPSHOT/klab.component.geospatial-1.0-20261025.094856-223-component.kar).\r\n- Python client candidate: `ced45f17691ce6a78b6a489ecca4a319564c69be` in klab-services; Python 3.12, rasterio/GDAL.\r\n- Compatible imod worldview: `d6c37c0b82afadd004d94bc5311983b66677532c`.\r\n- Pre-run verification checked actual owned service process/executable/argument/classpath identities, project/worldview bytes, installed component hashes and advertised service IDs.\r\n\r\n## Live reproduction\r\n\r\nUse an authorized compatible Reasoner/Resources/Resolver/Runtime deployment with the pinned geospatial component installed on Resources and Runtime, ordinary authenticated owner credentials, the compatible worldview and the published `python.fixture` project served/indexed. Do not modify existing shared services just to reproduce this.\r\n\r\nThe fixture is the existing published project from [fixture_hub.py at the tested candidate](https://github.com/integratedmodelling/klab-services/blob/ced45f17691ce6a78b6a489ecca4a319564c69be/python-client/tools/fixture_hub.py); its elevation declaration is:\r\n\r\n```kim\r\nnamespace python.fixture;\r\nmodel geography:Elevation in m set to [100 + 23.25];\r\n```\r\n\r\nThe reported run used the full project verbatim, not a changed scientific model. Only the elevation model was requested. The independent expectation is exact arithmetic `123.25 m`, not measured terrain. Serve/index the existing project through the normal supported deployment setup before submitting requests.\r\n\r\nWith `owner` an already configured, authenticated `klab_client.Client` for that deployment:\r\n\r\n```python\r\nfrom klab_client import ObservationRequest, RectangularGeometry, ObservationOptions\r\nimport rasterio\r\n\r\nowner.initialize_user_scope(local_federation=True)  # for the tested local federation\r\nsession = owner.create_session(name=\"native-geotiff-unit-reproduction\")\r\ncontext = session.create_context(configuration={\r\n    \"name\": \"native-geotiff-unit-reproduction\",\r\n    \"persistence\": \"EXPLICIT_ACTION\",\r\n})\r\n\r\n# Two writes, each submitted once. Preserve returned Job IDs/handles.\r\n# If submission/wait has an ambiguous outcome, inspect it; do not replay it.\r\nregion_job = context.observe(ObservationRequest(\r\n    observable=\"earth:Terrestrial earth:Region\",\r\n    geometry=RectangularGeometry(west=200000, east=200500,\r\n              south=6000000, north=6000400, columns=5, rows=4),\r\n))\r\nregion = region_job.wait(timeout=120)\r\nfield_job = context.within(region).observe(ObservationRequest(\r\n    observable=\"geography:Elevation in m\",\r\n    options=ObservationOptions(namespace=\"python.fixture\"),\r\n))\r\nfield = field_job.wait(timeout=120)\r\nprint(\"observation units:\", field.units)  # m\r\n\r\n# Calls the server's native exporter; no client metadata rewrite.\r\nfield.export_to_file(\"native-elevation.tif\",\r\n    media_type=\"image/tiff;application=geotiff\", max_bytes=64 * 1024 * 1024)\r\nwith rasterio.open(\"native-elevation.tif\") as dataset:\r\n    print(dataset.units)    # actual: (None,)\r\n    print(dataset.tags(1))  # actual: {}\r\n    assert dataset.units == (\"m\",)  # FAILS\r\n\r\n# Once all submitted Jobs are confirmed complete, release known-owned scopes.\r\n# In a real reproduction put release in failure-aware cleanup, not after this assert.\r\n# context.release(); session.release()\r\n```\r\n\r\nThe actual test requested a private owner-only context and confirmed owner/access configuration. Both observation Jobs completed; context/session release was confirmed after the assertion failed. All 13 recorded owned JVM identities were cleaned up, with original services/listeners unchanged. No ambiguous write was replayed.\r\n\r\n## Expected versus observed\r\n\r\n| Property | Expected | Observed |\r\n| --- | --- | --- |\r\n| Observation unit | `m` | `m` (passes before export) |\r\n| Native GeoTIFF band unit | `m` | `None` (defect) |\r\n| Width x height x bands | 5 x 4 x 1 | 5 x 4 x 1 |\r\n| CRS | EPSG:3857 | EPSG:3857 |\r\n| Affine transform | `(100, 0, 200000, 0, -100, 6000400)` | matches |\r\n| Every cell | 123.25 | 123.25 |\r\n| Native dtype | Exporter uses TYPE_FLOAT | float32 |\r\n\r\nOur initial independent fixture incorrectly declared `float64`; that is a separate fixture error, not an additional exporter defect. Correcting the fixture to the documented/native TYPE_FLOAT contract cannot repair absent units. The millimetre variation and full scientific matrix were not executed after this failure; no claim is made about their outcome.\r\n\r\n## Retained native artifact / offline reproduction\r\n\r\nThe unchanged native TIFF SHA-256 is `940b21aee3d6eaa7e70c7baef52d29d48d577398b0352ccb0e43347ca37ba2ce`.\r\nThe following embedded bytes contain only the small controlled constant raster and its public spatial metadata, not credentials, handles or private paths. They allow inspection without live services:\r\n\r\n```python\r\nimport base64, hashlib\r\nfrom pathlib import Path\r\nimport rasterio\r\n\r\npayload = \"TU0AKgAAAAgAEAEAAAMAAAABAAUAAAEBAAMAAAABAAQAAAECAAMAAAABACAAAAEDAAMAAAABAAEAAAEGAAMAAAABAAEAAAERAAQAAAABAAABpAEVAAMAAAABAAEAAAEWAAMAAAABAAQAAAEXAAQAAAABAAAAUAEaAAUAAAABAAAA0AEbAAUAAAABAAAA2AEoAAMAAAABAAEAAAExAAIAAAAkAAAA4AFTAAMAAAABAAMAAIXYAAwAAAAQAAABBIevAAMAAAAQAAABhAAAAAAAAAAAAAEAAAABAAAAAQAAAAFrLkxBQiAod3d3LmludGVncmF0ZWRtb2RlbGxpbmcub3JnKQBAWQAAAAAAAAAAAAAAAAAAAAAAAAAAAABBCGoAAAAAAAAAAAAAAAAAwFkAAAAAAAAAAAAAAAAAAEFW48QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAAAAAAAAABAAEAAAADBAAAAAABAAEEAQAAAAEAAQwAAAAAAQ8RQvaAAEL2gABC9oAAQvaAAEL2gABC9oAAQvaAAEL2gABC9oAAQvaAAEL2gABC9oAAQvaAAEL2gABC9oAAQvaAAEL2gABC9oAAQvaAAEL2gAA=\"\r\ndata = base64.b64decode(payload)\r\nassert hashlib.sha256(data).hexdigest() == \"940b21aee3d6eaa7e70c7baef52d29d48d577398b0352ccb0e43347ca37ba2ce\"\r\npath = Path(\"retained-native-elevation.tif\")\r\nif path.exists():\r\n    raise FileExistsError(path)  # never overwrite an existing file\r\npath.write_bytes(data)\r\nwith rasterio.open(path) as dataset:\r\n    print(dataset.units, dataset.tags(1), dataset.dtypes)\r\n    assert dataset.units == (\"m\",)  # reproduces the missing-unit failure\r\n```\r\n\r\n## Implementation evidence and suggested fix boundary\r\n\r\n- Exact pinned archive bytecode: `GeodataIO` calls `Geotools.stateToCoverage(... TYPE_FLOAT ... false)` and `GeoTiffWriter.write(coverage, null)`; only the software TIFF tag is explicitly set in that write path.\r\n- Current upstream [GeodataIO.java, lines 490-505](https://github.com/integratedmodelling/klab.component.geospatial/blob/3f98082db59e4b0b82eecff0e5753eec41fed671/src/main/java/org/integratedmodelling/geospatial/library/GeodataIO.java#L490-L505) shows the same relevant path.\r\n- Current upstream [Geotools.java, lines 359-413](https://github.com/integratedmodelling/klab.component.geospatial/blob/3f98082db59e4b0b82eecff0e5753eec41fed671/src/main/java/org/integratedmodelling/geospatial/utils/Geotools.java#L359-L413) leaves the sample-dimension key null for this path and creates coverage without explicit measurement units. Current source inspection is separate evidence, not a claim of complete source/binary equivalence.\r\n- Maven snapshot metadata checked on 1 November 2026 still advertises the tested build 223.\r\n\r\nSuggested correction: preserve the authoritative observation's measurement unit in the native GeoTIFF band metadata, using an interoperable encoding read by rasterio/GDAL, without changing values, spatial metadata, missingness or silently changing precision. Add a native-export regression for a dimensioned field (and a supported converted unit such as mm). The test should inspect the file itself, not rely on a Python sidecar or previously captured observation metadata. No component-source changes were made for this report.\r\n",
+      "body_sha256": "d8b2c954272e477aa08703f532e7c2ddc9e2bc96be44b472cc261b0b37ce480f",
+      "comment_refs": [],
+      "requirement_ids": [
+        "CAP-09",
+        "CAP-15",
+        "RC-P2.1",
+        "RC-P2.5"
+      ],
+      "associated_prs": [
+        102
+      ],
+      "python_test_refs": [
+        "python-client/tests/unit/test_nonuniform_export_oracle.py"
+      ],
+      "simulator_scenario_refs": [
+        "SIM-ADAPTERS-001",
+        "SIM-EXPORT-001"
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0010"
+      ],
+      "disposition": "TRACKED_AS_JAVA_GAP",
+      "current_reproduction": "No new real service mutation or Java execution; inspected current source/test/public evidence. Historical repro remains pinned in original issue body.",
+      "missing_acceptance": "Keep upstream product bug open until official pinned component exports native measurement units with unchanged values/geometry/masks/precision and supported mm variation; no Python metadata fallback.",
+      "closure_candidate": false,
+      "action": "KEEP_OPEN_PENDING_REQUIRED_EVIDENCE"
+    }
+  ]
+}
