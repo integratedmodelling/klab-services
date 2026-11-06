@@ -31,7 +31,7 @@ def make_server(port=0, *, scenario="elevation", seed=1, test_mode=False, mode="
                     return
                 body = self.rfile.read(length)
                 status, payload, media = state.request(self.command, self.path, self.headers, body)
-                encoded = (payload.encode() if media == "text/plain" else
+                encoded = (payload if isinstance(payload, bytes) else payload.encode() if media == "text/plain" else
                            json.dumps(payload, allow_nan=False, separators=(",", ":")).encode())
             except (ValueError, TypeError, KeyError, UnicodeError, IndexError, AttributeError):
                 status, media, encoded = 400, "application/json", b'{"error":"Simulator contract mismatch"}'
@@ -39,7 +39,11 @@ def make_server(port=0, *, scenario="elevation", seed=1, test_mode=False, mode="
             self.send_header("Content-Type", media)
             self.send_header("Content-Length", str(len(encoded)))
             self.end_headers()
-            self.wfile.write(encoded)
+            if state.scenario == "export-interrupted" and status == 200 and isinstance(payload, bytes):
+                self.wfile.write(encoded[:len(encoded) // 2])
+                self.close_connection = True  # Deterministic short stream, not a timing race.
+            else:
+                self.wfile.write(encoded)
 
         do_GET = do_POST = do_PUT = do_DELETE = handle_route
 
