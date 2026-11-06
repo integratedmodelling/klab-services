@@ -3,6 +3,7 @@ package org.integratedmodelling.resources.server.controllers;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import java.util.*;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
@@ -60,5 +61,16 @@ class ReviewCycleHttpPrincipalTest {
     assertArrayEquals(new byte[]{1, 2, 3}, Base64.getDecoder().decode(artifact.getResponse().getContentAsString()));
     when(service.getReviewCycles("flow-1", (UserScope) alice.getScope())).thenThrow(new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException("private reason"));
     mvc.perform(get(path).principal(alice)).andExpect(status().isForbidden());
+    when(service.addFlowAttachment(eq("flow-1"), eq("stage-1"), any(), same((UserScope) alice.getScope())))
+        .thenAnswer(invocation -> {
+          org.integratedmodelling.klab.api.services.resources.workflow.Flow.AttachmentUpload upload = invocation.getArgument(2);
+          assertArrayEquals(new byte[]{1, 2, 3}, upload.getContent()); assertEquals("r2.json", upload.getFileName());
+          var attachment = new org.integratedmodelling.klab.api.services.resources.workflow.impl.FlowImpl.AttachmentImpl();
+          attachment.setId("uploaded"); attachment.setFlowId("flow-1"); attachment.setStateId("stage-1"); return attachment;
+        });
+    mvc.perform(post("/api/v1/flows/flow-1/states/stage-1/attachments").principal(alice)
+        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+        .content("{\"type\":\"bootstrap-proposal\",\"fileName\":\"r2.json\",\"mediaType\":\"application/vnd.klab.proposal+yaml\",\"content\":\"AQID\"}"))
+        .andExpect(status().isOk());
   }
 }

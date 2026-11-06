@@ -256,6 +256,21 @@ public class JacksonConfiguration {
     public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       JsonNode node = p.getCodec().readTree(p);
       try {
+        // Browser workflow requests are ordinary JSON. They need the declared DTO implementation,
+        // not a LinkedHashMap or a caller-selected JVM class. Tagged Java clients remain supported.
+        var workflowType = workflowImplementation(interfaceClass);
+        if (workflowType != interfaceClass) {
+          if (node.has(CLASS_FIELD)) {
+            String marker = node.get(CLASS_FIELD).asText();
+            if (!marker.equals(interfaceClass.getName()) && !marker.equals(interfaceClass.getCanonicalName())
+                && !marker.equals(workflowType.getName()) && !marker.equals(workflowType.getCanonicalName()))
+              throw new IllegalArgumentException("Workflow transport type does not match the declared DTO");
+            var plain = node.deepCopy();
+            ((com.fasterxml.jackson.databind.node.ObjectNode) plain).remove(CLASS_FIELD);
+            node = plain;
+          }
+          return (T) p.getCodec().treeToValue(node, workflowType);
+        }
         if(interfaceClass==Semantics.class && node.isObject()) {
           var concrete=getObjectClass(node);
           if(concrete==null || !Semantics.class.isAssignableFrom(concrete))
