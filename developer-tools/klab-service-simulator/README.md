@@ -107,11 +107,12 @@ labels are in startup descriptors and structured traces, not injected into DTOs.
 |elevation|SYNTHETIC_SIMULATOR: metres=100+2row+3column,20x20; corners100/157/138/195; independent fixed400cell JSON oracle|
 |zero-negative-nodata|Separate synthetic fixture offsets0..3=0,-7.5,null,NaN; base oracle unchanged|
 |usgs-recorded|AUTHENTIC_FIXTURE_SIMULATED_DELIVERY: exact original20x20USGS float32 cells, not computed by Java Runtime|
+|nonuniform-export|SYNTHETIC_SIMULATOR: separately frozen4x5float64/metre/zero/negative/nodata native TIFF from the pre-existing independent N-oracle; no native point-offset inference|
 |empty-result / malformed-empty / failure|Deliberately empty scientific result, nonboolean empty flag, or ABORTED Job; errors remain visible|
 |http500|Explicit Resources retrieval failure, traced once as HTTP500; no retry or synthetic replacement|
 |pinned replay|Successful native semantic/model wire captures and historical null-scanner empty/Error response; not a new execution|
 
-Synthetic bounds `[0,0,2000,2000]`, EPSG:3857, x/y, row0north, col0west,
+Base elevation synthetic bounds `[0,0,2000,2000]`, EPSG:3857, x/y, row0north, col0west,
 centres `(50+100col,1950-100row)`, float64/native metre interpretation. No resampling
 or implicit CRS/unit conversion. A mismatched geometry is rejected. UNSPECIFIED
 point offsets follow the declared fixture order; no universal Java traversal claim.
@@ -232,6 +233,25 @@ Fault tests deterministically truncate the advertised stream or deny/change its
 media type; atomic publication preserves existing output and removes temporary
 files. Byte-limit rejection also leaves the owned observation readable. These
 small recorded files test protocol/atomicity, not representative-scale throughput.
+
+`nonuniform-export` is a separate synthetic 4x5 single-shard fixture, initialized
+from the **pre-existing independent** SDK N-oracle (`nonuniform-export.json`), not
+generated expected values from the simulator. Its first native materialization and
+oracle bytes are hash-pinned; the base 400-cell synthetic/USGS oracles are unchanged.
+The server only serves these finite bytes and never imports NumPy/rasterio/xarray.
+Scientific-adapter tests verify all20values, two missing cells, a valid zero, negative
+values, float64 precision beyond float32, metre band units, EPSG:3857, transform and
+every x/y centre. File/array/source association remains revision-unpinned and partial.
+Native point-offset mapping is deliberately refused for this export-only fixture.
+
+The independent optional scientific-adapters CI job installs/checks all four
+scientific dependencies before running these cases, preventing a missing dependency
+from silently skipping acceptance. Core package/HTTP tests do not require them.
+Pandas views preserve null versus NaN, zero, negative values and repeated offsets
+without inventing world coordinates. The unchanged authentic USGS crop does not
+carry sufficient internal georeferencing for `open_raster`; its rejection is an
+explicit fixture limitation, not permission to stamp oracle CRS/units into it or
+a newly observed Java defect. Authentic point delivery keeps its separate evidence.
 
 For executable read-contract comparison use `python -m klab_simulator.compare`:
 provide a flat JSON map of the four endpoint URLs (the startup descriptor's

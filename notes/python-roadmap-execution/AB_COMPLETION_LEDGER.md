@@ -80,7 +80,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P2.2 — A time/window selection, precision, revision and masks|P; fetch_data/ScanSlice/descriptors; SIM-GRID-001 partial|StorageScan.Point + PR223/224/226/230; B(#123remote lease contract); add explicit time/mask/slice cases, preserve unknown revision|
 |RC-P2.3 — A independent real-provider accuracy|P; provider-reference runner; S(slice) SIM-USGS-001 authentic recorded cells only|Pinned original oracle/TIFF; B(JAVA-SCANNER-001/#130), not scientific Java output; recorded handling verified, genuine matched provider acceptance separate|
 |RC-P2.4 — A representative bounded stream/interrupt|P; S(slice) SIM-EXPORT-001 sync/async truncation/media/denial/byte-limit controls preserve original outputs|Native export controller; #198socket64MiB/PR206Java1Mcell; N representative provider soak; small recorded simulation is not throughput acceptance|
-|RC-P2.5 — A faithful raster/xarray and categorical views|P; analysis/tables/vector; SIM-GRID-001/SIM-USGS-001 partial|Native formats, PR204GeoJSON and frozen metadata; N category/time/vector simulator; implement faithful served fixtures only|
+|RC-P2.5 — A faithful raster/xarray and categorical views|P; S(slice) SIM-ADAPTERS-001 nonuniform raster/xarray float64/masks/CRS/centres/units and pandas exact missingness; category/time/vector simulator remain partial|Independent pre-existing N-oracle; native adapter checks; fixture admission SIMULATED_PROVISIONAL. No inferred categories/time or guessed georeferencing; delivery active|
 |RC-P3.1 — A committed two-client race convergence|P; projection/invalidation/refetch; simulator race NOT_RUN|KnowledgeGraphQuery/activity hint contracts; B(JAVA-COMMIT-001/#126); test honest stale/refetch, label provisional ordering explicitly|
 |RC-P3.2 — A disconnect and honest partial refresh|S(slice) SIM-REFRESH-001 actual HTTP403/500/disconnect invalidates retained pages, explicit one-page refetch leaves others stale/partial|#199actual bounded outage/refetch retained; simulator faults SIMULATED_PROVISIONAL; no global resync/durable replay or rechecked authorization claim; delivery active|
 |RC-P3.3 — A cancel/expiry/restart/no replay|P; Job/AsyncJob/binding; S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001 zero-deadline resume, finite EMPTY expiry, concurrent cancellation|Native JobManager/status/boolean empty; PR243MERGEDb9ee02b91; B(JAVA-RETENTION-001); Java retention/incarnation/restart still pending|
@@ -88,7 +88,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; async vertical only, notebook/races NOT_RUN|PR210/211/225real bounded acceptance; N integrated multiprincipal notebook; reuse workflows with simulator concurrency/cancel controls|
 |RC-P4.1 — B meaning-based asset applicability/version/access|P; semantic/resource inspectors; S(slice) SIM-SELECTION-001/REPLAY-001|J(read) native captures; B(JAVA-CANDIDATES-001) newer protocol not advertised; extend implemented semantic/asset routes without Python reasoning|
 |RC-P4.2 — B revision-aware parse/validate|P; SourcePreviews/AsyncSourcePreviews/Authoring.parse; simulator NOT_RUN|Native parseAsset DTOs, PR201/228real parsers; N maintained revision; add finite parser/fault/stale cases, no compiler port|
-|RC-P4.3 — B import/annotate/compute with input provenance|S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001: public sync/async upload, explicit semantic source ADD, bound Resolver model/resource plan,400recorded cells and input SHA/count|PR244production imports merged; new AsyncAuthoring/source-binding delivery pending. SIMULATED_PROVISIONAL admission/input projection; JAVA_INCOMPATIBLE historical scanner outcome; B(JAVA-RESOURCE-CLEANUP-001). No general native annotation/immutable lineage claim|
+|RC-P4.3 — B import/annotate/compute with input provenance|S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001: public sync/async upload, semantic source ADD, bound plan,400recorded cells/input receipt|PR244/249 merged, AsyncAuthoring delivered. SIMULATED_PROVISIONAL admission/input projection; JAVA_INCOMPATIBLE historical scanner; B(JAVA-RESOURCE-CLEANUP-001). No general native annotation/immutable lineage claim|
 |RC-P4.4 — B authorized edit/publish/conflict|P; Authoring/new AsyncAuthoring ADD; S(slice) SIM-INPUT-BINDING-001 exact-source/new workspace/project/document; no update/publish/conflict closure|Native CRUD and PR209/222real ADD; SIMULATED_PROVISIONAL finite parser/admission; remote locks/history/conditional edits remain contract inspection, not assumed absent|
 |RC-P4.5 — B behavior invocation/outcomes/reconnect|P; agent execution/control/status/journal/messaging; simulator NOT_RUN|Native agent contracts/managed real slices; B(#125principal/incarnation/cleanup); add supported outcomes without worker SDK|
 |RC-P5 — C separate scoped worker product|EXCLUDED_C|#127separate product; never an A+B completion gate|
@@ -108,7 +108,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips; inherited bounded acceptance retained|ScientificData format/PR196; add fresh-process simulator-produced snapshot inspection, never offline reasoning|
 |CAP-13 — B resources/models read/query/dependency inspection|P; inspectors/services/imports; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-IMPORT-001|J(read) real catalog/model captures; newer candidates schema drift; add implemented resolve/query/dependencies and explicit binding|
 |CAP-14 — B authoring/behaviors actual authorized operations|P; Authoring/new AsyncAuthoring/agents/imports; S(slice) SIM-IMPORT-001/SIM-INPUT-BINDING-001; behaviors simulator NOT_RUN|Native CRUD/agent DTOs, PR209/222/244merged; finite semantic-source admission SIMULATED_PROVISIONAL; continue supported behavior/conditional mutation contracts, no compiler/scheduler port|
-|CAP-15 — A optional NumPy/pandas/xarray/raster/vector and notebooks|P; optional adapters; SIM-GRID-001core-only numeric slice|PR204actual vector and PR211notebook; N full simulator optional-adapter/presentation matrix; keep imports optional|
+|CAP-15 — A optional NumPy/pandas/xarray/raster/vector and notebooks|P; S(slice) SIM-ADAPTERS-001 raster/xarray/NumPy/pandas, plus core numeric slice; vector/notebook integrated simulator matrix remains|Independent N-oracle and PR204vector/PR211notebook receipts; new dedicated CI requires analysis/tabular dependencies, core SDK imports stay optional|
 |CAP-16 — A/B compatibility, fixtures, package, support/migration/scale|P; CI/wheel/support checker; simulator CI active|3651SDK/18gates/47module parity; N full simulator support matrix; external scheduled worker/#129does not hold Python tests|
 |CAP-17 — C provider SDK / local embedded runtime|EXCLUDED_C|#127separate product|
 |CAP-18 — A/B safe architecture and irreversible-contract boundaries|S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/REPLAY-001; accepted invariant retained|Native origin/identity/no-replay contracts; regression each increment; REAL never silently becomes SIMULATED|
@@ -150,19 +150,39 @@ or completion claim. Small protocol regressions cannot substitute for this inven
 
 ## Completion assessment
 
-Partial-refresh increment (active `feature/python-simulator-partial-refresh`): the
+Scientific adapter increment (`feature/python-simulator-scientific-adapters`):
+initial native materialization of the pre-existing independent 4x5 N-oracle is
+separately pinned SYNTHETIC_SIMULATOR data, not a rewritten expected oracle or USGS
+substitute. The simulator serves frozen bytes with no scientific runtime dependencies.
+Positive sync/native-async export→raster/xarray tests check all20values, missingness,
+zero/negative values, float64 precision, CRS/transform/centres/metre units; pandas
+preserves explicit null versus NaN and repeated offsets. The original authentic TIFF
+is unchanged and correctly rejected by open_raster when internal georeferencing is
+insufficient; external oracle geometry is never stamped into it. Dedicated optional
+scientific CI checks dependencies before acceptance, so missing extras cannot silently
+skip that gate. Source-category/applicability stays SIMULATED_PROVISIONAL.
+Validation:78tests including all5 optional scientific adapter cases (zero skips),
+both extracted current wheels, fatal-error lint and19-file source/wheel/sdist byte
+parity PASS. Receipt: `evidence/ab-simulator-adapters-validation-20261106.json`.
+PR249 is remotely MERGED at `3c9e1a5a4a49eca4ac5c072cb987277281574a68`
+(17:51:04Z), hosted SDK3.11/12/13/core/Windows/simulator/build/Jenkins passed.
+Partial refresh PR250 is remotely MERGED at `a74fda6a85e9d192a756d0d1be446b382b27e884`
+(17:58:20Z), all hosted simulator/build/Jenkins checks passed; its72-test packaged
+gate remains separately attributed. Current branch fast-forwarded to that integration.
+
+Partial-refresh increment (MERGED_BOUNDED PR250): the
 existing production graph APIs now have actual simulator HTTP denial/500/disconnect
 cases with positive recovery. All pages become stale on failed refresh; explicit
 one-page refetch does not mark other pages current, consistency remains UNKNOWN,
 local retained data remains NOT_RECHECKED authorization, and clear does not dispose
-remote state. Test-only bounded fault controls are SIMULATED_PROVISIONAL. PR249 is
-open atb2851e997 with hosted CI/review pending; no feature-branch merge bypass.
+remote state. Test-only bounded fault controls are SIMULATED_PROVISIONAL. PR249/250
+are remotely verified merged; no feature-branch merge bypass.
 Validation:72tests against both current extracted wheels, fatal-error lint and
 16-file source/wheel/sdist parity PASS. Receipt:
 `evidence/ab-simulator-refresh-validation-20261106.json`. This does not establish
 Java committed-version ordering, durable replay or a full-parent RC-P3.1 closure.
 
-Active source-binding pass: the public native async gap in source authoring was
+Source-binding pass (MERGED_BOUNDED PR249): the public native async gap in source authoring was
 implemented as `AsyncAuthoring`, sharing exact-source/consent/identity/confirmation
 validation with `Authoring`; transport is awaited directly, not threaded. The finite
 import-workflow now runs sync/async upload→Resources Job→explicit semantic source
@@ -205,10 +225,10 @@ All66 tests also pass against both extracted current wheels; all14 simulator
 source/data files match wheel/sdist bytes. Exact artifact receipt:
 `evidence/ab-simulator-exports-validation-20261106.json`.
 PR246 remotely MERGED at `75ac5b7e1eeb899bd9dd4e91d5f442b9d33c80c1`
-(17:22:12Z), hosted simulator3.11/3.13/build/Jenkins passed. PR247 is open and
-retargeted integration, with its separate 56-test packaged receipt retained.
+(17:22:12Z), hosted simulator3.11/3.13/build/Jenkins passed. PR247 was subsequently
+verified merged, with its separate56-test packaged receipt retained.
 
-Lifecycle follow-on (active `feature/python-simulator-lifecycle`): 56 simulator tests
+Lifecycle follow-on (MERGED_BOUNDED PR247): 56 simulator tests
 and fatal-error lint pass locally, including two fresh SDK processes restoring saved
 context/Job/observation handles with no remote create/submit/disposal; deterministic
 zero deadlines/resume; four-context native-async cancellation isolation; native EMPTY

@@ -1,0 +1,20 @@
+{
+  "utc": "2026-11-06T17:58:04.209225+00:00",
+  "base": "c6217925370a552c48ca6615e645fc774b5821ae",
+  "tests": 78,
+  "scientific_adapter_tests": 5,
+  "skipped": 0,
+  "test_exit": 0,
+  "lint_exit": 0,
+  "source_wheel_sdist_parity_files": 19,
+  "artifacts": {
+    "klab_service_simulator-0.1.0-py3-none-any.whl": "1901d53feb559514343b8ec16250cd7e9a1da9440e3d57c678982cdc511a4cee",
+    "klab_service_simulator-0.1.0.tar.gz": "f6530d2d17f44137f3d69e046b5a3a01efd05d1eb851a07f22255625ac30b7df"
+  },
+  "sdk_wheel_sha256": "c5d679b209fb5bf74274a22c6a973430c5e1c7860cc9df860e6a4a1a17ad1e49",
+  "both_extracted_wheels": true,
+  "java_execution": "NOT_RUN",
+  "new_fixture_origin": "SYNTHETIC_SIMULATOR; initial materialization from pre-existing independent N-oracle",
+  "existing_scientific_oracles_modified": false,
+  "category_time_multishard_claim": false
+}

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "independent synthetic single-shard scientific oracle, not measured elevation",
+  "shape": [4, 5], "crs_epsg": 3857, "dtype": "float64", "units": "m",
+  "transform": [100, 0, 200000, 0, -100, 6000400],
+  "x": [200050, 200150, 200250, 200350, 200450],
+  "y": [6000350, 6000250, 6000150, 6000050],
+  "north_first": [
+    [16777217.125, 11, null, 31, 41],
+    [10.125, -9, 12.5, 22, -8],
+    [-2.5, null, 4, -0.125, 9],
+    [0, 2.25, -100, 3, 5]
+  ],
+  "native_offsets": [0, 4, 6, 8, 12, 15, 16, 17, 19, 0],
+  "native_values": [0, 5, null, -0.125, 12.5, 16777217.125, 11, null, 41, 0],
+  "missing_cells": 2, "valid_zero_cells": 1,
+  "time": "initialization only; no discovered time/window or revision lease",
+  "multi_shard": "NOT_PROVEN: fixture is explicitly single-shard"
+}

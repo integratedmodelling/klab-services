@@ -20,7 +20,7 @@ MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
-SCENARIOS += EXPORT_SCENARIOS + ("import-workflow",)
+SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export")
 
 
 class ContractError(Exception):
@@ -70,6 +70,11 @@ class State:
                              centre_origin=[fixture["affine"][2] + fixture["affine"][0] / 2,
                                             fixture["affine"][5] + fixture["affine"][4] / 2])
             self.origin = "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY"
+        if scenario == "nonuniform-export":
+            from .fixtures import nonuniform_fixture
+            fixture, _ = nonuniform_fixture()
+            self.grid.update(shape=fixture["shape"], bounds=[200000, 6000000, 200500, 6000400],
+                centre_origin=[200050, 6000350])
 
     def counts(self):
         return {"sessions": len(self.sessions), "contexts": len(self.contexts),
@@ -104,8 +109,9 @@ class State:
         geometry = request.get("geometry")
         if not isinstance(geometry, dict) or not geometry.get("dimensions"):
             raise ContractError(400, "The vertical slice requires an explicit native grid geometry")
-        if geometry["dimensions"][0].get("shape") != [20, 20]:
-            raise ContractError(422, "This scenario supports exactly the declared20x20fixture")
+        rows, columns = self.grid["shape"]
+        if geometry["dimensions"][0].get("shape") != [columns, rows]:
+            raise ContractError(422, "This scenario supports exactly its declared native fixture shape")
         parameters = geometry["dimensions"][0].get("parameters", {}).get("delegate", {})
         polygon = parameters.get("shape", "").split("POLYGON", 1)
         numbers = re.findall(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?", polygon[1]) if len(polygon) == 2 else []
@@ -201,7 +207,8 @@ class State:
             return {"serviceId": self.service_ids[service], "type": service.upper(), "version": "simulator-0.1.0",
                     "worldviewUrn": "synthetic", "consistent": True,
                     "importSchemata": schemas() if service == "resources" else {},
-                    "exportSchemata": export_schemas() if service == "runtime" and self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" else {}}, "application/json"
+                    "exportSchemata": export_schemas() if service == "runtime" and (
+                        self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" or self.scenario == "nonuniform-export") else {}}, "application/json"
         principal = {"sim-token-alice": "alice", "sim-token-bob": "bob"}.get(headers.get("Authorization"))
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
@@ -406,6 +413,8 @@ class State:
             if not isinstance(data, dict):
                 raise ContractError(400, "A structured request is required")
             if route.endswith("/value"):
+                if self.scenario == "nonuniform-export":
+                    raise ContractError(422, "This fixture proves raster export only; native point-offset mapping is not established")
                 identity, offset = data.get("sourceId"), data.get("offset")
                 if type(identity) is not int or not 1 <= identity <= 2**63 - 1:
                     raise ContractError(422, "A positive native observation identity is required")

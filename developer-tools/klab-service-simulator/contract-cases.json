@@ -15,7 +15,7 @@
     },
     {
       "category": "JAVA_INCOMPATIBLE",
-      "cases": ["SIM-GRID-001", "SIM-USGS-001", "SIM-INPUT-BINDING-001"],
+      "cases": ["SIM-USGS-001", "REPLAY-001"],
       "properties": "Successful complete numerical workflow differs from the actual preserved USGS Java attempt, whose FINISHED Job delivered empty/Error after the null-scanner failure; applies to that attributed environment/workflow, not all Java runtimes",
       "evidence": "MODELER_REAL_DEM_REMEDIATION_REPORT.md section12; pinned historical failed Job result. A simulator success cannot clear this observed difference."
     }
@@ -270,6 +270,18 @@
       "confidence": "SIMULATED_PROVISIONAL deterministic fault controls; source-derived query shape; no commit ordering or durable event replay claim",
       "simulator_test": "test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
       "java_status": "NOT_RUN on current candidate; prior bounded outage acceptance retained; staging native commit/selection mechanisms are references, not proven remote Python ordering/retention guarantees"
+    },
+    {
+      "id": "SIM-ADAPTERS-001",
+      "rows": ["RC-P2.1", "RC-P2.5", "CAP-09", "CAP-15"],
+      "api": "Observation.export_to_file; export_for_analysis/open_raster/trace_analysis; ScientificData.to_dataframe",
+      "routes": ["GET /runtime/export/OBSERVATION/{urn}", "POST /runtime/api/v1/observation/value", "POST /runtime/api/v1/query"],
+      "request": "Native export of independently authored nonuniform4x5fixture; explicit indexed zero/negative/null/NaN reads; bounded optional adapters",
+      "expected": "Every20raster values/mask/coordinates, float64 precision/metre units/CRS, exact source SHA association; pandas preserves explicit missingness and repeated offsets; unknown georeferencing/revisions are not guessed",
+      "source": "Pre-existing python-client/tests/fixtures/nonuniform-export.json; pinned initial synthetic TIFF materialization and manifest; SDK analysis/tables contracts; staging storage/mediation patterns as references, not executed here",
+      "confidence": "SIMULATED_PROVISIONAL fixture/export applicability; source-native adapter validation; no categorical dictionary, time revision or multishard claim",
+      "simulator_test": "test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+      "java_status": "NOT_RUN; previous native N-export evidence remains separate; no Java scientific/provider accuracy or corrected exporter publication claim"
     }
   ]
 }
