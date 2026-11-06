@@ -282,6 +282,30 @@
       "confidence": "SIMULATED_PROVISIONAL fixture/export applicability; source-native adapter validation; no categorical dictionary, time revision or multishard claim",
       "simulator_test": "test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
       "java_status": "NOT_RUN; previous native N-export evidence remains separate; no Java scientific/provider accuracy or corrected exporter publication claim"
+    },
+    {
+      "id": "SIM-SEMANTICS-001",
+      "rows": ["RC-P4.1", "CAP-05", "CAP-18"],
+      "api": "SemanticExplorer/AsyncSemanticExplorer resolve_concept/resolve_observable/search_authority/resolve_candidate/parents/children/is_a/satisfiable/documentation",
+      "routes": ["GET /reasoner/public/capabilities", "POST /reasoner/api/v1/resolve/concept", "POST /reasoner/api/v1/authority/search", "GET /reasoner/api/v1/authority/documentation", "POST /reasoner/api/v1/parents", "POST /reasoner/api/v1/children", "POST /reasoner/api/v1/subsumes", "POST /reasoner/api/v1/satisfiable"],
+      "request": "Declared finite SIM vocabulary; explicit canonical-code selection and bounded paging; native concepts/boolean predicates; no provider auto-selection",
+      "expected": "Sync/async parity, same-label candidates require exact code, stored candidates invalidated by worldview identity drift, missing revision remains unknown, documentation inert, unavailable/unsupported distinct from successful empty results",
+      "source": "Native Reasoner route/DTO and authority source contracts; production semantics.py safety contracts; synthetic fixture answers are not observed Java ontology/provider facts",
+      "confidence": "SIMULATED_PROVISIONAL vocabulary/hierarchy/predicate/authority behavior; source-derived native envelope only",
+      "simulator_test": "test_semantics.py::test_explicit_authority_selection_hierarchy_predicates_and_passive_documentation",
+      "java_status": "NOT_RUN on this candidate; earlier captured observable read remains VERIFIED_JAVA only for that attributed property; no new authority/worldview admission claim"
+    },
+    {
+      "id": "SIM-INSPECTION-001",
+      "rows": ["RC-P4.1", "CAP-13", "CAP-18"],
+      "api": "ResourceInspector/AsyncResourceInspector list/retrieve/resolve",
+      "routes": ["GET /resources/api/v1/list/MODEL", "GET /resources/api/v1/retrieve/{kind}/{urn}", "GET /resources/api/v1/resolve/{kind}/{urn}"],
+      "request": "Explicit configured Resources origin and bounded asset classes/URNs; inert ResourceSet service URL metadata",
+      "expected": "Advertised model meaning connects to explicit resource metadata; selection and dependency completeness stay unknown; resolve metadata cannot reroute or forward credentials; no computation/state creation",
+      "source": "Native Resources DTO/routes, captured model metadata shapes and production inspection.py; synthetic fixture contents and URL descriptors are provisional",
+      "confidence": "SIMULATED_PROVISIONAL fixture advertisements and resolve results; not actual Resolver selection or Java execution",
+      "simulator_test": "test_semantics.py::test_meaning_based_catalog_inspection_remains_advertisement_not_selection",
+      "java_status": "NOT_RUN in this slice; captured catalog/model reads retain their separate provenance; newer modelCandidateProtocol remains unadvertised on historical installed tuple"
     }
   ]
 }
