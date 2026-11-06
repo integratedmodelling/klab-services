@@ -1,5 +1,25 @@
 # Partial graph page projection
 
+Native awaited refresh:
+
+```python
+from klab_client import AsyncGraphBrowser, AsyncGraphProjection
+
+projection = AsyncGraphProjection(AsyncGraphBrowser(async_context), max_pages=8)
+entry = await projection.load(observation)
+projection.invalidate("NOTIFICATION_HINT")  # local operation, no await/I/O
+refreshed = await projection.load(observation)  # exactly one explicit refetch
+```
+
+`view`, `invalidate` and `clear` remain synchronous pure local operations. Local
+locks protect retained data only and are never held across network awaits. Async
+refresh shares the same bounded retention/eviction and generation checks: a slower
+pre-invalidation read cannot replace a newer refreshed page. Failure/cancellation
+invalidates every retained page; a subsequent explicit load refreshes only its own
+page, not global state. Retained data is never proof of current authorization,
+committed revision, durable event replay or snapshot lineage. Mixing a synchronous
+GraphProjection with AsyncGraphBrowser is rejected before producing a coroutine.
+
 `GraphProjection(GraphBrowser(context))` retains bounded typed pages from the
 existing graph-query interface. Every `load(anchor, ...)` explicitly refetches one
 page through `GraphBrowser`: membership and links are checked with current HTTP

@@ -21,8 +21,8 @@ from klab_client.api.services import (
 )
 from klab_client.client import Client, Context, Session, Job, JobStatus, ScientificData, ScientificDataOrigin
 from klab_client.tables import to_dataframe
-from klab_client.graph import GraphBrowser, GraphPage
-from klab_client.graph_projection import GraphProjection, GraphProjectionView, ProjectedGraphPage
+from klab_client.graph import GraphBrowser, AsyncGraphBrowser, GraphPage
+from klab_client.graph_projection import GraphProjection, AsyncGraphProjection, GraphProjectionView, ProjectedGraphPage
 from klab_client.authoring import AsyncAuthoring, Authoring, AuthoringReceipt, ParsedSource
 from klab_client.source_previews import SourcePreview, SourcePreviews, AsyncSourcePreviews
 from klab_client.agents import AgentPreviews, AsyncAgentPreviews, AgentSourcePreview
@@ -72,8 +72,8 @@ __all__ = [
     "AgentControlBinding", "AgentControlJournal", "AgentControlView",
     "AgentChannel", "AgentMessage",
     "AgentExecutions", "AsyncAgentExecutions", "AgentRegistration", "DeferredAgent",
-    "GraphBrowser", "GraphPage",
-    "GraphProjection", "GraphProjectionView", "ProjectedGraphPage",
+    "GraphBrowser", "AsyncGraphBrowser", "GraphPage",
+    "GraphProjection", "AsyncGraphProjection", "GraphProjectionView", "ProjectedGraphPage",
     "ScientificDataOrigin", "to_dataframe",
     "AsyncClient", "AsyncContext", "AsyncSession", "AsyncJob",
     "WaitCancelled",

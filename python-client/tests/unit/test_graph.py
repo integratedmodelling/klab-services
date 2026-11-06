@@ -5,7 +5,7 @@ import json
 import httpx
 import pytest
 
-from klab_client import Client, Context, GraphBrowser
+from klab_client import AsyncClient, AsyncContext, Client, Context, GraphBrowser
 from klab_client.dto import observation_from_wire
 from klab_client.errors import (InvalidRequestError, MissingAssetError, ProtocolError,
                                UnsupportedOperationError, AuthorizationError)
@@ -13,7 +13,7 @@ from klab_client.provenance import CLASSES, _node
 from test_provenance import payload, link, OBS
 
 
-def setup(*, rows=None, membership=None, status=200):
+def setup(*, rows=None, membership=None, status=200, async_mode=False):
     calls = []
     def handler(request):
         query = json.loads(request.content)
@@ -25,9 +25,11 @@ def setup(*, rows=None, membership=None, status=200):
             default = payload() if query["resultType"] == "OBSERVATION" else link()["source"]
             return httpx.Response(200, json=[default] if membership is None else membership)
         return httpx.Response(status, json=[link()] if rows is None else rows)
-    client = Client("https://runtime.invalid/runtime", "issued-secret", runtime_service_id="home",
+    client_type = AsyncClient if async_mode else Client
+    client = client_type("https://runtime.invalid/runtime", "issued-secret", runtime_service_id="home",
                     http_transport=httpx.MockTransport(handler))
-    context = Context(client, {"id": "s.c", "serviceId": "home"})
+    context_type = AsyncContext if async_mode else Context
+    context = context_type(client, {"id": "s.c", "serviceId": "home"})
     observation = observation_from_wire(payload(), context)
     return client, context, observation, calls
 

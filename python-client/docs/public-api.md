@@ -219,6 +219,11 @@ Connection exposes `identity/profile/catalog/selected/client`, synchronous
 errors. See [profiles, providers, lifecycle and examples](connection-layer.md).
 ## Native async source authoring
 
+Graph browsing/partial refresh have native awaited `AsyncGraphBrowser.neighbors`
+and `AsyncGraphProjection.load`, returning the existing immutable page/view types.
+Local view/invalidate/clear remain synchronous, never authorization or revision
+authority. See [graph browsing](graph-browsing.md) and [projection](graph-projection.md).
+
 Agent source preview also has an explicit awaited `AsyncAgentPreviews.preview`
 counterpart to `AgentPreviews`, with the same nonexecuting flags and immutable
 receipt. See [source-only preview](agent-source-preview.md); neither returns a

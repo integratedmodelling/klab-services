@@ -22,6 +22,19 @@ branch reports unprotected and ruleset list empty; no approval bypass permitted.
 
 ## Delivery and verification log (append within this ledger)
 
+Native awaited graph pass (active `feature/python-async-graph-browser`): two red
+tests reproduced absent AsyncGraphBrowser/AsyncGraphProjection. Shared pure
+selection/membership/query/page/retention validation now serves native awaited
+reads; mutable relationship selection is snapshotted before I/O. Sync projection
+rejects async browser intake before creating a coroutine. Local generation locks
+are never held across awaits; cancellation invalidates retained pages, and a slow
+old-generation result cannot replace a refreshed page.117focused/3802full packaged
+SDK tests, all18gates,100%both graph modules lines+branches,96packaged simulator
+tests (including6existing-route HTTP refresh tests), lint and47module source/wheel/
+sdist parity PASS.42criteria unchanged. Receipt:
+`evidence/ab-async-graph-validation-20261106.json`. No new simulator endpoint/source
+behavior, Java graph call, revision or authority claim. Publication/hosted CI pending.
+
 PR256 hosted native-wire CI failed before Qpid/interop tests:
 runs42275002080/42275042424 cannot resolve the declared packaging plugin
 `org.integratedmodelling:klab.product:1.0.1-SNAPSHOT`. AgentStatusWireTest and
@@ -29,7 +42,11 @@ AgentMessagingWireTest passed first; AgentChannelInteropTest did not execute.
 Applied the same immutable official-source bootstrap already accepted in build.yml
 and runtime-notifications.yml, pin0c80acb1f16a1d405f888cf99286d6e365293559.
 No dependency version/source, Java product, test expectation or local IDE changed.
-Required fresh CI evidence pending; do not merge/bypass or infer native-wire success.
+Fresh native-wire CI PASS on runs42275450321/42275461095 after the correction;
+all applicable SDK/core/Windows/simulator/scientific/build/Jenkins checks also PASS.
+PR256 remotely MERGED atc5d138b242acb54242366601693259c1d2de22aa,
+2026-11-06T19:05:39Z. Native-wire/Qpid interoperability is distinct from managed
+Runtime behavior registration or scientific execution; no such promotion is made.
 Async graph work remains local and is not staged in this workflow correction.
 
 Awaited deferred-registration pass (active `feature/python-async-agent-registration`):
@@ -145,7 +162,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |RC-P2.4 — A representative bounded stream/interrupt|P; S(slice) SIM-EXPORT-001 sync/async truncation/media/denial/byte-limit controls preserve original outputs|Native export controller; #198socket64MiB/PR206Java1Mcell; N representative provider soak; small recorded simulation is not throughput acceptance|
 |RC-P2.5 — A faithful raster/xarray and categorical views|P; S(slice) SIM-ADAPTERS-001 nonuniform raster/xarray float64/masks/CRS/centres/units and pandas exact missingness; category/time/vector simulator remain partial|Independent pre-existing N-oracle; native adapter checks; fixture admission SIMULATED_PROVISIONAL. No inferred categories/time or guessed georeferencing; delivery active|
 |RC-P3.1 — A committed two-client race convergence|P; projection/invalidation/refetch; simulator race NOT_RUN|KnowledgeGraphQuery/activity hint contracts; B(JAVA-COMMIT-001/#126); test honest stale/refetch, label provisional ordering explicitly|
-|RC-P3.2 — A disconnect and honest partial refresh|S(slice) SIM-REFRESH-001 actual HTTP403/500/disconnect invalidates retained pages, explicit one-page refetch leaves others stale/partial|#199actual bounded outage/refetch retained; simulator faults SIMULATED_PROVISIONAL; no global resync/durable replay or rechecked authorization claim; delivery active|
+|RC-P3.2 — A disconnect and honest partial refresh|S(slice) SIM-REFRESH-001 sync/native-async HTTP403/500/disconnect invalidates retained pages, explicit one-page refetch leaves others stale/partial|#199actual bounded outage/refetch retained; simulator faults SIMULATED_PROVISIONAL; native AsyncGraphBrowser/AsyncGraphProjection implementation active; no global resync/durable replay or rechecked authorization claim|
 |RC-P3.3 — A cancel/expiry/restart/no replay|P; Job/AsyncJob/binding; S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001 zero-deadline resume, finite EMPTY expiry, concurrent cancellation|Native JobManager/status/boolean empty; PR243MERGEDb9ee02b91; B(JAVA-RETENTION-001); Java retention/incarnation/restart still pending|
 |RC-P3.4 — A explain actual dependencies and semantic effects|P; provenance/evidence/activity APIs; S(slice) SIM-PROVENANCE-001|Native query/LinkImpl and PR239/240real bounded views; B(JAVA-COMMIT-001); simulate explicit partial plans/recorded effects, no historical lineage claim|
 |RC-P3.5 — A bounded notebook concurrency and own-wait cancellation|P; AsyncClient/ExperimentRunner; async vertical only, notebook/races NOT_RUN|PR210/211/225real bounded acceptance; N integrated multiprincipal notebook; reuse workflows with simulator concurrency/cancel controls|
@@ -166,7 +183,7 @@ Original criterion text below is the exact criterion column of the42-row map.
 |CAP-07 — A jobs, polling, cancellation, sync/async and bounded concurrency|S(slice) SIM-LIFECYCLE-001/SIM-FAULTS-001/SIM-RESTORE-001: zero deadlines, resume, expiry distinct from cancellation, four concurrent async contexts|Native JobManager/Job routes; PR243merged; B(JAVA-RETENTION-001); finite retention is not Java durability|
 |CAP-08 — A exact sparse NUMBER/BOOLEAN/TEXT and explicit missingness|S(slice) SIM-GRID-001numeric/zero/negative/null/NaN; existing bounded acceptance retained|StorageScan.Point/text contract; N simulator Boolean/TEXT variants; preserve exact missingness and declared precision|
 |CAP-09 — A scientific exports/descriptors, time/space/units/categories|P; S(slice) SIM-GRID-001/SIM-USGS-001/SIM-EXPORT-001 exact native TIFF; time/categories partial|Native formats/Geometry/StorageScan; B(JAVA-SCANNER-001) IDE; time/categories/multishard remain, never synthesize native export bytes in SDK|
-|CAP-10 — A/B typed partial twin graph, stale markers, refresh|P; graph/projection/provenance; S(slice) SIM-PROVENANCE-001|KnowledgeGraphQuery/LinkImpl; B(JAVA-COMMIT-001); add paging/refetch/race cases without authoritative revision claims|
+|CAP-10 — A/B typed partial twin graph, stale markers, refresh|P; sync/native-async graph/projection/provenance; S(slice) SIM-PROVENANCE-001/SIM-REFRESH-001; cancellation/generation race controls|KnowledgeGraphQuery/LinkImpl; B(JAVA-COMMIT-001); awaited page/refetch implementation is bounded, not authoritative revision/event replay|
 |CAP-11 — A/B best-effort scoped events and resync|P; activity notifications/polling/resync; simulator events NOT_RUN|Native activity hints; B(#126durable cursor/replay); test supported hints/gaps only|
 |CAP-12 — A offline snapshot inspection, never queued replay|S(slice) SIM-GRID-001 exact snapshot round trips; inherited bounded acceptance retained|ScientificData format/PR196; add fresh-process simulator-produced snapshot inspection, never offline reasoning|
 |CAP-13 — B resources/models read/query/dependency inspection|P; inspectors/services/imports; S(slice) SIM-SELECTION-001/REPLAY-001/SIM-IMPORT-001|J(read) real catalog/model captures; newer candidates schema drift; add implemented resolve/query/dependencies and explicit binding|
