@@ -166,7 +166,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
             () ->
                 org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler
                     .componentResolver(getComponentRegistry()),
-            owner -> getScopeManager().getScope(owner, UserScope.class)));
+            owner -> getScopeManager().getScope(owner, UserScope.class),
+            () -> {
+              try (var input = ResourcesProvider.class.getResourceAsStream("/workflows/ontology-review.kactor")) {
+                if (input == null) throw new IllegalStateException("Missing bundled ontology review behavior");
+                return workspaceManager.parseAsset(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8),
+                    org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.class);
+              } catch (java.io.IOException failure) {
+                throw new IllegalStateException("Cannot load bundled ontology review behavior", failure);
+              }
+            }));
 
     ServiceConfiguration.INSTANCE.setMainService(this);
 

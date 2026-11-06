@@ -1,0 +1,42 @@
+id: ontology-review-pilot
+version: "0.1"
+name: Ontology community review pilot
+description: Prepare an editor-controlled ontology review draft. Review rounds will follow.
+behavior: klab.workflow.ontology_review
+assetTypes: [ONTOLOGY]
+states:
+  editing:
+    description: Prepare and edit the initial proposal.
+    instructions: Prepare the draft from the current ontology and optional project BOOTSTRAP.md, then edit it before opening review.
+    managerRoles: [ADMIN, EDITOR]
+    contributorRoles: [EDITOR]
+    assetTypes: [ONTOLOGY]
+    open: true
+    actions:
+      - id: prepare-review-draft
+        label: Prepare review draft
+        action: prepare
+    attachments:
+      - type: bootstrap-proposal
+        mediaType: application/vnd.klab.proposal+yaml
+        arity: -1
+        required: false
+      - type: bootstrap-comments
+        mediaType: application/vnd.klab.comments+json
+        arity: -1
+        required: false
+      - type: candidate-ontology
+        mediaType: application/vnd.klab.ontology
+        assetType: ONTOLOGY
+        arity: 1
+        required: false
+      - type: supporting-material
+        mediaType: '*/*'
+        arity: -1
+        required: false
+transitions:
+  initialize:
+    description: Open the editorial preparation stage.
+    sourceStates: [INIT]
+    targetState: editing
+    roles: [ADMIN, EDITOR]

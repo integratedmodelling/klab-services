@@ -1,3 +1,4 @@
 # One classpath-relative YAML definition per line. Definitions are imported into Nitrite at startup.
 asset-review.yaml
 ontology-expert-review.yaml
+ontology-review-pilot.yaml

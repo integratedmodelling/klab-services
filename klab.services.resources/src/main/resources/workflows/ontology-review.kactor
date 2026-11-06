@@ -1,0 +1,6 @@
+behavior klab.workflow.ontology_review
+    "Ontology review draft preparation"
+    version 1.0
+
+action prepare(content, ontology, project, @type(class="String") proposal_id, @type(class="String") revision_id, @type(class="String") domain, @type(class="String") purpose, @type(class="Integer") requested_tier, @type(class="String") target_community):
+    content.prepare_ontology_review(ontology, project, proposal_id, revision_id, domain, purpose, requested_tier, target_community)

@@ -46,7 +46,9 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
             100,
             false)
         .page("workflows", "Workflows", "Browse workflow definitions and process diagrams.",
-            "resources-workflows", 110, true);
+            "resources-workflows", 110, true)
+        .page("review", "Ontology review", "Prepare and edit ontology review drafts.",
+            "resources-review", 120, true);
   }
 
   @Override

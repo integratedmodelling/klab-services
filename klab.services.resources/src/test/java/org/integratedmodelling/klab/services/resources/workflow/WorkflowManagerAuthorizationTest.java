@@ -570,11 +570,13 @@ class WorkflowManagerAuthorizationTest {
     return 0D;
   }
 
-  private static final class MemoryStore implements WorkflowStore {
-    private boolean failFlowWrites;
+  static final class MemoryStore implements WorkflowStore {
+    boolean failFlowWrites;
+    int failAttachmentWriteAt = -1;
+    int attachmentWrites;
     private final Map<String, Workflow> workflows = new LinkedHashMap<>();
     private final Map<String, Flow> flows = new LinkedHashMap<>();
-    private final Map<String, byte[]> attachments = new LinkedHashMap<>();
+    final Map<String, byte[]> attachments = new LinkedHashMap<>();
 
     @Override
     public boolean putWorkflow(Workflow workflow) {
@@ -626,7 +628,7 @@ class WorkflowManagerAuthorizationTest {
     public boolean putWorkflowAttachment(
         String id, String flowId, String stateId, byte[] content) {
       attachments.put(id, content);
-      return true;
+      return ++attachmentWrites != failAttachmentWriteAt;
     }
 
     @Override

@@ -13,14 +13,22 @@ import org.integratedmodelling.klab.runtime.kactors.compiler.runtime.AgentRegist
 
 /** One isolated agent per mutation: persistence, not a live actor, is the source of truth. */
 public class WorkflowBehaviorBridge {
+  public static final String ONTOLOGY_REVIEW_BEHAVIOR = "klab.workflow.ontology_review";
   private final Supplier<AgentCompiler.Resolver> resolvers;
   private final Function<String, UserScope> owners;
+  private final Supplier<KActorsBehavior> ontologyReviewBehavior;
 
   public WorkflowBehaviorBridge() { this(() -> new AgentCompiler.Resolver() {}, owner -> null); }
   public WorkflowBehaviorBridge(Supplier<AgentCompiler.Resolver> resolvers,
       Function<String, UserScope> owners) {
+    this(resolvers, owners, null);
+  }
+
+  public WorkflowBehaviorBridge(Supplier<AgentCompiler.Resolver> resolvers,
+      Function<String, UserScope> owners, Supplier<KActorsBehavior> ontologyReviewBehavior) {
     this.resolvers = resolvers;
     this.owners = owners;
+    this.ontologyReviewBehavior = ontologyReviewBehavior;
   }
 
   /** Read-only editor facade, freshly bound for each call; no UI object or mutation verbs. */
@@ -36,10 +44,70 @@ public class WorkflowBehaviorBridge {
 
   /** Content mutation agent; fluent return values keep Java calls finite. */
   public static final class Content {
+    private final Flow flow;
     private final Flow.State stage;
     private final Attachments attachments;
 
-    private Content(Flow.State stage, Attachments attachments) { this.stage = stage; this.attachments = attachments; }
+    private Content(Flow flow, Flow.State stage, Attachments attachments) {
+      this.flow = flow; this.stage = stage; this.attachments = attachments;
+    }
+
+    /** Editor action: authorized current snapshots, immutable input manifest and no replacement. */
+    public List<String> prepareOntologyReview(
+        org.integratedmodelling.klab.api.actors.RuntimeAgent.Scope scope,
+        org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Ontology ontology,
+        org.integratedmodelling.klab.runtime.libraries.CoreActorLibrary.Project project,
+        String proposalId, String revisionId, String domain, String purpose,
+        int requestedTier, String targetCommunity) {
+      attachmentAccess();
+      if (flow.getAssetType() != org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass.ONTOLOGY)
+        throw new IllegalArgumentException("Bootstrap requires an ontology workflow target");
+      if (stage.getAttachments().stream().anyMatch(a ->
+          "application/vnd.klab.proposal+yaml".equals(a.getMediaType())
+              || "application/vnd.klab.ontology".equals(a.getMediaType())))
+        throw new IllegalStateException("This stage already has a proposal or candidate; existing editor work is preserved");
+      var document = ontology.read(scope);
+      if (!(document instanceof org.integratedmodelling.klab.api.lang.kim.KimOntology candidate)
+          || !Objects.equals(candidate.getUrn(), flow.getAssetUrn())
+          || !Objects.equals(candidate.getProjectName(), project.urn()))
+        throw new IllegalArgumentException("Bootstrap handles must identify the workflow target and its project");
+      var material = project.material(scope, "BOOTSTRAP.md");
+      String bootstrapText = null;
+      if (material != null) {
+        if (material.length > ProposalReview.MAX_PROPOSAL_BYTES)
+          throw new IllegalArgumentException("BOOTSTRAP.md exceeds the proposal byte limit");
+        try {
+          bootstrapText = java.nio.charset.StandardCharsets.UTF_8.newDecoder()
+              .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+              .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+              .decode(java.nio.ByteBuffer.wrap(material)).toString();
+        } catch (java.nio.charset.CharacterCodingException invalid) {
+          throw new IllegalArgumentException("BOOTSTRAP.md must contain valid UTF-8", invalid);
+        }
+      }
+      var prepared = OntologyReviewBootstrap.prepare(candidate,
+          bootstrapText == null ? null : new OntologyReviewBootstrap.BootstrapDocument(
+              project.urn() + "/BOOTSTRAP.md", bootstrapText),
+          new OntologyReviewBootstrap.Options(proposalId, revisionId, domain, purpose,
+              requestedTier, targetCommunity, java.time.LocalDate.now(java.time.ZoneOffset.UTC)));
+      var validation = ProposalSchemaValidator.bundled().validate(prepared.proposalBytes());
+      if (validation.status() != ProposalReview.CheckStatus.PASS)
+        throw new IllegalStateException("Generated proposal schema validation did not pass: " + validation.messages());
+      var ids = new ArrayList<String>();
+      ids.add(attachBytes("bootstrap-proposal", revisionId + "-proposal.json",
+          "application/vnd.klab.proposal+yaml", prepared.proposalBytes()).getId());
+      if (stage.getAttachments().stream().noneMatch(a -> "bootstrap-comments".equals(a.getType())))
+        ids.add(attachBytes("bootstrap-comments", revisionId + "-comments.json",
+            "application/vnd.klab.comments+json", prepared.commentsBytes()).getId());
+      ids.add(attachText("candidate-ontology", revisionId + ".kwv",
+          "application/vnd.klab.ontology", candidate.getSourceCode()).getId());
+      ids.add(attachBytes("supporting-material", revisionId + "-inputs.json",
+          "application/json", prepared.manifestBytes()).getId());
+      if (material != null) ids.add(attachBytes("supporting-material", "BOOTSTRAP.md", "text/markdown", material).getId());
+      metadata("ontologyReviewBootstrap", Map.of("proposalId", proposalId, "revisionId", revisionId,
+          "attachments", List.copyOf(ids), "generator", "klab.ontology-review-bootstrap/1"));
+      return List.copyOf(ids);
+    }
     public List<Flow.Attachment> attachments() { return List.copyOf(stage.getAttachments()); }
     public byte[] attachment(String id) { return attachmentAccess().read(stage, id); }
     public boolean removeAttachment(String id) { return attachmentAccess().remove(stage, id); }
@@ -112,7 +180,8 @@ public class WorkflowBehaviorBridge {
           ? caller : owners.apply(flow.getOwner());
       if (owner == null) throw new IllegalStateException("Workflow owner's scope is unavailable; owner must reconnect");
       resolver = resolvers.get();
-      behavior = resolver.resolveBehavior(workflow.getBehavior(), owner);
+      behavior = ONTOLOGY_REVIEW_BEHAVIOR.equals(workflow.getBehavior()) && ontologyReviewBehavior != null
+          ? ontologyReviewBehavior.get() : resolver.resolveBehavior(workflow.getBehavior(), owner);
       if (behavior == null || behavior.getBehaviorType() != KActorsBehavior.Type.BEHAVIOR)
         throw new IllegalArgumentException("Workflow requires a resolvable behavior category: " + workflow.getBehavior());
       collectActions(behavior, new HashSet<>());
@@ -159,7 +228,7 @@ public class WorkflowBehaviorBridge {
       context.put("workflow", workflow);
       context.put("flow", flow);
       context.put("stage", stage);
-      context.put("content", new Content(stage, attachments));
+      context.put("content", new Content(flow, stage, attachments));
       context.put("transition", transition);
       context.put("user", caller.getUser());
       context.put("participant", WorkflowParticipant.from(caller));
