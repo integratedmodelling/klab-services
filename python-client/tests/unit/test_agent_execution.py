@@ -6,7 +6,7 @@ from types import SimpleNamespace as NS
 
 import pytest
 
-from klab_client import AgentExecutions, Context, DeferredAgent
+from klab_client import AgentExecutions, AsyncContext, Context, DeferredAgent
 from klab_client.errors import (InvalidRequestError, ProtocolError, SubmissionOutcomeUnknown,
                                 UnsupportedOperationError)
 from test_agent_previews import SOURCE, setup
@@ -18,7 +18,8 @@ def scenario(**kwargs):
     changes.update(kwargs.pop("result_change", {}) or {})
     client, calls = setup(result_change=changes, **kwargs)
     client.runtime_service_id = "runtime-id"
-    context = Context(client, {"id": "s.c", "serviceId": "runtime-id"})
+    context_type = AsyncContext if kwargs.get("async_mode") else Context
+    context = context_type(client, {"id": "s.c", "serviceId": "runtime-id"})
     return client, context, calls
 
 

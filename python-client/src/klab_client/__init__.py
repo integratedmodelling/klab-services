@@ -29,7 +29,7 @@ from klab_client.agents import AgentPreviews, AsyncAgentPreviews, AgentSourcePre
 from klab_client.agent_status import AgentStatusSnapshot, decode_agent_status
 from klab_client.agent_control import AgentControlBinding, AgentControlJournal, AgentControlView
 from klab_client.agent_messaging import AgentChannel
-from klab_client.agent_execution import AgentExecutions, AgentRegistration, DeferredAgent
+from klab_client.agent_execution import AgentExecutions, AsyncAgentExecutions, AgentRegistration, DeferredAgent
 from klab_client._agent_wire import AgentMessage
 from klab_client.async_client import AsyncClient, AsyncContext, AsyncSession, AsyncJob
 from klab_client.transport import Endpoint
@@ -71,7 +71,7 @@ __all__ = [
     "AgentStatusSnapshot", "decode_agent_status",
     "AgentControlBinding", "AgentControlJournal", "AgentControlView",
     "AgentChannel", "AgentMessage",
-    "AgentExecutions", "AgentRegistration", "DeferredAgent",
+    "AgentExecutions", "AsyncAgentExecutions", "AgentRegistration", "DeferredAgent",
     "GraphBrowser", "GraphPage",
     "GraphProjection", "GraphProjectionView", "ProjectedGraphPage",
     "ScientificDataOrigin", "to_dataframe",

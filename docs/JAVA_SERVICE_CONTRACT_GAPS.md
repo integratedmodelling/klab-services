@@ -49,6 +49,15 @@ Java end-to-end functionality. No Monday walkthrough or live repair is a Python 
 
 ## Request/response and ownership rules
 
+Native awaited deferred-registration correction (RC-P4.5/CAP14):
+AsyncAgentExecutions shares exact consent/parser/identity/result checks and deferred
+compile flags, with same-object async admission serialization. Protocol tests enforce
+no resubmission after cancelled/unconfirmed admission and reject context drift across
+awaits. This is not a durable intent ledger or service-side exactly-once guarantee.
+Returned broker methods remain explicitly synchronous/thread-affine. Existing real
+registration/lifecycle evidence is not newly executed by these tests; principal,
+incarnation, cleanup and scientific acceptance gaps remain separately attributable.
+
 Native awaited preview correction (RC-P4.5/CAP14): AsyncAgentPreviews uses the
 existing parseAsset/BEHAVIOR and instantiate/agent compileOnly translation contract,
 sharing fixed nonexecution flags and validation with the sync facade. Mock protocol
