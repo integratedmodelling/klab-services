@@ -258,6 +258,18 @@
       "confidence": "NATIVE_SOURCE_FORM; exact fixture parser/admission/model selection/metadata.input PROVISIONAL_SIMULATOR_CONTRACT; not a compiler or immutable lineage guarantee",
       "simulator_test": "test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt",
       "java_status": "NOT_RUN in this slice; real positive import needs approved cleanup tuple and actual Runtime remains blocked by scanner defect; no scientific Java promotion"
+    },
+    {
+      "id": "SIM-REFRESH-001",
+      "rows": ["RC-P3.1", "RC-P3.2", "CAP-10", "CAP-18"],
+      "api": "GraphBrowser.neighbors; GraphProjection.load/view/invalidate/clear",
+      "routes": ["POST /runtime/api/v1/query"],
+      "request": "Bounded typed membership and incident-LINK query in original authorized context; explicit page refetch after query fault recovery",
+      "expected": "403/500/transport loss propagates and marks all retained pages stale; only explicitly refetched page becomes uninvalidated; consistency UNKNOWN and current authorization NOT_RECHECKED remain; local clear is not remote disposal",
+      "source": "Native KnowledgeGraphQuery/LinkImpl; production GraphBrowser/GraphProjection safety contracts; prior bounded real outage/refetch evidence remains independently attributed",
+      "confidence": "SIMULATED_PROVISIONAL deterministic fault controls; source-derived query shape; no commit ordering or durable event replay claim",
+      "simulator_test": "test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+      "java_status": "NOT_RUN on current candidate; prior bounded outage acceptance retained; staging native commit/selection mechanisms are references, not proven remote Python ordering/retention guarantees"
     }
   ]
 }

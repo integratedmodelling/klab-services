@@ -31,6 +31,9 @@ def make_server(port=0, *, scenario="elevation", seed=1, test_mode=False, mode="
                     return
                 body = self.rfile.read(length)
                 status, payload, media = state.request(self.command, self.path, self.headers, body)
+                if media == "application/x-simulator-disconnect":
+                    self.close_connection = True  # No response, deterministic transport-loss control.
+                    return
                 encoded = (payload if isinstance(payload, bytes) else payload.encode() if media == "text/plain" else
                            json.dumps(payload, allow_nan=False, separators=(",", ":")).encode())
             except (ValueError, TypeError, KeyError, UnicodeError, IndexError, AttributeError):

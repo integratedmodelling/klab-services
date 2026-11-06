@@ -211,6 +211,16 @@ The test-only authenticated `POST /__sim__/expireJobs` control yields native EMP
 status (JobManager.status source), distinct from confirmed cancellation or a released
 context's 404. Expiry control/timing is provisional, not Java durable retention.
 
+Partial graph refresh uses the production `GraphBrowser`/`GraphProjection` over
+actual HTTP. Authenticated test-mode `POST /__sim__/queryFault` accepts only an
+existing context plus `none`, `denied`, `http500` or `disconnect`. Each read fault
+propagates and invalidates retained pages; after explicit recovery/refetch only the
+requested page becomes uninvalidated. Other pages stay stale, consistency remains
+UNKNOWN, and local retained data never establishes current authorization. A forced
+disconnect is traced as no HTTP response, not an HTTP success. No retry, automatic
+resubmission, global resync, durable event order or committed-version lease is
+implied. Fault controls are SIMULATED_PROVISIONAL and never enabled in production.
+
 Recorded native exports are advertised only for `usgs-recorded` and the dedicated
 `export-interrupted`, `export-media-mismatch`, `export-denied` fault scenarios.
 The schema identity `simulator.native.geotiff` is explicitly simulator-only; the

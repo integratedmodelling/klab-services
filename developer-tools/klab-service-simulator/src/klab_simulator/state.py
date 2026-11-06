@@ -48,6 +48,7 @@ class State:
         self.service_ids = {name: f"sim-{name}-{seed}" for name in SERVICES}
         self.sessions, self.contexts, self.jobs, self.observations = {}, {}, {}, {}
         self.imported_resources = {}
+        self.query_faults = {}
         from .authoring import AuthoringState
         self.authoring = AuthoringState(self)
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
@@ -133,7 +134,9 @@ class State:
             except ContractError as error:
                 status, result = error.status, {"error": error.message}
             self.trace.append({"backend": self.backend, "scenario": self.scenario, "seed": self.seed,
-                "method": method, "path": urlsplit(path).path, "status": status,
+                "method": method, "path": urlsplit(path).path,
+                "status": None if content_type == "application/x-simulator-disconnect" else status,
+                "transport_outcome": "DISCONNECTED_BY_TEST" if content_type == "application/x-simulator-disconnect" else "RESPONSE",
                 "workflow": headers.get("klab-scope"), "fixture_origin": self.origin,
                 "contract_category": self._contract_category(method, path, body, status)})
             return status, result, content_type
@@ -155,12 +158,30 @@ class State:
                 for job in self.jobs.values():
                     job["expired"] = True
                 return True, "application/json"
+            if method == "POST" and path == "/__sim__/queryFault":
+                if len(body) > 4096:
+                    raise ContractError(413, "Fault-control byte budget exceeded")
+                try:
+                    control = json.loads(body)
+                except (ValueError, UnicodeError):
+                    raise ContractError(400, "Fault control requires a bounded object") from None
+                if (not isinstance(control, dict) or set(control) != {"scope", "mode"}
+                        or not isinstance(control["scope"], str)
+                        or control["scope"] not in self.contexts
+                        or control["mode"] not in ("none", "denied", "http500", "disconnect")):
+                    raise ContractError(422, "Select an existing simulator context and declared query fault")
+                if control["mode"] == "none":
+                    self.query_faults.pop(control["scope"], None)
+                else:
+                    self.query_faults[control["scope"]] = control["mode"]
+                return True, "application/json"
             if method == "POST" and path == "/__sim__/reset":
                 self.sessions.clear()
                 self.contexts.clear()
                 self.jobs.clear()
                 self.observations.clear()
                 self.imported_resources.clear()
+                self.query_faults.clear()
                 self.authoring.reset()
                 self.next_context = self.next_job = self.next_observation = 1
                 return True, "application/json"
@@ -299,6 +320,7 @@ class State:
                 roots = [root]
             for root in roots:
                 del self.contexts[root]
+                self.query_faults.pop(root, None)
                 self.jobs = {key: row for key, row in self.jobs.items() if row["scope"] != root}
                 self.observations = {key: row for key, row in self.observations.items() if key[0] != root}
                 self.imported_resources = {key: row for key, row in self.imported_resources.items() if row["scope"] != root}
@@ -376,6 +398,11 @@ class State:
             return self._job(service, root, principal, result), "application/json"
         if service == "runtime" and method == "POST" and route in ("/api/v1/observation/value", "/api/v1/query"):
             root, _ = self._context(scope, principal)
+            fault = self.query_faults.get(root) if route.endswith("/query") else None
+            if fault in ("denied", "http500"):
+                raise ContractError(403 if fault == "denied" else 500, "Explicit isolated query fault; no fallback")
+            if fault == "disconnect":
+                return None, "application/x-simulator-disconnect"
             if not isinstance(data, dict):
                 raise ContractError(400, "A structured request is required")
             if route.endswith("/value"):
