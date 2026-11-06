@@ -18,7 +18,13 @@ acceptance remains incomplete as itemized below. No tag/upload or release integr
 is claimed. Read-only cleanup check found zero matching test processes/visible
 windows, without touching Java services or unrelated terminals.
 
-Current phase: **POST_AB_REVIEW_IN_PROGRESS**, automatically begun after the
+Current phase: **POST_AB_REVIEW_FINAL_PUBLICATION**. Substantive review and governance
+PR265 are verified integrated;11idempotent keep-open issue comments posted, zero
+closures. Final documentation receipt still requires normal CI/permitted merge and
+remote confirmation. After that confirmation the review is COMPLETE: **STOP** for
+the joint roadmap decision. On recovery, finish only that remaining publication
+verification; do not restart A+B/C/research/Java remediation. Review automatically
+began after the
 verified final checkpoint/result, without another user prompt. Execute
 [`specs/KLAB_POST_AB_REVIEW_ISSUES_JAVA_GAP_GOVERNANCE_SPEC.md`](specs/KLAB_POST_AB_REVIEW_ISSUES_JAVA_GAP_GOVERNANCE_SPEC.md).
 This repository copy preserves the supplied full audit phases, issue migration
@@ -74,8 +80,16 @@ scanner reproducer custody and initial mixed-conftest runner failures retained;
 no SDK or Java workaround. Consolidated `POST_AB_DELIVERY_REVIEW.md` has exact IDs,
 17issue dispositions, evidence limits and decision brief. Governance PR/hostedCI/
 permitted merge, subsequent idempotent keep-open comments/actual URLs and final
-publication remain pending. No issue changes, role grants, services/IDE modifications
-or science runs; stop after review publication for joint roadmap decision.
+publication were pending at that verification checkpoint. Subsequently governance
+PR265 remotely MERGED8fe0f449c80ead7b56c07073ec3f2003d4d60ea5 at21:26:33UTC,
+all applicable hosted checks PASS, no independent maintainer review claimed. Hosted
+matrix artifacts independently checked:16SIMULATED_PASS versus16realNOT_RUN.
+Only after that merge,11keep-open comments posted with unique markers; actual URLs
+in canonical `docs/java-service-contract-gaps/issue-actions.json` and generated
+reconciliation. Zero closures/owner/label/priority changes. Final receipt's normal
+CI/merge and final state verification remain, then STOP. No role grants, services/
+IDE modifications or science runs. Test cleanup found zero matching test workers or
+visible windows without touching unrelated terminals/restored services.
 
 Source credential preflight correction (active `fix/python-source-credential-preflight`):
 16red tests reproduced quote/backslash-containing synthetic credentials bypassing

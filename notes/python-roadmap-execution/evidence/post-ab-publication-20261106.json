@@ -1,0 +1,38 @@
+{
+  "verified_utc": "2026-11-06T21:27:56.074616+00:00",
+  "governance_pr": 265,
+  "base": "feature/python-experiment-runner",
+  "verified_head": "fc0723364ba18c43a3cc08245c106201c288a0b8",
+  "merge": "8fe0f449c80ead7b56c07073ec3f2003d4d60ea5",
+  "merged_at": "2026-11-06T21:26:33Z",
+  "applicable_final_head_checks": "ALL_SUCCESS including build, Jenkins, notebook, scientific adapters, Python3.11/3.13 simulator and schema-and-substitutes",
+  "independent_maintainer_review": "NOT_CLAIMED; reviews array empty",
+  "actual_issue_actions_ref": "docs/java-service-contract-gaps/issue-actions.json",
+  "read_only_post_action_verification": {
+    "comments": 11,
+    "exact_recorded_comment_urls_found": 11,
+    "unique_markers_per_issue": 1,
+    "comment_author": "Dobbes",
+    "all_issues_still_open": true,
+    "owners_and_labels_unchanged_from_snapshot": true,
+    "priority_operations": 0,
+    "new_closures": 0
+  },
+  "hosted_workflow_run": "https://github.com/integratedmodelling/klab-services/actions/runs/42295810880",
+  "downloaded_hosted_matrices": {
+    "simulated_pass": 16,
+    "current_real_not_run": 16,
+    "sdk_substitute_tests": 100,
+    "http_and_capture_tests": 36,
+    "skips_errors_failures": 0,
+    "sha256": {
+      "gap-governance-tests.xml": "51f8b1992a7467ccd639d601b1d498d8f97e15e15bb79a4cc87cc178c861e406",
+      "gap-real-NOT_RUN.json": "db7e2f3263938e900f4e42238cddf7cb465bd9bf4285b43a6badcc29662c5328",
+      "gap-simulated-results.json": "3e610f820e7eaf35146bbc2e0ef01dcee6c6e695a5ee8131574fd15562f313de"
+    }
+  },
+  "new_java_or_scientific_execution": "NOT_RUN",
+  "develop_or_release_promotion": false,
+  "cleanup": "Read-only owned-test-process/window check found zero matches; unrelated terminals/Java/restored services unchanged",
+  "remaining_publication": "Normal final documentation receipt PR, applicable final-head CI, permitted merge and authoritative remote clean/ancestry verification; then STOP"
+}
