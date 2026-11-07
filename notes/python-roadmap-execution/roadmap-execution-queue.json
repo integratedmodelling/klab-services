@@ -9,14 +9,14 @@
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 305,
-    "merge": "971f2a98751b3f458eb4b0280a7093a4a4e716cd",
-    "head": "1863a62ae8c8816492fa1ba3654c6056ed05350f",
-    "utc": "2026-11-07T21:48:46Z",
+    "pr": 306,
+    "merge": "a9faa8513e6a62b479be8b18a60e9e9aaa8c9f9c",
+    "head": "10caa5027b57126e579b62b9b66e21f8d968ab1c",
+    "utc": "2026-11-07T22:14:50Z",
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P0",
-  "pending_deliveries": [{"pr": 306, "head": "10caa5027", "state": "EXACT_HEAD_CI_PENDING_AFTER_RETAINED_MISSING_VECTOR_DEPENDENCY_FAILURE_NOT_FULL_RC_P0_ACCEPTANCE"}],
+  "pending_deliveries": [],
   "remaining_runnable_work": [
     "operation-workflow-attribution",
     "onboarding-and-routing-acceptance",
@@ -3449,8 +3449,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: operation-workflow-attribution"
       },
       "simulator_support_needed": "Map every public operation to executable tests/workflows or exact unsupported disposition; measured body lines alone insufficient. Resolver encoder remains unsupported until maintained scientific encoding authority, with all independent preparation/inspection available.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "PUBLIC_CALLABLE_EXECUTABLE_TEST_PRESENCE_TOOLING_DELIVERED_PR306_ASSERTION_REVIEW_PARTIAL",
+      "simulator_acceptance_status": "INSTALLED5243UNIT536SIM_CALL_PRESENCE_PASS_455NONABSTRACT_51ABSTRACT_UNCALLED_NO_NATIVE_PROMOTION",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [],
@@ -3465,12 +3465,21 @@
           "188caeb47b86f2eb114cd6f557cf839df0eb10ee",
           "0d17032ca5083cb4a354a1509af12d5d36a52dd9"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "operation_test_presence_delivery": {
+          "pr": 306,
+          "head": "10caa5027b57126e579b62b9b66e21f8d968ab1c",
+          "merge": "a9faa8513e6a62b479be8b18a60e9e9aaa8c9f9c",
+          "merged_at": "2026-11-07T22:14:50Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/operation-test-attribution-installed-20261107.json"
+        }
       },
       "work_group": "operation-workflow-attribution",
       "priority": 14,
-      "task_state": "pending",
-      "next_executable_action": "Map every public operation to executable tests/workflows or exact unsupported disposition; measured body lines alone insufficient. Resolver encoder remains unsupported until maintained scientific encoding authority, with all independent preparation/inspection available.",
+      "task_state": "in_progress",
+      "next_executable_action": "Continue reviewed operation assertion/workflow mappings and original-row integrated acceptance; all506 classifications preserved. PR306 maps22operations with explicit assertion descriptions,484remain without reviewed maps including abstract declarations. Current onboarding supplement maps33/473missing; no missing evidence becomes invented unsupported or native acceptance.",
       "disposition": null
     },
     {

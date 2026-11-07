@@ -1,5 +1,10 @@
 # Integrated installed onboarding and routing acceptance
 
+Parent306 nowverifiedMERGEDa9faa8513 at2026-11-07T22:14:50Z, exact10caa5027/
+all19checksPASS/remote-localcheckpoint. Corrected vector-extra/importpreflight hosted
+trace jobPASS; initialfailure retained. Current onboarding candidatefe5028fb4 verified
+locally; hosted307delivery remains. Earlier parentOPEN lines below are historical.
+
 Public Python groups:190SDK connection/guard/onboarding/decoded-source-credential
 controls,1isolated process HTTP certificate exchange/origin/ambiguousmutation control,
 18independent ownedHTTP expiry/principal/identity/mixedprovideroutage/recovery and

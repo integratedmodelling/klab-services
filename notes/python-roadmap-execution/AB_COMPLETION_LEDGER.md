@@ -1,5 +1,17 @@
 # A+B completion ledger — ongoing campaign
 
+## PR306 verified merged; onboarding delivery preparation
+
+306MERGEDa9faa8513e6a62b479be8b18a60e9e9aaa8c9f9c at2026-11-07T22:14:50Z;
+exact10caa5027b57126e579b62b9b66e21f8d968ab1c/all19checksPASS, remote/local ancestry
+checkpointverified. Hosted13failedvector/5230passed missingextra failure retained;
+corrected explicitvector/importpreflight jobPASS. Tooling delivered, RC-P0 reviewed
+assertion mapping stillpartial; no fullfunctional/native/finalrow promotion.
+Current onboarding fe5028fb4 source+support-pinned190/1/18matrix/13runnercontrols/
+types-lintPASS,33reviewedmapped473missing; no307PRyet. No simulator services remain.
+42originalIDs/history16runnable/zero finaldispositions. Next restoration/lifecycle
+matrix independently runnable; native issuer/license/scientific/deployment gates separate.
+
 ## Integrated onboarding acceptance active; PR306 CI correction pending
 
 Active feat/python-integrated-onboarding-acceptance/noPR. Installed public matrix

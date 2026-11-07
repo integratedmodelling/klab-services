@@ -1,5 +1,13 @@
 # Resume the full Python A+B+C campaign
 
+Latest306MERGEDa9faa8513 at2026-11-07T22:14:50Z/exact10caa5027/all19checksPASS,
+remote-localcheckpointverified. All306watchersfinished; retained initial13vectorfailures/
+5230passed extraomission and correctedexplicitextrajobPASS. RC-P0partial reviewedmaps,
+not finalacceptance. Current feat/python-integrated-onboarding-acceptance sourcefe5028fb4
+plus localmerge/checkpointnotes; support-pinned190SDK1HTTP18simHTTP/13runnercontrols/
+types-lintPASS,33reviewedmaps473missing. Need publish307ordinarydelivery; then
+restoration/lifecycle/otherintegratedacceptance.42originalIDs/history16runnable.
+
 Current child feat/python-integrated-onboarding-acceptance/noPR/uncommitted tool/docs/
 receipt/mappings.190SDK/1isolatedHTTP/18independentHTTPmatrixPASS,13runnercontrols/
 types-lintPASS; source/import/test/supportbytes pinned. Receipt integrated-onboarding-
