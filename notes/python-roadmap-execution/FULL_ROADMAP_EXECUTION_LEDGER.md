@@ -2,6 +2,11 @@
 
 ## Sharing fresh installed checkpoint
 
+PR292 publisheda566359f2; final17linkedcasesPASS(644SDK/203simulator/57worker)
+vs17nativeREAL_NOT_RUN/expectedexit3 explicitly asserted. Full matrix recorded in
+sharing artifact receipt. Exact final-headCI and ordinary permitted merge remain
+delivery gates; no production source changed after final packages.
+
 shared-access-first4575SDK/326simulator/allreference-worker/39governance suites
 PASS with zero skips/errors/failures. Raw59SDK/26simulator/5worker source-wheel-
 sdist-installed parity rechecked; simulator not bundled in SDK/worker. Installed

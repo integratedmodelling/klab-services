@@ -2,6 +2,11 @@
 
 ## Sharing installed artifact verification — 2026-11-07
 
+PR292 openeda566359f2. Final installed17linkedcasesPASS(644SDK/203simulator/
+57worker),17nativeREAL_NOT_RUN/explicitly asserted expectedexit3. Receipt now
+contains full linked matrix. Exact final-headCI/ordinary merge pending; no native
+or whole42row disposition promoted. Source unchanged since artifact freeze.
+
 Fresh unique shared-access-first4575SDK/326simulator and all reference/worker/
 39governance suitesPASS, zero skips/errors/failures.59SDK/26simulator/5worker
 source/wheel/sdist/installed rawmodule parity rechecked; SDK/worker contain no
