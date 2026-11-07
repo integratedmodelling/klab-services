@@ -20,5 +20,6 @@
   "contract_matrix": {"simulated_pass": 17, "SDK_tests": 485, "simulator_tests": 177, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
   "dependency_custody": "Fresh wheels/sdists/pip-targets borrow prior test dependencies; no fresh dependency-isolation certification",
   "native_java": "REAL_NOT_RUN; JAVA-GAP-0007 MISSING_API and0013CONTRACT_PROVISIONAL unchanged; CAP-03/fullABC remain PARTIAL",
-  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; continue remaining42row operation/workflow coverage and native acceptance obligations. Sleep pending full checklist."
+  "delivery": {"pr": 287, "head": "592066a2cede122a207657d5fd2d453dbfee8c7c", "merge": "371187fdf5ef8ea443def0ab9bbe3388e0bda4c0", "merged_utc": "2026-11-07T05:51:52Z", "applicable_checks": "38PASS; no failed-check rerun", "independent_maintainer_review": false},
+  "remaining": "Continue remaining42row operation/workflow coverage and native acceptance obligations. Sleep pending full checklist."
 }

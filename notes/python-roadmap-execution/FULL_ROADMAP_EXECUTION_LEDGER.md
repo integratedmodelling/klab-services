@@ -1,5 +1,55 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Active operation measurement custody
+
+Final operation-custody17linkedcasesPASS(485SDK/177simulator/57worker), zero
+skips/errors/failures versus17realNOT_RUN/exit3. NormalPR/finalheadCI next;
+native/science/full42row acceptance not promoted. No live IDE gate needed for
+this Python-only delivery; no repair authorized or attempted.
+
+Fresh verifier completed2026-11-07T05:58:09.505557+00:00:4390SDK/248simulator/
+6tool/3composition/4revision/18provider/18provenance/11inventory/98reference/57worker/
+21HTTP/37governancePASS zero skips/errors/failures.57SDK+23simulator+5worker raw
+source/wheel/sdist/installed parity; devtool-only70lines34branches100%unexcluded.
+Attribution of newSDK-onlyreport reproduces411rows=51abstract/322measuredbodycomplete/
+17partial/19nobodymeasurement/2refusal. Exact reporthash209e7919... pinned in
+evidence/full-roadmap-operation-coverage-20261107.json.17linkedmatrix running
+sh_1b4962775001Jkqg823h10IMso versus17realNOT_RUN/exit3. No newSDKmodulegate
+claim; normalPR/finalCI/permittedmerge pending. Remaining caller/control/workflow
+gaps not replaced by coveragecounts, native/scientific/fullABC acceptance unchanged.
+
+PR287 subsequently verified MERGED371187fdf5ef8ea443def0ab9bbe3388e0bda4c0 at
+2026-11-07T05:51:52Z, exact592066a2cede122a207657d5fd2d453dbfee8c7c/all38checks
+PASS/no failedrerun. Operationmeasurement child integrated actualmerge preserving
+uncommitted tool/tests/docs. No remoteCIwatcher remains; fresh unique verifier
+operation-coverage-first sh_1b4900879001gtsS78x70qAaoT running. Native/CAP03/fullABC
+not promoted; copied-data remains distinct from native live federation/grants.
+
+Finaltool6testsPASS at70lines34branches100%unexcluded/bodymypy/fatallintPASS.
+CI export/attribution command dryrun initially used onlydevtooltests, which correctly
+never importSDK: coverageSDKexport NoData/exit1 retained. Corrected24testbatch
+includes18providerhandlecontrols and validates mixed→SDK-only export/attribution,
+not wholeSDKcoverage. Hostedfocusedtoolcoverage separate from SDK report; all old
+coveragegates unchanged. Fresh unique operation-coverage-first verification next.
+
+Copied-composition published PR287 head592066a2c, finalheadwatcher
+sh_1b489ec93001z5NCoei19oIUnz running. Current child
+test/python-operation-coverage-custody. New dev-only operation_coverage.py maps
+publicsourcecallables to exact matching measured SDK module bytes; mixed report,
+duplicate module/callable, unsafepaths, byte drift/unavailable files refuse. Report
+pins module+inputreporthashes, executed/missing/excludedbodylines. Definition-only
+coverage does not imply invocation; one-line def explicitly unattributable; nested
+callback body excluded from outer measurement; historical exclusions remainvisible.
+No invocationcount/route/workflow/permission/science/nativecompatibility claim.
+First accepted priorSDKreport411callables=51abstract/322fullymeasuredbodylines/
+17partialbodylines/19nobodymeasurement/2refusalbodies.19not necessarily untested:
+childprocess/reference suites outside this report can execute bodies;322not322
+supported userworkflows.6focusedtestsPASS/69lines34branches100%unexcluded before
+final type-only ast.parse end-position casts; initialbodymypy optional end-position
+diagnostics retained/corrected, no test/coverage exclusions. SourceSDK/worker/simulator
+unchanged; CI emits SDK-onlyview and attribution artifact without replacing any
+coveragegate. Fresh package/type/coverage/ordinarydelivery remain pending.
+
 ## Active copied snapshot composition reference
 
 Final17linkedcasesPASS using485SDK/177simulator/57worker, zero skips/errors/failures

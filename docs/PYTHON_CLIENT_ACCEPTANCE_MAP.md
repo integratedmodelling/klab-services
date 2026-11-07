@@ -1,5 +1,13 @@
 # Python roadmap acceptance map — 3 November 2026
 
+Copiedcomposition PR287 verified merged371187fdf/all38finalheadchecksPASS.
+Operationmeasurement devtool6tests/70lines34branches100%unexcluded/types/lintPASS;
+exact-byte SDK-onlybody measurement labels are not invocation/route/workflow/native
+support. First accepted priorSDKreport411callables=51abstract/322measuredbodycomplete/
+17partial/19nobodymeasurement/2refusal. Missing measurement need not mean untested
+childprocess/reference workflows. Fresh installed verification/delivery pending;
+productionSDK/worker/simulator and native/fullABC statuses unchanged.
+
 Fresh copied-composition packages4384SDK/248simulator/3focused and all reference/
 worker/governance suitesPASS, zero skips/errors/failures; rawpackageparity and
 simulator-only81lines40branches100% verified. Final17linkedmatrix/ordinaryPR/CI
