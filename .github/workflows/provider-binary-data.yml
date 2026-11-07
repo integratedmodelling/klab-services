@@ -35,6 +35,8 @@ jobs:
       - name: Enforce unchanged provider coverage gate
         run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:provider-coverage.json
       - name: Check unchanged provider gate
+        run: python -m pytest -q python-client/tests/unit/test_execution_explanations.py --cov=klab_client --cov-branch --cov-append --cov-report=json:provider-coverage.json
+      - name: Verify provider coverage threshold
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py provider-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/_provider_avro.py --new-module src/klab_client/provider_data.py

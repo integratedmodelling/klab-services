@@ -1,5 +1,12 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR300selectedexecutionexplanationcandidate5053installedSDK465sim72worker/reference-
+governancePASS;67SDK34sim5worker rawmoduleparity,17linkedPASSvs17nativeNOT_RUN.
+58SDK100%,2publicHTTP/24fixture100%,12focusedCI+actualorderedselectionPASS. Source/
+model/componentversions/planned-recordedsemanticlabelassociation are finite serverclaims,
+not native science/numericmediation/durable/permissionauthority. Finalreceipt/exactheadCI/
+ordinarymergepending; parent299verifiedmerged5d6d5139d/all31checksPASS.42rows/26runnable.
+
 PR299completefinitegraphcandidate4995installedSDK/439sim/72worker/reference-governance
 PASS,66SDK33sim5worker rawmoduleparity;17linkedPASSvs17nativeNOT_RUN.92SDK100%,
 3publictwo-clientHTTP/31fixture100%,11focusedCI+actualorderedselectionPASS. Separate

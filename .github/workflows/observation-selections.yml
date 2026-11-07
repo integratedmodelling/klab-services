@@ -30,6 +30,8 @@ jobs:
       - name: Public sync and native async HTTP acceptance (not native Java)
         run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:selections-coverage.json
       - name: Public HTTP selection acceptance
+        run: python -m pytest -q python-client/tests/unit/test_execution_explanations.py --cov=klab_client --cov-branch --cov-append --cov-report=json:selections-coverage.json
+      - name: Execute public HTTP selection acceptance
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_observation_selections.py --junitxml=selections-http.xml
       - name: Supplementary fixture refusals (not a substitute for public SDK acceptance)
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_observation_selection_fixture.py --cov=klab_simulator.observation_selections --cov-branch --cov-fail-under=100 --cov-report=json:selection-fixture-coverage.json

@@ -28,7 +28,7 @@ NOT_TESTED complete remote lineage/revision snapshot and committed race contract
 Partial plans/recorded effects with unknown durable consistency. Explicit provenance-dependencies fixture declares MEASURED/CONTRIBUTED_TO/planned RESOLVED edges in one owner root. Separate revision-convergence fixture captures completed synthetic observation IDs with expected-head CAS, bounded exact history, two independent clients and explicit refresh; ephemeral only, durable mode refuses. Neither establishes native committed science, full lineage, notification convergence, computed dependency or cross-service snapshot coherence.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-PROVENANCE-001, SIM-REFRESH-001, SIM-PROVENANCE-DEPENDENCIES-001, SIM-REVISION-CONVERGENCE-001, SIM-COMMIT-CACHE-001, SIM-GRAPH-CONVERGENCE-001
+Scenarios: SIM-PROVENANCE-001, SIM-REFRESH-001, SIM-PROVENANCE-DEPENDENCIES-001, SIM-REVISION-CONVERGENCE-001, SIM-COMMIT-CACHE-001, SIM-GRAPH-CONVERGENCE-001, SIM-EXECUTION-EXPLANATION-001
 
 Exact executable controls:
 
@@ -42,6 +42,9 @@ Exact executable controls:
 - `python-client/tests/unit/test_reference_commits.py`
 - `developer-tools/klab-service-simulator/tests/test_graph_convergence.py`
 - `developer-tools/klab-service-simulator/tests/test_graph_commit_fixture.py`
+- `python-client/tests/unit/test_execution_explanations.py`
+- `developer-tools/klab-service-simulator/tests/test_execution_explanations.py`
+- `developer-tools/klab-service-simulator/tests/test_execution_explanation_fixture.py`
 
 ## Reproduction commands
 

@@ -34,6 +34,7 @@ SCENARIOS += ("dependency-graphs",)
 SCENARIOS += ("annotated-input",)
 SCENARIOS += ("commit-inspection",)
 SCENARIOS += ("graph-convergence",)
+SCENARIOS += ("execution-explanation",)
 
 
 class ContractError(Exception):
@@ -94,11 +95,13 @@ class State:
         from .accepted_documents import AcceptedSources
         self.accepted_sources = AcceptedSources(self) if scenario == "accepted-documents" else None
         from .dependency_graphs import DependencyGraphs
-        self.dependency_graphs = DependencyGraphs(self) if scenario in ("dependency-graphs", "annotated-input") else None
+        self.dependency_graphs = DependencyGraphs(self) if scenario in ("dependency-graphs", "annotated-input", "execution-explanation") else None
         from .commits import CommitReports
         self.commit_reports = CommitReports(self) if scenario == "commit-inspection" else None
         from .graph_commits import GraphCommits
         self.graph_commits = GraphCommits(self) if scenario == "graph-convergence" else None
+        from .execution_explanations import ExecutionExplanations
+        self.execution_explanations = ExecutionExplanations(self) if scenario == "execution-explanation" else None
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -119,7 +122,7 @@ class State:
             self.values = [None if value == -9999 else value for row in fixture["values"][0] for value in row]
         if scenario == "zero-negative-nodata":
             self.values[:4] = [0, -7.5, None, "NaN"]
-        if scenario in ("usgs-recorded", "import-workflow", "annotated-input") or scenario in EXPORT_SCENARIOS:
+        if scenario in ("usgs-recorded", "import-workflow", "annotated-input", "execution-explanation") or scenario in EXPORT_SCENARIOS:
             from .fixtures import authentic_fixture
             fixture = authentic_fixture()
             self.values = [x for row in fixture["allCellsNorthToSouthWestToEast"] for x in row]
@@ -142,7 +145,8 @@ class State:
                     if self.accepted_sources is not None else {}),
                 **({"dependency_snapshots":len(self.dependency_graphs.snapshots)} if self.dependency_graphs is not None else {}),
                 **({"commit_reports":len(self.commit_reports.rows)} if self.commit_reports is not None else {}),
-                **({"graph_reference_roots":len(self.graph_commits.rows)} if self.graph_commits is not None else {})}
+                **({"graph_reference_roots":len(self.graph_commits.rows)} if self.graph_commits is not None else {}),
+                **({"execution_explanations":len(self.execution_explanations.rows)} if self.execution_explanations is not None else {})}
 
     def _owner(self, mapping, key, principal):
         if key not in mapping:
@@ -191,10 +195,10 @@ class State:
         result = {"@CLASS": OBS, "id": identity, "urn": f"{context}.{identity}", "name": "elevation",
             "observable": observable(self.scenario), "geometry": deepcopy(geometry), "empty": False, "notifications": [],
             "resolvedCoverage": 1.0, "metadata": {"delegate": {"grid": deepcopy(self.grid)}}}
-        if self.scenario in ("import-workflow", "annotated-input"):
+        if self.scenario in ("import-workflow", "annotated-input", "execution-explanation"):
             owner = self.contexts[context]["owner"]
             result["metadata"]["delegate"]["input"] = self.authoring.binding(context, owner)
-            if self.scenario == "annotated-input":
+            if self.scenario in ("annotated-input", "execution-explanation"):
                 from .input_provenance import evidence
                 result["metadata"]["delegate"]["input"] = evidence(self, context, owner)[3]
         return result
@@ -296,6 +300,7 @@ class State:
                 if self.dependency_graphs is not None:self.dependency_graphs.snapshots.clear()
                 if self.commit_reports is not None:self.commit_reports.rows.clear()
                 if self.graph_commits is not None:self.graph_commits.rows.clear()
+                if self.execution_explanations is not None:self.execution_explanations.rows.clear()
                 self.authoring.reset()
                 from .workers import WorkerState
                 self.workers = WorkerState(self)
@@ -331,6 +336,8 @@ class State:
                     "/__sim__/graphReferenceRename", "/__sim__/graphReferenceDrop", "/__sim__/graphReferenceEpoch"):
                 action={"/__sim__/graphReferenceRename":"rename", "/__sim__/graphReferenceDrop":"drop", "/__sim__/graphReferenceEpoch":"epoch"}[path]
                 return self.graph_commits.admin(action,body)
+            if method == "POST" and path == "/__sim__/executionSemanticUpdate" and self.execution_explanations is not None:
+                return self.execution_explanations.semantic_update(body)
             if method == "POST" and self.dependency_graphs is not None and path in (
                     "/__sim__/advanceDependencyGraph", "/__sim__/dependencyGraphCycle", "/__sim__/dependencyGraphGap", "/__sim__/dependencyGraphComplete"):
                 self.dependency_graphs.revision += 1
@@ -358,6 +365,7 @@ class State:
                     **({"acceptedDocumentProtocol":"klab.experimental.accepted-documents/1"} if self.accepted_sources is not None and service == "resources" else {}),
                     **({"dependencyGraphProtocol":"klab.experimental.dependency-graphs/1"} if self.dependency_graphs is not None and service == "resources" else {}),
                     **({"graphCommitProtocol":"klab.experimental.graph-commits/1"} if self.graph_commits is not None and service == "runtime" else {}),
+                    **({"executionExplanationProtocol":"klab.experimental.execution-explanations/1"} if self.execution_explanations is not None and service == "runtime" else {}),
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                      "importSchemata": schemas() if service == "resources" else {},
                      **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
@@ -479,6 +487,8 @@ class State:
             return self.dependency_graphs.request(method,original_path.split("/resources",1)[1],principal,scope,headers)
         if service == "runtime" and route == "/api/v1/commit" and self.commit_reports is not None:
             return self.commit_reports.request(method,original_path.split("/runtime",1)[1],principal,scope,headers)
+        if service == "runtime" and route.startswith("/experimental/execution-explanations/v1/") and self.execution_explanations is not None:
+            return self.execution_explanations.request(method,original_path.split("/runtime",1)[1],principal,scope,headers)
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
                 raise ContractError(400, "Scope advertisement requires service descriptors")
@@ -611,6 +621,7 @@ class State:
                 if self.dependency_graphs is not None:self.dependency_graphs.release(root)
                 if self.commit_reports is not None:self.commit_reports.release(root)
                 if self.graph_commits is not None:self.graph_commits.release(root)
+                if self.execution_explanations is not None:self.execution_explanations.release(root)
                 del self.contexts[root]
                 self.query_faults.pop(root, None)
                 self.jobs = {key: row for key, row in self.jobs.items() if row["scope"] != root}
@@ -652,6 +663,7 @@ class State:
                         result = job["result"]
                         self.observations[(root, result["id"])] = result
                         if self.commit_reports is not None:self.commit_reports.record(root,result)
+                        if self.execution_explanations is not None:self.execution_explanations.record(root,result)
                     if job["status"] == "FINISHED" and service == "resources" and "import_urn" in job:
                         urn = job["import_urn"]
                         self.imported_resources[urn] = {"owner": principal, "scope": root,
@@ -681,7 +693,7 @@ class State:
             if service == "resolver":
                 selected_model = MODEL
                 binding = None
-                if self.scenario in ("import-workflow", "annotated-input"):
+                if self.scenario in ("import-workflow", "annotated-input", "execution-explanation"):
                     binding = self.authoring.binding(root, principal)
                     selected_model = binding["modelUrn"]
                 result = {"resolutionOutcome": "RESOLVED", "empty": False, "notifications": [],
@@ -693,12 +705,16 @@ class State:
                 if binding:
                     result["requirements"]["results"].append({"resourceUrn": binding["resourceUrn"],
                         "knowledgeClass": "RESOURCE", "serviceId": self.service_ids["resources"]})
-                    if self.scenario == "annotated-input":
+                    if self.scenario in ("annotated-input", "execution-explanation"):
                         import hashlib
                         from .input_provenance import evidence
                         _, manifest, model_source, _ = evidence(self, root, principal)
                         for row, source_text in zip(result["requirements"]["results"], (model_source, manifest)):
                             row.update(resourceVersion="1.0.1", sourceSha256=hashlib.sha256(source_text.encode()).hexdigest())
+                        if self.scenario == "execution-explanation":
+                            result["referenceComponentSelection"]={"componentId":"simulator.recorded-crop",
+                                "componentVersion":"1.0.0","componentProviderId":self.service_ids["runtime"],
+                                "prototype":"simulator.recorded400"}
             else:
                 result = self._observation(root, data["observation"])
             return self._job(service, root, principal, result), "application/json"

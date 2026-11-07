@@ -8,6 +8,14 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario execution-explanation` composes actual authentic crop upload/source ADD,
+explicit selected model/component plan and observation into a complete finite reference
+explanation. A test-only semantic-label association records before/after revision effects
+and fresh observation metadata, **without changing native observable or numeric values**.
+Public sync/async400cell/two-client/principal/root/no-plan/cleanup tests do not imply
+native scientific lineage, numeric mediation or native RESOURCE deletion. See
+[reference contract](../../python-client/docs/execution-explanations-reference.md).
+
 `--scenario graph-convergence` supplies a separate explicitly advertised finite
 complete-reference checkpoint/delta graph. Public sync/async two-client projections
 require explicit resync after gaps/epoch changes; Jobs/hints never imply commits.
