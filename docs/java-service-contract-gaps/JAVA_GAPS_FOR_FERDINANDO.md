@@ -186,6 +186,12 @@ Tests include descendants after success/crash/deadline/cancellation and containm
 setup refusal before operator-code execution. Trusted scripts remain required;
 hard memory/disk quotas, deliberate POSIX session escape and hostile-code isolation
 are not claimed solved. Native Java acceptance remains REAL_NOT_RUN.
+Hosted CI exposed a completed-process inspection race in the regression test;
+the test now accepts a disappearing PID as terminated without weakening the live
+descendant assertion. A subsequent local run exposed asynchronous Windows Job
+shutdown racing temporary-directory cleanup: termination now confirms zero active
+Job members before closing its handle/removing owned temporary custody. These
+are implementation/test corrections, not a native contract-status promotion.
 The original16IDs and their evidence are retained; this genuinely distinct worker
 protocol adds0017 rather than relabeling any old contract as fixed.
 

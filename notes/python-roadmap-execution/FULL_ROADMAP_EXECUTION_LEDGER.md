@@ -91,6 +91,13 @@ gate and90% common-code gate, Windows/Ubuntu3.11+3.13 matrix. Kernel-specific co
 cannot execute on the opposite OS; this is not silently lowering common-code gates.
 Next command: finish installed verification/types/lint/generated handoff and publish
 hardening PR after269 integration; continue independent full-roadmap requirements.
+PR270 first CI failed: generated CONTRACT_MATRIX was omitted from staging and a
+POSIX dead-PID inspection raced process disappearance. Corrective commit194a429d7
+preserves the cleanup assertion and includes generated output. Its local run also
+exposed a Windows asynchronous Job-termination/temp-directory cleanup race
+(48passed/1failed), not claimed green: implementation now waits for zero active
+Job processes before removing owned temporary custody. Reverification and final
+head hosted matrix remain required; PR270 must not merge until those pass.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan

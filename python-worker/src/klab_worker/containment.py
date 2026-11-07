@@ -6,6 +6,7 @@ escape via setsid. No global process scan or unrelated-process termination.
 """
 import os
 import signal
+import time
 
 from .protocol import WorkerError
 
@@ -42,6 +43,10 @@ class ProcessTree:
         kernel.AssignProcessToJobObject.restype = wintypes.BOOL
         kernel.CloseHandle.argtypes = [wintypes.HANDLE]
         kernel.CloseHandle.restype = wintypes.BOOL
+        kernel.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        kernel.TerminateJobObject.restype = wintypes.BOOL
+        kernel.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p]
+        kernel.QueryInformationJobObject.restype = wintypes.BOOL
         self.kernel = kernel
         handle = kernel.CreateJobObjectW(None, None)
         if not handle:
@@ -57,8 +62,28 @@ class ProcessTree:
     def close(self):
         if os.name == "nt":
             if self.handle is not None:
-                self.kernel.CloseHandle(self.handle)
-                self.handle = None
+                import ctypes
+                from ctypes import wintypes
+                class Accounting(ctypes.Structure):
+                    _fields_ = [(name, ctypes.c_int64) for name in ("TotalUserTime", "TotalKernelTime",
+                        "ThisPeriodTotalUserTime", "ThisPeriodTotalKernelTime")] + [(name, wintypes.DWORD) for name in (
+                        "TotalPageFaultCount", "TotalProcesses", "ActiveProcesses", "TotalTerminatedProcesses")]
+                try:
+                    if not self.kernel.TerminateJobObject(self.handle, 1):
+                        raise WorkerError("Owned worker job termination failed")
+                    deadline = time.monotonic() + 5
+                    while True:
+                        counts = Accounting()
+                        if not self.kernel.QueryInformationJobObject(self.handle, 1, ctypes.byref(counts), ctypes.sizeof(counts), None):
+                            raise WorkerError("Owned worker job cleanup cannot be confirmed")
+                        if not counts.ActiveProcesses:
+                            break
+                        if time.monotonic() >= deadline:
+                            raise WorkerError("Owned worker job cleanup deadline exceeded")
+                        time.sleep(.01)
+                finally:
+                    self.kernel.CloseHandle(self.handle)
+                    self.handle = None
         else:
             try:
                 getattr(os, "killpg")(self.process.pid, getattr(signal, "SIGKILL"))
