@@ -1,5 +1,62 @@
 # A+B completion ledger — ongoing campaign
 
+## PR292 verified merge; revision-aware namespace validation underway
+
+Corrected source-validation-location-fixed full installed4625SDK/340simulator and
+allreference-worker/39governance suitesPASS, zero skips/errors/failures.60SDK/
+27simulator/5worker rawsource-wheel-sdist-installed module parity rechecked;
+SDK/worker contain no simulator. InstalledSDK-only newmodule/allchangedcode100%
+unexcludedPASS; focused722/630/508/132/50controls and12fixture100%PASS. Corrected
+17linkedcasesPASS(694SDK/217simulator/57worker) vs17nativeNOT_RUN/expectedexit3.
+Final receipt evidence/full-roadmap-source-validation-20261107.json retains initial
+337simulatorPASS/3FAIL superseded diagnosticspan run; no failed reports overwritten.
+PR293 currentheadbd1364c72checksPASS; finalreceiptcommit/exactheadCI/ordinarymerge
+remain delivery gates. No artifact/matrix job remains; no native/fullroadmap promotion.
+
+Superseded source-validation-first verifier completed:4625SDK/allreference-worker
+suitesPASS; fullsimulator337PASS/3FAIL. All three failures are the new exactsource-
+span assertions correctly rejecting old offset37 (two public HTTP clients plus
+supplementary fixture). Preserve original simulator.xml/last-command.log/artifacts.
+Corrected source-validation-location-fixed verifier/matrix and PR293CI watcher
+remain running; five corrected installedfocusedCI batches alreadyPASS. No failed
+report overwritten, SDK guard or expected token weakened, native acceptance unchanged.
+
+DraftPR293 publishedd1e8cd511. Source review found the declared fixture's Error
+offset37was one character before actual token38. Corrected to38 and added independent
+public sync/nativeasync source-span slicing assertions plus supplementary regression;
+14HTTP+fixturecontrolsPASS. Initial source-validation-first artifacts/matrix are
+SUPERSEDED; retain their results, do not claim them final. Newly named
+source-validation-location-fixed full verifier running, no installed-target overwrite.
+SDK behavior/native source contract unchanged; no weakened diagnostic assertions.
+
+Validation source frozen; fresh unique source-validation-first full verifier and
+17linkedmatrix running. Installed focusedCI722provider/630selection/508material/
+132sharing/50validation controlsPASS with unchanged newmodule/changedSDKgates;
+12installedsupplementaryfixture100%PASS. No validation PR yet. No native call or
+ontology synchronization performed; maintainers' original Java-gap obligations intact.
+
+PR292 remotely MERGED63e4f33c817caa45a8fef3f898fe27913f79372b at
+2026-11-07T15:39:22Z, exact32852ca9cd6b0951b0c8a341758f2358bdf8efaf,
+all23reported final-headchecksPASS/no outstanding review requests. Actualmerge
+integrated on feat/python-revision-aware-validation; checkpoint verifies remote
+state/local ancestry. Sharing receipt updated with actual checks/merge;42original
+rows/history preserved,36runnable/zero finaldispositions. No verifier/watcher remains.
+
+Next requirement already implemented locally: SourceValidation/AsyncSourceValidation
+use existing native /api/v1/validate/document namespace DTO, exact source/version/
+knowledge service/worldview/revision/session/content pinning, pre/post binding and
+current knowledge checks, explicit stale refusal/revalidation with no blind retries.
+50SDKcontrols100%unexcluded,2publicHTTP and12supplementaryfixturecases100%PASS;
+bodymypyPASS after correcting async helper typing and fixture source narrowing.
+Initial13-control coverage82.22% preserved in development history; expanded hostile
+intake/identity/status/race tests achieve100%, no exemptions. Independent fixture
+admits two namespace literals and a declared diagnostic, not a compiler/ontology.
+Inspected native ontology validation can synchronize/load knowledge, so API refuses
+ontology beforeHTTP and never requests executable-model/context/classifier admission.
+Prepared native namespace-only test NOT_RUN; no live diagnostics/repair requested.
+Governance, full regression/installed packages/ordinary PR delivery pending; no new
+validation PR yet, no whole-row or scientific acceptance claimed.
+
 ## Sharing installed artifact verification — 2026-11-07
 
 PR292 openeda566359f2. Final installed17linkedcasesPASS(644SDK/203simulator/

@@ -1,5 +1,55 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Sharing merge checkpoint and immediate source-validation implementation
+
+Corrected installed4625SDK/340simulator/allreference-worker/39governance suites
+PASS, zero skips/errors/failures;60SDK/27simulator/5worker rawmoduleparity rechecked.
+Installednewmodule/allchangedSDK100%unexcluded;focused722/630/508/132/50controls
+and12fixture100%PASS.17linkedcasesPASS(694SDK/217simulator/57worker) versus
+17nativeREAL_NOT_RUN/expectedexit3. Complete receipt
+evidence/full-roadmap-source-validation-20261107.json preserves superseded337PASS/
+3FAILsource-span run separately. PR293 bd1364c72checksPASS; finalreceipt/exactheadCI/
+ordinarymerge pending. No installedverifier or matrix runner remains running.
+
+Initial source-validation-first completed4625SDK/allreference-workerPASS but
+337simulatorPASS/3FAIL: both publicHTTP clientspan checks and supplementary fixture
+correctly reject superseded offset37. FailedXML/logs/oldartifacts retained. Corrected
+location-fixed verifier and17linkedmatrix plus PR293CI watcher remain running;
+corrected fivefocusedCI batchesPASS. No overwritten reports or weakened token oracle.
+
+DraftPR293 d1e8cd511. Review caught synthetic diagnostic offset37instead of38;
+corrected fixture, publicHTTP independent exact token/span oracle and supplemental
+regression14controlsPASS. Initial source-validation-first artifacts/matrix marked
+SUPERSEDED; preserve failures/results, no final acceptance. New unique
+source-validation-location-fixed full verifier running. SDK/native DTO unchanged,
+no reused installed target or weakened source-position assertion.
+
+Validation source freeze; source-validation-first uniquely named full artifact
+verification and17linkedmatrix running. Installed focusedCI722/630/508/132/50
+controlsPASS, all unchanged newmodule/changedSDKgates;12supplementaryfixture100%.
+New validation PR not yet opened. Native diagnostics NOT_RUN; source-defined route
+and finite fixture success do not clear historical legacy worldview/native gates.
+
+PR292 verified MERGED63e4f33c817caa45a8fef3f898fe27913f79372b,
+2026-11-07T15:39:22Z/exact32852ca9cd6b0951b0c8a341758f2358bdf8efaf,
+all23reported finalheadchecksPASS. Child feat/python-revision-aware-validation
+integrated actualmerge and verified remote/local ancestry queuecheckpoint. Sharing
+receipt holds actualremote merge/checks;42rows preserved/36runnable/zero final
+dispositions. No prior verifier/matrix/CIwatcher remains running.
+
+Immediately implemented public SourceValidation/nativeAsyncSourceValidation on
+existing native POST/api/v1/validate/document, not another provisional endpoint.
+Namespace source/version/hash and Reasoner service/worldview/revision/session/content
+are pinned; endpoint/credential drift before sourcePOST refuses, stale responses
+discard without retry; explicit revalidation uses newly selected revision. Diagnostics
+retain errors/noncomplete status and confer no publication/executable/science authority.
+50SDKcontrols100%unexcluded,2publicHTTP and12supplementaryfixture100%PASS. Initial
+13testcoverage82.22% expanded with hostile/race controls, not exemptions; bodymypy
+PASS after async helper/source narrowing corrections. Native ontology validation can
+synchronize savedsource/loadknowledge, so API explicitly refuses it. Two literal
+namespace finite fixture is not a semantic compiler. Native namespace-only prepared
+testNOT_RUN; fullregression/governance/installed/ordinaryPR gates still pending.
+
 ## Sharing fresh installed checkpoint
 
 PR292 publisheda566359f2; final17linkedcasesPASS(644SDK/203simulator/57worker)

@@ -25,14 +25,17 @@ Historical original ODO expectation496bc663 differs from current5c020dac after a
 
 ## Independent simulator implementation and fixtures
 
-Finite SIM vocabulary and stale-worldview refusal, not migration or original semantic acceptance
+Finite SIM vocabulary and stale-worldview refusal, not migration or original semantic acceptance. Separate source-validation fixture admits two namespace literals over existing Java-shaped Reasoner validate/document DTOs, pins exact source/version/hash and knowledge service/worldview/revision/session/content, preserves Error diagnostics and explicit stale revalidation without publication/executable admission. Namespace-only SDK refuses native ontology synchronization paths; finite diagnostics are not an ontology/compiler, native knowledge repair or replacement legacy fixture.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-SEMANTICS-001
+Scenarios: SIM-SEMANTICS-001, SIM-SOURCE-VALIDATION-001
 
 Exact executable controls:
 
 - `developer-tools/klab-service-simulator/tests/test_semantics.py::test_changed_worldview_refuses_stored_candidate_and_requires_fresh_search`
+- `python-client/tests/unit/test_source_validation.py`
+- `developer-tools/klab-service-simulator/tests/test_source_validation.py`
+- `developer-tools/klab-service-simulator/tests/test_source_validation_fixture.py`
 
 ## Reproduction commands
 
@@ -55,7 +58,7 @@ It is an executable missing-adapter disposition, **not** an actual native test o
 5. Capture request/response/error, positive/negative authorization, independent scientific checks where relevant and owned cleanup; compare with the acceptance criteria above.
 6. If no reviewed adapter/build/permission exists, retain NOT_RUN. Do not invent native endpoints or turn simulator success into a Java fix.
 
-Existing native test references: none reviewed for this complete gap
+Existing native test references: python-client/tests/functional/test_source_validation.py
 
 ## Custody, related trackers and remaining questions
 

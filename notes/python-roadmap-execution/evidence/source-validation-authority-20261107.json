@@ -1,0 +1,20 @@
+{
+  "baseline_parent": "PR292 sharing, child branch feat/python-revision-aware-validation",
+  "evidence": "READ_ONLY_SOURCE_NOT_NATIVE_EXECUTION",
+  "source_raw_sha256": {
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/reasoner/objects/SemanticValidationRequest.java": "11634498561d68216c9a70946b713f0fd57a16f1feec330bc5210351ebe5d174",
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/reasoner/objects/SemanticValidationResponse.java": "0652eff8e2e8dd22df25daba77fbe5e69ca6cf79c8bc233f3b8be7b4e25f0393",
+    "klab.services.reasoner/src/main/java/org/integratedmodelling/klab/services/reasoner/ReasonerService.java": "a7f822418382d8ff8d30b21ba394e4fc1ba697ce0f096e615ce28257d616ca9f",
+    "klab.services.reasoner.server/src/main/java/org/integratedmodelling/klab/services/reasoner/controllers/ReasonerController.java": "1802ead798c4f5478a780f39ccba9f2c51f83c9ad510e205cb7f0bd8fca85593"
+  },
+  "observations": [
+    "Existing ServicesAPI.REASONER.VALIDATE_DOCUMENT and authenticated ReasonerController map POST /api/v1/validate/document; not a proposed experimental route.",
+    "SemanticValidationRequest carries one parsed namespace or ontology, documentVersion and optional expected knowledgeRevision; sourceHash hashes exact UTF-8 source including whitespace.",
+    "Response.matches pins document URN/version/source hash, knowledge revision and executable/classifier/context options. COMPLETE is not necessarily valid: native valid() also checks Error diagnostics.",
+    "Response semanticSessionId and semanticContentFingerprint, together with Reasoner capability worldview/service/revision, distinguish source diagnostics across knowledge snapshots; no executable completeness is inferred from sourceSemanticsComplete.",
+    "ReasonerService ontology paths can synchronize saved source and loadKnowledge/repair candidate worldview. Python facade therefore refuses ontology validation before network and never sends executableModel, executionContext or pending-classifier proof claims.",
+    "Namespace source diagnostics remain server-reported. Finite simulator admits exactly two namespace literals and a declared error, not a parser/compiler/ontology implementation."
+  ],
+  "native_result": "NOT_RUN",
+  "authorization_boundary": "No live native validation or worldview/IDE repair authorized or performed; future native test must be approved namespace-only source diagnostics on prepared services"
+}

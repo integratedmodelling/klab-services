@@ -33,13 +33,16 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent verified checkpoint: PR291 merge `ceeaf623a`, exact `df2e1f102`,
-all37reported final-head checks PASS. PR290 selection merge `6307e93f4` also verified.
-Active child `feat/python-explicit-collaborator-rights`, direct requirement RC-P1.3;
-new advertised opt-in shared-read SDK/simulator source is implemented with82SDK/
-6publicHTTP/10fixture controls passing. Fresh installed verification and ordinary
-sharing PR delivery remain pending; source freeze is recorded in both ledgers.
+Most recent verified checkpoint: PR292 merge `63e4f33c8`, exact `32852ca9c`,
+all23reported final-head checks PASS. PR291 material/PR290 selections also verified.
+Active child `feat/python-revision-aware-validation`, RC-P4.2/CAP-05; existing
+native-shaped namespace diagnostics API/sourcefreeze50SDK100%/2publicHTTP/
+12fixture100% controlsPASS. Fresh unique source-validation-first full verifier and
+17linkedmatrix running; all five installed focusedCI batchesPASS. No validation PR
+yet; ledger and actual running jobs/receipts are authoritative, not this saved text.
 CAP-01 remains the existing certificate/token/profile seam, not shared-grant code.
 Inspect actual queue and running jobs rather than assuming this checkpoint stays
-current. After this delivery, immediately begin revision-aware validation and the
-remaining independently runnable work; never stop at the next merge.
+current. After this delivery, immediately begin conditional authoring and remaining
+independently runnable work; never stop at the next merge. Ontology validation is
+explicitly unsupported because native code can synchronize/load worldview knowledge;
+namespace-only work must not authorize repair or native scientific acceptance.

@@ -27,6 +27,7 @@ SCENARIOS += ("copied-composition",)
 SCENARIOS += ("observation-selections",)
 SCENARIOS += ("material-selections",)
 SCENARIOS += ("shared-read",)
+SCENARIOS += ("source-validation",)
 
 
 class ContractError(Exception):
@@ -82,6 +83,7 @@ class State:
         self.managed_agents = ManagedAgents(self)
         from .shared_access import SharedReads
         self.shared_reads = SharedReads(self) if scenario == "shared-read" else None
+        self.validation_revision = 1
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -288,6 +290,9 @@ class State:
                 if row is None: raise ContractError(404, "Unknown test grant")
                 row["expiresAt"] = 1
                 return True, "application/json"
+            if method == "POST" and path == "/__sim__/advanceValidation" and self.scenario == "source-validation":
+                self.validation_revision += 1
+                return True, "application/json"
             raise ContractError(404, "Unknown test control")
         pieces = path.strip("/").split("/", 1)
         if len(pieces) != 2 or pieces[0] not in SERVICES:
@@ -301,8 +306,10 @@ class State:
                         "available": True, "operational": True, "connected": True}, "application/json"
             from .resource_imports import schemas
             from .exports import export_schemas
+            from .source_validation import capabilities as validation_capabilities
             return {"serviceId": self.service_ids[service], "type": service.upper(), "version": "simulator-0.1.0",
                     **({"sharedAccessProtocol": "klab.experimental.shared-access/1"} if self.shared_reads is not None and service == "runtime" else {}),
+                    **(validation_capabilities(self) if self.scenario == "source-validation" and service == "reasoner" else {}),
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                      "importSchemata": schemas() if service == "resources" else {},
                      **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
@@ -396,6 +403,10 @@ class State:
             if selected is not None: return selected
         if self.shared_reads is not None:
             selected = self.shared_reads.respond(service, method, route, principal, scope, headers, data, original_path)
+            if selected is not None: return selected
+        if self.scenario == "source-validation":
+            from .source_validation import respond
+            selected = respond(self, service, method, route, principal, data, body)
             if selected is not None: return selected
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):

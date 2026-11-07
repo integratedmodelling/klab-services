@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario source-validation` independently serves two literal namespace parser
+snapshots and existing Java-shaped Reasoner source diagnostics with source/version/
+revision identity checks. Test-only knowledge advance verifies stale refusal and
+explicit revalidation; no source persistence, publication or observations are
+created. It is not a semantic compiler or worldview repair. See
+[namespace diagnostics](../../python-client/docs/source-validation.md).
+
 `--scenario shared-read` advertises an explicitly proposed capability-gated
 ephemeral Runtime READ-grant protocol. Owner-created grants permit current-principal
 point/Observation/Job reads, never collaborator submission/cancel/disposal/re-sharing.
