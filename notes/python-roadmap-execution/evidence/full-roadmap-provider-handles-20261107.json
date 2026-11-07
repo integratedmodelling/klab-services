@@ -18,5 +18,6 @@
   "contract_matrix": {"simulated_pass": 17, "SDK_tests": 485, "simulator_tests": 170, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
   "dependency_custody": "Fresh wheels/sdists/separate pip-targets borrow prior test dependencies; no fresh dependency-isolation certification",
   "native_java": "REAL_NOT_RUN; retained Job/incarnation, supplier authorization, native graph cleanup/scanner and scientific acceptance unchanged",
-  "remaining": "Ordinary PR/final-head CI/permitted merge; continue remaining42row revision/federation/workflow obligations. FullABC/sleep pending."
+  "delivery": {"pr": 285, "head": "1b65f37213cea75162abd2a141233b9025914a0a", "merge": "00eba666fd1b4a17da643e6e83c033912ec0b1bb", "merged_utc": "2026-11-07T05:07:03Z", "applicable_checks": "34PASS; no failed-check rerun", "independent_maintainer_review": false},
+  "remaining": "Continue remaining42row revision/federation/workflow obligations. FullABC/sleep pending."
 }

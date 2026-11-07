@@ -1,6 +1,55 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Active reference revision convergence slice
+
+Final revision17linkedcasesPASS using485SDK/174simulator/57worker, zero skips/
+errors/failures versus17realNOT_RUN/exit3. Publish ordinaryPR now; finalheadCI/
+permittedmerge remains required. Native/fullABC statuses unchanged.
+
+Latest read-only issue review2026-11-07T05:20:04.517173+00:00 retrieved all11open
+bodies/35comments; original body/comment hashes unchanged,12campaign comments
+reinspected/match prior pinned provider receipt. No unclassifiedURL, safeclosure
+candidate or mutation;8Java/3other remainopen. Reference snapshots do not satisfy
+native currentness/ceased/transaction or cursor/incarnation obligations in tickets.
+
+Fresh verifier completed05:18:56UTC:4384SDK/245simulator/4revision/18provider/
+18provenance/11inventory/98reference/57worker/21HTTP/37governancePASS, zero skips/
+errors/failures.57SDK+22simulator+5worker rawsource/wheel/sdist/installed parity.
+Installed simulator-only47lines24branches100%unexcluded, not SDKcoverage; SDK
+unchanged/newmodulegateN/A.17linkedmatrix running sh_1b47236b90018qR1gWxzQaPRIr
+vs17realNOT_RUN/exit3. Receipt evidence/full-roadmap-revision-convergence-20261107.json.
+NormalPR/finalCI/permittedmerge next; RC-P3.1/CAP-10/native/fullABC not promoted.
+
+Current test/python-revision-convergence-workflow parent00eba666f. Simulator-only
+explicit klab.experimental.revision-snapshots/1 checkpoint endpoint captures sorted
+completed synthetic observation IDs under State-lock expected-head CAS. No values/
+graph/durable history/nativecommit/full-lineage/notification convergence claim.
+Two independent clients test retained local evidence, exact history, explicit fresh
+head and owned cleanup; concurrent independent writers one winner/one409, nativeasync
+reader confirms winning snapshot. Eight retained checkpoints/root,256IDs/checkpoint,
+4096byteintake, duplicate keys refused; exact ownedroot/Runtime required, foreign/
+focused denied. Durable-storage mode explicitly refuses rather than claiming restart
+retention. Contextrelease/testreset discard reference state. No productionSDK/worker
+code changes or simulation dependency.4focusedtestsPASS; fixture47lines24branches
+100%unexcluded/bodymypyPASS. Initial focusedcoverage90%, then97%, added direct
+executable guards/history/conflict controls to100% without exclusions/assertion
+relaxation. Same0016/0013registry/handoff/scenario/docs/CI aligned. Fresh unique
+revision-convergence-first wheel/sdist/installed verification next; ordinary delivery
+pending. RC-P3.1/CAP-10/fullABC remain PARTIAL; native statuses unchanged.
+
+PR285 verified MERGED00eba666fd1b4a17da643e6e83c033912ec0b1bb at2026-11-07T05:07:03Z,
+exact1b65f37213cea75162abd2a141233b9025914a0a/all34checksPASS/no failedrerun.
+Revision branch fast-forwarded integration merge preserving uncommitted ledgers.
+No watcher remains; native retained Jobs/scanner/science/fullABC unchanged.
+
 ## Provider Job restoration development pass
+
+Restoration published PR285 head1b65f3721; final-head CI watcher
+sh_1b45ffaf600137iNC1BH7MLArM running. No merge claimed. Full installed and17linked
+gates PASS. Next independent RC-P3.1/CAP-10 revision/convergence work must use an
+explicit provisional protocol seam, not relabel existing draftCAS, graph fixture
+ordering or read-plan content hashes as native committed scientific revisions.
+Native historical lineage and fullABC acceptance remain open; no sleep action.
 
 Final restoration installed changed-code gate and17linkedcasesPASS using485SDK/
 170simulator/57worker, zero skips/errors/failures versus17realNOT_RUN/exit3.
@@ -1044,7 +1093,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P3.1|PARTIAL; SIM-REFRESH-001|Explicit provisional committed-revision two-client simulator contract/races, native semantics remain unknown.|
 |RC-P3.2|COMPLETE bounded refresh; SIM-REFRESH-001|Retain stale/partial/outage controls while broadening linked protocols.|
 |RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001 plus delivered269 durable restart/no-replay controls|Preserve expiry/cancel/no-replay and scoped results; native durable history/incarnation acceptance separate.|
-|RC-P3.4|PARTIAL; existing provenance plus active declared-dependency workflow|Installed18focused/223simulator testsPASS; finite same-root dependencies and planned resolution remain partial, not authoritative Java lineage. Normal feature delivery pending; native committed history separate.|
+|RC-P3.4|PARTIAL; declared-dependency workflow delivered282/be3ccf991|Installed18focused controls and hosted checksPASS; finite same-root dependencies/planned resolution remain partial, not authoritative Java lineage. Native committed history/convergence remain unverified.|
 |RC-P3.5|PARTIAL; notebook race delivered280/87178be30|Exact installed asyncSDK kernel/two-client CAS/foreign denial/cleanup and full package/hosted checksPASS; native sharing/currentness semantics separate.|
 |RC-P4.1|PARTIAL; source-defined candidate protocol1 delivered281/4806cbc69|Installed4263SDK/211simulator tests and final hostedchecksPASS; sourcehash/identity/advertisement/visibility controls verified. Native applicability/admission/deployed compatibility remain external.|
 |RC-P4.2|PARTIAL; source previews|Revision-aware validation scenario, parser and semantic admission kept distinct.|

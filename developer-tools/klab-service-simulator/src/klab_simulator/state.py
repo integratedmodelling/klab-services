@@ -22,6 +22,7 @@ SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
 SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export", "candidate-sources", "provenance-dependencies", "provider-avro")
+SCENARIOS += ("revision-convergence",)
 
 
 class ContractError(Exception):
@@ -67,6 +68,8 @@ class State:
         self.notifications = Notifications(self)
         from .drafts import Drafts
         self.drafts = Drafts(self)
+        from .revision_snapshots import RevisionSnapshots
+        self.revision_snapshots = RevisionSnapshots(self)
         from .read_plans import ReadPlans
         self.read_plans = ReadPlans(self)
         from .managed_agents import ManagedAgents
@@ -180,6 +183,7 @@ class State:
             if status == 200:
                 self.notifications.changed_jobs(before_jobs)
                 self.drafts.rows = {root: rows for root, rows in self.drafts.rows.items() if root in self.contexts}
+                self.revision_snapshots.rows = {root: rows for root, rows in self.revision_snapshots.rows.items() if root in self.contexts}
                 self.read_plans.cleanup()
                 self.managed_agents.cleanup()
             if self.store is not None:
@@ -214,6 +218,7 @@ class State:
                         "workers": len(self.workers.workers), "worker_tasks": len(self.workers.tasks),
                         "notification_streams": len(self.notifications.logs),
                         "draft_contexts": len(self.drafts.rows),
+                        "revision_contexts": len(self.revision_snapshots.rows),
                         "read_plans": len(self.read_plans.rows),
                         "managed_agents": len(self.managed_agents.rows),
                         "authoring_assets": len(self.authoring.assets),
@@ -256,6 +261,7 @@ class State:
                 self.notifications = Notifications(self)
                 from .drafts import Drafts
                 self.drafts = Drafts(self)
+                self.revision_snapshots.rows.clear()
                 from .read_plans import ReadPlans
                 self.read_plans = ReadPlans(self)
                 from .managed_agents import ManagedAgents
@@ -289,6 +295,22 @@ class State:
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
         scope = headers.get("klab-scope", "")
+        if service == "runtime" and route.startswith("/experimental/revision-snapshots/v1/"):
+            if len(body) > 4096:
+                raise ContractError(413, "Reference checkpoint request budget exceeded")
+            try:
+                def checkpoint_fields(items):
+                    result = {}
+                    for key, value in items:
+                        if key in result:
+                            raise ValueError("Duplicate checkpoint field")
+                        result[key] = value
+                    return result
+                data = json.loads(body, object_pairs_hook=checkpoint_fields) if body and headers.get("Content-Type", "").startswith("application/json") else None
+            except (ValueError, UnicodeError):
+                raise ContractError(422, "Invalid reference checkpoint JSON") from None
+            return self.revision_snapshots.request(method, route + ("?" + urlsplit(original_path).query if urlsplit(original_path).query else ""),
+                scope, principal, headers, data)
         if service == "resources" and route == "/contextualize" and method == "POST":
             from .provider_avro import submit
             return submit(self, principal, scope, headers, body)

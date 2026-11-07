@@ -8,6 +8,11 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario revision-convergence` provides explicit experimental checkpoint CAS/
+history over completed synthetic observation IDs. Ephemeral only, durable-storage
+mode refuses; not native scientific commits or full lineage/notification convergence.
+See [reference boundaries](../../python-client/docs/reference-revision-convergence.md).
+
 `--scenario provider-avro` serves independently generated finite raw Avro request/
 Data Job fixtures, not a codec imported from the SDK. Unknown valid requests refuse
 as outside this fixture. No runtime fastavro dependency, worker ABI or scientific

@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-REVISION-CONVERGENCE-001",
+      "rows": ["RC-P3.1", "CAP-10"],
+      "routes": ["/runtime/experimental/revision-snapshots/v1/checkpoint"],
+      "source": "SIMULATED_PROVISIONAL explicit reference checkpoint CAS of completed synthetic observation IDs only. Two independent readers/writers, conflict, exact retained history and explicit refresh. Not Java commits, scientific snapshots, full lineage, notification convergence or durable restart history.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native revision/lineage contract remains unestablished",
+      "simulator_test": "test_revision_convergence.py::test_two_clients_checkpoint_cas_conflict_history_refresh_and_owner_cleanup",
+      "java_gap_ids": ["JAVA-GAP-0016", "JAVA-GAP-0013"]
+    },
+    {
       "id": "SIM-PROVIDER-AVRO-001",
       "rows": ["RC-P0", "RC-P4.3", "CAP-13"],
       "routes": ["/resources/contextualize", "/resources/jobs/retrieveData/{id}", "/resources/jobs/status/{id}", "/resources/jobs/cancel/{id}"],
