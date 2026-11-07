@@ -76,6 +76,57 @@ class Wire:
         return httpx.Response(self.submit_code, text="session1" if self.submit_code == 200 else TOKEN)
 
 
+@pytest.mark.parametrize("failed_route", ["/public/capabilities", "/public/status"])
+@pytest.mark.parametrize("failure", ["transport", "http503"])
+def test_completed_failed_probe_preserves_identity_pin_without_readiness_or_failover(failed_route, failure):
+    wire = Wire()
+    failing = [False]
+    def handler(request):
+        if failing[0] and request.url.path.endswith(failed_route):
+            if failure == "transport": raise httpx.ConnectError("Synthetic owned outage", request=request)
+            return httpx.Response(503, text="Synthetic unavailable")
+        return wire(request)
+    with connect(profile(), credentials=IssuedTokenProvider(ConnectionIdentity("scientist"), {URL: TOKEN}),
+            http_transport=httpx.MockTransport(handler)) as connection:
+        original = connection.selected["runtime"]
+        failing[0] = True
+        connection.refresh()  # Fast refusal completes before the global deadline.
+        unavailable = connection.selected["runtime"]
+        assert unavailable.service_id == original.service_id
+        assert unavailable.reference.url == original.reference.url and not unavailable.ready
+        assert unavailable.supported is False and unavailable.reachable is (failure == "http503")
+        calls = len(wire.calls)
+        with pytest.raises(ReadinessError): connection.client.create_session()
+        assert len(wire.calls) == calls  # No mutation/replay while unavailable.
+        failing[0] = False
+        connection.refresh()
+        assert connection.selected["runtime"].service_id == original.service_id and connection.selected["runtime"].ready
+        wire.service_id = "runtime-uuid-replaced"
+        with pytest.raises(ConnectionIdentityError): connection.refresh()
+        with pytest.raises(ConnectionIdentityError): connection.client.create_session()
+
+
+def test_failed_unselected_runtime_never_inherits_selected_runtime_identity():
+    other = "https://second.example/runtime"
+    deployment = replace(profile(), services=(ServiceReference("runtime", URL), ServiceReference("runtime", other)),
+        trusted_urls=(URL, other), choices={"runtime": URL})
+    wire = Wire(); failed = [False]
+    def handler(request):
+        if request.url.host == "second.example":
+            if failed[0]: return httpx.Response(503, text="Synthetic standby outage")
+            if request.url.path.endswith("/public/capabilities"):
+                return httpx.Response(200, json={"serviceId": "standby-uuid", "type": "RUNTIME"})
+            return httpx.Response(200, json={"serviceId": "standby-uuid", "serviceType": "RUNTIME", "available": True, "operational": True})
+        return wire(request)
+    with connect(deployment, credentials=IssuedTokenProvider(ConnectionIdentity("scientist"), {URL: TOKEN, other: TOKEN}),
+            http_transport=httpx.MockTransport(handler)) as connection:
+        failed[0] = True
+        connection.refresh()
+        standby = next(row for row in connection.catalog.entries if row.reference.url == other)
+        assert standby.service_id is None and not standby.ready
+        assert connection.selected["runtime"].service_id == "runtime-uuid-1" and connection.selected["runtime"].ready
+
+
 @pytest.mark.parametrize("provider_kind", ["token", "certificate"])
 def test_provider_substitution_uses_same_client_and_origin_headers(tmp_path, provider_kind):
     wire = Wire()

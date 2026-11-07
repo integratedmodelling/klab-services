@@ -48,7 +48,7 @@ class _TransportPolicy:
         self.timeout = timeout
         self.poll_interval = poll_interval
         self.credential_resolver = None
-        self.sensitive_values = ()
+        self.sensitive_values: tuple[str, ...] = ()
 
     def redact(self, text: str) -> str:
         for value in self.sensitive_values:

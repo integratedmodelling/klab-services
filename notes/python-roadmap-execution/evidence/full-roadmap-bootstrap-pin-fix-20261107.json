@@ -1,0 +1,22 @@
+{
+  "verified_utc": "2026-11-07T02:56:14.755390+00:00",
+  "receipt_head": "851b5d056ee61231cee4229d82a036ba6aedabf0",
+  "baseline_before_correction": "9ea9d7dcbd9a5d272ac039190d281f8bca31428d",
+  "attribution": "Correction uncommitted during build; artifact hashes and raw source/wheel/sdist/installed parity identify code, not receipt HEAD alone. Prior bootstrap-recovery-first artifacts remain PRE-FIX only.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "804929202cc4dc6b7853aae09b9e3ce170a8bf015d44f120269d03f10a03b1ed", "sdist_sha256": "44942a65556485f14755c508ebe3d0033aa285c28825f61dd900af4c47235ef9", "parity_modules": 54},
+    "simulator": {"wheel_sha256": "354667d3dfac9447da85482cbf1b08a3148b4a28620fd0c93bce6bd9f944ae36", "sdist_sha256": "7d5fc80851c75aea24793f2d3782143956d40f5c8d24b687655a77636ff70c99", "parity_modules": 18},
+    "worker": {"wheel_sha256": "1b75fc51d3709d9766397ab0570c16a2ed2df9718da358c6aec4b71d1394418e", "sdist_sha256": "0c640d5737d1740398e83ec45220d6ee3177bd981cc719683574eb7021def6d3", "parity_modules": 5}
+  },
+  "installed_tests": {"SDK_unit_integration": 4210, "reference_HTTP_storage_recovery": 84, "simulator": 198, "worker": 57, "worker_HTTP": 21, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "SDK_only_existing_connection_module": {"covered_lines": 277, "statements": 277, "covered_branches": 112, "branches": 112, "excluded_lines": 0, "not_a_new_module": true, "gate": "PASS whole existing module100percent plus changed SDK decisions against9ea9d7dcb; --new-module is tool selector, not new-file assertion"},
+  "SDK_only_aggregate": {"covered_lines": 7591, "statements": 7690, "covered_branches": 2372, "branches": 2426, "historical_excluded_lines": 165, "separate_report_paths_and_current_raw_source_parity": true},
+  "retained_failure": "Initial279head9ea9d7dcb hosted Ubuntu bootstrap42330659337/job128276182622 and simulator3.13 42330659347/job128276183029 found selectedUUID lost after completed failed probe. Windows deadline-interrupted refresh masked it. Four deterministic regressions failed before fix; all five new regressions now pass.",
+  "correction": "Retain last verified identity only for same selected URL after failed probe; readiness remains failed/unknown; unselected endpoints never inherit selected UUID; actual identity drift requires reconnect. Type-only annotations permit body typechecking without suppression. No timeout/retry/trust policy relaxation.",
+  "focused_controls": "32SDK connection tests and10owned HTTP controls PASS; body mypy and fatal lint PASS",
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 322, "simulator_tests": 127, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "issue_review": "2026-11-07T02:54:38.268878+00:00 all11open bodies/comments retrieved; body hashes unchanged, no new unclassified comment URLs, no safe closure candidate",
+  "native_status": "All17 REAL_NOT_RUN;0015NOT_TESTED/0007MISSING_API unchanged. No Java/service repair/staging execution or scientific acceptance.",
+  "dependency_custody": "Fresh wheels/sdists/separate pip-targets borrow prior test dependencies; no newly isolated dependency certification",
+  "remaining": "Publish corrected279head, await Windows+Ubuntu and other checks, permitted merge then continue original42rows. Entire-roadmap sleep pending."
+}

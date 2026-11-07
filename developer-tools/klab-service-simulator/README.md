@@ -14,6 +14,10 @@ Runtime outage/recovery/service-IDdrift. No automatic standby work or native iss
 composition claim. The launcher supports explicit bounded identityseeds; default7
 and no-visible-console ownership/cleanup unchanged. See
 [acceptance scope](../../python-client/docs/bootstrap-recovery-acceptance.md).
+Fast-refusal hosted controls exposed an SDK bug losing the selected UUID after a
+completed failed probe; the correction retains the last verified same-URL identity
+without retaining old readiness or accepting actual changed identities. This is a
+Python recovery correction, not a native issuer/federation fix.
 
 SIM-READ-PLAN-ANALYSIS-001/JAVA-GAP-0006/0014 materializes complete reference
 snapshots offline after grant/context/service release, preserving numerical masks,

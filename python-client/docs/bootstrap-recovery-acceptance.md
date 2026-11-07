@@ -5,6 +5,17 @@ These tests exercise the **existing** production `connect`, `Connection`,
 APIs over separate owned simulator HTTP processes. No new production SDK protocol,
 credential issuer, native endpoint, fallback or automatic federation API is added.
 
+Hosted fast-refusal controls found and now regress an SDK identity-pin defect:
+a completed failed capabilities/status probe discarded the selected service UUID,
+so same-identity recovery was falsely rejected as drift. Failed probes now retain
+only the last verified UUID for the **same selected URL**; health/readiness remains
+failed/unknown. A failed unselected endpoint never inherits the selected UUID.
+Actual changed service identities still make the connection stale and require
+explicit reconnect. This is a Python recovery fix, not a native Java auth/federation
+fix or a readiness/timeout/retry-policy relaxation. Deterministic SDK-only controls
+cover transport and503failures on both discovery routes, same-ID recovery, genuine
+drift refusal and foreign/unselected identity noninheritance.
+
 The positive path selects explicit approved endpoints, creates one owned Job and
 reads all400synthetic cells in two bounded256/144cell calls. An injected SDK clock
 expires the first grant after submission; same-principal provider reacquisition

@@ -1,5 +1,16 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Latest correction checkpoint — 7 November 2026
+
+PR279 remains OPEN after hosted Ubuntu exposed loss of the selected Runtime UUID
+on completed failed probes. Correction retains only the same-URL verified identity,
+not healthy readiness; real drift and foreign/unselected identity inheritance still
+refuse. Fresh installed4210SDK/198simulator/84reference/57worker/21workerHTTP/
+33governancePASS, zero skips/errors/failures. SDK-only existingConnection277lines/
+112branches100%unexcluded; linked gates and corrected-head CI/delivery pending.
+Earlier test-only/emptyproductiondiff claims describe the initial pre-fix pass only.
+Original42row criteria and native Java/scientific acceptance remain distinct.
+
 ## Active full-roadmap campaign — user directive 6 November 2026
 
 The new A+B+C directive supersedes prior prospective C exclusions and audit-stop

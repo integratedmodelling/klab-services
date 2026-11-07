@@ -14,6 +14,23 @@ acceptance inferred from documentation. No liveIDEgate needed; retain recorded
 2026-11-06T14:20:57Z. Next verify corrected installed artifacts/SDKcoverage/17cases,
 push279correction/finalCI, then continue remaining independently executable rows.
 
+Verifier completed automatically02:56:14UTC:4210SDK/198simulator/84reference/
+57worker/21workerHTTP/33governancePASS, zero skips/errors/failures. Current54SDK+
+18simulator+5worker rawmodule bytes match installed; originalwheel/sdist parity
+retained. SDK-only existingConnection277lines112branches100%unexcluded. Gate uses
+--new-module selector for WHOLE EXISTING module, not a new-file claim; changedSDK
+decisions and17linked matrix running,17realNOT_RUN/exit3verified. Fresh receipt:
+`evidence/full-roadmap-bootstrap-pin-fix-20261107.json`. Pre-fix artifacts untouched.
+Independent temporary notebook prototype is NOT part of279: exact installedSDK
+kernel, separate same-owner clients race private-draftCAS, foreign principal denied,
+owner observation/history survives readerclose. First prototype omitted explicit
+Reasoner endpoint; second executed but sanitizer correctly rejected synthetic
+credentials in cellsource. Runtime-only configuration correction awaits rerun;
+no productioncode/policy weakening, no native collaboration/accepted-source claim.
+Corrected SDK-only wholeexistingConnection/changeddecision gatesPASS;17linkedcases
+PASS using322SDK/127simulator/57worker tests, zero skips/errors/failures.17realNOT_RUN/
+exit3unchanged. Correctionready for279commit/push/updatedPRbody and freshfinalCI.
+
 ## Current authority, scope and recovery
 
 Active directive: user's self-contained **Single OpenCode directive: complete Python
