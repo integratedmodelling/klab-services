@@ -69,8 +69,18 @@ cancellation guarantee or a total HTTP response deadline. `run_once` acknowledge
 publishing child errors/partial data. Remote cancellation fences publication even
 if a local script finishes after cancellation. It does not replay ambiguous writes.
 
+Optional `Limits(memory_bytes=96 * 1024**2)` selects an operator-supplied kernel
+budget (64MiB..16GiB), not a server hint. Windows uses the Job's aggregate committed
+memory limit before admitting operator code. POSIX sets inherited `RLIMIT_AS` in
+the trusted bootstrap before runpy: a **per-process virtual-address-space limit**,
+not aggregate resident memory across all descendants. Over-allocation fails the
+computation, acknowledges FAILED and cannot publish partial scientific output.
+Default `None` claims no hard memory budget; unsupported setup does not silently
+fall back to an unbounded run. These platform semantics are intentionally distinct.
+
 **Limits:** trusted scripts only. This is process isolation and owned descendant
-cleanup, not a hostile-code OS sandbox or hard resident-memory/disk quota. A POSIX
+cleanup, not a hostile-code OS sandbox, uniform aggregate-RSS guarantee or total
+disk quota. A POSIX
 script must not deliberately escape its process group with setsid; Windows Job
 membership is kernel-enforced and no breakaway is enabled. Operators
 must supply a reviewed container/job boundary for untrusted code. Default simulator
