@@ -21,7 +21,7 @@ MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
-SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export", "candidate-sources")
+SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export", "candidate-sources", "provenance-dependencies")
 
 
 class ContractError(Exception):
@@ -565,23 +565,13 @@ class State:
                 row = self.observations.get((root, data.get("id")))
                 return [row] if row else [], "application/json"
             if data.get("resultType") == "LINK":
-                rows = [{"@CLASS": "org.integratedmodelling.klab.api.data.impl.LinkImpl", "relationship": "MEASURED",
-                    "source": {"@CLASS": ACT, "id": identity + 1000, "urn": f"{root}.activity.{identity + 1000}",
-                               "type": "MEASURE", "outcome": "SUCCESS"},
-                    "target": {"@CLASS": OBS, "id": identity, "urn": row["urn"]},
-                    "sequence": 0, "properties": {"sequence": 0}}
-                    for (context, identity), row in self.observations.items() if context == root]
+                from .provenance_fixture import rows as provenance_rows, matches, validate_children
+                rows = provenance_rows(self, root)
                 offset, limit = data.get("offset", 0), data.get("limit", 64)
                 if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 129:
                     raise ContractError(422, "Graph page exceeds the bounded scenario contract")
                 children = data.get("children", [data])
-                def matches(row, child):
-                    if child.get("relationship") not in (None, row["relationship"]):
-                        return False
-                    return all(side not in child or (
-                        child[side].get("id") == row[side]["id"]
-                        and child[side].get("type") == ("ACTIVITY" if side == "source" else "OBSERVATION"))
-                        for side in ("source", "target"))
+                validate_children(children)
                 rows = [row for row in rows if any(matches(row, child) for child in children)]
                 return rows[offset:offset + limit], "application/json"
         raise ContractError(501, "Route/method not implemented by this finite simulator contract")

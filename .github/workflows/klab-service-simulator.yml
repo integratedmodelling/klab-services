@@ -11,6 +11,18 @@ permissions:
   contents: read
 
 jobs:
+  provenance-dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install ordinary SDK and separate simulator
+        run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]'
+      - name: Declared dependency workflow and refresh failures (native NOT_RUN)
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_provenance_dependencies.py developer-tools/klab-service-simulator/tests/test_partial_refresh.py --cov=klab_simulator.provenance_fixture --cov-branch --cov-fail-under=100 --cov-report=term-missing
   notebook-client:
     runs-on: ubuntu-latest
     timeout-minutes: 10

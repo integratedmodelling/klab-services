@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-PROVENANCE-DEPENDENCIES-001",
+      "rows": ["CAP-14", "RC-P4.4"],
+      "routes": ["/runtime/api/v1/query"],
+      "source": "SIMULATED_PROVISIONAL finite declared MEASURED/CONTRIBUTED_TO/RESOLVED edges between completed observations in one owner root. Native-shaped graph DTOs and existing SDK inspection only; planned resolution separate from recorded effects, no native committed revision or complete lineage guarantee.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; committed revision and native dependency/convergence semantics remain external",
+      "simulator_test": "test_provenance_dependencies.py::test_two_clients_observe_partial_dependency_and_plan_without_inventing_revision_or_replay",
+      "java_gap_ids": ["JAVA-GAP-0016", "JAVA-GAP-0013"]
+    },
+    {
       "id": "SIM-CANDIDATE-SOURCES-001",
       "rows": ["RC-P4.1", "CAP-05", "CAP-13"],
       "routes": ["/resources/public/capabilities", "/resources/api/v1/models/candidates"],

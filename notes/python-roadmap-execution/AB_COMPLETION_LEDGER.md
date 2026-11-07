@@ -1,5 +1,19 @@
 # A+B completion ledger — ongoing campaign
 
+Latest: PR281 verified merged4806cbc69 at03:38:29Z, exact370c42744/allchecksPASS.
+Provenance fixture18focused testsPASS, simulator-only30lines20branches100%unexcluded.
+Retain initial9FAIL/8PASS/no-data run: direct requests lacked JSON Content-Type;
+corrected setup preserves422/200 checks. Same0016handoff/scenario/docs updated;
+fresh installed acceptance and ordinary feature delivery pending. Native committed
+revision/full lineage and fullABC acceptance not established.
+Fresh provenance4263SDK/223simulator/18provenance-refresh/98otherreference/57worker/
+21HTTP/37governancePASS, zero skips/errors/failures.55SDK+20simulator+5worker parity;
+installed simulatorfixture30lines20branches100%unexcluded, not SDK coverage.17linked
+matrixrunning/17realNOT_RUN exit3; PR/finalCI pending. Latest11issues/comments
+03:41:40UTC unchanged/no closurecandidate. Exact custody in provenance feature receipt.
+Finalprovenance17linkedcasesPASS(375SDK/152simulator/57worker) vs17realNOT_RUN/exit3;
+ordinary featurePR/finalCI next. No native revision/full lineage acceptance promoted.
+
 Renewed self-contained directive: seed reconciled and committed851b5d056, original
 16gap records preserved plus worker0017;33governancePASS. PR279 remainsopen pending
 corrected-head delivery. Fresh pinfix packages4210SDK/198simulator/84reference/

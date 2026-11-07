@@ -1,5 +1,16 @@
 # Python roadmap acceptance map — 3 November 2026
 
+Latest delivery: candidate-source PR281 verified merged4806cbc69, all applicable
+final-head checks PASS. Next provenance fixture18focused testsPASS, simulator-only
+30lines20branches100%unexcluded. Existing SDK graph APIs read finite declared
+dependencies/plan edges; no native committed revision, full lineage or notification
+convergence claim. Fresh installed verification/ordinary PR delivery pending.
+Fresh provenance packages4263SDK/223simulator/18focused/98otherreference/57worker/
+21HTTP/37governancePASS, zero skips; rawmoduleparity verified. Linkedmatrix/ordinary
+PR/CI pending; native committed revision/full lineage acceptance unchanged.
+Final17linkedcasesPASS(375SDK/152simulator/57worker) vs17realNOT_RUN/exit3;
+ordinary featurePR/finalCI next. No whole-row/native acceptance promotion.
+
 ## Latest correction checkpoint — 7 November 2026
 
 PR279 remains OPEN after hosted Ubuntu exposed loss of the selected Runtime UUID

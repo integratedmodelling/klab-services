@@ -1,0 +1,23 @@
+{
+  "verified_utc": "2026-11-07T03:46:44.441588+00:00",
+  "baseline_head": "4806cbc698b983d8aec751bdb7ee7f62044a05c3",
+  "scope": "Finite declared provenance fixture through existing SDK graph readers; no production SDK/worker or native Java implementation change",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "db8d288568b0ab7257aadbbf8a5c9d28d16a57bce246b0224f99d71ee679c013", "sdist_sha256": "c3d51782f1c0a5fb7415331daa2192da14668e91a4e6e719de8f6a67d9daf245", "parity_modules": 55},
+    "simulator": {"wheel_sha256": "d874f66f54073b5eee8ba30c6dfe5ce5904bbda2df52ab3d9ffd4d953b5cc6b2", "sdist_sha256": "0b6ec2c7ffc96a1cfc8d8eb5141623dcb113381395bbd970af52d6c1c9bc40c1", "parity_modules": 20},
+    "worker": {"wheel_sha256": "d45c6161e0803685511f140ad00bee0e8b4ad55a3a4a4ab975a3604b03164b99", "sdist_sha256": "82c824ffbb790b8a6cd4269690e39cda92f30d67e3cdeec5eb2385442a88a8ff", "parity_modules": 5}
+  },
+  "attribution": "Feature source uncommitted during build; exact raw source/wheel/sdist/installed module parity and artifact hashes identify tested bytes, not receipt baseline HEAD alone",
+  "installed_tests": {"SDK": 4263, "provenance_reference": 18, "other_HTTP_notebook_recovery_reference": 98, "simulator": 223, "worker": 57, "worker_HTTP": 21, "governance": 37, "skips": 0, "failures": 0, "errors": 0},
+  "simulator_only_fixture_coverage": {"covered_lines": 30, "statements": 30, "covered_branches": 20, "branches": 20, "excluded_lines": 0, "not_SDK_coverage": true, "in_process_controls_separate_from_child_HTTP_execution": true},
+  "production_SDK_new_module_gate": "NOT_APPLICABLE: production SDK unchanged",
+  "evidence_source": "SIMULATED_PROVISIONAL",
+  "gap_ids": ["JAVA-GAP-0016", "JAVA-GAP-0013"],
+  "assertions": ["Only completed same-root observations receive finite declared dependency/plan fixture edges", "Two independent same-owner clients inspect pagination and explicit refresh; old local evidence remains immutable/partial", "Planned RESOLVED distinct from recorded MEASURED/CONTRIBUTED_TO; native_revision null", "Foreign denial/root isolation/reader-close preservation/owned cleanup with no extra submission", "Other scenarios retain original insertion order and measurement-only behavior; malformed/unbounded/typed child selectors refuse422"],
+  "retained_failed_run": "9FAIL/8PASS and no coverage data: direct-state requests omitted Content-Type application/json, so400 parsing refusal occurred before fixture import. Corrected header setup preserves422/200 assertions; no parser/status/authorization weakening.",
+  "issue_review": "2026-11-07T03:41:40.729057+00:00 retrieved all11open bodies/comments; body hashes unchanged/no new unclassified comment URLs/no closure candidate or issue mutation",
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 375, "simulator_tests": 152, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "native_status": "REAL_NOT_RUN; native committed revision, computed dependencies, scientific provenance, full historical lineage and notification convergence remain unverified",
+  "dependency_custody": "Fresh wheels/sdists/separate pip-targets borrow prior dependencies; no newly isolated dependency certification",
+  "remaining": "Ordinary PR/final-head CI/permitted merge, then continue remaining42rows. FullABC and native acceptance incomplete; sleep pending."
+}
