@@ -1,0 +1,38 @@
+{
+  "origin": "SYNTHETIC_SIMULATOR",
+  "observable": "synthetic:CategoryCode",
+  "meaning": "Raw numerical codes; labels are caller declared, not embedded native category metadata or ontology inference",
+  "shape": [
+    2,
+    3
+  ],
+  "values": [
+    [
+      0,
+      -2,
+      -32768
+    ],
+    [
+      7,
+      0,
+      -2
+    ]
+  ],
+  "nodata": -32768,
+  "unit": null,
+  "entries": [
+    [
+      0,
+      "bare"
+    ],
+    [
+      -2,
+      "forest"
+    ],
+    [
+      7,
+      "water"
+    ]
+  ],
+  "sha256": "e025556feac60d80c68f3dcd7465948f7a071186a9ff5f377c99b28cbc6eaccb"
+}

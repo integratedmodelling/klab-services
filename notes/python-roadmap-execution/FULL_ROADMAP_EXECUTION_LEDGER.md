@@ -321,6 +321,73 @@ slice is verified; publish normal featurePR now and await final-head hosted chec
 Broader authoring validation/publication and full42criterion acceptance are NOT
 complete. Fresh01:13:01UTC issue inventory retains all11open obligations, no new
 closure candidate; no remote issue action. Entire-roadmap sleep remains pending.
+
+Draft slice committedc96b74c59 and published normalPR274 against integration;
+watcher found Windows3.13 recovery failure run42323183860/job128252296397 during
+WorkerClient's200msstatus poll, yielding the intentional fail-closed unknown
+transport error. This is distinct from273's ordinary2sJobwait. One unchanged
+diagnostic rerun requested; no production status timeout, assertion or gate change.
+PR274 staysOPEN until all applicable final-head checksPASS. The200msmonitoring
+policy can reject slow service responses; native/deployment latency acceptance
+is not inferred from a successful rerun. Prior failure evidence remains retained.
+
+### Active caller-declared categorical raster pass
+
+Current branch `feat/python-declared-raster-categories`, parentc96b74c59, preserves
+pending274 delivery. New `RasterCategories`/`categorize_raster` performs only local
+explicit code→label mapping over detached integer rasters; all raw codes/dtypes,
+mask/coordinates/units preserved. Unknown valid codes refuse, no zero/negative→
+nodata coercion or floating conversion; exact signed64/extremeunsigned controls
+included. Source20SDKunit tests and one SDK-owned export/classification/cleanup
+HTTP testPASS, newmodule51lines/20branches100%unexcluded; bodytypecheckPASS after
+using explicit dynamic optional-xarray dataset typing, not typeignore suppression.
+Synthetic rawcode observable `synthetic:CategoryCode` has no units; it is not a
+fake elevation or landcover model. Separate pinned2x3int16 TIFF e025556f… and
+UTF8LFmanifest8fa1375f… (-text custody) do not change authentic fixtures. Explicit
+caller dictionary/provenance is not embedded native category metadata/ontology
+inference/committed science. Same0014/handoff/scenario/docs/scientificCI updated;
+fresh installedSDK+simulator/changed-code+scientificsubset/governance still pending.
+Next: finish unchanged274checks/permittedmerge, fresh package categorical slice,
+verify fullSDK/newmodule100% and17cases, publish next normalPR; continue remaining
+multishard/managedagents/provenance/federation. Entire-roadmap sleep remains pending.
+PR274 subsequently verified remotely MERGED
+`88373f7683c8acd994f27031bbd1654fc5b2b62a`,2026-11-07T01:24:39Z, exact head
+c96b74c5946475ad5b16faeaf5f521ce07c82a74. All applicable final-head checksPASS;
+Windows3.13 recovery's unchanged single rerun passed128252893568. The original
+short-monitoring failure remains recorded, not declared fixed. Primary category
+branch fast-forwarded actual integration merge, preserving all uncommitted work.
+Categorical source scientificCI-equivalent73unit+9HTTP PASS with100%newmodule and
+all changed decisions covered. Fresh installed full verifier now running in
+`full-roadmap-20261106/raster-categories` against new package bytes, separate SDK-only
+coverage. No native/scientific result promoted; sleep remains pending.
+Final review tightened the numerical raster/mask contract: matching shape alone
+does not establish matching dimension identities. Added an explicit misdimensioned
+boolean-mask refusal and regression; source20tests/newmodule100%51lines20branches/
+bodytypecheck/lintPASS. Because this changed production code after the first build,
+fresh `raster-categories-final` package verification was started separately; earlier
+`raster-categories` artifacts are superseded for final-head SDK attribution. Keep
+both receipts distinct. The scientificCI-equivalent73unit/9HTTP result predates
+this guard and must be rerun against final installed bytes for final acceptance.
+Earlier categorical installed pass completed4093SDK/39referenceHTTP+storage+
+recovery/153simulator/57worker/21workerHTTP+recovery/33governancePASS, zero skips.
+Its SDKa93da2d8… wheel precedes the final mask-dimension guard and is NOT final-head
+acceptance. Preserve that receipt separately; final `raster-categories-final`
+verifier is still running. No background CI watcher remains after274merge.
+Final categorical rebuilt pass now4093SDK/39referenceHTTP+storage+recovery/
+153fullsimulator/57worker/21workerHTTP+recovery/33governancePASS, zero skips/failures/
+errors.51SDK+16simulator+5worker raw module source/wheel/sdist/installed parity.
+SDK-only newmodule51/51lines+20/20branches, zero exclusions; ALL changed SDK lines/
+arcs covered. FullSDK98.41% retains165historical exclusions, not an exclusion-free
+wholeSDK claim. Final installed scientificCI-equivalent73unit+9HTTP alsoPASS,
+including scientific changed-decision/newmodule100%gate. Exact hashes/initial-pass
+attribution in `evidence/full-roadmap-raster-categories-20261107.json`.
+Only final17linked simulated matrix is running; real17NOT_RUN/exit3 alreadyverified.
+Await automatic completion then publish normalPR with all code/fixtures/generated
+outputs/evidence. Do not sleep at this checkpoint or call fullABC complete.
+Linked categorical final matrix now17PASS(205SDK/82simulator-capture-reference/
+57worker tests), zero skips/failures/errors; real17NOT_RUN/exit3 unchanged. All
+bounded local verification complete; publish categorical normalPR and await
+applicable final-head checks, then continue independent roadmap implementation.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
@@ -360,7 +427,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P4.1|PARTIAL; SIM-SEMANTICS-001/SIM-INSPECTION-001|Capability-aware applicability/version/access and actual candidate source protocol adapter.|
 |RC-P4.2|PARTIAL; source previews|Revision-aware validation scenario, parser and semantic admission kept distinct.|
 |RC-P4.3|PARTIAL delivered imports; SIM-IMPORT-001/SIM-INPUT-BINDING-001|Broader annotation/compute input provenance with owned cleanup; native resource custody gate separate.|
-|RC-P4.4|PARTIAL ADD/locks; SIM-PROJECT-LOCK-001/SIM-BEHAVIOR-DRAFT-001|Explicit conditional revision/edit/history/publication protocol seam; no blind overwrite.|
+|RC-P4.4|PARTIAL ADD/locks plus delivered274 private draftCAS/history; native acceptance separate|Private CAS is not accepted-source editing/validation/publication; maintained native conditional authoring contract remains unestablished.|
 |RC-P4.5|PARTIAL native agent control/registration; protocol tests|Complete isolated managed-agent simulator lifecycle, terminal cleanup, reconnect and owner/denial.|
 |RC-P5|IN_SCOPE PARTIAL; worker268/30460119d, recovery269/8f9fe3805, containment270/a58281643, memory271/96f696218 merged|Declared trusted worker lifecycle implemented/tested across Windows+POSIX; total disk/hostile-code isolation and maintained native backend/ABI/deployment acceptance remain separate deficits/gates.|
 |RC-R1|PARTIAL layered CI/test tooling|Install/coverage/contract/handoff CI per feature; external scheduled worker adoption is not local test success.|

@@ -41,3 +41,14 @@ def declared_band_fixture():
             or hashlib.sha256(native).hexdigest() != "6a41239e3b662ff32d901b80fa41ff9202a03523c27c72aae2e25451349763f0"):
         raise ValueError("Declared synthetic band fixture drift; never regenerate expected values")
     return json.loads(manifest), native
+
+
+def category_code_fixture():
+    """Synthetic integer codes; labels/provenance remain caller declarations."""
+    root = files("klab_simulator").joinpath("fixtures")
+    manifest = root.joinpath("synthetic-category-codes.json").read_bytes()
+    native = root.joinpath("synthetic-category-codes.tif").read_bytes()
+    if (hashlib.sha256(manifest).hexdigest() != "8fa1375f77f9e7422a086a7f2004f9e66b09abcab154b7723cfed0e26a086db7"
+            or hashlib.sha256(native).hexdigest() != "e025556feac60d80c68f3dcd7465948f7a071186a9ff5f377c99b28cbc6eaccb"):
+        raise ValueError("Synthetic category fixture drift; never regenerate expected values")
+    return json.loads(manifest), native

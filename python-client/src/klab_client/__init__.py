@@ -46,6 +46,7 @@ from klab_client.durable_notifications import (NotificationCursor, NotificationB
     read_notifications, async_read_notifications)
 from klab_client.revision_drafts import (DraftRevision, DraftConflict, read_draft, write_draft,
     async_read_draft, async_write_draft)
+from klab_client.raster_categories import RasterCategories, CategoricalRasterAnalysis, categorize_raster
 from klab_client.provenance import ProvenanceNode, ProvenanceLink, ProvenanceView, fetch_provenance, async_fetch_provenance
 from klab_client.vector import VectorAnalysis, open_vector
 from klab_client.semantics import (SemanticExplorer, AsyncSemanticExplorer, SemanticResult, KnowledgeState,
@@ -98,6 +99,7 @@ __all__ = [
     "NotificationCursor", "NotificationBatch", "NotificationResyncRequired", "read_notifications", "async_read_notifications",
     "DraftRevision", "DraftConflict", "read_draft", "write_draft",
     "async_read_draft", "async_write_draft",
+    "RasterCategories", "CategoricalRasterAnalysis", "categorize_raster",
     "TracedAnalysis", "trace_analysis",
     "VectorAnalysis", "open_vector",
     "ProvenanceNode", "ProvenanceLink", "ProvenanceView", "fetch_provenance", "async_fetch_provenance",

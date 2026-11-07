@@ -8,6 +8,14 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-CATEGORY-CODES-001/JAVA-GAP-0014 exports a separately pinned2x3int16synthetic
+code TIFF (`category-code-export`, observable `synthetic:CategoryCode`, units absent).
+SDK caller-declared `RasterCategories` labels preserve all raw codes/masks, including
+zero/negative values, and reject unknown valid codes. No native categorical
+dictionary, ontology classifier or scientific measurement is inferred. Point reads
+refuse422because that mapping is unestablished; export/analysis remains explicit.
+See [categorical derivative contract](../../python-client/docs/raster-categories.md).
+
 SIM-REVISION-DRAFTS-001/JAVA-GAP-0009 adds explicit opt-in private draft CAS over
 proposed `klab.experimental.drafts/1`, not native Resources authoring/publication.
 Exact source SHA256 and expected revision prevent blind concurrent overwrite;

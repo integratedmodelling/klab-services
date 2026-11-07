@@ -87,6 +87,20 @@ Private-draft fresh installed result now4073SDK/38referenceHTTPstorage+recovery/
 Exact hashes/parity and scope limits:
 `evidence/full-roadmap-revision-drafts-20261107.json`. Normal delivery pending;
 private draft CAS is NOT native accepted-source validation/publication acceptance.
+Private-draft PR274 now verified MERGED88373f7683c8acd994f27031bbd1654fc5b2b62a,
+2026-11-07T01:24:39Z, applicable final-head checksPASS. Windows3.13's200msworker
+status-poll failure passed one unchanged rerun; both outcomes retained, no claim
+that slow-service latency is fixed. Next active A/B slice: explicit local categorical
+dictionary over preserved numerical codes under0014. Source20unit/oneHTTP and
+scientificCI-equivalent73unit/9HTTPPASS, newmodule100%unexcluded. Fresh installed
+verification pending; native category semantics/inference/revisions unverified.
+Final categorical installed4093SDK/39referenceHTTPstorage+recovery/153simulator/
+57worker/21workerHTTP+recovery/33governancePASS, zero skips;51SDK+16simulator+5worker
+rawmodule parity. Newmodule51lines20branches100%unexcluded in SDK-only report;
+all changedSDKdecisionsPASS. Finalscientific73unit/9HTTPPASS.17linkedcasesPASS
+(205SDK/82simulator/57worker) versus17realNOT_RUN/exit3. Earlier artifact before
+mask-dimension guard remains separately attributed in
+`evidence/full-roadmap-raster-categories-20261107.json`; normal delivery pending.
 
 ### Sequential execution queue — user directive 2026-11-06
 

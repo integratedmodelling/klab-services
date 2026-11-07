@@ -18,6 +18,8 @@
   "scientific_acceptance": false,
   "dependency_custody": "Fresh wheels/sdists and separate pip-target installations borrow existing test dependencies; no old environment modification or fresh dependency-isolation certification",
   "issue_review": "2026-11-07T01:13:01.754278+00:00 all11open bodies hash-match originals and comment bodies retrieved; no newly unclassified comment URLs/closure candidate or issue mutation",
-  "remaining": "NormalPR/finalheadCI/permittedmerge; native accepted-source version/conflict/validation/permissions/publication acceptance remains separate. Continue other independent roadmap requirements.",
+  "delivery": {"pr": 274, "head": "c96b74c5946475ad5b16faeaf5f521ce07c82a74", "merge": "88373f7683c8acd994f27031bbd1654fc5b2b62a", "merged_utc": "2026-11-07T01:24:39Z", "applicable_final_head_checks": "PASS SDK3.11/12/13, draft/reference, workerWindows/Ubuntu3.11/3.13, schema/scientific/simulator/core/build/Jenkins", "independent_maintainer_review": false},
+  "retained_hosted_failure": "Run42323183860/job128252296397 Windows3.13 recovery failed during200msworker-status poll with fail-closed transport outcome unknown; one unchanged failed-job rerun passed as128252893568. No assertion/timeout/coverage weakening or production retry. Slow monitoring remains an explicit operational limit, not certified native latency acceptance.",
+  "remaining": "Native accepted-source version/conflict/validation/permissions/publication acceptance remains separate. Continue other independent roadmap requirements; private CAS alone does not complete authoring.",
   "sleep_condition": "User explicitly chose sleep only after entire roadmap checklist complete, not after current pass or blocked checkpoint; no power action performed"
 }

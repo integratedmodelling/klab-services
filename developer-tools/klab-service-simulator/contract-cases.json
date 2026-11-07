@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-CATEGORY-CODES-001",
+      "rows": ["RC-P2.1", "RC-P2.5", "CAP-09", "CAP-15"],
+      "routes": ["/runtime/export/OBSERVATION/{urn}"],
+      "source": "Existing numerical GeoTIFF export transport; pinned synthetic:CategoryCode int16fixture is not native classification metadata or elevation science. SDK labels/provenance are an explicit caller declaration under JAVA-GAP-0014.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native category dictionary/block/revision mappings unestablished",
+      "simulator_test": "test_category_codes.py::test_owned_synthetic_code_export_retains_codes_mask_and_explicit_dictionary",
+      "java_gap_ids": ["JAVA-GAP-0014"]
+    },
+    {
       "id": "SIM-REVISION-DRAFTS-001",
       "rows": ["RC-P4.2", "RC-P4.4", "CAP-14"],
       "routes": ["/runtime/experimental/drafts/v1/{name}"],

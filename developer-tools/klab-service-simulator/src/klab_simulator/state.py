@@ -21,7 +21,7 @@ MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
-SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export")
+SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export")
 
 
 class ContractError(Exception):
@@ -29,7 +29,13 @@ class ContractError(Exception):
         self.status, self.message = status, message
 
 
-def observable():
+def observable(scenario=None):
+    if scenario == "category-code-export":
+        return {"@CLASS": "org.integratedmodelling.common.knowledge.ObservableImpl",
+            "urn": "synthetic:CategoryCode", "artifactType": "NUMBER", "contextualization": "MEASURE",
+            "semantics": {"@CLASS": "org.integratedmodelling.common.knowledge.ConceptImpl",
+                "urn": "synthetic:CategoryCode", "type": ["QUALITY", "QUANTIFIABLE", "OBSERVABLE"],
+                "collective": False, "notifications": []}, "resolutionDirectives": [], "optional": False, "notifications": []}
     return {"@CLASS": "org.integratedmodelling.common.knowledge.ObservableImpl",
         "urn": "geography:Elevation in m", "artifactType": "NUMBER", "contextualization": "MEASURE",
         "semantics": {"@CLASS": "org.integratedmodelling.common.knowledge.ConceptImpl",
@@ -69,6 +75,11 @@ class State:
                      "unit": "m", "row_orientation": "north_to_south", "axis_order": "x,y",
                      "centre_origin": [50, 1950], "cell_size": [100, -100], "precision": "float64"}
         self.origin = "SYNTHETIC_SIMULATOR"
+        if scenario == "category-code-export":
+            from .fixtures import category_code_fixture
+            fixture, _ = category_code_fixture()
+            self.grid.update(shape=[2, 3], bounds=[0, 0, 300, 200], centre_origin=[50, 150], precision="int16", unit=None)
+            self.values = [None if value == fixture["nodata"] else value for row in fixture["values"] for value in row]
         if scenario == "declared-band-export":
             from .fixtures import declared_band_fixture
             fixture, _ = declared_band_fixture()
@@ -119,7 +130,7 @@ class State:
     def _observation(self, context, request):
         identity = self.next_observation
         self.next_observation += 1
-        if request.get("observable", {}).get("urn") != "geography:Elevation in m":
+        if request.get("observable", {}).get("urn") != observable(self.scenario)["urn"]:
             raise ContractError(422, "Only the declared fixture observable is supported")
         geometry = request.get("geometry")
         if not isinstance(geometry, dict) or not geometry.get("dimensions"):
@@ -140,7 +151,7 @@ class State:
             if self.grid["crs"] != "EPSG:3857" or span is None or float(span[1]) != 100:
                 raise ContractError(422, "Declared grid span differs from the fixed fixture; no implicit mediation")
         result = {"@CLASS": OBS, "id": identity, "urn": f"{context}.{identity}", "name": "elevation",
-            "observable": observable(), "geometry": deepcopy(geometry), "empty": False, "notifications": [],
+            "observable": observable(self.scenario), "geometry": deepcopy(geometry), "empty": False, "notifications": [],
             "resolvedCoverage": 1.0, "metadata": {"delegate": {"grid": deepcopy(self.grid)}}}
         if self.scenario == "import-workflow":
             owner = self.contexts[context]["owner"]
@@ -253,7 +264,7 @@ class State:
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                     "importSchemata": schemas() if service == "resources" else {},
                     "exportSchemata": export_schemas() if service == "runtime" and (
-                        self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" or self.scenario in ("nonuniform-export", "declared-band-export")) else {}}, "application/json"
+                        self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" or self.scenario in ("nonuniform-export", "declared-band-export", "category-code-export")) else {}}, "application/json"
         if service == "runtime" and route.startswith("/experimental/worker/v1/"):
             return self.workers.request(method, route, headers, body)
         principal = {"sim-token-alice": "alice", "sim-token-bob": "bob",
@@ -293,9 +304,9 @@ class State:
                 raise ContractError(400, "Scope advertisement requires service descriptors")
             return True, "application/json"
         if service == "reasoner" and method == "POST" and route == "/api/v1/resolve/observable":
-            if body.decode() != "geography:Elevation in m":
+            if body.decode() != observable(self.scenario)["urn"]:
                 raise ContractError(404, "Observable not in finite simulator vocabulary")
-            return observable(), "application/json"
+            return observable(self.scenario), "application/json"
         if service == "reasoner":
             from .semantics import respond
             semantic = respond(self, method, route, original_path, data, body)
@@ -504,7 +515,7 @@ class State:
             if not isinstance(data, dict):
                 raise ContractError(400, "A structured request is required")
             if route.endswith("/value"):
-                if self.scenario in ("nonuniform-export", "declared-band-export"):
+                if self.scenario in ("nonuniform-export", "declared-band-export", "category-code-export"):
                     raise ContractError(422, "This fixture proves raster export only; native point-offset mapping is not established")
                 identity, offset = data.get("sourceId"), data.get("offset")
                 if type(identity) is not int or not 1 <= identity <= 2**63 - 1:

@@ -56,6 +56,16 @@ That bounded draft slice is now locally installed-verified4073SDK/152simulator/
 50SDK+16simulator+5worker module artifact parity; SDK-only newmodule100%lines/
 branches and changed decisionsPASS.17simulatedcasesPASS vs17realNOT_RUN. Native
 authoring contract stillUNKNOWN_PENDING_REFERENCE; normal featurePR/CI pending.
+DraftPR274 subsequently verified merged88373f768 after final-headchecksPASS;
+one Windows worker-monitoring timeout and unchanged rerun are retained in evidence.
+Active categorical local derivative under0014 preserves codes/dtypes/masks and
+uses caller-declared labels, not native metadata or inference. Source20unit and
+oneHTTP flow pass; full installed/normal delivery remains pending.
+Categorical local acceptance nowfreshinstalled4093SDK/153simulator/39reference/
+57worker/21workerHTTP+recovery/33governancePASS; newmodule51lines/20branches100%
+unexcluded, all changedSDKdecisions covered. Scientific73unit/9HTTP and17linked
+casesPASS vs17realNOT_RUN. Native classification/dictionary/block/revision mappings
+remain unestablished; normal feature delivery pending, no fullparent acceptance.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),
