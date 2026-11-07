@@ -5,6 +5,7 @@ code/command is executed; no credentials are passed to the child. Native deploym
 requires an operator-approved isolation boundary (JAVA-GAP-0017).
 """
 import hashlib
+from contextlib import contextmanager
 import os
 from pathlib import Path
 import subprocess
@@ -30,6 +31,23 @@ runpy.run_path(sys.argv[1],run_name="__main__")
 '''
 
 
+@contextmanager
+def owned_directory():
+    directory = tempfile.TemporaryDirectory(prefix="klab-worker-")
+    try:
+        yield directory.name
+    finally:
+        deadline = time.monotonic() + 2
+        while True:
+            try:
+                directory.cleanup()
+                break
+            except PermissionError:
+                if time.monotonic() >= deadline:
+                    raise WorkerError("Owned worker temporary cleanup could not be confirmed") from None
+                time.sleep(.02)  # Windows may release terminated members' CWD handles asynchronously.
+
+
 def execute(script, field, *, limits=Limits(), cancel=None):
     if not isinstance(field, Field) or not isinstance(limits, Limits) or len(field.values) > limits.cells:
         raise WorkerError("Invalid worker input or cell budget exceeded")
@@ -45,7 +63,7 @@ def execute(script, field, *, limits=Limits(), cancel=None):
     # Finite pipes are implemented with files, avoiding unbounded communicate() buffers.
     # Child sees minimal environment, not host credentials/PYTHONPATH/certificates.
     env = {key: value for key, value in os.environ.items() if key.upper() in ("SYSTEMROOT", "WINDIR", "TEMP", "TMP")}
-    with tempfile.TemporaryDirectory(prefix="klab-worker-") as directory:
+    with owned_directory() as directory:
         # Execute exactly the bytes identified by provenance, not a mutable source path.
         snapshot = Path(directory) / "trusted.py"
         snapshot.write_bytes(source)
