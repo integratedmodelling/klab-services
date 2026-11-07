@@ -2,6 +2,15 @@
 
 ## Direct geometry finite-size validation pass
 
+PublishedPR289 head609930ec5; initial two installed-provider jobs FAILED changed-code
+coverage, not functional tests: provider-only CI batch omitted new geometry tests,
+so runtime.py57/59/60 and54->57/57->59/57->61 remained unmeasured in that report.
+Full installed passing report never substitutes for narrower hosted gate. Retain
+both failureURLs in receipt. Added test_geometry_size.py to focused provider batch;
+513installedcontrolsPASS, codec/provider100% and changed-code gatePASS locally.
+No failed-head rerun, coverage exclusions or threshold relaxation. Corrected head
+must pass hosted checks before merge; independent selection audit has no source edits.
+
 Final geometry17linkedcasesPASS using485SDK/177simulator/57worker, zero skips/
 errors/failures versus17realNOT_RUN/exit3. Publish ordinaryPR now; finalheadCI/
 verified merge required. Native unit/scanner/scientific/fullABC gates unchanged.

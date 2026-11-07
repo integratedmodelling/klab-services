@@ -1,5 +1,12 @@
 # A+B completion ledger — ongoing campaign
 
+GeometryPR289 published609930ec5; both installed-provider hosted jobs FAILED the
+changed-code gate because focused provider batch omitted test_geometry_size.py
+(runtime.py57/59/60 and54->57/57->59/57->61 unmeasured). No merge/retry claimed.
+Added geometry tests to that batch;513installedcontrolsPASS and existing codec/
+provider100% plus changed-code gatePASS locally. No exclusions/threshold changes;
+corrected finalheadCI required. Selection audit child has no source changes.
+
 Final geometry17linkedcasesPASS(485SDK/177simulator/57worker), zero skips/errors/
 failures vs17realNOT_RUN/exit3. Ordinary geometryPR/finalheadCI next; no native
 unit/scanner/scientific or fullABC acceptance promotion.
