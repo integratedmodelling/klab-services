@@ -3,3 +3,4 @@ python-client/tests/fixtures/runtime_compatibility/contract.json text eol=lf
 python-client/tests/fixtures/runtime_compatibility/execution-contract-v3.json text eol=lf
 # New independent oracle is byte-hashed; preserve its authored bytes on checkout.
 python-client/tests/acceptance/scenarios/s-selection-oracle.json -text
+developer-tools/klab-service-simulator/src/klab_simulator/fixtures/synthetic-declared-bands.json -text

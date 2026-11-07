@@ -30,3 +30,14 @@ def nonuniform_fixture():
     if hashlib.sha256(oracle).hexdigest() != NONUNIFORM_ORACLE_SHA or hashlib.sha256(native).hexdigest() != NONUNIFORM_TIFF_SHA:
         raise ValueError("Frozen synthetic scientific adapter fixture drifted; do not regenerate")
     return json.loads(oracle), native
+
+
+def declared_band_fixture():
+    """Explicit synthetic bands and separately caller-declared labels; no native time claim."""
+    root = files("klab_simulator").joinpath("fixtures")
+    manifest = root.joinpath("synthetic-declared-bands.json").read_bytes()
+    native = root.joinpath("synthetic-declared-bands.tif").read_bytes()
+    if (hashlib.sha256(manifest).hexdigest() != "085d074c774e7d0da4ab36e301930145e3b92c9cdd924b3aa379d526986a386d"
+            or hashlib.sha256(native).hexdigest() != "6a41239e3b662ff32d901b80fa41ff9202a03523c27c72aae2e25451349763f0"):
+        raise ValueError("Declared synthetic band fixture drift; never regenerate expected values")
+    return json.loads(manifest), native

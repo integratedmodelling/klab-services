@@ -24,8 +24,28 @@ class AnalysisArtifact:
 
 
 @dataclass(frozen=True)
+class RasterBandAxis:
+    """Caller-declared band meaning, never inferred native temporal/category history."""
+    name: str
+    coordinates: tuple
+    provenance: str
+
+    def __post_init__(self):
+        if (not isinstance(self.name, str) or not self.name.isidentifier() or self.name in ("x", "y", "value", "valid")
+                or len(self.name) > 64 or type(self.coordinates) is not tuple or not 1 <= len(self.coordinates) <= 256
+                or not isinstance(self.provenance, str) or not self.provenance.strip() or len(self.provenance) > 4096):
+            raise InvalidRequestError("Band axis requires explicit immutable coordinates and attributable meaning")
+        for coordinate in self.coordinates:
+            if (type(coordinate) not in (str, int, float) or isinstance(coordinate, str) and (not coordinate or len(coordinate) > 256)
+                    or type(coordinate) in (int, float) and (abs(coordinate) > 2**53 or not math.isfinite(coordinate))):
+                raise InvalidRequestError("Band coordinates must be bounded explicit labels or exact finite numbers")
+        if len({type(value) for value in self.coordinates}) != 1 or len(set(self.coordinates)) != len(self.coordinates):
+            raise InvalidRequestError("Band coordinates must be homogeneous and unique")
+
+
+@dataclass(frozen=True)
 class RasterDescriptor:
-    shape: tuple[int, int]
+    shape: tuple[int, ...]
     dtype: str
     crs: str
     transform: tuple[float, float, float, float, float, float]
@@ -33,6 +53,7 @@ class RasterDescriptor:
     nodata: float | int | None
     sha256: str
     estimated_bytes: int
+    band_axis: RasterBandAxis | None = None
 
 
 @dataclass(frozen=True)
@@ -102,8 +123,8 @@ def trace_analysis(analysis, provenance):
     return TracedAnalysis(analysis, provenance)
 
 
-def open_raster(source, *, max_bytes=DEFAULT_ANALYSIS_BYTES):
-    """Load one local numerical rectilinear GeoTIFF within an eager-allocation budget.
+def open_raster(source, *, max_bytes=DEFAULT_ANALYSIS_BYTES, band_axis=None):
+    """Load numerical rectilinear GeoTIFF with explicit optional band-axis meaning.
 
     Dataset variables are `value` (native dtype) and `valid` (boolean). No implicit
     masking/coercion, reprojection, unit conversion or network access is performed.
@@ -111,6 +132,8 @@ def open_raster(source, *, max_bytes=DEFAULT_ANALYSIS_BYTES):
     """
     if type(max_bytes) is not int or max_bytes <= 0:
         raise InvalidRequestError("Analysis byte budget must be a positive integer")
+    if band_axis is not None and not isinstance(band_axis, RasterBandAxis):
+        raise InvalidRequestError("Multiband meaning requires an explicit RasterBandAxis")
     artifact = source if isinstance(source, AnalysisArtifact) else None
     path = Path(artifact.export.path if artifact else source).resolve(strict=True)
     size = path.stat().st_size
@@ -129,23 +152,29 @@ def open_raster(source, *, max_bytes=DEFAULT_ANALYSIS_BYTES):
     with rasterio.Env(GDAL_PAM_ENABLED="NO", GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
                       GDAL_GEOREF_SOURCES="INTERNAL"):
         with rasterio.open(path, driver="GTiff") as reader:
-            if reader.count != 1 or reader.subdatasets:
-                raise UnsupportedOperationError("Only single-band two-dimensional rasters are supported")
+            if reader.subdatasets or not 1 <= reader.count <= 256 or reader.count != 1 and band_axis is None:
+                raise UnsupportedOperationError("Multiband rasters require explicit declared band-axis coordinates")
+            if band_axis is not None and len(band_axis.coordinates) != reader.count:
+                raise InvalidRequestError("Declared band axis differs from the exact TIFF band count")
             dtype = np.dtype(reader.dtypes[0])
-            if dtype.kind not in "iuf" or reader.colorinterp[0].name == "palette":
+            if dtype.kind not in "iuf" or len(set(reader.dtypes)) != 1 or any(value.name == "palette" for value in reader.colorinterp):
                 raise UnsupportedOperationError("Only plain numerical rasters are supported")
-            if reader.scales != (1.0,) or reader.offsets != (0.0,):
+            if reader.scales != (1.0,) * reader.count or reader.offsets != (0.0,) * reader.count:
                 raise UnsupportedOperationError("Scaled/offset raster values require an explicit mediation contract")
             transform = reader.transform
             coefficients = tuple(transform)[:6]
             if (not all(math.isfinite(v) for v in coefficients) or transform.b != 0 or transform.d != 0
                     or transform.a == 0 or transform.e == 0 or transform.is_identity or reader.crs is None):
                 raise UnsupportedOperationError("Raster requires supplied CRS and nondegenerate rectilinear georeferencing")
-            cells = reader.width * reader.height
+            cells = reader.width * reader.height * reader.count
             estimate = size + cells * (2 * dtype.itemsize + 4) + 32 * (reader.width + reader.height)
+            if band_axis is not None:
+                estimate += reader.count * (512 + 8 * max(len(str(value)) for value in band_axis.coordinates)) + 8 * len(band_axis.provenance)
             if estimate > max_bytes:
                 raise InvalidRequestError("Raster arrays and validity exceed the analysis byte budget")
             units = reader.units[0] or None
+            if any((unit or None) != units for unit in reader.units):
+                raise UnsupportedOperationError("Bands with different units require an explicit mediation contract")
             if artifact and artifact.source_units is not None and artifact.source_units != units:
                 raise ProtocolError("Observation and exported raster source units disagree or are missing")
             with np.errstate(over="ignore", invalid="ignore"):
@@ -155,16 +184,22 @@ def open_raster(source, *, max_bytes=DEFAULT_ANALYSIS_BYTES):
             y_ordered = np.all(y[1:] > y[:-1]) if transform.e > 0 else np.all(y[1:] < y[:-1])
             if not np.isfinite(x).all() or not np.isfinite(y).all() or not x_ordered or not y_ordered:
                 raise UnsupportedOperationError("Raster pixel centers must be finite and distinct in float64 coordinates")
-            values = reader.read(1)
-            valid = reader.read_masks(1) != 0
-            descriptor = RasterDescriptor((reader.height, reader.width), dtype.name, reader.crs.to_wkt(),
-                coefficients, units, reader.nodata, digest, estimate)
+            values = reader.read() if band_axis is not None else reader.read(1)
+            valid = (reader.read_masks() if band_axis is not None else reader.read_masks(1)) != 0
+            shape = (reader.count, reader.height, reader.width) if band_axis is not None else (reader.height, reader.width)
+            descriptor = RasterDescriptor(shape, dtype.name, reader.crs.to_wkt(),
+                coefficients, units, reader.nodata, digest, estimate, band_axis)
     if _digest(path) != digest:
         raise ProtocolError("Raster file changed during analysis loading")
     attrs = {"crs_wkt": descriptor.crs, "transform": descriptor.transform,
              "artifact_sha256": descriptor.sha256, "validity": "valid variable; zero is not missing"}
     if units is not None:
         attrs["units"] = units
-    dataset = xr.Dataset({"value": (("y", "x"), values, attrs),
-                          "valid": (("y", "x"), valid)}, coords={"x": x, "y": y})
+    dimensions = (band_axis.name, "y", "x") if band_axis is not None else ("y", "x")
+    coordinates = {"x": x, "y": y}
+    if band_axis is not None:
+        coordinates[band_axis.name] = list(band_axis.coordinates)
+        attrs.update(band_axis_source="CALLER_DECLARED", band_axis_provenance=band_axis.provenance)
+    dataset = xr.Dataset({"value": (dimensions, values, attrs),
+                          "valid": (dimensions, valid)}, coords=coordinates)
     return RasterAnalysis(descriptor, dataset, artifact, datetime.now(timezone.utc))
