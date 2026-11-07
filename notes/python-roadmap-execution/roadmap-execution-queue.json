@@ -4,7 +4,7 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-worker-output-custody",
-    "pr": null,
+    "pr": 303,
     "requirement": "RC-P5",
     "ci_review_dependencies": []
   },

@@ -2,6 +2,26 @@
 
 ## PR302 verified merged; worker output/deployment custody active
 
+PR303final candidate5152installedSDK/501simulator/115worker/23workerHTTP/allreference/
+39governancePASS zero skips/errors/failures.69SDK35sim6worker rawsource-wheel-sdist-
+installed parity/no simulatorinproduction verified.17linkedPASS(1218SDK378sim115worker)
+vs17nativeNOT_RUN. Fullinstallednewworker_module/changedworker100%,originalaggregate
+80%gate93.07%/common90%gate96.85%PASS;14olderSDKfocusedCI+actualorderedselectionPASS.
+No simulator services remain. Finalreceipt/exactnewheadCI/ordinarymerge pending; no
+nativeABI/OS-container deployment/scientific/final-row promotion. Dependencies borrowed.
+
+All14olderSDKinstalledfocusedregression batches PASS with generalized defaultSDK
+coverage tool; existing gate thresholds unchanged. Actualorderedselection PASS and
+installed115worker/23HTTP100%newmodule-changedworker/93.07%aggregate/96.85%common
+PASS. PR303fullartifactverifier+17linkedmatrix+hostedwatcher remain running; sourcefrozen.
+
+DraftPR303 published3a7b125a9. Fresh installed focused115workerunit/23publicHTTP/
+recoveryPASS; newmodule+changedworker100%,original80%aggregate93.07%/90%common96.85%
+PASS. ActualinstalledSDKordered693/214/92/115/40/6/21+unchanged100%gatePASS. Fullfresh
+artifactverifier/14SDKfocusedregressionhelper/17linkedmatrix/hostedCIwatcher running;
+no fullinstalled/exactheadCI/mergeacceptance claimed. Next selected reference windows
+source review only; worker source frozen for artifact custody.
+
 Worker finalsource115unit/23actualpublicHTTP-recoveryPASS, whole_newmodule/changedworker
 100%unexcluded; unchangedaggregate80%gate93.07%/common90%gate96.85%PASS.6modulebodymypy/
 fatallint/56governancequeueordering-featuretoolcontrolsPASS. Dot-only taskIDs refused
