@@ -20,5 +20,6 @@
   "native_status": "JAVA-GAP-0003 NOT_TESTED unchanged. Source-defined route/DTO and syntheticfixtures are not deployednative compatibility, semanticadmission, selectedmodel, publication or scientificexecution.",
   "scientific_acceptance": false,
   "dependency_custody": "Fresh wheels/sdists/separate pip-target installs borrow existing test dependencies; not newly isolated dependency certification",
-  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; continue remaining42rows/native gates separately. Entire-roadmap sleep pending."
+  "delivery": {"pr": 281, "head": "370c4274485cec5a0062ac9989fe15d62342d46c", "merge": "4806cbc698b983d8aec751bdb7ee7f62044a05c3", "merged_utc": "2026-11-07T03:38:29Z", "applicable_checks": "PASS; no failed-check rerun", "independent_maintainer_review": false},
+  "remaining": "Continue remaining42rows/native gates separately. Entire-roadmap sleep pending."
 }

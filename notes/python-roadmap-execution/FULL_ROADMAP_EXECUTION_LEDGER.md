@@ -1,5 +1,50 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Latest delivery and provenance development pass
+
+PR281 verified MERGED4806cbc698b983d8aec751bdb7ee7f62044a05c3 at
+2026-11-07T03:38:29Z, exact370c4274485cec5a0062ac9989fe15d62342d46c after all
+applicable final-head checks PASS. Current provenance branch fast-forwarded that
+integration merge preserving uncommitted work; watcher completed, no CI pending.
+
+Provenance-dependency fixture uses existing graph APIs with finite synthetic
+MEASURED/CONTRIBUTED_TO/RESOLVED edges, no native commit or full lineage claim.
+Initial direct-state run9FAIL/8PASS omitted JSON Content-Type;400 responses prevented
+fixture import and coverage had NO DATA. Corrected headers retain422/200 assertions:
+17PASS, then direct edge/order/type controls yield18PASS including refresh failures,
+fixture30lines20branches100%unexcluded. HTTP child-process execution is separate from
+in-process coverage. Same0016scenario/handoff/docs updated; full installed verification,
+linked real/simulated matrices and ordinary PR/CI delivery still pending. Native
+acceptance and entire42-row scope remain incomplete; no sleep action.
+Fresh wheel/sdist/install verifier started in unique provenance-dependencies-first
+target, shell sh_1b4185111001p96BczaB45vZxB. Production SDK/worker unchanged; freeze
+simulator source until receipt/parity. Next linked17simulated/17realNOT_RUN matrix,
+feature receipt/ordinary PR/final CI/permitted merge; continue operation inventory.
+Independent next-operation source check (read-only, not implementation): ResourcesClient
+contextualize at587 constructs DataRequest with observable/geometry/resourceUrns/
+startTime/endTime/nullable inputData; Utils.Http.Client.postData at1293 writes raw
+Avro SpecificDatumWriter bytes under application/octet-stream to the existing
+Resources contextualize route and parses a returned Job id. Generated DataRequest
+schema exists in klab.core.common. This is a distinct native binary provider contract,
+not proof the experimental Python worker lease transport is native. Do not invent
+JSON contextualization or silently mark this unsupported wrapper implemented.
+ResolverClient.encodeDataflow at103 remains a source stub returning null; no native
+encoder route inferred. Broader inventory and bounded implementation remain next
+after provenance delivery; no reason to start IDE/staging repair.
+Fresh provenance verifier completed03:46:44UTC:4263SDK/223simulator/18provenance+
+refresh/98otherreference/57worker/21workerHTTP/37governancePASS, zero skips/errors/
+failures.55SDK+20simulator+5worker rawsource/wheel/sdist/installed parity and current
+sourcebytes verified. Installed simulator fixture30lines20branches100%unexcluded,
+not SDK coverage; SDK unchanged/newmodulegateN/A.17linkedmatrix running versus
+17realNOT_RUN/exit3verified. Receipt:
+`evidence/full-roadmap-provenance-dependencies-20261107.json`. Latest11issue/comment
+review03:41:40UTC unchanged/no newunclassifiedURLs/no safeclosure. Next ordinaryPR/
+finalCI/permittedmerge then nativebinarycontextualization operation inventory.
+Final17linkedcasesPASS using375SDK/152simulator/57worker, zero skips/errors/failures
+versus17realNOT_RUN/exit3. Ordinary featurePR publication now; no native revision/
+lineage acceptance promoted. ProductionSDK/worker unchanged; simulator-only coverage
+not substituted for SDK claims. Generated companions refreshed after new receipt link.
+
 ## Renewed self-contained directive reconciliation
 
 The renewed directive retains complete A+B+C scope and the permanent seeded handoff.
@@ -858,9 +903,9 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P3.1|PARTIAL; SIM-REFRESH-001|Explicit provisional committed-revision two-client simulator contract/races, native semantics remain unknown.|
 |RC-P3.2|COMPLETE bounded refresh; SIM-REFRESH-001|Retain stale/partial/outage controls while broadening linked protocols.|
 |RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001 plus delivered269 durable restart/no-replay controls|Preserve expiry/cancel/no-replay and scoped results; native durable history/incarnation acceptance separate.|
-|RC-P3.4|PARTIAL; SIM-PROVENANCE-001|Broaden dependency/semantic-effect fixtures without calling finite simulator lineage authoritative Java.|
-|RC-P3.5|PARTIAL; notebook plus active SIM-NOTEBOOK-PRINCIPAL-RACE-001|Exact installed asyncSDK kernel/two-client CAS/foreign denial/cleanup focusedPASS; fullfreshverification/delivery pending, native sharing/currentness semantics separate.|
-|RC-P4.1|PARTIAL; semantics/inspection plus active source-defined candidate protocol1 adapter0003|SDK-sourcehash/identity/advertisement and synthetic visibility/denial testsPASS; final installed/hosted delivery pending. Native applicability/admission/deployed candidate compatibility remain external.|
+|RC-P3.4|PARTIAL; existing provenance plus active declared-dependency workflow|Installed18focused/223simulator testsPASS; finite same-root dependencies and planned resolution remain partial, not authoritative Java lineage. Normal feature delivery pending; native committed history separate.|
+|RC-P3.5|PARTIAL; notebook race delivered280/87178be30|Exact installed asyncSDK kernel/two-client CAS/foreign denial/cleanup and full package/hosted checksPASS; native sharing/currentness semantics separate.|
+|RC-P4.1|PARTIAL; source-defined candidate protocol1 delivered281/4806cbc69|Installed4263SDK/211simulator tests and final hostedchecksPASS; sourcehash/identity/advertisement/visibility controls verified. Native applicability/admission/deployed compatibility remain external.|
 |RC-P4.2|PARTIAL; source previews|Revision-aware validation scenario, parser and semantic admission kept distinct.|
 |RC-P4.3|PARTIAL delivered imports; SIM-IMPORT-001/SIM-INPUT-BINDING-001|Broader annotation/compute input provenance with owned cleanup; native resource custody gate separate.|
 |RC-P4.4|PARTIAL ADD/locks plus delivered274 private draftCAS/history; native acceptance separate|Private CAS is not accepted-source editing/validation/publication; maintained native conditional authoring contract remains unestablished.|
@@ -880,9 +925,9 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-10|PARTIAL graph/projections|Two-client revision/race/partial refresh scenario through explicit protocol seam.|
 |CAP-11|PARTIAL; transient hints plus delivered273/0c9825893 retained reference|Explicit provisional durable cursor/resync/gap reference verified; maintained expiry/revocation/full convergence/native acceptance still unverified.|
 |CAP-12|COMPLETE bounded offline snapshots|Maintain socket-forbidden fresh-process inspection and no queued replay.|
-|CAP-13|PARTIAL resource inspection/import plus active source-defined candidate catalogs|Candidate visibility/hash/member/denial fixture testsPASS; final artifact/CI delivery pending. Declared broader CRUD/dependency and native resource custody/admission gates remain separate.|
+|CAP-13|PARTIAL resource inspection/import plus candidate catalogs delivered281|Installed package/CI candidate visibility/hash/member/denial controlsPASS. Broader CRUD/dependency and native resource custody/admission gates remain separate.|
 |CAP-14|PARTIAL native facades plus private draftCAS274/synthetic managed lifecycle277|Reference CAS/history and finite lifecycle delivered; accepted-source validation/publication and actual native agent/private-session disposal contracts remain external.|
-|CAP-15|PARTIAL optional scientific/notebook plus declaredbands272/categories275/offlinearrays278|Reference categories/bands/offline400cell snapshot association verified; coherent multi-principal notebook/race and native temporal/provenance semantics still pending.|
+|CAP-15|PARTIAL optional scientific/notebook plus declaredbands272/categories275/offlinearrays278/notebookrace280|Reference categories/bands/offline400cell and independent-client notebook race verified; native temporal/provenance/sharing semantics still unverified.|
 |CAP-16|PARTIAL compatibility/package matrix|Fresh wheel/sdk/worker installs, types/lint/coverage and reproducible starter; real deployment/support gates separate.|
 |CAP-17|IN_SCOPE PARTIAL; same separate worker as RC-P5, merged268–271 with installed and hosted lifecycle/resource controls|Total disk/hostile-code isolation and maintained native deployment remain separate; no compiler/inference/storage port or embedded engine claim.|
 |CAP-18|COMPLETE current safety invariants|Enforce per change: explicit origins, no mutation replay, no hidden fallback, optional extras and separate simulator.|

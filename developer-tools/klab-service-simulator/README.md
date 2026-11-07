@@ -8,6 +8,11 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario provenance-dependencies` provides finite declared dependency and plan
+edges for existing provenance readers (SIM-PROVENANCE-DEPENDENCIES-001/JAVA-GAP-0016).
+No computed dependency, complete lineage or native committed revision is claimed.
+See [reference boundaries](../../python-client/docs/provenance-dependency-reference.md).
+
 SIM-CANDIDATE-SOURCES-001/JAVA-GAP-0003 uses `--scenario candidate-sources` for
 source-defined protocol1 Resources catalog snapshots. Deterministic namespaceJSON,
 source hashes and synthetic permissions are not native semantic admission or model
