@@ -1,6 +1,7 @@
 """Explicit versioned experimental transport; no discovery guess or live fallback."""
 import hashlib
 import re
+import time
 from urllib.parse import urlsplit
 
 import httpx
@@ -38,11 +39,11 @@ class WorkerClient:
     def __exit__(self, *args):
         self.close()  # Local transport only; never deletes/disposes remote work.
 
-    def _request(self, method, path, body=None):
+    def _request(self, method, path, body=None, *, poll=False):
         payload = encoded(body) if body is not None else None
         try:
             with self._http.stream(method, "experimental/worker/v1/" + path, content=payload,
-                    headers={"Content-Type": "application/json"}) as response:
+                    headers={"Content-Type": "application/json"}, timeout=.2 if poll else self._http.timeout) as response:
                 if response.status_code not in (200, 201):
                     raise WorkerError(f"Worker operation refused (HTTP {response.status_code}); no automatic replay")
                 chunks, size = [], 0
@@ -94,8 +95,21 @@ class WorkerClient:
         task = self.claim(worker_id)
         if task.get("state") == "IDLE":
             return task
+        client = self
+        class Cancellation:
+            next_check = 0.0
+
+            def is_set(self):
+                if cancel is not None and cancel.is_set():
+                    return True
+                now = time.monotonic()
+                if now >= self.next_check:
+                    self.next_check = now + .2
+                    if client._request("GET", "tasks/" + identity(task["task_id"]), poll=True).get("state") != "LEASED":
+                        return True
+                return False
         try:
-            result, digest = execute(script, Field.from_dict(task.get("input")), limits=limits or Limits(), cancel=cancel)
+            result, digest = execute(script, Field.from_dict(task.get("input")), limits=limits or Limits(), cancel=Cancellation())
         except (WorkerError, OSError):
             try:
                 self.fail(task)

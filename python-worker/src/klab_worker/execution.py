@@ -1,4 +1,4 @@
-"""Trusted local-script process isolation, finite wall time and file byte budgets.
+"""Trusted local-script process-tree cleanup, finite wall time and file byte budgets.
 
 Not an adversarial OS sandbox or a hard resident-memory guarantee. No server-supplied
 code/command is executed; no credentials are passed to the child. Native deployment
@@ -13,6 +13,11 @@ import tempfile
 import time
 
 from .protocol import Field, Limits, WorkerError, decoded, encoded
+from .containment import ProcessTree
+
+# Trusted bootstrap cannot execute the operator script until the parent has
+# assigned containment and provided EOF. Buffering is bounded by encoded(Field).
+BOOTSTRAP = 'import io,runpy,sys;data=sys.stdin.buffer.read();sys.exit(125) if not data else None;sys.stdin=io.TextIOWrapper(io.BytesIO(data),encoding="utf-8");runpy.run_path(sys.argv[1],run_name="__main__")'
 
 
 def execute(script, field, *, limits=Limits(), cancel=None):
@@ -34,12 +39,16 @@ def execute(script, field, *, limits=Limits(), cancel=None):
         # Execute exactly the bytes identified by provenance, not a mutable source path.
         snapshot = Path(directory) / "trusted.py"
         snapshot.write_bytes(source)
-        with tempfile.TemporaryFile() as stdin, tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
-            stdin.write(encoded(field.to_dict())); stdin.seek(0)
-            process = subprocess.Popen([sys.executable, "-I", str(snapshot)], stdin=stdin, stdout=stdout, stderr=stderr,
-                cwd=directory, env=env, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+            process = subprocess.Popen([sys.executable, "-I", "-c", BOOTSTRAP, str(snapshot)], stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
+                cwd=directory, env=env, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), start_new_session=os.name != "nt")
             start = time.monotonic()
+            tree = None
             try:
+                tree = ProcessTree(process)
+                assert process.stdin is not None  # PIPE is explicit above.
+                process.stdin.write(encoded(field.to_dict()))
+                process.stdin.close()
                 while True:
                     if cancel is not None and cancel.is_set():
                         raise WorkerError("Worker execution cancelled")
@@ -62,6 +71,10 @@ def execute(script, field, *, limits=Limits(), cancel=None):
                     raise WorkerError("Worker result changed declared geometry, units or validity")
                 return result, digest
             finally:
+                if tree is not None:
+                    tree.close()  # Also remove descendants after a successful direct child.
+                if process.stdin is not None and not process.stdin.closed:
+                    process.stdin.close()
                 if process.poll() is None:
                     process.kill()
                 process.wait(timeout=5)

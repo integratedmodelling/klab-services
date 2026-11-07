@@ -56,12 +56,23 @@ not signatures or verification that the scientific computation is correct.
 `python -I` subprocess in a private temporary working directory with minimal
 environment, no parent credentials/PYTHONPATH. It enforces wall time, cell budget,
 bounded input and checked stdout/stderr file sizes, validates output before return,
-and reaps the direct child in finally. `run_once` acknowledges failure without
+and reaps the direct child in finally. A trusted bootstrap waits for parent input
+before executing the exact script snapshot: Windows containment is a non-breakaway
+Job Object with kill-on-close, POSIX containment a new session/process group. If
+containment cannot be established, operator code never runs. Cleanup terminates
+owned descendants even after successful direct-child exit. `run_once` checks the
+retained task state about every200ms, stops local computation when cancellation or
+another terminal state is observed, and fails closed if status cannot be fetched.
+Monitoring requests use a200ms per-network-operation timeout (rather than the
+ordinary configured transport timeout); this is not an instantaneous distributed
+cancellation guarantee or a total HTTP response deadline. `run_once` acknowledges failure without
 publishing child errors/partial data. Remote cancellation fences publication even
 if a local script finishes after cancellation. It does not replay ambiguous writes.
 
-**Limits:** trusted scripts only. This is process isolation, not a hostile-code OS
-sandbox, hard resident-memory/disk quota or descendant-process containment. Operators
+**Limits:** trusted scripts only. This is process isolation and owned descendant
+cleanup, not a hostile-code OS sandbox or hard resident-memory/disk quota. A POSIX
+script must not deliberately escape its process group with setsid; Windows Job
+membership is kernel-enforced and no breakaway is enabled. Operators
 must supply a reviewed container/job boundary for untrusted code. Default simulator
 state is volatile. With an explicitly owned opt-in `.klab-sim.sqlite` checkpoint,
 published/cancelled tasks and scientific context/Job references survive simulator

@@ -50,3 +50,20 @@ def test_unknown_task_and_invalid_publication_fail_before_network(monkeypatch):
 def test_idle_work_does_not_open_or_execute_operator_script(monkeypatch):
     with client(monkeypatch, lambda request: httpx.Response(200, json={"protocol": PROTOCOL, "state": "IDLE"})) as worker:
         assert worker.run_once("example", "absent.py")["state"] == "IDLE"
+
+
+def test_status_loss_stops_work_before_operator_script_and_never_publishes(monkeypatch, tmp_path):
+    from test_worker import sample
+    calls = []
+    marker = tmp_path / "must-not-run"
+    script = tmp_path / "trusted.py"
+    script.write_text(f'open({str(marker)!r},"w").write("unsafe")\n')
+    def handler(request):
+        calls.append(request.url.path)
+        if request.url.path.endswith("/claim"):
+            return httpx.Response(200, json={"protocol": PROTOCOL, "state": "LEASED", "task_id": "task", "input": sample().to_dict(), "lease": "synthetic"})
+        return httpx.Response(403)
+    with client(monkeypatch, handler) as worker:
+        with pytest.raises(WorkerError, match="403"):
+            worker.run_once("example", script)
+    assert not marker.exists() and not any(path.endswith("/publish") for path in calls)

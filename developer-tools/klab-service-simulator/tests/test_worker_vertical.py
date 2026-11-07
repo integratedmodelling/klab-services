@@ -2,6 +2,8 @@
 from contextlib import contextmanager
 import hashlib
 import json
+import threading
+import time
 
 import httpx
 import pytest
@@ -107,3 +109,35 @@ def test_failed_worker_acknowledges_failure_without_publishing_or_replaying(simu
         assert result["state"] == "FAILED" and result["output"] is None and result["provenance"] is None
         assert worker.run_once("first", script)["state"] == "IDLE"
         worker.release("first")
+
+
+def test_remote_owner_cancellation_stops_running_script_promptly_without_publication(simulator, tmp_path):
+    marker = tmp_path / "started"
+    script = tmp_path / "waits.py"
+    script.write_text(f'import time\nopen({str(marker)!r},"w").write("started")\ntime.sleep(60)\n')
+    with owned_scope(simulator) as context, clients(simulator, context) as owner, clients(simulator, context, worker=True) as worker:
+        worker.register("cancel-worker", operation="double")
+        task = owner.submit(field(), operation="double")
+        errors = []
+        def run():
+            try:
+                worker.run_once("cancel-worker", script)
+            except WorkerError as error:
+                errors.append(str(error))
+        thread = threading.Thread(target=run)
+        thread.start()
+        try:
+            deadline = time.monotonic() + 5
+            while not marker.exists() and thread.is_alive() and time.monotonic() < deadline:
+                time.sleep(.01)
+            assert marker.exists()
+            start = time.monotonic()
+            owner.cancel(task["task_id"])
+            thread.join(timeout=3)
+            assert not thread.is_alive() and time.monotonic() - start < 3
+            assert errors and "cancel" in errors[0]
+            status = owner.status(task["task_id"])
+            assert status["state"] == "CANCELLED" and status["output"] is None
+        finally:
+            thread.join(timeout=12)
+            worker.release("cancel-worker")
