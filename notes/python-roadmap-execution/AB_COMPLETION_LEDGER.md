@@ -1,5 +1,40 @@
 # A+B completion ledger — ongoing campaign
 
+## PR299 verified merged; execution-dependency explanation continues
+
+TwelveinstalledfocusedCIgatesPASS: eacholderbatchappend58explanationcontrols before
+unchangedcoveragegate. Actualorderedselection693SDK/214prior/92convergence/58explanation/
+6HTTP/21fixture+unchanged100%gatePASS.24independentexplanationfixturecases100%,
+18existing sourceboundgraphfixture100%regressionPASS. Fullartifactverifier+17linked
+matrix running; no explanationPRyet. Next publiccopiedcomposition source review only.
+
+Sourceexplanation58SDK100%unexcluded newmodule/allchangedSDK,2actualpublicHTTP
+upload/sourceADD/explicitselectedmodel-component/no-planrefusal/observe/inputjoin/
+recordedsemanticmetadata/400cells/two-client/Bob-rootdenial/cleanupPASS;24fixture100%,
+bodymypy-lint-49governancequeueorderingPASS. Nativeobservable/numericdata unchanged:
+semanticlabelassociation is not unitmediation. BroadenumerationIndexErrors and wrongDTO
+attribute failures retained, corrected to exactpublicrestore/rawtransportedURN, no
+generalcollectionacceptance claimed. Reviewevidence records constraints/failures.
+Fresh execution-dependency-explanations-first verifier running/no explanationPRyet.
+
+PR299 MERGED5d6d5139d5a445c784bb4a91b331a4f890046787 at2026-11-07T19:02:21Z,
+exact7c25a73f3ad2ace805835cdddbaf053ebcdd6d37/all31checksPASS; actualremote/local
+ancestry checkpoint verified. Completefinite reference delivered, not native scientific/
+durable/permission authority or original-row acceptance.42originalIDs/history preserved,
+26runnable/zero finaldispositions.4995installedSDK439sim72worker/reference-governance
+PASS;66SDK33sim5worker parity,92SDK100%,3publicHTTP/31fixture100%,11focusedCI/
+actualorderedselection,17linkedPASSvs17nativeNOT_RUN. All priorjobs finished.
+
+Active feat/python-execution-dependency-explanation: explicit advertised finite
+input/model/component version/source binding and planned-versus-recorded effects,
+including declared semantic before/after revision records.54SDK controlsPASS(98.75%
+coverage, final added UTF8/capability probe pending),2actualpublic upload/sourceADD/
+selectedResolver/observation/InputProvenance/explanation workflowsPASS, bodymypyPASS.
+Initial star-expanded DTOconstructor mypy issue fixed with explicit fields; firstHTTP
+used syntheticgeometry against authenticcroptuple and correctly422refused, corrected
+test geometry toauthenticfixture. No production geometry/mediation relaxation.
+No explanation PR/installed/fixturecoverage/ownership acceptance yet; sourceuncommitted.
+
 ## PR298 verified merged; complete finite reference convergence active
 
 PR299draft2194aa502 final freshinstalled4995SDK/439simulator/72worker/allreference/

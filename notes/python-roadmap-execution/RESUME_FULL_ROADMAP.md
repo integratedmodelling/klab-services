@@ -33,8 +33,19 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent verified checkpoint: PR297 merge `53ee5bed9`, exact `a2c54ca9a`,
-all29reported final-head checks PASS. PR296 graph/PR295 membership also verified.
+Most recent verified checkpoint: PR299 merge `5d6d5139d`, exact `7c25a73f3`,
+all31reported final-head checks PASS. PR298 native cache/PR297 input also verified.
+
+Current active child `feat/python-execution-dependency-explanation`,RC-P3.4/CAP-06:
+58SDK100%newmodule/changedcode,2actualpublicHTTP with actualupload/source/selected
+model-component/no-planrefusal/semanticmetadata/recorded400cells/two-client/Bob-root
+denial/cleanupPASS;24fixture100%,bodytypes-lint-49governancequeueorderingPASS. Fresh
+execution-dependency-explanations-first artifactverifier running/no newPRyet. Native
+observable/numericdata unchanged after declaredsemanticlabelassociation; not mediation.
+26runnable/42originalrows/history/zero finaldispositions. Review retains geometry422,
+enumerationIndexErrors/wrongDTOattribute/mypy failures. Completefiniteconvergence299
+delivered4995SDK439sim72worker/reference-governancePASS/66SDK33sim5workerparity/
+17linkedPASSvs17nativeNOT_RUN. Historical sections below are superseded by this entry.
 Linux cleanup-oracle omission ofSTATUS_DEAD fixed with300owned probes/8Z->Xpairs;
 separate Windows cancellationGETpoll failure retained, exactheadattempt2PASS, original
 HTTP exception class remainsunknown. No timeout relaxation or mutation replay.

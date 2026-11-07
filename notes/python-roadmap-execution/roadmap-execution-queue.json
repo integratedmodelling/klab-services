@@ -3,24 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-reference-graph-convergence",
-    "pr": 299,
-    "requirement": "RC-P3.1",
-    "ci_review_dependencies": [
-      "PR299 fresh fullinstalled artifact/matrix and exactfinalheadCI/ordinarymerge; completefinite reference is not native scientific/durable/fullrow authority"
-    ]
+    "branch": "feat/python-execution-dependency-explanation",
+    "pr": null,
+    "requirement": "RC-P3.4",
+    "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 298,
-    "merge": "1c0b94327a312520794b234e5145f2a8e625af54",
-    "head": "c3cb53d994151b22ff65da7c86f24226295cfa01",
-    "utc": "2026-11-07T18:33:41Z",
+    "pr": 299,
+    "merge": "5d6d5139d5a445c784bb4a91b331a4f890046787",
+    "head": "7c25a73f3ad2ace805835cdddbaf053ebcdd6d37",
+    "utc": "2026-11-07T19:02:21Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P3.1",
+  "next_actionable_requirement": "RC-P3.4",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "reference-commit-convergence",
     "execution-dependency-explanation",
     "public-copied-composition",
     "managed-behavior-workflow",
@@ -1789,8 +1786,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "COMPLETE_FINITE_GRAPH_CONVERGENCE_INSTALLED_VERIFIED_PR299_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "NATIVE_CACHE_PR298_AND_COMPLETE_FINITE_GRAPH_CONVERGENCE_PR299_DELIVERED",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_TWO_CLIENT_GRAPH_DELTA_PROJECTION_GAP_RESYNC_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -1832,12 +1829,21 @@
           "pr": 299,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json",
           "final_original_row_acceptance": false
+        },
+        "finite_graph_convergence_delivery": {
+          "pr": 299,
+          "head": "7c25a73f3ad2ace805835cdddbaf053ebcdd6d37",
+          "merge": "5d6d5139d5a445c784bb4a91b331a4f890046787",
+          "merged_at": "2026-11-07T19:02:21Z",
+          "final_head_checks": 31,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json"
         }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
-      "task_state": "in_progress",
-      "next_executable_action": "Require PR299 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute next independent explanation requirement. Keep native scientific/fullgraph/durable revision authority and original-row integrated acceptance separate.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native scientific complete graph/contiguous incarnation-retention-notification contracts and real two-client evidence remain distinct external gates.",
       "disposition": null
     },
     {
@@ -1901,8 +1907,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "COMPLETE_FINITE_GRAPH_CONVERGENCE_INSTALLED_VERIFIED_PR299_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "NATIVE_CACHE_PR298_AND_COMPLETE_FINITE_GRAPH_CONVERGENCE_PR299_DELIVERED",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_TWO_CLIENT_GRAPH_DELTA_PROJECTION_GAP_RESYNC_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -1940,12 +1946,21 @@
           "pr": 299,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json",
           "final_original_row_acceptance": false
+        },
+        "finite_graph_convergence_delivery": {
+          "pr": 299,
+          "head": "7c25a73f3ad2ace805835cdddbaf053ebcdd6d37",
+          "merge": "5d6d5139d5a445c784bb4a91b331a4f890046787",
+          "merged_at": "2026-11-07T19:02:21Z",
+          "final_head_checks": 31,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json"
         }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
-      "task_state": "in_progress",
-      "next_executable_action": "Require PR299 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute next independent explanation requirement. Keep native scientific/fullgraph/durable revision authority and original-row integrated acceptance separate.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native scientific complete graph/contiguous incarnation-retention-notification contracts and real two-client evidence remain distinct external gates.",
       "disposition": null
     },
     {
@@ -2025,8 +2040,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "COMPLETE_FINITE_GRAPH_CONVERGENCE_INSTALLED_VERIFIED_PR299_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "NATIVE_CACHE_PR298_AND_COMPLETE_FINITE_GRAPH_CONVERGENCE_PR299_DELIVERED",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_TWO_CLIENT_GRAPH_DELTA_PROJECTION_GAP_RESYNC_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -2067,12 +2082,21 @@
           "pr": 299,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json",
           "final_original_row_acceptance": false
+        },
+        "finite_graph_convergence_delivery": {
+          "pr": 299,
+          "head": "7c25a73f3ad2ace805835cdddbaf053ebcdd6d37",
+          "merge": "5d6d5139d5a445c784bb4a91b331a4f890046787",
+          "merged_at": "2026-11-07T19:02:21Z",
+          "final_head_checks": 31,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json"
         }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
-      "task_state": "in_progress",
-      "next_executable_action": "Require PR299 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute next independent explanation requirement. Keep native scientific/fullgraph/durable revision authority and original-row integrated acceptance separate.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native scientific complete graph/contiguous incarnation-retention-notification contracts and real two-client evidence remain distinct external gates.",
       "disposition": null
     },
     {
@@ -2148,7 +2172,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: execution-dependency-explanation"
       },
       "simulator_support_needed": "Provide public dependency/execution explanation joining supplied resources, model/component versions and planned versus recorded effects; finite complete reference lineage including semantic-update effects, not only fixture graph links.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "EXPLICIT_FINITE_EXECUTION_EXPLANATION_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2170,8 +2194,8 @@
       },
       "work_group": "execution-dependency-explanation",
       "priority": 8,
-      "task_state": "pending",
-      "next_executable_action": "Provide public dependency/execution explanation joining supplied resources, model/component versions and planned versus recorded effects; finite complete reference lineage including semantic-update effects, not only fixture graph links.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish actual upload/source/selectedmodel-component/planned-versus-recorded semantic effects explanation, public sync/async ownership/oracle controls, hostile coverage and installed delivery; no native scientific lineage or semantic mediation claim.",
       "disposition": null
     },
     {
@@ -2247,7 +2271,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: execution-dependency-explanation"
       },
       "simulator_support_needed": "Provide public dependency/execution explanation joining supplied resources, model/component versions and planned versus recorded effects; finite complete reference lineage including semantic-update effects, not only fixture graph links.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "EXPLICIT_FINITE_EXECUTION_EXPLANATION_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2269,8 +2293,8 @@
       },
       "work_group": "execution-dependency-explanation",
       "priority": 8,
-      "task_state": "pending",
-      "next_executable_action": "Provide public dependency/execution explanation joining supplied resources, model/component versions and planned versus recorded effects; finite complete reference lineage including semantic-update effects, not only fixture graph links.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish actual upload/source/selectedmodel-component/planned-versus-recorded semantic effects explanation, public sync/async ownership/oracle controls, hostile coverage and installed delivery; no native scientific lineage or semantic mediation claim.",
       "disposition": null
     },
     {

@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-EXECUTION-EXPLANATION-001",
+      "rows": ["RC-P3.4", "CAP-06"],
+      "routes": ["/runtime/experimental/execution-explanations/v1/observations/", "/resources/experimental/dependencies/v1/graphs/MODEL/simulator.uploaded.elevation-quantifier"],
+      "source": "Explicit advertised finite execution explanation through actual public upload/source ADD/selected Resolver plan/observation/InputProvenance and400recordedcells. Inputs pin provider/concreteversion/source-manifest-vs-binary hashes; selected model source and componentprovider/version/prototype match explicit referenceComponentSelection, never inventory inference. Planned and recorded effects separate; successful declared semantic-label association binds before/after revision history and fresh restored observation metadata. Native observable/numeric values unchanged: no scientific/unit mediation. Same-owner secondclient, Bob/root/no-selected-plan denial and ownedRuntime cleanup; fixture-only source reset/nativeRESOURCEdelete distinct. Strict source/component/plan/effect/digest/privacy/budget/duplicate refusals, no native scientific lineage or permission authority.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native selected component/source/semantic effect and scientific lineage contracts remain external",
+      "simulator_test": "test_execution_explanations.py::test_actual_supplied_input_model_component_plan_recorded_and_semantic_effects",
+      "java_gap_ids": ["JAVA-GAP-0016"]
+    },
+    {
       "id": "SIM-GRAPH-CONVERGENCE-001",
       "rows": ["RC-P3.1", "CAP-10", "CAP-11"],
       "routes": ["/runtime/experimental/graph-commits/v1/snapshot", "/runtime/experimental/graph-commits/v1/checkpoint", "/runtime/experimental/graph-commits/v1/changes"],

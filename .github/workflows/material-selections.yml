@@ -29,6 +29,8 @@ jobs:
       - name: Enforce unchanged material coverage gate
         run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:material-sdk-coverage.json
       - name: Check unchanged material gate
+        run: python -m pytest -q python-client/tests/unit/test_execution_explanations.py --cov=klab_client --cov-branch --cov-append --cov-report=json:material-sdk-coverage.json
+      - name: Verify material coverage threshold
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py material-sdk-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/requests.py

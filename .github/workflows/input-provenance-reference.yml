@@ -29,6 +29,8 @@ jobs:
       - name: Enforce unchanged input association coverage gate
         run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:input-sdk.json
       - name: Check unchanged input association gate
+        run: python -m pytest -q python-client/tests/unit/test_execution_explanations.py --cov=klab_client --cov-branch --cov-append --cov-report=json:input-sdk.json
+      - name: Verify input association coverage threshold
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py input-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/input_provenance.py

@@ -25,6 +25,8 @@ jobs:
       - name: SDK-only complete graph and delta/projection controls
         run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-report=json:graph-convergence-sdk.json
       - name: Entire new SDK module and changed SDK decisions unexcluded
+        run: python -m pytest -q python-client/tests/unit/test_execution_explanations.py --cov=klab_client --cov-branch --cov-append --cov-report=json:graph-convergence-sdk.json
+      - name: Verify complete finite graph coverage threshold
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py graph-convergence-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/reference_commits.py
