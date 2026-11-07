@@ -175,6 +175,20 @@ function inputLabel(name: string): string {
   return ({ proposal_id: "Proposal ID", revision_id: "Revision ID", domain: "Domain", purpose: "Purpose",
     requested_tier: "Requested tier", target_community: "Target community" } as Record<string, string>)[name] || name.replaceAll("_", " ");
 }
+function integerInput(input: Action["missing"][number]): boolean {
+  return ["int", "Integer", "java.lang.Integer"].includes(input.javaType || "");
+}
+function inputError(input: Action["missing"][number]): string {
+  const value = values.value[input.name];
+  if (integerInput(input)) {
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > 2147483647)
+      return `${inputLabel(input.name)} must be an integer of 1 or greater (maximum 2147483647).`;
+  } else if (value === undefined || String(value).trim() === "") return `${inputLabel(input.name)} is required.`;
+  return "";
+}
+function actionInputError(action: Action): string {
+  return action.missing.map(inputError).find(Boolean) || "";
+}
 function keepDraft(): boolean {
   if (!editorDirty.value && !feedbackDirty.value) return false;
   error.value = "Save or explicitly discard your stage details, selected files, proposal edits or feedback before changing the view."; return true;
@@ -270,7 +284,7 @@ async function loadFlow() {
     }
     if (disposed) return false;
     for (const action of actions.value) for (const input of action.missing) {
-      if (!(input.name in values.value)) values.value[input.name] = input.javaType === "Integer" || input.javaType === "java.lang.Integer" ? 1 : "";
+      if (!(input.name in values.value)) values.value[input.name] = integerInput(input) ? 1 : "";
     }
     selectedProposal.value = proposals.value.at(-1)?.id || "";
     selectedContext.value = contextAttachments.value[0]?.id || "";
@@ -287,6 +301,8 @@ async function loadFlow() {
 }
 async function execute(action: Action) {
   if (busy.value || uncertainPreparation.value || keepDraft() || !flow.value) return;
+  // A click handler does not invoke native form validity, so guard the request as well as the button.
+  if (actionInputError(action)) return;
   const finish = beginOperation("Preparing review draft from the ontology. This can take a little while; stay on this page...", "prepare");
   try {
     const parameters = Object.fromEntries(action.missing.map(input => [input.name, values.value[input.name]]));
@@ -507,10 +523,13 @@ onMounted(async () => {
       <p>Use the current ontology, authored review annotations and optional project BOOTSTRAP.md to generate an editable proposal. Reference files you added are retained for your preparation.</p>
       <p>Complete all preparation fields below. Stage details only need saving if you changed them.</p>
       <div class="action-inputs"><label v-for="input in action.missing" :key="input.name">{{ inputLabel(input.name) }}
-        <input v-if="input.javaType?.endsWith('Integer')" v-model.number="values[input.name]" type="number" min="1" />
+        <input v-if="integerInput(input)" v-model.number="values[input.name]" type="number" min="1" max="2147483647" step="1" required
+          :aria-invalid="!!inputError(input)" :aria-describedby="inputError(input) ? `${action.id}-${input.name}-error` : undefined" />
         <input v-else v-model="values[input.name]" required />
       </label></div>
-      <button :disabled="action.missing.some(input => values[input.name] === '' || values[input.name] === undefined)" @click="execute(action)">{{ preparing ? 'Preparing review draft...' : action.label }}</button>
+      <p v-for="input in action.missing.filter(input => integerInput(input) && inputError(input))" :key="input.name"
+        :id="`${action.id}-${input.name}-error`" role="status">{{ inputError(input) }}</p>
+      <button :disabled="!!actionInputError(action)" @click="execute(action)">{{ preparing ? 'Preparing review draft...' : action.label }}</button>
     </fieldset>
     <div v-if="flowAttempted && flowId" class="face-to-face">
       <section><h2>{{ canEdit ? 'Current candidate draft' : 'Reviewed candidate' }}</h2>

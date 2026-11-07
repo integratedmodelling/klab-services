@@ -19,6 +19,42 @@ async function fillPreparation(page: import("@playwright/test").Page) {
   }
 }
 
+test("invalid requested tiers never submit or mutate and correction prepares exactly once", async ({ page }, testInfo) => {
+  await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=prepare");
+  await fillPreparation(page);
+  const tier = page.getByLabel("Requested tier", { exact: true });
+  const prepare = page.getByRole("button", { name: "Prepare review draft", exact: true });
+  const feedback = page.locator("#prepare-review-draft-requested_tier-error");
+  for (const invalid of ["0", "-1", "1.5", "", "2147483648"]) {
+    await tier.fill(invalid);
+    await expect(tier).toHaveAttribute("aria-invalid", "true");
+    await expect(feedback).toContainText("Requested tier must be an integer of 1 or greater");
+    await expect(prepare).toBeDisabled();
+    // Even a dispatched click bypassing the disabled control must not reach the API.
+    await prepare.dispatchEvent("click");
+    await prepare.dispatchEvent("click");
+    await expect(page.getByLabel("Revision ID", { exact: true })).toHaveValue("r1");
+    await expect(page.getByLabel("Purpose", { exact: true })).toHaveValue("test");
+    expect(await page.evaluate(() => ({ calls: (window as any).calls.length,
+      revision: (window as any).reviewFixtureFlow.revision,
+      files: (window as any).reviewFixtureFlow.states["stage-1"].attachments.length })))
+      .toEqual({ calls: 0, revision: 3, files: 0 });
+    await expect(page.getByText("Preparation has an unknown outcome", { exact: false })).toHaveCount(0);
+  }
+  await page.screenshot({ path: testInfo.outputPath("invalid-requested-tier.png"), fullPage: true });
+  await tier.fill("2");
+  await expect(tier).toHaveAttribute("aria-invalid", "false");
+  await expect(feedback).toHaveCount(0);
+  await prepare.click();
+  await waitingFor(page, "prepare");
+  await page.getByRole("button", { name: "Preparing review draft...", exact: true }).dispatchEvent("click");
+  expect(await page.evaluate(() => (window as any).calls)).toMatchObject([{ command: {
+    expectedRevision: 3, parameters: { requested_tier: 2, revision_id: "r1", purpose: "test" } } }]);
+  await release(page, "prepare");
+  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
+  expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
+});
+
 test("slow discovery and review permissions show progress instead of an empty bootstrap", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=discovery&pause=review");
   await waitingFor(page, "discovery");
