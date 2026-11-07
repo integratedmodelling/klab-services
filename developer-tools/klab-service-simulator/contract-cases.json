@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-MANAGED-AGENT-001",
+      "rows": ["RC-P4.5", "CAP-14"],
+      "routes": ["/runtime/experimental/managed-agents/v1/create", "/runtime/experimental/managed-agents/v1/{agent}", "/runtime/experimental/managed-agents/v1/{agent}/{command}"],
+      "source": "Explicit klab.experimental.managed-agents/1 finite synthetic state machine, no k.Actors parsing/compilation/execution. Root-owned BEHAVIOR-like reference only; synthetic stop/terminal/separatecleanup/CAS/epoch/rebind controls are not native execution or private-session disposal evidence.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; maintained native managed execution/independent cleanup NOT_TESTED",
+      "simulator_test": "test_managed_agents.py::test_owned_managed_reference_single_use_terminal_and_separate_cleanup",
+      "java_gap_ids": ["JAVA-GAP-0008"]
+    },
+    {
       "id": "SIM-READ-PLAN-001",
       "rows": ["RC-P2.1", "RC-P2.2", "CAP-09"],
       "routes": ["/runtime/experimental/read-plans/v1/open", "/runtime/experimental/read-plans/v1/{plan}/shards/{index}", "/runtime/experimental/read-plans/v1/{plan}"],

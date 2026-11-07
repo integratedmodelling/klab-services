@@ -119,6 +119,28 @@ or block-contract promotion; ordinaryPR/delivery and other roadmap work pending.
 Final SDK-only changed-code/newmodulegatePASS;17linkedcasesPASS(269SDK/104simulator/
 57worker), zero skips/failures/errors versus17realNOT_RUN/exit3. Bounded private
 read-plan reference locally verified; ordinaryPR/finalheadCI/permittedmerge next.
+Read-plan normalPR276 open atdd8ee781d; final-headCIrunning. Next uncommitted managed
+synthetic lifecycle reference under0008 now35SDK-only tests100%133lines48branches/
+12HTTPserver tests/types/lintPASS. This is finite fixture state, not k.Actors execution
+or native cleanup proof. Same0008handoff/docs/scenario/CI/publicexports updated;
+fresh installed/17case/delivery pending. Native lifecycle exists and remainsNOT_TESTED.
+Read-planPR276 now verified MERGED8d4068b3bb6a3683526b805d5f269ef09ecd004e at
+2026-11-07T02:04:58Z, all applicable final-head checksPASS without failed rerun.
+Managed synthetic reference fresh installed verifier running; no native lifecycle
+execution/disposal inferred. Fresh02:04:41UTC11issue review unchanged/no safe closure.
+Managed-reference fresh installed4192SDK/73referenceHTTPstorage+recovery/187simulator/
+57worker/21workerHTTP+recovery/33governancePASS, zero skips.53SDK+18simulator+5worker
+rawmodule parity; SDK-only133lines48branches100%unexcluded. Linkedmatrix/coveragegate
+attestation running;17realNOT_RUN/exit3verified. Exact custody/synthetic-onlylimits:
+`evidence/full-roadmap-managed-agents-20261107.json`; ordinary delivery pending.
+Managed finalSDK-only changed-code/newmodulegatePASS;17linkedcasesPASS(304SDK/
+116simulator/57worker), zero skips/failures/errors;17realNOT_RUN/exit3unchanged.
+Bounded synthetic reference locally verified, normalPR/finalCI/permittedmerge next.
+ManagedPR277 OPENd5c2f3af5; hosted drift gate correctly rejected omitted generated
+JAVA_GAP_STATUS.md. Local dirty-file generatedcheck had passed; missing gitadd is
+the delivery defect, not Java/native status or simulator-code failure. Correction
+commits companion without weakening gate; local33governance+generatedcheckPASS,
+push/finalheadCI/permittedmerge still required. Failure retained in feature receipt.
 
 ### Sequential execution queue — user directive 2026-11-06
 

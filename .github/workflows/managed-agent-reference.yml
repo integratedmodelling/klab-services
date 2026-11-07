@@ -1,0 +1,43 @@
+name: Synthetic managed lifecycle (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/src/klab_client/managed_agents.py', 'python-client/tests/unit/test_managed_agents.py', 'developer-tools/klab-service-simulator/src/klab_simulator/managed_agents.py', 'developer-tools/klab-service-simulator/tests/test_managed_agents.py', '.github/workflows/managed-agent-reference.yml']
+  pull_request:
+    paths: ['python-client/src/klab_client/managed_agents.py', 'python-client/tests/unit/test_managed_agents.py', 'developer-tools/klab-service-simulator/src/klab_simulator/managed_agents.py', 'developer-tools/klab-service-simulator/tests/test_managed_agents.py', '.github/workflows/managed-agent-reference.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install separate SDK and development reference
+        run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: SDK-only synchronous and native asynchronous wire coverage
+        run: python -m pytest -q python-client/tests/unit/test_managed_agents.py --cov=klab_client --cov-branch --cov-report=json:managed-coverage.json --junitxml=managed-unit.xml
+      - name: Synthetic HTTP lifecycle, denial, restart loss and durable rollback
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_managed_agents.py developer-tools/klab-service-simulator/tests/test_durable_recovery.py --junitxml=managed-http.xml
+      - name: Full unexcluded SDK-only new-module coverage
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py managed-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/managed_agents.py
+      - name: Check implementation bodies
+        run: python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/managed_agents.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-managed-lifecycle-native-NOT_RUN
+          path: |
+            managed-unit.xml
+            managed-http.xml
+            managed-coverage.json

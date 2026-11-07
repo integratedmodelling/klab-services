@@ -79,6 +79,19 @@ native block/layout/revision lease contract stillUNKNOWN_PENDING_REFERENCE.
 Read-plan final SDK-only changed-code/newmodule gate and17linkedcases nowPASS
 (269SDK/104simulator/57worker) versus17realNOT_RUN/exit3. Local bounded reference
 acceptance complete; normalPR/finalheadCI/permittedmerge pending, not native parity.
+Read-planPR276 subsequently verified merged8d4068b3b with all applicable checksPASS
+without failed rerun. Next0008managed synthetic lifecycle has35SDK-only unit tests
+at100%133lines48branches and12HTTPserver controlsPASS; fresh installedverification
+running. Named finite fixtures execute NO k.Actors source or private sessions, and
+synthetic terminal/cleanup confirmation is not native disposal evidence. Native
+execution/cleanup staysNOT_TESTED; no fullparent acceptance or issueclosure implied.
+Managed-reference fresh installed4192SDK/187simulator/73reference/57worker/21HTTP/
+33governancePASS, zero skips;53SDK+18simulator+5worker rawmodule parity, SDK-only
+newmodule133lines48branches100%unexcluded. Linked-case attestation/normalPR/CI pending.
+Finite synthetic fixtures do not satisfy native execution/private-session cleanup.
+Managed finalSDK-only changed-code/newmodulegate and17linkedcasesPASS(304SDK/
+116simulator/57worker) vs17realNOT_RUN/exit3. Bounded local synthetic reference
+acceptance verified; normalPR/finalCI pending, no native execution/cleanup promotion.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),

@@ -19,5 +19,6 @@
   "revision_kind": "REFERENCE_CONTENT_SHA256_NOT_NATIVE_COMMIT",
   "scientific_acceptance": false,
   "dependency_custody": "Fresh wheels/sdists/separate pip-target installs borrow existing test dependencies; no existing environment modification or fresh dependency-isolation certification",
-  "remaining": "Ordinary featurePR/finalheadCI/permittedmerge. Native block/layout/revision lease acceptance and remaining managedagents/provenance/federation/full42criterion completion remain separate. Entire-roadmap sleep pending."
+  "delivery": {"pr": 276, "head": "dd8ee781d452914a18517ee67a9b4fd082b8d75b", "merge": "8d4068b3bb6a3683526b805d5f269ef09ecd004e", "merged_utc": "2026-11-07T02:04:58Z", "applicable_final_head_checks": "PASS SDK3.11/12/13/core/read-plan/scientific/workerWindows+Ubuntu/schema/simulator/notebook/build/Jenkins; no failed-check rerun needed", "independent_maintainer_review": false},
+  "remaining": "Native block/layout/revision lease acceptance and remaining managedagents/provenance/federation/full42criterion completion remain separate. Entire-roadmap sleep pending."
 }
