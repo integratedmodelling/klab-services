@@ -31,6 +31,21 @@ public class WorkflowBehaviorBridge {
     this.ontologyReviewBehavior = ontologyReviewBehavior;
   }
 
+  /** Shared production loading path, separate from project behavior resolution. */
+  public static KActorsBehavior bundledOntologyReview(Function<String, KActorsBehavior> parser) {
+    try (var input = WorkflowBehaviorBridge.class.getResourceAsStream("/workflows/ontology-review.kactor")) {
+      if (input == null) throw new IllegalStateException("Missing bundled ontology review behavior");
+      var behavior = parser.apply(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+      if (behavior == null || !ONTOLOGY_REVIEW_BEHAVIOR.equals(behavior.getUrn())
+          || behavior.getBehaviorType() != KActorsBehavior.Type.BEHAVIOR
+          || org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(behavior.getNotifications()))
+        throw new IllegalStateException("Bundled ontology review behavior could not be parsed and validated");
+      return behavior;
+    } catch (java.io.IOException failure) {
+      throw new IllegalStateException("Cannot load bundled ontology review behavior", failure);
+    }
+  }
+
   /** Read-only editor facade, freshly bound for each call; no UI object or mutation verbs. */
   public record Editor(String flowId, String stageId, String title, String description,
       String owner, long revision, List<String> attachmentNames) {}

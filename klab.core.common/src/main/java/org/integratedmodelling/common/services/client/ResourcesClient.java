@@ -159,7 +159,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
       String workflowId, Flow.InitializationRequest request, UserScope scope) {
     return client
         .withScope(scope)
-        .postRequired(
+        .postResourceSnapshot(
             ServicesAPI.RESOURCES.FLOW_INITIALIZATION,
             request,
             Flow.class,
@@ -212,6 +212,12 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
             flowId,
             "stateId",
             stateId);
+  }
+
+  @Override
+  public Flow updateFlowStateDetails(String flowId, String stateId, Flow.StateDetailsUpdate update, UserScope scope) {
+    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_STATE + "/details", update, Flow.class,
+        "flowId", flowId, "stateId", stateId);
   }
 
   @Override

@@ -42,26 +42,22 @@ host repository with an attached branch, no conflicting mutation owner and writa
 
 ## Create the disposable review
 
-An authorized editor can use the existing create-flow API. Substitute an actual accessible
-disposable ontology URN for `pilot.ontology`; send this JSON through the normal authenticated
-client, not through the synthetic test bridge:
+Run the primary check through the actual IDE or `<Resources-base>/ui/review`, not by seeding
+a flow through an API. Confirm that new-workflow choices contain only the latest definition and
+show its version (`0.4` for this revision). Enter a title and description, select a reference file,
+and create the private bootstrap once. Check that details/files survive reload and that starting
+another flow requires an explicit action. Use a second disposable flow to test an already-authored
+proposal upload. On a flow without a proposal, complete **Prepare review draft** and inspect its
+result. In the IDE, exercise the actual file chooser and the restored structure button.
 
-```text
-POST <Resources-base>/api/v1/flows?workflowId=ontology-review-pilot
-Content-Type: application/json
-```
+After creation, edit the stage details, save a preparation note, upload a proposal/reference, and
+start peer review without relying on an unrelated refresh. Test two-tab detail conflicts and a
+known rejected upload separately from an uncertain network outcome. In coalescing, selecting a
+private note/reference for preview must never replace the frozen ontology source in the next cycle.
 
-```json
-{
-  "schemaId": "bootstrap",
-  "assetUrn": "pilot.ontology",
-  "assetType": "ONTOLOGY",
-  "permissionsOwnerUrn": "pilot.ontology",
-  "title": "Colleague ontology review pilot"
-}
-```
+The atomic API (`POST /api/v1/flows/initialize`, with `initialState` and `attachments`) is documented
+in the [staged contract](../REVIEW_CYCLES_PILOT.md). API-only setup does not satisfy this UI check.
 
-The web UI also offers **Create private bootstrap**, with server-derived creation permission.
 Use the returned flow ID and its current bootstrap state ID in
 `<Resources-base>/ui/review?flow=<id>&stage=<id>`. The editor uses the explicit bootstrap action,
 checks the generated draft, saves a candidate and opens the desired rounds. From the selected
@@ -85,6 +81,11 @@ Use the actual deployment path. An HTTP 403/401 assertion in the synthetic fixtu
 | Contributor/proposal filters | Attribution and candidate revision remain clear; filtering never overwrites the editor's unsaved candidate | NOT RUN |
 | Two concurrent edits/close vs submission | One current-revision write wins; loser keeps local work for explicit refresh/retry; closure remains immutable | NOT RUN |
 | Creator bootstrap with unrelated editor/admin and public flag | Only creating editor with current grants can read/update bootstrap; no private catalog reference or generic API bypass | NOT RUN |
+| Empty IDE/Web editor journey | Latest version identifiable; title/description, actual file selection, save, preparation and start work from no flow | NOT RUN |
+| Successful create followed by another click/reload | One flow created; Start is hidden; starting a second flow is an explicit choice | NOT RUN |
+| Details save followed immediately by Start | Uses current command revision; no avoidable stale-command error | NOT RUN |
+| Cross-tab details and reference upload | Stale title/description cannot overwrite another tab; local edits retained for reconciliation | NOT RUN |
+| Private reference selected during coalescing | Next candidate retains exact intended ontology bytes, never the private preview text | NOT RUN |
 | Create interrupted after server persistence | No blind repeat; reconcile current-account flows and open the saved bootstrap | NOT RUN |
 | Move to coalescing | Open rounds/cycle close atomically; new creator-owned editor stage is editable; historical stages remain immutable | NOT RUN |
 | Untouched coalescing seed | Termination is available without pretending the automatically loaded candidate is a user edit; return requires a saved local candidate | NOT RUN |

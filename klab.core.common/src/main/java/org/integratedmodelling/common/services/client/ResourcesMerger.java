@@ -268,6 +268,11 @@ public class ResourcesMerger implements ResourcesService {
   }
 
   @Override
+  public Flow updateFlowStateDetails(String flowId, String stateId, Flow.StateDetailsUpdate update, UserScope scope) {
+    return primary().updateFlowStateDetails(flowId, stateId, update, scope);
+  }
+
+  @Override
   public boolean deleteFlowState(String flowId, String stateId, UserScope scope) {
     return primary().deleteFlowState(flowId, stateId, scope);
   }

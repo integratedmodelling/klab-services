@@ -55,6 +55,9 @@ class OntologyReviewBootstrapActionTest {
     final String stage;
     Fixture(String bootstrap) throws Exception { this(bootstrap, null); }
     Fixture(String bootstrap, org.integratedmodelling.klab.resources.WorkflowStore actualStore) throws Exception {
+      this(bootstrap, actualStore, true);
+    }
+    Fixture(String bootstrap, org.integratedmodelling.klab.resources.WorkflowStore actualStore, boolean createInitialFlow) throws Exception {
       manager = new WorkflowManager(actualStore == null ? store : actualStore);
       var identity = new ProposalReviewProtocolTest().scope("editor", "EDITOR");
       editor = mock(UserScope.class);
@@ -74,7 +77,8 @@ class OntologyReviewBootstrapActionTest {
       manager.setBehaviorBridge(new WorkflowBehaviorBridge(() -> new AgentCompiler.Resolver() {}, owner -> null, () -> behavior));
       var initial = Flow.State.create(); initial.setSchemaId("bootstrap"); initial.setAssetUrn("test.ontology");
       initial.setPermissionsOwnerUrn("test.ontology"); initial.setAssetType(KlabAsset.KnowledgeClass.ONTOLOGY);
-      flow = manager.createFlow(WORKFLOW, initial, editor); stage = flow.getCurrentStateIds().iterator().next();
+      flow = createInitialFlow ? manager.createFlow(WORKFLOW, initial, editor) : null;
+      stage = flow == null ? null : flow.getCurrentStateIds().iterator().next();
     }
     WorkflowBehavior.ActionRequest request(long revision) {
       return new WorkflowBehavior.ActionRequest(revision, Map.of("proposal_id", "test-proposal", "revision_id", "test-r1",

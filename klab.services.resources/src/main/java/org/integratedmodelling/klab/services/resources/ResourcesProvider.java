@@ -169,15 +169,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
                 org.integratedmodelling.klab.runtime.kactors.compiler.AgentCompiler
                     .componentResolver(getComponentRegistry()),
             owner -> getScopeManager().getScope(owner, UserScope.class),
-            () -> {
-              try (var input = ResourcesProvider.class.getResourceAsStream("/workflows/ontology-review.kactor")) {
-                if (input == null) throw new IllegalStateException("Missing bundled ontology review behavior");
-                return workspaceManager.parseAsset(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8),
-                    org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.class);
-              } catch (java.io.IOException failure) {
-                throw new IllegalStateException("Cannot load bundled ontology review behavior", failure);
-              }
-            }));
+            () -> org.integratedmodelling.klab.services.resources.workflow.WorkflowBehaviorBridge
+                .bundledOntologyReview(source -> workspaceManager.parseAsset(source,
+                    org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.class))));
 
     ServiceConfiguration.INSTANCE.setMainService(this);
 
@@ -397,6 +391,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public Flow.State updateFlowState(
       String flowId, String stateId, Flow.State state, UserScope scope) {
     return workflowManager.updateState(flowId, stateId, state, scope);
+  }
+
+  @Override
+  public Flow updateFlowStateDetails(String flowId, String stateId, Flow.StateDetailsUpdate update, UserScope scope) {
+    return workflowManager.updateStateDetails(flowId, stateId, update, scope);
   }
 
   @Override

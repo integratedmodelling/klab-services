@@ -1,5 +1,5 @@
 id: ontology-review-pilot
-version: "0.3"
+version: "0.4"
 name: Ontology community review pilot
 description: Editor-led ontology review with attributed reviewer and community rounds.
 metadata:

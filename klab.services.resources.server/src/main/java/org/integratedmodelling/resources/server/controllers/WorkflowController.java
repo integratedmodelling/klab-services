@@ -211,6 +211,18 @@ public class WorkflowController {
         .updateFlowState(flowId, stateId, state, userScope(principal));
   }
 
+  @org.springframework.web.bind.annotation.PatchMapping(ServicesAPI.RESOURCES.FLOW_STATE)
+  public Flow updateStateDetails(@PathVariable String flowId, @PathVariable String stateId,
+      @RequestBody Flow.StateDetailsUpdate update, Principal principal) {
+    return resourcesServer.klabService().updateFlowStateDetails(flowId, stateId, update, userScope(principal));
+  }
+
+  @PostMapping(ServicesAPI.RESOURCES.FLOW_STATE + "/details")
+  public Flow postStateDetails(@PathVariable String flowId, @PathVariable String stateId,
+      @RequestBody Flow.StateDetailsUpdate update, Principal principal) {
+    return updateStateDetails(flowId, stateId, update, principal);
+  }
+
   @Operation(summary = "Delete a flow state", description = "Remove a state from an existing flow")
   @DeleteMapping(ServicesAPI.RESOURCES.FLOW_STATE)
   public boolean deleteState(

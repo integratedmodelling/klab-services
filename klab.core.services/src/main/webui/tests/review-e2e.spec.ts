@@ -1,8 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 import { writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 test("four simulated principals review, integrate, close and restart through real UI/native workflow APIs", async ({ browser, request }) => {
-  const api = process.env.KLAB_REVIEW_E2E_API!, flow = process.env.KLAB_REVIEW_E2E_FLOW!, stage = process.env.KLAB_REVIEW_E2E_STAGE!;
+  const api = process.env.KLAB_REVIEW_E2E_API!;
+  let flow = "", stage = "";
   expect(api).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
   async function view(actor = "editor"): Promise<any> {
     const response = await request.get(`${api}/api/v1/flows/${flow}/review-cycles`, { headers: { "X-Review-Fixture-Principal": actor } });
@@ -19,12 +21,49 @@ test("four simulated principals review, integrate, close and restart through rea
       await page.getByRole("button", { name: "Refresh rounds", exact: true }).click();
       await expect(page.getByRole("button", { name: "Refresh rounds", exact: true })).toBeEnabled();
     }
-    await visit(editor, "editor");
+    await editor.goto("/tests/review-e2e.html?actor=editor");
+    await expect(editor.getByLabel("Flow", {exact:true}).locator("option")).toHaveCount(1);
+    await editor.getByLabel("Ontology URN", {exact:true}).fill("test.ontology");
+    await editor.getByLabel("Review title", {exact:true}).fill("Native ontology editor review");
+    await editor.getByLabel("Review description", {exact:true}).fill("Prepare the ontology with authored references and editor rationale before peer review.");
+    await editor.getByLabel("Reference files (optional)", {exact:true}).setInputFiles({name:"review-reference.md",mimeType:"text/markdown",buffer:Buffer.from("# Native editor reference\nReference evidence uploaded from the bootstrap form.")});
+    if (process.env.KLAB_REVIEW_E2E_REPORT) await editor.screenshot({path:join(dirname(process.env.KLAB_REVIEW_E2E_REPORT),"editor-journey-filled-bootstrap.png"),fullPage:true});
+    await editor.getByRole("button", {name:"Create private bootstrap",exact:true}).click();
+    await expect(editor.getByRole("button", {name:"Create private bootstrap",exact:true})).toHaveCount(0);
+    await expect(editor.getByLabel("Stage title", {exact:true})).toHaveValue("Native ontology editor review");
+    flow = new URL(editor.url()).searchParams.get("flow")!; stage = new URL(editor.url()).searchParams.get("stage")!;
+    expect(flow).toBeTruthy(); expect(stage).toBeTruthy();
+    await expect(editor.getByLabel("Saved stage files")).toContainText("review-reference.md");
+    // Starting another flow is explicit, and cancelling it must not create a duplicate or lose this stage.
+    await editor.getByRole("button", {name:"Start another ontology review",exact:true}).click();
+    await expect(editor.getByLabel("Review title", {exact:true})).toHaveValue("");
+    await editor.getByRole("button", {name:"Cancel new review",exact:true}).click();
+    await expect(editor.getByRole("button", {name:"Create private bootstrap",exact:true})).toHaveCount(0);
+    await editor.getByLabel("Stage title", {exact:true}).fill("Native ontology editor preparation");
+    await editor.getByLabel("Stage description", {exact:true}).fill("Edited bootstrap scope, preserved through preparation and reload.");
+    await editor.getByRole("button", {name:"Save stage details",exact:true}).click();
+    await expect(editor.getByRole("button", {name:"Save stage details",exact:true})).toBeDisabled();
+    await editor.getByLabel("Preparation note", {exact:true}).fill("Bootstrap editor rationale from native form");
+    await editor.getByRole("button", {name:"Save preparation note",exact:true}).click();
+    await expect(editor.getByLabel("Preparation note", {exact:true})).toHaveValue("");
     for (const name of ["Proposal ID", "Revision ID", "Domain", "Purpose", "Target community"])
       await editor.getByLabel(name, { exact: true }).fill(name === "Proposal ID" ? "test-proposal" : name === "Revision ID" ? "test-r1" : "Fixture review");
     await editor.getByRole("button", { name: "Prepare review draft", exact: true }).click();
     await expect(editor.getByLabel("Candidate proposal JSON")).toHaveValue(/test-r1/);
     const original = JSON.parse(await editor.getByLabel("Candidate proposal JSON").inputValue());
+    await expect(editor.getByLabel("Stage title", {exact:true})).toHaveValue("Native ontology editor preparation");
+    await expect(editor.getByLabel("Stage description", {exact:true})).toHaveValue("Edited bootstrap scope, preserved through preparation and reload.");
+    // Upload a real proposal file through the saved bootstrap, without a programmatic candidate seed.
+    await editor.getByLabel("File purpose", {exact:true}).selectOption("bootstrap-proposal");
+    await editor.getByLabel("Stage files", {exact:true}).setInputFiles({name:"editor-proposal.json",mimeType:"application/json",buffer:Buffer.from(JSON.stringify(original))});
+    await editor.getByRole("button", {name:"Upload selected files",exact:true}).click();
+    await expect(editor.getByLabel("Saved stage files")).toContainText("editor-proposal.json");
+    await expect(editor.getByLabel("Proposal attachment", {exact:true}).locator("option:checked")).toContainText("editor-proposal.json");
+    await editor.reload();
+    await expect(editor.getByLabel("Stage title", {exact:true})).toHaveValue("Native ontology editor preparation");
+    await expect(editor.getByLabel("Candidate proposal JSON")).toHaveValue(/test-r1/);
+    await expect(editor.getByRole("button", {name:"Create private bootstrap",exact:true})).toHaveCount(0);
+    if (process.env.KLAB_REVIEW_E2E_REPORT) await editor.screenshot({path:join(dirname(process.env.KLAB_REVIEW_E2E_REPORT),"editor-journey-saved-bootstrap.png"),fullPage:true});
     await editor.getByRole("button", { name: "Start cycle from selected proposal", exact: true }).click();
     await expect(editor.getByRole("button", { name: "Open reviewer round", exact: true })).toBeVisible();
     await expect(editor.getByLabel("Feedback iteration").locator("option")).toHaveCount(2);
@@ -136,6 +175,8 @@ test("four simulated principals review, integrate, close and restart through rea
       originalProposalChecksum: frozen.candidate.proposal.checksum, integratedProposalChecksum: cycle2.candidate.proposal.checksum,
       peerContributors: ["reviewer-a", "reviewer-b"], communityContributors: ["community"],
       privateDraftIsolation: true, contributorAndProposalFilters: true, staleRevisionRecovery: true,
+      actualBootstrapForm: true, atomicReferenceUpload: true, proposalFileUpload: true, editorPreparationNote: true,
+      titledDescribedStage: true, explicitStartAnotherAndCancel: true, creationCount: 1,
       immutableClosureAfterLaterCycleAndRestart: true, nativeStoreAndManagerRestarts: 1,
       finalPhase: "TERMINATED", terminationIsNotPublication: true, historicalReadOnlyAfterTermination: true,
       fakeNotices: notice1, duplicateReplay: notice2, realMail: false, archiveDispatch: false,

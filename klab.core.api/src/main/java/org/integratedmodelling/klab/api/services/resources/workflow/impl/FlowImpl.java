@@ -499,6 +499,12 @@ public class FlowImpl implements Flow {
   }
 
   public static class AttachmentUploadImpl implements Flow.AttachmentUpload {
+    private long expectedRevision = -1;
+
+    public long getExpectedRevision() { return expectedRevision; }
+
+    public void setExpectedRevision(long expectedRevision) { this.expectedRevision = expectedRevision; }
+
     private String type;
     private String fileName;
     private String mediaType;

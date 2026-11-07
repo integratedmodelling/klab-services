@@ -222,7 +222,15 @@ public interface Flow extends KlabAsset {
     }
   }
 
+  /** Revision-checked update of user-editable stage details. */
+  record StateDetailsUpdate(long expectedRevision, String title, String description) implements Serializable {}
+
   interface AttachmentUpload extends Serializable {
+    /** Optional optimistic concurrency guard; negative values retain legacy behavior. */
+    long getExpectedRevision();
+
+    void setExpectedRevision(long expectedRevision);
+
     String getType();
 
     void setType(String type);
@@ -250,7 +258,8 @@ public interface Flow extends KlabAsset {
 
   /**
    * Atomic first-stage submission. The flow does not exist persistently until the initial state,
-   * its attachments, and the requested transition have all passed validation.
+   * its attachments, and the requested transition have all passed validation. Staged review
+   * bootstraps may omit the transition to persist an editable private preparation stage.
    */
   interface InitializationRequest extends Serializable {
     State getInitialState();

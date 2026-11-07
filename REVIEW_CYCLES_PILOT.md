@@ -1,8 +1,10 @@
 # Staged review cycle pilot
 
 Participant instructions: [Try the staged pilot](ONTOLOGY_REVIEW_PILOT.md).
-The unused pilot schema is intentionally revised to `ontology-review-pilot@0.3`; this is not a
-migration of existing 0.2 flows. Unrelated workflow protocols retain their own lifecycle.
+New flows use `ontology-review-pilot@0.4`. Creation discovery lists only the latest version of
+each workflow, and explicitly retired versions cannot be selected for a new flow. Existing
+flows remain bound to their recorded definition. Unrelated workflow protocols retain their own
+lifecycle.
 
 ## Authoritative lifecycle
 
@@ -33,12 +35,23 @@ creation/deletion and reopening cannot bypass the staged protocol.
 
 `GET /api/v1/workflows/{workflowId}/creation` returns server-derived `canCreate`,
 `initialStateIds` and `version`. This is a read-only UI hint; creation rechecks admission and
-actual ontology/project access. Create using `POST /api/v1/flows?workflowId=ontology-review-pilot`
-with an initial state such as:
+actual ontology/project access. The editing clients create with
+`POST /api/v1/flows/initialize?workflowId=ontology-review-pilot`:
 
 ```json
-{"schemaId":"bootstrap","assetUrn":"<authorized ontology URN>","assetType":"ONTOLOGY","title":"Ontology review"}
+{"initialState":{"schemaId":"bootstrap","assetUrn":"<authorized ontology URN>","assetType":"ONTOLOGY","title":"Ontology review","description":"Purpose and context"},"attachments":[]}
 ```
+
+Each optional attachment contains `type`, `fileName`, `mediaType` and Base64 `content`.
+The private state and all uploaded files persist atomically. Only staged-review bootstraps may
+omit the initial transition; ordinary workflow initialization still requires one.
+`POST /api/v1/flows` remains available for creating a state without initial uploads.
+
+`PATCH /api/v1/flows/{flowId}/states/{stateId}` accepts
+`{expectedRevision,title,description}` and returns the updated flow. The native client can also
+POST the same body to the state `/details` endpoint. This narrow edit never round-trips protected
+protocol metadata. Existing attachment POSTs accept optional `expectedRevision`; editing clients
+supply it and refresh explicitly after conflicts.
 
 `GET /api/v1/flows/{flowId}/review-cycles` returns revision, caller-filtered cycles, identity,
 contributable round IDs, `phase`, `editableStageId`, stage descriptors and management

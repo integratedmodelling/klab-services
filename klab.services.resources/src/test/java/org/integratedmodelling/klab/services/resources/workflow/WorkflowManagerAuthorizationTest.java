@@ -589,7 +589,7 @@ class WorkflowManagerAuthorizationTest {
     public Workflow getWorkflow(String id) {
       return workflows.values().stream()
           .filter(workflow -> workflow.getId().equals(id))
-          .findFirst()
+          .max((left, right) -> org.integratedmodelling.klab.api.services.resources.workflow.WorkflowVersions.compare(left.getVersion(), right.getVersion()))
           .orElse(null);
     }
 

@@ -11,6 +11,6 @@ async function send(path: string, init: RequestInit = {}, plain = false) {
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return plain ? response.text() : response.json();
 }
-const context = { api: { get: (path: string) => send(path), request: (path: string, init: RequestInit) => send(path, init),
+const context = { auth: { authenticated: true, username: actor }, api: { get: (path: string) => send(path), request: (path: string, init: RequestInit) => send(path, init),
   text: (path: string) => send(path, {}, true) } };
 createApp({ render: () => h(ResourcesReview, { context: context as never }) }).mount("#app");

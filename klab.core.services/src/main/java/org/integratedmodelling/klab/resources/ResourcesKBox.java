@@ -300,7 +300,7 @@ public class ResourcesKBox implements WorkflowStore {
     return workflows.find().toList().stream()
         .map(WorkflowRecord::getWorkflow)
         .filter(workflow -> id.equals(workflow.getId()))
-        .max(java.util.Comparator.comparing(workflow -> Version.create(workflow.getVersion())))
+        .max((left, right) -> org.integratedmodelling.klab.api.services.resources.workflow.WorkflowVersions.compare(left.getVersion(), right.getVersion()))
         .orElse(null);
   }
 

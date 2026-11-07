@@ -131,4 +131,39 @@ class ReviewCycleHttpPrincipalTest {
         .content("{\"type\":\"bootstrap-proposal\",\"fileName\":\"r2.json\",\"mediaType\":\"application/vnd.klab.proposal+yaml\",\"content\":\"AQID\"}"))
         .andExpect(status().isOk());
   }
+  @Test void detailsAndAtomicBootstrapBindRevisionAndAuthenticatedPrincipal() throws Exception {
+    var service = mock(ResourcesProvider.class); var server = mock(ResourcesServer.class);
+    when(server.klabService()).thenReturn(service);
+    var controller = new WorkflowController(); ReflectionTestUtils.setField(controller, "resourcesServer", server);
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var mvc = MockMvcBuilders.standaloneSetup(controller)
+        .setControllerAdvice(new org.integratedmodelling.klab.services.application.controllers.KlabErrorHandler())
+        .setMessageConverters(new MappingJackson2HttpMessageConverter(mapper)).build();
+    var editor = principal("editor", true); var scope = (UserScope) editor.getScope();
+    String details = "/api/v1/flows/flow-1/states/stage-1";
+    String body = "{\"expectedRevision\":7,\"title\":\"Named stage\",\"description\":\"Editorial scope\"}";
+    mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(details)
+        .contentType("application/json").content(body)).andExpect(status().isForbidden());
+    mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(details).principal(editor)
+        .contentType("application/json").content(body)).andExpect(status().isOk());
+    var expected = new org.integratedmodelling.klab.api.services.resources.workflow.Flow.StateDetailsUpdate(7, "Named stage", "Editorial scope");
+    verify(service).updateFlowStateDetails("flow-1", "stage-1", expected, scope);
+    mvc.perform(post(details + "/details").principal(editor).contentType("application/json").content(body)).andExpect(status().isOk());
+    verify(service, times(2)).updateFlowStateDetails("flow-1", "stage-1", expected, scope);
+    when(service.updateFlowStateDetails("flow-1", "stage-1", expected, scope))
+        .thenThrow(new org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException("stale"));
+    mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(details).principal(editor)
+        .contentType("application/json").content(body)).andExpect(status().isConflict());
+    mvc.perform(post("/api/v1/flows/initialize").param("workflowId", "ontology-review-pilot").principal(editor)
+        .contentType("application/json").content("""
+            {"initialState":{"schemaId":"bootstrap","assetUrn":"test.ontology","assetType":"ONTOLOGY","title":"Named bootstrap"},
+             "attachments":[{"type":"supporting-material","fileName":"reference.txt","mediaType":"text/plain","content":"YWJj"}]}
+            """)).andExpect(status().isOk());
+    var request = org.mockito.ArgumentCaptor.forClass(org.integratedmodelling.klab.api.services.resources.workflow.Flow.InitializationRequest.class);
+    verify(service).initializeFlow(eq("ontology-review-pilot"), request.capture(), eq(scope));
+    assertNull(request.getValue().getTransition()); assertEquals("Named bootstrap", request.getValue().getInitialState().getTitle());
+    assertArrayEquals("abc".getBytes(java.nio.charset.StandardCharsets.UTF_8), request.getValue().getAttachments().getFirst().getContent());
+    assertEquals(-1, request.getValue().getAttachments().getFirst().getExpectedRevision());
+  }
+
 }

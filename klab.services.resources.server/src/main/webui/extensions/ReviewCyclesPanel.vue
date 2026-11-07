@@ -99,7 +99,7 @@ async function refresh() {
   catch (cause) { if (current === generation) failed(cause); } finally { if (current === generation) busy.value = false; }
 }
 async function command(operation: string, extra: Record<string, unknown> = {}) {
-  if (!view.value) return;
+  if (!view.value || busy.value || props.candidateLoading) return;
   const current = generation;
   busy.value = true; error.value = "";
   try {
@@ -154,6 +154,7 @@ watch(() => props.flowId, () => {
   selectionNotice.value = "";
   contributor.value = ""; proposalFilter.value = ""; clearDraft(); refresh();
 }, { immediate: true });
+defineExpose({ refresh });
 </script>
 
 <template>
@@ -165,13 +166,15 @@ watch(() => props.flowId, () => {
       <button :disabled="busy" @click="refresh">Refresh rounds</button>
       <button v-if="view?.canOpenCycle" :disabled="busy || candidateLoading || dirty || candidateDirty || !proposalAttachmentId || !sourceStateId" @click="openCycle">{{ view.phase === "COALESCING" ? "Return to peer review" : "Start cycle from selected proposal" }}</button>
     </div>
+    <p>Refresh rounds checks for new submissions and status changes from other participants. It does not create a round or discard your feedback.</p>
     <template v-if="view">
       <p v-if="view.phase === 'BOOTSTRAP'">Bootstrap is private to the creating editor. Starting review freezes this exact candidate and opens peer review.</p>
+      <p v-if="view.canOpenCycle && (!proposalAttachmentId || candidateDirty)" role="status">{{ candidateDirty ? 'Save or discard your unsaved preparation changes before starting review.' : 'First prepare or upload a proposal and save it in this stage. Then the start-review action becomes available.' }}</p>
       <p v-if="view.phase === 'COALESCING'">Coalescing: integrate feedback in a new draft, then return to review or terminate the flow.</p>
       <p v-if="view.phase === 'TERMINATED'">This flow is terminated. Termination is not acceptance or publication. Its review history is read-only.</p>
       <div class="controls">
-        <button v-if="view.canCoalesce" :disabled="busy || dirty || candidateDirty" @click="command('ENTER_COALESCING')">Coalesce feedback</button>
-        <button v-if="view.canTerminate" :disabled="busy || dirty || candidateDirty" @click="command('TERMINATE')">Terminate flow without publication</button>
+        <button v-if="view.canCoalesce" :disabled="busy || candidateLoading || dirty || candidateDirty" @click="command('ENTER_COALESCING')">Coalesce feedback</button>
+        <button v-if="view.canTerminate" :disabled="busy || candidateLoading || dirty || candidateDirty" @click="command('TERMINATE')">Terminate flow without publication</button>
       </div>
       <p v-if="!view.cycles.length">No review cycles have been opened.</p>
       <label v-else>Proposal and cycle <select v-model="cycleId" aria-label="Feedback proposal" :disabled="busy || dirty" @change="selectCycle">

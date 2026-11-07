@@ -107,6 +107,11 @@ public interface ResourcesService extends KlabService {
    */
   Flow.State updateFlowState(String flowId, String stateId, Flow.State state, UserScope scope);
 
+  /** Update stage details without accepting server-owned metadata or bindings. */
+  default Flow updateFlowStateDetails(String flowId, String stateId, Flow.StateDetailsUpdate update, UserScope scope) {
+    throw new UnsupportedOperationException("Revision-checked stage details are not supported");
+  }
+
   /** Remove an unreferenced, non-current state. */
   boolean deleteFlowState(String flowId, String stateId, UserScope scope);
 

@@ -1,14 +1,20 @@
 # Try the staged ontology review pilot
 
-Use `ontology-review-pilot@0.3`. Existing colleague accounts can be used after an operator
+Use `ontology-review-pilot@0.4`. Existing colleague accounts can be used after an operator
 checks the Resources review URL and permissions. Email setup is not required.
 
-1. Open `<Resources-base>/ui/review`, sign in and choose **Create private bootstrap**. Supply the real,
-   accessible ontology URN. The IDE also offers **Create workflow** rather than
-   requiring a transition to persist its initial draft.
-2. **Bootstrap** belongs exclusively to the creating editor. Prepare the initial proposal
-   using the current ontology, available `@review` annotations and optional project
-   `BOOTSTRAP.md`. Edit and save the candidate before starting review. Administrators and
+1. Open `<Resources-base>/ui/review` and sign in. Enter the accessible **Ontology URN**,
+   **Review title** and **Review description**. You may select an existing proposal and reference
+   files before **Create private bootstrap**. The state and files are submitted atomically.
+   After success the Start form closes; use **Start another ontology review** only when you
+   deliberately want a separate flow. A failed/uncertain response does not invite a second creation.
+2. **Bootstrap** belongs exclusively to the creating editor. Edit its title/description, add
+   reference material and editor notes, and either upload your proposal or use **Prepare review
+   draft**. Preparation uses the current ontology, available `@review` annotations and optional
+   project `BOOTSTRAP.md`. Complete the labeled proposal/revision/domain/purpose/community fields,
+   then inspect and save the candidate before starting review. Preparation does not overwrite an
+   already supplied proposal. If preparation cannot be discovered or the ontology is unavailable,
+   the page shows a diagnostic rather than silently hiding the next step. Administrators and
    other editors cannot read or edit this private bootstrap stage.
 3. **Peer review** and **Community review** are separate stage instances. Starting a cycle
    freezes the selected proposal/source and opens peer review. The editor may open community
@@ -30,8 +36,10 @@ cannot see someone else's private draft. Submitted corrections are new contribut
 
 The stage selector includes permitted historical stages, displayed read-only. Stale commands
 require refresh and explicit retry; unsaved feedback is retained. The IDE's specialized stage
-panel opens the Resources review UI for stage operations rather than presenting generic
-controls that could conflict with this lifecycle.
+panel provides native bootstrap title/description, preparation and attachment controls, and
+opens the Resources review UI for review-cycle operations. New-workflow choices show only the
+latest definition with its version. The structure button shows staged behavior and persisted
+history without inventing ordinary transitions for the review protocol.
 
 Cycle closure records a minimal protected Git digest intent. Its link grants no access and its
 content excludes contribution text, drafts and identities. Check its receipt or retry a deferred

@@ -99,6 +99,10 @@ public class WorkflowManager {
   }
 
   public Workflow getWorkflow(String id) {
+    if (id != null && id.startsWith("urn:klab:workflow:")) {
+      var coordinates = WorkflowUrns.parse(id, KlabAsset.KnowledgeClass.WORKFLOW);
+      return getWorkflow(coordinates.ownerId(), coordinates.version());
+    }
     var workflow = kbox.getWorkflow(id);
     if (workflow == null) throw new KlabIllegalArgumentException("Unknown workflow " + id);
     workflow.validate();
@@ -175,11 +179,27 @@ public class WorkflowManager {
     };
   }
 
+  private List<Workflow> latestWorkflows() {
+    var latest = new java.util.LinkedHashMap<String, Workflow>();
+    for (var workflow : kbox.listWorkflows()) latest.merge(workflow.getId(), workflow, (left, right) ->
+        org.integratedmodelling.klab.api.services.resources.workflow.WorkflowVersions.compare(
+            left.getVersion(), right.getVersion()) >= 0 ? left : right);
+    return List.copyOf(latest.values());
+  }
+
+  private Workflow creationWorkflow(String identifier) {
+    var workflow = getWorkflow(identifier);
+    var latest = kbox.getWorkflow(workflow.getId());
+    if (latest == null || !Objects.equals(workflow.getVersion(), latest.getVersion()))
+      throw new KlabIllegalStateException("This workflow version is retired; refresh available workflows before creating a flow");
+    return workflow;
+  }
+
   public List<? extends KlabAsset> list(KlabAsset.KnowledgeClass type, UserScope scope) {
     var participant = WorkflowParticipant.from(scope);
     return switch (type) {
       case WORKFLOW ->
-          kbox.listWorkflows().stream()
+          latestWorkflows().stream()
               .peek(Workflow::validate)
               .filter(workflow -> canInspectWorkflow(workflow, participant))
               .toList();
@@ -297,7 +317,7 @@ public class WorkflowManager {
   public synchronized Flow createFlow(
       String workflowId, Flow.State initial, boolean publicRead, UserScope scope) {
     var participant = WorkflowParticipant.from(scope);
-    var workflow = getWorkflow(workflowId);
+    var workflow = creationWorkflow(workflowId);
     var flow = prepareFlow(workflow, initial, publicRead, participant);
     try (var behaviorAttachments = new BehaviorAttachments(flow, workflow, participant)) {
       instrumentCreation(workflow, flow, initial, scope, behaviorAttachments);
@@ -324,10 +344,10 @@ public class WorkflowManager {
       String workflowId, Flow.InitializationRequest request, UserScope scope) {
     if (request == null || request.getInitialState() == null)
       throw new KlabIllegalArgumentException("An initial state is required");
-    if (request.getTransition() == null)
-      throw new KlabIllegalArgumentException("A first-stage transition is required");
     var participant = WorkflowParticipant.from(scope);
-    var workflow = getWorkflow(workflowId);
+    var workflow = creationWorkflow(workflowId);
+    if (request.getTransition() == null && !ReviewStageProtocol.enabled(workflow))
+      throw new KlabIllegalArgumentException("A first-stage transition is required");
     var initial = request.getInitialState();
     var flow = prepareFlow(workflow, initial, request.isPublicRead(), participant);
     try (var behaviorAttachments = new BehaviorAttachments(flow, workflow, participant)) {
@@ -339,15 +359,16 @@ public class WorkflowManager {
       }
       var initialUploads = new ArrayList<>(initial.getAttachments());
       if (workflow.getBehavior() == null) validateRequiredAttachments(initialSchema, initial);
-      if (request.getTransition().getSourceStateId() == null
-          || request.getTransition().getSourceStateId().isBlank())
+      if (request.getTransition() != null && (request.getTransition().getSourceStateId() == null
+          || request.getTransition().getSourceStateId().isBlank()))
         request.getTransition().setSourceStateId(initial.getId());
       var initialPayloads = new java.util.HashMap<String, byte[]>();
       for (int i = 0; i < initialUploads.size(); i++)
         initialPayloads.put(initialUploads.get(i).getId(), uploads.get(i).getContent());
       behaviorAttachments.supplied.putAll(initialPayloads);
       instrumentCreation(workflow, flow, initial, scope, behaviorAttachments);
-      applyTransitionInMemory(flow, workflow, request.getTransition(), participant, behaviorAttachments::payload, scope, behaviorAttachments);
+      if (request.getTransition() != null)
+        applyTransitionInMemory(flow, workflow, request.getTransition(), participant, behaviorAttachments::payload, scope, behaviorAttachments);
 
       var persistedAttachmentIds = new ArrayList<String>();
       boolean flowPersisted = false;
@@ -355,12 +376,13 @@ public class WorkflowManager {
         for (int i = 0; i < initialUploads.size(); i++) {
           var attachment = initialUploads.get(i);
           var upload = uploads.get(i);
+          // A store may write bytes and then report failure. Reclaim every attempted new ID.
+          persistedAttachmentIds.add(attachment.getId());
           if (!kbox.putWorkflowAttachment(
               attachment.getId(), flow.getId(), initial.getId(), upload.getContent())) {
             throw new KlabIllegalStateException(
                 "Cannot persist attachment " + attachment.getFileName());
           }
-          persistedAttachmentIds.add(attachment.getId());
         }
         behaviorAttachments.write();
         if (!kbox.putFlow(flow))
@@ -375,10 +397,12 @@ public class WorkflowManager {
 
       behaviorAttachments.committed();
       notifyStageCreated(flow, initial, workflow, initialSchema, scope);
-      var targetId = request.getTransition().getTargetState().getId();
-      var target = flow.getStates().get(targetId);
-      notifyStageCreated(
-          flow, target, workflow, requiredStateSchema(workflow, target.getSchemaId()), scope);
+      if (request.getTransition() != null) {
+        var targetId = request.getTransition().getTargetState().getId();
+        var target = flow.getStates().get(targetId);
+        notifyStageCreated(
+            flow, target, workflow, requiredStateSchema(workflow, target.getSchemaId()), scope);
+      }
       return project(flow, workflow, participant);
     }
   }
@@ -660,6 +684,24 @@ public class WorkflowManager {
       return project(flow, workflow, participant).getStates().get(state.getId());
     }
   }
+  /** Never round-trip protected stage bindings through an editing form. */
+  public synchronized Flow updateStateDetails(String flowId, String stateId, Flow.StateDetailsUpdate update, UserScope scope) {
+    var participant = WorkflowParticipant.from(scope);
+    var flow = requiredActiveFlow(flowId);
+    var workflow = requiredWorkflowVersion(flow);
+    var state = requireActionStage(flow, workflow, stateId, scope);
+    if (update == null || update.expectedRevision() < 0 || update.expectedRevision() != flow.getRevision())
+      throw new KlabIllegalStateException("Flow revision conflict");
+    if (update.title() != null && update.title().length() > 512
+        || update.description() != null && update.description().length() > 65536)
+      throw new KlabIllegalArgumentException("Stage title or description is too long");
+    state.setTitle(update.title());
+    state.setDescription(update.description());
+    state.setUpdatedAt(Instant.now());
+    persistMutation(flow, workflow);
+    return project(flow, workflow, participant);
+  }
+
   public synchronized Flow.State updateState(
       String flowId, String stateId, Flow.State update, UserScope scope) {
     var participant = WorkflowParticipant.from(scope);
@@ -823,6 +865,8 @@ public class WorkflowManager {
       throw new KlabIllegalStateException("Attachments cannot be added to a closed state");
     if (upload == null || upload.getContent() == null)
       throw new KlabIllegalArgumentException("Attachment content is required");
+    if (upload.getExpectedRevision() >= 0 && upload.getExpectedRevision() != flow.getRevision())
+      throw new KlabIllegalStateException("Flow revision conflict");
     if (state.getProposalReview() != null
         && state.getProposalReview().status() == org.integratedmodelling.klab.api.services.resources.workflow.ProposalReview.Status.IN_REVIEW
         && ("application/vnd.klab.proposal+yaml".equals(upload.getMediaType())
@@ -931,8 +975,9 @@ public class WorkflowManager {
       Workflow.StateSchema schema,
       Flow.AttachmentUpload upload,
       WorkflowParticipant participant) {
-    if (upload == null || upload.getContent() == null)
-      throw new KlabIllegalArgumentException("Attachment content is required");
+    if (upload == null || upload.getContent() == null || upload.getFileName() == null || upload.getFileName().isBlank()
+        || upload.getMediaType() == null || upload.getMediaType().isBlank())
+      throw new KlabIllegalArgumentException("Attachment content, filename and media type are required");
     validateUploadBounds(upload, state);
     var rule =
         schema.getAttachments().stream()
@@ -942,6 +987,7 @@ public class WorkflowManager {
                 () ->
                     new KlabIllegalArgumentException(
                         "Attachment type " + upload.getType() + " is not admitted"));
+    if (upload.getAssetType() == null) upload.setAssetType(rule.getAssetType());
     validateAttachmentRule(rule, upload, state);
     var descriptor = new FlowImpl.AttachmentImpl();
     descriptor.setId(UUID.randomUUID().toString());

@@ -33,7 +33,7 @@ From the isolated checkout, substitute real local paths in these arguments:
 mvn -o -pl klab.services.resources.server -am test `
   '-Dmaven.repo.local=<writable-verified-cache>' `
   '-Dmaven.repo.local.tail=<read-only-cache>' `
-  '-Dtest=*SerializationTest,WorkflowRequestBindingTest,ReflectionMetadataTransportTest,LookupTableTransportTest,*Review*,Workflow*,*Bootstrap*,ProjectMaterialIOTest,WebUiConfigurationTest,ProposalSchemaValidatorTest,IsolatedProposalCandidateValidatorTest,ProjectMaterialAuthorizationTest,HubWebAuthenticationTest,TokenAuthorizationFilterTest' `
+  '-Dtest=*SerializationTest,ResourcesInitializationTransportTest,WorkflowRequestBindingTest,ReflectionMetadataTransportTest,LookupTableTransportTest,*Review*,Workflow*,*Bootstrap*,ProjectMaterialIOTest,WebUiConfigurationTest,ProposalSchemaValidatorTest,IsolatedProposalCandidateValidatorTest,ProjectMaterialAuthorizationTest,HubWebAuthenticationTest,TokenAuthorizationFilterTest' `
   '-Dsurefire.failIfNoSpecifiedTests=false' `
   '-DargLine=-Duser.home=<isolated-test-home> -javaagent:<byte-buddy-agent-1.17.5.jar>'
 ```
