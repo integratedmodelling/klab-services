@@ -1,5 +1,35 @@
 # A+B completion ledger — ongoing campaign
 
+## PR298 verified merged; complete finite reference convergence active
+
+EleveninstalledfocusedCIgates PASS, with92SDKreferencecontrols appended to all
+olderbatches beforetheirunchangedcoveragegates. Actualorderedselection693SDK/214
+priorappend/92referenceappend/6publicHTTP/21fixture+unchanged100%gatePASS.31installed
+finitefixturecases100%. Freshfullartifactverifier+17linkedmatrix running; no newPRyet.
+
+Convergencesource92SDK100%unexcluded newmodule/allchangedSDK,3actualpublicHTTP
+sync/async two-client/CAS/history/deltas/modification/removal/gap-epoch/resync/denial/
+cleanup workflows;31independentfixturecases100%;bodytypes-lint-49governancequeueordering
+PASS. Canonicalordering, exacthistory/CASack checks, cancellation/localclear/forked/
+lateoldepoch/hint races preserve historicaldata; no hiddenresync. Initialmypy and
+mockUTF8serialization failure retained in graph-convergence-review-20261107.md.
+Fresh complete-graph-convergence-first artifactverifier running; no convergencePRyet.
+
+PR298 MERGED `1c0b94327a312520794b234e5145f2a8e625af54` at
+2026-11-07T18:33:41Z, exact head `c3cb53d994151b22ff65da7c86f24226295cfa01`;
+all30final-head checks PASS, remote/local ancestry checkpoint verified. Installed
+4903SDK/405simulator/72worker/reference-governance PASS; native/scientific NOT_RUN.
+Native cache inspection is delivered, NOT full convergence or original-row acceptance.
+42original IDs/history preserved;29runnable/zero final dispositions.
+
+Active `feat/python-reference-graph-convergence`: separate opt-in advertised finite
+checkpoint/delta/projection implementation and independent graph-convergence fixture.
+Current7SDK design probes PASS; initial bodymypy found retained-snapshot variable
+inference and optional projection reason annotations; fixed, final rerun pending.
+Public two-client sync/async acceptance, hostile responses/races/coverage/installed
+packaging and ordinary PR delivery remain. No convergence PR yet; no background
+verifier/matrix/watcher remains. Python-only work needs no live IDE gate/repair.
+
 ## PR297 verified delivery, native commit read slice underway
 
 Finalcommitcache installed4903SDK/405simulator/72worker/allreference/39governance

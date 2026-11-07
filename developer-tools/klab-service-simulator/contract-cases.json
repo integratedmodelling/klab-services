@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-GRAPH-CONVERGENCE-001",
+      "rows": ["RC-P3.1", "CAP-10", "CAP-11"],
+      "routes": ["/runtime/experimental/graph-commits/v1/snapshot", "/runtime/experimental/graph-commits/v1/checkpoint", "/runtime/experimental/graph-commits/v1/changes"],
+      "source": "Separate explicitly advertised opt-in finite complete reference graph protocol, not native cached commits or old ID-only checkpoints. Public sync/async two-client snapshot/CAS/immutable history/pinned contiguous delta convergence, Jobs never commit or advance revisions; local duplicate/reordered hints only invalidate freshness. Modification/removal, retentiongap410/epoch409 and explicit full resync with no hidden fallback; currentprincipal/root refusal and cleanup. Typed reachable canonical digest graphs, bounded history/membership/bytes, cancellation/clear/slow-forked-response refusal. Declared synthetic activities are not native IDs/scientific execution/permission/durable authority.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native contiguous revision/fullgraph/incarnation/retention/notification/scientific lineage contract remains external",
+      "simulator_test": "test_graph_convergence.py::test_public_two_client_snapshots_deltas_job_hints_gaps_and_explicit_resync",
+      "java_gap_ids": ["JAVA-GAP-0016"]
+    },
+    {
       "id": "SIM-COMMIT-CACHE-001",
       "rows": ["RC-P3.1", "CAP-10", "CAP-11"],
       "routes": ["/runtime/api/v1/commit", "/runtime/public/capabilities"],

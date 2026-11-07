@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario graph-convergence` supplies a separate explicitly advertised finite
+complete-reference checkpoint/delta graph. Public sync/async two-client projections
+require explicit resync after gaps/epoch changes; Jobs/hints never imply commits.
+Canonical graph validation, bounded eight-snapshot history, modification/removal and
+cleanup controls are not native scientific/durable/permission authority. See
+[reference protocol](../../python-client/docs/reference-graph-convergence.md).
+
 `--scenario commit-inspection` supplies the native-shaped transient commit-cache
 read after a finite synthetic observation completes. Explicit `im:commit-id` metadata,
 current-owner denial, test-only expiry/null and bounded ephemeral cleanup do not

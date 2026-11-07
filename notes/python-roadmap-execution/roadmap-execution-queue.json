@@ -3,18 +3,16 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-native-commit-inspection",
-    "pr": 298,
+    "branch": "feat/python-reference-graph-convergence",
+    "pr": null,
     "requirement": "RC-P3.1",
-    "ci_review_dependencies": [
-      "PR298 native commit-cache read primitive only; full finite checkpoint/delta/gap-resync convergence remains Python work after delivery"
-    ]
+    "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 297,
-    "merge": "53ee5bed9fd433ec877187ce1d4ed09a0fbd84f2",
-    "head": "a2c54ca9a5fb97f09dc7cd3ce3ba07aa4b87dc2e",
-    "utc": "2026-11-07T18:09:20Z",
+    "pr": 298,
+    "merge": "1c0b94327a312520794b234e5145f2a8e625af54",
+    "head": "c3cb53d994151b22ff65da7c86f24226295cfa01",
+    "utc": "2026-11-07T18:33:41Z",
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P3.1",
@@ -1789,7 +1787,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "NATIVE_COMMIT_CACHE_READ_INSTALLED_VERIFIED_PR298_PENDING_FULL_REFERENCE_CONVERGENCE_STILL_ACTIVE",
+      "implementation_status": "NATIVE_CACHE_PRIMITIVE_DELIVERED_PR298_FULL_FINITE_GRAPH_CONVERGENCE_IMPLEMENTATION_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1818,12 +1816,21 @@
           "pr": 298,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
           "full_requirement_complete": false
+        },
+        "native_cache_delivery": {
+          "pr": 298,
+          "head": "c3cb53d994151b22ff65da7c86f24226295cfa01",
+          "merge": "1c0b94327a312520794b234e5145f2a8e625af54",
+          "merged_at": "2026-11-07T18:33:41Z",
+          "final_head_checks": 30,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json"
         }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
       "task_state": "in_progress",
-      "next_executable_action": "Require PR298 exact final-head CI/ordinary primitive merge/checkpoint, then finish separately advertised complete finite checkpoint/delta/gap-resync reconciliation. Native cache read primitive must not mark whole original requirement delivered.",
+      "next_executable_action": "Finish explicit advertised finite complete graph checkpoints/deltas/projection, duplicate/reordered Job hint invalidation, retention-gap refusal and explicit resync; public sync/async two-client acceptance and installed delivery. Native cache primitive does not discharge this requirement.",
       "disposition": null
     },
     {
@@ -1887,7 +1894,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "NATIVE_COMMIT_CACHE_READ_INSTALLED_VERIFIED_PR298_PENDING_FULL_REFERENCE_CONVERGENCE_STILL_ACTIVE",
+      "implementation_status": "NATIVE_CACHE_PRIMITIVE_DELIVERED_PR298_FULL_FINITE_GRAPH_CONVERGENCE_IMPLEMENTATION_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1912,12 +1919,21 @@
           "pr": 298,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
           "full_requirement_complete": false
+        },
+        "native_cache_delivery": {
+          "pr": 298,
+          "head": "c3cb53d994151b22ff65da7c86f24226295cfa01",
+          "merge": "1c0b94327a312520794b234e5145f2a8e625af54",
+          "merged_at": "2026-11-07T18:33:41Z",
+          "final_head_checks": 30,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json"
         }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
       "task_state": "in_progress",
-      "next_executable_action": "Require PR298 exact final-head CI/ordinary primitive merge/checkpoint, then finish separately advertised complete finite checkpoint/delta/gap-resync reconciliation. Native cache read primitive must not mark whole original requirement delivered.",
+      "next_executable_action": "Finish explicit advertised finite complete graph checkpoints/deltas/projection, duplicate/reordered Job hint invalidation, retention-gap refusal and explicit resync; public sync/async two-client acceptance and installed delivery. Native cache primitive does not discharge this requirement.",
       "disposition": null
     },
     {
@@ -1997,7 +2013,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "NATIVE_COMMIT_CACHE_READ_INSTALLED_VERIFIED_PR298_PENDING_FULL_REFERENCE_CONVERGENCE_STILL_ACTIVE",
+      "implementation_status": "NATIVE_CACHE_PRIMITIVE_DELIVERED_PR298_FULL_FINITE_GRAPH_CONVERGENCE_IMPLEMENTATION_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2025,12 +2041,21 @@
           "pr": 298,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
           "full_requirement_complete": false
+        },
+        "native_cache_delivery": {
+          "pr": 298,
+          "head": "c3cb53d994151b22ff65da7c86f24226295cfa01",
+          "merge": "1c0b94327a312520794b234e5145f2a8e625af54",
+          "merged_at": "2026-11-07T18:33:41Z",
+          "final_head_checks": 30,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json"
         }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
       "task_state": "in_progress",
-      "next_executable_action": "Require PR298 exact final-head CI/ordinary primitive merge/checkpoint, then finish separately advertised complete finite checkpoint/delta/gap-resync reconciliation. Native cache read primitive must not mark whole original requirement delivered.",
+      "next_executable_action": "Finish explicit advertised finite complete graph checkpoints/deltas/projection, duplicate/reordered Job hint invalidation, retention-gap refusal and explicit resync; public sync/async two-client acceptance and installed delivery. Native cache primitive does not discharge this requirement.",
       "disposition": null
     },
     {

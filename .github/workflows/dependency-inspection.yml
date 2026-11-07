@@ -27,6 +27,8 @@ jobs:
       - name: Require entire new SDK module and all changed SDK decisions unexcluded
         run: python -m pytest -q python-client/tests/unit/test_commits.py python-client/tests/unit/test_input_provenance.py python-client/tests/unit/test_dependency_graphs.py --cov=klab_client --cov-branch --cov-append --cov-report=json:dependency-sdk.json
       - name: Enforce unchanged membership coverage gate
+        run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:dependency-sdk.json
+      - name: Check unchanged membership gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py dependency-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/dependencies.py

@@ -25,6 +25,8 @@ jobs:
       - name: SDK-only source-defined cached report and identity-refusal controls
         run: python -m pytest -q python-client/tests/unit/test_commits.py --cov=klab_client --cov-branch --cov-report=json:commits-sdk.json
       - name: Entire new SDK module and changed SDK decisions unexcluded
+        run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:commits-sdk.json
+      - name: Check unchanged native-cache coverage gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py commits-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/commits.py

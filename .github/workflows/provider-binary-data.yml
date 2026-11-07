@@ -33,6 +33,8 @@ jobs:
         # Dependency view is also imported by the public SDK export surface.
         run: python -m pytest -q python-client/tests/unit/test_commits.py python-client/tests/unit/test_input_provenance.py python-client/tests/unit/test_dependency_graphs.py python-client/tests/unit/test_dependencies.py --cov=klab_client --cov-branch --cov-append --cov-report=json:provider-coverage.json
       - name: Enforce unchanged provider coverage gate
+        run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:provider-coverage.json
+      - name: Check unchanged provider gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py provider-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/_provider_avro.py --new-module src/klab_client/provider_data.py
