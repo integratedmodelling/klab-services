@@ -4,9 +4,9 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-material-selection-effects",
-    "pr": null,
+    "pr": 291,
     "requirement": "RC-P1.5",
-    "ci_review_dependencies": []
+    "ci_review_dependencies": ["PR291 corrected root-scope artifact verification, exact final-head CI and ordinary permitted merge"]
   },
   "last_verified_checkpoint": {
     "pr": 290,
@@ -176,7 +176,7 @@
       "simulator_acceptance_status": "INSTALLED_PUBLIC_SYNC_ASYNC_WORKFLOWS_PASS_FULL_ROW_FINAL_DISPOSITION_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
-      "java_gap_ids": [],
+      "java_gap_ids": ["JAVA-GAP-0013"],
       "pr_and_merge_evidence": {
         "historical_prs": [
           56,
@@ -356,11 +356,11 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: material-selection-effects"
       },
       "simulator_support_needed": "Verify project/namespace/scenario/observer/grid options change declared synthetic plan and executed input, not only echoed request metadata; reject unsupported forced models.",
-      "implementation_status": "MATERIAL_SELECTION_IMPLEMENTATION_IN_PROGRESS",
-      "simulator_acceptance_status": "FOUR_SOURCE_PUBLIC_HTTP_CASES_60_NUMERICAL_OPTION_COMBINATIONS_PASS_INSTALLED_PENDING",
+      "implementation_status": "TYPED_RESOLVE_AND_MATERIAL_EFFECTS_INSTALLED_VERIFIED_PR291_PENDING",
+      "simulator_acceptance_status": "CORRECTED_INSTALLED_PUBLIC_HTTP_60_NUMERICAL_COMBINATIONS_PASS_FULL_ROW_FINAL_DISPOSITION_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
-      "java_gap_ids": [],
+      "java_gap_ids": ["JAVA-GAP-0013"],
       "pr_and_merge_evidence": {
         "historical_prs": [
           56,

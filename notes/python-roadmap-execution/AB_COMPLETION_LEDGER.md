@@ -2,6 +2,25 @@
 
 ## PR290 verified merge; material-selection execution begun
 
+DraftPR291 publishedb27748f78. Corrected fresh `material-selections-root-scope-fixed`
+4492installedSDK/310simulator and all reference/worker suitesPASS, zero skips/errors/
+failures;58SDK/25simulator/5worker source-wheel-sdist-installed rawmodule parity
+rechecked. Final whole requests/handles/async modules plus changed-code100%SDK-only
+gatePASS. Corrected installed focusedCI590provider/498selection/376material controls
+PASS,31supplementaryfixture100%PASS.17linkedcasesPASS(562SDK/187simulator/57worker)
+vs17realNOT_RUN/expectedexit3. Existinggap0013 additively maps RC-P1.5/CAP-04;
+historical original audit bytes/statuses untouched.
+
+Retain both initial verification failures: first material artifacts4492SDKPASS but
+309simulatorPASS/1FAIL on newly added focus regression (superseded old fixture);
+corrected artifacts all runtime testsPASS but3governance drift failures after
+requirement-link correction. Regenerated companions and reran same39governance
+controls to a separate corrected XML, allPASS. No failed reports overwritten,
+production changes, package overwrites or weakened gates for governance correction.
+Finalization rechecked all rawpackagebytes and passing XMLs; receipt
+`evidence/full-roadmap-material-selections-20261107.json` records complete custody.
+Exact final-headCI/ordinary PR291 merge still pending, no native/fullABC promotion.
+
 Material development now376SDKfocusedPASS, all changed SDK decisions and whole
 existing requests module100%unexcluded;31supplementary fixturecontrols100%,
 requests/fixture bodymypy and fatal lintPASS.28new typed-plan tests cover text/

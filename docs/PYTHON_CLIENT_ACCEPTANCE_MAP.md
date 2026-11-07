@@ -1,5 +1,15 @@
 # Python roadmap acceptance map — 3 November 2026
 
+Material candidate PR291 adds public typed sync/nativeasync Context.resolve with
+the same observe options. Corrected installed4492SDK/310simulator/allreference-
+worker suitesPASS;58SDK/25simulator/5worker rawpackageparity;17linkedcasesPASS
+vs17nativeNOT_RUN. Four public HTTP workflows verify60actual numerical preference/
+observer/lattice combinations;31supplementary fixturecontrols100%. Focused590/
+498/376SDKcontrols and whole requests/handles/async plus changed-code gatesPASS.
+First focus-regression and later3governance-drift failures retained and corrected
+without weakened assertions; exact final-headCI/ordinary merge pending. Declared
+finite arithmetic is not native model admission, ranking or scientific acceptance.
+
 Selection delivery PR290 verified MERGED6307e93f4, exactf38a332e8/all26reported
 finalheadchecksPASS. Public persisted `Context.between`,
 bounded direct-child observation pages and v2 relationship-selected saved references

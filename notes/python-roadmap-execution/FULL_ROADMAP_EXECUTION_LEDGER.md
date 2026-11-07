@@ -2,6 +2,23 @@
 
 ## Selection merge checkpoint and immediate material-selection work
 
+DraftPR291 publishedb27748f78. Corrected unique installed artifact candidate:
+4492SDK/310simulator and all reference/worker suitesPASS; zero skips/errors/failures;
+58SDK/25simulator/5worker rawmodule parity. All changed SDK decisions and whole
+requests/handles/async modules100%SDK-onlygatePASS. Focused installedCI590/498/376
+controls and31supplementaryfixture100%PASS.17linkedcasesPASS(562SDK/187simulator/
+57worker) vs17realNOT_RUN/expectedexit3. Gap0013 additive RC-P1.5/CAP-04 links
+corrected without historical audit/status edits.
+
+First artifacts retained4492SDKPASS/309simulatorPASS/1FAIL newfocusregression,
+explicitly superseded. Corrected artifacts runtime suitesPASS;3governance generated
+report drifts after requirement-link correction preserved separately. Regeneration
+and identical39control rerunPASS to `governance-corrected.xml`; no production code,
+artifact overwrite, gate weakening or failed-report rewrite. Finalized receipt
+`evidence/full-roadmap-material-selections-20261107.json` rechecks rawpackagebytes,
+all passing XMLs, full SDK coverage and17linkedcase results. Exact finalheadCI and
+ordinary PR291 merge remain pending; continue collaborator rights afterward.
+
 Material pass376focusedSDKPASS with changed-code and whole existingrequests
 100%unexcluded;31supplementaryfixture100%PASS; bodymypy/fatal lintPASS.28new
 public typed planning controls test all inputforms/options/relationship retention,

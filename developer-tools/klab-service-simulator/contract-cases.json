@@ -31,7 +31,7 @@
   "cases": [
     {
       "id": "SIM-MATERIAL-SELECTIONS-001",
-      "rows": ["RC-P1.5", "CAP-02", "CAP-04"],
+      "rows": ["RC-P1.5", "CAP-04"],
       "routes": ["/runtime/createContext", "/resolver/api/v1/resolve", "/runtime/api/v1/submit", "/runtime/api/v1/observation/value"],
       "source": "PrioritizerImpl source-shaped lexical preference scores and ConfigurationImpl/GridAlignmentSupport inline grid schema; explicitly provisional finite tie order, three candidates, two observer biases and4x4metre extent. Public typed Context.resolve/observe/fetch_data verify preferences and1m/2m lattices change actual sampled values, units and geometry, not only echoes. No native semantic admission, forced model consumer or scientific engine.",
       "confidence": "SIMULATED_PROVISIONAL",
