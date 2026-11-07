@@ -1,5 +1,32 @@
 # A+B completion ledger — ongoing campaign
 
+PR311 published832982cdd installedsafety587/2/31PASS37controls/types-lintPASS;
+60reviewedmaps446missing. Ready for exact-headCI, ordinarymerge/checkpoint owed.
+310CIpending;309verifiedmerge/all39PASS. Continue packaging/release-readiness.
+
+Final safety installed587SDK/2isolated/31HTTPPASS, zero failures/errors/skips;
+37sharedrecipe/exactchild/queue-ordercontrols/types-fatallintPASS. Fresh SDK-only
+optionalimport/socketblocked snapshot verifies precision/missingness/order/origin,
+future-schema refusal and actionable dataframe extra error; guarded absence is not
+fresh dependencyisolation or OSsecurity.60reviewedmaps446missing across506; no invented
+subprocess attribution. Receipt integrated-safety-installed-20261107.json recorded;
+simulatorscanempty.310CIpending,309verifiedmerge914582221/all39checksPASS. Safety
+source ready for ordinary delivery; native science/history/rights/deployment external.
+
+## PR309 verified merged; scientific310 CI and safety integration continue
+
+309MERGED9145822213d5895c984e5ce4c3c6b357e962b88f at2026-11-07T22:49:56Z,
+exact87cc87c164a30b4dec432a4d2ef5d06e7ffc58e0/all39checksPASS; remote/local ancestry
+checkpointverified. Final notebook24guards3kernel-smokes3publicHTTPPASS delivered;
+native scheduler/provider science/rights not promoted.42originalIDs/history8runnable,
+zero finaldispositions.310ready336ea7604 exact-headCIwatcher active,484/3/52localPASS.
+
+Active safetybranch/noPR: exact installed fresh core subprocess blocks optional
+imports+network, preserves scalar/Decimal/zero/null/order/origin and rejects future
+schema; dataframe explicitly requires tabular extra. Probe+recipe2controls/types-lint
+PASS. Full SDK-safety/isolated/publicHTTPmatrix running; actualcounts pending. No
+fresh dependency-isolation/OSsecurity/nativecompatibility/science claim follows.
+
 PR310 publishedb63d61e54 scientific-snapshot exact-child484/3/52PASS,35controls/types-
 lint/onboarding190/1/18PASS;56reviewedmaps450missing. Ready for exact-headCI; parent309
 CI/merge remains pending. No native science/finalrow promotion; safety proceeds next.

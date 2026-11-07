@@ -3,23 +3,28 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-integrated-scientific-snapshots",
-    "pr": 310,
-    "requirement": "RC-P2.1",
+    "branch": "feat/python-integrated-safety-acceptance",
+    "pr": 311,
+    "requirement": "RC-P3.2",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 308,
-    "merge": "3fe92c7c192c6db36ed75cf506d6fb1c1a576c00",
-    "head": "abfc54bda8978115228cdc4c6141a24858b80b3e",
-    "utc": "2026-11-07T22:39:36Z",
+    "pr": 309,
+    "merge": "9145822213d5895c984e5ce4c3c6b357e962b88f",
+    "head": "87cc87c164a30b4dec432a4d2ef5d06e7ffc58e0",
+    "utc": "2026-11-07T22:49:56Z",
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P3.5",
-  "pending_deliveries": [{"pr": 309, "head": "87cc87c16", "state": "EXACT_HEAD_CI_PENDING_NOTEBOOK24_3_3_LOCAL_PASS_NOT_NATIVE_ACCEPTANCE"}],
+  "pending_deliveries": [
+    {
+      "pr": 310,
+      "head": "336ea7604",
+      "state": "EXACT_HEAD_CI_PENDING_REFERENCE_SCIENCE484_3_52PASS_NOT_NATIVE_SCIENCE"
+    }
+  ],
   "remaining_runnable_work": [
     "operation-workflow-attribution",
-    "notebook-integrated-acceptance",
     "multishard-scientific-acceptance",
     "safety-regression-acceptance",
     "integrated-packaging-compatibility"
@@ -4437,8 +4442,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: notebook-integrated-acceptance"
       },
       "simulator_support_needed": "Run installed independent notebook clients through bounded concurrent Jobs, own-wait cancellation, collaboration denial and graph reconciliation without deleting owner state.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_NOTEBOOK_GUARDS_KERNEL_SMOKE_THREE_PUBLIC_HTTP_WORKFLOWS_DELIVERED_PR309",
+      "simulator_acceptance_status": "24GUARDS_3KERNELSMOKES_3PUBLICHTTPNOTEBOOKS_PASS_NATIVE_SCHEDULER_SCIENCE_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [],
@@ -4473,12 +4478,21 @@
           "052c729cba3cae5bfe5057e68c40501ea1e96718",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_notebook_delivery": {
+          "pr": 309,
+          "head": "87cc87c164a30b4dec432a4d2ef5d06e7ffc58e0",
+          "merge": "9145822213d5895c984e5ce4c3c6b357e962b88f",
+          "merged_at": "2026-11-07T22:49:56Z",
+          "final_head_checks": 39,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-notebook-installed-20261107.json"
+        }
       },
       "work_group": "notebook-integrated-acceptance",
       "priority": 17,
-      "task_state": "pending",
-      "next_executable_action": "Run installed independent notebook clients through bounded concurrent Jobs, own-wait cancellation, collaboration denial and graph reconciliation without deleting owner state.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance. Kernel/subprocess calls remain unmeasured by owning-thread trace; native scheduler/provider science/rights/deployment remain separate external gates.",
       "disposition": null
     },
     {

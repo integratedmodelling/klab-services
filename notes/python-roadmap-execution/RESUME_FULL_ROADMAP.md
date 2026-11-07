@@ -1,5 +1,15 @@
 # Resume the full Python A+B+C campaign
 
+Latest309MERGED914582221 at2026-11-07T22:49:56Z/exact87cc87c16/all39checksPASS,
+remote/localcheckpointverified.42originalIDs/history8runnable/zero dispositions.
+310ready336ea7604 source scientific-snapshot484/3/52PASS35controls56maps450missing,
+exact-headCIwatcher active; no verified mergeyet. Current feat/python-integrated-safety-
+acceptance/uncommitted/noPR has new public optionalblocked/socketforbidden SDK-only
+fresh core subprocessPASS plus safetyrecipe/types-lintPASS; fullmatrix running.
+No optionaldependency absence claim from full extras alone; blocking import test is
+not freshdependencyisolation or OSsecurity. Need finish safetyreceipt/delivery, verify
+310CI/merge/checkpoint, then integratedpackaging/release-readiness and RC-P0review.
+
 Active feat/python-integrated-scientific-snapshots/uncommitted/noPR. Final exact-child
 484SDK/3isolated/52HTTPmatrix and onboarding190/1/18regressionPASS,35controls/types-lint
 PASS. Receipt integrated-scientific-snapshot-installed-20261107.json. Shared runner now
