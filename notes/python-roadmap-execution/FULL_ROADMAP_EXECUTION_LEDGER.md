@@ -1,5 +1,59 @@
 # Full Python A+B+C roadmap execution ledger
 
+## PR295 failed selection coverage report retained and actual workflow fixed
+
+Hostedselectioncoveragegatefailed at2343a220c: SDKappend ran afterfixture reset of
+shared.coverage; localfocusedrunner skippedfixture ordering. Correctedappendposition,
+actualorderedinstalled693/34/6/21controlsPASS andunchanged100%gatePASS; addedstatic
+allworkfloworderingcontrolPASS. Failurecustody inpr295-selection-coverage-ordering.json.
+No productionSDK/simulatorbytechange, skip/threshold/exclusionrelaxation or native
+promotion. Graphchild76SDK100%/6publicHTTP/bodymypyPASS; finalCI/deliverypending.
+
+## Conditional reference verified delivered; dependency requirement remains active
+
+Membership finalinstalled4722SDK/362simulator/72worker/allreference/39governance
+suitesPASS, zero skips/errors/failures;62SDK/29simulator/5worker rawmoduleparity.
+SevenfocusedCIgates/34SDKwholemodule+changedcode100%unexcludedPASS;17linkedcases
+PASS(791SDK/239simulator/72worker) vs17nativeNOT_RUN/expectedexit3. Receipt
+evidence/full-roadmap-dependency-membership-20261107.json retains sourcecustody/
+developmenthistory. PR295finalreceipt/exactheadCI/ordinarymerge pending. Separate
+unshipped graphdraft9designprobesPASS, not publicinstalled/native/fullgraph acceptance;
+RC-P4.1/CAP-13remainactive until deeper graph pagination/cycle/access delivery.
+
+DraftPR29588abe06a3 published as membershipprimitive only. Fullartifactverifier/
+17linkedmatrix running; sourceboundgraph/pagination/cycle/access still Pythonwork.
+Requirement staysactive; never infer native completeness from group-array order.
+
+Membership sourcefrozen/fullartifactverifier+17linkedmatrix running. Seven installed
+focusedCIgatesPASS, olderbatches785/693/571/195/113/63 plus34membershipcontrols
+each via coverageappend; dedicated34membershipcontrols and1fixturecase100%PASS.
+No Python sourcebound graph requirement waived; remainactive after membershipPR.
+
+PR294MERGEDcc71b09919566bea85c6aa39c8dab38d4936b9e1/2026-11-07T16:38:25Z,
+exact2ff29e210b4c1941a7b940ee24be173de034b1a9/all37checksPASS. Actualmerge
+integrated and remote/local checkpointverified;42rows/32runnable/zero dispositions.
+Both workerfailures preserved. Windows exactheadattempt2all4matrixPASS doesn't
+retroactively identify originalHTTPError. No production timeout/replay modification.
+
+Dependency native-shaped groupslice34SDK100%newmodule/changedcode and2publicHTTP
+PASS. Grouporder/provider/version/currentcredential fencing, missinggroupsNone,
+closureUNKNOWN/edgesUNAVAILABLE; never follows providerURLs or exportsaccessKey.
+Native root/group auxiliarymetadata/timestampdifference is legitimate; knownversion
+conflicts stillrefuse. PreparedreadonlynativeNOT_RUN. Deeper graph/pagination/cycle/
+source/access reference remainsunfinished Pythonwork, not waived or marked delivered.
+No dependencyPR yet; fixture/governance/bodychecks and installed verification next.
+
+## Continued dependency work while PR294 transport gate is unresolved
+
+PR2942ff29e210OPEN/mergeheld for Windows3.13 durable-recovery GETpoll HTTPError,
+not Linux containment.72workerPASS,20HTTPPASS/1FAIL; exactlog/investigation preserved.
+One failedjob rerun requested; no classification asflake or unsafe timeout/replay fix.
+NativeGrouped dependencyinspector sourceimplemented on separate childbranch:
+19SDK/2publicHTTPPASS, honestunknownclosure/unavailableedges/inertproviderURLs,
+versionclaims/currentcredential fencing. Native sourceaddDependencies incomplete
+categories/no wireedges prohibit invented fullclosure. Acceptance/coverage/installed/
+governance/newPR pending; no milestone stop or native service dependency introduced.
+
 ## PR294 hosted worker failure retained, merge held
 
 Linux owned300crash stateprobe reproduces8Z->X transitions: zombie becomes dead

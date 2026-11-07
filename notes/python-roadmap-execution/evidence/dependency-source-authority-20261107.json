@@ -1,0 +1,21 @@
+{
+  "baseline": "cc71b09919566bea85c6aa39c8dab38d4936b9e1",
+  "evidence": "READ_ONLY_SOURCE_NOT_NATIVE_EXECUTION",
+  "source_raw_sha256": {
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/ServicesAPI.java": "562dcf7b1bfe03f0f52680419dba322d790cf9414dcc93f04a0fcab1bb15b7fa",
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/resources/ResourceSet.java": "3526615fbecbba54d16e5c54d31a99ff8a60ef28d01d93b40a77b6eec2cc49cd",
+    "klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java": "6e88271d1e02aa6cebfb895c1d27d58313dd7903549b98cd036b45c8363c7ff6"
+  },
+  "observations": [
+    "ServicesAPI.RESOURCES.RESOLVE documents full dependency closure, but ResourceSet carries dependency-ordered group arrays and results, not edge records or snapshot-completeness proof.",
+    "ResourcesProvider.resolve calls addDependencies. Inspected addDependencies identifies namespace/model/definition roots and invokes addNamespacesToResultSet; behavior/component/project/resource dependencies remain comment-only follow-up categories.",
+    "addNamespaceToResultSet recursively follows namespace imports and topologically orders descriptors; remote namespace retrieval has a TODO, failures may returnfalse and addDependencies does not promote them to an explicit complete/incomplete graph receipt. No edge graph is transmitted.",
+    "The grouped namespace descriptor may have timestamp0 and empty metadata even when root result descriptor has a timestamp/project metadata. Do not reject such native-shaped duplicates merely for differing auxiliary descriptor metadata; conflicting known versions are refused.",
+    "ResourceSet.Resource.accessKey has no inspected safe-public permission meaning. The public view does not expose the field or use it as authorization. ServiceURLs remain inert data; no provider fetch or credential forwarding.",
+    "DependencyInspector/AsyncDependencyInspector inspect all native groups but always label closure UNKNOWN and edges UNAVAILABLE. Missing groups remainNone rather than asserting empty closure. Provider/version/currentness/access are server claims, not immutable source or permission leases.",
+    "Existing ResourceInspector.resolve remains its documented partial results view; historical snapshots are not silently promoted to full closure or graph acceptance."
+  ],
+  "native_result": "NOT_RUN",
+  "remaining_native_obligations": "Maintained complete dependency categories, edges, cross-service missingness/version/snapshot/access contracts and approved same-fixture compatibility evidence; do not substitute finite grouping for those guarantees",
+  "stable_gap": "JAVA-GAP-0013"
+}

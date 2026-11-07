@@ -8,6 +8,12 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario dependency-inspection` serves a finite native-shaped ResourceSet grouped
+membership response and authenticated test-only version advance. Provider URLs are
+inert. It refuses durable mode, creates no dependency resources and does not imply
+edge-complete closure, source hashes, access leases or native model selection.
+See [membership inspection](../../python-client/docs/dependency-inspection.md).
+
 `--scenario accepted-documents` exercises explicit opt-in/advertised conditional
 source CAS, finite server-owned validation, atomic knowledge/source publication
 conditions and independent reference snapshot readback. Eight literal namespaces,

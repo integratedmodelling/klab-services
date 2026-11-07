@@ -1,0 +1,13 @@
+{
+  "pr": 295,
+  "failed_head": "2343a220c",
+  "failed_run": 42393814235,
+  "failed_job": 128466810363,
+  "failure": "selections.py new module100percent gate failed after SDK coverage append",
+  "log_custody": "C:/Users/lumsd/AppData/Local/Temp/opencode/pr295-selection-ci-failure.log",
+  "root_cause": "SDK coverage append step was placed after simulator fixture pytest reset the default .coverage database. Append regenerated selections-coverage.json with fixture+membership data instead of original SDK selections coverage. Local focused runner ran only SDK commands, omitting the intervening reset, so did not expose ordering defect.",
+  "correction": "Move SDK membership append immediately after original SDK batch, before simulator coverage reset. Keep original JSON gate and100percent threshold; add static all-workflow ordering regression.",
+  "production_module_bytes_changed": false,
+  "verification": "Actual ordered installed693SDK/34append/6publicHTTP/21fixturePASS, then unchanged selections.py/newchangedcode100percent gatePASS despite fixture database reset. Static workflowordering controlPASS. Final-head hosted CI remains pending.",
+  "evidence_directory": "C:/Users/lumsd/AppData/Local/Temp/opencode/full-roadmap-20261106/dependency-membership-first/selection-ordered-correction"
+}

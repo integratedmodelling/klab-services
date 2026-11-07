@@ -3,22 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-conditional-authoring",
-    "pr": 294,
-    "requirement": "RC-P4.4",
-    "ci_review_dependencies": ["PR294 fresh installed full verification, exact final-head CI and ordinary permitted merge"]
+    "branch": "feat/python-dependency-inspection",
+    "pr": 295,
+    "requirement": "RC-P4.1",
+    "ci_review_dependencies": ["PR295 native-shaped membership artifact/CI delivery only; complete source-bound graph/pagination/cycle/access reference remains Python work"]
   },
   "last_verified_checkpoint": {
-    "pr": 293,
-    "merge": "0376f97c4819086a11c30ebafe376cdf818cd1e6",
-    "head": "213ae23f1d9ee43469b394cef377a89772bb3f5a",
-    "utc": "2026-11-07T16:00:36Z",
+    "pr": 294,
+    "merge": "cc71b09919566bea85c6aa39c8dab38d4936b9e1",
+    "head": "2ff29e210b4c1941a7b940ee24be173de034b1a9",
+    "utc": "2026-11-07T16:38:25Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P4.4",
+  "next_actionable_requirement": "RC-P4.1",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "conditional-authoring",
     "dependency-inspection",
     "annotated-input-provenance",
     "reference-commit-convergence",
@@ -1077,8 +1076,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: conditional-authoring"
       },
       "simulator_support_needed": "Implement opt-in reference accepted-document revision/update/validate/publish workflow with public SDK DTOs, CAS conflicts and permission checks; private draft CAS alone is insufficient; synthetic admission not Java compilation.",
-      "implementation_status": "OPT_IN_CONDITIONAL_SOURCE_REFERENCE_INSTALLED_VERIFIED_PR294_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "OPT_IN_CONDITIONAL_SOURCE_REFERENCE_DELIVERED_PR294",
+      "simulator_acceptance_status": "INSTALLED_CONDITIONAL_SOURCE_CAS_PUBLICATION_READBACK_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -1114,12 +1113,20 @@
           "1fd759605e45fb384a088a3f4b4e0d305b50605f",
           "2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "conditional_delivery": {
+          "pr": 294,
+          "head": "2ff29e210b4c1941a7b940ee24be173de034b1a9",
+          "merge": "cc71b09919566bea85c6aa39c8dab38d4936b9e1",
+          "merged_at": "2026-11-07T16:38:25Z",
+          "final_head_checks": 37,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-conditional-authoring-20261107.json"
+        }
       },
       "work_group": "conditional-authoring",
       "priority": 4,
-      "task_state": "in_progress",
-      "next_executable_action": "Complete explicit advertised conditional source update/validate/publish/readback SDK and independent fixture with owner/source/knowledge CAS, conflict/recovery and cleanup; then installed/public acceptance and ordinary PR delivery. No native publication claim.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native CAS-safe conditional source publication remains separate unestablished contract, no finite-reference promotion.",
       "disposition": null
     },
     {
@@ -1209,8 +1216,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: conditional-authoring"
       },
       "simulator_support_needed": "Implement opt-in reference accepted-document revision/update/validate/publish workflow with public SDK DTOs, CAS conflicts and permission checks; private draft CAS alone is insufficient; synthetic admission not Java compilation.",
-      "implementation_status": "OPT_IN_CONDITIONAL_SOURCE_REFERENCE_INSTALLED_VERIFIED_PR294_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "OPT_IN_CONDITIONAL_SOURCE_REFERENCE_DELIVERED_PR294",
+      "simulator_acceptance_status": "INSTALLED_CONDITIONAL_SOURCE_CAS_PUBLICATION_READBACK_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -1238,12 +1245,20 @@
           "1fd759605e45fb384a088a3f4b4e0d305b50605f",
           "2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "conditional_delivery": {
+          "pr": 294,
+          "head": "2ff29e210b4c1941a7b940ee24be173de034b1a9",
+          "merge": "cc71b09919566bea85c6aa39c8dab38d4936b9e1",
+          "merged_at": "2026-11-07T16:38:25Z",
+          "final_head_checks": 37,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-conditional-authoring-20261107.json"
+        }
       },
       "work_group": "conditional-authoring",
       "priority": 4,
-      "task_state": "in_progress",
-      "next_executable_action": "Complete explicit advertised conditional source update/validate/publish/readback SDK and independent fixture with owner/source/knowledge CAS, conflict/recovery and cleanup; then installed/public acceptance and ordinary PR delivery. No native publication claim.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native CAS-safe conditional source publication remains separate unestablished contract, no finite-reference promotion.",
       "disposition": null
     },
     {
@@ -1344,7 +1359,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: dependency-inspection"
       },
       "simulator_support_needed": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "NATIVE_GROUPED_DEPENDENCY_INSPECTION_IMPLEMENTED_SOURCE_VERIFICATION_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1384,8 +1399,8 @@
       },
       "work_group": "dependency-inspection",
       "priority": 5,
-      "task_state": "pending",
-      "next_executable_action": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish bounded source-defined grouped ResourceSet dependency inspection and honest source/version/access/completeness receipts; public sync/async acceptance, coverage/security, governance, installed packages and ordinary PR. No invented native edge-complete graph.",
       "disposition": null
     },
     {
@@ -1486,7 +1501,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: dependency-inspection"
       },
       "simulator_support_needed": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "NATIVE_GROUPED_DEPENDENCY_INSPECTION_IMPLEMENTED_SOURCE_VERIFICATION_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1526,8 +1541,8 @@
       },
       "work_group": "dependency-inspection",
       "priority": 5,
-      "task_state": "pending",
-      "next_executable_action": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish bounded source-defined grouped ResourceSet dependency inspection and honest source/version/access/completeness receipts; public sync/async acceptance, coverage/security, governance, installed packages and ordinary PR. No invented native edge-complete graph.",
       "disposition": null
     },
     {

@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-DEPENDENCY-MEMBERSHIP-001",
+      "rows": ["RC-P4.1", "CAP-13"],
+      "routes": ["/resources/api/v1/resolve/NAMESPACE/synthetic.root", "/resources/public/capabilities"],
+      "source": "Existing ResourceSet groups/results/provider/version descriptors, not invented dependency edges. Native addDependencies has unfinished category/remote paths; snapshot always labels closureUNKNOWN/edgesUNAVAILABLE and missing groupsNone. Independent finite membership/ordered namespace group and changed version fixture with current-principal/root denial and cleanup. Provider URLs inert; no credential forwarding/accessKey permission claims/compilation/source mutation or complete graph acceptance.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; grouped native shape does not establish full dependency closure/edges/source/access authority",
+      "simulator_test": "test_dependencies.py::test_public_group_membership_versions_current_credentials_and_no_provider_follow",
+      "java_gap_ids": ["JAVA-GAP-0013"]
+    },
+    {
       "id": "SIM-CONDITIONAL-AUTHORING-001",
       "rows": ["RC-P4.4", "CAP-14"],
       "routes": ["/resources/experimental/accepted-documents/v1/knowledge", "/resources/experimental/accepted-documents/v1/documents/{name}", "/resources/experimental/accepted-documents/v1/documents/{name}/validate", "/resources/experimental/accepted-documents/v1/documents/{name}/publish", "/resources/experimental/accepted-documents/v1/publications/{name}"],
