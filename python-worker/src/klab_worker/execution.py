@@ -18,7 +18,17 @@ from .containment import ProcessTree
 
 # Trusted bootstrap cannot execute the operator script until the parent has
 # assigned containment and provided EOF. Buffering is bounded by encoded(Field).
-BOOTSTRAP = 'import io,runpy,sys;data=sys.stdin.buffer.read();sys.exit(125) if not data else None;sys.stdin=io.TextIOWrapper(io.BytesIO(data),encoding="utf-8");runpy.run_path(sys.argv[1],run_name="__main__")'
+BOOTSTRAP = '''import io,os,runpy,sys
+data=sys.stdin.buffer.read()
+if not data:
+    sys.exit(125)
+budget=int(sys.argv[2])
+if budget and os.name != "nt":
+    import resource
+    resource.setrlimit(resource.RLIMIT_AS,(budget,budget))
+sys.stdin=io.TextIOWrapper(io.BytesIO(data),encoding="utf-8")
+runpy.run_path(sys.argv[1],run_name="__main__")
+'''
 
 
 @contextmanager
@@ -58,12 +68,12 @@ def execute(script, field, *, limits=Limits(), cancel=None):
         snapshot = Path(directory) / "trusted.py"
         snapshot.write_bytes(source)
         with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
-            process = subprocess.Popen([sys.executable, "-I", "-c", BOOTSTRAP, str(snapshot)], stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
+            process = subprocess.Popen([sys.executable, "-I", "-c", BOOTSTRAP, str(snapshot), str(limits.memory_bytes or 0)], stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
                 cwd=directory, env=env, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), start_new_session=os.name != "nt")
             start = time.monotonic()
             tree = None
             try:
-                tree = ProcessTree(process)
+                tree = ProcessTree(process, limits.memory_bytes)
                 assert process.stdin is not None  # PIPE is explicit above.
                 process.stdin.write(encoded(field.to_dict()))
                 process.stdin.close()

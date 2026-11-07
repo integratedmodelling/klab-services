@@ -9,7 +9,7 @@ import httpx
 import pytest
 
 from klab_client import Client
-from klab_worker import Field, WorkerClient, WorkerError, execute
+from klab_worker import Field, Limits, WorkerClient, WorkerError, execute
 from klab_worker.protocol import PROTOCOL
 from test_vertical import client_args, control
 
@@ -141,3 +141,16 @@ def test_remote_owner_cancellation_stops_running_script_promptly_without_publica
         finally:
             thread.join(timeout=12)
             worker.release("cancel-worker")
+
+
+def test_memory_budget_failure_is_acknowledged_without_scientific_output(simulator, tmp_path):
+    script = tmp_path / "overallocate.py"
+    script.write_text('x=bytearray(256*1024*1024)\n')
+    with owned_scope(simulator) as context, clients(simulator, context) as owner, clients(simulator, context, worker=True) as worker:
+        worker.register("limited", operation="double")
+        task = owner.submit(field(), operation="double")
+        with pytest.raises(WorkerError, match="process failed"):
+            worker.run_once("limited", script, limits=Limits(memory_bytes=96 * 1024**2))
+        status = owner.status(task["task_id"])
+        assert status["state"] == "FAILED" and status["output"] is None and status["provenance"] is None
+        worker.release("limited")

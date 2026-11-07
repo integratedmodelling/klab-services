@@ -1,0 +1,18 @@
+{
+  "verified_utc": "2026-11-07T00:10:07.388598+00:00",
+  "local_head": "caeffaa660bdf1b8b615c79fa6b41f049c824aaa",
+  "attribution": "Memory implementation committed as local WIP106bc9139; same-feature registry/handoff updates were uncommitted during build. Corrective containment commits integrated; exact module bytes verified against wheel/sdist/installed target, no native execution implied.",
+  "worker_wheel_sha256": "d7a9723d3e7d530834c340f5c3345533ad37082b29955ec095e9ff342eb6f570",
+  "worker_sdist_sha256": "8d90708102cb2f5c31afb1b8148e3307d82257d2ed867287e0ba46ab8068b763",
+  "simulator_wheel_sha256": "543de7f8d28ea78b2e943325eddf3c7a2e865e37d7b29ed505aa74a11c110c92",
+  "simulator_sdist_sha256": "f45aaa90430f92e38ed53ea75d76c8e4e04b9de222eae8477bb60a05fc8000e2",
+  "source_artifact_installed_parity_modules": {"worker": 5, "simulator": 14},
+  "installed_tests": {"worker_unit": 57, "worker_http_and_recovery": 21, "full_simulator": 128, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "coverage": {"combined_percent": 90.42553191489361, "covered_lines": 322, "statements": 348, "covered_branches": 103, "branches": 122, "excluded_lines": 0, "common_code_gate": "PASS90%", "aggregate_gate": "PASS80% with full OS-specific lines retained"},
+  "types_lint_schema_generated_handoff": "PASS; mypy5source files",
+  "kernel_evidence": "Local Windows Job aggregate committed-memory limit:128MiB bounded echo succeeds;256MiB allocation under96MiB limit fails before marker/output publication. HTTP task becomesFAILED with output/provenance null. Invalid bounds rejected. POSIX RLIMIT_AS runtime acceptance awaits hosted Ubuntu3.11/3.13.",
+  "semantics": "Explicit opt-in64MiB..16GiB; defaultNone claims no cap. Windows aggregate committed memory and POSIX inherited per-process address space are not interchangeable RSS guarantees. No hard total disk quota or hostile-code sandbox claim.",
+  "native_java": "REAL_NOT_RUN",
+  "scientific_acceptance": false,
+  "remaining": "Preceding containmentPR270 final-headCI/permittedmerge, memory feature publication/hosted cross-platformCI/merge; then continue independent A/B scientific descriptors/revision/agents/notifications/federation. No public release or develop promotion."
+}

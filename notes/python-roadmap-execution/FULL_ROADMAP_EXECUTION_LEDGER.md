@@ -98,6 +98,35 @@ exposed a Windows asynchronous Job-termination/temp-directory cleanup race
 (48passed/1failed), not claimed green: implementation now waits for zero active
 Job processes before removing owned temporary custody. Reverification and final
 head hosted matrix remain required; PR270 must not merge until those pass.
+Containment corrective headb2fc7a414 includes explicit Windows Job termination,
+zero-active-member confirmation and bounded retries while OS CWD handles release;
+three consecutive49test local runs PASS. Fresh corrected installed suite and
+final-head hosted checks are running. The original installed receipt is superseded
+for modified execution modules, not silently relabeled.
+
+Current branch `feat/python-worker-memory-budgets` preserves local WIP106bc9139
+and integrates containment corrections without discarding work. Eight focused
+memory tests PASS for invalid bounds, bounded success and actual over-allocation.
+Full memory source suites now57worker+6HTTP PASS, mypy5files PASS; fresh installed
+verification running in task-only `worker-memory` targets. A separate corrected
+containment installed pass49worker/20HTTP+recovery/127simulator/33governance PASS
+with90.22%aggregate Windows coverage. Its built bytes precede the final Windows-only
+loader `getattr` typing correction14dca6345; no final-head installed-byte equivalence
+is fabricated. Hosted runtime tests passed on Ubuntu in the prior run; final-head
+matrix is running after correcting Linux mypy's Windows loader attribute check.
+This is not complete verification: full installed/cross-platform memory evidence,
+types/coverage/governance and normal publication remain pending. Explicit memory
+semantics are Windows aggregate committed memory / POSIX per-process virtual
+address space, not aggregate RSS. DefaultNone remains explicitly unbounded.
+Next: validate full source memory/HTTP tests, build/install new artifacts, update
+same0017/handoff, then publish after preceding feature integration; continue A/B.
+Fresh memory artifacts now installed-verified:57worker/21HTTP+recovery/128full
+simulator/33governance PASS, zero skips;5worker+14simulator module parity,
+90.43%Windows aggregate coverage/common90%gatePASS, mypy/lint/schema/handoffPASS.
+Receipt: `evidence/full-roadmap-worker-memory-20261107.json`. Native/scientific
+acceptance unchanged. Publish a reviewable stacked memory PR against270's branch
+while its final checks run; retarget to integration after270's verified merge.
+Do not merge the stack out of order or call POSIX memory acceptance locally verified.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
