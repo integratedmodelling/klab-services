@@ -1,0 +1,44 @@
+name: Experimental private draft CAS (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/src/klab_client/revision_drafts.py', 'python-client/tests/unit/test_revision_drafts.py', 'developer-tools/klab-service-simulator/src/klab_simulator/drafts.py', 'developer-tools/klab-service-simulator/tests/test_revision_drafts.py', '.github/workflows/revision-draft-reference.yml']
+  pull_request:
+    paths: ['python-client/src/klab_client/revision_drafts.py', 'python-client/tests/unit/test_revision_drafts.py', 'developer-tools/klab-service-simulator/src/klab_simulator/drafts.py', 'developer-tools/klab-service-simulator/tests/test_revision_drafts.py', '.github/workflows/revision-draft-reference.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-drafts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install separate production SDK and development-only reference
+        run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: SDK-only sync and async wire paths and strict CAS results
+        run: python -m pytest -q python-client/tests/unit/test_revision_drafts.py --cov=klab_client --cov-branch --cov-report=json:drafts-coverage.json --junitxml=drafts-unit.xml
+      - name: Concurrent writers, restart, bounded history, corruption and durable rollback
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_revision_drafts.py developer-tools/klab-service-simulator/tests/test_durable_recovery.py --junitxml=drafts-http.xml
+      - name: Require100percent new-module coverage without simulator tests
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py drafts-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/revision_drafts.py
+      - name: Typecheck implementation bodies
+        run: python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/revision_drafts.py
+      - name: Retain reference evidence, not native authoring acceptance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-draft-reference-native-NOT_RUN
+          path: |
+            drafts-unit.xml
+            drafts-http.xml
+            drafts-coverage.json

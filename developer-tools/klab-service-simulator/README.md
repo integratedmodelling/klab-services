@@ -8,6 +8,16 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-REVISION-DRAFTS-001/JAVA-GAP-0009 adds explicit opt-in private draft CAS over
+proposed `klab.experimental.drafts/1`, not native Resources authoring/publication.
+Exact source SHA256 and expected revision prevent blind concurrent overwrite;
+bounded8names/context and8versions/name fail explicitly on eviction/capacity.
+SQLite preserves draft revisions, validates all retained history before restore,
+rolls back failed durable saves and cleans released scopes. Every response says
+UNVALIDATED_PRIVATE_DRAFT, even if the retained text resembles a model/behavior.
+No parser, compiler, agent or publication executes. See
+[reference contract](../../python-client/docs/revision-draft-reference.md).
+
 SIM-DURABLE-NOTIFICATIONS-001/JAVA-GAP-0005 offers an explicitly experimental
 retained Job-hint reference, NOT native AMQP replay. First activation establishes
 a tail cursor; only subsequent finite Job transitions are recorded. Sync/async SDK

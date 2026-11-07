@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-REVISION-DRAFTS-001",
+      "rows": ["RC-P4.2", "RC-P4.4", "CAP-14"],
+      "routes": ["/runtime/experimental/drafts/v1/{name}"],
+      "source": "Explicit proposed klab.experimental.drafts/1 private CAS; not accepted-source editing/semantic validation/publication. Native contract UNKNOWN_PENDING_REFERENCE under JAVA-GAP-0009.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; private reference success does not verify maintained native authoring semantics",
+      "simulator_test": "test_revision_drafts.py::test_two_writers_cannot_overwrite_same_revision_and_history_is_exact",
+      "java_gap_ids": ["JAVA-GAP-0009"]
+    },
+    {
       "id": "SIM-DURABLE-NOTIFICATIONS-001",
       "rows": ["RC-P3.1", "CAP-10", "CAP-11"],
       "routes": ["/runtime/experimental/notifications/v1/events"],

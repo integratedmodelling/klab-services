@@ -68,6 +68,25 @@ Corrective isolated pass adds positive real SDK sync/async MockTransport wire
 tests (37focused tests/newmodule100%PASS) and fixes the confirmed line31 doubled
 HEAD^ quote error. Full local rerun and final-head hosted acceptance remain pending;
 no native or delivery status promotion is authorized by focused test success.
+Correction289ba5325 subsequently passed installed4049SDK+historical-baselinegate/
+24HTTP-recovery and applicable hosted checks; PR273 verified remotely MERGED
+0c982589322c47733fd80166069f97f879207c8b at2026-11-07T01:09:50Z. The Windows3.11
+recovery timeout failed once and passed one unchanged rerun; evidence retains both.
+No native AMQP/complete-convergence/issue-closure acceptance promoted. Current next
+A/B pass is private draft CAS under0009, not accepted-source publication.
+Draft source pass now24SDK-only unit tests at101/101lines+38/38branches and14HTTP/
+storage testsPASS, with sync/nativeasync paths, conflict/owner/restart/history/
+save-failure/corruption controls. Same0009/handoff updated. Fresh SDK/worker/simulator
+wheel/sdist/pip-target full verification is running separately; no artifact or
+native acceptance result inferred before that receipt. Sleep is authorized only
+after the entire roadmap checklist completes, not at a partial/blocked checkpoint.
+Private-draft fresh installed result now4073SDK/38referenceHTTPstorage+recovery/
+152simulator/57worker/21workerHTTP+recovery/33governancePASS, zero skips. Newmodule
+101lines/38branches100%unexcluded in SDK-only coverage; all changedSDKdecisionsPASS.
+17linked simulatedcasesPASS(185SDK/81simulator/57worker) versus17realNOT_RUN/exit3.
+Exact hashes/parity and scope limits:
+`evidence/full-roadmap-revision-drafts-20261107.json`. Normal delivery pending;
+private draft CAS is NOT native accepted-source validation/publication acceptance.
 
 ### Sequential execution queue — user directive 2026-11-06
 

@@ -44,6 +44,18 @@ Final installed reference verification nowPASS4047SDK/24referenceHTTP+recovery/
 fully covered/unexcluded,49SDK+15simulator+5worker artifact/install parity.17linked
 simulated casesPASS versus17currentrealNOT_RUN/exit3. Normal publication/hosted
 acceptance still pending; no native replay or full convergence verdict inferred.
+PR273 correction289ba5325 subsequently passed SDK-only offline gates on hosted
+Python3.11/3.12/3.13, reference checks and the unchanged Windows worker rerun; it
+is verified merged0c9825893. Initial failures and one2s recovery timeout are retained.
+Active private draft CAS reference under0009 adds exact-source/version fences and
+bounded retained history, but NOT accepted-source editing, semantic validation,
+publication or scientific revision acceptance. Source24SDKunit/14HTTPstorage
+tests pass; fresh installed full-suite/ordinary delivery remains pending.
+That bounded draft slice is now locally installed-verified4073SDK/152simulator/
+38referenceHTTPstorage+recovery/57worker/21workerHTTP+recovery/33governancePASS,
+50SDK+16simulator+5worker module artifact parity; SDK-only newmodule100%lines/
+branches and changed decisionsPASS.17simulatedcasesPASS vs17realNOT_RUN. Native
+authoring contract stillUNKNOWN_PENDING_REFERENCE; normal featurePR/CI pending.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),

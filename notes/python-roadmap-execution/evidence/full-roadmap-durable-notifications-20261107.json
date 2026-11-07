@@ -26,8 +26,12 @@
     "workflow_failed_run": 42321214993,
     "github_validation": "Line31 Col14 Unexpected symbol HEAD^ in expression github.event.pull_request.base.sha || doubled-single-quoted HEAD^",
     "correction": "Two SDK-only positive wire tests use httpx.MockTransport with real Clients/contexts, bootstrap and subsequent cursor params; workflow env expression removes doubled expression quotes",
-    "focused_verification": "37unit tests PASS and newmodule100%unexcluded lines/branches without simulator tests; full local and final-head hosted reruns pending",
+    "focused_verification": "37unit tests PASS and newmodule100%unexcluded lines/branches without simulator tests",
+    "installed_correction_verification": "4049SDK tests83.47s and SDK-only historical-baseline changed-code gatePASS;24HTTP/recovery10.10sPASS. Prior fresh wheel target reused;49production modules match after Windows checkout newline normalization, not raw-byte parity",
+    "retained_verification_failures": "First source-import rerun4046passed/3preflightfailed requiring installedSDK; next custody check aborted before tests because checkoutCRLF differed from earlierLF. Only newline-normalized equivalence established for reused installed target",
+    "hosted_transient_failure": "Windows3.11 worker recovery Job wait exceeded2s in run42321807691/job128247863255; one unchanged failed-job rerun passed as128248687104. No timeout/assertion/gate changes or internal retry",
+    "delivery": "Corrective head289ba532513fab5a9c8777802642e7f80522b8e4; all applicable final-head checksPASS; PR273 remotely MERGED0c982589322c47733fd80166069f97f879207c8b at2026-11-07T01:09:50Z; no independent maintainer review claimed",
     "production_modules_changed": false
   },
-  "remaining": "PR273 remains OPEN pending corrected final-headCI/permittedmerge; complete convergence and maintained native replay acceptance remain unverified. Continue revision-safe authoring/agents/categories/multishard/federation and other independent roadmap scope; issue126 staysOPEN."
+  "remaining": "PR273 merged as an experimental Python reference, not complete convergence or maintained native replay acceptance. Continue revision-safe authoring/agents/categories/multishard/federation and other independent roadmap scope; issue126 staysOPEN."
 }
