@@ -1,5 +1,18 @@
 # Python roadmap acceptance map — 3 November 2026
 
+Fresh copied-composition packages4384SDK/248simulator/3focused and all reference/
+worker/governance suitesPASS, zero skips/errors/failures; rawpackageparity and
+simulator-only81lines40branches100% verified. Final17linkedmatrix/ordinaryPR/CI
+pending. Copied source claims remain callerasserted; CAP-03/native live federation,
+revocation/scientificcompatibility and fullABC acceptance remain open.
+
+Reference revision PR286 verified merged99fd8712d/all36finalheadchecksPASS. Next
+copied-snapshot composition reference3focusedtestsPASS/simulator81lines40branches
+100%unexcluded/bodymypyPASS, actual A/B/C HTTP sourcepins and C-only output/detach.
+Source claims explicitly callerasserted, not upstream grants or live federation;
+CAP-03/nativeAPI/scientificcompatibility/revocation gates remain open. Fresh installed
+verification/delivery pending; productionSDK/worker unchanged/fullABC incomplete.
+
 PR285 provider restoration verified merged00eba666f/all34finalheadchecksPASS.
 New explicit revision-convergence simulator fixture4focusedtestsPASS,47lines/
 24branches100%unexcluded/bodymypyPASS. IDs-only ephemeral referenceCAS/history and

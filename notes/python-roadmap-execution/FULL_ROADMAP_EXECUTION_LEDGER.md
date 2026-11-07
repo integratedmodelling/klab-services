@@ -1,6 +1,60 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Active copied snapshot composition reference
+
+Final17linkedcasesPASS using485SDK/177simulator/57worker, zero skips/errors/failures
+versus17realNOT_RUN/exit3. OrdinaryPR/finalheadCI next; all copied-source authority/
+native federation/scientific/CAP03/fullABC limitations remain explicit.
+
+Fresh verifier completed05:41:33UTC:4384SDK/248simulator/3composition/4revision/
+18provider/18provenance/11inventory/98reference/57worker/21HTTP/37governancePASS,
+zero skips/errors/failures.57SDK+23simulator+5worker raw source/wheel/sdist/installed
+parity. Installed simulator-only81lines40branches100%unexcluded; SDK unchanged/
+newmodulegateN/A.17linkedmatrix sh_1b487095e001pNbhEIKO1nxf8P running vs17realNOT_RUN/
+exit3verified. Receipt evidence/full-roadmap-copied-composition-20261107.json.
+Next normalPR/finalCI/permittedmerge; native federation/sourceauthority/revocation/
+science and CAP-03/fullABC not promoted. Frozen simulator code through attestation.
+
+Current test/python-coordinator-composition-reference parent99fd8712d. Explicit
+klab.experimental.copied-composition/1 protocol imports two independently SDK-read
+reference snapshots into C-owned declared PAIRWISE_SUM_REFERENCE result. Runtime/
+context/observation-qualified IDs and pinned epoch/plan/contentrevision vector;
+colliding numeric sourceIDs remain distinct.400cell three-ownedHTTPprocess test
+verifies independent A/B read-plan delivery/release, sourceforeign denial, C output,
+nativeasync independent C inspection, foreignCdenial, expectedvector409, C-only
+detach and unchanged A/B counts/revisions/oneoriginalsubmit each, no C RuntimeSubmit.
+Strict matching descriptor/masks; no implicit resampling/unitconversion/model inference.
+Coordinator does not fetch/authenticate upstream or forward credentials: source
+claims explicitly CALLER_ASSERTED_COPIED_REFERENCE_NOT_REMOTE_GRANT. No live source
+validation/revocation propagation/atomicmultiservice snapshot/native federation or
+science acceptance. Ephemeralonly/durablemode409; bounded8results/root/4096cells/
+262144byteintake, duplicatekeys/types/hash/vector/overflow guards before publication.
+3focusedtestsPASS, simulator-only81lines40branches100%unexcluded/bodymypyPASS.
+Retain initial1PASS/1FAIL: capture helper passed list to SDK assemble_read_plan,
+which requires immutable tuple; corrected testsetup, noSDKrelaxation. Initialmypy
+optionaloutput diagnostic corrected by explicit nonnull guard. Same0007/0013registry/
+handoff/scenario/docs/CI aligned, native MISSING_API and CAP-03 PARTIAL unchanged.
+No productionSDK/worker changes or facade/route authority claims. Fresh unique
+copied-composition-first verification next, then ordinaryPR/finalCI/permittedmerge.
+
+PR286 verified MERGED99fd8712d8dd7cc4036e4ffea1e826bb65bfd422 at2026-11-07T05:29:06Z,
+exact449fa72ffc18648b4eb9f8acbeea89693bb9cafb/all36checksPASS/no failedrerun.
+Composition branch integrated actualmerge; no watcher remains. Native scientific
+commits/lineage/convergence remain unknown; RC-P3.1/CAP-10 not promoted.
+
 ## Active reference revision convergence slice
+
+Published PR286 head449fa72ff; final-head CI watcher sh_1b4751ab80012gKJgq6ZeXlVeQ
+running. No merge claimed. Child test/python-coordinator-composition-reference
+begins contract inspection; no federation implementation claimed yet. Existing
+read-plan snapshot vectors can identify immutable synthetic inputs but cannot
+grant upstream authority or prove native commits. Existing worker accepts one
+Field; do not misrepresent one-field worker execution as federated twin composition.
+Next reference needs genuine coordinator-ownedC/result, independently authorized
+sourceA/B reads with origin-qualified IDs and pinned reference vectors, C-only
+detach/cleanup, source preservation, ambiguity/denial/drift refusal and no remote
+source mutation or credential delegation. Scientific/native composition remains
+unverified regardless of synthetic arithmetic or union/standby success.
 
 Final revision17linkedcasesPASS using485SDK/174simulator/57worker, zero skips/
 errors/failures versus17realNOT_RUN/exit3. Publish ordinaryPR now; finalheadCI/
@@ -1079,9 +1133,9 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 
 |Original ID|Current Python implementation / simulator baseline|Next independently actionable item or exact external gate|
 |---|---|---|
-|RC-P0|PARTIAL; discovery/compatibility guards|Complete operation inventory against supported source and simulator coverage; production support decision separate.|
+|RC-P0|PARTIAL; source inventory delivered283 plus binary284|Reproducible411sourcecallables, two Resolver encoder wrappers remain unsupported; source classification not executed support. Broader route/workflow/test mapping and native support decision separate.|
 |RC-P1.1|PARTIAL; discovery plus delivered279expiry/recovery|Bootstrap through400cells/renewal/denial/no replay verified; production issuer/license/deployed positive-negative matrix remains external.|
-|RC-P1.2|PARTIAL; SIM-RESTORE-001 and SIM-DURABLE-RESTORE-001 delivered269/8f9fe3805 (0004/0017)|Completed/in-flight saved Job, context and observation reattach across owned simulator processes without replay; native retained-Job/incarnation semantics still external.|
+|RC-P1.2|PARTIAL; restoration269 and binaryProviderJob285/00eba666f delivered|Completed/in-flight saved Job/context/observation and binary supplier-scoped Job reattach without replay verified; native retained-Job/incarnation semantics remain external.|
 |RC-P1.3|PARTIAL; scope selection/279expiry plus independent notebook race active|Same-owner independent credentials and foreign read/write/query denial tested; not a fabricated cross-principal sharing/grant contract. Native collaborator policy/deployed approval remains unverified.|
 |RC-P1.4|PARTIAL; delivered279mixed-provider outage/recovery and identity drift|Same-URL selectedUUID retention SDKfix verified Ubuntu+Windows; no automatic failover. Supported native deployment matrix remains external.|
 |RC-P1.5|PARTIAL; SIM-SELECTION-001|Cover material project/observer/grid option effects, distinguishing advertised model from actual selected input.|
@@ -1090,14 +1144,14 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P2.3|PARTIAL tools; authentic recorded fixture only|Independent actual-provider model/datum/reference tuple external; no study replication or synthetic accuracy claim.|
 |RC-P2.4|COMPLETE bounded transport; synthetic stream tests|Maintain interrupt/budget evidence; representative real-provider soak external.|
 |RC-P2.5|PARTIAL; raster/vector/table, declaredbands272/categories275/readplans276/offlinearrays278|Caller-declared category mappings and bounded multishard references delivered; native dictionary/time/revision/representation convergence remains unverified, not pending Python dictionary code.|
-|RC-P3.1|PARTIAL; SIM-REFRESH-001|Explicit provisional committed-revision two-client simulator contract/races, native semantics remain unknown.|
+|RC-P3.1|PARTIAL; reference revision CAS/history delivered286/99fd8712d|Two independent writers/readers exercise ephemeral IDs-only reference checkpoints, not committed scientific revisions. Native commits/lineage/notification convergence remain unknown.|
 |RC-P3.2|COMPLETE bounded refresh; SIM-REFRESH-001|Retain stale/partial/outage controls while broadening linked protocols.|
 |RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001 plus delivered269 durable restart/no-replay controls|Preserve expiry/cancel/no-replay and scoped results; native durable history/incarnation acceptance separate.|
 |RC-P3.4|PARTIAL; declared-dependency workflow delivered282/be3ccf991|Installed18focused controls and hosted checksPASS; finite same-root dependencies/planned resolution remain partial, not authoritative Java lineage. Native committed history/convergence remain unverified.|
 |RC-P3.5|PARTIAL; notebook race delivered280/87178be30|Exact installed asyncSDK kernel/two-client CAS/foreign denial/cleanup and full package/hosted checksPASS; native sharing/currentness semantics separate.|
 |RC-P4.1|PARTIAL; source-defined candidate protocol1 delivered281/4806cbc69|Installed4263SDK/211simulator tests and final hostedchecksPASS; sourcehash/identity/advertisement/visibility controls verified. Native applicability/admission/deployed compatibility remain external.|
 |RC-P4.2|PARTIAL; source previews|Revision-aware validation scenario, parser and semantic admission kept distinct.|
-|RC-P4.3|PARTIAL delivered imports; SIM-IMPORT-001/SIM-INPUT-BINDING-001|Broader annotation/compute input provenance with owned cleanup; native resource custody gate separate.|
+|RC-P4.3|PARTIAL imports plus binaryProviderData284 and restoration285|RawAvro input/event/result and source-shaped Job controls delivered; broader annotation/dependency workflows and native resource custody/scanner/graphcleanup remain separate.|
 |RC-P4.4|PARTIAL ADD/locks plus delivered274 private draftCAS/history; native acceptance separate|Private CAS is not accepted-source editing/validation/publication; maintained native conditional authoring contract remains unestablished.|
 |RC-P4.5|PARTIAL native agent control/registration plus delivered277finite synthetic lifecycle|Synthetic single-use/stop/terminal/latercleanup/rebind/denial/restart loss verified; actual k.Actors execution/private-session/native principal+incarnation/disposal acceptance remains unverified.|
 |RC-P5|IN_SCOPE PARTIAL; worker268/30460119d, recovery269/8f9fe3805, containment270/a58281643, memory271/96f696218 merged|Declared trusted worker lifecycle implemented/tested across Windows+POSIX; total disk/hostile-code isolation and maintained native backend/ABI/deployment acceptance remain separate deficits/gates.|
@@ -1107,12 +1161,12 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-02|PARTIAL catalog/peers plus delivered279|Mixed provider outage/recovery/selectedUUID retention and genuine drift refusal verified; no trust expansion or native deployment approval.|
 |CAP-03|PARTIAL origin-qualified routing|Explicit provisional composition/migration workflow behind contract adapter; no silent automatic failover.|
 |CAP-04|PARTIAL typed requests|Broaden supported collections/relationship/context selection scenarios.|
-|CAP-05|PARTIAL semantic explorers plus active candidate-source protocol1 inspector|Source-defined candidate catalogs behind capability gate, no source evaluation/local ontology inference. Native revision/applicability/admission evidence remains separate.|
+|CAP-05|PARTIAL semantic explorers plus candidate-source protocol1 delivered281|Source-defined candidate catalogs behind capability gate, no source evaluation/local ontology inference. Native revision/applicability/admission evidence remains separate.|
 |CAP-06|COMPLETE bounded evidence DTOs|Maintain plan-versus-executed-effect distinction; full lineage belongs RC-P3.4.|
 |CAP-07|PARTIAL Jobs/native async; durable completed/in-flight restoration installed-tested|Broaden bounded fairness/lifecycle where independently needed; native retention/restart contract remains unverified.|
 |CAP-08|COMPLETE bounded scalar data|Preserve exact NUMBER/BOOLEAN/TEXT/null precision while adding separate block contract.|
 |CAP-09|PARTIAL descriptors/exports plus declaredbands272/categories275/readplans276/offlinearrays278|Declared band/category/multishard reference mappings verified; maintained native layout/time/revision lease/dictionary semantics still external.|
-|CAP-10|PARTIAL graph/projections|Two-client revision/race/partial refresh scenario through explicit protocol seam.|
+|CAP-10|PARTIAL graph/projections plus ephemeral reference checkpoints286|Two-client CAS/history/head inspection verified through explicit protocol seam; not native scientific commits, full lineage or notification convergence.|
 |CAP-11|PARTIAL; transient hints plus delivered273/0c9825893 retained reference|Explicit provisional durable cursor/resync/gap reference verified; maintained expiry/revocation/full convergence/native acceptance still unverified.|
 |CAP-12|COMPLETE bounded offline snapshots|Maintain socket-forbidden fresh-process inspection and no queued replay.|
 |CAP-13|PARTIAL resource inspection/import plus candidate catalogs delivered281|Installed package/CI candidate visibility/hash/member/denial controlsPASS. Broader CRUD/dependency and native resource custody/admission gates remain separate.|

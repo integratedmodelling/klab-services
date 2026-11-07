@@ -23,6 +23,7 @@ SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-emp
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
 SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export", "candidate-sources", "provenance-dependencies", "provider-avro")
 SCENARIOS += ("revision-convergence",)
+SCENARIOS += ("copied-composition",)
 
 
 class ContractError(Exception):
@@ -70,6 +71,8 @@ class State:
         self.drafts = Drafts(self)
         from .revision_snapshots import RevisionSnapshots
         self.revision_snapshots = RevisionSnapshots(self)
+        from .composition import Compositions
+        self.compositions = Compositions(self)
         from .read_plans import ReadPlans
         self.read_plans = ReadPlans(self)
         from .managed_agents import ManagedAgents
@@ -184,6 +187,7 @@ class State:
                 self.notifications.changed_jobs(before_jobs)
                 self.drafts.rows = {root: rows for root, rows in self.drafts.rows.items() if root in self.contexts}
                 self.revision_snapshots.rows = {root: rows for root, rows in self.revision_snapshots.rows.items() if root in self.contexts}
+                self.compositions.rows = {key: row for key, row in self.compositions.rows.items() if key[0] in self.contexts}
                 self.read_plans.cleanup()
                 self.managed_agents.cleanup()
             if self.store is not None:
@@ -219,6 +223,7 @@ class State:
                         "notification_streams": len(self.notifications.logs),
                         "draft_contexts": len(self.drafts.rows),
                         "revision_contexts": len(self.revision_snapshots.rows),
+                        "compositions": len(self.compositions.rows),
                         "read_plans": len(self.read_plans.rows),
                         "managed_agents": len(self.managed_agents.rows),
                         "authoring_assets": len(self.authoring.assets),
@@ -262,6 +267,7 @@ class State:
                 from .drafts import Drafts
                 self.drafts = Drafts(self)
                 self.revision_snapshots.rows.clear()
+                self.compositions.rows.clear()
                 from .read_plans import ReadPlans
                 self.read_plans = ReadPlans(self)
                 from .managed_agents import ManagedAgents
@@ -295,6 +301,22 @@ class State:
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
         scope = headers.get("klab-scope", "")
+        if service == "runtime" and route.startswith("/experimental/copied-composition/v1/"):
+            if len(body) > 262144:
+                raise ContractError(413, "Copied composition request budget exceeded")
+            try:
+                def composition_fields(items):
+                    result = {}
+                    for key, value in items:
+                        if key in result: raise ValueError("Duplicate composition field")
+                        result[key] = value
+                    return result
+                data = json.loads(body, object_pairs_hook=composition_fields) if body and headers.get("Content-Type", "").startswith("application/json") else None
+            except (ValueError, UnicodeError, RecursionError):
+                raise ContractError(422, "Invalid copied composition JSON") from None
+            if urlsplit(original_path).query:
+                raise ContractError(422, "Copied composition operation does not accept queries")
+            return self.compositions.request(method, route, scope, principal, headers, data)
         if service == "runtime" and route.startswith("/experimental/revision-snapshots/v1/"):
             if len(body) > 4096:
                 raise ContractError(413, "Reference checkpoint request budget exceeded")

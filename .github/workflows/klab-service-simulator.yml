@@ -11,6 +11,17 @@ permissions:
   contents: read
 
 jobs:
+  copied-composition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]'
+      - name: Three owned HTTP services and copied reference C result (not native federation)
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_copied_composition.py --cov=klab_simulator.composition --cov-branch --cov-fail-under=100 --cov-report=term-missing
   revision-convergence:
     runs-on: ubuntu-latest
     timeout-minutes: 10

@@ -20,5 +20,6 @@
   "dependency_custody": "Fresh wheel/sdist/pip-targets borrow prior test dependencies; no fresh dependency-isolation certification",
   "issue_review": "2026-11-07T05:20:04.517173+00:00: all11open bodies/35comments retrieved; original body/comment hashes unchanged,12known campaign comments fully reinspected and match prior pinned provider-live-issue-review receipt; no unclassified URLs, safe closure candidates or issue mutations",
   "native_java": "REAL_NOT_RUN; JAVA-GAP-0016/0013 native statuses unchanged. Reference counters are not scientific commits/hashes/signatures/grants; lineage and notification convergence remain unknown",
-  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; remaining42row federation/workflow and native acceptance gates. RC-P3.1/CAP-10/fullABC remain PARTIAL; sleep pending."
+  "delivery": {"pr": 286, "head": "449fa72ffc18648b4eb9f8acbeea89693bb9cafb", "merge": "99fd8712d8dd7cc4036e4ffea1e826bb65bfd422", "merged_utc": "2026-11-07T05:29:06Z", "applicable_checks": "36PASS; no failed-check rerun", "independent_maintainer_review": false},
+  "remaining": "Continue remaining42row federation/workflow and native acceptance gates. RC-P3.1/CAP-10/fullABC remain PARTIAL; sleep pending."
 }

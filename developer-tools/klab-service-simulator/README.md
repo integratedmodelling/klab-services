@@ -8,6 +8,11 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario copied-composition` combines two copied reference snapshots into a
+C-owned declared arithmetic result. Source origins remain caller assertions, not
+remote grants; no coordinator remote fetching/live federation/revocation propagation.
+See [reference boundaries](../../python-client/docs/copied-composition-reference.md).
+
 `--scenario revision-convergence` provides explicit experimental checkpoint CAS/
 history over completed synthetic observation IDs. Ephemeral only, durable-storage
 mode refuses; not native scientific commits or full lineage/notification convergence.
