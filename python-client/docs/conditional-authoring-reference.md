@@ -35,6 +35,10 @@ Python `VALID` reports alone never authorize server publication. The facade does
 silently call unconditional native UPDATE or treat resource-info MARK_PUBLISHED as
 namespace admission. Native CAS/validation/publication/retention remain external
 contract gates under JAVA-GAP-0009.
+The inspected native ResourcesProvider explicitly rejects PUBLISH for assets other
+than Resource; its deferred namespace save/workspace validation branches are not
+this conditional source-publication protocol. The reference never translates a
+namespace publication request into those native operations.
 
 ## Revision, readback and recovery
 

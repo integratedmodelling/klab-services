@@ -7,6 +7,9 @@ contract approval, scientific admission or final PR/full-row acceptance.
   misrepresented as CAS-safe namespace publication. Separate proposed protocol must
   be explicitly advertised and opted into; no reference route on ordinary services.
   Existing ADD-only Authoring/private RevisionDrafts are unchanged.
+  Additional source inspection confirms ResourcesProvider rejects PUBLISH for
+  non-Resource assets; deferred source save/workspace validation is not silently
+  translated into this namespace conditional-publication contract.
 - Server owns source revisions, finite diagnostics, knowledge and atomic conditions.
   Client DTOs or claimed successful validations cannot authorize publication. Source
   edits invalidate validation; old publication snapshots remain separately readable.

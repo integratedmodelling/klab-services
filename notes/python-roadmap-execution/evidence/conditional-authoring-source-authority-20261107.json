@@ -4,11 +4,13 @@
   "source_raw_sha256": {
     "klab.services.resources.server/src/main/java/org/integratedmodelling/resources/server/controllers/ResourceCRUDController.java": "9a92fee8d4f6b5ac0021391160204f5b968dddb2e9cf07c0cc1491d81cc54e36",
     "klab.services.resources.server/src/main/java/org/integratedmodelling/resources/server/controllers/ResourcesProviderController.java": "2cd3d59bd3f7414dc52147c6dffe4206fa8f058ef51b1f479345b276548c6ca5",
-    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/ResourcesService.java": "68b47f16b7ddff2f19276259abf27ce007118d7030a60f3adc878810293631ee"
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/ResourcesService.java": "68b47f16b7ddff2f19276259abf27ce007118d7030a60f3adc878810293631ee",
+    "klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java": "6e88271d1e02aa6cebfb895c1d27d58313dd7903549b98cd036b45c8363c7ff6"
   },
   "observations": [
     "ResourceCRUDController.submit takes asset URN, knowledge class, submission mode, serialized contents and principal; its inspected signature is not an expected-document-revision CAS/validation-ticket/conditional-publication contract.",
     "ResourcesProviderController.MARK_PUBLISHED passes resource URN, service ID and authoritativeResourceUrn to markPublished. This is not evidence of atomic validated namespace-source publication and must not be repurposed as such.",
+    "ResourcesProvider.submit explicitly returns an Error ResourceSet for PUBLISH of non-Resource assets, including namespaces. UPDATE_DEFERRED delegates ontology/namespace saves and VALIDATE operates on a workspace; neither inspected branch establishes this generic expected-document-revision conditional publication protocol.",
     "Existing production Authoring remains explicit ADD-only and RevisionDrafts remain UNVALIDATED_PRIVATE_DRAFT; no unsafe UPDATE or automatic publication was added to them.",
     "AcceptedDocuments/AsyncAcceptedDocuments is a separately proposed reference. Every call requires exact caller opt-in and selected Resources acceptedDocumentProtocol advertisement; no management endpoint is attempted on ordinary unadvertised Java services.",
     "Reference server owns source revisions, diagnostics and atomic current source/knowledge publication conditions. Python DTOs or caller-supplied validations do not grant publication authority.",
