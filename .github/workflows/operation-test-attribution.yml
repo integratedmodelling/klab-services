@@ -1,0 +1,47 @@
+name: Public operation test presence (not functional or native acceptance)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/operation-test-attribution.yml']
+  push:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/operation-test-attribution.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-operation-presence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}/python-client/tools
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev,analysis,vector,notebook,local]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: Require exact installed SDK and dependencies
+        run: |
+          python -c "import klab_client,numpy,rasterio,xarray,geopandas,pandas,shapely,nbclient,ipykernel,psutil;from pathlib import Path;p=Path(klab_client.__file__).resolve().parent;assert 'site-packages' in p.parts;print('SDK_SOURCE='+str(p))" >> "$GITHUB_ENV"
+      - name: Instrumentation custody and independent negative controls
+        run: python -m pytest -q python-client/tests/tools/test_operation_trace.py python-client/tests/tools/test_operation_trace_pytest.py
+      - name: Development tooling types and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/tools/operation_trace.py python-client/tools/operation_trace_pytest.py python-client/tools/operation_attribution.py
+          python -m ruff check python-client/tools/operation_trace.py python-client/tools/operation_trace_pytest.py python-client/tools/operation_attribution.py --select E9,F63,F7,F82
+      - name: Full SDK unit call-resume presence (not invocation counts)
+        run: python -m pytest -q -p operation_trace_pytest python-client/tests/unit --operation-trace-source "$SDK_SOURCE" --operation-trace-output sdk-operation-trace.json
+      - name: Independent HTTP workflow presence (other threads and kernels unmeasured)
+        run: python -m pytest -q -p operation_trace_pytest developer-tools/klab-service-simulator/tests --operation-trace-source "$SDK_SOURCE" --operation-trace-output simulator-operation-trace.json
+      - name: Reconcile every callable without promoting missing assertion evidence
+        run: python python-client/tools/operation_attribution.py --source "$SDK_SOURCE" --trace sdk-operation-trace.json simulator-operation-trace.json --workflows python-client/docs/operation-workflow-mappings.json --repository . --output operation-test-attribution.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: operation-presence-not-functional-or-native-acceptance
+          path: |
+            sdk-operation-trace.json
+            simulator-operation-trace.json
+            operation-test-attribution.json

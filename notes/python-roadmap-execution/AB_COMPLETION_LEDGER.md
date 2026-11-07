@@ -1,5 +1,43 @@
 # A+B completion ledger — ongoing campaign
 
+PR306 hosted installed-operation-presence failed13vectorcontrols/5230passed at
+run42418781221/job128542504869: workflow omitted vector dependency extra. Failure
+retained; add vector extra and explicit imports, no test skipping or gate waiver.
+Fresh exacthead hosted verification remains owed. Independent onboarding matrix
+190SDK/1localHTTP/18simHTTP passes, not native issuer/license/deployment approval.
+
+## PR305 verified merged; RC-P0 attribution active
+
+DraftPR3066b27f5792 published. Fresh source-pinned installed5243unit/536simulator
+testsPASS; all506classifications preserved,455nonabstractcallables observed and51
+abstract declarations uncalled, no truncation.22operations have reviewed assertions
+linked to passed same-operation/exact-test-byte scopes;484remain without reviewed
+assertionmapping (including abstract declarations). No full functional/nativeacceptance.
+Receipt operation-test-attribution-installed-20261107.json recorded; hostedCI running.
+Next independent installed onboarding/routing matrix under review; RC-P0 staysactive.
+
+Latest attribution31tool/accessor/orchestration/queue-order controls/fatal lintPASS.
+Initialfullinstalledunit5235PASS/HTTP536PASS; plus8gapcontrols observes455nonabstract,
+51abstractuncalled. Initial5orchestration-double setup failures retained/corrected.
+Found pytest-root-relative test IDs ambiguous across packages; now exact repository
+testfiles+executedbytes pinned. FreshfullSDK/simulator traces running. Reviewedworkflow
+mapping is partial and authority-labelled; all other assertion/native evidence missing.
+
+PR305 MERGED971f2a98751b3f458eb4b0280a7093a4a4e716cd at2026-11-07T21:48:46Z;
+exact1863a62ae8c8816492fa1ba3654c6056ed05350f/all36finalheadchecksPASS, remote/local
+ancestry checkpoint verified.5253installedSDK536sim116worker23HTTP/reference39governance
+PASS;71/37/6parity49SDK100%10fixture100%4HTTP1ownednotebook17focusedCI/ordered/
+17linkedPASSvs17nativeNOT_RUN.42originalIDs/history16runnable/zero finaldispositions.
+No native semantic/time/scientific authority or public release promoted.
+
+Active feat/python-operation-test-attribution, noPR/uncommitted tooling only.
+Bounded owning-thread call/resume tracer, opt-in pytest adapter and exact source
+reconciler implemented outside production packages.10tool/subprocess controlsPASS:
+parameter-safe refs/no returns, source drift, bounds, profiler preservation, whole-test
+teardown outcome and import/output custody. First installed49raster controlsPASS under
+trace:506callables preserved,32observed474notobserved. These are presence only, not
+functional assertion/native acceptance; broader tests/workflow mapping remain.
+
 ## PR305 final installed receipt verified
 
 Fresh raster-label artifacts at source79a73dbc5 passed5253installedSDK/536simulator/
