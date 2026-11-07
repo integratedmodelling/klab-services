@@ -33,11 +33,14 @@ platform blockers and does not bump, tag, upload or publish the package.
 | Behavior/agent lifecycle | Existing deferred BEHAVIOR registration/native AMQP control and wire fixture; opt-in Hub federation transport prerequisite in PR212, authority readiness corrected in PR213. Genuine managed Runtime/principal-incarnation/independent remote cleanup remain unaccepted; PUBLISHED/STOPPED are not execution/cleanup proof |
 | Broader federation | Blocked composition/recovery contracts [#112](https://github.com/integratedmodelling/klab-services/pull/112); attachment is not composition |
 | Original PaL / full scientific portfolio | Still blocked by admitted models, binding/units/grid/time/masks/reference contracts. Input QA and synthetic known-answer runs are not published-study reproduction |
-| Embedded worker/provider SDK | Separate product specification and execution authorization required |
+| Embedded worker/provider SDK | C is in scope under the renewed A+B+C directive. A separate experimental `python-worker` package and simulator lifecycle/recovery/resource controls are delivered; native provider ABI/deployment and hostile-code/total-disk isolation remain separate gates. Not a production support promise. |
 
 These are bounded development-preview receipts, not whole-row acceptance or
 production support commitments. Current integrated evidence and remaining gates
 are tracked in [current compatibility evidence](current-compatibility-evidence.md).
+The reproducible [source-callable inventory](supported-operation-inventory.md)
+identifies explicit unsupported wrappers without treating guarded fallback errors
+as missing whole operations. Source classification alone is not executed support.
 PR213 restored default owned authority readiness after a discovered PR212 regression;
 the red failure is retained, not recast as a pass. Q7's actual hierarchy discrepancy
 remains unresolved on its preserved branch and is not hidden by offline success.

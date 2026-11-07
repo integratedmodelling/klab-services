@@ -1,5 +1,18 @@
 # Python roadmap acceptance map — 3 November 2026
 
+ProvenancePR282OPENca32b1f2f/finalCIrunning. RC-P0 reproducible source inventory
+now410public-named callables:51abstract/331source-only/24guarded/4unsupported wrappers.
+This is source classification, NOT410tested/supported operations.11tooltestsPASS;
+fresh installed verification/delivery pending. Native Avro contextualization and
+encoder authority deficits remain explicit; fullRC-P0/fullABC acceptance incomplete.
+ProvenancePR282 subsequently verified mergedbe3ccf991 at03:57:44Z/allapplicable
+checksPASS/no failedrerun. Nativecommittedrevision/fulllineage not promoted.
+Freshinventory4274SDK/223simulator/11tool/18provenance/98reference/57worker/21HTTP/
+37governancePASS, rawmoduleparity. Tool-only50lines26branches100%, not SDKsupport
+certificate;17linkedmatrix/ordinaryPR/CIpending. Native/fullABC acceptance unchanged.
+Finalinventory17linkedcasesPASS(375SDK/152simulator/57worker) vs17realNOT_RUN/exit3;
+normalPR/finalCI pending. Source-only classifications are not executed support.
+
 Latest delivery: candidate-source PR281 verified merged4806cbc69, all applicable
 final-head checks PASS. Next provenance fixture18focused testsPASS, simulator-only
 30lines20branches100%unexcluded. Existing SDK graph APIs read finite declared

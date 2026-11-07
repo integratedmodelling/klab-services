@@ -1,0 +1,2883 @@
+{
+  "version": 1,
+  "evidence": "READ_ONLY_PYTHON_SOURCE_NOT_EXECUTION_OR_NATIVE_ACCEPTANCE",
+  "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
+  "counts": {
+    "ABSTRACT_DECLARATION": 51,
+    "IMPLEMENTED_SOURCE_ONLY": 331,
+    "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
+    "UNCONDITIONALLY_UNSUPPORTED": 4
+  },
+  "operations": [
+    {
+      "path": "_agent_wire.py",
+      "owner": null,
+      "operation": "agent_exchange",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_agent_wire.py",
+      "owner": null,
+      "operation": "encode_command",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_agent_wire.py",
+      "owner": null,
+      "operation": "decode_message",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_async_exports.py",
+      "owner": null,
+      "operation": "export_formats",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_async_exports.py",
+      "owner": null,
+      "operation": "export_to_file",
+      "async": true,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "_async_transport.py",
+      "owner": "AsyncTransport",
+      "operation": "request",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_async_transport.py",
+      "owner": "AsyncTransport",
+      "operation": "stream",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_async_transport.py",
+      "owner": "AsyncTransport",
+      "operation": "aclose",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_bootstrap.py",
+      "owner": null,
+      "operation": "public_fields",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_bootstrap.py",
+      "owner": null,
+      "operation": "wire_request",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_bootstrap.py",
+      "owner": null,
+      "operation": "decode_bootstrap",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_inspection.py",
+      "owner": null,
+      "operation": "require_sync",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "_inspection.py",
+      "owner": null,
+      "operation": "bounds",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_inspection.py",
+      "owner": null,
+      "operation": "text",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_inspection.py",
+      "owner": null,
+      "operation": "freeze",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_inspection.py",
+      "owner": null,
+      "operation": "html_summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_job_binding.py",
+      "owner": "JobBinding",
+      "operation": "capture",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_job_binding.py",
+      "owner": "JobBinding",
+      "operation": "validate",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_scientific_snapshot.py",
+      "owner": null,
+      "operation": "dumps",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "_scientific_snapshot.py",
+      "owner": null,
+      "operation": "loads",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "agent_control.py",
+      "owner": "AgentControlJournal",
+      "operation": "view",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_control.py",
+      "owner": "AgentControlJournal",
+      "operation": "attempt",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_control.py",
+      "owner": "AgentControlJournal",
+      "operation": "observe",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_control.py",
+      "owner": "AgentControlJournal",
+      "operation": "transport_lost",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_control.py",
+      "owner": "AgentControlJournal",
+      "operation": "detach",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "DeferredAgent",
+      "operation": "receipt",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "DeferredAgent",
+      "operation": "attach",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "DeferredAgent",
+      "operation": "view",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "DeferredAgent",
+      "operation": "start",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "DeferredAgent",
+      "operation": "stop",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "DeferredAgent",
+      "operation": "request_status",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "DeferredAgent",
+      "operation": "read",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "DeferredAgent",
+      "operation": "close",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "AgentExecutions",
+      "operation": "create",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_execution.py",
+      "owner": "AsyncAgentExecutions",
+      "operation": "create",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "view",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "state",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "local_cleanup_confirmed",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "broker_features",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "open",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "start",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "stop",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "request_status",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "read",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_messaging.py",
+      "owner": "AgentChannel",
+      "operation": "close",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agent_status.py",
+      "owner": null,
+      "operation": "decode_agent_status",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agents.py",
+      "owner": "AgentPreviews",
+      "operation": "preview",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "agents.py",
+      "owner": "AsyncAgentPreviews",
+      "operation": "preview",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "analysis.py",
+      "owner": null,
+      "operation": "export_for_analysis",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "analysis.py",
+      "owner": null,
+      "operation": "async_export_for_analysis",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "analysis.py",
+      "owner": null,
+      "operation": "trace_analysis",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "analysis.py",
+      "owner": null,
+      "operation": "open_raster",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Concept",
+      "operation": "get_type",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Concept",
+      "operation": "is_collective",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Concept",
+      "operation": "get_qualifier",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Concept",
+      "operation": "singular",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Concept",
+      "operation": "collective",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Concept",
+      "operation": "get_notifications",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Concept",
+      "operation": "get_description_type",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Observable",
+      "operation": "get_semantics",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Observable",
+      "operation": "get_observer_semantics",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Observable",
+      "operation": "get_description_type",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Observable",
+      "operation": "is_optional",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Observable",
+      "operation": "get_default_value",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "Observable",
+      "operation": "get_resolution_directives",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ConceptImpl",
+      "operation": "contextualization",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ConceptImpl",
+      "operation": "get_type",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ConceptImpl",
+      "operation": "is_collective",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ConceptImpl",
+      "operation": "get_qualifier",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ConceptImpl",
+      "operation": "singular",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ConceptImpl",
+      "operation": "collective",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ConceptImpl",
+      "operation": "get_notifications",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ConceptImpl",
+      "operation": "get_description_type",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ObservableImpl",
+      "operation": "contextualization",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ObservableImpl",
+      "operation": "get_semantics",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ObservableImpl",
+      "operation": "get_observer_semantics",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ObservableImpl",
+      "operation": "get_description_type",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ObservableImpl",
+      "operation": "is_optional",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ObservableImpl",
+      "operation": "get_default_value",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/knowledge.py",
+      "owner": "ObservableImpl",
+      "operation": "get_resolution_directives",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/modeler.py",
+      "owner": "Modeler",
+      "operation": "open_user",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/modeler.py",
+      "owner": "Modeler",
+      "operation": "open_session",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/modeler.py",
+      "owner": "Modeler",
+      "operation": "open_context",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/modeler.py",
+      "owner": "Modeler",
+      "operation": "get_open_context",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/modeler.py",
+      "owner": "ModelerImpl",
+      "operation": "open_user",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/modeler.py",
+      "owner": "ModelerImpl",
+      "operation": "open_session",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/modeler.py",
+      "owner": "ModelerImpl",
+      "operation": "open_context",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/modeler.py",
+      "owner": "ModelerImpl",
+      "operation": "get_open_context",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "Geometry",
+      "operation": "dimension",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "Geometry",
+      "operation": "size",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "Geometry",
+      "operation": "is_scalar",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "Geometry",
+      "operation": "encode",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "Observation",
+      "operation": "get_urn",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "Observation",
+      "operation": "get_name",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "Observation",
+      "operation": "get_observable",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "Observation",
+      "operation": "get_value",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "Observation",
+      "operation": "get_notifications",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "GeometryImpl",
+      "operation": "dimension",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "GeometryImpl",
+      "operation": "size",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "GeometryImpl",
+      "operation": "is_scalar",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "GeometryImpl",
+      "operation": "encode",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "GeometryImpl",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "GeometryImpl",
+      "operation": "from_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "ObservationImpl",
+      "operation": "units",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "ObservationImpl",
+      "operation": "fetch_data",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "ObservationImpl",
+      "operation": "export_to_file",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "ObservationImpl",
+      "operation": "to_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "ObservationImpl",
+      "operation": "get_urn",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "ObservationImpl",
+      "operation": "get_name",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "ObservationImpl",
+      "operation": "get_observable",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "ObservationImpl",
+      "operation": "get_value",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/runtime.py",
+      "owner": "ObservationImpl",
+      "operation": "get_notifications",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "UserScope",
+      "operation": "get_user_id",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "UserScope",
+      "operation": "get_roles",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "SessionScope",
+      "operation": "get_session_id",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "ContextScope",
+      "operation": "get_context_id",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "ContextScope",
+      "operation": "get_observer",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "UserScopeImpl",
+      "operation": "get_user_id",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "UserScopeImpl",
+      "operation": "get_roles",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "SessionScopeImpl",
+      "operation": "get_session_id",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "ContextScopeImpl",
+      "operation": "get_context_id",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/scopes.py",
+      "owner": "ContextScopeImpl",
+      "operation": "get_observer",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "Reasoner",
+      "operation": "capabilities",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "Reasoner",
+      "operation": "resolve_concept",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "Reasoner",
+      "operation": "resolve_observable",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResourcesService",
+      "operation": "capabilities",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResourcesService",
+      "operation": "retrieve",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResourcesService",
+      "operation": "resolve",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResourcesService",
+      "operation": "contextualize",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeService",
+      "operation": "capabilities",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeService",
+      "operation": "submit",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeService",
+      "operation": "get_context_info",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeService",
+      "operation": "connect_context",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeService",
+      "operation": "release_session",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeService",
+      "operation": "release_context",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeService",
+      "operation": "query_knowledge_graph",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "Resolver",
+      "operation": "capabilities",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "Resolver",
+      "operation": "resolve",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "Resolver",
+      "operation": "encode_dataflow",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "Resolver",
+      "operation": "submit_resource",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "Resolver",
+      "operation": "get_submitted_resources",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "_RemoteService",
+      "operation": "capabilities",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ReasonerImpl",
+      "operation": "resolve_concept",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ReasonerImpl",
+      "operation": "resolve_observable",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResourcesServiceImpl",
+      "operation": "retrieve",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResourcesServiceImpl",
+      "operation": "list",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResourcesServiceImpl",
+      "operation": "resolve",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResourcesServiceImpl",
+      "operation": "contextualize",
+      "async": false,
+      "classification": "UNCONDITIONALLY_UNSUPPORTED"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeServiceImpl",
+      "operation": "submit",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeServiceImpl",
+      "operation": "get_context_info",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeServiceImpl",
+      "operation": "connect_context",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeServiceImpl",
+      "operation": "release_session",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeServiceImpl",
+      "operation": "release_context",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "RuntimeServiceImpl",
+      "operation": "query_knowledge_graph",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResolverImpl",
+      "operation": "resolve",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResolverImpl",
+      "operation": "encode_dataflow",
+      "async": false,
+      "classification": "UNCONDITIONALLY_UNSUPPORTED"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResolverImpl",
+      "operation": "submit_resource",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "api/services.py",
+      "owner": "ResolverImpl",
+      "operation": "get_submitted_resources",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncJob",
+      "operation": "status",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncJob",
+      "operation": "cancel",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncJob",
+      "operation": "result",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncSession",
+      "operation": "create_context",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncSession",
+      "operation": "release",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncContext",
+      "operation": "within",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncContext",
+      "operation": "submit",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncContext",
+      "operation": "observe",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncContext",
+      "operation": "job",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncContext",
+      "operation": "release",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncContext",
+      "operation": "fetch_data",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "_AsyncService",
+      "operation": "capabilities",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncReasoner",
+      "operation": "resolve_concept",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncReasoner",
+      "operation": "resolve_observable",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncResources",
+      "operation": "retrieve",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncResources",
+      "operation": "list",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncResources",
+      "operation": "resolve",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncResources",
+      "operation": "contextualize",
+      "async": true,
+      "classification": "UNCONDITIONALLY_UNSUPPORTED"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncRuntime",
+      "operation": "submit",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncRuntime",
+      "operation": "get_context_info",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncRuntime",
+      "operation": "connect_context",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncRuntime",
+      "operation": "release_session",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncRuntime",
+      "operation": "release_context",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncRuntime",
+      "operation": "query_knowledge_graph",
+      "async": true,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncResolver",
+      "operation": "resolve",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncResolver",
+      "operation": "encode_dataflow",
+      "async": true,
+      "classification": "UNCONDITIONALLY_UNSUPPORTED"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncResolver",
+      "operation": "submit_resource",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncResolver",
+      "operation": "get_submitted_resources",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncClient",
+      "operation": "from_env",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncClient",
+      "operation": "initialize_user_scope",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncClient",
+      "operation": "create_session",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncClient",
+      "operation": "attach_context",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncClient",
+      "operation": "restore_handle",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncClient",
+      "operation": "export_formats",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncClient",
+      "operation": "export_to_file",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncClient",
+      "operation": "aclose",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "authoring.py",
+      "owner": "Authoring",
+      "operation": "parse",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "authoring.py",
+      "owner": "Authoring",
+      "operation": "create_workspace",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "authoring.py",
+      "owner": "Authoring",
+      "operation": "create_project",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "authoring.py",
+      "owner": "Authoring",
+      "operation": "create_document",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "authoring.py",
+      "owner": "Authoring",
+      "operation": "created",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "authoring.py",
+      "owner": "AsyncAuthoring",
+      "operation": "parse",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "authoring.py",
+      "owner": "AsyncAuthoring",
+      "operation": "create_workspace",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "authoring.py",
+      "owner": "AsyncAuthoring",
+      "operation": "create_project",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "authoring.py",
+      "owner": "AsyncAuthoring",
+      "operation": "create_document",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": null,
+      "operation": "scope_token",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "ScientificData",
+      "operation": "to_dataframe",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "ScientificData",
+      "operation": "dumps",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "ScientificData",
+      "operation": "loads",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Job",
+      "operation": "status",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Job",
+      "operation": "cancel",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Job",
+      "operation": "result",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Job",
+      "operation": "to_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Session",
+      "operation": "id",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Session",
+      "operation": "create_context",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Session",
+      "operation": "release",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "id",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "within",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "submit",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "observe",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "job",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "to_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "release",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "fetch_data",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Client",
+      "operation": "from_env",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Client",
+      "operation": "initialize_user_scope",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Client",
+      "operation": "create_session",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Client",
+      "operation": "attach_context",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Client",
+      "operation": "restore_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Client",
+      "operation": "export_formats",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Client",
+      "operation": "export_to_file",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Client",
+      "operation": "close",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": null,
+      "operation": "connect",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "SelectionPolicy",
+      "operation": "select",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "profile",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "identity",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "selected",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "renew",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "refresh",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "initialize_peers",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "client",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "explain_readiness",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "wait_ready",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection.py",
+      "owner": "Connection",
+      "operation": "close",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": null,
+      "operation": "checked_url",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": null,
+      "operation": "loopback",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": null,
+      "operation": "parse_expiry",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": "ConnectionIdentity",
+      "operation": "binding",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": "CatalogEntry",
+      "operation": "eligible",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": "CatalogEntry",
+      "operation": "ready",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": "ServiceCatalog",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": "DeploymentProfile",
+      "operation": "from_urls",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": "DeploymentProfile",
+      "operation": "to_dict",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": "DeploymentProfile",
+      "operation": "from_dict",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": "DeploymentProfile",
+      "operation": "load",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "connection_models.py",
+      "owner": "DeploymentProfile",
+      "operation": "save",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "credentials.py",
+      "owner": null,
+      "operation": "parse_properties",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "credentials.py",
+      "owner": "CredentialGrant",
+      "operation": "for_url",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "credentials.py",
+      "owner": "CredentialProvider",
+      "operation": "acquire",
+      "async": false,
+      "classification": "ABSTRACT_DECLARATION"
+    },
+    {
+      "path": "credentials.py",
+      "owner": "IssuedTokenProvider",
+      "operation": "from_env",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "credentials.py",
+      "owner": "IssuedTokenProvider",
+      "operation": "acquire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "credentials.py",
+      "owner": "HubCertificateProvider",
+      "operation": "acquire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "legacy_description_type",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "object_payload",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "required_text",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "notifications",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "check_notifications",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "concept_from_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "observable_from_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "observable_to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "map_values",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "observation_to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "observation_from_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "configuration_to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "storage_semantics",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "dto.py",
+      "owner": null,
+      "operation": "decode_cell",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "durable_notifications.py",
+      "owner": null,
+      "operation": "read_notifications",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "durable_notifications.py",
+      "owner": null,
+      "operation": "async_read_notifications",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "durable_notifications.py",
+      "owner": "NotificationCursor",
+      "operation": "to_dict",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "durable_notifications.py",
+      "owner": "NotificationCursor",
+      "operation": "from_dict",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "evidence.py",
+      "owner": null,
+      "operation": "decode_flowchart",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "evidence.py",
+      "owner": null,
+      "operation": "decode_dataflow",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "evidence.py",
+      "owner": null,
+      "operation": "fetch_execution_evidence",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "evidence.py",
+      "owner": null,
+      "operation": "async_fetch_execution_evidence",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "evidence.py",
+      "owner": "FlowChartEvidence",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "evidence.py",
+      "owner": "DataflowEvidence",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "evidence.py",
+      "owner": "ExecutionEvidence",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiment.py",
+      "owner": null,
+      "operation": "rectangle_geometry",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiment.py",
+      "owner": null,
+      "operation": "verify_grid",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiment.py",
+      "owner": null,
+      "operation": "verify_region",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiment.py",
+      "owner": null,
+      "operation": "run_elevation",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiment.py",
+      "owner": null,
+      "operation": "verify_elevation",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentOutcome",
+      "operation": "job_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentOutcome",
+      "operation": "result_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentOutcome",
+      "operation": "to_dict",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentBatch",
+      "operation": "counts",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentBatch",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentBatch",
+      "operation": "dumps",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentBatch",
+      "operation": "loads",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentRunner",
+      "operation": "outcomes",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentRunner",
+      "operation": "run",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "experiments.py",
+      "owner": "ExperimentRunner",
+      "operation": "close",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "exports.py",
+      "owner": null,
+      "operation": "export_formats",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "exports.py",
+      "owner": null,
+      "operation": "export_to_file",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "graph.py",
+      "owner": "GraphBrowser",
+      "operation": "neighbors",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "graph.py",
+      "owner": "AsyncGraphBrowser",
+      "operation": "neighbors",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "graph_projection.py",
+      "owner": "GraphProjection",
+      "operation": "view",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "graph_projection.py",
+      "owner": "GraphProjection",
+      "operation": "invalidate",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "graph_projection.py",
+      "owner": "GraphProjection",
+      "operation": "load",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "graph_projection.py",
+      "owner": "GraphProjection",
+      "operation": "clear",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "graph_projection.py",
+      "owner": "AsyncGraphProjection",
+      "operation": "load",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": null,
+      "operation": "to_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "handles.py",
+      "owner": null,
+      "operation": "save_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": null,
+      "operation": "load_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": null,
+      "operation": "restore_handle",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": "Handle",
+      "operation": "to_dict",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": "Handle",
+      "operation": "dumps",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": "Handle",
+      "operation": "inspect",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": "Handle",
+      "operation": "save",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": "Handle",
+      "operation": "restore",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": "Handle",
+      "operation": "loads",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "handles.py",
+      "owner": "Handle",
+      "operation": "load",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "imports.py",
+      "owner": "_Upload",
+      "operation": "fileno",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "imports.py",
+      "owner": "_Upload",
+      "operation": "seek",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "imports.py",
+      "owner": "_Upload",
+      "operation": "read",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "imports.py",
+      "owner": "ResourceImporter",
+      "operation": "formats",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "imports.py",
+      "owner": "ResourceImporter",
+      "operation": "upload",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "imports.py",
+      "owner": "AsyncResourceImporter",
+      "operation": "formats",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "imports.py",
+      "owner": "AsyncResourceImporter",
+      "operation": "upload",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "inspection.py",
+      "owner": "AssetInspection",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "inspection.py",
+      "owner": "ResourceResolution",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "inspection.py",
+      "owner": "ResourceInspector",
+      "operation": "list",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "inspection.py",
+      "owner": "ResourceInspector",
+      "operation": "retrieve",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "inspection.py",
+      "owner": "ResourceInspector",
+      "operation": "resolve",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "inspection.py",
+      "owner": "AsyncResourceInspector",
+      "operation": "list",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "inspection.py",
+      "owner": "AsyncResourceInspector",
+      "operation": "retrieve",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "inspection.py",
+      "owner": "AsyncResourceInspector",
+      "operation": "resolve",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_agents.py",
+      "owner": null,
+      "operation": "create_managed_reference",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_agents.py",
+      "owner": null,
+      "operation": "read_managed_reference",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_agents.py",
+      "owner": null,
+      "operation": "command_managed_reference",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_agents.py",
+      "owner": null,
+      "operation": "async_create_managed_reference",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_agents.py",
+      "owner": null,
+      "operation": "async_read_managed_reference",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_agents.py",
+      "owner": null,
+      "operation": "async_command_managed_reference",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "model_candidates.py",
+      "owner": null,
+      "operation": "inspect_model_candidates",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "model_candidates.py",
+      "owner": null,
+      "operation": "async_inspect_model_candidates",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "model_candidates.py",
+      "owner": "ModelCandidateQuery",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "notifications.py",
+      "owner": "ActivityNotifications",
+      "operation": "open",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "notifications.py",
+      "owner": "ActivityNotifications",
+      "operation": "read",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "notifications.py",
+      "owner": "ActivityNotifications",
+      "operation": "close",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "project_locks.py",
+      "owner": "ProjectLock",
+      "operation": "project",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "project_locks.py",
+      "owner": "ProjectLock",
+      "operation": "state",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "project_locks.py",
+      "owner": "ProjectLock",
+      "operation": "receipt",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "project_locks.py",
+      "owner": "ProjectLock",
+      "operation": "acquire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "project_locks.py",
+      "owner": "ProjectLock",
+      "operation": "release",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "project_locks.py",
+      "owner": "AsyncProjectLock",
+      "operation": "acquire",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "project_locks.py",
+      "owner": "AsyncProjectLock",
+      "operation": "release",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "provenance.py",
+      "owner": null,
+      "operation": "fetch_provenance",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "provenance.py",
+      "owner": null,
+      "operation": "async_fetch_provenance",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "provenance.py",
+      "owner": "ProvenanceLink",
+      "operation": "evidence",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "raster_categories.py",
+      "owner": null,
+      "operation": "categorize_raster",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "read_plan_analysis.py",
+      "owner": null,
+      "operation": "analyze_read_plan",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "read_plans.py",
+      "owner": null,
+      "operation": "open_read_plan",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "read_plans.py",
+      "owner": null,
+      "operation": "read_plan_shard",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "read_plans.py",
+      "owner": null,
+      "operation": "release_read_plan",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "read_plans.py",
+      "owner": null,
+      "operation": "assemble_read_plan",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "read_plans.py",
+      "owner": null,
+      "operation": "async_open_read_plan",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "read_plans.py",
+      "owner": null,
+      "operation": "async_read_plan_shard",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "read_plans.py",
+      "owner": null,
+      "operation": "async_release_read_plan",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "requests.py",
+      "owner": null,
+      "operation": "observe",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "requests.py",
+      "owner": "ResolutionConstraint",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "requests.py",
+      "owner": "RectangularGeometry",
+      "operation": "to_geometry",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "requests.py",
+      "owner": "GridOptions",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "requests.py",
+      "owner": "ContextOptions",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "requests.py",
+      "owner": "ObservationRequest",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "revision_drafts.py",
+      "owner": null,
+      "operation": "read_draft",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "revision_drafts.py",
+      "owner": null,
+      "operation": "write_draft",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "revision_drafts.py",
+      "owner": null,
+      "operation": "async_read_draft",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "revision_drafts.py",
+      "owner": null,
+      "operation": "async_write_draft",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "scan_slices.py",
+      "owner": "ScanSlice",
+      "operation": "initialization",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "scan_slices.py",
+      "owner": "ScanSlice",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "KnowledgeState",
+      "operation": "freshness",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticResult",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AuthorityCandidate",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AuthoritySearch",
+      "operation": "select",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AuthoritySearch",
+      "operation": "summary",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticExplorer",
+      "operation": "resolve_concept",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticExplorer",
+      "operation": "resolve_observable",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticExplorer",
+      "operation": "search_authority",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticExplorer",
+      "operation": "documentation",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticExplorer",
+      "operation": "resolve_candidate",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticExplorer",
+      "operation": "parents",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticExplorer",
+      "operation": "children",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticExplorer",
+      "operation": "is_a",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "SemanticExplorer",
+      "operation": "satisfiable",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AsyncSemanticExplorer",
+      "operation": "resolve_concept",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AsyncSemanticExplorer",
+      "operation": "resolve_observable",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AsyncSemanticExplorer",
+      "operation": "search_authority",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AsyncSemanticExplorer",
+      "operation": "documentation",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AsyncSemanticExplorer",
+      "operation": "resolve_candidate",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AsyncSemanticExplorer",
+      "operation": "parents",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AsyncSemanticExplorer",
+      "operation": "children",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AsyncSemanticExplorer",
+      "operation": "is_a",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "semantics.py",
+      "owner": "AsyncSemanticExplorer",
+      "operation": "satisfiable",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "source_previews.py",
+      "owner": "SourcePreviews",
+      "operation": "parse",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "source_previews.py",
+      "owner": "AsyncSourcePreviews",
+      "operation": "parse",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "tables.py",
+      "owner": null,
+      "operation": "to_dataframe",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "transport.py",
+      "owner": "_TransportPolicy",
+      "operation": "redact",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "transport.py",
+      "owner": "_TransportPolicy",
+      "operation": "endpoint",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "transport.py",
+      "owner": "Transport",
+      "operation": "request",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "transport.py",
+      "owner": "Transport",
+      "operation": "stream",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "transport.py",
+      "owner": "Transport",
+      "operation": "close",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "vector.py",
+      "owner": null,
+      "operation": "open_vector",
+      "async": false,
+      "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    }
+  ]
+}

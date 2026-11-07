@@ -1,5 +1,20 @@
 # A+B completion ledger — ongoing campaign
 
+ProvenancePR282OPENca32b1f2f/finalCIrunning. Next independent operationinventory
+tool11testsPASS/50lines26branches100%unexcluded, source410callables classified without
+nativeexecution/support claims;4unsupported wrappers=2sync/nativeasync operations,
+not guardeddecode_cell/Geometry.encode. Csupportdoc corrected to renewedin-scope
+experimentalworker. Full installed verification and ordinary delivery pending.
+PR282 subsequently verified mergedbe3ccf991 at03:57:44Z exactca32b1f2f/allapplicable
+checksPASS/no failedrerun. Nativecommittedrevision/fulllineage remain unverified.
+Inventorybranch integrated actualmerge; its independentfullverifier remainsrunning.
+Inventoryfresh4274SDK/223simulator/11tool/18provenance/98otherreference/57worker/
+21HTTP/37governancePASS, zero skips/errors/failures;55SDK+20simulator+5worker parity.
+Tool-only50lines26branches100%unexcluded;17linkedmatrixrunningvs17realNOT_RUN/exit3.
+NormalPR/CIpending; sourcecounts not native/executed support or fullroadmap completion.
+Inventory17linkedcasesPASS(375SDK/152simulator/57worker) vs17realNOT_RUN/exit3;
+normalPR/finalCI pending, no wholeRC-P0/fullABC/nativeacceptance promoted.
+
 Latest: PR281 verified merged4806cbc69 at03:38:29Z, exact370c42744/allchecksPASS.
 Provenance fixture18focused testsPASS, simulator-only30lines20branches100%unexcluded.
 Retain initial9FAIL/8PASS/no-data run: direct requests lacked JSON Content-Type;
