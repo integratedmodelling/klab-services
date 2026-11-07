@@ -1,0 +1,66 @@
+{
+  "origin": "SYNTHETIC_SIMULATOR",
+  "source": "New declared-band contract fixture, not Java output, scientific truth or a historical oracle",
+  "shape": [
+    3,
+    2,
+    3
+  ],
+  "values": [
+    [
+      [
+        0,
+        -2,
+        -9999
+      ],
+      [
+        4,
+        5,
+        6
+      ]
+    ],
+    [
+      [
+        10,
+        12,
+        14
+      ],
+      [
+        -9999,
+        18,
+        20
+      ]
+    ],
+    [
+      [
+        20,
+        24,
+        28
+      ],
+      [
+        32,
+        36,
+        40
+      ]
+    ]
+  ],
+  "crs": "EPSG:3857",
+  "transform": [
+    100,
+    0,
+    0,
+    0,
+    -100,
+    200
+  ],
+  "unit": "m",
+  "nodata": -9999,
+  "axis_name": "time",
+  "axis_coordinates": [
+    "2026-01-01T00:00:00Z",
+    "2026-01-02T00:00:00Z",
+    "2026-01-03T00:00:00Z"
+  ],
+  "axis_source": "CALLER_DECLARED; not embedded TIFF time or native committed slices",
+  "sha256": "6a41239e3b662ff32d901b80fa41ff9202a03523c27c72aae2e25451349763f0"
+}

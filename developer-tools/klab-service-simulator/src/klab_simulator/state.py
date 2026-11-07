@@ -21,7 +21,7 @@ MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
-SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable")
+SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export")
 
 
 class ContractError(Exception):
@@ -65,6 +65,11 @@ class State:
                      "unit": "m", "row_orientation": "north_to_south", "axis_order": "x,y",
                      "centre_origin": [50, 1950], "cell_size": [100, -100], "precision": "float64"}
         self.origin = "SYNTHETIC_SIMULATOR"
+        if scenario == "declared-band-export":
+            from .fixtures import declared_band_fixture
+            fixture, _ = declared_band_fixture()
+            self.grid.update(shape=[2, 3], bounds=[0, 0, 300, 200], centre_origin=[50, 150], precision="float32")
+            self.values = [None if value == -9999 else value for row in fixture["values"][0] for value in row]
         if scenario == "zero-negative-nodata":
             self.values[:4] = [0, -7.5, None, "NaN"]
         if scenario in ("usgs-recorded", "import-workflow") or scenario in EXPORT_SCENARIOS:
@@ -234,7 +239,7 @@ class State:
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                     "importSchemata": schemas() if service == "resources" else {},
                     "exportSchemata": export_schemas() if service == "runtime" and (
-                        self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" or self.scenario == "nonuniform-export") else {}}, "application/json"
+                        self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" or self.scenario in ("nonuniform-export", "declared-band-export")) else {}}, "application/json"
         if service == "runtime" and route.startswith("/experimental/worker/v1/"):
             return self.workers.request(method, route, headers, body)
         principal = {"sim-token-alice": "alice", "sim-token-bob": "bob",
@@ -468,7 +473,7 @@ class State:
             if not isinstance(data, dict):
                 raise ContractError(400, "A structured request is required")
             if route.endswith("/value"):
-                if self.scenario == "nonuniform-export":
+                if self.scenario in ("nonuniform-export", "declared-band-export"):
                     raise ContractError(422, "This fixture proves raster export only; native point-offset mapping is not established")
                 identity, offset = data.get("sourceId"), data.get("offset")
                 if type(identity) is not int or not 1 <= identity <= 2**63 - 1:

@@ -127,6 +127,74 @@ Receipt: `evidence/full-roadmap-worker-memory-20261107.json`. Native/scientific
 acceptance unchanged. Publish a reviewable stacked memory PR against270's branch
 while its final checks run; retarget to integration after270's verified merge.
 Do not merge the stack out of order or call POSIX memory acceptance locally verified.
+
+### Current next A/B vertical — declared multiband analysis
+
+PR270 verified MERGED`a5828164341d810913fc9acdccf21514373a6c93`,00:14:46UTC,
+Windows/Ubuntu3.11+3.13 and applicable final-head checksPASS. PR271 retargeted to
+integration/marked ready, then verified MERGED
+`96f696218ebc0f4603c0e1ecf350f4d73f308656`,00:17:41UTC; all applicable hosted
+memory/runtime/schema/build/Jenkins checksPASS. Native/deployment/science untouched.
+
+Current branch `feat/python-declared-multiband-analysis` integrates actual271merge;
+uncommitted A/B SDK RasterBandAxis/open_raster extension and synthetic simulator
+fixture/export flow are implemented. Source39scientific unit controls and one HTTP
+multiband flowPASS. Initial manifest checksum failed because the creation script
+reported LF text hash while Windows wrote CRLF; exact authored bytes are now pinned
+as085d074c… with a specific -text attribute, no authentic fixture overwritten.
+New TIFF6a41239e… is explicitly synthetic, not USGS/native-science evidence.
+FreshSDK/worker/simulator wheel/sdist/installed verification and SDK changed-code
+coverage are next. Existing0014/handoff updated in this same feature; no new gap.
+Current localHEAD`1f7fc44bc26cab48be1f1cca55e01bbcc8a79b74` integrates actual271merge;
+the multiband code/tests/fixture/docs remain uncommitted. Initial installed pass
+4012SDK/57worker/21HTTP+recovery/129simulator/33governancePASS, zero skips. A
+subsequent production change accounts for declared band-coordinate/provenance
+buffers in the memory estimate, so final rebuilt artifacts are under separate
+verification, not relabeled from the first pass. Source53analysis testsPASS and
+all changed analysis.py lines/arcs covered; full-package __init__ coverage still
+requires the final installed SDK report. Analysis typecheck (check-untyped-defs,
+follow-imports=silent/ignore-missing-imports) and fatal lintPASS.
+Running task: final fresh installed verifier in
+`full-roadmap-20261106/declared-bands-final` (automatic completion notification).
+No CI watcher or long-running service remains from270/271. Next command after
+verification: compare source/artifact module bytes, evaluate SDK changed-code
+coverage againstHEAD, run17gap simulated/real matrices, commit/push normalPR with
+all generated outputs (especially CONTRACT_MATRIX) and evidence, then continue.
+Two exact agent-created temporary directories left by pre-fix Windows tests were
+owner-checked and narrowly removed; no unrelated user terminals/services touched.
+Live issue re-review00:24:56UTC7November: all10services+geospatial10 still OPEN,
+all original body hashes unchanged, all comments re-inspected with no new
+unclassified obligations beyond the recorded127scope correction. Keep existing
+8OPEN_JAVA_REQUIRED/3OPEN_OTHER; zero closure candidates or remote issue mutations.
+Final installed pass is now verified:4012SDK/57worker/21workerHTTP+recovery/
+129fullsimulator/33governance, zero skips/failures/errors. Module parity48SDK+
+5worker+14simulator; exact hashes in
+`evidence/full-roadmap-declared-bands-20261107.json`. FullSDKcoverage98.35% with
+165historical excluded lines; ALL changed lines/arcs are covered/unexcluded, not
+a false no-exclusions claim for the whole SDK. Scientific CI-equivalent separate
+53unit+8HTTP suite alsoPASS and covers changed lines/arcs. Combined invocation
+initially had2collection errors due conftest name collision; separate processes
+fixed invocation isolation without weakening/skipping assertions.17linked cases
+PASS(124SDK+57worker+58simulator/capture),17realNOT_RUN/exit3.
+Next: final generated/lint/diff checks, stage ALL feature/generated files and
+receipt, publish normal PR against integration; continue next independent work.
+Final review found the new fixture could otherwise reach the inherited single-grid
+point reader with a guessed first-band offset map. It now explicitly refuses that
+unestablished path with422; new regression verifies this alongside foreign-owner
+denial. SDK and worker tested module bytes remain unchanged, but simulator state.py
+changed, so a separate fresh simulator-only rebuild/full129test+17gap rerun is
+running before final artifact attribution/publication. Do not reuse the earlier
+simulator hash for this refusal change.
+All23feature files (including new binary fixture, explicit byte-custody attribute,
+generated CONTRACT_MATRIX, CI coverage helper and living gap/handoff) are staged
+pending the simulator-refusal verification receipt. No unrelated work is staged.
+Current installedSDK047f895a… and worker8cb862eb… remain module-byte identical to
+tested source. The only running verification is the fresh simulator-refusal build/
+full-suite/linked-case runner; no live Modeler/Java/broker service was started.
+That final refusal rebuild is now verified: simulator wheel3b2981b4…/sdista702a676…,
+14module source/wheel/sdist/installed byte parity, full129testsPASS84.08s and17linked
+casesPASS. SDK/worker bytes unchanged. No background verification remains. Finish
+staging refreshed receipt/ledger/handoff, commit and publish normal featurePR now.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
@@ -168,7 +236,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P4.3|PARTIAL delivered imports; SIM-IMPORT-001/SIM-INPUT-BINDING-001|Broader annotation/compute input provenance with owned cleanup; native resource custody gate separate.|
 |RC-P4.4|PARTIAL ADD/locks; SIM-PROJECT-LOCK-001/SIM-BEHAVIOR-DRAFT-001|Explicit conditional revision/edit/history/publication protocol seam; no blind overwrite.|
 |RC-P4.5|PARTIAL native agent control/registration; protocol tests|Complete isolated managed-agent simulator lifecycle, terminal cleanup, reconnect and owner/denial.|
-|RC-P5|IN_SCOPE PARTIAL; worker vertical mergedPR268/30460119d; durable simulator recovery installed-tested, pending next delivery|Next resource/descendant/cancellation hardening; native backend/ABI/deployment acceptance remains separate.|
+|RC-P5|IN_SCOPE PARTIAL; worker268/30460119d, recovery269/8f9fe3805, containment270/a58281643, memory271/96f696218 merged|Declared trusted worker lifecycle implemented/tested across Windows+POSIX; total disk/hostile-code isolation and maintained native backend/ABI/deployment acceptance remain separate deficits/gates.|
 |RC-R1|PARTIAL layered CI/test tooling|Install/coverage/contract/handoff CI per feature; external scheduled worker adoption is not local test success.|
 |RC-R2|PARTIAL release checker|Package development artifacts; production release/support/owner approval remains external, no upload inferred.|
 |CAP-01|PARTIAL providers/profiles|Expiry/reacquisition and simulator bootstrap matrix; actual issuer approval external.|
@@ -187,7 +255,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-14|PARTIAL authoring/agent facades|Complete revision-safe authoring and managed lifecycle simulator flows with separate native status.|
 |CAP-15|PARTIAL optional scientific/notebook adapters|Categories/time/multidimensional and coherent notebook examples.|
 |CAP-16|PARTIAL compatibility/package matrix|Fresh wheel/sdk/worker installs, types/lint/coverage and reproducible starter; real deployment/support gates separate.|
-|CAP-17|IN_SCOPE PARTIAL; same separate worker as RC-P5, merged268 plus installed recovery pass|Complete resource/descendant/cancellation boundaries and maintained native deployment; no compiler/inference/storage port or embedded engine claim.|
+|CAP-17|IN_SCOPE PARTIAL; same separate worker as RC-P5, merged268–271 with installed and hosted lifecycle/resource controls|Total disk/hostile-code isolation and maintained native deployment remain separate; no compiler/inference/storage port or embedded engine claim.|
 |CAP-18|COMPLETE current safety invariants|Enforce per change: explicit origins, no mutation replay, no hidden fallback, optional extras and separate simulator.|
 
 ## Execution order and C interpretation

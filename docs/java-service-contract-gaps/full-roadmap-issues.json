@@ -3,6 +3,7 @@
   "collected_utc": "2026-11-06T23:20:40.346815+00:00",
   "scope": "All live OPEN issues in klab-services and klab.component.geospatial; limit1000 each, no truncation. Bodies hash-match preserved originals in issues.json; all current comments inspected, no new obligation comments beyond preserved audit and known keep-open comments.",
   "read_only": true,
+  "subsequent_read_only_reviews": [{"utc": "2026-11-07T00:24:56.485323+00:00", "open_services": 10, "open_geospatial": 1, "all_original_bodies_unchanged": true, "all_comments_reinspected": true, "new_unclassified_comments": 0, "known_scope_correction": "https://github.com/integratedmodelling/klab-services/issues/127#issuecomment-6698860944", "classification_change": false, "closures": 0}],
   "original_bodies_and_conditions_ref": "docs/java-service-contract-gaps/issues.json",
   "migration_candidates": 0,
   "new_closures": 0,

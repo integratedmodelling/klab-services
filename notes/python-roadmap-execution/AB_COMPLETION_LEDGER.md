@@ -39,6 +39,18 @@ Next worker-only containment pass changes no end-user SDK API or Java source;
 Fresh installed and cross-platform acceptance remains pending; no new SDK full-suite
 or native scientific result is claimed for this pass.
 
+Next active A/B pass: explicit multiband raster analysis, sameJAVA-GAP-0014.
+Source39scientific unit controls+one ordinarySDK-owned simulator export/analysis/
+cleanup flowPASS; no fresh installed result yet. Caller-declared labels are not
+native temporal history, categories or committed revisions. Fresh installed SDK
+regression and changed-code coverage now required before ordinary feature delivery.
+That follow-up verification is now complete locally:4012freshinstalled SDK tests,
+129fullsimulator,57worker/21HTTP+recovery and33governance PASS, zero skips. All changed
+SDK lines/arcs covered/unexcluded; fullSDK98.35% retains165historical exclusions.
+17simulatedgap casesPASS versus17realNOT_RUN/exit3; exact artifacts/failedinvocation
+history in `evidence/full-roadmap-declared-bands-20261107.json`. Delivery pending;
+continue remaining independent A/B/C deficits after normalPR/CI/permittedmerge.
+
 ### Sequential execution queue — user directive 2026-11-06
 
 Previous phase: **A+B Service Simulator development — COMPLETED_BOUNDED**.

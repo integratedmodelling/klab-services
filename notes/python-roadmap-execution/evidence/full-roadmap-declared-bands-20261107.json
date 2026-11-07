@@ -1,0 +1,24 @@
+{
+  "verified_utc": "2026-11-07T00:25:00.081830+00:00",
+  "parent_head": "1f7fc44bc26cab48be1f1cca55e01bbcc8a79b74",
+  "attribution": "Uncommitted multiband feature, exact source/artifact/installed module parity. Parent integrates real271merge96f696218; artifact bytes identify tested code, not parent alone.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "047f895a7ceb656d9b95fb5762a6103ffdc00694283aac0bbc467793f693e6d2", "sdist_sha256": "70a1a2e5b568ab12c42945c7bd9b509969fccd2131c7d5496d6e36f36327b7ea", "parity_modules": 48},
+    "worker": {"wheel_sha256": "8cb862eb15a6cd3286f65bdb66acc7653865d0bb9e786244a9707094d3890ede", "sdist_sha256": "bcd051bf4322fd6441ff92117cc6c398153e6b3fe3772421e00db6a8222649b2", "parity_modules": 5},
+    "simulator": {"wheel_sha256": "3b2981b481f57279008c49a076b72a6fda17658279d9391f34dbd479772c7b21", "sdist_sha256": "a702a67689ab8a4e6dcc66d7e42d3d5521f5289dca3fc949a6a40759163e095e", "parity_modules": 14, "final_refusal_rerun": "129passed84.08s and17linkedcasesPASS after explicit multiband point-offset422 refusal; SDK/worker bytes unchanged"}
+  },
+  "fresh_installed_tests": {"sdk_unit_integration": 4012, "worker_unit": 57, "worker_http_recovery": 21, "full_simulator": 129, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "scientific_ci_equivalent_subset": {"sdk_analysis_unit": 53, "simulator_scientific_http": 8, "separate_processes": true, "new_declared_band_case": "owned observation/export/all18values/per-band masks/explicit axis/foreign-owner denial/cleanup"},
+  "sdk_coverage": {"combined_percent": 98.34915839447561, "covered_lines": 6967, "statements": 7066, "covered_branches": 2148, "branches": 2202, "historical_excluded_lines": 165, "new_changed_code": "PASS all changed production lines/arcs measured and covered, none excluded; checked against full installed SDK and scientific-only CI-equivalent report"},
+  "worker_coverage": {"combined_percent": 90.42553191489361, "excluded_lines": 0, "scope": "Rerun unchanged merged worker; platform aggregate80/common90gatesPASS"},
+  "typing": "PASS analysis.py --check-untyped-defs --follow-imports=silent --ignore-missing-imports; not a new whole-SDK typing certification",
+  "lint_schema_generated_reports": "PASS fatal-error lint,17stable gaps/42historic rows/17historic issue inventory and generated companion drift",
+  "contract_matrix": {"simulated_pass": 17, "sdk_protocol_tests": 124, "worker_tests": 57, "simulator_capture_tests": 58, "real_not_run": 17, "real_mode_exit": 3},
+  "fixture": {"origin": "SYNTHETIC_SIMULATOR", "tiff_sha256": "6a41239e3b662ff32d901b80fa41ff9202a03523c27c72aae2e25451349763f0", "manifest_sha256": "085d074c774e7d0da4ab36e301930145e3b92c9cdd924b3aa379d526986a386d", "axis_meaning": "CALLER_DECLARED, not native temporal history, category dictionary or committed revision", "authentic_fixtures_changed": false},
+  "retained_attempts": ["Initial manifest checksum compared LF text hash to Windows-authoredCRLF bytes; actual authored bytes pinned with -text, no authentic fixture overwritten", "Earlier installed4012SDK pass predates added band-coordinate/provenance memory estimate; final rebuilt artifact pass above supersedes, not relabeled", "Combined SDK/simulator scientific pytest invocation had2collection errors from colliding conftest module names; split53unit+8HTTP processes passed with cov-append and unchanged assertions", "Full installed simulator3b1455ca... passed129tests before final-review point-offset refusal. Final simulator3b2981b4... freshly rebuilt/installed and rerun129tests84.08s plus17linkedcases; old hash not relabeled as final"],
+  "issues": "Fresh all11open bodies/comments reviewed00:24:56UTC, original bodies unchanged and no unclassified obligations;8OPEN_JAVA_REQUIRED/3OPEN_OTHER remain, zero new closures/actions",
+  "native_java": "REAL_NOT_RUN",
+  "scientific_acceptance": false,
+  "dependency_custody": "Fresh package wheels/sdists and separate pip-target installation borrow existing test dependencies; no modification or newly isolated dependency certification of old environments",
+  "remaining": "NormalPR/final-headCI/permittedmerge; continue categories/multishard/revision-safe authoring/agents/notifications/federation, native reference/deployment/security/release gates separate."
+}

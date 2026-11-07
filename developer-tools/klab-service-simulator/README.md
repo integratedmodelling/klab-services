@@ -8,6 +8,15 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-DECLARED-BANDS-001/JAVA-GAP-0014 adds a separately pinned synthetic3band2x3
+GeoTIFF over existing export transport. `declared-band-export` serves the immutable
+fixture; all18values, per-band missingness and metre units are preserved. The SDK's
+optional `RasterBandAxis` supplies explicit caller labels/provenance; no native time,
+category dictionary, history or committed revision is inferred from band order.
+Default analysis still refuses unlabelled multiband data. Authentic/native defect
+fixtures are unchanged. Dedicated scientific CI installs all extras and exercises
+the export→local-analysis→cleanup flow; core-only jobs may skip optional analysis.
+
 Opt-in SIM-DURABLE-RESTORE-001 (JAVA-GAP-0004/0017) preserves one wholly simulated
 workflow across owned process restart. Pass `--state-file <owned>.klab-sim.sqlite`
 in an existing private directory **outside live `.klab`**. SQLite synchronous

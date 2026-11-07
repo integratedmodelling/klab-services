@@ -24,6 +24,13 @@ simulator/33governance PASS,90.43%Windows aggregate coverage/no exclusions; same
 JAVA-GAP-0017. Operator opt-in enforces Windows Job aggregate committed memory or
 POSIX inherited per-process address space, not uniform RSS. Native/deployment/disk/
 hostile-code isolation and final-head hosted memory acceptance remain separate.
+
+Worker containment and explicit platform memory follow-ups are now verified merged
+PR270/a58281643 and PR271/96f696218 with Windows/Ubuntu3.11+3.13 hosted checksPASS.
+This is not a uniform aggregate-RSS/disk quota or hostile-code sandbox certification.
+The active A/B follow-up adds caller-declared multiband GeoTIFF analysis under
+JAVA-GAP-0014; source tests pass, fresh installed/coverage and delivery pending.
+All original42criteria and their historical statuses below remain preserved.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),

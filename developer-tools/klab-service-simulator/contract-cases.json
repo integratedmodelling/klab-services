@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-DECLARED-BANDS-001",
+      "rows": ["RC-P2.1", "RC-P2.2", "RC-P2.5", "CAP-09", "CAP-15"],
+      "routes": ["/runtime/export/OBSERVATION/{urn}"],
+      "source": "Existing native GeoTIFF export transport only. Fixture is synthetic3band2x3float32; RasterBandAxis meaning comes from explicit caller declaration, not Java temporal history, band metadata inference or committed revision.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native same-fixture multiband/time/descriptor mappings remain unverified",
+      "simulator_test": "test_declared_bands.py::test_owned_sdk_export_retains_all_bands_with_explicit_caller_axis",
+      "java_gap_ids": ["JAVA-GAP-0014"]
+    },
+    {
       "id": "SIM-DURABLE-RESTORE-001",
       "rows": ["RC-P1.2", "RC-P3.3", "CAP-07", "RC-P5", "CAP-17"],
       "routes": ["/runtime/api/v1/connect", "/runtime/jobs/{id}", "/runtime/experimental/worker/v1/tasks/{id}", "/runtime/experimental/worker/v1/tasks/{id}/recover"],
