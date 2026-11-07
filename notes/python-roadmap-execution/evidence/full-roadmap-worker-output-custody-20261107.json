@@ -116,7 +116,7 @@
   "scope": "Worker aggregate stdout-stderr acceptance budget/owned-tree stop before final output validation/exact public operation ACK-task-input-lease-status-provenance-outputdigest guards. Actual independent HTTP aggregateoutput/layout failures leave FAILED without output/provenance, explicitnewtask succeeds while predecessorretained; existing cancel/restart/recovery preserved. Dotsegment routeescape refuses. No hardtotaldisk/hostilecode sandbox/uniformRSS/nativeABI/science/deployment approval; operatorhandoff records required external evidence.",
   "dependency_custody": "Disposable prior test interpreter borrows existing dependencies; fresh package pip-target installs, no existing environment modifications or fresh dependency-isolation claim",
   "pr": 303,
-  "delivery_state": "OPEN_FINAL_HEAD_CI_PENDING_WORKER_CUSTODY_NOT_NATIVE_ABI_OS_APPROVAL_OR_FINAL_ROW_ACCEPTANCE",
+  "delivery_state": "OPEN_FINAL_HEAD_CI_PENDING_AFTER_DETERMINISTIC_WINDOWS311_FINAL_BUDGET_CONTROL",
   "source_raw_sha256": {
     "sdk": {
       "klab_client/accepted_documents.py": "8701ab5657c327b813e4a64c926acfd7d039d9167253e0889d3083473c472219",
@@ -716,7 +716,8 @@
     "Initialaggregateoutput designprobeDIDNOTRAISE because old budgetperstream, nowaggregatePASS",
     "Initialprotocol-only registrationACK designprobeDIDNOTRAISE, nowstrictreceiptPASS",
     "Initialexpanded110PASS/1FAIL wrongly expected surrogateJSON encode failure; defaultensure_ascii safelyescapes; testcorrected to realnonfiniteJSON refusal, unnecessaryUnicodeError catchremoved without productrelaxation",
-    "Reviewadded path-only dotsegment refusal and live-child aggregate/tree-stop-before-read controls;115unit/23HTTP pass without producttimeout/coverage relaxation"
+    "Reviewadded path-only dotsegment refusal and live-child aggregate/tree-stop-before-read controls;115unit/23HTTP pass without producttimeout/coverage relaxation",
+    "Initial Windows3.11 push42411213599/job128519568181 and PR42411217302/job128519579780 failed changed coverage arc execution.py98->99: polling-vs-final budget refusal timing. Final0208dochead green did not establish a fix. Added deterministic GrowAtStop final-acceptance refusal control; sameproduction artifacts116unit/23HTTP PASS. Initial logs retained; no producttimeout/coverage relaxation."
   ],
   "queue": {
     "original_records": 42,
@@ -727,5 +728,52 @@
       "CAP-17"
     ],
     "full_row_or_native_acceptance_promoted": false
+  },
+  "supplementary_worker_validation": {
+    "unit_tests": 116,
+    "http_recovery_tests": 23,
+    "same_production_artifacts": true,
+    "new_module_coverage": {
+      "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\worker-output-custody-first\\worker-installed\\klab_worker\\_responses.py": {
+        "covered_lines": 40,
+        "num_statements": 40,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100",
+        "num_branches": 18,
+        "num_partial_branches": 0,
+        "covered_branches": 18,
+        "missing_branches": 0,
+        "percent_branches_covered": 100.0,
+        "percent_branches_covered_display": "100"
+      }
+    },
+    "aggregate_coverage": {
+      "covered_lines": 376,
+      "num_statements": 396,
+      "percent_covered": 93.07116104868913,
+      "percent_covered_display": "93",
+      "missing_lines": 20,
+      "excluded_lines": 0,
+      "percent_statements_covered": 94.94949494949495,
+      "percent_statements_covered_display": "95",
+      "num_branches": 138,
+      "num_partial_branches": 15,
+      "covered_branches": 121,
+      "missing_branches": 17,
+      "percent_branches_covered": 87.68115942028986,
+      "percent_branches_covered_display": "88"
+    },
+    "new_changed_branch_gate": "PASS",
+    "test_source_sha256": "ce28071178ae5dddc72a4910629522d83d4db789373ff1d01c05bdf1d976ff2b",
+    "evidence_files": [
+      "worker-final-budget-control.xml",
+      "worker-final-budget-control-http.xml",
+      "worker-final-budget-control.json"
+    ],
+    "preserves_original_fresh_suite_counts": true
   }
 }

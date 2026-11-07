@@ -144,3 +144,22 @@ def test_owned_tree_stop_precedes_final_output_read_and_validation(monkeypatch,t
     monkeypatch.setattr(execution,'ProcessTree',TailAtStop)
     script=tmp_path/'trusted.py';script.write_text('import sys\nsys.stdout.write(sys.stdin.read())\n')
     with pytest.raises(WorkerError,match='Invalid worker response'):execute(script,sample())
+
+
+def test_final_aggregate_budget_refusal_is_deterministic_after_tree_stop(monkeypatch,tmp_path):
+    import klab_worker.execution as execution
+    factory=execution.subprocess.Popen;tree_factory=execution.ProcessTree;files={}
+    def launch(*args,**kwargs):
+        files['stderr']=kwargs['stderr']
+        return factory(*args,**kwargs)
+    class GrowAtStop:
+        def __init__(self,*args):self.tree=tree_factory(*args)
+        def close(self):
+            self.tree.close()
+            # The monitor has already stopped: this exercises final acceptance,
+            # independent of process scheduling or which write the polling loop saw.
+            files['stderr'].write(b'x'*801);files['stderr'].flush()
+    monkeypatch.setattr(execution.subprocess,'Popen',launch)
+    monkeypatch.setattr(execution,'ProcessTree',GrowAtStop)
+    script=tmp_path/'trusted.py';script.write_text('import sys\nsys.stdout.write(sys.stdin.read())\n')
+    with pytest.raises(WorkerError,match='byte budget'):execute(script,sample(),limits=Limits(output_bytes=800))

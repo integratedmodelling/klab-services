@@ -63,3 +63,12 @@ no simulatorinproduction.17linkedPASS(1218SDK378sim115worker)vs17nativeNOT_RUN.
 Fullinstallednewmodule/changedworker100%/originalaggregate93.07%common96.85%gatesPASS;
 14olderSDKfocusedCI+orderedselectionPASS. No simulatorservicesremain. PR303finalreceipt/
 exactnewheadCI/ordinarymergepending; no nativeABI/OS/scientific/final-row acceptance.
+
+Before merge, reviewed retained initial Windows3.11 failures in push42411213599/job
+128519568181 and PR42411217302/job128519579780: changedcoverage arc execution.py98->99
+was not exercised when polling caught oversize output first. Final0208doc-only head
+passed but that did NOT prove the timing issue fixed. Added deterministic GrowAtStop
+control enlarging stderr after the monitor stops, forcing final-budget refusal without
+sleep or scheduler dependence. Same production worker bytes/wheels unchanged;116unit/
+23HTTP supplemental installedPASS/newmodule+changedworker100%/originalaggregate93.07%
+PASS. Initial logs and original fresh115unit receipt retained; exact newhead CI pending.

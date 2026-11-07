@@ -2,6 +2,11 @@
 
 ## Managed behavior delivered; worker output custody active
 
+PR303initialWindows3.11 changedcoverage arc98->99 timing failure reviewed beforemerge;
+green0208dochead not assumedfix. Added deterministic final-budget refusal control,
+sameproductionbytes116unit/23HTTP supplementalPASS/changedworker100%/originalgates.
+Initiallogs/original115freshsuite preserved; exactnewheadCI/merge pending.
+
 PR303final5152installedSDK501sim115worker/23workerHTTP/reference39governancePASS;
 69SDK35sim6worker rawparity/no simulatorinproduction;17linkedPASS(1218SDK378sim115worker)
 vs17nativeNOT_RUN. Fullnewmodule/changedworker100%/93.07%aggregate96.85%common/original

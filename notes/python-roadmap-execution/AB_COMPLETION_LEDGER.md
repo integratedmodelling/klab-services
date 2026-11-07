@@ -2,6 +2,13 @@
 
 ## PR302 verified merged; worker output/deployment custody active
 
+PR303mergeheld for reviewed initialWindows3.11 coverage failures: execution.py98->99
+depended on whether polling caught the oversize output first.0208dochead green was
+NOT treated as a fix. Deterministic post-monitor GrowAtStop control added; sameworker
+production artifacts unchanged,116unit/23HTTP supplementalinstalledPASS/newmodule+
+changedworker100%/93.07%aggregatePASS. Initialpush/PR logs and original115freshsuite
+receipt retained. ExactnewheadCI pending; selectedwindow childsource remains separate.
+
 PR303final candidate5152installedSDK/501simulator/115worker/23workerHTTP/allreference/
 39governancePASS zero skips/errors/failures.69SDK35sim6worker rawsource-wheel-sdist-
 installed parity/no simulatorinproduction verified.17linkedPASS(1218SDK378sim115worker)
