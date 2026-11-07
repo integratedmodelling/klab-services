@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-READ-PLAN-ANALYSIS-001",
+      "rows": ["RC-P2.1", "RC-P2.2", "CAP-09", "CAP-15"],
+      "routes": ["/runtime/experimental/read-plans/v1/open", "/runtime/experimental/read-plans/v1/{plan}/shards/{index}"],
+      "source": "Local array materialization of complete explicit klab.experimental.read-plans/1 snapshot after grant/scope/service release. Exact masks/layout/source binding and local manifest SHA256 NOT native committed revision, signature or provenance graph.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native block/layout/revision/provenance convergence remains externally unverified",
+      "simulator_test": "test_read_plan_analysis.py::test_complete_snapshot_offline_analysis_after_grant_scope_and_service_release",
+      "java_gap_ids": ["JAVA-GAP-0006", "JAVA-GAP-0014"]
+    },
+    {
       "id": "SIM-MANAGED-AGENT-001",
       "rows": ["RC-P4.5", "CAP-14"],
       "routes": ["/runtime/experimental/managed-agents/v1/create", "/runtime/experimental/managed-agents/v1/{agent}", "/runtime/experimental/managed-agents/v1/{agent}/{command}"],

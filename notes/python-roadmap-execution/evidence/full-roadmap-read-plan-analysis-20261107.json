@@ -1,0 +1,22 @@
+{
+  "verified_utc": "2026-11-07T02:22:35.886028+00:00",
+  "baseline_head": "4d34940d4f0feb50e7f2fe135367c2f1801625ae",
+  "attribution": "Uncommitted offline snapshot-array association; exact source/wheel/sdist/installed raw module parity identifies tested code. Separate SDK-only coverage never appends simulator HTTP tests.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "e5545bb5526f2d773452dcd6508af3de61c1b1ef32eeb6bdc297dd9a98da032c", "sdist_sha256": "baa58ecd53e61dad630f75235c29a02efca0a5efabbed199dd7ad649aab2b2c4", "parity_modules": 54},
+    "simulator": {"wheel_sha256": "139905c94070215851a993a619714c99610ebc13ce5771d8960c5a0bdf1904e2", "sdist_sha256": "f7d97f39bcce0314fbea5b4d0accc383ec7f74fac285b50d5001eba82c409395", "parity_modules": 18},
+    "worker": {"wheel_sha256": "3b08243fe2f9f8bafbff60878d398aeb7290ee43b6cf24d52d20de7506f79750", "sdist_sha256": "f1248f4714c2e3256f5794507f1a3fd99225f2856da645b438b0f094440c3512", "parity_modules": 5}
+  },
+  "installed_tests": {"sdk_unit_integration": 4205, "reference_http_storage_recovery": 74, "worker_unit": 57, "worker_http_recovery": 21, "full_simulator": 188, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "new_sdk_module": {"SDK_only_tests": 13, "covered_lines": 54, "statements": 54, "covered_branches": 14, "branches": 14, "excluded_lines": 0, "SDK_only_changed_code_gate": "PASS"},
+  "scientific_CI_equivalent_installed": {"sdk_unit": 86, "simulator_HTTP": 10, "separate_processes_cov_append": true, "newmodule100percent_and_changed_scientific_decisions": "PASS", "warning": "Expected rasterio identity-affine warning in existing negative georeferencing test, not native science execution"},
+  "sdk_coverage": {"combined_percent": 98.48754448398577, "covered_lines": 7591, "statements": 7690, "covered_branches": 2372, "branches": 2426, "historical_excluded_lines": 165, "current_raw_module_bytes_and_unique_SDK_only_paths": "PASS54SDK/18simulator/5worker modules"},
+  "type_lint_governance": "PASS newmodule body mypy/fatal lint/17stable gaps/42historic rows/generatedcompanions; committed generated-report parity still required before push",
+  "assertions": ["Complete immutable bounded descriptor/source/layout and per-shard+whole-content digests revalidated offline", "Detached float64values/exactboolmask/explicit affine centrecoordinates; valid zero/negative cells preserved, invalidNone→arrayNaN keeps falsemask and originalimmutableNone", "Unknown layout, tampered/partial/mixed cells and nonfinite/indistinguishable coordinates refuse; eager source/arrays/coordinates/per-shard/descriptor budget, not OSRSSguarantee", "Exact sourceRuntimeURL/ID/root/observation/plan/epoch/fixtureorigin/units/layout plus content and localcanonicalmanifest hashes retained", "Local manifest digest distinguishes changed local descriptor even for identical cellrevision; NOT native signature/authenticmetadata/committedrevision/provenancegraph", "OwnedHTTP400cells/sixshards→grant+scope+service shutdown→offlinearray materialization; no hiddennetwork/grant/liveclientdependency", "Mutable derivative edits leave source tuples unchanged; originalattrs not live output digest, caller must separately attest derivatives", "Lazy coreimport without numpy/xarray/rasterio/simulator/worker; clear missingoptionalextra refusal; native TIFFexport/trace_analysis remain separate"],
+  "contract_matrix": {"simulated_pass": 17, "sdk_protocol_tests": 317, "simulator_capture_reference_tests": 117, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_mode_exit": 3},
+  "native_status": "JAVA-GAP-0006 MISSING_API / JAVA-GAP-0014 CONTRACT_PROVISIONAL unchanged; native layout/revision/provenance convergence and scientific execution remain REAL_NOT_RUN",
+  "historical_prose_correction": "Earlier read-plan receipt accidentally labelled0014NOT_TESTED; explicit correction preserves original mistaken attribution and actual unchangedCONTRACT_PROVISIONAL. No new native probe/statuspromotion.",
+  "scientific_acceptance": false,
+  "dependency_custody": "Fresh wheels/sdists/separate pip-target installs borrow existing test dependencies; no existing environment modification or newly isolated dependency certification",
+  "remaining": "NormalPR/finalheadCI/permittedmerge. Native scientific/layout/revision contracts and remaining federation/full42criteria separate; entire-roadmap sleep pending."
+}

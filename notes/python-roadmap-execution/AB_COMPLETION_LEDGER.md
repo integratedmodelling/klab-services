@@ -141,6 +141,24 @@ JAVA_GAP_STATUS.md. Local dirty-file generatedcheck had passed; missing gitadd i
 the delivery defect, not Java/native status or simulator-code failure. Correction
 commits companion without weakening gate; local33governance+generatedcheckPASS,
 push/finalheadCI/permittedmerge still required. Failure retained in feature receipt.
+277correction683218a24pushed; generatedcheckPASS with clean tracked report diff,
+freshfinalheadCIrunning. Next local read-plan→offlinearrays association under0006/
+0014has13SDK-only tests54lines14branches100%/oneHTTPshutdownflow/types/lintPASS;
+fresh installed verifier running. Content+localmanifesthashes explicitly NOT native
+commits/signatures/provenancegraph. Native0014remainsCONTRACT_PROVISIONAL; earlier
+receipt'sNOT_TESTEDprose misstatement corrected with explicit attribution history.
+ManagedPR277 verified MERGED4d34940d4f0feb50e7f2fe135367c2f1801625ae at
+2026-11-07T02:20:19Z, corrected683218a24finalheadchecksPASS. Initial omittedreport
+failure retained; driftgate unchanged. Synthetic cleanup is not native disposal
+acceptance. Offlineanalysis fresh installedverification continues independently.
+Offlineanalysis installed4205SDK/74referenceHTTPstorage+recovery/188simulator/
+57worker/21workerHTTP+recovery/33governancePASS;54SDK+18simulator+5worker rawmodule
+parity. SDK-only54lines14branches100%/allchangeddecisionsPASS; installedscientific
+86unit/10HTTP+gatePASS.17linkedmatrixrunning vs17realNOT_RUN/exit3; ordinarydelivery
+pending. Content/manifesthashes explicitly not nativecommits/authentication/provenance.
+Offlineanalysis final17linkedcasesPASS(317SDK/117simulator/57worker), zero
+skips/errors/failures versus17realNOT_RUN/exit3. Bounded localreference verified;
+normalPR/finalheadCI/permittedmerge next, no native/scientific statuspromotion.
 
 ### Sequential execution queue — user directive 2026-11-06
 

@@ -48,8 +48,8 @@ jobs:
         run: python -c "import numpy, pandas, rasterio, xarray"
       - name: Scientific adapters over isolated native HTTP exports and point reads
         run: |
-          python -m pytest -q python-client/tests/unit/test_multiband_analysis.py python-client/tests/unit/test_scientific_analysis.py python-client/tests/unit/test_raster_categories.py --cov=klab_client --cov-branch --cov-report=json:scientific-coverage.json --junitxml=scientific-unit-results.xml
-          python -m pytest -q developer-tools/klab-service-simulator/tests/test_scientific_adapters.py developer-tools/klab-service-simulator/tests/test_declared_bands.py developer-tools/klab-service-simulator/tests/test_category_codes.py --cov=klab_client --cov-branch --cov-append --cov-report=json:scientific-coverage.json --junitxml=scientific-adapter-results.xml
+          python -m pytest -q python-client/tests/unit/test_multiband_analysis.py python-client/tests/unit/test_scientific_analysis.py python-client/tests/unit/test_raster_categories.py python-client/tests/unit/test_read_plan_analysis.py --cov=klab_client --cov-branch --cov-report=json:scientific-coverage.json --junitxml=scientific-unit-results.xml
+          python -m pytest -q developer-tools/klab-service-simulator/tests/test_scientific_adapters.py developer-tools/klab-service-simulator/tests/test_declared_bands.py developer-tools/klab-service-simulator/tests/test_category_codes.py developer-tools/klab-service-simulator/tests/test_read_plan_analysis.py --cov=klab_client --cov-branch --cov-append --cov-report=json:scientific-coverage.json --junitxml=scientific-adapter-results.xml
       - name: Require unexcluded changed-line and branch coverage for scientific adapters
         env:
           COVERAGE_BASE: '${{ github.event.pull_request.base.sha || github.event.before || ''HEAD^'' }}'
