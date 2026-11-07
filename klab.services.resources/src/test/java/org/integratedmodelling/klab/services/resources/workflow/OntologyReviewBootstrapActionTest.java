@@ -72,7 +72,7 @@ class OntologyReviewBootstrapActionTest {
           .thenReturn(new ProjectMaterial("test-project", "BOOTSTRAP.md", bootstrap.getBytes(StandardCharsets.UTF_8)));
       behavior = behavior();
       manager.setBehaviorBridge(new WorkflowBehaviorBridge(() -> new AgentCompiler.Resolver() {}, owner -> null, () -> behavior));
-      var initial = Flow.State.create(); initial.setSchemaId("editing"); initial.setAssetUrn("test.ontology");
+      var initial = Flow.State.create(); initial.setSchemaId("bootstrap"); initial.setAssetUrn("test.ontology");
       initial.setPermissionsOwnerUrn("test.ontology"); initial.setAssetType(KlabAsset.KnowledgeClass.ONTOLOGY);
       flow = manager.createFlow(WORKFLOW, initial, editor); stage = flow.getCurrentStateIds().iterator().next();
     }

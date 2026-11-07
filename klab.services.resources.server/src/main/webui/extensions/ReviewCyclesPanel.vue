@@ -4,8 +4,8 @@ import type { DashboardContext } from "@klab-dashboard/types";
 import type { ReviewCycle, ReviewView } from "../review-model";
 
 const props = defineProps<{ context: DashboardContext; flowId: string; sourceStateId?: string;
-  proposalAttachmentId?: string; ontologyAttachmentId?: string; candidateDirty?: boolean; candidateLoading?: boolean }>();
-const emit = defineEmits<{ candidate: [value: ReviewCycle]; revision: [value: number]; dirty: [value: boolean]; accessLost: [] }>();
+  proposalAttachmentId?: string; ontologyAttachmentId?: string; candidateDirty?: boolean; candidateLoading?: boolean; stageId?: string }>();
+const emit = defineEmits<{ candidate: [value: ReviewCycle]; revision: [value: number]; dirty: [value: boolean]; accessLost: []; view: [value: ReviewView]; stage: [value: string]; changed: [keepStage?: boolean] }>();
 const view = ref<ReviewView>(), cycleId = ref(""), roundId = ref(""), contributor = ref("");
 const draftId = ref(""), text = ref(""), original = ref(""), busy = ref(false), error = ref("");
 const selectionNotice = ref("");
@@ -43,11 +43,13 @@ function clearDraft() {
 function resetRoundDraft() { contributor.value = ""; proposalFilter.value = ""; clearDraft(); }
 function selectRound() {
   selectionNotice.value = ""; resetRoundDraft(); updateLocation();
+  if (round.value?.stageId) emit("stage", round.value.stageId);
   if (cycle.value && round.value) emit("candidate", cycle.value); else emit("accessLost");
 }
 function selectCycle() {
   const requested = new URL(window.location.href).searchParams;
-  const requestedRound = requested.get("cycle") === cycleId.value ? requested.get("round") : null;
+  const stageRound = view.value?.stages?.find(s => s.id === props.stageId && s.cycleId === cycleId.value)?.roundId;
+  const requestedRound = requested.get("cycle") === cycleId.value ? requested.get("round") || stageRound : stageRound;
   const admitted = cycle.value?.rounds.find(r => r.id === requestedRound);
   roundId.value = admitted?.id || (requestedRound ? "" : cycle.value?.rounds.at(-1)?.id || "");
   resetRoundDraft();
@@ -56,6 +58,7 @@ function selectCycle() {
     emit("accessLost"); // Preserve the requested URL; do not silently turn a protected link into another stage.
   } else {
     selectionNotice.value = ""; updateLocation();
+    if (round.value?.stageId) emit("stage", round.value.stageId);
     if (cycle.value) emit("candidate", cycle.value);
   }
 }
@@ -68,14 +71,18 @@ function selectDraft() {
 function accept(next: ReviewView) {
   const retainedCycle = next.cycles.find(c => c.id === cycleId.value);
   const contextLost = !!cycleId.value && (!retainedCycle || (!!roundId.value && !retainedCycle.rounds.some(r => r.id === roundId.value)));
-  view.value = next; emit("revision", next.revision);
+  view.value = next; emit("revision", next.revision); emit("view", next);
+  if (props.stageId && next.stages && !next.stages.some(s => s.id === props.stageId)) {
+    selectionNotice.value = "The requested stage is unavailable to this account. Choose an authorized stage to continue.";
+    cycleId.value = ""; roundId.value = ""; emit("accessLost"); return;
+  }
   if (contextLost) {
     contributor.value = ""; proposalFilter.value = "";
     selectionNotice.value = "The selected review context is no longer available. Retain or discard private work before choosing an authorized iteration.";
     emit("accessLost"); return; // Keep the draft's original cycle/round IDs; never redirect its contents to another audience.
   }
   if (!next.cycles.some(c => c.id === cycleId.value)) {
-    const requested = new URL(window.location.href).searchParams.get("cycle");
+    const requested = new URL(window.location.href).searchParams.get("cycle") || next.stages?.find(s => s.id === props.stageId)?.cycleId;
     if (requested && !next.cycles.some(c => c.id === requested)) {
       cycleId.value = ""; roundId.value = "";
       selectionNotice.value = "The requested review cycle is unavailable to this account. Choose an authorized cycle to continue.";
@@ -103,8 +110,10 @@ async function command(operation: string, extra: Record<string, unknown> = {}) {
     });
     if (current !== generation) return;
     accept(next);
+    if (["OPEN_CYCLE", "ENTER_COALESCING", "TERMINATE"].includes(operation)) emit("changed");
     if (operation === "OPEN_CYCLE") { cycleId.value = next.cycles.at(-1)?.id || ""; selectCycle(); }
-    if (operation === "OPEN_ROUND") { roundId.value = cycle.value?.rounds.at(-1)?.id || ""; selectRound(); }
+    if (operation === "OPEN_ROUND") { roundId.value = cycle.value?.rounds.at(-1)?.id || ""; selectRound(); emit("changed", true); }
+    if (operation === "CLOSE_ROUND") emit("changed", true);
     if (operation === "SAVE_CONTRIBUTION") {
       if (extra.submit) { clearDraft(); }
       else {
@@ -149,14 +158,21 @@ watch(() => props.flowId, () => {
 
 <template>
   <section class="review-rounds" aria-label="Review rounds and contributions">
-    <h2>Rounds and feedback</h2>
+    <h2>{{ round?.audience === "REVIEWER" ? "Peer review" : round?.audience === "COMMUNITY" ? "Community review" : "Review history and next steps" }}</h2>
     <p v-if="error" role="alert">{{ error }} Your unsaved feedback has been kept. Refresh rounds before retrying a conflict.</p>
     <p v-if="selectionNotice" role="status">{{ selectionNotice }}</p>
     <div class="controls">
       <button :disabled="busy" @click="refresh">Refresh rounds</button>
-      <button v-if="view?.canManage" :disabled="busy || dirty || candidateDirty || !proposalAttachmentId || !sourceStateId" @click="openCycle">Start cycle from selected proposal</button>
+      <button v-if="view?.canOpenCycle" :disabled="busy || candidateLoading || dirty || candidateDirty || !proposalAttachmentId || !sourceStateId" @click="openCycle">{{ view.phase === "COALESCING" ? "Return to peer review" : "Start cycle from selected proposal" }}</button>
     </div>
     <template v-if="view">
+      <p v-if="view.phase === 'BOOTSTRAP'">Bootstrap is private to the creating editor. Starting review freezes this exact candidate and opens peer review.</p>
+      <p v-if="view.phase === 'COALESCING'">Coalescing: integrate feedback in a new draft, then return to review or terminate the flow.</p>
+      <p v-if="view.phase === 'TERMINATED'">This flow is terminated. Termination is not acceptance or publication. Its review history is read-only.</p>
+      <div class="controls">
+        <button v-if="view.canCoalesce" :disabled="busy || dirty || candidateDirty" @click="command('ENTER_COALESCING')">Coalesce feedback</button>
+        <button v-if="view.canTerminate" :disabled="busy || dirty || candidateDirty" @click="command('TERMINATE')">Terminate flow without publication</button>
+      </div>
       <p v-if="!view.cycles.length">No review cycles have been opened.</p>
       <label v-else>Proposal and cycle <select v-model="cycleId" aria-label="Feedback proposal" :disabled="busy || dirty" @change="selectCycle">
         <option v-if="!cycle" value="">Choose an authorized proposal and cycle</option>
@@ -164,10 +180,9 @@ watch(() => props.flowId, () => {
       </select></label>
       <template v-if="cycle">
         <p>Feedback concerns proposal {{ cycle.candidate.proposalId }}, revision {{ cycle.candidate.revisionId }}. {{ cycle.closedAt ? 'This cycle is closed and its history is immutable.' : '' }}</p>
-        <div v-if="view.canManage && !cycle.closedAt" class="controls">
+        <div v-if="view.canOpenRound && !cycle.closedAt" class="controls">
           <button :disabled="busy || dirty" @click="command('OPEN_ROUND', { audience: 'REVIEWER' })">Open reviewer round</button>
           <button :disabled="busy || dirty" @click="command('OPEN_ROUND', { audience: 'COMMUNITY' })">Open community round</button>
-          <button :disabled="busy || dirty" @click="command('CLOSE_CYCLE', { roundId: null })">Close cycle</button>
         </div>
         <div v-if="view.canManage && cycle.closedAt" class="controls">
           <button :disabled="busy" @click="archive(false)">Check digest receipt</button>

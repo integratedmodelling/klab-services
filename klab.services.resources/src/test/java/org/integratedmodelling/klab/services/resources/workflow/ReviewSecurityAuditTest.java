@@ -35,20 +35,26 @@ class ReviewSecurityAuditTest {
     String alternative = ReviewContributionProposalTest.document("r2");
     view = f.manager.reviewCycle(flow.getId(), new Command(view.revision(), Operation.SAVE_CONTRIBUTION, null,
         cycle.id(), round.id(), null, null, "alternative", true, null, null, new ProposalInput(alternative, null)), reviewer);
+    view = f.manager.reviewCycle(flow.getId(), new Command(view.revision(), Operation.ENTER_COALESCING, null,
+        null, null, null, null, null, false), f.editor);
+    var coalescing = view.editableStageId();
+    var sourceUpload = Flow.AttachmentUpload.create(); sourceUpload.setType("candidate-ontology"); sourceUpload.setFileName("source.kwv");
+    sourceUpload.setMediaType("application/vnd.klab.ontology"); sourceUpload.setContent(f.store.attachments.get(ontology));
+    var nextOntology = f.manager.addAttachment(flow.getId(), coalescing, sourceUpload, f.editor).getId();
     var mapper = new com.fasterxml.jackson.databind.ObjectMapper(); var changed = mapper.readTree(alternative);
     ((com.fasterxml.jackson.databind.node.ObjectNode) changed.path("proposal")).put("title", "Different bytes with reused revision");
     var upload = Flow.AttachmentUpload.create(); upload.setType("bootstrap-proposal"); upload.setFileName("aliased.json");
     upload.setMediaType("application/vnd.klab.proposal+yaml"); upload.setContent(mapper.writeValueAsBytes(changed));
-    var stored = f.manager.addAttachment(flow.getId(), f.stage, upload, f.editor);
+    var stored = f.manager.addAttachment(flow.getId(), coalescing, upload, f.editor);
     long revision = f.manager.getReviewCycles(flow.getId(), f.editor).revision();
     assertThrows(KlabIllegalStateException.class, () -> f.manager.reviewCycle(flow.getId(), new Command(revision,
-        Operation.OPEN_CYCLE, f.stage, null, null, null, null, null, false, stored.getId(), ontology), f.editor));
+        Operation.OPEN_CYCLE, coalescing, null, null, null, null, null, false, stored.getId(), nextOntology), f.editor));
     assertEquals(revision, f.manager.getReviewCycles(flow.getId(), f.editor).revision());
     assertEquals(1, f.manager.getReviewCycles(flow.getId(), f.editor).cycles().size());
     upload.setFileName("exact-alternative.json"); upload.setContent(alternative.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    var exact = f.manager.addAttachment(flow.getId(), f.stage, upload, f.editor);
+    var exact = f.manager.addAttachment(flow.getId(), coalescing, upload, f.editor);
     var adopted = f.manager.reviewCycle(flow.getId(), new Command(f.manager.getReviewCycles(flow.getId(), f.editor).revision(),
-        Operation.OPEN_CYCLE, f.stage, null, null, null, null, null, false, exact.getId(), ontology), f.editor);
+        Operation.OPEN_CYCLE, coalescing, null, null, null, null, null, false, exact.getId(), nextOntology), f.editor);
     assertEquals("r2", adopted.cycles().getLast().candidate().revisionId());
   }
   @Test void notificationEditorPrivilegeDoesNotAuthorizeUnknownStageCoordinates() throws Exception {

@@ -11,6 +11,25 @@ import org.integratedmodelling.klab.services.resources.workflow.*;
 import org.junit.jupiter.api.Test;
 
 class ReviewArchiveProviderTest {
+  @Test void coalescingAttemptsOnlyCyclesFrozenByThisCommand() throws Exception {
+    var service = mock(ResourcesProvider.class, CALLS_REAL_METHODS); var manager = mock(WorkflowManager.class);
+    var worker = mock(ReviewArchiveWorker.class); var user = mock(UserScope.class);
+    set(service, "workflowManager", manager); set(service, "reviewArchiveWorker", worker);
+    String flow = UUID.randomUUID().toString(), oldId = UUID.randomUUID().toString(), newId = UUID.randomUUID().toString();
+    var now = java.time.Instant.now();
+    var oldCycle = new Cycle(oldId, "source1", 1, null, "editor", now, now, List.of(), 3L);
+    var newCycle = new Cycle(newId, "source2", 4, null, "editor", now, now, List.of(), 8L);
+    var result = new View(8, List.of(oldCycle, newCycle), true, "editor", List.of());
+    var command = new Command(7, Operation.ENTER_COALESCING, null, null, null, null, null, null, false);
+    when(manager.reviewCycle(flow, command, user)).thenReturn(result);
+    var intent = new ReviewArchiveOutbox.Intent(flow, newId, "ontology", 8);
+    when(manager.requireReviewArchiveIntent(flow, newId, user)).thenReturn(intent);
+    assertSame(result, service.reviewCycle(flow, command, user));
+    verify(manager).requireReviewArchiveIntent(flow, newId, user);
+    verify(manager, never()).requireReviewArchiveIntent(flow, oldId, user);
+    verify(worker).attempt(eq(intent), any());
+  }
+
   static void set(ResourcesProvider service, String name, Object value) throws Exception {
     var field = ResourcesProvider.class.getDeclaredField(name); field.setAccessible(true); field.set(service, value);
   }

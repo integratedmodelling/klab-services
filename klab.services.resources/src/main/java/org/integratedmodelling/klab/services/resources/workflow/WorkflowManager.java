@@ -389,6 +389,7 @@ public class WorkflowManager {
       boolean publicRead,
       WorkflowParticipant participant) {
     if (!participant.isWorkflowPermitted(workflow)) throw access(workflow.getId());
+    if (ReviewStageProtocol.enabled(workflow) && !participant.isAuthenticated()) throw access(workflow.getId());
     if (initial == null || initial.getSchemaId() == null)
       throw new KlabIllegalArgumentException("An initial state schema is required");
     var init =
@@ -427,6 +428,11 @@ public class WorkflowManager {
     var now = Instant.now();
     var flow = new FlowImpl();
     flow.setId(UUID.randomUUID().toString());
+    if (ReviewStageProtocol.enabled(workflow)) {
+      initial.setOwner(participant.getIdentity());
+      initial.setAssignees(new java.util.LinkedHashSet<>());
+      initial.setMetadata(org.integratedmodelling.klab.api.data.Metadata.create());
+    }
     if (initial.getOwner() == null || initial.getOwner().isBlank()) {
       initial.setOwner(participant.getIdentity());
     }
@@ -463,11 +469,13 @@ public class WorkflowManager {
     var participant = WorkflowParticipant.from(scope);
     requireAdmin(participant);
     var flow = Utils.Json.parseObject(Utils.Json.asString(requiredFlow(flowId)), Flow.class);
+    if (ReviewStageProtocol.enabled(requiredWorkflowVersion(flow)))
+      throw new KlabIllegalStateException("Staged review flows cannot be reopened");
     if (flow.getStatus() == Flow.Status.ACTIVE) {
       return project(flow, requiredWorkflowVersion(flow), participant);
     }
     var workflow = requiredWorkflowVersion(flow);
-    if (ProposalReviewProtocol.enabled(workflow))
+    if (ProposalReviewProtocol.enabled(workflow) || ReviewStageProtocol.enabled(workflow))
       throw new KlabIllegalStateException("Proposal review stages and evidence use the transition lifecycle; direct create/delete/reopen is blocked");
     var latest =
         flow.getHistory().stream()
@@ -513,9 +521,7 @@ public class WorkflowManager {
     var workflow = requiredWorkflowVersion(flow);
     var visible = ReviewCycleProtocol.visible(flow, workflow, actor);
     if (!ReviewCycleProtocol.editor(flow, workflow, actor) && visible.isEmpty()) throw access(id);
-    return new org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View(
-        flow.getRevision(), visible, ReviewCycleProtocol.editor(flow, workflow, actor), actor.getIdentity(),
-        ReviewCycleProtocol.contributableRounds(visible, workflow, actor));
+    return ReviewStageProtocol.view(flow, workflow, actor);
   }
 
   /** Only the exact proposal/source bound to an admitted cycle can cross this narrow endpoint. */
@@ -556,7 +562,7 @@ public class WorkflowManager {
       throw new KlabIllegalStateException("Review command requires the current flow revision");
     switch (command.operation()) {
       case OPEN_CYCLE -> ReviewCycleProtocol.openCycle(flow, workflow, actor, command.sourceStateId(),
-          command.proposalAttachmentId(), command.ontologyAttachmentId(), kbox::getWorkflowAttachment);
+          command.proposalAttachmentId(), command.ontologyAttachmentId(), kbox::getWorkflowAttachment, command.audience());
       case OPEN_ROUND -> ReviewCycleProtocol.openRound(flow, workflow, actor, command.cycleId(), command.audience());
       case SAVE_CONTRIBUTION -> ReviewCycleProtocol.contribute(flow, workflow, actor, command.cycleId(),
           command.roundId(), command.contributionId(), command.text(), command.submit(), command.proposal());
@@ -564,15 +570,19 @@ public class WorkflowManager {
         if (command.roundId() == null) throw new KlabIllegalArgumentException("A round ID is required");
         ReviewCycleProtocol.close(flow, workflow, actor, command.cycleId(), command.roundId());
       }
-      case CLOSE_CYCLE -> ReviewCycleProtocol.close(flow, workflow, actor, command.cycleId(), null);
+      case CLOSE_CYCLE -> {
+        if (ReviewStageProtocol.enabled(workflow))
+          throw new KlabIllegalStateException("Move to coalescing to close this review cycle");
+        ReviewCycleProtocol.close(flow, workflow, actor, command.cycleId(), null);
+      }
+      case ENTER_COALESCING -> ReviewStageProtocol.enterCoalescing(flow, workflow, actor);
+      case TERMINATE -> ReviewStageProtocol.terminate(flow, workflow, actor);
     }
     ReviewWorkflowNotifications.stage(flow, command);
     ReviewWorkflowArchives.stage(flow, command);
     persistMutation(flow, workflow);
     var visible = ReviewCycleProtocol.visible(flow, workflow, actor);
-    return new org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.View(
-        flow.getRevision(), visible, ReviewCycleProtocol.editor(flow, workflow, actor), actor.getIdentity(),
-        ReviewCycleProtocol.contributableRounds(visible, workflow, actor));
+    return ReviewStageProtocol.view(flow, workflow, actor);
   }
 
   /** Exact private archive fact for a fresh authorized editor operation. A digest link alone
@@ -657,6 +667,7 @@ public class WorkflowManager {
     var current = requiredState(flow, stateId);
     var workflow = requiredWorkflowVersion(flow);
     var schema = requiredStateSchema(workflow, current.getSchemaId());
+    if (ReviewStageProtocol.enabled(workflow)) ReviewStageProtocol.requireEditable(flow, workflow, current, participant);
     requireContributor(workflow, schema, participant);
     requireStageEditor(current, participant);
     if (current.getStatus() == Flow.StateStatus.CLOSED)
@@ -664,10 +675,15 @@ public class WorkflowManager {
     if (update == null
         || (update.getSchemaId() != null && !current.getSchemaId().equals(update.getSchemaId())))
       throw new KlabIllegalArgumentException("A state's schema cannot be changed");
-    if (ProposalReviewProtocol.enabled(workflow)
+    if ((ProposalReviewProtocol.enabled(workflow) || ReviewStageProtocol.enabled(workflow))
         && ((update.getProposalReview() != null && !Objects.equals(update.getProposalReview(), current.getProposalReview()))
             || (update.getStatus() != null && update.getStatus() != current.getStatus())))
       throw new KlabIllegalStateException("Proposal review results and stage status are controlled by transitions");
+    if (ReviewStageProtocol.enabled(workflow)
+        && ((update.getOwner() != null && !Objects.equals(update.getOwner(), current.getOwner()))
+            || !Objects.equals(update.getAssignees(), current.getAssignees())
+            || !Objects.equals(update.getMetadata(), current.getMetadata())))
+      throw new KlabIllegalStateException("Review stage ownership, assignments and bindings are server-controlled");
     current.setTitle(update.getTitle());
     current.setDescription(update.getDescription());
     current.setStatus(update.getStatus() == null ? current.getStatus() : update.getStatus());
@@ -695,7 +711,7 @@ public class WorkflowManager {
     var workflow = requiredWorkflowVersion(flow);
     if (flow.getReviewCycles().stream().anyMatch(c -> Objects.equals(c.sourceStateId(), stateId)))
       throw new KlabIllegalStateException("A review cycle's source stage is immutable provenance");
-    if (ProposalReviewProtocol.enabled(workflow))
+    if (ProposalReviewProtocol.enabled(workflow) || ReviewStageProtocol.enabled(workflow))
       throw new KlabIllegalStateException("Proposal review stages and evidence use the transition lifecycle; direct create/delete/reopen is blocked");
     requireManager(workflow, requiredStateSchema(workflow, state.getSchemaId()), participant);
     requireStageEditor(state, participant);
@@ -728,6 +744,8 @@ public class WorkflowManager {
     if (!flow.getCurrentStateIds().contains(source.getId()))
       throw new KlabIllegalStateException("Transitions must start at a current state");
     var workflow = requiredWorkflowVersion(flow);
+    if (ReviewStageProtocol.enabled(workflow))
+      throw new KlabIllegalStateException("Use the review stage commands for this workflow");
     try (var behaviorAttachments = new BehaviorAttachments(flow, workflow, participant)) {
       var transition = workflow.getTransitions().get(request.getTransitionId());
       if (transition == null || !transition.getSourceStates().contains(source.getSchemaId()))
@@ -798,6 +816,7 @@ public class WorkflowManager {
     var state = requiredState(flow, stateId);
     var workflow = requiredWorkflowVersion(flow);
     var schema = requiredStateSchema(workflow, state.getSchemaId());
+    if (ReviewStageProtocol.enabled(workflow)) ReviewStageProtocol.requireEditable(flow, workflow, state, participant);
     requireContributor(workflow, schema, participant);
     requireStageEditor(state, participant);
     if (state.getStatus() == Flow.StateStatus.CLOSED)
@@ -823,11 +842,14 @@ public class WorkflowManager {
     var state =
         flow.getStates().values().stream()
             .filter(s -> s.getAttachments().stream().anyMatch(a -> attachmentId.equals(a.getId())))
-            .filter(s -> flow.isPublicRead() || workflow.canAccess(requiredStateSchema(workflow, s.getSchemaId()), participant))
+            .filter(s -> ReviewStageProtocol.enabled(workflow)
+                ? ReviewStageProtocol.canSeeStage(flow, workflow, s, participant)
+                : flow.isPublicRead() || workflow.canAccess(requiredStateSchema(workflow, s.getSchemaId()), participant))
             .findFirst()
             .orElseThrow(
-                () -> new KlabIllegalArgumentException("Unknown attachment " + attachmentId));
-    if (!flow.isPublicRead()) {
+                () -> ReviewStageProtocol.enabled(workflow) ? access(attachmentId)
+                    : new KlabIllegalArgumentException("Unknown attachment " + attachmentId));
+    if (!ReviewStageProtocol.enabled(workflow) && !flow.isPublicRead()) {
       requireContributor(workflow, requiredStateSchema(workflow, state.getSchemaId()), participant);
     }
     var bytes = kbox.getWorkflowAttachment(attachmentId);
@@ -854,6 +876,7 @@ public class WorkflowManager {
               .findFirst()
               .orElse(null);
       if (attachment == null) continue;
+      if (ReviewStageProtocol.enabled(workflow)) ReviewStageProtocol.requireEditable(flow, workflow, state, participant);
       requireContributor(workflow, requiredStateSchema(workflow, state.getSchemaId()), participant);
       requireStageEditor(state, participant);
       if (state.getStatus() == Flow.StateStatus.CLOSED)
@@ -946,6 +969,8 @@ public class WorkflowManager {
       Workflow workflow,
       Flow.TransitionRequest request,
       WorkflowParticipant participant, java.util.function.Function<String, byte[]> payload, UserScope scope, BehaviorAttachments behaviorAttachments) {
+    if (ReviewStageProtocol.enabled(workflow))
+      throw new KlabIllegalStateException("Create the bootstrap flow first, then use review stage commands");
     var source = requiredState(flow, request.getSourceStateId());
     if (!flow.getCurrentStateIds().contains(source.getId()))
       throw new KlabIllegalStateException("Transitions must start at the initial current state");
@@ -1033,6 +1058,13 @@ public class WorkflowManager {
     copy.getStates().values().forEach(state -> state.setBehaviorCheckpoint(null));
     // Apply privacy even to public flows and owners: another author's drafts never leave the server.
     copy.setReviewCycles(ReviewCycleProtocol.visible(stored, workflow, participant));
+    if (ReviewStageProtocol.enabled(workflow)) {
+      copy.getStates().entrySet().removeIf(e -> !ReviewStageProtocol.canSeeStage(stored, workflow, e.getValue(), participant));
+      copy.getCurrentStateIds().removeIf(id -> !copy.getStates().containsKey(id));
+      copy.getHistory().removeIf(t -> (t.getSourceStateId() != null && !copy.getStates().containsKey(t.getSourceStateId()))
+          || !copy.getStates().containsKey(t.getTargetStateId()));
+      return copy;
+    }
     if (stored.isPublicRead()) return copy;
     boolean adminOrOwner =
         participant.getRoles().contains(WorkflowRole.ADMIN)
@@ -1067,6 +1099,9 @@ public class WorkflowManager {
   }
 
   private boolean canSee(Flow flow, Workflow workflow, WorkflowParticipant participant) {
+    if (ReviewStageProtocol.enabled(workflow))
+      return participant.isAuthenticated() && flow.getStates().values().stream()
+          .anyMatch(s -> ReviewStageProtocol.canSeeStage(flow, workflow, s, participant));
     return flow.isPublicRead()
         || participant.getRoles().contains(WorkflowRole.ADMIN)
         || Objects.equals(flow.getOwner(), participant.getIdentity())
@@ -1233,6 +1268,10 @@ public class WorkflowManager {
   }
 
   private void synchronizeResourceInfo(Flow flow, Workflow workflow) {
+    // The shared asset catalog is not a private workflow projection. Do not advertise the
+    // creator-only bootstrap, its stage coordinates or creator through that separate surface.
+    if (ReviewStageProtocol.enabled(workflow)
+        && ReviewStageProtocol.phase(flow) == org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Phase.BOOTSTRAP) return;
     var summary = reviewSummary(flow, workflow);
     if (!kbox.updateResourceInfoForFlow(flow, summary.stage(), summary.reviewStatus()))
       throw new KlabIllegalStateException(
@@ -1363,6 +1402,7 @@ public class WorkflowManager {
   private Flow.State requireActionStage(Flow flow, Workflow workflow, String stateId, UserScope scope) {
     var state = requiredState(flow, stateId);
     var participant = WorkflowParticipant.from(scope);
+    if (ReviewStageProtocol.enabled(workflow)) ReviewStageProtocol.requireEditable(flow, workflow, state, participant);
     requireContributor(workflow, requiredStateSchema(workflow, state.getSchemaId()), participant);
     requireStageEditor(state, participant);
     if (state.getStatus() != Flow.StateStatus.OPEN || !flow.getCurrentStateIds().contains(stateId)
@@ -1387,6 +1427,7 @@ public class WorkflowManager {
     }
 
     public Flow.Attachment add(Flow.State stage, Flow.AttachmentUpload upload) {
+      if (ReviewStageProtocol.enabled(workflow)) ReviewStageProtocol.requireEditable(flow, workflow, stage, participant);
       if (upload == null || upload.getFileName() == null || upload.getFileName().isBlank()
           || upload.getMediaType() == null || upload.getMediaType().isBlank())
         throw new KlabIllegalArgumentException("Attachment filename and media type are required");
@@ -1417,6 +1458,7 @@ public class WorkflowManager {
     }
 
     public byte[] read(Flow.State stage, String id) {
+      if (ReviewStageProtocol.enabled(workflow) && !ReviewStageProtocol.canSeeStage(flow, workflow, stage, participant)) throw access(stage.getId());
       if (stage.getAttachments().stream().noneMatch(attachment -> Objects.equals(id, attachment.getId())))
         throw new KlabIllegalArgumentException("Attachment does not belong to this stage");
       var value = payload(id);
@@ -1425,6 +1467,7 @@ public class WorkflowManager {
     }
 
     public boolean remove(Flow.State stage, String id) {
+      if (ReviewStageProtocol.enabled(workflow)) ReviewStageProtocol.requireEditable(flow, workflow, stage, participant);
       if (stage.getStatus() == Flow.StateStatus.CLOSED)
         throw new KlabIllegalStateException("Attachments cannot be removed from a closed stage");
       if (ReviewCycleProtocol.references(flow, id))

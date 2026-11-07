@@ -339,6 +339,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
       // Closure is already committed. Never turn a Git/queue failure into a failed closure response.
       try { archiveReviewCycle(flowId, command.cycleId(), scope); }
       catch (RuntimeException deferred) { Logging.INSTANCE.warn("Review digest deferred; closure remains committed"); }
+    } else if (command.operation() == org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles.Operation.ENTER_COALESCING) {
+      for (var cycle : result.cycles()) if (Objects.equals(cycle.closedFlowRevision(), result.revision())) {
+        try { archiveReviewCycle(flowId, cycle.id(), scope); }
+        catch (RuntimeException deferred) { Logging.INSTANCE.warn("Review digest deferred; closure remains committed"); }
+      }
     }
     return result;
   }

@@ -82,6 +82,24 @@ public class WorkflowController {
     return resourcesServer.klabService().getWorkflow(workflowId, userScope(principal));
   }
 
+  /** A read-only admission hint. Creation rechecks all policy and target-asset access. */
+  public record CreationOptions(boolean canCreate, List<String> initialStateIds, String version) {}
+
+  @GetMapping(ServicesAPI.RESOURCES.WORKFLOW + "/creation")
+  public ResponseEntity<CreationOptions> creationOptions(@PathVariable String workflowId, Principal principal) {
+    var scope = userScope(principal);
+    var workflow = resourcesServer.klabService().getWorkflow(workflowId, scope);
+    var actor = org.integratedmodelling.klab.api.services.resources.workflow.WorkflowParticipant.from(scope);
+    var initialStates = actor.isAuthenticated() && actor.isWorkflowPermitted(workflow)
+        ? workflow.getTransitions().values().stream()
+            .filter(t -> t.getSourceStates().contains(Workflow.INIT)
+                && actor.hasAnyRole(t.getRoles()) && !actor.getDisallowedTransitions().contains(t.getId()))
+            .map(Workflow.TransitionSchema::getTargetState)
+            .filter(id -> workflow.canAccess(workflow.getStates().get(id), actor)).distinct().toList()
+        : List.<String>of();
+    return ResponseEntity.ok().header("Cache-Control", "private, no-store")
+        .body(new CreationOptions(!initialStates.isEmpty(), initialStates, workflow.getVersion()));
+  }
   @Operation(
       summary = "Create a flow",
       description = "Start a flow from a workflow and its initial state")

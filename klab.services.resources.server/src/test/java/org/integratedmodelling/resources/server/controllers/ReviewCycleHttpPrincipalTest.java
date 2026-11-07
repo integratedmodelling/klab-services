@@ -21,6 +21,41 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 /** Real EngineAuthorization objects at the HTTP controller boundary, not a live JWT/login test. */
 class ReviewCycleHttpPrincipalTest {
+  @Test void creationOptionsAreServerDerivedAndDoNotCreateAFlow() throws Exception {
+    var service = mock(ResourcesProvider.class); var server = mock(ResourcesServer.class);
+    when(server.klabService()).thenReturn(service);
+    var controller = new WorkflowController(); ReflectionTestUtils.setField(controller, "resourcesServer", server);
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var mvc = MockMvcBuilders.standaloneSetup(controller)
+        .setControllerAdvice(new org.integratedmodelling.klab.services.application.controllers.KlabErrorHandler())
+        .setMessageConverters(new MappingJackson2HttpMessageConverter(mapper)).build();
+    var workflow = mock(org.integratedmodelling.klab.api.services.resources.workflow.Workflow.class);
+    when(workflow.getId()).thenReturn("ontology-review-pilot"); when(workflow.getVersion()).thenReturn("0.3");
+    var transition = mock(org.integratedmodelling.klab.api.services.resources.workflow.Workflow.TransitionSchema.class);
+    when(transition.getId()).thenReturn("initialize"); when(transition.getSourceStates()).thenReturn(Set.of("INIT"));
+    when(transition.getTargetState()).thenReturn("bootstrap");
+    when(transition.getRoles()).thenReturn(Set.of(org.integratedmodelling.klab.api.services.resources.workflow.WorkflowRole.EDITOR));
+    when(workflow.getTransitions()).thenReturn(Map.of("initialize", transition));
+    var schema = mock(org.integratedmodelling.klab.api.services.resources.workflow.Workflow.StateSchema.class);
+    when(workflow.getStates()).thenReturn(Map.of("bootstrap", schema)); when(workflow.canAccess(eq(schema), any())).thenReturn(true);
+    var path = "/api/v1/workflows/ontology-review-pilot/creation";
+    mvc.perform(get(path)).andExpect(status().isForbidden());
+    var editor = principal("editor", true); var scope = (UserScope) editor.getScope();
+    var group = mock(org.integratedmodelling.klab.api.identities.Group.class); when(group.getId()).thenReturn("editors");
+    var roles = new org.integratedmodelling.klab.api.authentication.CustomProperty(); roles.setKey("workflow.roles"); roles.setValue("EDITOR");
+    var permitted = new org.integratedmodelling.klab.api.authentication.CustomProperty(); permitted.setKey("workflow.permitted"); permitted.setValue("ontology-review-pilot");
+    when(group.getCustomProperties()).thenReturn(List.of(roles, permitted)); when(scope.getUser().getGroups()).thenReturn(List.of(group));
+    when(service.getWorkflow("ontology-review-pilot", scope)).thenReturn(workflow);
+    var result = mvc.perform(get(path).principal(editor)).andExpect(status().isOk()).andReturn();
+    assertEquals("private, no-store", result.getResponse().getHeader("Cache-Control"));
+    var json = mapper.readTree(result.getResponse().getContentAsString()); assertTrue(json.path("canCreate").asBoolean());
+    assertEquals("bootstrap", json.path("initialStateIds").get(0).asText());
+    when(scope.getUser().getGroups()).thenReturn(List.of());
+    result = mvc.perform(get(path).principal(editor)).andExpect(status().isOk()).andReturn();
+    assertFalse(mapper.readTree(result.getResponse().getContentAsString()).path("canCreate").asBoolean());
+    verify(service, never()).createFlow(any(), any(), any());
+  }
+
   @Test void archiveStatusAndRetryRequireAuthenticatedPrincipalAndPreserveItsScope() throws Exception {
     var service = mock(ResourcesProvider.class); var server = mock(ResourcesServer.class); when(server.klabService()).thenReturn(service);
     var controller = new WorkflowController(); ReflectionTestUtils.setField(controller, "resourcesServer", server);

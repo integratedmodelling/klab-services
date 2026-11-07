@@ -1,13 +1,14 @@
 id: ontology-review-pilot
-version: "0.2"
+version: "0.3"
 name: Ontology community review pilot
 description: Editor-led ontology review with attributed reviewer and community rounds.
 metadata:
   reviewCycles: true
+  reviewStages: true
 behavior: klab.workflow.ontology_review
 assetTypes: [ONTOLOGY]
 states:
-  editing:
+  bootstrap:
     description: Prepare and edit the initial proposal.
     instructions: Prepare the draft from the current ontology and optional project BOOTSTRAP.md, then edit it before opening review.
     managerRoles: [ADMIN, EDITOR]
@@ -36,9 +37,52 @@ states:
         mediaType: '*/*'
         arity: -1
         required: false
+  peer-review:
+    description: Peer review of an immutable candidate.
+    managerRoles: [ADMIN, EDITOR]
+    contributorRoles: [REVIEWER]
+    assetTypes: [ONTOLOGY]
+    open: true
+  community-review:
+    description: Authenticated community review of an immutable candidate.
+    managerRoles: [ADMIN, EDITOR]
+    contributorRoles: [REVIEWER]
+    assetTypes: [ONTOLOGY]
+    open: true
+  coalescing:
+    description: Integrate submitted review into a fresh editorial candidate.
+    instructions: Coalesce the frozen review, then return to review or terminate without publishing.
+    managerRoles: [ADMIN, EDITOR]
+    contributorRoles: [EDITOR]
+    assetTypes: [ONTOLOGY]
+    open: true
+    attachments:
+      - type: bootstrap-proposal
+        mediaType: application/vnd.klab.proposal+yaml
+        arity: -1
+        required: false
+      - type: bootstrap-comments
+        mediaType: application/vnd.klab.comments+json
+        arity: -1
+        required: false
+      - type: candidate-ontology
+        mediaType: application/vnd.klab.ontology
+        assetType: ONTOLOGY
+        arity: 1
+        required: false
+      - type: supporting-material
+        mediaType: '*/*'
+        arity: -1
+        required: false
+  terminated:
+    description: Review ended without acceptance or publication.
+    managerRoles: [ADMIN, EDITOR]
+    contributorRoles: [EDITOR]
+    assetTypes: [ONTOLOGY]
+    open: false
 transitions:
   initialize:
     description: Open the editorial preparation stage.
     sourceStates: [INIT]
-    targetState: editing
+    targetState: bootstrap
     roles: [ADMIN, EDITOR]

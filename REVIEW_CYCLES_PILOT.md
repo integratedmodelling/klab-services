@@ -1,52 +1,98 @@
-# Review cycle pilot
+# Staged review cycle pilot
 
-For participant instructions, start with [Try the ontology review pilot](ONTOLOGY_REVIEW_PILOT.md).
-This page is the API and implementation reference.
+Participant instructions: [Try the staged pilot](ONTOLOGY_REVIEW_PILOT.md).
+The unused pilot schema is intentionally revised to `ontology-review-pilot@0.3`; this is not a
+migration of existing 0.2 flows. Unrelated workflow protocols retain their own lifecycle.
 
-The pilot combines editor bootstrap with independent review cycles. It does not grant reviewer roles or equate closing a review with accepting or publishing an ontology. `WorkflowParticipant.from` no longer fabricates a reviewer role for a known-person identity with no configured role.
+## Authoritative lifecycle
 
-Open an `ontology-review-pilot@0.2` flow from the editor, then enter `<Resources-base>/ui/review?flow=<id>&stage=<id>`. Prepare and edit the candidate, start a cycle from the selected saved proposal, and open reviewer and/or community rounds. The candidate remains editable as a new draft alongside feedback; proposal/cycle, iteration and contributor filters keep the review in context. Community participants use the same authenticated URL and see only the authorized round view. Closed cycles remain consultable and immutable; a later integrated draft can start another cycle.
+The schema declares `bootstrap`, `peer-review`, `community-review`, `coalescing` and
+`terminated`. Review commands create and close real `Flow.State` records and corresponding
+review cycles/rounds in one conditional aggregate write. There is no independently editable
+phase flag. Only bootstrap is an ordinary INIT target; generic transitions, direct stage
+creation/deletion and reopening cannot bypass the staged protocol.
 
-## Server interface
+- Bootstrap is owned by the authenticated creator, regardless of caller-supplied owner,
+  assignees or stage metadata. Only that creator with current editorial permission can see
+  its content, including after handoff. Public visibility and administration do not bypass it.
+  Bootstrap also writes no reference into the shared asset catalog; indexing begins at review handoff.
+- Starting review closes bootstrap or coalescing and freezes its exact saved candidate. The
+  initial audience defaults to REVIEWER, with COMMUNITY available through the command contract.
+- Every round has a `stageId`. Peer/community rounds may overlap and repeat. Their stage and
+  round status change together. Closing all rounds does not terminate the flow or its cycle.
+- Entering coalescing closes every still-open round and cycle, atomically records closure
+  notification/archive intents and creates an editor stage owned by the flow creator. The
+  initiating editor/administrator remains recorded separately in provenance.
+- Returning to review creates new cycle/round/stage records. Termination is allowed only from
+  coalescing and creates a closed terminal record. Neither action means scientific acceptance,
+  application or publication. Closed records never reopen or become editable. The catalog retains
+  a historical REVIEWING summary alongside the explicit CLOSED flow status; that summary is not
+  an acceptance or publication result.
 
-`GET {FLOW}/review-cycles` returns the current revision, caller-filtered cycles, caller identity and server-derived management/contribution permissions. `POST` takes a `ReviewCycles.Command`. Both require an authenticated principal and return `Cache-Control: private, no-store`. `GET {FLOW}/review-cycles/{cycleId}/attachments/{attachmentId}` returns only the exact proposal or ontology artifact of a visible cycle, as plain Base64 text. It does not grant unrelated stage/material access.
+## HTTP contract
 
-Commands are `OPEN_CYCLE` (sourceStateId, optional proposalAttachmentId and ontologyAttachmentId), `OPEN_ROUND` (cycleId, audience), `SAVE_CONTRIBUTION` (cycleId, roundId, optional contributionId, text, submit, optional proposal), `CLOSE_ROUND` (cycleId, roundId), and `CLOSE_CYCLE` (cycleId). Every command requires the current expectedRevision. Omit contributionId to create independently owned feedback. Save a draft with submit=false and submit that same ID with submit=true. Submitted text and proposals cannot be rewritten; corrections are new contributions. A conflict keeps the browser's unsaved feedback for an explicit refresh/retry.
+`GET /api/v1/workflows/{workflowId}/creation` returns server-derived `canCreate`,
+`initialStateIds` and `version`. This is a read-only UI hint; creation rechecks admission and
+actual ontology/project access. Create using `POST /api/v1/flows?workflowId=ontology-review-pilot`
+with an initial state such as:
 
-An alternative proposal supplies `proposal: { document: "<JSON or YAML>", ontologySource: "<optional source>" }`. Omit ontologySource to retain the round candidate's ontology. The service records exact content, checksums and derived proposal identity. Incomplete documents can be saved privately; submission requires the bundled document schema and a fresh revision ID for changed inputs. This check does not imply semantic or scientific approval. Alternatives remain bound to their round's candidate and do not replace the editor's draft. The UI supports document/source editing, resuming private drafts and filtering alternatives by contributor and proposal.
-
-Cycle management requires an authenticated workflow-permitted EDITOR who owns this flow or is an assigned/owning stage editor, or an administrator. A workflow-wide editor role alone does not grant control over someone else's flow. Reviewer rounds require an actual REVIEWER role and workflow permission. Community rounds require an authenticated, nonanonymous identity with a nonblank username; no email, known-person flag or invented reviewer role is needed.
-
-Editors see all rounds and submitted contributions. Participants see submitted feedback only in rounds whose audience admits them. Every draft remains private to its author, including on public flows and when an editor reads the aggregate. The ordinary flow projection applies the same filter before its public-flow shortcut. Closure preserves the same audience restrictions; it does not make private feedback public.
-
-## Revisions, closure, concurrency
-
-Opening a cycle freezes either the legacy server-owned candidate or explicitly selected attachments from a current editing stage. The server checks artifact membership, media, checksums and the bundled proposal schema, then derives candidate identity itself. The cycle records source stage/revision, candidate proposal/revision, exact artifacts, action IDs, context digest, actor and time. Referenced artifacts, source stages and cycle history cannot be deleted. Candidate revision and aggregate revision are different coordinates. Reviewer/community rounds can overlap or repeat in either order; opening one does not close another.
-
-Closing a round freezes it; closing a cycle also closes its remaining open rounds. Closed records cannot be reopened, edited, or deleted through this extension. A new cycle is a new record, including after the underlying legacy flow is closed. Extension closure does not accept, reject, apply, publish, or reopen the underlying workflow. Historical proposal workflow records remain protected by the existing direct-delete restrictions.
-
-All existing-flow mutations use a database-atomic revision predicate and write. Independent managers writing the same observed revision have one winner; the loser refreshes and explicitly retries. Attachment cleanup retains committed payloads when a write outcome is uncertain. Nitrite/RocksDB exclusively locks the database directory across processes: a second service process cannot own it until the first closes. This is the existing local database model, not replicated multi-writer storage. Bounds cover cycles, rounds, contribution counts and UTF-8 proposal/source/feedback payload bytes.
-
-## Scope and integration
-
-The new pilot supports bootstrap -> saved draft -> frozen cycle -> overlapping rounds -> attributed feedback -> integrated draft -> next cycle, without passing through legacy acceptance. Existing accepted legacy flows remain closed; consulting or opening another cycle over their exact candidate does not reopen them. Java remote client methods are implemented for cycle reads, commands and exact artifact access.
-
-The candidate pane is a JSON draft editor with text feedback and alternative JSON/YAML proposal/source contributions. Richer comment forms and semantic diffs remain pending. Closing a cycle records a private archive intent atomically and attempts a minimal local Git digest in the ontology's actual hosting project using the closing editor's current write authority. The digest contains a persistent permission-checked review link, with no contribution text, drafts, identities or proposal metadata. A dirty/locked/read-only/unavailable project defers archiving without undoing closure. Startup replay retains pending jobs; an editor can inspect the receipt and explicitly retry from the closed-cycle UI. No cached scope is retained for background writes and no remote push occurs. See `klab.core.services/REVIEW_ARCHIVE_PILOT.md`.
-
-Review submissions and round/cycle changes now persist service-private notification intents in
-the same conditional aggregate write. Draft saves do not notify. A service-owned worker replays
-committed intents into the private outbox at startup and every minute, stopping before resource
-stores close. Service administrators can consult bounded health/status at
-`GET api/v1/admin/review-notifications?limit=50`. Delivery remains disabled; the worker has no
-transport or email-enable switch. A recipient adapter requires fresh authoritative identity,
-verified mailbox, explicit consent and current round authorization, but no live directory is bound.
-Persisted intents are not delivered editor notices. Recipient metadata is excluded from user views
-and Git history. See `notes/ontology-review-worker-status.md` for verification and deployment limits.
-
-Checks cover independent managers, real database conditional writes and separate-process ownership, actual Nitrite/RocksDB close/reopen, scoped EngineAuthorization objects at the HTTP controller boundary, disposable Git repositories and browser fixtures. An isolated four-principal browser scenario also exercises the real review component, k.Actors bootstrap, native workflow storage, integrated proposal, closure/restart and fake notices. It uses explicit simulated authenticated scopes, not live login. See [audit](notes/ontology-review-audit-status.md), [digest status](notes/ontology-review-digest-status.md) and [pilot handoff](notes/ontology-review-pilot-handoff.md) for exact coverage and remaining gates.
-
-Run the focused reactor checks with a writable isolated test home:
-
-```powershell
-mvn -o -pl klab.services.resources.server -am test '-Dtest=ReviewCycleProtocolTest,ProposalReviewProtocolTest,WorkflowSchemaTest' '-Dsurefire.failIfNoSpecifiedTests=false' '-DargLine=-Duser.home=<isolated-test-home>'
+```json
+{"schemaId":"bootstrap","assetUrn":"<authorized ontology URN>","assetType":"ONTOLOGY","title":"Ontology review"}
 ```
+
+`GET /api/v1/flows/{flowId}/review-cycles` returns revision, caller-filtered cycles, identity,
+contributable round IDs, `phase`, `editableStageId`, stage descriptors and management
+capabilities. A descriptor identifies its state schema, cycle, round, open status and caller
+edit/contribution capability. The server is authoritative; hiding a button is not authorization.
+
+`POST` to the same route takes `ReviewCycles.Command`, always with the exact
+`expectedRevision`:
+
+- `OPEN_CYCLE`: current bootstrap/coalescing `sourceStateId`, saved proposal attachment,
+  optional ontology attachment and optional initial audience. It opens the initial round.
+- `OPEN_ROUND`: cycle ID and audience, creating a further peer/community stage.
+- `SAVE_CONTRIBUTION`: cycle/round IDs, optional owned draft ID, text, submit flag and optional
+  alternative proposal. Submitted contributions cannot be rewritten.
+- `CLOSE_ROUND`: cycle/round IDs. Closes the round and its stage, not the cycle or flow.
+- `ENTER_COALESCING`: freezes open review and creates the next editorial stage.
+- `TERMINATE`: closes coalescing and the flow without publication.
+
+`CLOSE_CYCLE` remains for the older independent-cycle extension but is rejected for the staged
+pilot: use `ENTER_COALESCING`. Unsupported phase, stale revision and closed-history writes are
+conflicts, not an invitation to retry automatically.
+
+`GET /api/v1/flows/{flowId}/review-cycles/{cycleId}/attachments/{attachmentId}` exposes only the
+exact proposal or source of a caller-visible cycle, as plain Base64 text. It does not grant
+access to its private bootstrap stage or unrelated materials. Review and creation-option
+responses are `Cache-Control: private, no-store` and require an authenticated principal.
+
+## Access, evidence and durability
+
+Editorial management requires actual workflow permission plus ownership/assignment or
+administration; bootstrap adds the strict creator condition. Peer rounds require a genuine
+permitted REVIEWER; community requires a nonanonymous authenticated identity. Every private
+contribution remains author-only, including for editors and public-flow projections. Generic
+flow/stage/artifact reads enforce the same staged visibility before public shortcuts.
+
+Candidate identity is derived from saved bytes, media types, checksums and the bundled proposal
+schema. Schema validity is not semantic or scientific approval. Alternatives retain their own
+identity and frozen round candidate. Changed bytes cannot reuse an already bound revision ID.
+Referenced source stages and artifacts cannot be deleted.
+
+All existing-flow mutations use the store's atomic expected-revision predicate. Competing
+writers cannot silently overwrite one another. Nitrite/RocksDB has a single owning process;
+this is not replicated multiwriter storage. Native close/reopen tests do not prove production
+failover. Counts and UTF-8 payload bounds remain enforced.
+
+Coalescing seed content is copied from an authorized frozen candidate into new attachments
+when saved. It never mutates the prior candidate. Stage, cycle and round links survive reload;
+historical editorial and review views remain read-only. Conflicting edits retain local text.
+
+Closure retains the minimal digest and private outbox behavior described in
+`klab.core.services/REVIEW_ARCHIVE_PILOT.md`. A dirty/locked/unavailable project defers the local
+Git digest without undoing closure. No remote push occurs. Email delivery is still disabled;
+a persisted notification intent is not an editor inbox delivery.
+
+Real IdP login, real-account role/revocation propagation and production deployment remain
+separate acceptance gates. Automated HTTP/native/browser fixtures must not be presented as
+live authentication evidence. See the operator worksheet and staged-review verification note.

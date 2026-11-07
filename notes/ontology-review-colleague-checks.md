@@ -1,3 +1,5 @@
+Current staged pilot: follow [the participant guide](../ONTOLOGY_REVIEW_PILOT.md) and [staged review contract](../REVIEW_CYCLES_PILOT.md). Older evidence below describes its dated implementation checkpoint, not verification of the new stage revision.
+
 # Colleague pilot setup and real-auth acceptance
 
 Status: prepared for later use with existing colleagues; no designated test account is available.
@@ -51,7 +53,7 @@ Content-Type: application/json
 
 ```json
 {
-  "schemaId": "editing",
+  "schemaId": "bootstrap",
   "assetUrn": "pilot.ontology",
   "assetType": "ONTOLOGY",
   "permissionsOwnerUrn": "pilot.ontology",
@@ -59,10 +61,11 @@ Content-Type: application/json
 }
 ```
 
-Use the returned flow ID and its current editing state ID in
+The web UI also offers **Create private bootstrap**, with server-derived creation permission.
+Use the returned flow ID and its current bootstrap state ID in
 `<Resources-base>/ui/review?flow=<id>&stage=<id>`. The editor uses the explicit bootstrap action,
 checks the generated draft, saves a candidate and opens the desired rounds. From the selected
-iteration, copy the URL retaining `flow`, `cycle`, `round` (and any `stage` parameter). Participants
+iteration, copy the URL retaining its real `stage` ID along with `flow`, `cycle` and `round`. Do not share the private bootstrap URL with reviewers. Participants
 need no direct access to unrelated editing attachments; the narrow cycle artifact endpoint checks
 stage admission and the exact bound proposal/source. Never place an access token in the URL.
 
@@ -81,7 +84,12 @@ Use the actual deployment path. An HTTP 403/401 assertion in the synthetic fixtu
 | Reviewer A/B and community save/submit | Independent attributed drafts, submission shared only in admitted stage; editor sees submitted work | NOT RUN |
 | Contributor/proposal filters | Attribution and candidate revision remain clear; filtering never overwrites the editor's unsaved candidate | NOT RUN |
 | Two concurrent edits/close vs submission | One current-revision write wins; loser keeps local work for explicit refresh/retry; closure remains immutable | NOT RUN |
-| Integrated proposal and another cycle | New saved revision opens a distinct cycle; originals remain consultable | NOT RUN |
+| Creator bootstrap with unrelated editor/admin and public flag | Only creating editor with current grants can read/update bootstrap; no private catalog reference or generic API bypass | NOT RUN |
+| Create interrupted after server persistence | No blind repeat; reconcile current-account flows and open the saved bootstrap | NOT RUN |
+| Move to coalescing | Open rounds/cycle close atomically; new creator-owned editor stage is editable; historical stages remain immutable | NOT RUN |
+| Untouched coalescing seed | Termination is available without pretending the automatically loaded candidate is a user edit; return requires a saved local candidate | NOT RUN |
+| Integrated proposal and return to review | New saved revision opens a distinct cycle and review stages; originals remain consultable | NOT RUN |
+| Explicit termination and restart | Flow stays CLOSED, historical views read-only; no generic reopen, acceptance, application or publication | NOT RUN |
 | Reviewer grant removed, fresh credentials | After the site's revocation propagation takes effect, new peer reads/writes are denied, including direct API/artifact calls | NOT RUN |
 | Existing token/session after role removal | Behavior matches the recorded token/revocation policy; any continued old-token access is timed and reported, never claimed as immediate revocation | NOT RUN |
 | Session expiry/sign-out and stale browser view | Next protected requests fail; reauthentication restores only current authority; refresh clears denied shared content without redirecting private work | NOT RUN |

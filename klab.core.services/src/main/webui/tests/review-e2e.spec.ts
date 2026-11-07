@@ -12,7 +12,8 @@ test("four simulated principals review, integrate, close and restart through rea
   try {
     const [editor, alice, bob, citizen] = await Promise.all(contexts.map(c => c.newPage()));
     async function visit(page: Page, actor: string, cycle?: string, round?: string) {
-      await page.goto(`/tests/review-e2e.html?actor=${actor}&flow=${flow}&stage=${stage}${cycle ? `&cycle=${cycle}&round=${round}` : ""}`);
+      const routedStage = round ? (await view(actor)).cycles.find((c:any) => c.id === cycle).rounds.find((r:any) => r.id === round).stageId : stage;
+      await page.goto(`/tests/review-e2e.html?actor=${actor}&flow=${flow}&stage=${routedStage}${cycle ? `&cycle=${cycle}&round=${round}` : ""}`);
     }
     async function refresh(page: Page) {
       await page.getByRole("button", { name: "Refresh rounds", exact: true }).click();
@@ -26,7 +27,6 @@ test("four simulated principals review, integrate, close and restart through rea
     const original = JSON.parse(await editor.getByLabel("Candidate proposal JSON").inputValue());
     await editor.getByRole("button", { name: "Start cycle from selected proposal", exact: true }).click();
     await expect(editor.getByRole("button", { name: "Open reviewer round", exact: true })).toBeVisible();
-    await editor.getByRole("button", { name: "Open reviewer round", exact: true }).click();
     await expect(editor.getByLabel("Feedback iteration").locator("option")).toHaveCount(2);
     await editor.getByRole("button", { name: "Open community round", exact: true }).click();
     await expect(editor.getByLabel("Feedback iteration").locator("option")).toHaveCount(3);
@@ -68,25 +68,24 @@ test("four simulated principals review, integrate, close and restart through rea
     await editor.getByText("Alternative test-proposal", { exact: false }).click();
     await expect(editor.getByLabel("Proposal by reviewer-a", { exact: true })).toHaveValue(/test-r2-a/);
     await expect(editor.getByLabel("Candidate proposal JSON")).toHaveValue(/test-r1/);
-    await editor.getByRole("button", { name: "Close cycle", exact: true }).click();
+    await editor.getByRole("button", { name: "Coalesce feedback", exact: true }).click();
     await expect(editor.getByText("This cycle is closed and its history is immutable.", { exact: false })).toBeVisible();
     const frozen = (await view()).cycles[0];
     const integrated = structuredClone(original); integrated.proposal.revision_id = "test-r2-integrated";
     integrated.proposal.supersedes_revision = "test-r1"; integrated.proposal.title = "Integrated after peer and community feedback";
     await editor.getByLabel("Candidate proposal JSON").fill(JSON.stringify(integrated));
     await editor.getByRole("button", { name: "Save new draft attachment", exact: true }).click();
-    await expect(editor.getByLabel("Proposal attachment", { exact: true }).locator("option")).toHaveCount(3);
+    await expect(editor.getByLabel("Proposal attachment", { exact: true }).locator("option")).toHaveCount(2);
     await expect(editor.getByLabel("Candidate proposal JSON")).toHaveValue(/test-r2-integrated/);
-    await editor.getByRole("button", { name: "Start cycle from selected proposal", exact: true }).click();
+    await editor.getByRole("button", { name: "Return to peer review", exact: true }).click();
     await expect(editor.getByLabel("Feedback proposal").locator("option")).toHaveCount(2);
-    await editor.getByRole("button", { name: "Open reviewer round", exact: true }).click();
     state = await view(); const cycle2 = state.cycles[1], secondPeer = cycle2.rounds[0];
     await visit(alice, "reviewer-a", cycle2.id, secondPeer.id);
     await expect(alice.getByLabel("Candidate proposal JSON")).toHaveValue(/test-r2-integrated/);
     await alice.getByLabel("Your feedback", { exact: true }).fill("Second cycle review");
     await alice.getByRole("button", { name: "Submit feedback", exact: true }).click();
     await expect(alice.getByLabel("Your feedback", { exact: true })).toHaveValue("");
-    await refresh(editor); await editor.getByRole("button", { name: "Close cycle", exact: true }).click();
+    await refresh(editor); await editor.getByRole("button", { name: "Coalesce feedback", exact: true }).click();
     await expect(editor.getByText("This cycle is closed and its history is immutable.", { exact: false })).toBeVisible();
     expect((await view()).cycles[0]).toEqual(frozen);
     const unauthorized = await request.post(`${api}/api/v1/flows/${flow}/review-cycles`, {
@@ -102,6 +101,30 @@ test("four simulated principals review, integrate, close and restart through rea
     await expect(citizen.getByText("Reviewer A submitted feedback", { exact: true })).toHaveCount(0);
     await editor.reload(); await expect(editor.getByLabel("Feedback proposal").locator("option")).toHaveCount(2);
     await expect(editor.getByLabel("Candidate proposal JSON")).toHaveValue(/test-r2-integrated/);
+    const beforeTermination = await view();
+    expect(beforeTermination.phase).toBe("COALESCING");
+    const frozenCycles = structuredClone(beforeTermination.cycles);
+    // An unchanged automatic seed does not require saving or discarding to terminate.
+    await expect(editor.getByRole("button", { name: "Return to peer review", exact: true })).toBeDisabled();
+    await editor.getByRole("button", { name: "Terminate flow without publication", exact: true }).click();
+    await expect(editor.getByText("This flow is terminated.", { exact: false })).toBeVisible();
+    const terminated = await view();
+    expect(terminated.phase).toBe("TERMINATED");
+    expect(terminated.cycles).toEqual(frozenCycles);
+    expect(terminated.cycles[0]).toEqual(frozen);
+    expect(terminated.canOpenCycle).toBe(false); expect(terminated.canCoalesce).toBe(false);
+    expect(terminated.canTerminate).toBe(false); expect(terminated.canOpenRound).toBe(false);
+    await expect(editor.getByRole("button", { name: "Return to peer review", exact: true })).toHaveCount(0);
+    await expect(editor.getByRole("button", { name: "Terminate flow without publication", exact: true })).toHaveCount(0);
+    await editor.reload();
+    await expect(editor.getByText("This flow is terminated.", { exact: false })).toBeVisible();
+    await expect(editor.getByLabel("Candidate proposal JSON")).toHaveAttribute("readonly");
+    await editor.getByLabel("Stage", { exact: true }).selectOption(peer.stageId);
+    await expect(editor.getByText("Historical stage.", { exact: false })).toBeVisible();
+    await expect(editor.getByLabel("Candidate proposal JSON")).toHaveValue(/test-r1/);
+    await expect(editor.getByLabel("Candidate proposal JSON")).toHaveAttribute("readonly");
+    await expect(editor.getByRole("button", { name: "Save new draft attachment", exact: true })).toBeDisabled();
+    expect((await view()).cycles).toEqual(frozenCycles);
     const notice1 = await (await request.post(`${api}/fixture/notices`, { headers: { "X-Review-Fixture-Principal": "editor" } })).json();
     expect(notice1.replayed).toBeGreaterThan(0); expect(notice1.dispatched).toBeGreaterThan(0); expect(notice1.accepted).toBeGreaterThan(0);
     const notice2 = await (await request.post(`${api}/fixture/notices`, { headers: { "X-Review-Fixture-Principal": "editor" } })).json();
@@ -114,6 +137,7 @@ test("four simulated principals review, integrate, close and restart through rea
       peerContributors: ["reviewer-a", "reviewer-b"], communityContributors: ["community"],
       privateDraftIsolation: true, contributorAndProposalFilters: true, staleRevisionRecovery: true,
       immutableClosureAfterLaterCycleAndRestart: true, nativeStoreAndManagerRestarts: 1,
+      finalPhase: "TERMINATED", terminationIsNotPublication: true, historicalReadOnlyAfterTermination: true,
       fakeNotices: notice1, duplicateReplay: notice2, realMail: false, archiveDispatch: false,
     }, null, 2));
   } finally { await Promise.all(contexts.map(c => c.close())); }

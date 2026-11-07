@@ -67,7 +67,10 @@ class ReviewPilotBrowserScenarioIT {
       assertTrue(flow.getReviewCycles().stream().allMatch(c -> c.closedAt() != null)); assertEquals(1, restarts);
       assertTrue(manager.getReviewCycles(flow.getId(), actors.get("community")).cycles().stream()
           .flatMap(c -> c.rounds().stream()).allMatch(r -> r.audience() == ReviewCycles.Audience.COMMUNITY));
-      assertEquals(Flow.Status.ACTIVE, flow.getStatus(), "Closing review does not accept or publish ontology");
+      assertEquals(Flow.Status.CLOSED, flow.getStatus(), "Explicit termination closes the flow without publication");
+      assertTrue(flow.getCurrentStateIds().isEmpty());
+      assertTrue(flow.getStates().values().stream().anyMatch(s -> "terminated".equals(s.getSchemaId()) && s.getStatus() == Flow.StateStatus.CLOSED));
+      assertEquals(ReviewCycles.Phase.TERMINATED, manager.getReviewCycles(flow.getId(), fixture.editor).phase());
       // The same private flat-key/string ledger must survive the real Nitrite/RocksDB restart.
       try (var archives = new org.integratedmodelling.klab.resources.ReviewArchiveOutbox(directory.resolve("archive-replay"), 10)) {
         assertEquals(2, ReviewWorkflowArchives.replayCommitted(store, archives));

@@ -574,6 +574,7 @@ class WorkflowManagerAuthorizationTest {
     boolean failFlowWrites;
     int failAttachmentWriteAt = -1;
     int attachmentWrites;
+    int catalogWrites;
     private final Map<String, Workflow> workflows = new LinkedHashMap<>();
     private final Map<String, Flow> flows = new LinkedHashMap<>();
     final Map<String, byte[]> attachments = new LinkedHashMap<>();
@@ -651,6 +652,7 @@ class WorkflowManagerAuthorizationTest {
     @Override
     public boolean updateResourceInfoForFlow(
         Flow flow, ResourceInfo.Stage stage, int reviewStatus) {
+      catalogWrites++;
       return true;
     }
 

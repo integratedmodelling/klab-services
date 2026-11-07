@@ -1,3 +1,5 @@
+Current staged pilot: follow [the participant guide](../ONTOLOGY_REVIEW_PILOT.md) and [staged review contract](../REVIEW_CYCLES_PILOT.md). Older evidence below describes its dated implementation checkpoint, not verification of the new stage revision.
+
 # Ontology review pilot handoff
 
 Use an isolated Services checkout with the supplied bundle/patch and its delivery receipt.
@@ -69,7 +71,7 @@ and the exact remaining gates before a user-approved feature-branch push.
   Workflow roles alone do not grant service administration. Verify expiry/revocation and anonymous,
   unrelated-editor, peer-only and cross-stage denials through the actual login/filter/session path.
 - Configure the advertised Resources UI origin and authentication return route. Create an
-  ontology-review-pilot@0.2 flow through the existing editor/Resources createFlow API, using an
+  ontology-review-pilot@0.3 flow through the existing editor/Resources createFlow API, using an
   authorized ontology target. Enter `ui/review?flow=<id>&stage=<id>`; stable cycle/round parameters
   identify iterations. Bootstrap requires current read access to the ontology's server-owned host
   project and optional BOOTSTRAP.md.

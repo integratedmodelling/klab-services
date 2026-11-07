@@ -174,3 +174,19 @@ test("an unavailable cycle link requires an explicit admitted selection", async 
   await page.getByLabel("Feedback proposal").selectOption("cycle-1");
   await expect(page.getByText("Alice feedback", { exact: true })).toBeVisible();
 });
+
+test("real stage links select dedicated audience views and reject inaccessible stages", async ({page}) => {
+  await page.goto("/tests/review-rounds.html?flow=flow-1&stage=community-1&stages&overlap");
+  await expect(page.getByRole("heading", {name:"Peer review", exact:true}).first()).toBeVisible();
+  await expect(page.getByLabel("Feedback iteration")).toHaveValue("community-1");
+  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/"r1"/);
+  await page.getByLabel("Stage", {exact:true}).selectOption("public-1");
+  await expect(page.getByRole("heading", {name:"Community review", exact:true}).first()).toBeVisible();
+  await expect(page.getByLabel("Feedback iteration")).toHaveValue("public-1");
+  expect(page.url()).toContain("stage=public-1");
+  await page.reload();
+  await expect(page.getByLabel("Feedback iteration")).toHaveValue("public-1");
+  await page.goto("/tests/review-rounds.html?flow=flow-1&stage=denied-stage&stages");
+  await expect(page.getByText("The requested stage is unavailable",{exact:false})).toBeVisible();
+  await expect(page.getByLabel("Your feedback",{exact:true})).toHaveCount(0);
+});

@@ -16,6 +16,8 @@ final class ReviewCycleProtocol {
 
   static boolean editor(Flow flow, Workflow workflow, WorkflowParticipant actor) {
     if (!actor.isAuthenticated() || !actor.isWorkflowPermitted(workflow)) return false;
+    if (ReviewStageProtocol.enabled(workflow) && ReviewStageProtocol.phase(flow) == Phase.BOOTSTRAP
+        && !ReviewStageProtocol.creator(flow, actor)) return false;
     if (actor.getRoles().contains(WorkflowRole.ADMIN)) return true;
     return actor.getRoles().contains(WorkflowRole.EDITOR)
         && (Objects.equals(flow.getOwner(), actor.getIdentity()) || flow.getStates().values().stream()
@@ -41,7 +43,7 @@ final class ReviewCycleProtocol {
         var contributions = round.contributions().stream()
             .filter(c -> c.submitted() || Objects.equals(c.owner(), actor.getIdentity())).toList();
         rounds.add(new Round(round.id(), round.audience(), round.openedBy(), round.openedAt(),
-            round.closedAt(), contributions));
+            round.closedAt(), contributions, round.stageId()));
       }
       if (editor(flow, workflow, actor) || !rounds.isEmpty()) result.add(new Cycle(cycle.id(),
           cycle.sourceStateId(), cycle.sourceFlowRevision(), cycle.candidate(), cycle.openedBy(),
@@ -57,10 +59,16 @@ final class ReviewCycleProtocol {
 
   static void openCycle(Flow flow, Workflow workflow, WorkflowParticipant actor, String stateId,
       String proposalId, String ontologyId, java.util.function.Function<String, byte[]> payload) {
+    openCycle(flow, workflow, actor, stateId, proposalId, ontologyId, payload, Audience.REVIEWER);
+  }
+
+  static void openCycle(Flow flow, Workflow workflow, WorkflowParticipant actor, String stateId,
+      String proposalId, String ontologyId, java.util.function.Function<String, byte[]> payload, Audience audience) {
     requireEditor(flow, workflow, actor);
     if (flow.getReviewCycles().size() >= 256) fail("Review cycle limit reached");
     var state = flow.getStates().get(stateId);
     if (state == null) fail("A source stage is required");
+    ReviewStageProtocol.requireCycleSource(flow, workflow, actor, state);
     ProposalReview.Candidate candidate;
     if (proposalId != null) {
       if (state.getStatus() != Flow.StateStatus.OPEN || !flow.getCurrentStateIds().contains(stateId))
@@ -86,6 +94,12 @@ final class ReviewCycleProtocol {
     cycles.add(new Cycle(UUID.randomUUID().toString(), stateId, flow.getRevision(), candidate,
         actor.getIdentity(), now(), null, List.of()));
     flow.setReviewCycles(cycles);
+    ReviewStageProtocol.freezeSource(flow, workflow, state);
+    if (ReviewStageProtocol.enabled(workflow)) {
+      openRound(flow, workflow, actor, cycles.getLast().id(), audience == null ? Audience.REVIEWER : audience);
+      ReviewWorkflowNotifications.stage(flow, new Command(flow.getRevision(), Operation.OPEN_ROUND, null,
+          cycles.getLast().id(), null, audience, null, null, false));
+    }
   }
 
   static void openRound(Flow flow, Workflow workflow, WorkflowParticipant actor, String cycleId,
@@ -95,7 +109,8 @@ final class ReviewCycleProtocol {
     if (audience == null) fail("Review audience is required");
     if (cycle.rounds().size() >= 256) fail("Review round limit reached");
     var rounds = new ArrayList<>(cycle.rounds());
-    rounds.add(new Round(UUID.randomUUID().toString(), audience, actor.getIdentity(), now(), null, List.of()));
+    var stageId = ReviewStageProtocol.openRoundStage(flow, workflow, actor, cycle, audience);
+    rounds.add(new Round(UUID.randomUUID().toString(), audience, actor.getIdentity(), now(), null, List.of(), stageId));
     replace(flow, cycle, rounds, null);
   }
 
@@ -133,7 +148,7 @@ final class ReviewCycleProtocol {
     if (bytes > ProposalReview.MAX_STAGE_BYTES) fail("Review feedback aggregate size limit reached");
     var rounds = new ArrayList<>(cycle.rounds());
     rounds.set(rounds.indexOf(round), new Round(round.id(), round.audience(), round.openedBy(),
-        round.openedAt(), null, contributions));
+        round.openedAt(), null, contributions, round.stageId()));
     replace(flow, cycle, rounds, null);
   }
 
@@ -143,17 +158,22 @@ final class ReviewCycleProtocol {
     Instant now = now();
     var rounds = new ArrayList<>(cycle.rounds());
     if (roundId == null) {
-      rounds.replaceAll(r -> r.closedAt() == null ? closed(r, now) : r);
+      rounds.replaceAll(r -> {
+        if (r.closedAt() != null) return r;
+        ReviewStageProtocol.closeStage(flow, r.stageId());
+        return closed(r, now);
+      });
     } else {
       var round = round(cycle, roundId);
       if (round.closedAt() != null) fail("Review round is closed");
+      ReviewStageProtocol.closeStage(flow, round.stageId());
       rounds.set(rounds.indexOf(round), closed(round, now));
     }
     replace(flow, cycle, rounds, roundId == null ? now : null);
   }
 
   private static Round closed(Round round, Instant now) {
-    return new Round(round.id(), round.audience(), round.openedBy(), round.openedAt(), now, round.contributions());
+    return new Round(round.id(), round.audience(), round.openedBy(), round.openedAt(), now, round.contributions(), round.stageId());
   }
   static boolean references(Flow flow, String attachmentId) {
     return flow.getReviewCycles().stream().anyMatch(c -> c.candidate().proposal().attachmentId().equals(attachmentId)

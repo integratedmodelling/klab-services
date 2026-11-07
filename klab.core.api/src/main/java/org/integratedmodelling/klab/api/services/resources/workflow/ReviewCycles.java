@@ -8,7 +8,10 @@ import java.util.List;
 public final class ReviewCycles {
   private ReviewCycles() {}
   public enum Audience { REVIEWER, COMMUNITY }
-  public enum Operation { OPEN_CYCLE, OPEN_ROUND, SAVE_CONTRIBUTION, CLOSE_ROUND, CLOSE_CYCLE }
+  public enum Operation { OPEN_CYCLE, OPEN_ROUND, SAVE_CONTRIBUTION, CLOSE_ROUND, CLOSE_CYCLE, ENTER_COALESCING, TERMINATE }
+  public enum Phase { BOOTSTRAP, REVIEW, COALESCING, TERMINATED }
+  public record Stage(String id, String schemaId, String cycleId, String roundId, boolean open,
+      boolean canEdit, boolean canContribute) implements Serializable {}
   /** expectedRevision is mandatory; refresh and explicitly retry after a conflict. */
   public record Command(long expectedRevision, Operation operation, String sourceStateId,
       String cycleId, String roundId, Audience audience, String contributionId, String text,
@@ -33,9 +36,13 @@ public final class ReviewCycles {
     public ProposalSnapshot { actionIds = List.copyOf(actionIds); }
   }
   public record View(long revision, List<Cycle> cycles, boolean canManage, String identity,
-      List<String> contributableRoundIds) implements Serializable {
+      List<String> contributableRoundIds, Phase phase, String editableStageId, List<Stage> stages,
+      boolean canOpenCycle, boolean canCoalesce, boolean canTerminate, boolean canOpenRound) implements Serializable {
+    public View(long revision, List<Cycle> cycles, boolean canManage, String identity, List<String> rounds) {
+      this(revision, cycles, canManage, identity, rounds, null, null, List.of(), canManage, false, false, canManage);
+    }
     public View(long revision, List<Cycle> cycles) { this(revision, cycles, false, null, List.of()); }
-    public View { cycles = List.copyOf(cycles); contributableRoundIds = List.copyOf(contributableRoundIds); }
+    public View { cycles = List.copyOf(cycles); contributableRoundIds = List.copyOf(contributableRoundIds); stages = List.copyOf(stages); }
   }
   public record Contribution(String id, String owner, String text, boolean submitted,
       Instant updatedAt, ProposalSnapshot proposal) implements Serializable {
@@ -44,7 +51,10 @@ public final class ReviewCycles {
     }
   }
   public record Round(String id, Audience audience, String openedBy, Instant openedAt,
-      Instant closedAt, List<Contribution> contributions) implements Serializable {
+      Instant closedAt, List<Contribution> contributions, String stageId) implements Serializable {
+    public Round(String id, Audience audience, String openedBy, Instant openedAt, Instant closedAt, List<Contribution> contributions) {
+      this(id, audience, openedBy, openedAt, closedAt, contributions, null);
+    }
     public Round { contributions = List.copyOf(contributions); }
   }
   public record Cycle(String id, String sourceStateId, long sourceFlowRevision,

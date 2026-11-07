@@ -19,6 +19,13 @@ if (new URL(location.href).searchParams.has("overlap")) {
   view.cycles[0].rounds.push({ id: "public-1", audience: "COMMUNITY", contributions: [] });
   view.contributableRoundIds.push("public-1");
 }
+if (new URL(location.href).searchParams.has("stages")) {
+  view.phase = "REVIEW";
+  view.stages = view.cycles.flatMap(c => c.rounds.map(r => {
+    r.stageId = r.id;
+    return { id:r.id, schemaId:r.audience === "REVIEWER" ? "peer-review" : "community-review", cycleId:c.id, roundId:r.id, open:!r.closedAt, canEdit:false, canContribute:view.contributableRoundIds.includes(r.id) };
+  }));
+}
 const context = { api: {
   text: async (path: string) => {
     if (holdCandidates) await new Promise<void>(resolve => pendingCandidates.push(resolve));
