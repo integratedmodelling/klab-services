@@ -1,5 +1,11 @@
 # A+B completion ledger — ongoing campaign
 
+PR313 published9f85e775f:51explicit reviewedworkflows/219linked287missing across506,
+fresh5270SDK538reference traces/24controlsPASS. Parent312corrected01395fa76 CIrunning,
+not yetmerged. Both finalheadCI/ordinarydelivery/checkpoint owed; no functional/native/
+finalrow promotion. Next independent33boundarycontrols savedec98ed989 in additional
+ownedworktree; broader287review and finalcandidate reconciliation remain implementable.
+
 ## Reviewed operation assertions advance while corrected312 CI runs
 
 312corrected01395fa76 pushed; exactheadCIwatcher active, no merge. First47checks21FAIL
