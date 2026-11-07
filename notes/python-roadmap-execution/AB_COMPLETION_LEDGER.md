@@ -1,5 +1,82 @@
 # A+B completion ledger — ongoing campaign
 
+## PR294 hosted containment failure investigation
+
+Owned Linux300crash probe reproduced8Z->X consecutive state pairs. psutil maps
+XtoSTATUS_DEAD; existing test incorrectly recognized onlyZOMBIE/absent. Corrected
+testoracle acceptsDEADtoo, preserves live/stopped/waking refusal and adds explicit
+Z->X regression. Production containment/packagebytes unchanged. Original hosted raw
+state wasn't captured, so exactXatfailure remains retrospective hypothesis, not fact.
+Final installed72workerPASS and6publicworkerHTTPPASS in separate processes; initial
+platform-onlyconstant collection error and combined-worker/simulator isolation failure
+retained in investigationreceipt. No threshold/cleanupdeadline weakened. Exact newhead
+Linux/Windows3.11/3.13CI still needed before ordinary merge.
+
+PR294 OPEN currentheadb1ce04dd98c916a9c1c5dac7deeb9bfadbd93448.
+Initial hosted42390987841/job128458311008 Ubuntu3.13 crash-descendant cleanup
+failed56PASS/1FAIL in1.71s; failure log preserved privately and tracked investigation
+receipt records exact URL/source findings. Current-head Ubuntu3.13 passes but does
+not erase failure. No root cause classified or merge authorized by passing reruns.
+Polling observed terminal state before a separate assertion observed nonterminal
+state (suite1.71s is shorter than3s poll budget); PID reuse/kernel transition remains
+unproven. Bounded owned Linux crash stress running; production/test gates unchanged.
+Exact current-head CI watcher running. Python-only investigation, no live IDE gates.
+
+## PR293 verified merge; conditional source workflow begun
+
+Final fresh conditional-authoring-first installed4688SDK/359simulator/allreference-
+worker/39governance suitesPASS, zero skips/errors/failures.61SDK/28simulator/5worker
+source-wheel-sdist-installed rawmodule parity rechecked; SDK/worker contain no
+simulator modules. Entire newSDKmodule/allchangeddecisions100%unexcludedPASS;
+focused785/693/571/195/113/63controlsPASS,13fixture100%.17linkedcasesPASS
+(757SDK/236simulator/57worker) vs17nativeNOT_RUN/explicitexpectedexit3. Complete
+receipt evidence/full-roadmap-conditional-authoring-20261107.json preserves initial
+coverage/type corrections. Existing dependencies borrowed, no fresh isolation claim.
+Additional native ResourcesProvider source explicitly rejects PUBLISH of non-Resource
+assets; deferred source save/workspace validation is not this conditional namespace
+publication contract. Source receipt extended, no native management call performed.
+PR294 finalreceiptcommit/exactheadCI/ordinarymerge pending; no fullroadmap promotion.
+
+DraftPR294 publishede59b21fe7. Fresh unique conditional-authoring-first full artifact
+verifier and17linkedmatrix running; six installedfocusedCI batchesPASS (785provider/
+693selection/571material/195sharing/113validation/63conditional),13fixture100%.
+No final fullinstalled/PR acceptance yet. Source frozen since package build;
+native accepted-source publication remainsNOT_RUN/unestablished. Dependency
+inspection source review begun independently; no new dependency API implemented.
+
+Conditional source freeze now63SDKcontrolsPASS, whole newmodule/allchangedSDK
+100%unexcluded;6publicHTTP workflowsPASS including two independent same-owner
+editor races (one success, one409, exact winning source/hash/currentrevision) and
+lostpublicationreply lookup without replay.13supplementaryfixturecases100%PASS;
+bodymypy/fatal lint/48governance+queue controlsPASS. Initial56controls96.38%coverage
+expanded with actualbinding/privacy refusals to63/100%, no exclusions; initial3mypy
+optionalindex errors fixed using post-capability casts, not policy weakening.
+Public route/body/source/receipt configured-credential reflection refuses before
+transmission; contradictory VALID/Error receipts and wrongsource update refuse.
+NativeCAS-safe publication remainsunestablished; no new native management test
+fabricated. Existinggap0009/handoff/scenario/reproduction synchronized. Fresh
+uniquely named installed acceptance and ordinary authoring PR remain pending.
+
+PR293 remotely MERGED0376f97c4819086a11c30ebafe376cdf818cd1e6 at
+2026-11-07T16:00:36Z/exact213ae23f1d9ee43469b394cef377a89772bb3f5a,
+all25reported finalheadchecksPASS/no outstanding review requests. Actualmerge
+integrated on feat/python-conditional-authoring and queue checkpoint verifies remote
+state/local ancestry. Validation receipt records actual remote merge/checks;42original
+records/history preserved,34runnable/zero finaldispositions. No verifier/matrix/CI
+watcher remains running. Latest read-only issueinventory10open mainrepo plus separate
+geospatial#10OPEN; no issue closure or transferred genuine Java responsibility.
+
+Next RC-P4.4/CAP-14 implementation begun immediately: proposed advertised opt-in
+AcceptedDocuments/AsyncAcceptedDocuments, typed source revisions/knowledge/publication
+receipts; independent server-owned sourceCAS/validate/publish/catalog readback.
+4public sync/nativeasync HTTP workflowsPASS: update/read/sourceconflict, invalid
+diagnostics cannotpublish, published snapshot stable across edits, update invalidates
+validation, staleknowledge blocks publication until explicit revalidation, owner/root
+denial, lostpublishreply reconciles by readback without replay and owned cleanup.
+Finite namespace source literals, not native compilation/admission/publication.
+SDK-only/fixture coverage, hostile/race review, source/native boundary/governance/docs
+and fresh installed/ordinary PR acceptance remain pending; no new authoring PR yet.
+
 ## PR292 verified merge; revision-aware namespace validation underway
 
 Corrected source-validation-location-fixed full installed4625SDK/340simulator and

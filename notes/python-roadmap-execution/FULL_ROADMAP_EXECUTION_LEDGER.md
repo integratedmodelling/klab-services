@@ -1,5 +1,67 @@
 # Full Python A+B+C roadmap execution ledger
 
+## PR294 hosted worker failure retained, merge held
+
+Linux owned300crash stateprobe reproduces8Z->X transitions: zombie becomes dead
+duringreaping. psutilSTATUS_DEAD omitted by oldtestoracle. Corrected testonly plus
+live/stopped/waking negative controls and explicitZ->Xregression; no production/package
+bytechange. Exact originalhostedXstate not captured, cannot prove retrospectively.
+Final separate installed72worker/6publicHTTPPASS; platformconstant/mixedcollection
+failures retained. Final newheadLinux/Windows3.11/3.13matrix remains mergegate.
+
+Initial hosted run42390987841/job128458311008 Ubuntu3.13 failed crash descendant
+cleanup56PASS/1FAIL in1.71s. Currentheadb1ce04dd98c916a9c1c5dac7deeb9bfadbd93448
+Ubuntu3.13 passes, not clearance of earlier failure. Investigation receipt/log custody
+preserved; asynchronous POSIX group kill/test double-observation reviewed, root cause
+UNKNOWN. Bounded owned Linux state-trace probe and currentheadCI watcher running.
+No speculative production fix, weakened cleanup gate, native call or IDE repair.
+
+## Namespace validation delivery; immediate conditional-authoring implementation
+
+Conditional fresh installed4688SDK/359simulator/allreference-worker/39governance
+suitesPASS with zero skips/errors/failures;61SDK/28simulator/5worker rawmoduleparity.
+NewSDK/allchangeddecisions100%unexcluded;focused785/693/571/195/113/63controls
+and13fixture100%PASS.17linkedcasesPASS(757SDK/236simulator/57worker) vs17real
+NOT_RUN/expectedexit3. Receipt evidence/full-roadmap-conditional-authoring-20261107.json
+records custody and development coverage/type corrections. Borrowed dependencies,
+not fresh isolation. Additional pinned ResourcesProvider source rejects native
+PUBLISH for namespaces; deferred save/workspace validation isn't generic CAS-safe
+source publication. PR294 finalreceipt/exactheadCI/ordinarymerge still pending.
+
+DraftPR294 e59b21fe7 published. Fresh conditional-authoring-first full verifier and
+17linkedmatrix running; installedfocused785/693/571/195/113/63controls and13fixture
+100%PASS. Final fullinstalled/CI/ordinarymerge pending, source frozen after artifacts.
+No native source publication/ontology repair. Next dependency-closure source review
+has begun, not an implemented dependency API or campaign stopping point.
+
+Conditional source freeze63SDK/newmodule+changedcode100%unexcluded,6publicHTTP,
+13supplementaryfixture100%,bodymypy/fatallint/48governance+queue controlsPASS.
+Independent concurrent editorHTTP CAS yields one revision2/winner exactsource and
+one409, no silent overwrite. Lostpublicationreply lookup avoidsreplay. Credential
+route/source/body/receipt reflection, wrongsource update and contradictoryVALID/Error
+responses refuse. Initial56controls96.38%coverage expanded to63/100%with binding/
+privacy cases, no exemptions;3mypyoptionalindexes fixed by postcapability casts.
+NativeCRUD/MARK_PUBLISHED not claimed conditional sourceadmission; existinggap0009
+and generatedhandoff/reproduction synchronized. No nativepublicationtest fabricated.
+Fresh installed/fullacceptance/ordinaryPR pending, fullABC still incomplete.
+
+PR293 verified remotely MERGED0376f97c4819086a11c30ebafe376cdf818cd1e6,
+2026-11-07T16:00:36Z/exact213ae23f1d9ee43469b394cef377a89772bb3f5a/
+all25reported finalheadchecksPASS. Child feat/python-conditional-authoring integrated
+actualmerge and queue remote/local ancestry checkpoint.42originalrows/history
+preserved/34runnable/zero finaldispositions. All prior verifiers/matrices/watchers
+finished; read-only inventory10open mainrepo plus geospatial#10OPEN, no closure.
+
+Next RC-P4.4/CAP-14 implemented locally: opt-in advertised proposed conditional
+source update/read/validate/publish/referencecatalog APIs and independent server-owned
+document/knowledge CAS.4publicHTTP sync/nativeasync workflowsPASS for positive
+publication/readback, editor conflicts, failed validation/nonpublication, edits invalidate
+validation but do not rewrite prior publication, staleknowledge blocks publish until
+explicit revalidation, owner/root denial, lostreply readback without replay and cleanup.
+No native CAS-safe publication contract inferred from existing unconditional CRUD;
+ADD-only authoring/privateDraft APIs unchanged. SDK/fixture hostile coverage/review/
+native boundary/governance/docs/installed/ordinaryPR gates remain pending.
+
 ## Sharing merge checkpoint and immediate source-validation implementation
 
 Corrected installed4625SDK/340simulator/allreference-worker/39governance suites

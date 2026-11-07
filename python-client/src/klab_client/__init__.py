@@ -53,6 +53,7 @@ from klab_client.provider_data import ProviderData, ProviderDataJob, AsyncProvid
 from klab_client.selections import RelationshipSelection, ObservationPage
 from klab_client.shared_access import SharedAccess, AsyncSharedAccess, ReadGrant, AccessInspection, GrantInspection
 from klab_client.source_validation import SourceValidation, AsyncSourceValidation, SourceValidationReceipt, ValidationKnowledge
+from klab_client.accepted_documents import AcceptedDocuments, AsyncAcceptedDocuments, AuthoringKnowledge, DocumentRevision, DocumentPublication
 from klab_client.read_plan_analysis import ReadPlanAnalysis, analyze_read_plan
 from klab_client.managed_agents import (ManagedAgentReference, ManagedAgentStatus, create_managed_reference,
     read_managed_reference, command_managed_reference, async_create_managed_reference,
@@ -81,6 +82,7 @@ from klab_client.scan_slices import ScanSlice
 from klab_client.imports import ResourceImporter, AsyncResourceImporter, ImportFormat, ImportSubmission
 
 __all__ = [
+    "AcceptedDocuments", "AsyncAcceptedDocuments", "AuthoringKnowledge", "DocumentRevision", "DocumentPublication",
     "SourceValidation", "AsyncSourceValidation", "SourceValidationReceipt", "ValidationKnowledge",
     "SharedAccess", "AsyncSharedAccess", "ReadGrant", "AccessInspection", "GrantInspection",
     "RelationshipSelection", "ObservationPage",

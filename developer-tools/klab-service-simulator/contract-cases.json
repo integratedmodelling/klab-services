@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-CONDITIONAL-AUTHORING-001",
+      "rows": ["RC-P4.4", "CAP-14"],
+      "routes": ["/resources/experimental/accepted-documents/v1/knowledge", "/resources/experimental/accepted-documents/v1/documents/{name}", "/resources/experimental/accepted-documents/v1/documents/{name}/validate", "/resources/experimental/accepted-documents/v1/documents/{name}/publish", "/resources/experimental/accepted-documents/v1/publications/{name}"],
+      "source": "Explicitly proposed opt-in/advertised finite reference, not native unconditional CRUD or resource-info MARK_PUBLISHED. Server owns exact source revisions/hash, validation diagnostics/knowledge and atomic publication conditions, bounded history, independent reference publication snapshots and root cleanup. Eight literal namespace fixtures, no parser/compiler/executable admission/ontology synchronization. Public sync/nativeasync update/read/conflict/validate/publish/readback, invalid/stale source or knowledge nonpublication, owner/root denial and lost reply recovery without replay.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native CAS-safe accepted-source version/validation/publication contract remains unestablished",
+      "simulator_test": "test_accepted_documents.py::test_public_conditional_source_conflicts_validation_publication_and_owner_cleanup",
+      "java_gap_ids": ["JAVA-GAP-0009"]
+    },
+    {
       "id": "SIM-SOURCE-VALIDATION-001",
       "rows": ["RC-P4.2", "CAP-05"],
       "routes": ["/resources/parseAsset/NAMESPACE", "/reasoner/api/v1/validate/document", "/reasoner/public/capabilities"],

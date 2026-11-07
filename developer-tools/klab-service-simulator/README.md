@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario accepted-documents` exercises explicit opt-in/advertised conditional
+source CAS, finite server-owned validation, atomic knowledge/source publication
+conditions and independent reference snapshot readback. Eight literal namespaces,
+bounded ephemeral history/cleanup, no native compiler or real Resources catalog
+publication. Existing ADD-only authoring/private drafts are unchanged. See
+[conditional source reference](../../python-client/docs/conditional-authoring-reference.md).
+
 `--scenario source-validation` independently serves two literal namespace parser
 snapshots and existing Java-shaped Reasoner source diagnostics with source/version/
 revision identity checks. Test-only knowledge advance verifies stale refusal and

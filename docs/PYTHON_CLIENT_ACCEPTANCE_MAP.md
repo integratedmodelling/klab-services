@@ -1,5 +1,19 @@
 # Python roadmap acceptance map — 3 November 2026
 
+Conditional candidate PR294 fresh installed4688SDK/359simulator/allreference-worker-
+governance suitesPASS,61SDK/28simulator/5worker rawpackageparity.63SDK/newmodule/
+changedcode100%,6publicHTTP and13fixture100%PASS;17linkedcasesPASS vs17nativeNOT_RUN.
+Finalreceipt/exactheadCI/ordinarymerge pending. Native ResourcesProvider rejects
+namespace PUBLISH; reference conditional source publication is not native admission.
+
+PR293 verified MERGED0376f97c4/exact213ae23f1 at2026-11-07T16:00:36Z,
+all25reported finalheadchecksPASS. Active conditional-authoring child adds explicitly
+proposed advertised opt-in source/knowledge CAS, finite diagnostics/publication and
+independent reference readback;63SDK100%newmodule/changedcode,6publicHTTP and
+13fixture100%controlsPASS. Existing ADD-only/privateDraft contracts unchanged;
+native conditional namespace publication remains unestablished. Fresh installed/full
+acceptance and ordinary authoring PR pending; original42row histories untouched.
+
 PR293 namespace diagnostics candidate corrected installed4625SDK/340simulator/
 allreference-worker-governance suitesPASS;60SDK/27simulator/5worker rawmoduleparity.
 50SDK/2publicHTTP/12fixturecontrolsPASS;newmodule/changedcode100%unexcluded.

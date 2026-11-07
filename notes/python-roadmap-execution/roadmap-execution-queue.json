@@ -3,22 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-revision-aware-validation",
-    "pr": 293,
-    "requirement": "RC-P4.2",
-    "ci_review_dependencies": ["PR293 corrected diagnostic-location artifacts, exact final-head CI and ordinary permitted merge"]
+    "branch": "feat/python-conditional-authoring",
+    "pr": 294,
+    "requirement": "RC-P4.4",
+    "ci_review_dependencies": ["PR294 fresh installed full verification, exact final-head CI and ordinary permitted merge"]
   },
   "last_verified_checkpoint": {
-    "pr": 292,
-    "merge": "63e4f33c817caa45a8fef3f898fe27913f79372b",
-    "head": "32852ca9cd6b0951b0c8a341758f2358bdf8efaf",
-    "utc": "2026-11-07T15:39:22Z",
+    "pr": 293,
+    "merge": "0376f97c4819086a11c30ebafe376cdf818cd1e6",
+    "head": "213ae23f1d9ee43469b394cef377a89772bb3f5a",
+    "utc": "2026-11-07T16:00:36Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P4.2",
+  "next_actionable_requirement": "RC-P4.4",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "revision-aware-validation",
     "conditional-authoring",
     "dependency-inspection",
     "annotated-input-provenance",
@@ -793,8 +792,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: revision-aware-validation"
       },
       "simulator_support_needed": "Expose typed validation evidence pinned to source hash and knowledge service/worldview/revision; explicit revalidation after revision change, parser success distinct from semantic admission; independent finite validator fixture.",
-      "implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_INSTALLED_VERIFIED_PR293_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_DELIVERED_PR293",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_NAMESPACE_DIAGNOSTICS_AND_17LINKED_CASES_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -829,12 +828,20 @@
           "937c758b62743a0ab68e48792870a9261cf7cc87",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "validation_delivery": {
+          "pr": 293,
+          "head": "213ae23f1d9ee43469b394cef377a89772bb3f5a",
+          "merge": "0376f97c4819086a11c30ebafe376cdf818cd1e6",
+          "merged_at": "2026-11-07T16:00:36Z",
+          "final_head_checks": 25,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-source-validation-20261107.json"
+        }
       },
       "work_group": "revision-aware-validation",
       "priority": 3,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish typed source/version/knowledge validation diagnostics coverage and independent public HTTP workflows, native namespace-only plan/source custody/governance/installed artifacts/ordinary PR delivery; refuse ontology synchronization, never auto-retry or publish.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile full original-row integration acceptance; namespace source diagnostics delivered, ontology synchronization/native semantic/scientific authority remain separate gates.",
       "disposition": null
     },
     {
@@ -922,8 +929,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: revision-aware-validation"
       },
       "simulator_support_needed": "Expose typed validation evidence pinned to source hash and knowledge service/worldview/revision; explicit revalidation after revision change, parser success distinct from semantic admission; independent finite validator fixture.",
-      "implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_INSTALLED_VERIFIED_PR293_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_DELIVERED_PR293",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_NAMESPACE_DIAGNOSTICS_AND_17LINKED_CASES_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -953,12 +960,20 @@
           "1fd759605e45fb384a088a3f4b4e0d305b50605f",
           "2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "validation_delivery": {
+          "pr": 293,
+          "head": "213ae23f1d9ee43469b394cef377a89772bb3f5a",
+          "merge": "0376f97c4819086a11c30ebafe376cdf818cd1e6",
+          "merged_at": "2026-11-07T16:00:36Z",
+          "final_head_checks": 25,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-source-validation-20261107.json"
+        }
       },
       "work_group": "revision-aware-validation",
       "priority": 3,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish typed source/version/knowledge validation diagnostics coverage and independent public HTTP workflows, native namespace-only plan/source custody/governance/installed artifacts/ordinary PR delivery; refuse ontology synchronization, never auto-retry or publish.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile full original-row integration acceptance; namespace source diagnostics delivered, ontology synchronization/native semantic/scientific authority remain separate gates.",
       "disposition": null
     },
     {
@@ -1041,7 +1056,7 @@
         ]
       },
       "current_ledger_baseline": "PARTIAL native facades plus private draftCAS274/synthetic managed lifecycle277",
-      "remaining_implementation": "Implement opt-in reference accepted-document revision/update/validate/publish workflow with public SDK DTOs, CAS conflicts and permission checks; private draft CAS alone is insufficient; synthetic admission not Java compilation.",
+      "remaining_implementation": "Opt-in advertised conditional source update/validate/publish/readback implemented and source-tested; fresh installed full acceptance, exact-head CI and ordinary PR delivery pending. Native CAS-safe publication/semantic admission/retention remain separately unestablished, not inferred from finite reference.",
       "required_tests": {
         "existing_unit": [
           "python-client/tests/unit/test_agent_execution.py",
@@ -1062,7 +1077,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: conditional-authoring"
       },
       "simulator_support_needed": "Implement opt-in reference accepted-document revision/update/validate/publish workflow with public SDK DTOs, CAS conflicts and permission checks; private draft CAS alone is insufficient; synthetic admission not Java compilation.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "OPT_IN_CONDITIONAL_SOURCE_REFERENCE_INSTALLED_VERIFIED_PR294_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1103,14 +1118,14 @@
       },
       "work_group": "conditional-authoring",
       "priority": 4,
-      "task_state": "pending",
-      "next_executable_action": "Implement opt-in reference accepted-document revision/update/validate/publish workflow with public SDK DTOs, CAS conflicts and permission checks; private draft CAS alone is insufficient; synthetic admission not Java compilation.",
+      "task_state": "in_progress",
+      "next_executable_action": "Complete explicit advertised conditional source update/validate/publish/readback SDK and independent fixture with owner/source/knowledge CAS, conflict/recovery and cleanup; then installed/public acceptance and ordinary PR delivery. No native publication claim.",
       "disposition": null
     },
     {
       "id": "RC-P4.4",
       "original_requirement": "B authorized edit/publish/conflict",
-      "required_public_python_functionality": "Authoring/AsyncAuthoring.parse/create_workspace/create_project/create_document; ProjectLock/AsyncProjectLock.acquire/release",
+      "required_public_python_functionality": "Existing ADD-only Authoring/project locks plus explicit advertised opt-in AcceptedDocuments/AsyncAcceptedDocuments knowledge/read/update/validate/publish/published and immutable source/knowledge/publication receipts; server-owned source/knowledge CAS, not native unconditional UPDATE",
       "historical_audit": {
         "acceptance_id": "RC-P4.4",
         "original_requirement": "B authorized edit/publish/conflict",
@@ -1175,7 +1190,7 @@
         ]
       },
       "current_ledger_baseline": "PARTIAL ADD/locks plus delivered274 private draftCAS/history; native acceptance separate",
-      "remaining_implementation": "Implement opt-in reference accepted-document revision/update/validate/publish workflow with public SDK DTOs, CAS conflicts and permission checks; private draft CAS alone is insufficient; synthetic admission not Java compilation.",
+      "remaining_implementation": "Opt-in advertised conditional source update/validate/publish/readback implemented and source-tested; fresh installed full acceptance, exact-head CI and ordinary PR delivery pending. Native CAS-safe publication/semantic admission/retention remain separately unestablished, not inferred from finite reference.",
       "required_tests": {
         "existing_unit": [
           "python-client/tests/unit/test_authoring.py",
@@ -1194,7 +1209,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: conditional-authoring"
       },
       "simulator_support_needed": "Implement opt-in reference accepted-document revision/update/validate/publish workflow with public SDK DTOs, CAS conflicts and permission checks; private draft CAS alone is insufficient; synthetic admission not Java compilation.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "OPT_IN_CONDITIONAL_SOURCE_REFERENCE_INSTALLED_VERIFIED_PR294_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1227,8 +1242,8 @@
       },
       "work_group": "conditional-authoring",
       "priority": 4,
-      "task_state": "pending",
-      "next_executable_action": "Implement opt-in reference accepted-document revision/update/validate/publish workflow with public SDK DTOs, CAS conflicts and permission checks; private draft CAS alone is insufficient; synthetic admission not Java compilation.",
+      "task_state": "in_progress",
+      "next_executable_action": "Complete explicit advertised conditional source update/validate/publish/readback SDK and independent fixture with owner/source/knowledge CAS, conflict/recovery and cleanup; then installed/public acceptance and ordinary PR delivery. No native publication claim.",
       "disposition": null
     },
     {

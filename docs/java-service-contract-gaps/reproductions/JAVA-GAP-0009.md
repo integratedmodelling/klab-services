@@ -25,10 +25,10 @@ Source only: project lock ownership is principal-shared, not revision-fenced. Sp
 
 ## Independent simulator implementation and fixtures
 
-Existing ADD-only native source projections and principal-shared boolean locks remain separate. New explicit opt-in klab.experimental.drafts/1 private root-owner draft CAS retains8names/8versions, exact source/hash and UNVALIDATED_PRIVATE_DRAFT; stale writes409, evicted history410, bounded capacity429. SQLite restart/corruption validation/failed-save rollback/cleanup tested; no accepted-source editing, semantic validation, publication or execution substitute.
+Existing ADD-only native source projections and principal-shared boolean locks remain separate. Explicit opt-in klab.experimental.drafts/1 private root-owner draft CAS retains8names/8versions, exact source/hash and UNVALIDATED_PRIVATE_DRAFT; stale writes409, evicted history410, capacity429. Private draft SQLite restart/corruption/rollback/cleanup remains unvalidated, not accepted publication. Separate advertised acceptedDocumentProtocol reference now implements independent ephemeral source CAS, server-owned finite diagnostics and atomic source/knowledge-conditioned reference publication/catalog readback; edits invalidate validation but preserve old publication snapshots, stale source/knowledge and invalid diagnostics block publish, owner/root denial, lost reply readback without replay and cleanup. Eight declared literal namespaces, no native compiler, scientific admission, ontology repair or real Resources publication.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-PROJECT-LOCK-001, SIM-BEHAVIOR-DRAFT-001, SIM-INPUT-BINDING-001, SIM-REVISION-DRAFTS-001, SIM-NOTEBOOK-PRINCIPAL-RACE-001
+Scenarios: SIM-PROJECT-LOCK-001, SIM-BEHAVIOR-DRAFT-001, SIM-INPUT-BINDING-001, SIM-REVISION-DRAFTS-001, SIM-NOTEBOOK-PRINCIPAL-RACE-001, SIM-CONDITIONAL-AUTHORING-001
 
 Exact executable controls:
 
@@ -37,6 +37,9 @@ Exact executable controls:
 - `python-client/tests/unit/test_revision_drafts.py`
 - `developer-tools/klab-service-simulator/tests/test_revision_drafts.py`
 - `developer-tools/klab-service-simulator/tests/test_notebook_principal_races.py`
+- `python-client/tests/unit/test_accepted_documents.py`
+- `developer-tools/klab-service-simulator/tests/test_accepted_documents.py`
+- `developer-tools/klab-service-simulator/tests/test_accepted_document_fixture.py`
 
 ## Reproduction commands
 

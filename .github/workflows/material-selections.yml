@@ -23,7 +23,7 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
       - name: SDK-only typed planning, options and scope controls
-        run: python -m pytest -q python-client/tests/unit/test_source_validation.py python-client/tests/unit/test_shared_access.py python-client/tests/unit/test_material_selections.py python-client/tests/unit/test_selections.py python-client/tests/unit/test_typed_requests.py python-client/tests/unit/test_request_plan_acceptance.py python-client/tests/unit/test_scope_selection_guards.py python-client/tests/unit/test_client.py python-client/tests/unit/test_async_client.py --cov=klab_client --cov-branch --cov-report=json:material-sdk-coverage.json
+        run: python -m pytest -q python-client/tests/unit/test_accepted_documents.py python-client/tests/unit/test_source_validation.py python-client/tests/unit/test_shared_access.py python-client/tests/unit/test_material_selections.py python-client/tests/unit/test_selections.py python-client/tests/unit/test_typed_requests.py python-client/tests/unit/test_request_plan_acceptance.py python-client/tests/unit/test_scope_selection_guards.py python-client/tests/unit/test_client.py python-client/tests/unit/test_async_client.py --cov=klab_client --cov-branch --cov-report=json:material-sdk-coverage.json
       - name: Require all changed SDK code and whole existing request module unexcluded
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
