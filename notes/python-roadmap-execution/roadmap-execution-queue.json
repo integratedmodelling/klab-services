@@ -3,23 +3,22 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-integrated-onboarding-acceptance",
-    "pr": 307,
-    "requirement": "RC-P1.1",
+    "branch": "feat/python-integrated-restoration-acceptance",
+    "pr": 308,
+    "requirement": "RC-P1.2",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 306,
-    "merge": "a9faa8513e6a62b479be8b18a60e9e9aaa8c9f9c",
-    "head": "10caa5027b57126e579b62b9b66e21f8d968ab1c",
-    "utc": "2026-11-07T22:14:50Z",
+    "pr": 307,
+    "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
+    "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
+    "utc": "2026-11-07T22:23:23Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P0",
+  "next_actionable_requirement": "RC-P1.2",
   "pending_deliveries": [],
   "remaining_runnable_work": [
     "operation-workflow-attribution",
-    "onboarding-and-routing-acceptance",
     "restoration-lifecycle-acceptance",
     "notebook-integrated-acceptance",
     "multishard-scientific-acceptance",
@@ -479,8 +478,8 @@
         "new_acceptance": "Installed public onboarding/issued-token/Hub-certificate/profile renewal controls with expiry, provider failure, privacy and no silent identity/fallback drift; native issuer/license approval separate."
       },
       "simulator_support_needed": "Existing owned bootstrap/expiry/current-principal scenarios; no new provider inference from granular shared-read grants.",
-      "implementation_status": "CERTIFICATE_TOKEN_PROVIDERS_DELIVERED_INTEGRATED_ACCEPTANCE_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_PUBLIC_ONBOARDING_EXPIRY_EXPLICIT_PROVIDER_ROUTING_MATRIX_DELIVERED_PR307",
+      "simulator_acceptance_status": "190SDK_1ISOLATEDHTTP_18INDEPENDENTHTTP_CONTROLS_PASS_NATIVE_ISSUER_LICENSE_DEPLOYMENT_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -495,12 +494,21 @@
           "4ad3887cc6f5d4a816fc9aec5e0f170cfa5efcec",
           "188caeb47b86f2eb114cd6f557cf839df0eb10ee"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_onboarding_delivery": {
+          "pr": 307,
+          "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
+          "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
+          "merged_at": "2026-11-07T22:23:23Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-onboarding-installed-20261107.json"
+        }
       },
       "work_group": "onboarding-and-routing-acceptance",
       "priority": 15,
-      "task_state": "pending",
-      "next_executable_action": "Reverify installed certificate/token/profile renewal integration and record row-specific Python disposition separately from native production issuer/license approval; granular collaborator rights belong directly to RC-P1.3.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated packaging/compatibility acceptance; genuine issuer/license/rights and actual deployment/mixed-native-version approval remain external evidence, not loopback certificate or simulator acceptance.",
       "disposition": null
     },
     {
@@ -3550,8 +3558,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: onboarding-and-routing-acceptance"
       },
       "simulator_support_needed": "Run installed public onboarding/catalog/expiry/mixed-provider positive-negative scenarios and record Python completion separately from actual production issuer/license/deployment approval.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_PUBLIC_ONBOARDING_EXPIRY_EXPLICIT_PROVIDER_ROUTING_MATRIX_DELIVERED_PR307",
+      "simulator_acceptance_status": "190SDK_1ISOLATEDHTTP_18INDEPENDENTHTTP_CONTROLS_PASS_NATIVE_ISSUER_LICENSE_DEPLOYMENT_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -3566,12 +3574,21 @@
           "4ad3887cc6f5d4a816fc9aec5e0f170cfa5efcec",
           "188caeb47b86f2eb114cd6f557cf839df0eb10ee"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_onboarding_delivery": {
+          "pr": 307,
+          "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
+          "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
+          "merged_at": "2026-11-07T22:23:23Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-onboarding-installed-20261107.json"
+        }
       },
       "work_group": "onboarding-and-routing-acceptance",
       "priority": 15,
-      "task_state": "pending",
-      "next_executable_action": "Run installed public onboarding/catalog/expiry/mixed-provider positive-negative scenarios and record Python completion separately from actual production issuer/license/deployment approval.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated packaging/compatibility acceptance; genuine issuer/license/rights and actual deployment/mixed-native-version approval remain external evidence, not loopback certificate or simulator acceptance.",
       "disposition": null
     },
     {
@@ -3645,8 +3662,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: onboarding-and-routing-acceptance"
       },
       "simulator_support_needed": "Run installed public onboarding/catalog/expiry/mixed-provider positive-negative scenarios and record Python completion separately from actual production issuer/license/deployment approval.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_PUBLIC_ONBOARDING_EXPIRY_EXPLICIT_PROVIDER_ROUTING_MATRIX_DELIVERED_PR307",
+      "simulator_acceptance_status": "190SDK_1ISOLATEDHTTP_18INDEPENDENTHTTP_CONTROLS_PASS_NATIVE_ISSUER_LICENSE_DEPLOYMENT_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -3664,12 +3681,21 @@
           "188caeb47b86f2eb114cd6f557cf839df0eb10ee",
           "c491dbbff934e8192e4f04d5fb62c13cfb8cbfda"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_onboarding_delivery": {
+          "pr": 307,
+          "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
+          "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
+          "merged_at": "2026-11-07T22:23:23Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-onboarding-installed-20261107.json"
+        }
       },
       "work_group": "onboarding-and-routing-acceptance",
       "priority": 15,
-      "task_state": "pending",
-      "next_executable_action": "Run installed public onboarding/catalog/expiry/mixed-provider positive-negative scenarios and record Python completion separately from actual production issuer/license/deployment approval.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated packaging/compatibility acceptance; genuine issuer/license/rights and actual deployment/mixed-native-version approval remain external evidence, not loopback certificate or simulator acceptance.",
       "disposition": null
     },
     {
@@ -3740,8 +3766,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: onboarding-and-routing-acceptance"
       },
       "simulator_support_needed": "Run installed public onboarding/catalog/expiry/mixed-provider positive-negative scenarios and record Python completion separately from actual production issuer/license/deployment approval.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_PUBLIC_ONBOARDING_EXPIRY_EXPLICIT_PROVIDER_ROUTING_MATRIX_DELIVERED_PR307",
+      "simulator_acceptance_status": "190SDK_1ISOLATEDHTTP_18INDEPENDENTHTTP_CONTROLS_PASS_NATIVE_ISSUER_LICENSE_DEPLOYMENT_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -3756,12 +3782,21 @@
           "4ad3887cc6f5d4a816fc9aec5e0f170cfa5efcec",
           "188caeb47b86f2eb114cd6f557cf839df0eb10ee"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_onboarding_delivery": {
+          "pr": 307,
+          "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
+          "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
+          "merged_at": "2026-11-07T22:23:23Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-onboarding-installed-20261107.json"
+        }
       },
       "work_group": "onboarding-and-routing-acceptance",
       "priority": 15,
-      "task_state": "pending",
-      "next_executable_action": "Run installed public onboarding/catalog/expiry/mixed-provider positive-negative scenarios and record Python completion separately from actual production issuer/license/deployment approval.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated packaging/compatibility acceptance; genuine issuer/license/rights and actual deployment/mixed-native-version approval remain external evidence, not loopback certificate or simulator acceptance.",
       "disposition": null
     },
     {
@@ -3881,8 +3916,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: restoration-lifecycle-acceptance"
       },
       "simulator_support_needed": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INTEGRATED_RESTORATION_MATRIX453SDK32LIFECYCLEHTTP30PROVIDERHTTP_SOURCE_VERIFIED_DELIVERY_PENDING",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_RESTART_EXPIRY_CANCEL_IDENTITY_FENCING_PASS_NATIVE_RETENTION_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -3938,7 +3973,7 @@
       },
       "work_group": "restoration-lifecycle-acceptance",
       "priority": 16,
-      "task_state": "pending",
+      "task_state": "in_progress",
       "next_executable_action": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
       "disposition": null
     },
@@ -4051,8 +4086,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: restoration-lifecycle-acceptance"
       },
       "simulator_support_needed": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INTEGRATED_RESTORATION_MATRIX453SDK32LIFECYCLEHTTP30PROVIDERHTTP_SOURCE_VERIFIED_DELIVERY_PENDING",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_RESTART_EXPIRY_CANCEL_IDENTITY_FENCING_PASS_NATIVE_RETENTION_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -4105,7 +4140,7 @@
       },
       "work_group": "restoration-lifecycle-acceptance",
       "priority": 16,
-      "task_state": "pending",
+      "task_state": "in_progress",
       "next_executable_action": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
       "disposition": null
     },
@@ -4226,8 +4261,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: restoration-lifecycle-acceptance"
       },
       "simulator_support_needed": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INTEGRATED_RESTORATION_MATRIX453SDK32LIFECYCLEHTTP30PROVIDERHTTP_SOURCE_VERIFIED_DELIVERY_PENDING",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_RESTART_EXPIRY_CANCEL_IDENTITY_FENCING_PASS_NATIVE_RETENTION_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -4283,7 +4318,7 @@
       },
       "work_group": "restoration-lifecycle-acceptance",
       "priority": 16,
-      "task_state": "pending",
+      "task_state": "in_progress",
       "next_executable_action": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
       "disposition": null
     },

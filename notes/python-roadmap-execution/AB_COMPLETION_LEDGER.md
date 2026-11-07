@@ -1,5 +1,36 @@
 # A+B completion ledger — ongoing campaign
 
+308 final local receipt includes17linked simulatedPASS(1319SDK414sim116worker)
+vs17nativeREAL_NOT_RUN/expectedexit3.453/32/30matrix+onboarding190/1/18regression,
+20runner-recipe-HTTPcontrols/types-lint68governancequeueorderingPASS. No simulator
+services remain. FinalreceiptheadCI/ordinarymerge pending; native incarnation,
+retention/TTL/rights/deployment/science not promoted. Sourcefrozen for308delivery.
+
+Draft30873ad1de35 published with installed453/32/30restoration matrixPASS,
+onboarding190/1/18regression20runner-recipe-HTTPcontrols/types-lintPASS. Supplemental
+68governance/runner/queue/ordercontrolsPASS; stableJAVA-GAP-0004registry/handoff/
+reproduction synchronized without native retention promotion.47reviewedmaps459missing.
+17linkedmatrix stillrunning; finalreceipt-headCI/ordinarymerge pending. Sourcefrozen,
+no simulator services after lastcompleted matrix.307verifiedmerged/all19checksPASS.
+
+## PR307 verified merged; restoration/lifecycle matrix verified locally
+
+307MERGED0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0 at2026-11-07T22:23:23Z;
+exact4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6/all19checksPASS, remote/local ancestry
+checkpointverified.190SDK/1isolatedHTTP/18independentHTTP onboarding and13runnercontrols
+delivered without native issuer/license/deployment or final-row acceptance promotion.
+42originalIDs/history12runnable/zero finaldispositions preserved.
+
+Active feat/python-integrated-restoration-acceptance/noPR. Installed453SDKsaved-binding/
+32HTTPrestart-expiry-cancel/30HTTPprovider-selection-grant controlsPASS; shared-runner
+onboarding190/1/18regressionPASS.20runner/recipe/newHTTPcontrols/types-lintPASS. New
+optimized fresh asyncSDK-onlyprocess restores Context/Job/Observation after owned
+reference restart with no replay/creation/disposal/gainedownership; exact imports and
+knownreferencecells verified, explicit parentcleanup.47reviewedassertionmapped459missing
+across506; subprocessentry remains explicitly unmeasured by owning-thread tracer.
+Receipt integrated-restoration-installed-20261107.json; lastsimulator scanempty.
+HostedCI/ordinarydelivery pending, native incarnation/retention/TTL/deployment separate.
+
 PR307 published12c8ef11a with final onboarding support-pinned190SDK/1HTTP/18simHTTP
 receipt,13runnernegativecontrols/types-lintPASS;33reviewedmapped473missing assertions.
 Ready for final-head CI; ordinarymerge/checkpoint remain.306verifiedmerged/all19checks

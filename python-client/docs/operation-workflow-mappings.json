@@ -3,6 +3,24 @@
   "scope": "Explicit reviewed assertion descriptions; only linked passed trace scopes count as observed. Not native acceptance; all unlisted operations remain assertion-evidence missing.",
   "workflows": [
     {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_observation_selections.py::test_public_relationship_endpoints_collections_plan_foreign_denial_and_cleanup",
+      "operations": [["client.py", "Client.restore_handle"], ["async_client.py", "AsyncClient.restore_handle"], ["client.py", "Context.between"], ["client.py", "Context.within"], ["async_client.py", "AsyncContext.within"], ["client.py", "Context.observations"], ["async_client.py", "AsyncContext.observations"], ["handles.py", "Handle.loads"], ["handles.py", "Handle.dumps"], ["handles.py", "to_handle"]],
+      "assertions": "Public sync/async finite relationship selection preserves exact endpoints/planned-result association, bounded collection pages and selected context/observation/Job references through version2 roundtrip. Fresh current clients retain selection but gain no ownership; foreign principal attach and missing/self endpoints refuse, owner cleanup empties counts. Not native composed-twin, durable incarnation or retention authority."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_zero_deadline_preserves_job_without_submission_replay",
+      "operations": [["client.py", "Job.result"], ["client.py", "Job.cancel"]],
+      "assertions": "Zero-deadline local wait raises WaitTimeout carrying the same Job and preserves remote counts. Explicit cancel then yields JobCancelledError, while the uncancelled case returns exact reference data; both cases retain one submission and perform explicit owner cleanup. Timeout alone is not remote cancellation."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_async_concurrent_contexts_cancel_one_wait_and_resume_other",
+      "operations": [["async_client.py", "AsyncJob.result"], ["async_client.py", "AsyncJob.cancel"]],
+      "assertions": "Four owned async contexts submit independent Jobs; local timeout followed by explicit cancellation affects one Job only. Three other results retain distinct observation IDs and exact100/195 reference endpoints, with explicit owned cleanup. Not native scheduler/scientific/retention acceptance."
+    },
+    {
       "authority": "MOCK_HTTP_ONLY",
       "test_ref": "python-client/tests/unit/test_connection.py::test_provider_substitution_uses_same_client_and_origin_headers",
       "operations": [["connection.py", "connect"], ["connection.py", "Connection.client"], ["connection.py", "Connection.selected"], ["connection.py", "Connection.initialize_peers"], ["connection.py", "Connection.close"], ["credentials.py", "IssuedTokenProvider.acquire"], ["credentials.py", "HubCertificateProvider.acquire"]],

@@ -333,7 +333,7 @@
       "id": "SIM-DURABLE-RESTORE-001",
       "rows": ["RC-P1.2", "RC-P3.3", "CAP-07", "RC-P5", "CAP-17"],
       "routes": ["/runtime/api/v1/connect", "/runtime/jobs/{id}", "/runtime/experimental/worker/v1/tasks/{id}", "/runtime/experimental/worker/v1/tasks/{id}/recover"],
-      "source": "SIMULATED_PROVISIONAL explicitly owned SQLite checkpoint; not a native Java storage/retention/incarnation promise. Existing SDK routes unchanged; worker recovery endpoint is an explicit proposed protocol operation, Java route UNKNOWN_PENDING_REFERENCE.",
+      "source": "SIMULATED_PROVISIONAL explicitly owned SQLite checkpoint; not a native Java storage/retention/incarnation promise. Existing SDK routes unchanged; worker recovery endpoint is an explicit proposed protocol operation, Java route UNKNOWN_PENDING_REFERENCE. Supplemental optimized fresh async SDK-only process restores public Context/Job/Observation handles after same-identity owned reference restart; exact interpreter/imports/cells, no gained ownership/replay/creation/disposal, preserved counts and explicit current-parent cleanup. This separate subprocess workflow is unmeasured by owning-thread operation tracing, not native incarnation/TTL/durable history acceptance.",
       "confidence": "SIMULATED_PROVISIONAL",
       "java_status": "REAL_NOT_RUN; same native tuple/retention/lease semantics still NOT_TESTED",
       "simulator_test": "test_durable_recovery.py::test_owned_process_restart_restores_sdk_results_and_fences_uncertain_worker_output",

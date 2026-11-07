@@ -1,5 +1,17 @@
 # Resume the full Python A+B+C campaign
 
+Latest307MERGED0f50b3b52 at2026-11-07T22:23:23Z/exact4c21ec9ec/all19checksPASS,
+remote-localcheckpointverified.42originalIDs/history12runnable/zero dispositions.
+Current feat/python-integrated-restoration-acceptance/uncommittedsource/noPR.453SDK/
+32HTTPrestart-lifecycle/30HTTPprovider-selection-grantsPASS; sharedonboarding190/1/18
+regressionPASS;20runner-recipe-newHTTPcontrols/types-lintPASS. New optimizedfresh
+asyncSDK-only child restore after ownedreference restart verifies exactimports/cells,
+no replay/create/release/ownership; currentparentexplicitcleanup.47reviewedmapped459
+missing across506; no subprocess attribution invented. Receipt integrated-restoration-
+installed-20261107.json recorded; lastsimulatorscanempty. Need ordinary308delivery,
+then notebooks/scientificsnapshot/safety/packaging/release-readiness and RC-P0mapping.
+Native incarnation/retention/TTL/issuer/science/deployment/release gates remain distinct.
+
 Latest306MERGEDa9faa8513 at2026-11-07T22:14:50Z/exact10caa5027/all19checksPASS,
 remote-localcheckpointverified. All306watchersfinished; retained initial13vectorfailures/
 5230passed extraomission and correctedexplicitextrajobPASS. RC-P0partial reviewedmaps,

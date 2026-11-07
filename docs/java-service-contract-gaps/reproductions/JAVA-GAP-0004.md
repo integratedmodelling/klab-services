@@ -35,6 +35,7 @@ Exact executable controls:
 - `developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_expired_job_empty_status_is_not_confirmed_cancellation`
 - `developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state`
 - `developer-tools/klab-service-simulator/tests/test_durable_recovery.py`
+- `developer-tools/klab-service-simulator/tests/test_integrated_restore.py::test_fresh_async_sdk_only_process_restores_after_restart_without_replay_or_ownership`
 
 ## Reproduction commands
 
@@ -66,3 +67,4 @@ Original reproducer/evidence: python-client/docs/job-binding.md
 No new durable endpoint or retention promise inferred from version1 saved references or process-local binding. Publish authoritative lifetime/incarnation and owned restart fixture first.
 
 - https://github.com/integratedmodelling/klab-services/issues/89
+- python-client/docs/integrated-restoration-acceptance.md

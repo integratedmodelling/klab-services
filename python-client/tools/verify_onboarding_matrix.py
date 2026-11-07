@@ -22,7 +22,7 @@ GROUPS = {
 
 
 def support_snapshot():
-    paths = [ROOT / 'python-client/tools/verify_onboarding_matrix.py']
+    paths = list((ROOT / 'python-client/tools').glob('verify_*matrix.py'))
     for directory in ('python-client/tests', 'python-client/tools/workflows',
                       'developer-tools/klab-service-simulator/tests'):
         paths.extend((ROOT / directory).rglob('*.py'))
@@ -59,7 +59,7 @@ def verify_installed(receipt):
     return result
 
 
-def main(argv=None):
+def main(argv=None, *, groups=None, requirements=None, scope=None, matrix_name='onboarding-routing', external_gates=None):
     parser = argparse.ArgumentParser(description=__doc__)
     custody = parser.add_mutually_exclusive_group(required=True)
     custody.add_argument('--artifact-receipt', type=Path)
@@ -67,6 +67,16 @@ def main(argv=None):
                          help='Verify fresh installed module bytes against current checkout, not wheel/sdist custody')
     parser.add_argument('--output-directory', required=True, type=Path)
     args = parser.parse_args(argv)
+    selected_groups = GROUPS if groups is None else groups
+    if (not isinstance(selected_groups, dict) or not 1 <= len(selected_groups) <= 32
+            or any(not isinstance(name, str) or not 1 <= len(name) <= 80
+                   or not name.replace('-', '').replace('_', '').isascii()
+                   or not name.replace('-', '').replace('_', '').isalnum()
+                   or not isinstance(tests, list) or not 1 <= len(tests) <= 256
+                   or any(not isinstance(test, str) or not test.endswith('.py')
+                          or not (ROOT / test).resolve().is_relative_to(ROOT.resolve()) for test in tests)
+                   for name, tests in selected_groups.items())):
+        raise ValueError('Explicit nonempty bounded repository test groups required')
     if args.capture_current_source:
         packages = {'sdk': 'python-client', 'simulator': 'developer-tools/klab-service-simulator',
                     'worker': 'python-worker'}
@@ -80,7 +90,7 @@ def main(argv=None):
         raw_receipt = args.artifact_receipt.read_bytes()
     installed = verify_installed(json.loads(raw_receipt))
     test_hashes = {test: hashlib.sha256((ROOT / test).read_bytes()).hexdigest()
-                   for tests in GROUPS.values() for test in tests}
+                   for tests in selected_groups.values() for test in tests}
     support_hashes = support_snapshot()
     # Do not overwrite failed development evidence or reuse an earlier green run.
     args.output_directory.mkdir(parents=True, exist_ok=False)
@@ -89,7 +99,7 @@ def main(argv=None):
     env['PYTHONPATH'] = os.pathsep.join([str(ROOT / 'python-client/tools'),
                                        *(str(Path(info['path']).parent) for info in installed.values())])
     results = {}
-    for name, tests in GROUPS.items():
+    for name, tests in selected_groups.items():
         try:
             result = subprocess.run([sys.executable, '-m', 'pytest', '-q', *tests,
                                      '--junitxml=' + str(output / (name + '.xml')), '--tb=short',
@@ -100,10 +110,10 @@ def main(argv=None):
             chunks = [value.decode('utf-8', 'replace') if isinstance(value, bytes) else value or ''
                       for value in (error.stdout, error.stderr)]
             (output / (name + '.log')).write_text(''.join(chunks), encoding='utf-8')
-            raise ValueError('Onboarding group harness timeout; partial evidence retained: ' + name) from None
+            raise ValueError('Acceptance group harness timeout; partial evidence retained: ' + name) from None
         (output / (name + '.log')).write_text(result.stdout + result.stderr, encoding='utf-8')
         if result.returncode != 0:
-            raise ValueError('Onboarding group failed; local diagnostic evidence retained: ' + name)
+            raise ValueError('Acceptance group failed; local diagnostic evidence retained: ' + name)
         results[name] = suite_counts(output / (name + '.xml'))
         print(name, json.dumps(results[name], sort_keys=True), flush=True)
     # A child run must not mutate the installation being accepted.
@@ -115,16 +125,19 @@ def main(argv=None):
         raise ValueError('Test/support/runner source bytes changed during verification')
     receipt = {
         'version': 1, 'verified_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        'requirements': ['RC-P1.1', 'RC-P1.4', 'CAP-01', 'CAP-02'], 'groups': results,
+        'matrix': matrix_name,
+        'requirements': ['RC-P1.1', 'RC-P1.4', 'CAP-01', 'CAP-02'] if requirements is None else requirements,
+        'groups': results,
         'artifact_receipt_sha256': hashlib.sha256(raw_receipt).hexdigest(), 'installed': installed,
         'artifact_receipt_kind': json.loads(raw_receipt).get('evidence', 'EXPLICIT_PRIOR_ARTIFACT_RECEIPT'),
         'test_sha256': test_hashes,
         'support_source_sha256': support_hashes,
-        'python_acceptance': 'INSTALLED_PUBLIC_ONBOARDING_EXPIRY_PROVIDER_ROUTING_CONTROLS_PASS',
+        'python_acceptance': 'INSTALLED_PUBLIC_MATRIX_CONTROLS_PASS_NOT_NATIVE_ACCEPTANCE',
         'native_issuer_license_deployment': 'REAL_NOT_RUN_EXTERNAL_APPROVAL_REQUIRED',
         'scientific_acceptance': False, 'final_original_row_acceptance': False,
         'dependency_custody': 'Explicit installed package bytes; existing dependencies, not fresh dependency isolation',
-        'scope': 'Mock-wire certificate/token substitution, isolated local HTTP certificate exchange/origin boundaries, '
+        'external_gates': ['Native issuer/license/production rights/deployment'] if external_gates is None else external_gates,
+        'scope': scope or 'Mock-wire certificate/token substitution, isolated local HTTP certificate exchange/origin boundaries, '
                  'independent owned HTTP expiry/principal/identity/outage/recovery and no-replay workflows. '
                  'No native Hub, IDE, genuine issuer/license approval or production deployment inferred.'}
     with (output / 'receipt.json').open('x', encoding='utf-8') as stream:
