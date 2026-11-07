@@ -1,5 +1,9 @@
 # A+B completion ledger — ongoing campaign
 
+PR311 published832982cdd installedsafety587/2/31PASS37controls/types-lintPASS;
+60reviewedmaps446missing. Ready for exact-headCI, ordinarymerge/checkpoint owed.
+310CIpending;309verifiedmerge/all39PASS. Continue packaging/release-readiness.
+
 Final safety installed587SDK/2isolated/31HTTPPASS, zero failures/errors/skips;
 37sharedrecipe/exactchild/queue-ordercontrols/types-fatallintPASS. Fresh SDK-only
 optionalimport/socketblocked snapshot verifies precision/missingness/order/origin,
