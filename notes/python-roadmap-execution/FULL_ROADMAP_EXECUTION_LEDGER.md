@@ -1,5 +1,19 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Renewed self-contained directive reconciliation
+
+The renewed directive retains complete A+B+C scope and the permanent seeded handoff.
+Seed text already installed; reconciled against17actual records without replacing
+original0001–0016or historical42row statuses. Native totals unchanged:
+2CONFIRMED_DEFECT/3MISSING_API/7CONTRACT_PROVISIONAL/5NOT_TESTED/0JAVA_FIXED_VERIFIED.
+Live GitHub recheck confirms265MERGED8fe0f449c and266MERGEDeda8697da;279OPEN
+head9ea9d7dcb targetsfeature/python-experiment-runner. ExistingSDKpinfix remains
+uncommitted; verifier sh_1b3ea7921001vW21P7pgLPS13o awaits automatic completion,
+no polling/overwriting. Reconciliation commit precedes correction delivery; no SDK
+acceptance inferred from documentation. No liveIDEgate needed; retain recorded
+2026-11-06T14:20:57Z. Next verify corrected installed artifacts/SDKcoverage/17cases,
+push279correction/finalCI, then continue remaining independently executable rows.
+
 ## Current authority, scope and recovery
 
 Active directive: user's self-contained **Single OpenCode directive: complete Python
@@ -630,6 +644,33 @@ Bootstrap final17linkedcasesPASS(317SDK/127simulator-capture-reference/57worker)
 zero skips/errors/failures;17realNOT_RUN/exit3unchanged. Bounded existingSDKacceptance
 verified locally; publish ordinaryPR now, require dedicatedWindows+Ubuntu and all
 applicable finalheadchecks before permittedmerge. No realissuer/federation approval.
+Bootstrap normalPR279 published9ea9d7dcb; hostedUbuntu installedbootstrap failed
+run42330659337/job128276182622 and simulator3.13failed run42330659347/job128276183029.
+Fast failed probe completes onLinux, replaces selected CatalogEntry with service_id
+None; same-ID recovery then falsely triggers ConnectionIdentityError. Windows's
+deadline-expired path had preserved old pin, masking this SDK defect in local passes.
+No unchanged rerun or test weakening can fix it. Added4deterministic SDK-only red
+regressions (transport/503 × capabilities/status), all4FAILED on lostUUID assertion
+before production fix. Correction retains previousverifiedUUID only for same
+selectedURL on failed probe, leaving failed/unknown readiness; failedunselectedURL
+cannot inherit anotherRuntime'sUUID. Genuine changedID stillstale/refuses. New
+fifth regression tests failedstandby noninheritance. Focused32connectiontests+
+10ownedbootstrapHTTPtestsPASS afterfix, unchanged production deadlines/retry/guards.
+This pass is no longer test-only: earlier emptyproductiondiff/N/Anewmodule claims
+apply ONLY to initial9ea9d7dcb/artifacts. New code is an existing SDK modulefix,
+not a newmodule; require SDK-only changeddecisions AND wholeexistingconnectionmodule
+100%unexcluded coverage. Fresh rebuilt artifacts/fullregressions/17cases required
+in a NEW `bootstrap-recovery-pin-fix` target; never relabel earlier Windows-only
+passing artifacts as finalfix. PR279staysOPEN until corrected finalhead checksPASS.
+Corrected Connection bodytypecheck initially exposed3existing inference gaps
+(secret iterators/by_key), thenTransport.sensitive_values emptytuple inference.
+Added concrete tuple[str,...]annotations in Connection/Transport and typed
+ServiceReference catalogdictionary/import, no typeignore/castAny suppression or
+behavioral transportchange. Implementation-bodymypy/fatalLint nowPASS. Dedicated
+Windows+Ubuntu workflow also runs32SDKconnectiontests/bodytypecheck and triggers
+on future Connection/test changes. Fresh `bootstrap-recovery-pin-fix` fullpackage
+verifier started; previous initialartifact receipt retained unchanged attribution.
+Same0015registry links deterministic5SDKregressions; native statuses not promoted.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
