@@ -2,6 +2,14 @@
 
 ## PR292 verified merge; revision-aware namespace validation underway
 
+DraftPR293 publishedd1e8cd511. Source review found the declared fixture's Error
+offset37was one character before actual token38. Corrected to38 and added independent
+public sync/nativeasync source-span slicing assertions plus supplementary regression;
+14HTTP+fixturecontrolsPASS. Initial source-validation-first artifacts/matrix are
+SUPERSEDED; retain their results, do not claim them final. Newly named
+source-validation-location-fixed full verifier running, no installed-target overwrite.
+SDK behavior/native source contract unchanged; no weakened diagnostic assertions.
+
 Validation source frozen; fresh unique source-validation-first full verifier and
 17linkedmatrix running. Installed focusedCI722provider/630selection/508material/
 132sharing/50validation controlsPASS with unchanged newmodule/changedSDKgates;

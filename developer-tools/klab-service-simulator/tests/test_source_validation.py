@@ -34,6 +34,8 @@ def test_public_parse_semantic_diagnostics_and_explicit_revision_revalidation(na
                 invalid=await previews.parse(BAD)
                 diagnostic=await validator.validate(invalid,document_version='edit-2',expected_revision=1)
                 assert diagnostic.raw['notifications'][0]['level']=='Error'
+                location=diagnostic.raw['notifications'][0]['lexicalContext']
+                assert BAD[location['offsetInDocument']:location['offsetInDocument']+location['length']]=='synthetic:Unknown'
                 assert diagnostic.parser_source_sha256 != good.parser_source_sha256
                 assert parsed.source_sha256==good.source_sha256
                 advance(ready)
@@ -50,6 +52,8 @@ def test_public_parse_semantic_diagnostics_and_explicit_revision_revalidation(na
                 invalid=previews.parse(BAD)
                 diagnostic=validator.validate(invalid,document_version='edit-2',expected_revision=1)
                 assert diagnostic.raw['notifications'][0]['level']=='Error'
+                location=diagnostic.raw['notifications'][0]['lexicalContext']
+                assert BAD[location['offsetInDocument']:location['offsetInDocument']+location['length']]=='synthetic:Unknown'
                 assert diagnostic.parser_source_sha256!=good.parser_source_sha256
                 advance(ready)
                 with pytest.raises(StaleKnowledgeError): validator.validate(parsed,document_version='edit-1',expected_revision=1)

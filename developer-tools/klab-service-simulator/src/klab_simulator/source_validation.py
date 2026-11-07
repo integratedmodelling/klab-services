@@ -48,5 +48,5 @@ def respond(state, service, method, route, principal, data, body):
         **capabilities(state),'executableModels':False,'classifierPreparableDependencies':False,
         'executionContext':None,'preparableMemberQualityDependencies':[],
         'notifications':[] if stale or source == SOURCE else [{'level':'Error','message':'Declared synthetic unknown semantic',
-            'lexicalContext':{'documentUrn':URN,'offsetInDocument':37,'length':17}}],
+            'lexicalContext':{'documentUrn':URN,'offsetInDocument':38,'length':17}}],
         'reason':'Independent finite reference, not native semantic admission'},'application/json'

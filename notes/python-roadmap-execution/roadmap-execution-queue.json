@@ -4,9 +4,9 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-revision-aware-validation",
-    "pr": null,
+    "pr": 293,
     "requirement": "RC-P4.2",
-    "ci_review_dependencies": []
+    "ci_review_dependencies": ["PR293 corrected diagnostic-location artifacts, exact final-head CI and ordinary permitted merge"]
   },
   "last_verified_checkpoint": {
     "pr": 292,

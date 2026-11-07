@@ -21,6 +21,9 @@ def test_literal_parse_and_revision_outcomes_do_not_allocate_assets():
         parsed=call(state,service='resources',route='/parseAsset/NAMESPACE',body=source.encode())[0]
         result=call(state,data={**request(state),'namespace':parsed})[0]
         assert result['status']=='COMPLETE' and bool(result['notifications'])==(source==BAD_SOURCE)
+        if source==BAD_SOURCE:
+            location=result['notifications'][0]['lexicalContext']
+            assert source[location['offsetInDocument']:location['offsetInDocument']+location['length']]=='synthetic:Unknown'
     stale=call(state,data={**request(state),'knowledgeRevision':0})[0]
     assert stale['status']=='STALE_KNOWLEDGE' and stale['notifications']==[]
     assert capabilities(state)['knowledgeRevision']==1

@@ -2,6 +2,13 @@
 
 ## Sharing merge checkpoint and immediate source-validation implementation
 
+DraftPR293 d1e8cd511. Review caught synthetic diagnostic offset37instead of38;
+corrected fixture, publicHTTP independent exact token/span oracle and supplemental
+regression14controlsPASS. Initial source-validation-first artifacts/matrix marked
+SUPERSEDED; preserve failures/results, no final acceptance. New unique
+source-validation-location-fixed full verifier running. SDK/native DTO unchanged,
+no reused installed target or weakened source-position assertion.
+
 Validation source freeze; source-validation-first uniquely named full artifact
 verification and17linkedmatrix running. Installed focusedCI722/630/508/132/50
 controlsPASS, all unchanged newmodule/changedSDKgates;12supplementaryfixture100%.

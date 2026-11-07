@@ -36,3 +36,9 @@ coverage without exclusions. Five installed focusedCI batchesPASS:722provider,
 630selection,508material,132sharing,50validation;12installedfixture100%.
 Fresh full regression/artifact verifier and17linkedmatrix running separately;
 ordinary PR, exact final-headCI and permitted merge remain delivery gates.
+
+Final review found declared Error offset37off by one; independent source slicing
+requires38to select synthetic:Unknown. Corrected fixture plus both publicHTTP and
+supplemental token/span assertions14controlsPASS. First source-validation-first
+artifact candidate is superseded; new source-validation-location-fixed verification
+is required, without overwriting old reports or weakening diagnostic expectations.
