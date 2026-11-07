@@ -1,5 +1,73 @@
 # A+B completion ledger — ongoing campaign
 
+## PR296 verified merged; annotated-input provenance source pass
+
+Finalsameartifact diagnostic390simulatorPASSin233.376s (zero skips/errors/failures),
+39governance/fatallint/workercoverage/custodyPASS. Original240stotalrunner timeout
+retained; diagnosticbelowoldceiling, so originalexactroot/stoppingtest remainsUNKNOWN,
+not a productionfix/flakeclaim. Guarded16632/50032/ownedconhost47016cleanupverified;
+finalcreate-time-qualified survivorsnone/current simulatorservicesnone, unrelated
+services/terminals untouched. Final4862SDK/390sim/72worker/allreference-governancePASS;
+64SDK/31simulator/5worker rawsource-wheel-sdist-installed parity/no simulatorinSDKworker.
+17linkedPASS(930SDK/267simulator/72worker)vs17nativeNOT_RUN/expectedexit3. FullSDK
+100%unexcluded newmodule+changedcodegatePASS. Receiptcomplete, PR297finalreceiptcommit/
+exactheadCI/ordinarymergepending. Nextcommitinspectiondraft11designprobesPASSoutside
+shippedpackages, not installed/native/convergenceacceptance; no campaign stoppinggate.
+
+PR297draft1206906e8mergeheld: originalfullinstalledSDK4862/allreference/72worker/
+21workerHTTPPASS, but complete simulator batch exceeded240s runnerceiling. Prior
+PR296batch387tests236.835s plus newworkflow8.61s supports insufficient totalsuite
+budget hypothesis; original wrapper didn't preserve partialstdout, exactstoppingtest
+unknown. Failure retained pr297-full-suite-runner-timeout.json. Sameinstalledartifact
+diagnostic fullbatch uses480s runner-onlyceiling/streamedlogs/faulthandler90; product
+wait/assertion/skip/exclusion unchanged. Initialcleanup exactdescendants guard found
+extra conhost47016 and refused before killing; read-only tree confirmed ownedparent
+16632/deadpytestparent46176/testPython50032. Finalscope includes provenownedconsole
+only, recoveryattempt2 distinctdirectory.17linkedcasesPASSvs17nativeNOT_RUN;
+9focusedgates/orderedselection do not replace fullbatchrecovery. No mergeclearance.
+
+DraftPR297 published1206906e8; sourcefrozen after packagebuilds. Fullinstalled
+artifactverifier+17linkedmatrix+CIwatcher running. NineinstalledfocusedCIgates/
+actualorderedselectionPASS;55SDK100%/2publicHTTP/18fixture100%/types-lint-49governance
+PASS. No finalfullinstalled/exactheadCI/mergeclearance claimed yet. Next independent
+reference-commit-convergence source review only; no native scientific commit inferred.
+
+NineinstalledfocusedCIgatesPASS:older785/693/571/195/113/63append173controls,
+membership34append139,graph84append55,input55dedicated;18fixturecases100%.
+Actualorderedselection693SDK/173append/6HTTP/21fixture+unchanged100%gatePASS.
+Combinedshell120sbudget expired afterfocusedPASS/orderedfirst2steps; partiallogs
+retained and uniqueattempt2 completed actualordering with unchanged producttimeouts.
+No orderedhelperprocess remained at check. Fullartifactverifier+17linkedmatrix running.
+
+Source gates now55SDK100%unexcluded newmodule/allchangedSDK,2actualpublicHTTP
+workflows with explicit selected actuator+requirements, fresh queryinput, distinct
+binary/manifest/annotation hashes, serverBobborrowed-job denial/rootrefusal and400cell
+recordedoracle/cleanupPASS.18supplementaryfixturecases cover derivedmanifest+entire
+graphmodule100%;bodymypy/fatallintPASS. CanonicalResolverdataflow decoder restriction
+developmentfailure corrected after actualpublic workflow exposed mapping-only mock;
+result kinds now faithful, bindings unchanged. Full freshartifactverification next;
+no annotatedPR or native/scientificacceptance. Review retains all initial failures.
+
+PR296 remotely MERGED a17f8c3fe2479441625a62db0e530f3dfb1788d1 at
+2026-11-07T17:37:30Z, exact head ffd3fb185d26b10fd243b85cef86f5e11c7b8c55,
+all28reported final-head checksPASS. Actual merge integrated; remote/local ancestry
+checkpoint verified. Graph receipt records delivery, not native/full-row acceptance.
+Queue preserves42original rows/history,30runnable/zero final dispositions; RC-P4.3
+active on feat/python-annotated-input-provenance. No CI watcher/verifier remains.
+
+Initial InputProvenance/nativeasync source implementation joins explicit completed
+upload, CREATE acknowledgment from ADD namespace, exact source, completed selected
+plan, current queried observation input and opt-in source-bound graph. Independent
+annotated-input fixture derives manifest from owned uploaded binary/source state;
+binary hash and manifest/source hash are distinct.2public sync/async workflowsPASS
+including authentic recorded400cell reads, altered binary/source refusal and cleanup.
+Development errors retained: initial exact context-object test rejected legitimate
+focused wrapper; replaced with same client/root and handle checks, not weaker owner
+authority. Import Job returns rawdict, not ResourceSet DTO; corrected public boundary.
+Initial bodymypy found base attribute/job narrowing issues; corrections under review.
+No new PR/installed verification; hostile/security/coverage/body/regression gates remain.
+Native annotation/update/deletion/scientific lineage not invented or accepted.
+
 ## PR295 verified merge; full finite graph reference implemented, acceptance pending
 
 Finalraw63SDK/30simulator/5worker source-wheel-sdist-installedmodule parity

@@ -1,0 +1,16 @@
+{
+  "pr": 297,
+  "state": "FAILURE_RETAINED_SAME_ARTIFACT_FULL_BATCH_DIAGNOSTIC_PASS_FINAL_HEAD_CI_PENDING",
+  "artifact_directory": "C:/Users/lumsd/AppData/Local/Temp/opencode/full-roadmap-20261106/annotated-input-provenance-first",
+  "failure": "Original verifier subprocess.TimeoutExpired after240seconds running complete simulator batch; wrapper did not save partial stdout on timeout, exact stopping test unknown",
+  "verified_prior_timing": "PR296 same full simulator batch387tests took236.835seconds; new annotated-input public workflows alone take8.61seconds, additional fixture adds one case",
+  "classification": "Runner total-suite budget exhaustion is plausible and timing-supported, not proof of original stopping test or rootcause; do not claim clean initial simulator suite",
+  "already_passed": "4862SDK/all reference/72worker/21workerHTTP,9installedfocusedgates,actualorderedselection693+173+6+21+100percentgate;17linkedcasesPASS vs17nativeNOT_RUN",
+  "owned_orphan": "Identified testservice16632 and descendant50032, exact installed testinterpreter/-mklab_simulator/port0/usgs-recorded/seed7/test-mode; deadpytestparent46176. Read-only confirmation found owned conhost47016 directly parented by16632 as well. Cleanup guarded by exact command/parent/descendant checks, including ownedconsole; no unrelated services targeted",
+  "cleanup_development_failure": "Initial exactdescendants guard expected only50032, refused unexpected ownedconhost47016 before terminating anything. Read-only process-tree evidence confirmed direct parent/name; final guarded scope includes both proven-owned descendants. Empty firstrecovery directory retained, attempt2 uses distinct directory",
+  "diagnostic_recovery": "Separate same-artifact full simulator pass with480second harness ceiling, streaming logfile and faulthandler90seconds; no productoperation wait/assertion relaxation, no skip/exclusion or automatic mutation replay",
+  "diagnostic_result": "Sameartifact390simulatorPASS/zero skipsfailureserrors in233.376seconds;39governance/fatal-lint/workercoverage/custodyPASS. Recovery ceiling480seconds not reached; duration even below old240second ceiling. Tight original budget/load remains plausible, exact original stoppingtest/rootcause unproven; no production fix inferred",
+  "cleanup_result": "Guarded termination of exactowned16632/50032/conhost47016 completed; finalcreate-time-qualified survivorcheck empty and no simulatorservices found. No unrelated console/service targeted",
+  "evidence": "C:/Users/lumsd/AppData/Local/Temp/opencode/full-roadmap-20261106/annotated-input-provenance-first/full-suite-recovery-attempt2",
+  "next": "Record final installed custody and require exactnewheadCI before ordinary merge; retain original timeout/missingstdout and initialcleanupguard failure"
+}

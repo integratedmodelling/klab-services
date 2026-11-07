@@ -25,13 +25,15 @@ jobs:
       - name: Public SDK-only complete graph identity/source/access/pagination refusal controls
         run: python -m pytest -q python-client/tests/unit/test_dependency_graphs.py --cov=klab_client --cov-branch --cov-report=json:dependency-graphs-sdk.json
       - name: Whole new SDK module and all changed SDK decisions unexcluded
+        run: python -m pytest -q python-client/tests/unit/test_input_provenance.py --cov=klab_client --cov-branch --cov-append --cov-report=json:dependency-graphs-sdk.json
+      - name: Enforce unchanged graph coverage gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py dependency-graphs-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/dependency_graphs.py
       - name: Independent public sync/nativeasync complete finite graph acceptance
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_dependency_graphs.py --junitxml=dependency-graphs-http.xml
       - name: Supplementary independent fixture ownership/retention/intake
-        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_dependency_graph_fixture.py --cov=klab_simulator.dependency_graphs --cov-branch --cov-fail-under=100 --cov-report=json:dependency-graphs-fixture.json
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_dependency_graph_fixture.py developer-tools/klab-service-simulator/tests/test_input_provenance_fixture.py --cov=klab_simulator.dependency_graphs --cov-branch --cov-fail-under=100 --cov-report=json:dependency-graphs-fixture.json
       - name: Implementation body types and fatal lint
         run: |
           python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/dependency_graphs.py developer-tools/klab-service-simulator/src/klab_simulator/dependency_graphs.py

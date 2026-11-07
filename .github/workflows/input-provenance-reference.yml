@@ -1,0 +1,46 @@
+name: Explicit annotated input provenance (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/src/klab_client/input_provenance.py', 'python-client/src/klab_client/__init__.py', 'python-client/tests/unit/test_input_provenance.py', 'developer-tools/klab-service-simulator/**', '.github/workflows/input-provenance-reference.yml']
+  pull_request:
+    paths: ['python-client/src/klab_client/input_provenance.py', 'python-client/src/klab_client/__init__.py', 'python-client/tests/unit/test_input_provenance.py', 'developer-tools/klab-service-simulator/**', '.github/workflows/input-provenance-reference.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-input-provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: SDK-only explicit source and import-plan-current-input join controls
+        run: python -m pytest -q python-client/tests/unit/test_input_provenance.py --cov=klab_client --cov-branch --cov-report=json:input-sdk.json
+      - name: Entire new SDK module and changed SDK decisions unexcluded
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py input-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/input_provenance.py
+      - name: Actual public sync-nativeasync upload-source-plan-observe-provenance and recorded400cell acceptance
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_input_provenance.py --junitxml=input-http.xml
+      - name: Supplementary independently derived manifests and graph ownership controls
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_input_provenance_fixture.py developer-tools/klab-service-simulator/tests/test_dependency_graph_fixture.py --cov=klab_simulator.input_provenance --cov=klab_simulator.dependency_graphs --cov-branch --cov-fail-under=100 --cov-report=json:input-fixture.json
+      - name: Types and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/input_provenance.py developer-tools/klab-service-simulator/src/klab_simulator/input_provenance.py developer-tools/klab-service-simulator/src/klab_simulator/dependency_graphs.py
+          python -m ruff check python-client/src developer-tools/klab-service-simulator/src --select E9,F63,F7,F82
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: annotated-input-join-not-native-lineage
+          path: |
+            input-sdk.json
+            input-http.xml
+            input-fixture.json

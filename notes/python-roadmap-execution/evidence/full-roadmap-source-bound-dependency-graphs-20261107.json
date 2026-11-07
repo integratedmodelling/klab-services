@@ -116,7 +116,7 @@
   "scope": "Explicit proposed advertised opt-in complete finite source-bound model/resource graph: exact sourceUTF8/hash/provider/concreteversion/sourceRevision/server-READclaims, pinned opaque snapshot pagination, changedsource409/no partialresult/no autoretry, cycle/gap/aggregatebudget/principal denial and ownedcleanup. Independent literal sources/edges, not native completeclosure/compiler/scientific/access authority. Native membership remainsUNKNOWN/UNAVAILABLE.",
   "dependency_custody": "Disposable prior test interpreter borrows existing dependencies; fresh package pip-target installs, no existing environment modifications or fresh dependency-isolation claim",
   "pr": 296,
-  "delivery_state": "OPEN_FINAL_HEAD_CI_PENDING_FINITE_REFERENCE_NOT_NATIVE_AUTHORITY",
+  "delivery_state": "VERIFIED_MERGED_FINITE_REFERENCE_NOT_NATIVE_OR_FULL_ROW_ACCEPTANCE",
   "source_raw_sha256": {
     "sdk": {
       "klab_client/accepted_documents.py": "8701ab5657c327b813e4a64c926acfd7d039d9167253e0889d3083473c472219",
@@ -724,5 +724,294 @@
       "CAP-13"
     ],
     "native_or_full_row_acceptance_promoted": false
+  },
+  "remote_pr": {
+    "headRefOid": "ffd3fb185d26b10fd243b85cef86f5e11c7b8c55",
+    "mergeCommit": {
+      "oid": "a17f8c3fe2479441625a62db0e530f3dfb1788d1"
+    },
+    "mergedAt": "2026-11-07T17:37:30Z",
+    "reviewDecision": "",
+    "reviewRequests": [],
+    "state": "MERGED",
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:37:09Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396697500/job/128475493079",
+        "name": "build",
+        "startedAt": "2026-11-07T17:31:08Z",
+        "status": "COMPLETED",
+        "workflowName": "Build and test"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:37Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700431/job/128475501097",
+        "name": "installed-worker (3.11, ubuntu-latest)",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Experimental Python worker contracts (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:33Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700363/job/128475500820",
+        "name": "installed-conditional-source",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Experimental conditional source publication (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:44Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700407/job/128475500967",
+        "name": "installed-shared-read",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Experimental shared-read rights (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:42Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700398/job/128475500895",
+        "name": "installed-source-bound-graphs",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Experimental source-bound dependency graphs (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:32:32Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700428/job/128475501252",
+        "name": "schema-and-substitutes",
+        "startedAt": "2026-11-07T17:31:11Z",
+        "status": "COMPLETED",
+        "workflowName": "Java gap governance (not real Java acceptance)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:32:25Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396697462/job/128475493046",
+        "name": "schema-and-substitutes",
+        "startedAt": "2026-11-07T17:31:08Z",
+        "status": "COMPLETED",
+        "workflowName": "Java gap governance (not real Java acceptance)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:37Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700478/job/128475501122",
+        "name": "installed-dependency-membership",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Native-shaped dependency membership (complete graph NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:45Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700462/job/128475501312",
+        "name": "installed-selections",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Persisted observation selections (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:27Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700498/job/128475501324",
+        "name": "copied-composition",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Python SDK simulated service contracts"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:32:02Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700385/job/128475501389",
+        "name": "windows-fixture-bytes",
+        "startedAt": "2026-11-07T17:31:32Z",
+        "status": "COMPLETED",
+        "workflowName": "Python client offline checks"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:38Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700430/job/128475500786",
+        "name": "installed-source-validation",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Revision-aware namespace diagnostics (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:46Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700330/job/128475500699",
+        "name": "installed-provider",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Source-defined provider binary workflow (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:49Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700391/job/128475500644",
+        "name": "installed-material-selections",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Typed planning and material selections (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:32:34Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700431/job/128475501290",
+        "name": "installed-worker (3.11, windows-latest)",
+        "startedAt": "2026-11-07T17:31:29Z",
+        "status": "COMPLETED",
+        "workflowName": "Experimental Python worker contracts (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:42Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700431/job/128475501366",
+        "name": "installed-worker (3.13, ubuntu-latest)",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Experimental Python worker contracts (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:32:48Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700431/job/128475501406",
+        "name": "installed-worker (3.13, windows-latest)",
+        "startedAt": "2026-11-07T17:31:29Z",
+        "status": "COMPLETED",
+        "workflowName": "Experimental Python worker contracts (native NOT_RUN)"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:27Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700498/job/128475501462",
+        "name": "revision-convergence",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Python SDK simulated service contracts"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:33:07Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700385/job/128475501345",
+        "name": "offline (3.11)",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Python client offline checks"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:33:39Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700385/job/128475501392",
+        "name": "offline (3.12)",
+        "startedAt": "2026-11-07T17:31:35Z",
+        "status": "COMPLETED",
+        "workflowName": "Python client offline checks"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:33:57Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700385/job/128475501331",
+        "name": "offline (3.13)",
+        "startedAt": "2026-11-07T17:31:39Z",
+        "status": "COMPLETED",
+        "workflowName": "Python client offline checks"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:30Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700498/job/128475501484",
+        "name": "provenance-dependencies",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Python SDK simulated service contracts"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:58Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700385/job/128475501427",
+        "name": "core-only",
+        "startedAt": "2026-11-07T17:31:43Z",
+        "status": "COMPLETED",
+        "workflowName": "Python client offline checks"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:32:09Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700498/job/128475501532",
+        "name": "notebook-client",
+        "startedAt": "2026-11-07T17:31:39Z",
+        "status": "COMPLETED",
+        "workflowName": "Python SDK simulated service contracts"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:31:50Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700498/job/128475501517",
+        "name": "scientific-adapters",
+        "startedAt": "2026-11-07T17:31:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Python SDK simulated service contracts"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:32:00Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700498/job/128475501367",
+        "name": "simulator-sdk (3.11)",
+        "startedAt": "2026-11-07T17:31:11Z",
+        "status": "COMPLETED",
+        "workflowName": "Python SDK simulated service contracts"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-07T17:32:35Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/integratedmodelling/klab-services/actions/runs/42396700498/job/128475501512",
+        "name": "simulator-sdk (3.13)",
+        "startedAt": "2026-11-07T17:31:39Z",
+        "status": "COMPLETED",
+        "workflowName": "Python SDK simulated service contracts"
+      },
+      {
+        "__typename": "StatusContext",
+        "context": "continuous-integration/jenkins/branch",
+        "startedAt": "2026-11-07T17:33:11Z",
+        "state": "SUCCESS",
+        "targetUrl": "http://jenkins.integratedmodelling.org/job/klab-services/job/feat%252Fpython-source-bound-dependency-graphs/2/display/redirect"
+      }
+    ]
   }
 }

@@ -31,6 +31,7 @@ SCENARIOS += ("source-validation",)
 SCENARIOS += ("accepted-documents",)
 SCENARIOS += ("dependency-inspection",)
 SCENARIOS += ("dependency-graphs",)
+SCENARIOS += ("annotated-input",)
 
 
 class ContractError(Exception):
@@ -91,7 +92,7 @@ class State:
         from .accepted_documents import AcceptedSources
         self.accepted_sources = AcceptedSources(self) if scenario == "accepted-documents" else None
         from .dependency_graphs import DependencyGraphs
-        self.dependency_graphs = DependencyGraphs(self) if scenario == "dependency-graphs" else None
+        self.dependency_graphs = DependencyGraphs(self) if scenario in ("dependency-graphs", "annotated-input") else None
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -112,7 +113,7 @@ class State:
             self.values = [None if value == -9999 else value for row in fixture["values"][0] for value in row]
         if scenario == "zero-negative-nodata":
             self.values[:4] = [0, -7.5, None, "NaN"]
-        if scenario in ("usgs-recorded", "import-workflow") or scenario in EXPORT_SCENARIOS:
+        if scenario in ("usgs-recorded", "import-workflow", "annotated-input") or scenario in EXPORT_SCENARIOS:
             from .fixtures import authentic_fixture
             fixture = authentic_fixture()
             self.values = [x for row in fixture["allCellsNorthToSouthWestToEast"] for x in row]
@@ -182,9 +183,12 @@ class State:
         result = {"@CLASS": OBS, "id": identity, "urn": f"{context}.{identity}", "name": "elevation",
             "observable": observable(self.scenario), "geometry": deepcopy(geometry), "empty": False, "notifications": [],
             "resolvedCoverage": 1.0, "metadata": {"delegate": {"grid": deepcopy(self.grid)}}}
-        if self.scenario == "import-workflow":
+        if self.scenario in ("import-workflow", "annotated-input"):
             owner = self.contexts[context]["owner"]
             result["metadata"]["delegate"]["input"] = self.authoring.binding(context, owner)
+            if self.scenario == "annotated-input":
+                from .input_provenance import evidence
+                result["metadata"]["delegate"]["input"] = evidence(self, context, owner)[3]
         return result
 
     def request(self, method, path, headers, body=b""):
@@ -641,7 +645,7 @@ class State:
             if service == "resolver":
                 selected_model = MODEL
                 binding = None
-                if self.scenario == "import-workflow":
+                if self.scenario in ("import-workflow", "annotated-input"):
                     binding = self.authoring.binding(root, principal)
                     selected_model = binding["modelUrn"]
                 result = {"resolutionOutcome": "RESOLVED", "empty": False, "notifications": [],
@@ -653,6 +657,12 @@ class State:
                 if binding:
                     result["requirements"]["results"].append({"resourceUrn": binding["resourceUrn"],
                         "knowledgeClass": "RESOURCE", "serviceId": self.service_ids["resources"]})
+                    if self.scenario == "annotated-input":
+                        import hashlib
+                        from .input_provenance import evidence
+                        _, manifest, model_source, _ = evidence(self, root, principal)
+                        for row, source_text in zip(result["requirements"]["results"], (model_source, manifest)):
+                            row.update(resourceVersion="1.0.1", sourceSha256=hashlib.sha256(source_text.encode()).hexdigest())
             else:
                 result = self._observation(root, data["observation"])
             return self._job(service, root, principal, result), "application/json"
