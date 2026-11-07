@@ -46,6 +46,8 @@ const context = { auth: { authenticated:true, username:new URL(location.href).se
       await pause("discovery");
       if (location.search.includes("reader")) throw new Error("403 Forbidden");
       if (location.search.includes("action-failed")) throw new Error("503 Service unavailable");
+      if (location.search.includes("custom-integer-action")) return [{ id: "custom-action", label: "Run custom action",
+        revision: flow.revision, missing: [{ name: "count", javaType: "Integer" }] }];
       return [{ id: "prepare-review-draft", label: "Prepare review draft", revision: flow.revision,
         missing: (location.search.includes("context-missing") ? ["ontology", "project"] : ["proposal_id", "revision_id", "domain", "purpose", "target_community"]).map(name => ({ name, javaType: "String" }))
           .concat([{ name: "requested_tier", javaType: "Integer" }]) }];

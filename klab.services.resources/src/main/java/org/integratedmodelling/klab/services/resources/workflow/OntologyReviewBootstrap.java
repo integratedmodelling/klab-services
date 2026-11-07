@@ -18,13 +18,56 @@ public final class OntologyReviewBootstrap {
   public record Options(String proposalId, String revisionId, String domain, String purpose,
       int requestedTier, String targetCommunity, LocalDate generatedOn) {
     public Options {
-      if (proposalId == null || !proposalId.matches("[A-Za-z][A-Za-z0-9._-]*")
-          || revisionId == null || !revisionId.matches("[A-Za-z][A-Za-z0-9._-]*"))
-        throw new IllegalArgumentException("Proposal and revision identifiers are required");
-      for (String value : new String[]{domain, purpose, targetCommunity})
-        if (value == null || value.isBlank()) throw new IllegalArgumentException("Editorial scope is required");
-      if (requestedTier < 1 || generatedOn == null) throw new IllegalArgumentException("Tier and date are required");
+      identifier(proposalId, "proposal_id", "Proposal ID");
+      identifier(revisionId, "revision_id", "Revision ID");
+      required(domain, "domain", "Domain");
+      required(purpose, "purpose", "Purpose");
+      required(targetCommunity, "target_community", "Target community");
+      if (requestedTier < 1) throw invalidTier();
+      Objects.requireNonNull(generatedOn, "Generation date is required");
     }
+  }
+
+  /** A fixed, client-safe validation message; never contains submitted values or nested causes. */
+  public static final class InvalidOption extends IllegalArgumentException {
+    private final String field;
+    private InvalidOption(String field, String message) { super(message); this.field = field; }
+    public String field() { return field; }
+  }
+
+  /** Validate the bundled action before crossing its asynchronous actor boundary. */
+  static Options actionOptions(Map<String, Object> parameters) {
+    return new Options(text(parameters.get("proposal_id")), text(parameters.get("revision_id")),
+        text(parameters.get("domain")), text(parameters.get("purpose")),
+        tier(parameters.get("requested_tier")), text(parameters.get("target_community")),
+        LocalDate.now(java.time.ZoneOffset.UTC));
+  }
+
+  private static String text(Object value) { return value instanceof String text ? text : null; }
+
+  private static int tier(Object value) {
+    if (!(value instanceof Number number)) throw invalidTier();
+    try {
+      int tier = new java.math.BigDecimal(number.toString()).intValueExact();
+      if (tier < 1) throw invalidTier();
+      return tier;
+    } catch (ArithmeticException | NumberFormatException invalid) {
+      throw invalidTier();
+    }
+  }
+
+  private static InvalidOption invalidTier() {
+    return new InvalidOption("requested_tier", "Requested tier must be an integer of 1 or greater");
+  }
+
+  private static void identifier(String value, String field, String label) {
+    if (value == null || !value.matches("[A-Za-z][A-Za-z0-9._-]*"))
+      throw new InvalidOption(field,
+          label + " must start with a letter and contain only letters, digits, dots, underscores or hyphens");
+  }
+
+  private static void required(String value, String field, String label) {
+    if (value == null || value.isBlank()) throw new InvalidOption(field, label + " is required");
   }
 
   /** Text is supplied by authorized project access; this helper never follows the locator. */

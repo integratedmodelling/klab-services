@@ -275,6 +275,19 @@ public class WorkflowController {
     throw new KlabAuthorizationException("A valid user scope is required for workflow operations");
   }
 
+  @org.springframework.web.bind.annotation.ExceptionHandler(
+      org.integratedmodelling.klab.services.resources.workflow.OntologyReviewBootstrap.InvalidOption.class)
+  public ResponseEntity<java.util.Map<String, Object>> invalidPreparationInput(
+      org.integratedmodelling.klab.services.resources.workflow.OntologyReviewBootstrap.InvalidOption invalid) {
+    // This dedicated exception can only contain fixed field-validation messages. Do not expose
+    // arbitrary IllegalArgumentException messages or unwrap runtime/actor exception chains.
+    // Explicit RFC 9457 fields keep extensions top-level with the service's custom ObjectMapper,
+    // which does not install Spring's ProblemDetail properties-flattening mixin.
+    return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_PROBLEM_JSON).body(java.util.Map.of(
+        "type", "about:blank", "title", "Bad Request", "status", 400,
+        "detail", invalid.getMessage(), "code", "INVALID_REVIEW_PREPARATION_INPUT", "field", invalid.field()));
+  }
+
   @org.springframework.web.bind.annotation.ExceptionHandler(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class)
   public ResponseEntity<org.springframework.http.ProblemDetail> deniedWorkflowAccess() {
     return ResponseEntity.status(403).contentType(MediaType.APPLICATION_PROBLEM_JSON)
