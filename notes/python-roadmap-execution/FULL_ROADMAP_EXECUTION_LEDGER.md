@@ -261,6 +261,66 @@ query, strict raw-byte decoding and transport response handling. Focused37tests
 and newmodule100%unexcluded line/branch gate PASS without simulator tests. Full
 SDK unit/integration+historical-baseline coverage gate and24HTTP/recovery rerun
 are running; final-head hosted success remains required before PR273 can merge.
+
+Corrective notification head289ba5325 pushed; installed4049SDK tests and SDK-only
+historical-baseline changed-code/newmodule100%gate PASS plus24HTTP/recoveryPASS.
+Verification attempts retained: source-tree imports caused3preflight failures
+(4046passed); the first installed custody check stopped before tests due Windows
+checkout CRLF vs earlier LF bytes. All49modules match after newline normalization,
+not raw-byte parity; production source diff of correction is empty. Final installed
+rerun passed4049 in83.47s and24HTTP/recovery in10.10s, using prior fresh-wheel target
+with unchanged normalized production content. Hosted reference workflow now starts
+and PASS; one Windows3.11 worker recovery job failed a2second ordinary Job wait
+before worker execution. Run42321807691 failed job128247863255 rerun once unchanged;
+no retry inside tests or timeout/assertion/coverage weakening. PR273 staysOPEN until
+all applicable final-head checksPASS. Original failures remain part of evidence.
+
+### Active private draft reference pass
+
+Current primary branch `feat/python-revision-safe-drafts` integrates289ba5325 and
+retains/extends original two prototypes. Explicit root-owner private draft CAS and
+bounded8name/8version history now wired to simulator, SQLite snapshot/validate/
+restore/rollback and released-scope cleanup. New sync/nativeasync SDK APIs require
+explicit opt-in/expected revision and exact hash/source/result validation. No
+semantic validation, accepted-source editing, publication or execution inferred.
+Source24SDK-only unit tests PASS with101/101lines+38/38branches and no exclusions;
+14HTTP/storage tests PASS (concurrent writer, stale fence, restart, owner denial,
+bounded-history410,capacity429,corruption,no partial restore,failed-save507).
+New module bodytypecheck/lintPASS. Same0009/handoff/scenario/docs/CI updated; full
+fresh installed SDK/simulator/worker/governance and17case evidence pending. Sleep
+requested ONLY after the entire roadmap checklist finishes, never after this
+partial pass or a blocked checkpoint; sleep remains pending, no power action run.
+PR273 subsequently verified remotely MERGED
+`0c982589322c47733fd80166069f97f879207c8b`,2026-11-07T01:09:50Z, exact corrective
+head289ba532513fab5a9c8777802642e7f80522b8e4. All applicable final-head SDK3.11/12/13,
+reference, workerWindows/Ubuntu, schema/scientific/simulator/build/Jenkins checks
+PASS. Windows recovery's unchanged rerun passed job128248687104; failure retained,
+not erased or relabelled. Primary branch fast-forwarded actual integration merge
+without touching uncommitted draft work. No external acceptance status promoted.
+Fresh draft-package verifier started in task-only
+`full-roadmap-20261106/revision-drafts`, own coverage data and source/artifact byte
+comparison. SDK coverage report is deliberately SDK-only: the separate HTTP/storage
+process does NOT append to it, preventing recurrence of273's acceptance mistake.
+Await automatic completion, then verify newmodule100%/all changed decisions against
+that report and run17linked simulated/real-not-run matrices. No Java/IDE readiness
+check or repair is needed/authorized; persistent state snapshot remains historical.
+Fresh installed draft verification nowPASS4073SDK/38referenceHTTP+storage+recovery/
+57worker/21workerHTTP+recovery/152fullsimulator/33governance, zero skips/errors/failures.
+50SDK+16simulator+5worker source/wheel/sdist/installed module byte parity. SDK-only
+newmodule101/101lines+38/38branches, no exclusions, all report paths uniquely in the
+new installed target. FullSDK98.40% retains165historical exclusions; no whole-SDK
+zero-exclusions claim. Exact artifacts in `evidence/full-roadmap-revision-drafts-20261107.json`.
+SDK changed-code gate and17linked simulated-case process started separately; await
+its automatic completion before attesting those results.17currentrealNOT_RUN/exit3
+already verified without service invocation or fallback. Next publish normalPR
+with all same-feature generated outputs only after final matrix attestation.
+Final SDK-only changed-code/newmodule gate PASS.17linked casesPASS using185SDK/
+81simulator-capture-reference/57worker tests, zero skips/failures/errors. The real
+matrix remains17NOT_RUN/exit3. All local acceptance for this bounded private-draft
+slice is verified; publish normal featurePR now and await final-head hosted checks.
+Broader authoring validation/publication and full42criterion acceptance are NOT
+complete. Fresh01:13:01UTC issue inventory retains all11open obligations, no new
+closure candidate; no remote issue action. Entire-roadmap sleep remains pending.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
@@ -283,18 +343,18 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |---|---|---|
 |RC-P0|PARTIAL; discovery/compatibility guards|Complete operation inventory against supported source and simulator coverage; production support decision separate.|
 |RC-P1.1|PARTIAL; SIM-DISCOVERY-001 vertical|Exercise bootstrap through computation with positive/denial/expiry; actual issuer/license evidence external.|
-|RC-P1.2|PARTIAL; SIM-RESTORE-001 and installed SIM-DURABLE-RESTORE-001 (0004/0017), publication pending|Completed/in-flight saved Job, context and observation reattach across owned simulator processes without replay; native retained-Job/incarnation semantics still external.|
+|RC-P1.2|PARTIAL; SIM-RESTORE-001 and SIM-DURABLE-RESTORE-001 delivered269/8f9fe3805 (0004/0017)|Completed/in-flight saved Job, context and observation reattach across owned simulator processes without replay; native retained-Job/incarnation semantics still external.|
 |RC-P1.3|PARTIAL; SIM-SCOPE-SELECTION-001|Complete collaborator/forbidden/expiry scenario, preserving server authority.|
 |RC-P1.4|PARTIAL; discovery guards|Mixed-provider outage/recovery and identity drift scenario.|
 |RC-P1.5|PARTIAL; SIM-SELECTION-001|Cover material project/observer/grid option effects, distinguishing advertised model from actual selected input.|
 |RC-P2.1|PARTIAL; SIM-EXPORT-001/SIM-ADAPTERS-001|Synthetic nonuniform multi-shard native transport/descriptor acceptance; native exporter/scanner remain external.|
-|RC-P2.2|PARTIAL; SIM-GRID-001/SIM-TEMPORAL-EXPORT-001|Versioned explicitly provisional block/slice adapter and simulator; preserve units/masks/revision/unknown native mappings.|
+|RC-P2.2|PARTIAL; SIM-GRID-001/SIM-TEMPORAL-EXPORT-001, declared-band272/d65d940f9|Versioned explicitly provisional block/slice adapter and simulator; caller-labelled time bands are not native committed history; preserve units/masks/revision/unknown mappings.|
 |RC-P2.3|PARTIAL tools; authentic recorded fixture only|Independent actual-provider model/datum/reference tuple external; no study replication or synthetic accuracy claim.|
 |RC-P2.4|COMPLETE bounded transport; synthetic stream tests|Maintain interrupt/budget evidence; representative real-provider soak external.|
-|RC-P2.5|PARTIAL; raster/vector/table adapters|Explicit categorical dictionary and multidimensional/time descriptors with faithful synthetic fixtures.|
+|RC-P2.5|PARTIAL; raster/vector/table and delivered declared-band272/d65d940f9|Explicit categorical dictionary/multishard still pending; native time/revision meaning remains unestablished despite caller-declared band support.|
 |RC-P3.1|PARTIAL; SIM-REFRESH-001|Explicit provisional committed-revision two-client simulator contract/races, native semantics remain unknown.|
 |RC-P3.2|COMPLETE bounded refresh; SIM-REFRESH-001|Retain stale/partial/outage controls while broadening linked protocols.|
-|RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001 plus installed durable restart/no-replay controls, publication pending|Preserve expiry/cancel/no-replay and scoped results; native durable history/incarnation acceptance separate.|
+|RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001 plus delivered269 durable restart/no-replay controls|Preserve expiry/cancel/no-replay and scoped results; native durable history/incarnation acceptance separate.|
 |RC-P3.4|PARTIAL; SIM-PROVENANCE-001|Broaden dependency/semantic-effect fixtures without calling finite simulator lineage authoritative Java.|
 |RC-P3.5|PARTIAL; SIM-NOTEBOOK-001|Multi-principal notebook/race acceptance over ordinary installed async client.|
 |RC-P4.1|PARTIAL; SIM-SEMANTICS-001/SIM-INSPECTION-001|Capability-aware applicability/version/access and actual candidate source protocol adapter.|
@@ -315,7 +375,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-08|COMPLETE bounded scalar data|Preserve exact NUMBER/BOOLEAN/TEXT/null precision while adding separate block contract.|
 |CAP-09|PARTIAL descriptors/exports|Multidimensional/category/time/multi-shard declared mappings and revision integrity.|
 |CAP-10|PARTIAL graph/projections|Two-client revision/race/partial refresh scenario through explicit protocol seam.|
-|CAP-11|PARTIAL transient hints|Explicit provisional durable cursor/resync/gap/expiry/revocation simulator adapter, not invented Java guarantee.|
+|CAP-11|PARTIAL; transient hints plus delivered273/0c9825893 retained reference|Explicit provisional durable cursor/resync/gap reference verified; maintained expiry/revocation/full convergence/native acceptance still unverified.|
 |CAP-12|COMPLETE bounded offline snapshots|Maintain socket-forbidden fresh-process inspection and no queued replay.|
 |CAP-13|PARTIAL resource inspection/import|Complete declared CRUD/visibility/dependency scenarios and supported native candidates.|
 |CAP-14|PARTIAL authoring/agent facades|Complete revision-safe authoring and managed lifecycle simulator flows with separate native status.|

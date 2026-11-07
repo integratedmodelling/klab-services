@@ -26,7 +26,7 @@ def snapshot(state):
         "project_locks": deepcopy(state.authoring.project_locks),
         "workers": [[list(key), deepcopy(value)] for key, value in state.workers.workers.items()],
         "worker_tasks": deepcopy(state.workers.tasks), "next_worker_task": state.workers.next_task,
-        "notifications": deepcopy(state.notifications.logs)}
+        "notifications": deepcopy(state.notifications.logs), "drafts": deepcopy(state.drafts.rows)}
 
 
 def restore(state, saved, *, recovery=True):
@@ -35,7 +35,9 @@ def restore(state, saved, *, recovery=True):
     # No old Job/history is replayed or fabricated, and coverage is explicitly limited.
     if isinstance(saved, dict) and "notifications" not in saved:
         saved = {**saved, "notifications": {}}
-    expected = {"version", "scenario", "seed", "simple", "pairs", "counters", "worldview_id", "assets", "project_locks", "workers", "worker_tasks", "next_worker_task", "notifications"}
+    if isinstance(saved, dict) and "drafts" not in saved:
+        saved = {**saved, "drafts": {}}
+    expected = {"version", "scenario", "seed", "simple", "pairs", "counters", "worldview_id", "assets", "project_locks", "workers", "worker_tasks", "next_worker_task", "notifications", "drafts"}
     if (not isinstance(saved, dict) or set(saved) != expected or type(saved["version"]) is not int or saved["version"] != 1
             or type(saved["seed"]) is not int
             or saved["scenario"] != state.scenario or saved["seed"] != state.seed
@@ -67,6 +69,8 @@ def restore(state, saved, *, recovery=True):
         raise ValueError("Invalid simulator worldview identity")
     assets, locks, workers, tasks = pairs(saved["assets"]), mapping(saved["project_locks"]), pairs(saved["workers"]), mapping(saved["worker_tasks"])
     logs = mapping(saved["notifications"])
+    from .drafts import retained
+    drafts = retained(saved["drafts"], simple["contexts"])
     for root, log in logs.items():
         if (root not in simple["contexts"] or not isinstance(log, dict) or set(log) != {"epoch", "next", "events"}
                 or not isinstance(log["epoch"], str) or len(log["epoch"]) != 32
@@ -110,6 +114,7 @@ def restore(state, saved, *, recovery=True):
     state.workers.workers, state.workers.tasks = workers, tasks
     state.workers.next_task = saved["next_worker_task"]
     state.notifications.logs = logs
+    state.drafts.rows = drafts
 
 
 class Store:

@@ -59,6 +59,8 @@ class State:
         self.workers = WorkerState(self)
         from .notifications import Notifications
         self.notifications = Notifications(self)
+        from .drafts import Drafts
+        self.drafts = Drafts(self)
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -160,6 +162,7 @@ class State:
                 status, result = error.status, {"error": error.message}
             if status == 200:
                 self.notifications.changed_jobs(before_jobs)
+                self.drafts.rows = {root: rows for root, rows in self.drafts.rows.items() if root in self.contexts}
             if self.store is not None:
                 try:
                     self.store.save(self)
@@ -189,6 +192,7 @@ class State:
                 return {"counts": self.counts(), "resources": len(self.imported_resources),
                         "workers": len(self.workers.workers), "worker_tasks": len(self.workers.tasks),
                         "notification_streams": len(self.notifications.logs),
+                        "draft_contexts": len(self.drafts.rows),
                         "authoring_assets": len(self.authoring.assets),
                         "project_locks": len(self.authoring.project_locks), "trace": list(self.trace)}, "application/json"
             if method == "POST" and path == "/__sim__/expireJobs":
@@ -227,6 +231,8 @@ class State:
                 self.workers = WorkerState(self)
                 from .notifications import Notifications
                 self.notifications = Notifications(self)
+                from .drafts import Drafts
+                self.drafts = Drafts(self)
                 self.worldview_id = "synthetic"
                 self.next_context = self.next_job = self.next_observation = 1
                 return True, "application/json"
@@ -255,6 +261,21 @@ class State:
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
         scope = headers.get("klab-scope", "")
+        if service == "runtime" and route.startswith("/experimental/drafts/v1/"):
+            if len(body) > 131072:
+                raise ContractError(413, "Private draft request byte budget exceeded")
+            try:
+                def unique(items):
+                    result = {}
+                    for key, value in items:
+                        if key in result:
+                            raise ValueError("Duplicate draft key")
+                        result[key] = value
+                    return result
+                data = json.loads(body, object_pairs_hook=unique) if body else None
+            except (ValueError, UnicodeError, RecursionError):
+                raise ContractError(422, "Invalid private draft JSON") from None
+            return self.drafts.request(method, route + ("?" + urlsplit(original_path).query if urlsplit(original_path).query else ""), scope, principal, headers, data)
         if service == "runtime" and method == "GET" and route == "/experimental/notifications/v1/events":
             return self.notifications.request(original_path, scope, principal, headers)
         if self.scenario == "http500" and service == "resources" and route.startswith("/api/v1/retrieve/"):

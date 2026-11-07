@@ -1,0 +1,23 @@
+{
+  "verified_utc": "2026-11-07T01:14:18.579245+00:00",
+  "baseline_head": "0c982589322c47733fd80166069f97f879207c8b",
+  "attribution": "Uncommitted private draft reference. Exact source/wheel/sdist/installed module bytes, not parent alone, identify tested implementation. SDK-only coverage does not append simulator HTTP processes.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "a6eff4eb9e6415564b045d46f3ba9bb98019ede3a27d7b89581e78aee5f958f1", "sdist_sha256": "7c00d91677c7769cbdd1c9af4634528b87b2e7fdf9b14ec3fdc208cec10d6c17", "parity_modules": 50},
+    "simulator": {"wheel_sha256": "56fc05a3aa4cc469fc6782cca42069e17f4bbcc4557d5d2bf7c7b75c5555f284", "sdist_sha256": "0d55283f1946794ce720897c7b15b049698cb3a22b460b4a2e3db6852e90c5c8", "parity_modules": 16},
+    "worker": {"wheel_sha256": "420c37fe4755c88cae408013153415371d68e6c2ba19d3c427622ff6c15f46f9", "sdist_sha256": "f1c75c1a730cb75061491c2d60f58b127154b1d43b9f4fb599f644e7437d8c4b", "parity_modules": 5}
+  },
+  "installed_tests": {"sdk_unit_integration": 4073, "reference_http_storage_recovery": 38, "worker_unit": 57, "worker_http_recovery": 21, "full_simulator": 152, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "new_sdk_module": {"covered_lines": 101, "statements": 101, "covered_branches": 38, "branches": 38, "excluded_lines": 0, "source_unit_tests": 24, "report_scope": "SDK-only installed unit/integration, no simulator coverage append"},
+  "sdk_coverage": {"combined_percent": 98.3979057591623, "covered_lines": 7169, "statements": 7268, "covered_branches": 2228, "branches": 2282, "historical_excluded_lines": 165, "unique_installed_paths_verified": true},
+  "typing_lint_schema_generated_reports": "PASS new module body typecheck, fatal-error lint and17stable gaps/42historic rows/generated companions; not whole-native acceptance",
+  "reference_assertions": ["Explicit opt-in, bound root scope and Runtime identity, immutable exact source/hash/revision", "Real sync/nativeasync SDK-only wire tests, no simulator imports or fallback", "Two competing writers for same expected revision admit one, stale409never blindly retried", "Exact historical reads;8versions/name and8names/context; evicted410andcapacity429explicit", "Restart retains revisions; foreign current principal denies; released scope removes drafts", "Corrupt/foreign/hash-mismatched/noncontiguous retained histories fail before partial live restore", "Failed durable save returns507and restores prior in-memory state", "UNVALIDATED_PRIVATE_DRAFT only: no accepted-source edits, semantic parser/compiler, publication, agent execution or scientific revision"],
+  "contract_matrix": {"simulated_pass": 17, "sdk_protocol_tests": 185, "simulator_capture_reference_tests": 81, "worker_tests": 57, "all_skips_failures_errors": 0, "real_not_run": 17, "real_mode_exit": 3},
+  "changed_sdk_decisions": "PASS all changed production lines/arcs covered and unexcluded against4073test SDK-only installed report; newmodule100% lines/branches",
+  "native_contract": "UNKNOWN_PENDING_REFERENCE / JAVA-GAP-0009; explicit proposed klab.experimental.drafts/1 route is not native Java endpoint authority",
+  "scientific_acceptance": false,
+  "dependency_custody": "Fresh wheels/sdists and separate pip-target installations borrow existing test dependencies; no old environment modification or fresh dependency-isolation certification",
+  "issue_review": "2026-11-07T01:13:01.754278+00:00 all11open bodies hash-match originals and comment bodies retrieved; no newly unclassified comment URLs/closure candidate or issue mutation",
+  "remaining": "NormalPR/finalheadCI/permittedmerge; native accepted-source version/conflict/validation/permissions/publication acceptance remains separate. Continue other independent roadmap requirements.",
+  "sleep_condition": "User explicitly chose sleep only after entire roadmap checklist complete, not after current pass or blocked checkpoint; no power action performed"
+}

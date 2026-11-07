@@ -44,6 +44,8 @@ from klab_client.analysis import (AnalysisArtifact, RasterBandAxis, RasterDescri
     async_export_for_analysis, export_for_analysis, open_raster, trace_analysis)
 from klab_client.durable_notifications import (NotificationCursor, NotificationBatch, NotificationResyncRequired,
     read_notifications, async_read_notifications)
+from klab_client.revision_drafts import (DraftRevision, DraftConflict, read_draft, write_draft,
+    async_read_draft, async_write_draft)
 from klab_client.provenance import ProvenanceNode, ProvenanceLink, ProvenanceView, fetch_provenance, async_fetch_provenance
 from klab_client.vector import VectorAnalysis, open_vector
 from klab_client.semantics import (SemanticExplorer, AsyncSemanticExplorer, SemanticResult, KnowledgeState,
@@ -94,6 +96,8 @@ __all__ = [
     "ExportFormat", "ExportResult", "ExportIOError",
     "AnalysisArtifact", "RasterBandAxis", "RasterDescriptor", "RasterAnalysis", "async_export_for_analysis", "export_for_analysis", "open_raster",
     "NotificationCursor", "NotificationBatch", "NotificationResyncRequired", "read_notifications", "async_read_notifications",
+    "DraftRevision", "DraftConflict", "read_draft", "write_draft",
+    "async_read_draft", "async_write_draft",
     "TracedAnalysis", "trace_analysis",
     "VectorAnalysis", "open_vector",
     "ProvenanceNode", "ProvenanceLink", "ProvenanceView", "fetch_provenance", "async_fetch_provenance",
