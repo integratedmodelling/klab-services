@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+The existing `--scenario copied-composition` now advertises its exact reference
+protocol to the public typed CopiedCompositions sync/async facade. Independent
+authorized A/B captures release their read grants before C receives copied values;
+different source/C credentials, no grant forwarding, C-only release/sourcepreservation
+and400cell known-answer flows are tested. This is not native live federation or
+scientific engine execution; source identity claims are not authenticated grants.
+
 `--scenario execution-explanation` composes actual authentic crop upload/source ADD,
 explicit selected model/component plan and observation into a complete finite reference
 explanation. A test-only semantic-label association records before/after revision effects

@@ -3,24 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-execution-dependency-explanation",
-    "pr": 300,
-    "requirement": "RC-P3.4",
-    "ci_review_dependencies": [
-      "PR300 finalinstalled artifacts/matrix/exactheadCI/ordinarymerge; native scientific/semantic mediation and original-row acceptance remain separate"
-    ]
+    "branch": "feat/python-public-copied-composition",
+    "pr": 301,
+    "requirement": "CAP-03",
+    "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 299,
-    "merge": "5d6d5139d5a445c784bb4a91b331a4f890046787",
-    "head": "7c25a73f3ad2ace805835cdddbaf053ebcdd6d37",
-    "utc": "2026-11-07T19:02:21Z",
+    "pr": 300,
+    "merge": "1f879772d5d373c1d0921ce74867f78f189d90e8",
+    "head": "4dd1a2819d9cb320ac140e6a2c919040a1644d86",
+    "utc": "2026-11-07T19:29:08Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P3.4",
+  "next_actionable_requirement": "CAP-03",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "execution-dependency-explanation",
     "public-copied-composition",
     "managed-behavior-workflow",
     "worker-output-and-budget-custody",
@@ -2174,8 +2171,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: execution-dependency-explanation"
       },
       "simulator_support_needed": "Provide public dependency/execution explanation joining supplied resources, model/component versions and planned versus recorded effects; finite complete reference lineage including semantic-update effects, not only fixture graph links.",
-      "implementation_status": "FINITE_SELECTED_EXECUTION_EXPLANATIONS_INSTALLED_VERIFIED_PR300_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "FINITE_SELECTED_EXECUTION_EXPLANATION_DELIVERED_PR300",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_INPUT_MODEL_COMPONENT_PLANNED_RECORDED_SEMANTIC_ASSOCIATION_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -2197,12 +2194,21 @@
           "pr": 300,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json",
           "final_original_row_acceptance": false
+        },
+        "execution_explanation_delivery": {
+          "pr": 300,
+          "head": "4dd1a2819d9cb320ac140e6a2c919040a1644d86",
+          "merge": "1f879772d5d373c1d0921ce74867f78f189d90e8",
+          "merged_at": "2026-11-07T19:29:08Z",
+          "final_head_checks": 32,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json"
         }
       },
       "work_group": "execution-dependency-explanation",
       "priority": 8,
-      "task_state": "in_progress",
-      "next_executable_action": "Require PR300 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute public copiedcomposition SDK requirement. Keep native scientific/semantic mediation/source-component lineage authority and original-row integrated acceptance separate.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native selectedsource/component/scientific semantic-effect lineage and actual numericmediation evidence remain distinct external gates.",
       "disposition": null
     },
     {
@@ -2278,8 +2284,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: execution-dependency-explanation"
       },
       "simulator_support_needed": "Provide public dependency/execution explanation joining supplied resources, model/component versions and planned versus recorded effects; finite complete reference lineage including semantic-update effects, not only fixture graph links.",
-      "implementation_status": "FINITE_SELECTED_EXECUTION_EXPLANATIONS_INSTALLED_VERIFIED_PR300_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "FINITE_SELECTED_EXECUTION_EXPLANATION_DELIVERED_PR300",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_INPUT_MODEL_COMPONENT_PLANNED_RECORDED_SEMANTIC_ASSOCIATION_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -2301,12 +2307,21 @@
           "pr": 300,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json",
           "final_original_row_acceptance": false
+        },
+        "execution_explanation_delivery": {
+          "pr": 300,
+          "head": "4dd1a2819d9cb320ac140e6a2c919040a1644d86",
+          "merge": "1f879772d5d373c1d0921ce74867f78f189d90e8",
+          "merged_at": "2026-11-07T19:29:08Z",
+          "final_head_checks": 32,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json"
         }
       },
       "work_group": "execution-dependency-explanation",
       "priority": 8,
-      "task_state": "in_progress",
-      "next_executable_action": "Require PR300 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute public copiedcomposition SDK requirement. Keep native scientific/semantic mediation/source-component lineage authority and original-row integrated acceptance separate.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native selectedsource/component/scientific semantic-effect lineage and actual numericmediation evidence remain distinct external gates.",
       "disposition": null
     },
     {
@@ -2422,7 +2437,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: public-copied-composition"
       },
       "simulator_support_needed": "Replace raw-transport-only copied composition examples with typed public opt-in SDK source snapshots/vector/result lifecycle API; independently authorized sources, pinned identity, no upstream grants inferred; native live federation separate.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "PUBLIC_TYPED_COPIED_SOURCE_VECTOR_RESULT_LIFECYCLE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2484,8 +2499,8 @@
       },
       "work_group": "public-copied-composition",
       "priority": 9,
-      "task_state": "pending",
-      "next_executable_action": "Replace raw-transport-only copied composition examples with typed public opt-in SDK source snapshots/vector/result lifecycle API; independently authorized sources, pinned identity, no upstream grants inferred; native live federation separate.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish typed public sync/async independent A/B capture and C-owned result lifecycle, exact sourcevector/descriptor/secret/budget/ambiguousack/cleanup controls,100%SDK and independentfixture acceptance/installed delivery; no native livefederation or upstream grants inferred.",
       "disposition": null
     },
     {

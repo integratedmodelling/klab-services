@@ -29,7 +29,7 @@ jobs:
       - name: Enforce unchanged conditional source coverage gate
         run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:conditional-source-sdk.json
       - name: Check unchanged conditional source gate
-        run: python -m pytest -q python-client/tests/unit/test_execution_explanations.py --cov=klab_client --cov-branch --cov-append --cov-report=json:conditional-source-sdk.json
+        run: python -m pytest -q python-client/tests/unit/test_copied_composition.py python-client/tests/unit/test_execution_explanations.py --cov=klab_client --cov-branch --cov-append --cov-report=json:conditional-source-sdk.json
       - name: Verify conditional source coverage threshold
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"

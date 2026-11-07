@@ -1,5 +1,12 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR301 copied-reference candidate5110installedSDK467sim72worker/reference-governance
+PASS;68SDK34sim5worker rawparity,17linkedPASSvs17nativeNOT_RUN.57SDK100%,2public
+HTTP/2fixture100%,13focusedCI+actualorderedselectionPASS. Independently authorized A/B
+captures and C-owned copied results do not confer native live federation/upstream grants.
+Finalreceipt/exactheadCI/ordinarymerge pending;42originalrows/history/24runnable/zero
+final dispositions preserved. Next RC-P4.5 managed behavior/source/outcome/disposal.
+
 PR300selectedexecutionexplanationcandidate5053installedSDK465sim72worker/reference-
 governancePASS;67SDK34sim5worker rawmoduleparity,17linkedPASSvs17nativeNOT_RUN.
 58SDK100%,2publicHTTP/24fixture100%,12focusedCI+actualorderedselectionPASS. Source/
