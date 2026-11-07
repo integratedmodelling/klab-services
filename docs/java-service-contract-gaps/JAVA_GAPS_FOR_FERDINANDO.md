@@ -235,6 +235,12 @@ trailing bytes; no result salvage or hidden fallback is introduced.
 
 ### Python operation inventory is not a native support certificate
 
+The follow-up operation_coverage development tool can attribute SDK-only measured
+body lines to matching source bytes, separately labelling abstracts, refusal bodies,
+partial/unmeasured bodies and exclusions. Definitions/one-line declarations/nested
+callbacks do not imply invocation. This is not route/workflow correctness or native
+support, and changes no gap status. Reports reject byte drift or mixed packages.
+
 The reproducible [source-callable inventory](../../python-client/docs/supported-operation-inventory.md)
 initially distinguished four explicit unsupported wrappers from guarded refusal
 paths. The active binary feature now supplies the two Resources wrappers, leaving

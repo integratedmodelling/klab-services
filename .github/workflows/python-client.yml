@@ -36,6 +36,9 @@ jobs:
       - name: Reproducible source-callable inventory (not native acceptance)
         run: python tools/operation_inventory.py --check
         working-directory: python-client
+      - name: Callable measurement devtool unexcluded coverage (not SDK coverage)
+        run: python -m pytest -q tests/unit/test_operation_coverage.py --cov=operation_coverage --cov-branch --cov-fail-under=100 --cov-report=json:operation-coverage-tool.json
+        working-directory: python-client
       - name: Conservative feedback selection rationale (advisory; full gates below remain required)
         env:
           PR_BASE: ${{ github.event.pull_request.base.sha }}
@@ -48,6 +51,18 @@ jobs:
         working-directory: python-client
       - run: python -m pytest -q tests/unit tests/integration --cov=klab_client --cov=workflows.discover_compare_explain --cov=workflows.milestone --cov=workflows.deployment --cov=build_milestone_deliverable --cov=run_milestone_acceptance --cov=run_milestone_throughput --cov=restore_milestone_results --cov=workflows.resource_inspection --cov=run_resource_inspector_acceptance --cov=check_release_readiness --cov=prepare_runtime_fixture --cov-branch --cov-report=json
         working-directory: python-client
+      - name: SDK-only callable-body measurement custody (not executed support)
+        run: |
+          python -m coverage json --include='*/klab_client/*' -o sdk-only-coverage.json
+          python tools/operation_coverage.py sdk-only-coverage.json --output operation-body-coverage.json
+        working-directory: python-client
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-callable-measurement-${{ matrix.python }}
+          path: |
+            python-client/sdk-only-coverage.json
+            python-client/operation-body-coverage.json
+            python-client/operation-coverage-tool.json
       - run: python tools/check_feature_coverage.py coverage.json --base ad2bc949c167e1c2e370973ce4427fe67cb1cc30 --new-module src/klab_client/requests.py --new-module src/klab_client/handles.py --new-module src/klab_client/exports.py --new-module src/klab_client/connection.py --new-module src/klab_client/connection_models.py --new-module src/klab_client/credentials.py --new-module src/klab_client/_bootstrap.py --new-module src/klab_client/analysis.py --new-module src/klab_client/provenance.py --new-module src/klab_client/semantics.py --new-module src/klab_client/_inspection.py --new-module src/klab_client/inspection.py --new-module src/klab_client/evidence.py --new-module src/klab_client/experiments.py --new-module tools/workflows/discover_compare_explain.py --new-module tools/workflows/milestone.py --new-module tools/workflows/deployment.py --new-module tools/build_milestone_deliverable.py --new-module tools/run_milestone_acceptance.py --new-module tools/run_milestone_throughput.py --new-module tools/restore_milestone_results.py --new-module tools/workflows/resource_inspection.py --new-module tools/run_resource_inspector_acceptance.py
         working-directory: python-client
       - name: Native async transport coverage

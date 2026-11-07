@@ -1,0 +1,27 @@
+{
+  "verified_utc": "2026-11-07T05:58:09.505557+00:00",
+  "baseline_head": "371187fdf5ef8ea443def0ab9bbe3388e0bda4c0",
+  "scope": "Development-only exact-byte SDK callable-body measurement custody, not invocation/route/workflow/permission/science/native acceptance",
+  "attribution": "Tool/tests/docs uncommitted during build; raw source/wheel/sdist/installed module parity and hashes identify tested package bytes. Production SDK/worker/simulator implementation unchanged.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "2f05fdfb04afa50a112f22dbb32ed4ef91c2ad8b17e95a35455ff3f092d9f345", "sdist_sha256": "8c6e0af1339ae9d09e63eee781127c9ebeb97aadec23ae157d2cbfeee582bf92", "parity_modules": 57},
+    "simulator": {"wheel_sha256": "f68cb3766ec6c46537924e44c14666075eb15a501e8dad0d5ed483f86ab21205", "sdist_sha256": "45201d425f2ecfd359b5962921c317ba2ea8d7908171bbc55ec78e08bef37e51", "parity_modules": 23},
+    "worker": {"wheel_sha256": "f50fbd914230d9fa4348e3b1141f314461fbdb364c03f4593a8b599113b46e88", "sdist_sha256": "4c513b1b78482b0eb0877560df68cb5a374b6207cba7d6b46e59f3296c0fdd90", "parity_modules": 5}
+  },
+  "installed_suites": {"SDK": 4390, "simulator": 248, "operation_coverage": 6, "composition_reference": 3, "revision_reference": 4, "provider_reference": 18, "provenance_reference": 18, "operation_inventory": 11, "other_reference": 98, "worker": 57, "worker_HTTP": 21, "governance": 37, "skips_failures_errors": 0},
+  "overlapping_counts_not_unique_total": true,
+  "devtool_only_coverage": {"covered_lines": 70, "statements": 70, "covered_branches": 34, "branches": 34, "excluded_lines": 0, "not_SDK_coverage": true},
+  "SDK_new_module_gate": "NOT_APPLICABLE; production SDK unchanged",
+  "body_mypy": "PASS",
+  "fatal_lint": "PASS",
+  "attribution_input_report_sha256": "209e7919a966f1438d6a93af0bb905af5d881e5e960653c7eb0ee49faac91713",
+  "source_callable_count": 411,
+  "body_measurement_counts": {"ABSTRACT_NOT_IMPLEMENTATION": 51, "BODY_LINES_MEASURED_EXECUTED": 322, "NO_BODY_LINES_MEASURED_EXECUTED": 19, "PARTIAL_BODY_LINE_MEASUREMENT": 17, "REFUSAL_BODY_MEASURED_NOT_SUPPORTED": 2},
+  "measurement_limits": "No invocation counts, per-callable branch completeness, user-workflow correctness, permission or backend compatibility claim.19no-body-measurement does not mean19untested operations; childprocess/reference suite execution may be outside this report.322body-line-complete is not322supported workflows. Abstract/refusal/excluded/nested/one-line declaration cases remain explicit.",
+  "custody_controls": ["Reject mixed SDK/simulator/worker/tool JSON reports", "Reject unsafe/duplicate module identity or duplicate source-callable identity", "Refuse unavailable/drifted measured source bytes rather than falling back to static classification", "Exclude import-only declaration lines and nested callback bodies from outer function attribution", "One-line declaration/body ambiguity explicitly unattributable, no invocation inferred", "Input coverage hash and module hashes retained; original hosted broad coverage gates unchanged"],
+  "retained_diagnostics": ["Initialmypy optional end_lineno diagnostics corrected with casts for ast.parse-provided end positions; no exclusions", "Initial CLI SDK-export dryrun used only devtool tests which never import SDK: expected ModuleNotImported/NoData exit1 preserved. Corrected24testbatch includes18providerhandlecontrols and mixed-to-SDK-only export/attributionPASS; focused numbers not wholeSDK measurement"],
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 485, "simulator_tests": 177, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "dependency_custody": "Fresh wheel/sdist/pip-targets borrow prior dependencies; no fresh dependency-isolation certification",
+  "native_java": "REAL_NOT_RUN; all17native gap statuses unchanged. Coverage custody does not satisfy backend authority or science.",
+  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; then evidence-driven remaining callable/control/workflow and42row implementation gaps. FullABC/native acceptance and sleep pending."
+}

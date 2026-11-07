@@ -1,5 +1,39 @@
 # A+B completion ledger — ongoing campaign
 
+Final operation-custody17linkedcasesPASS(485SDK/177simulator/57worker), zero
+skips/errors/failures versus17realNOT_RUN/exit3. OrdinaryPR/finalheadCI next;
+measurement is not functional support/native acceptance. Python-only delivery
+requires no live IDE gate or repair; full42row acceptance/sleep remain pending.
+
+Fresh operationmeasurement4390SDK/248simulator/6tool and all composition/revision/
+provider/provenance/inventory/reference/worker/governance suitesPASS, zero skips/
+errors/failures.57SDK+23simulator+5worker rawpackageparity; tool-only70lines34branches
+100%unexcluded. Exact newSDK-onlyreport reproduces411body-attributioncounts unchanged;
+inputreporthash209e7919... pinned.17linkedmatrix running vs17realNOT_RUN/exit3.
+NormalPR/CI pending; native/fullABC unchanged.
+
+PR287 verified MERGED371187fdf5ef8ea443def0ab9bbe3388e0bda4c0 at05:51:52Z,
+exact592066a2cede122a207657d5fd2d453dbfee8c7c/all38checksPASS/no failedrerun.
+Operationmeasurement child fastforwarded actualmerge preserving uncommitted work;
+no remote watcher remains. Unique operation-coverage-first verifier running;
+native/CAP03/fullABC acceptance unchanged.
+
+Final operationmeasurement devtool6testsPASS/70lines34branches100%unexcluded,
+bodymypy/fatallintPASS. CI SDK-onlyexport/attribution dryrun initially tool-onlytest
+did not import SDK, coverageexport correctly failed NoData; corrected batch includes
+18providerhandlecontrols,24PASS and filteredSDKreport/attributionPASS. Neither the
+initial lack ofSDKmeasurement nor filteredfocusedcounts are fullSDKcoverage claims.
+Fresh unique operation-coverage-first verification next; no productioncode changes.
+
+Copied-composition published PR287 head592066a2c/finalheadwatcher
+sh_1b489ec93001z5NCoei19oIUnz running, no merge claimed. Child operationcoverage
+devtool now attributes SDK-only body lines to exact matching source bytes, rejecting
+mixed reports/duplicates/drift.6focusedtestsPASS/69lines34branches100% before final
+type-only parser-endposition casts. First priorreport411callables:51abstract/
+322measuredbody/17partial/19no-bodymeasurement/2refusal, NOT supportedworkflow counts.
+Importdefinitions/one-line defs/nestedcallbacks/exclusions never imply invocation.
+Fullfreshverification pending; productionSDK/worker/simulator unchanged fromPR287.
+
 Final copiedcomposition17linkedcasesPASS(485SDK/177simulator/57worker) vs17real
 NOT_RUN/exit3, zero skips/errors/failures. Publish ordinaryPR/finalCI next;
 copieddata composition not live federation/sourceauthority/native/CAP03 completion.

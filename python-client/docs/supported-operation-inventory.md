@@ -15,6 +15,42 @@ transport/permission/scientific obligations still require their own tests/eviden
 The [pinned Java source receipt](../../notes/python-roadmap-execution/evidence/supported-operation-source-authority-20261107.json)
 records the read-only authority used below. It is not a deployed Java test.
 
+## Measured callable-body custody
+
+`tools/operation_coverage.py` joins the source inventory to an **SDK-only** coverage
+JSON report, requiring that every measured module still exists and matches current
+source bytes. It refuses mixed simulator/worker/tool reports, path traversal, duplicate
+module/callable identities and unavailable or drifted installed files. The result
+pins the input report hash and module hashes and lists measured/missing/excluded
+body lines for each source callable. No SDK import or service request is performed.
+
+```powershell
+python tools/operation_coverage.py sdk-only-coverage.json --output operation-body-coverage.json
+```
+
+Definitions executed at import are excluded from body attribution. For a one-line
+`def`, declaration and body cannot be distinguished using line coverage; it is
+labelled unattributable, not invoked. Nested callback bodies are not counted as
+outer-function body execution. Historical excluded lines remain explicit, not
+converted to measured success. Abstract declarations and explicit unsupported
+refusal bodies retain separate statuses. This is **line measurement, not invocation
+counting, full branch coverage per callable, route/workflow support, permissions,
+scientific correctness or native compatibility**.
+
+First attribution against the prior accepted copied-composition SDK report found
+51abstract declarations,322bodies with all measured body lines executed,17partial
+body-line measurements,19bodies with no measured body execution and2refusal bodies.
+This does not mean19untested operations: child-process/reference-suite execution
+may be absent from the particular SDK-only coverage report, and getters/wrappers
+have their own measurement scope. Conversely322measured bodies do not establish
+322supported user workflows. Use these rows to select further tests, never as a
+roadmap completion or backend acceptance counter.
+
+Hosted offline checks export an SDK-only view from the existing measurement data
+and upload it with the attribution report; existing broad coverage gates remain
+unchanged. Missing reports or installed bytes never silently fall back to source
+classification. The development tool and its coverage are not production SDK code.
+
 ## Binary provider implementation and remaining encoder wrappers
 
 | Operation | Python status | Inspected Java source | Next requirement |
