@@ -1,5 +1,20 @@
 # Resume the full Python A+B+C campaign
 
+Latest310MERGED3df3ee48d at2026-11-07T23:00:03Z/exact336ea7604/all40checksPASS,
+remote-localcheckpointverified.42originalIDs/history7runnable/zero dispositions.
+Primary feat/python-integrated-packaging-readiness has uncommitted evidence/checkpoint
+notes; private verify-integrated-packaging.py fullbuild/freshpiptargets/fullsuite run
+active at premerge8867bb4af candidate, output integrated-packaging-first. Do not modify
+primary SDK/test/tool/example bytes during frozen run.311ready8867bb4afCIwatcher active.
+Whole-tree mypy144errors25files/114modules retained whole-tree-types-initial.log,
+fatallintPASS. Separate ownedworktree C:/Users/lumsd/AppData/Local/Temp/opencode/
+whole-tree-type-contracts (branchfeat/python-whole-tree-type-contracts) has uncommitted
+errors.py/_async_transport.py/state.py limited typing/binding corrections.223SDK44sim
+sourcecontrolsPASS; firstcorrectiontype105errors before laterstateannotations. Need
+continue corrections without ignores, fullsuite/build/types exactcandidate; no all-tree
+pass or finalroadmapacceptance claim.60reviewedmaps446missing remain. Preserve owned
+worktree pending verified integration; no finalcleanup/delete until changes safely saved.
+
 Latest309MERGED914582221 at2026-11-07T22:49:56Z/exact87cc87c16/all39checksPASS,
 remote/localcheckpointverified.42originalIDs/history8runnable/zero dispositions.
 310ready336ea7604 source scientific-snapshot484/3/52PASS35controls56maps450missing,

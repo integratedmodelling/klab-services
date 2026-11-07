@@ -3,30 +3,22 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-integrated-safety-acceptance",
-    "pr": 311,
-    "requirement": "RC-P3.2",
+    "branch": "feat/python-integrated-packaging-readiness",
+    "pr": null,
+    "requirement": "RC-R1",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 309,
-    "merge": "9145822213d5895c984e5ce4c3c6b357e962b88f",
-    "head": "87cc87c164a30b4dec432a4d2ef5d06e7ffc58e0",
-    "utc": "2026-11-07T22:49:56Z",
+    "pr": 311,
+    "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
+    "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
+    "utc": "2026-11-07T23:02:11Z",
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P3.5",
-  "pending_deliveries": [
-    {
-      "pr": 310,
-      "head": "336ea7604",
-      "state": "EXACT_HEAD_CI_PENDING_REFERENCE_SCIENCE484_3_52PASS_NOT_NATIVE_SCIENCE"
-    }
-  ],
+  "pending_deliveries": [],
   "remaining_runnable_work": [
     "operation-workflow-attribution",
-    "multishard-scientific-acceptance",
-    "safety-regression-acceptance",
     "integrated-packaging-compatibility"
   ],
   "external_blockers": [
@@ -4618,8 +4610,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: multishard-scientific-acceptance"
       },
       "simulator_support_needed": "Integrate public synthetic multishard and authentic recorded-data read/export/analysis known-answer workflows with independent coordinates/masks/precision checks; real provider science remains separately gated.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_MULTISHARD_RECORDED_REFERENCE_SNAPSHOT_MATRIX_DELIVERED_PR310",
+      "simulator_acceptance_status": "484SDK_3ISOLATED_52PUBLICHTTP_PASS_REAL_PROVIDER_SCIENCE_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -4674,12 +4666,21 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_scientific_snapshot_delivery": {
+          "pr": 310,
+          "head": "336ea76043b65284bbed7ac268582f7f74679b62",
+          "merge": "3df3ee48d49c7c8a2b10d21f304e10ca1a0feb4b",
+          "merged_at": "2026-11-07T23:00:03Z",
+          "final_head_checks": 40,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-scientific-snapshot-installed-20261107.json"
+        }
       },
       "work_group": "multishard-scientific-acceptance",
       "priority": 18,
-      "task_state": "pending",
-      "next_executable_action": "Integrate public synthetic multishard and authentic recorded-data read/export/analysis known-answer workflows with independent coordinates/masks/precision checks; real provider science remains separately gated.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance. Authentic recorded data is not actual provider execution; approved model/data/datum/tolerance oracle and native scanner/provider/worldview/time evidence remain separate external gates.",
       "disposition": null
     },
     {
@@ -5051,8 +5052,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: safety-regression-acceptance"
       },
       "simulator_support_needed": "Reverify public stale/partial refresh, exact scalar precision/missingness, socket-forbidden offline restoration, no implicit replay/fallback and optional-dependency safety after remaining features.",
-      "implementation_status": "BOUNDED_IMPLEMENTATION_DELIVERED_ACCEPTANCE_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_SAFETY_PRECISION_PARTIAL_REFRESH_OFFLINE_NOOPTIONAL_MATRIX_DELIVERED_PR311",
+      "simulator_acceptance_status": "587SDK_2ISOLATED_31PUBLICHTTP_PASS_NATIVE_AND_OS_SECURITY_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [],
@@ -5099,12 +5100,21 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_safety_delivery": {
+          "pr": 311,
+          "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
+          "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
+          "merged_at": "2026-11-07T23:02:11Z",
+          "final_head_checks": 23,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-safety-installed-20261107.json"
+        }
       },
       "work_group": "safety-regression-acceptance",
       "priority": 21,
-      "task_state": "pending",
-      "next_executable_action": "Reverify public stale/partial refresh, exact scalar precision/missingness, socket-forbidden offline restoration, no implicit replay/fallback and optional-dependency safety after remaining features.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance. Whole-tree type gate and reviewed operation assertions remain incomplete; native complete graph/history/rights/deployment and approved OS/container security remain separate evidence obligations.",
       "disposition": null
     },
     {
@@ -5194,8 +5204,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: safety-regression-acceptance"
       },
       "simulator_support_needed": "Reverify public stale/partial refresh, exact scalar precision/missingness, socket-forbidden offline restoration, no implicit replay/fallback and optional-dependency safety after remaining features.",
-      "implementation_status": "BOUNDED_IMPLEMENTATION_DELIVERED_ACCEPTANCE_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_SAFETY_PRECISION_PARTIAL_REFRESH_OFFLINE_NOOPTIONAL_MATRIX_DELIVERED_PR311",
+      "simulator_acceptance_status": "587SDK_2ISOLATED_31PUBLICHTTP_PASS_NATIVE_AND_OS_SECURITY_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -5238,12 +5248,21 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_safety_delivery": {
+          "pr": 311,
+          "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
+          "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
+          "merged_at": "2026-11-07T23:02:11Z",
+          "final_head_checks": 23,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-safety-installed-20261107.json"
+        }
       },
       "work_group": "safety-regression-acceptance",
       "priority": 21,
-      "task_state": "pending",
-      "next_executable_action": "Reverify public stale/partial refresh, exact scalar precision/missingness, socket-forbidden offline restoration, no implicit replay/fallback and optional-dependency safety after remaining features.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance. Whole-tree type gate and reviewed operation assertions remain incomplete; native complete graph/history/rights/deployment and approved OS/container security remain separate evidence obligations.",
       "disposition": null
     },
     {
@@ -5366,8 +5385,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: safety-regression-acceptance"
       },
       "simulator_support_needed": "Reverify public stale/partial refresh, exact scalar precision/missingness, socket-forbidden offline restoration, no implicit replay/fallback and optional-dependency safety after remaining features.",
-      "implementation_status": "BOUNDED_IMPLEMENTATION_DELIVERED_ACCEPTANCE_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_SAFETY_PRECISION_PARTIAL_REFRESH_OFFLINE_NOOPTIONAL_MATRIX_DELIVERED_PR311",
+      "simulator_acceptance_status": "587SDK_2ISOLATED_31PUBLICHTTP_PASS_NATIVE_AND_OS_SECURITY_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [],
@@ -5412,12 +5431,21 @@
           "1fd759605e45fb384a088a3f4b4e0d305b50605f",
           "2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_safety_delivery": {
+          "pr": 311,
+          "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
+          "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
+          "merged_at": "2026-11-07T23:02:11Z",
+          "final_head_checks": 23,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-safety-installed-20261107.json"
+        }
       },
       "work_group": "safety-regression-acceptance",
       "priority": 21,
-      "task_state": "pending",
-      "next_executable_action": "Reverify public stale/partial refresh, exact scalar precision/missingness, socket-forbidden offline restoration, no implicit replay/fallback and optional-dependency safety after remaining features.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance. Whole-tree type gate and reviewed operation assertions remain incomplete; native complete graph/history/rights/deployment and approved OS/container security remain separate evidence obligations.",
       "disposition": null
     },
     {
@@ -5494,8 +5522,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: safety-regression-acceptance"
       },
       "simulator_support_needed": "Reverify public stale/partial refresh, exact scalar precision/missingness, socket-forbidden offline restoration, no implicit replay/fallback and optional-dependency safety after remaining features.",
-      "implementation_status": "BOUNDED_IMPLEMENTATION_DELIVERED_ACCEPTANCE_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "INSTALLED_SAFETY_PRECISION_PARTIAL_REFRESH_OFFLINE_NOOPTIONAL_MATRIX_DELIVERED_PR311",
+      "simulator_acceptance_status": "587SDK_2ISOLATED_31PUBLICHTTP_PASS_NATIVE_AND_OS_SECURITY_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -5516,12 +5544,21 @@
           "564d27f166b5a908240b0533bfa7c4b4b55dbd4d",
           "052c729cba3cae5bfe5057e68c40501ea1e96718"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_safety_delivery": {
+          "pr": 311,
+          "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
+          "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
+          "merged_at": "2026-11-07T23:02:11Z",
+          "final_head_checks": 23,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-safety-installed-20261107.json"
+        }
       },
       "work_group": "safety-regression-acceptance",
       "priority": 21,
-      "task_state": "pending",
-      "next_executable_action": "Reverify public stale/partial refresh, exact scalar precision/missingness, socket-forbidden offline restoration, no implicit replay/fallback and optional-dependency safety after remaining features.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance. Whole-tree type gate and reviewed operation assertions remain incomplete; native complete graph/history/rights/deployment and approved OS/container security remain separate evidence obligations.",
       "disposition": null
     },
     {

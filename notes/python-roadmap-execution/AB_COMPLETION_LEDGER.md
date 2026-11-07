@@ -1,5 +1,33 @@
 # A+B completion ledger — ongoing campaign
 
+311MERGEDb342a674a at2026-11-07T23:02:11Z/exact8867bb4af/all23checksPASS,
+remote/localcheckpointverified.310merged3df3ee48d/all40PASS.42originalIDs/history
+3runnable/zero dispositions; all hostedwatchersfinished. Fresh premergepackage run
+5262SDK38tools116worker537sim39governancePASS/71SDK6worker37sim13assetparityPASS.
+Receipt integrated-packaging-development-20261107.json retains premergecandidate;
+exactmergedfinalrevalidation stillowed. ReadinessNOTELIGIBLE/expected3/publicationfalse.
+Whole-tree baseline144typefailures not waived; secondaryownedworktree now79errors/
+18files with223SDK99simsourcecontrols/fatallintPASS, uncommitted/noPR. Continue
+typing/assertionreview then rebuild/reverify, no finalroadmap/native/release promotion.
+
+310MERGED3df3ee48d49c7c8a2b10d21f304e10ca1a0feb4b at2026-11-07T23:00:03Z,
+exact336ea76043b65284bbed7ac268582f7f74679b62/all40checksPASS; remote/local ancestry
+checkpointverified.484/3/52reference-science matrix delivered without actual provider
+science/finalrow promotion.42originalIDs/history7runnable/zero dispositions.
+311ready8867bb4af CIwatcher active; primary package/fullsuite candidate frozen.
+Owned secondary worktree approvedtemp/whole-tree-type-contracts/branchfeat/python-
+whole-tree-type-contracts has uncommitted limited annotation/distinctbinding corrections;
+223SDK44reference sourcecontrolsPASS. Initial144typefailures retained; first correction
+sweep105remain before laterstateannotations, not finalgatepass. No ignores or native repair.
+
+Packaging/readiness expanded sweep exposes144whole-tree mypyerrors/25files across
+114sourcefiles; whole-source fatal lintPASS. Prior focused type passes are not an
+all-tree pass; production bytes unchanged, findings remain unresolved not waived.
+Fresh builds/source-wheel-sdist-installed assetparity/fullsuite run active at
+premerge311candidate8867bb4af; final exact-merged acceptance still owed.310/311CI
+watchers active;309verifiedmerged/all39PASS. Concrete next: classify declaration vs
+runtime findings, retain diagnostics, fix without ignores, rebuild/rerun exactcandidate.
+
 PR311 published832982cdd installedsafety587/2/31PASS37controls/types-lintPASS;
 60reviewedmaps446missing. Ready for exact-headCI, ordinarymerge/checkpoint owed.
 310CIpending;309verifiedmerge/all39PASS. Continue packaging/release-readiness.
