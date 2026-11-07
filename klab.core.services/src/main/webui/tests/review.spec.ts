@@ -56,7 +56,7 @@ test("invalid requested tiers never submit or mutate and correction prepares exa
   expect(await page.evaluate(() => (window as any).calls)).toMatchObject([{ command: {
     expectedRevision: 3, parameters: { requested_tier: 2, revision_id: "r1", purpose: "test" } } }]);
   await release(page, "prepare");
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/test-proposal/);
   expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
 });
 
