@@ -1,0 +1,15 @@
+{
+  "evidence": "READ_ONLY_SOURCE_NOT_NATIVE_EXECUTION",
+  "baseline": "ca32b1f2f",
+  "files_sha256": {
+    "klab.core.common/src/main/java/org/integratedmodelling/common/services/client/ResourcesClient.java": "1035a45164358022ef42562adb15ed1df965f97deba760daff14552b643a082c",
+    "klab.core.common/src/main/java/org/integratedmodelling/common/services/client/ResolverClient.java": "e3a9548dad982f01a1feb6dd737db24f3b030bc8879c6e582824d0911b7c76b3",
+    "klab.core.common/src/main/java/org/integratedmodelling/common/utils/Utils.java": "0ddf6936f0304f7e9f5714842faa101fa8f2e80192f00b4bc86ba82f2b6c67f9",
+    "klab.core.common/src/main/java/org/integratedmodelling/klab/common/data/DataRequest.java": "97481b096b9fe95fd494ddf94a306beae8b798c3c2fcbc12ebed6bc44bee2a23"
+  },
+  "contextualize": "ResourcesClient587 constructs DataRequest; Utils.postData1293 raw Avro SpecificDatumWriter binary, application/octet-stream, native Resources contextualize route, returned Job id; PollingFuture1174 retrieves Data via distinct binary result route. Experimental worker lease protocol is separate.",
+  "encode_dataflow": "ResolverClient103 source stub returns null. No native encoder HTTP route or global absence claim inferred.",
+  "python": "Four unconditional unsupported wrappers represent two sync/nativeasync operations. decode_cell and Geometry.encode support checked cases and contain guarded unsupported fallbacks, not wholly unimplemented operations.",
+  "native_java": "REAL_NOT_RUN",
+  "scientific_acceptance": false
+}

@@ -190,6 +190,17 @@ not a prerequisite for this campaign. No production Java source/services/resourc
 
 ## Generated authoritative inventory
 
+### Python operation inventory is not a native support certificate
+
+The reproducible [source-callable inventory](../../python-client/docs/supported-operation-inventory.md)
+distinguishes four explicit unsupported wrappers (two sync/nativeasync operations)
+from supported functions with guarded refusal paths. Resources contextualization
+needs the source-defined raw Avro DataRequest and binary Data Job retrieval contract;
+the separate experimental worker protocol does not implement that native ABI.
+ResolverClient.encodeDataflow is a source stub returning null, not evidence for a
+universal missing server endpoint. No source count or stub inspection changes any
+gap's native status, supplies a fresh Java run or completes RC-P0.
+
 ### Declared dependency graph workflow — JAVA-GAP-0016/0013
 
 The separate provenance-dependencies fixture adds finite synthetic MEASURED,

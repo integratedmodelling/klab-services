@@ -1,5 +1,52 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Active supported-operation source inventory
+
+ProvenancePR282OPENca32b1f2f, finalheadwatcher sh_1b4208e62001EIICUDmOiPnFJe
+running; no merge claimed. Current test/python-supported-operation-inventory branches
+from that head. Independent RC-P0 source inventory enumerates410public-named AST
+callables:51abstract/331implemented-source-only/24guarded/4unconditionallyunsupported.
+Four wrappers represent two sync/nativeasync operations(contextualize/encode_dataflow),
+not six: decode_cell and Geometry.encode have supported returns before guarded
+refusals. Tool never imports SDK or contacts services. Inherited/generated/alias/
+nested surfaces and route/permission/test coverage NOT inferred from source counts.
+11focused tooltestsPASS at50lines26branches100%unexcluded, fatallintPASS. Committed
+sourceinventory/check CI and support docs now reflect C in scope/separate experimental
+worker, not obsolete authorization exclusion. Java source-only authority hashes pinned
+in `evidence/supported-operation-source-authority-20261107.json`. RC-P0/full42rows
+remain PARTIAL; nativebinarycontextualization/encoder-contract and workflowcoverage
+deficits not hidden. Fresh installed verification/delivery remain pending.
+Fresh package verifier uses unique supported-operation-inventory-first target,
+shell sh_1b42385c10018XE8ZqAvlfUs4t; no overwrite/polling. Tool body mypyPASS.
+ProductionSDK/worker/simulator sources unchanged from pendingPR282. Next automatic
+receipt/parity/toolcoverage/17linkedvsreal and ordinaryPR after282finalCI/merge.
+ProvenancePR282 subsequently verified MERGEDbe3ccf991d6d1ee1bfd9b6b0a45c7f5e2213451d
+at2026-11-07T03:57:44Z, exactca32b1f2fabd43ebca6119009fcd1152040d1ac8 after all
+applicable finalheadchecksPASS including100%fixture gate/no failed-check rerun.
+Inventory branch fastforwarded actualintegrationmerge preserving uncommittedwork.
+No independentmaintainerreview/nativecommit or full-lineage acceptance claimed.
+Inventory freshverifier remainsrunning; no282watcher remains. Continue independent
+implementation after normalinventorydelivery; full42scope/nativegates/sleep pending.
+Inventory verifier completed03:59:02UTC:4274SDK/223simulator/11inventory/18provenance/
+98otherreference/57worker/21HTTP/37governancePASS, zero skips/errors/failures. Current
+55SDK+20simulator+5worker modulebytes matchsource/wheel/sdist/installed. Tool-only
+50lines26branches100%unexcluded, not SDKnewmodulecoverage.17linkedmatrix running
+vs17realNOT_RUN/exit3verified. Receipt `evidence/full-roadmap-operation-inventory-20261107.json`.
+Next ordinaryPR after matrix attestation, finalheadCI/permittedmerge, then remaining
+independent implementation; no sourcecount/support/native/fullroadmap promotion.
+Independent next-slice temporaryprototype (not productionSDK/support): raw no-input
+Avro DataRequest fieldorder from pinned generatedschema matches fastavro1.13.1
+schemaless encode/decode across9controls (empty/single/multipleURNs and signedlong
+boundaries). fastavro installed only in approved temporary oracle target, no SDK
+dependency/environment mutation. This is offline codec evidence, NOT Java execution
+or nativecontextualize acceptance. Bounded fullInstance codec/nativebinaryJob
+transport/denial/error/lifecycle/installedtests/simulator+stablegap handoff remain
+required before replacing existing explicitunsupported wrappers. No production
+source changed during inventoryartifact custody; no sourcecount progress inflated.
+Inventoryfinal17linkedcasesPASS(375SDK/152simulator/57worker), zero skips/errors/
+failures vs17realNOT_RUN/exit3. NormalPR/finalheadCI/permittedmerge next; source
+inventory remains only boundedRC-P0 component, not executed/native/fullroadmap support.
+
 ## Latest delivery and provenance development pass
 
 PR281 verified MERGED4806cbc698b983d8aec751bdb7ee7f62044a05c3 at

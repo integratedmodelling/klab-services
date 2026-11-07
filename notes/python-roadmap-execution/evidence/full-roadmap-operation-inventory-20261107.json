@@ -1,0 +1,20 @@
+{
+  "verified_utc": "2026-11-07T03:59:02.243912+00:00",
+  "baseline_head": "be3ccf991d6d1ee1bfd9b6b0a45c7f5e2213451d",
+  "scope": "Development-only source-callable inventory and support documentation; production SDK/worker/simulator implementation unchanged",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "2ac490e96851367e22ff9752f6fe786b2ccffd2c37a5c7c8a977a468807c1b53", "sdist_sha256": "0a2ec2a5583100f35f72c2d56562b4173fdc23390a0b09ef92ab20633a519568", "parity_modules": 55},
+    "simulator": {"wheel_sha256": "29b4c784aa28cf12eddc506d1fcfda6a47eb669490340477963e650d396f31ec", "sdist_sha256": "5e8781f156c5c4837be5de0dd9a95f3e2e1aa8e7aa7c539f5739fde4c3ccba91", "parity_modules": 20},
+    "worker": {"wheel_sha256": "aaf6d63b9a019861cef9ae29738dc4a53ecb9d3ef16b9488f9839078a9c3220b", "sdist_sha256": "9a806303c398557aea1d0f6551311b22ade5a8dcdd0bb6dfc7b4f584dc4c3367", "parity_modules": 5}
+  },
+  "installed_tests": {"SDK": 4274, "operation_inventory": 11, "provenance_reference": 18, "other_reference": 98, "simulator": 223, "worker": 57, "worker_HTTP": 21, "governance": 37, "skips_failures_errors": 0},
+  "tool_only_coverage": {"covered_lines": 50, "statements": 50, "covered_branches": 26, "branches": 26, "excluded_lines": 0, "not_SDK_new_module_coverage": true},
+  "source_classifications": {"ABSTRACT_DECLARATION": 51, "IMPLEMENTED_SOURCE_ONLY": 331, "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24, "UNCONDITIONALLY_UNSUPPORTED": 4},
+  "limitations": "Source-callable classification is not executed support, route/permission coverage or native compatibility. Inherited/generated/alias/nested expansion excluded explicitly. RC-P0/fullABC incomplete; two unsupported operations still unimplemented.",
+  "source_authority": "notes/python-roadmap-execution/evidence/supported-operation-source-authority-20261107.json; all4Java hashes independently rechecked unchanged, no native execution",
+  "body_mypy": "PASS",
+  "fatal_lint": "PASS",
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 375, "simulator_tests": 152, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "dependency_custody": "Fresh wheel/sdist/separate pip-target verification borrows prior test dependencies; no fresh dependency-isolation certification",
+  "remaining": "Publish ordinary PR/final-head CI/permitted merge; continue native binary contextualization and remaining42rows. Native/fullABC acceptance and sleep pending."
+}
