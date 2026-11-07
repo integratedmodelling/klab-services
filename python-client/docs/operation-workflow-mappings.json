@@ -4,6 +4,18 @@
   "workflows": [
     {
       "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+      "operations": [["graph_projection.py", "GraphProjection.load"], ["graph_projection.py", "GraphProjection.view"], ["graph_projection.py", "GraphProjection.clear"]],
+      "assertions": "Denied/server/disconnect refresh invalidates both retained pages with READ_FAILED/UNKNOWN/NOT_RECHECKED and preserves remote counts. Explicit one-page reload refreshes only that page, not global state; local clear disposes no remote scopes. Exactly two scientific submissions, no hidden replay; owner cleanup empties counts. Not native complete graph/history or current authorization acceptance."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_native_awaited_refresh_uses_existing_routes_and_retains_honest_partial_pages",
+      "operations": [["graph_projection.py", "AsyncGraphProjection.load"]],
+      "assertions": "Native coroutine awaited HTTP refresh retains explicit partial/stale pages after denial/500/disconnect, then refreshes only one requested page. Existing routes, explicit owner cleanup, two submissions and no authorization/completeness inference; native coroutine here means Python async, not native Java acceptance."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
       "test_ref": "developer-tools/klab-service-simulator/tests/test_read_plans.py::test_owned_multishard_snapshot_preserves400cells_zero_negative_mask_and_release",
       "operations": [["read_plans.py", "open_read_plan"], ["read_plans.py", "read_plan_shard"], ["read_plans.py", "assemble_read_plan"], ["read_plans.py", "release_read_plan"]],
       "assertions": "Explicit experimental opt-in yields six73-cell-budget shards for400finite cells; exact zero/negative/missing masks, shape/CRS/affine/units and final195 value preserve known answers. Reordered shards refuse, Bob denies, released grant returns410; owner cleanup empties counts. Reference content hashes are not native commits or provider accuracy."
