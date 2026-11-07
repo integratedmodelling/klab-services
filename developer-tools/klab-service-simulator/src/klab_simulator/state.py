@@ -30,6 +30,7 @@ SCENARIOS += ("shared-read",)
 SCENARIOS += ("source-validation",)
 SCENARIOS += ("accepted-documents",)
 SCENARIOS += ("dependency-inspection",)
+SCENARIOS += ("dependency-graphs",)
 
 
 class ContractError(Exception):
@@ -89,6 +90,8 @@ class State:
         self.dependency_revision = 1
         from .accepted_documents import AcceptedSources
         self.accepted_sources = AcceptedSources(self) if scenario == "accepted-documents" else None
+        from .dependency_graphs import DependencyGraphs
+        self.dependency_graphs = DependencyGraphs(self) if scenario == "dependency-graphs" else None
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -129,7 +132,8 @@ class State:
                 "jobs": len(self.jobs), "observations": len(self.observations),
                 **({"read_grants": len(self.shared_reads.rows)} if self.shared_reads is not None else {}),
                 **({"source_documents":len(self.accepted_sources.rows),"source_publications":len(self.accepted_sources.publications)}
-                    if self.accepted_sources is not None else {})}
+                    if self.accepted_sources is not None else {}),
+                **({"dependency_snapshots":len(self.dependency_graphs.snapshots)} if self.dependency_graphs is not None else {})}
 
     def _owner(self, mapping, key, principal):
         if key not in mapping:
@@ -277,6 +281,7 @@ class State:
                 if self.shared_reads is not None: self.shared_reads.rows.clear()
                 if self.accepted_sources is not None:
                     self.accepted_sources.rows.clear(); self.accepted_sources.publications.clear()
+                if self.dependency_graphs is not None:self.dependency_graphs.snapshots.clear()
                 self.authoring.reset()
                 from .workers import WorkerState
                 self.workers = WorkerState(self)
@@ -305,6 +310,13 @@ class State:
             if method == "POST" and path == "/__sim__/advanceDependencies" and self.scenario == "dependency-inspection":
                 self.dependency_revision += 1
                 return True, "application/json"
+            if method == "POST" and self.dependency_graphs is not None and path in (
+                    "/__sim__/advanceDependencyGraph", "/__sim__/dependencyGraphCycle", "/__sim__/dependencyGraphGap", "/__sim__/dependencyGraphComplete"):
+                self.dependency_graphs.revision += 1
+                if path.endswith("Cycle"):self.dependency_graphs.mode="cycle"
+                if path.endswith("Gap"):self.dependency_graphs.mode="missing-endpoint"
+                if path.endswith("Complete"):self.dependency_graphs.mode="complete"
+                return True, "application/json"
             raise ContractError(404, "Unknown test control")
         pieces = path.strip("/").split("/", 1)
         if len(pieces) != 2 or pieces[0] not in SERVICES:
@@ -323,6 +335,7 @@ class State:
                     **({"sharedAccessProtocol": "klab.experimental.shared-access/1"} if self.shared_reads is not None and service == "runtime" else {}),
                     **(validation_capabilities(self) if self.scenario == "source-validation" and service == "reasoner" else {}),
                     **({"acceptedDocumentProtocol":"klab.experimental.accepted-documents/1"} if self.accepted_sources is not None and service == "resources" else {}),
+                    **({"dependencyGraphProtocol":"klab.experimental.dependency-graphs/1"} if self.dependency_graphs is not None and service == "resources" else {}),
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                      "importSchemata": schemas() if service == "resources" else {},
                      **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
@@ -427,6 +440,8 @@ class State:
             from .dependencies import respond as dependency_response
             selected = dependency_response(self, method, route, principal, scope)
             if selected is not None: return selected
+        if service == "resources" and route.startswith("/experimental/dependencies/v1/graphs/") and self.dependency_graphs is not None:
+            return self.dependency_graphs.request(method,original_path.split("/resources",1)[1],principal,scope,headers)
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
                 raise ContractError(400, "Scope advertisement requires service descriptors")
@@ -556,6 +571,7 @@ class State:
             for root in roots:
                 if self.shared_reads is not None: self.shared_reads.release(root)
                 if self.accepted_sources is not None: self.accepted_sources.release(root)
+                if self.dependency_graphs is not None:self.dependency_graphs.release(root)
                 del self.contexts[root]
                 self.query_faults.pop(root, None)
                 self.jobs = {key: row for key, row in self.jobs.items() if row["scope"] != root}

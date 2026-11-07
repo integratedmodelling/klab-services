@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-SOURCE-BOUND-DEPENDENCIES-001",
+      "rows": ["RC-P4.1", "CAP-13"],
+      "routes": ["/resources/experimental/dependencies/v1/graphs/MODEL/synthetic.model", "/resources/experimental/dependencies/v1/graphs/RESOURCE/synthetic:input", "/resources/public/capabilities"],
+      "source": "Separate advertised exact opt-in proposed graph protocol, not guessed native ResourceSet edges. Independent finite model/namespace/resource source literals with exact UTF8SHA256, provider/version/sourceRevision, server-reported root/subject/READ stamps, immutable snapshot/revision paging and typed DEPENDS_ON edges. Public sync/nativeasync graph/source/version/access proof, changed-source paging409/no partialresult, explicit fresh inspection, principal/root denial, cycle/gap/budget refusal and owned cleanup. Reference declared completeness never native closure/compiler/scientific/access authority; native membership remainsUNKNOWN/UNAVAILABLE.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native complete source/edge/access/snapshot contract unestablished",
+      "simulator_test": "test_dependency_graphs.py::test_public_multipage_source_version_access_graph_and_current_principal_denial",
+      "java_gap_ids": ["JAVA-GAP-0013"]
+    },
+    {
       "id": "SIM-DEPENDENCY-MEMBERSHIP-001",
       "rows": ["RC-P4.1", "CAP-13"],
       "routes": ["/resources/api/v1/resolve/NAMESPACE/synthetic.root", "/resources/public/capabilities"],

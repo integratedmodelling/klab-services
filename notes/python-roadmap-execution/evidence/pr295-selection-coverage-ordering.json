@@ -9,5 +9,11 @@
   "correction": "Move SDK membership append immediately after original SDK batch, before simulator coverage reset. Keep original JSON gate and100percent threshold; add static all-workflow ordering regression.",
   "production_module_bytes_changed": false,
   "verification": "Actual ordered installed693SDK/34append/6publicHTTP/21fixturePASS, then unchanged selections.py/newchangedcode100percent gatePASS despite fixture database reset. Static workflowordering controlPASS. Final-head hosted CI remains pending.",
-  "evidence_directory": "C:/Users/lumsd/AppData/Local/Temp/opencode/full-roadmap-20261106/dependency-membership-first/selection-ordered-correction"
+  "evidence_directory": "C:/Users/lumsd/AppData/Local/Temp/opencode/full-roadmap-20261106/dependency-membership-first/selection-ordered-correction",
+  "final_delivery": {
+    "head": "a1a781f547671406bcfea146644558ceb4d84351",
+    "checks_pass": 40,
+    "merge": "641eaa161a30941b0d5c875e7beb26d3eaf12772",
+    "merged_at": "2026-11-07T17:09:18Z"
+  }
 }

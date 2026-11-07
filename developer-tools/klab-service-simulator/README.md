@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario dependency-graphs` is a separately advertised opt-in finite graph
+reference with exact literal sources/hash/version/provider/access stamps and pinned
+opaque multipage snapshots. Test-only source advance, cycle and missing-edge modes
+verify no mixed/partial graph, explicit fresh inspection and bounded owner cleanup.
+It is not native complete closure, source compilation or scientific lineage. Durable
+mode refuses. See [source-bound graph reference](../../python-client/docs/dependency-graphs-reference.md).
+
 `--scenario dependency-inspection` serves a finite native-shaped ResourceSet grouped
 membership response and authenticated test-only version advance. Provider URLs are
 inert. It refuses durable mode, creates no dependency resources and does not imply

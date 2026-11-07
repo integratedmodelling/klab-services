@@ -1,0 +1,46 @@
+name: Experimental source-bound dependency graphs (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/src/klab_client/dependency_graphs.py', 'python-client/src/klab_client/__init__.py', 'python-client/tests/unit/test_dependency_graphs.py', 'developer-tools/klab-service-simulator/**', '.github/workflows/dependency-graphs-reference.yml']
+  pull_request:
+    paths: ['python-client/src/klab_client/dependency_graphs.py', 'python-client/src/klab_client/__init__.py', 'python-client/tests/unit/test_dependency_graphs.py', 'developer-tools/klab-service-simulator/**', '.github/workflows/dependency-graphs-reference.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-source-bound-graphs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: Public SDK-only complete graph identity/source/access/pagination refusal controls
+        run: python -m pytest -q python-client/tests/unit/test_dependency_graphs.py --cov=klab_client --cov-branch --cov-report=json:dependency-graphs-sdk.json
+      - name: Whole new SDK module and all changed SDK decisions unexcluded
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py dependency-graphs-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/dependency_graphs.py
+      - name: Independent public sync/nativeasync complete finite graph acceptance
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_dependency_graphs.py --junitxml=dependency-graphs-http.xml
+      - name: Supplementary independent fixture ownership/retention/intake
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_dependency_graph_fixture.py --cov=klab_simulator.dependency_graphs --cov-branch --cov-fail-under=100 --cov-report=json:dependency-graphs-fixture.json
+      - name: Implementation body types and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/dependency_graphs.py developer-tools/klab-service-simulator/src/klab_simulator/dependency_graphs.py
+          python -m ruff check python-client/src developer-tools/klab-service-simulator/src --select E9,F63,F7,F82
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: source-bound-finite-dependency-graph-not-native-closure
+          path: |
+            dependency-graphs-sdk.json
+            dependency-graphs-http.xml
+            dependency-graphs-fixture.json

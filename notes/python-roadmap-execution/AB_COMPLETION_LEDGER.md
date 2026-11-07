@@ -1,5 +1,61 @@
 # A+B completion ledger — ongoing campaign
 
+## PR295 verified merge; full finite graph reference implemented, acceptance pending
+
+Finalraw63SDK/30simulator/5worker source-wheel-sdist-installedmodule parity
+rechecked; SDK/worker no simulator.17linkedcasesPASS(875SDK/264simulator/72worker)
+vs17nativeREAL_NOT_RUN/explicitexpectedexit3. Fullreceipt
+evidence/full-roadmap-source-bound-dependency-graphs-20261107.json records source/
+artifactcustody,8publicHTTP/84SDK100%/17fixture100%,8focusedCIgates andactualordered
+selectioncoverageproof, initialcoverage/type corrections. Existingdependenciesborrowed,
+notfreshisolation. PR296 finalreceiptcommit/exactheadCI/ordinarymerge pending;
+no fullverifier/matrix remains running, CIwatcher active. No fullrow/nativepromotion.
+
+Fresh full installed4807SDK/387simulator/72worker/allreference/39governance suites
+PASS, zero skips/errors/failures. InstalledSDK-only whole newmodule/allchangedcode
+100%unexcludedPASS. Packageenumeration63SDK/30simulator/5worker; finalrawcustody
+receipt awaits17linkedmatrixcompletion. Draft296558caf47e hostedCI running;
+no newnativecompatibility/scientificexecution or whole-row acceptancepromotion.
+
+DraftPR296 published558caf47e. Graphsource unchanged afterartifactfreeze; full
+source-bound-dependency-graphs-first verifier and17linkedmatrix running. Eight
+installedfocusedCIgates+actualorderedselectiongatePASS,84SDK/8publicHTTP/17fixture
+controlsPASS. Finalfullinstalled/CI/ordinarymerge stillpending; native/scienceNOT_RUN.
+
+Graph fresh source-bound-dependency-graphs-first fullverifier+17linkedmatrix running.
+All8installedfocusedCIgatesPASS:785/693/571/195/113/63 olderbatches append118
+(84graph+34membership),native-membership34append84graph,graphdedicated84.
+17installedfixturecases100%. Actualorderedselection693SDK/118append/6HTTP/21fixture
+thenunchanged100%gatePASS, not only focused approximation. No graphPR yet; native
+completeclosure/science unchangedNOT_RUN. Next annotatedinputsource review planned,
+not implemented or nativeannotation authority. No finalcampaign completion inferred.
+
+Graph sourcefreeze final84SDK100%unexcluded wholemodule+changedcode,8publicHTTP
+including transitiveRESOURCEroot andMODELroot,17fixture100%,bodymypy/fatal lint/
+49governance+queue+workfloworderingcontrolsPASS. Resource/model literal graphs now
+share consistent transitive input->baseinput source/edges; modelnodecount5/4edges,
+resourceroot2/1. Concreteversion triple and unknownnodeclass refusal added, no ranges
+or inferred nativeVersion semantics. Initialtupleinference fix finalized. No newgraph
+PR yet; freshuniqueinstalledartifactverification next. Nativeacceptance remainsNOT_RUN.
+
+PR295 remotelyMERGED641eaa161a30941b0d5c875e7beb26d3eaf12772 at
+2026-11-07T17:09:18Z/exacta1a781f547671406bcfea146644558ceb4d84351,
+all40reportedfinalheadchecksPASS. Actualmerge integrated/remote+ancestrycheckpoint
+verified. Membershipreceipt and retainedselectioncoverageorderingfailure updated;
+42originalrecords/32runnable/zero finaldispositions. Graphchild continues same
+RC-P4.1/CAP-13, not a completed requirement or campaign stop. No watcher remains.
+
+Separate proposed advertised opt-in DependencyGraphs/AsyncDependencyGraphs now
+implemented with exact finite source/hash/provider/version/access stamps, pinned
+opaque snapshotpaging, typededges/reachability/cycle/gap/total/budget checks and
+ownedcleanup. Native membership staysUNKNOWN/UNAVAILABLE.83SDKwholemodule/
+changedcode100%unexcluded,8publicHTTP modelANDresource-root workflows and17fixture
+cases100%PASS. Changedsourcegenerationmidpages409rejects entiregraph without retry;
+explicitfresh inspection succeeds. Privacy/client/transport/credential fences include
+offlinecontext.clientreplacement refusal. Initial73controlcoverage98.81%expanded
+to83/100%without exemptions; tuple/map bodytypeinference annotations corrected,
+finalbody/governance rerun pending. Freshinstalled/ordinaryPR/nativeacceptance pending.
+
 ## PR295 CI ordering defect corrected without coverage relaxation
 
 PR295 current2343a220cOPEN; hostedselectiongate42393814235/job128466810363

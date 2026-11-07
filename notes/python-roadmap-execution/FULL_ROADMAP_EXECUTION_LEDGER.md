@@ -1,5 +1,49 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Native membership delivered, complete finite source-bound graph ongoing
+
+Finalrawmoduleparity63SDK/30simulator/5worker rechecked; no simulator inproduction.
+17linkedcasesPASS(875SDK/264simulator/72worker) vs17nativeNOT_RUN/expectedexit3.
+Completereceipt evidence/full-roadmap-source-bound-dependency-graphs-20261107.json
+retains source/artifactcustody,8focusedCIgates+actualorderedselection,84SDK100%,
+8publicHTTP/17fixture100% anddevelopment corrections. Dependenciesborrowed, notfresh
+isolation. PR296finalreceipt/exactheadCI/ordinarymergepending. OnlyCIwatcherrunning;
+fullverifier/matrixfinished. No originalrow/native/scientific disposition promoted.
+
+Freshinstalled4807SDK/387simulator/72worker/allreference/39governancePASS,
+zero skips/errors/failures. Installednewmodule/changedcode100%unexcludedPASS.
+63SDK/30simulator/5worker packageenumeration; finalrawcustodyreceipt pendinglinked
+matrix. Draft296558caf47e hostedCI running; no native/science/fullrow promotion.
+
+DraftPR296558caf47e published. Fullgraphartifactverifier/17linkedmatrix running,
+source frozen. EightinstalledfocusedCIgates/actualorderedselectionPASS. Finalfull
+installed/CI/ordinarymerge pending, no fullrow/native/science acceptancepromotion.
+
+Freshgraph fullverifier+17linkedmatrix running. EightinstalledfocusedCIgatesPASS,
+older785/693/571/195/113/63append118, membership34append84, graph84dedicated;
+17fixture100%. Actualorderedselection693/118/6/21plusunchanged100%gatePASS;
+earliercoverageorderfailure not repeated or concealed. No graphPR yet; nextannotated
+inputintegration onlysource-reviewed/planned, not implemented/nativeauthority.
+
+Graph sourcefreeze84SDKwholemodule/changedcode100%unexcluded,8publicHTTP
+MODEL+transitiveRESOURCEroots,17fixture100%,bodymypy/fatallint/49governance+queue+
+CIorderingPASS. Consistent model5nodes/4edges/resource2nodes/1edge declaredsources;
+versiontriples/unknownclassguards explicit, not guessednativeVersion mapping.
+No graphPR yet/freshinstallednext; native/science/fullrow dispositions unchanged.
+
+PR295MERGED641eaa161a30941b0d5c875e7beb26d3eaf12772/2026-11-07T17:09:18Z,
+exacta1a781f547671406bcfea146644558ceb4d84351/all40checksPASS. Actualmerge/
+remote+ancestrycheckpointverified, original42rows/32runnable/zero dispositions.
+Failedselectioncoverageorderingreport retained, correctedwithout gate relaxation.
+Sourceboundgraph child alreadyimplemented:83SDK100%newmodule+changedcode,
+8publicHTTP across model/resource roots,17fixturecases100%PASS. Pinnedmultipage
+source/provider/version/access receipts, sourcechange409nopartial/noautoretry,
+explicitfreshinspection, DAG/cycle/gap/budget/refusal/currentprincipal/cleanup.
+Currentclient/transport/credential fences prevent implicit rebind; providerURLs inert.
+Native closure/edges/source/access authority not promoted. Initial73SDK98.81%
+expandedto83/100%noexemptions; tuple/map annotation fixes need finalbodyrerun.
+Freshinstalled/governance/ordinaryPR/complete rowacceptance stillpending; no stop.
+
 ## PR295 failed selection coverage report retained and actual workflow fixed
 
 Hostedselectioncoveragegatefailed at2343a220c: SDKappend ran afterfixture reset of
