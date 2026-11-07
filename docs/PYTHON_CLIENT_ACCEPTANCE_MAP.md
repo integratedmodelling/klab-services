@@ -1,5 +1,16 @@
 # Python roadmap acceptance map — 3 November 2026
 
+Current selection delivery candidate PR290: public persisted `Context.between`,
+bounded direct-child observation pages and v2 relationship-selected saved references
+are implemented and verified through fresh installed sync/nativeasync SDK workflows.
+4464SDK/275simulator plus all reference/worker/governance suitesPASS;58SDK/
+24simulator/5worker rawpackageparity. New selection SDK90lines/28branches and
+supplementary independent fixture65lines/40branches100%unexcluded.17linked cases
+PASS versus17nativeNOT_RUN. Exact final-headCI/ordinary merge remain pending;
+no whole-roadmap or native scientific acceptance is inferred. The authoritative
+42row continuation queue is `notes/python-roadmap-execution/roadmap-execution-queue.json`;
+historical statuses below remain history, not new acceptance or stopping authority.
+
 Copiedcomposition PR287 verified merged371187fdf/all38finalheadchecksPASS.
 Operationmeasurement devtool6tests/70lines34branches100%unexcluded/types/lintPASS;
 exact-byte SDK-onlybody measurement labels are not invocation/route/workflow/native

@@ -2,6 +2,20 @@
 
 ## Persisted selections / full42row continuation — development pass 2026-11-07
 
+DraftPR290 published `acb5e60d7d107fe6477b0348ffdd07037c8561bf`. Fresh unique
+`observation-selections-first` installed4464SDK/275simulator and all reference/
+worker/governance suitesPASS, zero skips/errors/failures.58SDK/24simulator/5worker
+rawsource/wheel/sdist/installed module parity verified and rechecked; no dependency
+isolation claim. Installed SDK-only new selection90lines/28branches100%unexcluded,
+all changed SDK decisions and entire existing handles/requests/Job binding/async
+modules100%unexcludedPASS. Supplementary independent fixture21controls/65lines/
+40branches100%PASS, distinct from6public SDKHTTP workflows.17linkedcasesPASS
+(534SDK/183simulator/57worker),17realNOT_RUN/expectedexit3; initial PowerShell
+wrapper's retained native exit was explicitly asserted by separate Python wrapper.
+Full receipt `evidence/full-roadmap-observation-selections-20261107.json` preserves
+initial failed source-only suite and final installed results separately. Exact final
+PR-head CI/ordinary merge pending. Queue remains42rows/zero final dispositions.
+
 PR289 and remote campaign integration reverified at48ef20741; current branch
 `test/python-selection-workflow-audit`, no new PR yet. Public sync/nativeasync
 persisted relationship selection, typed bounded direct-child observation pages and

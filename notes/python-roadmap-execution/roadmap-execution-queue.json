@@ -4,9 +4,9 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "test/python-selection-workflow-audit",
-    "pr": null,
+    "pr": 290,
     "requirement": "CAP-04",
-    "ci_review_dependencies": []
+    "ci_review_dependencies": ["PR290 exact final-head CI and ordinary permitted merge"]
   },
   "last_verified_checkpoint": {
     "pr": 289,
@@ -171,8 +171,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: persisted-relationship-selection"
       },
       "simulator_support_needed": "observation-selections independent finite entity/connection admission, plan/result endpoint receipts, direct-child pages and owner checks implemented; six public SDK HTTP workflows pass, installed verification pending.",
-      "implementation_status": "PUBLIC_SELECTION_IMPLEMENTED_PENDING_INSTALLED_AND_PR_ACCEPTANCE",
-      "simulator_acceptance_status": "SOURCE_PUBLIC_SYNC_ASYNC_WORKFLOWS_PASS_INSTALLED_PENDING",
+      "implementation_status": "PUBLIC_SELECTION_IMPLEMENTED_INSTALLED_VERIFIED_PR290_PENDING",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_SYNC_ASYNC_WORKFLOWS_PASS_FULL_ROW_FINAL_DISPOSITION_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [],

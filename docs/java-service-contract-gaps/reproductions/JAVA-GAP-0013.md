@@ -25,7 +25,7 @@ NOT_TESTED whole proposed finite scheduling/admission/semantic substitute. Narro
 
 ## Independent simulator implementation and fixtures
 
-Clockless controlled polls, exact-source literals, fixed SIM vocabulary, bounded private synthetic state; never local reasoning or Java execution
+Clockless controlled polls, exact-source literals, fixed SIM vocabulary, bounded private synthetic state; never local reasoning or Java execution. observation-selections admits only synthetic:Entity and synthetic:Connection, independently checks persisted endpoint ownership/existence, supplies declared plan/result selection receipts and direct HAS_CHILD pages. Public sync/nativeasync SDK and v2 saved Context/Observation/Job restoration are exercised; no scientific numeric storage, general ontology inference or unresolved transaction snapshots.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
 Scenarios: SIM-DISCOVERY-001, SIM-LIFECYCLE-001, SIM-FAULTS-001, SIM-SELECTION-001, SIM-INSPECTION-001, SIM-IMPORT-001, SIM-INPUT-BINDING-001, SIM-SEMANTICS-001, SIM-BEHAVIOR-DRAFT-001, SIM-NOTEBOOK-001, REPLAY-001, SIM-PROVENANCE-DEPENDENCIES-001, SIM-PROVIDER-AVRO-001, SIM-REVISION-CONVERGENCE-001, SIM-COPIED-COMPOSITION-001, SIM-OBSERVATION-SELECTIONS-001

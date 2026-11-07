@@ -2,6 +2,19 @@
 
 ## Renewed full-roadmap queue and persisted-selection implementation
 
+PR290 draft publishedacb5e60d7. Fresh `observation-selections-first` artifacts:
+4464installedSDK/275simulator, all references/worker/governancePASS with zero
+skips/errors/failures;58SDK/24simulator/5worker rawpackageparity rechecked.
+Installed newselection90lines28branches100%unexcluded and all changed SDK code/
+whole handles/requests/Jobbinding/async modules100%gatePASS. Supplementary finite
+fixture21controls/65lines40branches100%PASS;6publicHTTP workflows remain primary.
+17linkedcasesPASS(534SDK/183simulator/57worker) versus17realNOT_RUN/expectedexit3.
+The initial PowerShell wrapper retained native expectedexit3 as shellnonzero;
+separate Python wrapper asserted17NOT_RUN/exit3 and returned0. Receipt
+`evidence/full-roadmap-observation-selections-20261107.json` retains initial5source
+failures and installedcorrections separately. Source unchanged after artifacts;
+PR/final-headCI/merge still pending, no native/fullABC promotion.
+
 2026-11-07: actual remote PR289 MERGED/integration48ef20741 reverified. Active
 `test/python-selection-workflow-audit` remains local/uncommitted/no new PR. The
 authoritative `roadmap-execution-queue.json` preserves42original IDs and historical
