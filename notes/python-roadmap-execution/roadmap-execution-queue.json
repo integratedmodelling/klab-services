@@ -4,9 +4,11 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-reference-graph-convergence",
-    "pr": null,
+    "pr": 299,
     "requirement": "RC-P3.1",
-    "ci_review_dependencies": []
+    "ci_review_dependencies": [
+      "PR299 fresh fullinstalled artifact/matrix and exactfinalheadCI/ordinarymerge; completefinite reference is not native scientific/durable/fullrow authority"
+    ]
   },
   "last_verified_checkpoint": {
     "pr": 298,
@@ -1787,7 +1789,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "NATIVE_CACHE_PRIMITIVE_DELIVERED_PR298_FULL_FINITE_GRAPH_CONVERGENCE_IMPLEMENTATION_IN_PROGRESS",
+      "implementation_status": "COMPLETE_FINITE_GRAPH_CONVERGENCE_INSTALLED_VERIFIED_PR299_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1825,12 +1827,17 @@
           "final_head_checks": 30,
           "full_requirement_complete": false,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json"
+        },
+        "finite_graph_convergence_candidate": {
+          "pr": 299,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json",
+          "final_original_row_acceptance": false
         }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
       "task_state": "in_progress",
-      "next_executable_action": "Finish explicit advertised finite complete graph checkpoints/deltas/projection, duplicate/reordered Job hint invalidation, retention-gap refusal and explicit resync; public sync/async two-client acceptance and installed delivery. Native cache primitive does not discharge this requirement.",
+      "next_executable_action": "Require PR299 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute next independent explanation requirement. Keep native scientific/fullgraph/durable revision authority and original-row integrated acceptance separate.",
       "disposition": null
     },
     {
@@ -1894,7 +1901,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "NATIVE_CACHE_PRIMITIVE_DELIVERED_PR298_FULL_FINITE_GRAPH_CONVERGENCE_IMPLEMENTATION_IN_PROGRESS",
+      "implementation_status": "COMPLETE_FINITE_GRAPH_CONVERGENCE_INSTALLED_VERIFIED_PR299_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1928,12 +1935,17 @@
           "final_head_checks": 30,
           "full_requirement_complete": false,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json"
+        },
+        "finite_graph_convergence_candidate": {
+          "pr": 299,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json",
+          "final_original_row_acceptance": false
         }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
       "task_state": "in_progress",
-      "next_executable_action": "Finish explicit advertised finite complete graph checkpoints/deltas/projection, duplicate/reordered Job hint invalidation, retention-gap refusal and explicit resync; public sync/async two-client acceptance and installed delivery. Native cache primitive does not discharge this requirement.",
+      "next_executable_action": "Require PR299 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute next independent explanation requirement. Keep native scientific/fullgraph/durable revision authority and original-row integrated acceptance separate.",
       "disposition": null
     },
     {
@@ -2013,7 +2025,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "NATIVE_CACHE_PRIMITIVE_DELIVERED_PR298_FULL_FINITE_GRAPH_CONVERGENCE_IMPLEMENTATION_IN_PROGRESS",
+      "implementation_status": "COMPLETE_FINITE_GRAPH_CONVERGENCE_INSTALLED_VERIFIED_PR299_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2050,12 +2062,17 @@
           "final_head_checks": 30,
           "full_requirement_complete": false,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json"
+        },
+        "finite_graph_convergence_candidate": {
+          "pr": 299,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json",
+          "final_original_row_acceptance": false
         }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
       "task_state": "in_progress",
-      "next_executable_action": "Finish explicit advertised finite complete graph checkpoints/deltas/projection, duplicate/reordered Job hint invalidation, retention-gap refusal and explicit resync; public sync/async two-client acceptance and installed delivery. Native cache primitive does not discharge this requirement.",
+      "next_executable_action": "Require PR299 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute next independent explanation requirement. Keep native scientific/fullgraph/durable revision authority and original-row integrated acceptance separate.",
       "disposition": null
     },
     {

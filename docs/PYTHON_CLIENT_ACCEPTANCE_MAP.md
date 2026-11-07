@@ -1,5 +1,12 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR299completefinitegraphcandidate4995installedSDK/439sim/72worker/reference-governance
+PASS,66SDK33sim5worker rawmoduleparity;17linkedPASSvs17nativeNOT_RUN.92SDK100%,
+3publictwo-clientHTTP/31fixture100%,11focusedCI+actualorderedselectionPASS. Separate
+advertised finitecheckpoint/delta/projection/gap-resync reference, not native scientific/
+durable/permission authority. Finalreceipt/exactheadCI/ordinarymergepending;42original
+rows/history/29runnable/zero dispositions. Nextexecutionexplanation independently runnable.
+
 PR298cache-readcandidate final4903installedSDK/405sim/72worker/reference-governance
 PASS,65SDK32sim5worker rawmoduleparity;17linkedPASSvs17nativeNOT_RUN.41SDK100%
 newmodule/changedcode,2publicHTTP/13fixture100%,10focusedCI+actualorderedselectionPASS.
