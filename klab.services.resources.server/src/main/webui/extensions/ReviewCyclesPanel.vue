@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onUnmounted, ref, watch } from "vue";
 import type { DashboardContext } from "@klab-dashboard/types";
 import type { ReviewCycle, ReviewView } from "../review-model";
 
@@ -8,11 +8,13 @@ const props = defineProps<{ context: DashboardContext; flowId: string; sourceSta
 const emit = defineEmits<{ candidate: [value: ReviewCycle]; revision: [value: number]; dirty: [value: boolean]; accessLost: []; view: [value: ReviewView]; stage: [value: string]; changed: [keepStage?: boolean] }>();
 const view = ref<ReviewView>(), cycleId = ref(""), roundId = ref(""), contributor = ref("");
 const draftId = ref(""), text = ref(""), original = ref(""), busy = ref(false), error = ref("");
+const progress = ref("");
 const selectionNotice = ref("");
 const archiveReceipt = ref<{ state: string; commitId?: string; manifestSha256?: string }>();
 watch(cycleId, () => { archiveReceipt.value = undefined; });
 const proposalDocument = ref(""), ontologySource = ref(""), replaceOntology = ref(false), proposalFilter = ref("");
 let generation = 0;
+onUnmounted(() => { generation++; });
 const endpoint = computed(() => `api/v1/flows/${encodeURIComponent(props.flowId)}/review-cycles`);
 const cycle = computed(() => view.value?.cycles.find(c => c.id === cycleId.value));
 const round = computed(() => cycle.value?.rounds.find(r => r.id === roundId.value));
@@ -94,7 +96,7 @@ function accept(next: ReviewView) {
 }
 async function refresh() {
   const current = generation;
-  busy.value = true; error.value = "";
+  busy.value = true; error.value = ""; progress.value = "Loading review permissions and next steps...";
   try { const next = await props.context.api.get<ReviewView>(endpoint.value); if (current === generation) accept(next); }
   catch (cause) { if (current === generation) failed(cause); } finally { if (current === generation) busy.value = false; }
 }
@@ -102,6 +104,7 @@ async function command(operation: string, extra: Record<string, unknown> = {}) {
   if (!view.value || busy.value || props.candidateLoading) return;
   const current = generation;
   busy.value = true; error.value = "";
+  progress.value = operation === "OPEN_CYCLE" ? "Starting peer review with the selected candidate..." : "Saving review changes...";
   try {
     const next = await props.context.api.request<ReviewView>(endpoint.value, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -133,6 +136,7 @@ async function archive(retry: boolean) {
   const current = generation, selected = cycleId.value;
   if (!cycle.value?.closedAt || !view.value?.canManage) return;
   busy.value = true; error.value = "";
+  progress.value = retry ? "Requesting the review archive..." : "Checking the review archive...";
   try {
     const path = `${endpoint.value}/${encodeURIComponent(selected)}/archive`;
     const receipt = retry ? await props.context.api.request<typeof archiveReceipt.value>(path, { method: "POST" })
@@ -160,6 +164,7 @@ defineExpose({ refresh });
 <template>
   <section class="review-rounds" aria-label="Review rounds and contributions">
     <h2>{{ round?.audience === "REVIEWER" ? "Peer review" : round?.audience === "COMMUNITY" ? "Community review" : "Review history and next steps" }}</h2>
+    <p v-if="busy" role="status" aria-live="polite">{{ progress }}</p>
     <p v-if="error" role="alert">{{ error }} Your unsaved feedback has been kept. Refresh rounds before retrying a conflict.</p>
     <p v-if="selectionNotice" role="status">{{ selectionNotice }}</p>
     <div class="controls">
@@ -246,5 +251,5 @@ defineExpose({ refresh });
 label { display: grid; gap: 5px; } input, select, button, textarea { padding: 8px; color: inherit; background: transparent; border: 1px solid #70999d; border-radius: 4px; }
 textarea { width: 100%; margin-top: 12px; } button { cursor: pointer; } button:disabled { opacity: .55; cursor: default; }
 .contribution { padding: 12px; margin: 12px 0; border: 1px solid #70999d; } .contribution p { white-space: pre-wrap; overflow-wrap: anywhere; }
-[role="alert"] { color: #ffb0b0; }
+[role="alert"] { color: #8c3030; background: #fbecec; border: 1px solid #f1caca; padding: 12px; border-radius: 6px; }
 </style>

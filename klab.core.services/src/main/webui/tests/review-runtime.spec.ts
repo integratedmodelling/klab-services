@@ -40,25 +40,46 @@ test("browser scope discovers and executes the genuine preparation action throug
   await page.getByLabel("Review description", { exact: true }).fill("Exercise authenticated host service lookup, production behavior parser and compiled action.");
   await page.getByRole("button", { name: "Create private bootstrap", exact: true }).click();
   await expect(page.getByLabel("Proposal ID", { exact: true })).toBeVisible();
+  await page.getByLabel("Stage title", { exact: true }).fill("Saved runtime preparation details");
+  await page.getByLabel("Stage description", { exact: true }).fill("Revision-checked details saved through the actual controller before preparing.");
+  await page.getByRole("button", { name: "Save stage details", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Stage title and description saved" })).toBeVisible();
   for (const [name, value] of [["Proposal ID", "browser-proposal"], ["Revision ID", "browser-r1"],
       ["Domain", "Wetland terminology"], ["Purpose", "Review the current ontology"],
       ["Requested tier", "1"], ["Target community", "Ontology reviewers"]]) {
     await page.getByLabel(name, { exact: true }).fill(value);
   }
+  let releasePreparation!: () => void, preparationRequests = 0;
+  const preparationGate = new Promise<void>(resolve => { releasePreparation = resolve; });
+  await page.route("**/api/v1/flows/*/states/*/actions/prepare-review-draft", async route => {
+    preparationRequests++;
+    await preparationGate;
+    await route.continue(); // No canned response: the actual runtime still executes the action.
+  });
   await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
+  try {
+    await expect(page.getByRole("status").filter({ hasText: "Preparing review draft from the ontology" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Preparing review draft...", exact: true })).toBeDisabled();
+    await expect(page.getByLabel("Stage title", { exact: true })).toBeDisabled();
+    await page.getByRole("button", { name: "Preparing review draft...", exact: true }).dispatchEvent("click");
+    await expect.poll(() => preparationRequests).toBe(1);
+  } finally { releasePreparation(); }
   await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/browser-r1/);
   await expect(page.getByText("Could not load preparation actions", { exact: false })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Start cycle from selected proposal", exact: true })).toBeEnabled();
+  await expect(page.getByRole("status").filter({ hasText: "Proposal prepared and saved in this stage" })).toBeVisible();
+  expect(preparationRequests).toBe(1);
   const url = new URL(page.url()), id = url.searchParams.get("flow")!, stageId = url.searchParams.get("stage")!;
   const receipt = await saved(request, id, stageId, "browser-proposal");
   await page.reload();
   await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/browser-r1/);
-  await expect(page.getByLabel("Stage title", { exact: true })).toHaveValue("Real runtime browser preparation");
+  await expect(page.getByLabel("Stage title", { exact: true })).toHaveValue("Saved runtime preparation details");
+  await expect(page.getByLabel("Stage description", { exact: true })).toHaveValue("Revision-checked details saved through the actual controller before preparing.");
   expect((await saved(request, id, stageId, "browser-proposal")).revision).toBe(receipt.revision);
   expect(failures).toEqual([]);
   if (process.env.KLAB_REVIEW_E2E_REPORT) await page.screenshot({ path: join(dirname(process.env.KLAB_REVIEW_E2E_REPORT), "preparation-real-browser.png"), fullPage: true });
-  receipts.push({ ...receipt, path: "browser form -> authenticated scope -> actual controller/runtime", repeatedPreparation: false });
+  receipts.push({ ...receipt, path: "browser details PATCH -> preparation form -> authenticated scope -> actual controller/runtime", preparationRequests, repeatedPreparation: false });
 });
 
 test("web bootstrap opens an actual IDE-like prepared candidate without rerunning preparation", async ({ page, request }) => {

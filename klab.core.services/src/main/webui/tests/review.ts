@@ -1,10 +1,20 @@
 import { createApp, h } from "vue";
+import "../src/styles.css";
 import ResourcesReview from "../../../../../klab.services.resources.server/src/main/webui/extensions/ResourcesReview.vue";
 const calls: unknown[] = [];
 Object.assign(window, { calls });
+// Deterministic slow responses exercise the real component's pending state without time-based races.
+const pendingSteps: Record<string, () => void> = {}, pausedSteps = new Set<string>();
+Object.assign(window, { pendingReviewSteps: pendingSteps, releaseReviewStep: (step: string) => pendingSteps[step]?.() });
+async function pause(step: string) {
+  if (!new URL(location.href).searchParams.getAll("pause").includes(step) || pausedSteps.has(step)) return;
+  pausedSteps.add(step);
+  await new Promise<void>(resolve => { pendingSteps[step] = () => { delete pendingSteps[step]; resolve(); }; });
+}
 const recoveredFixture = JSON.parse(sessionStorage.getItem("review-fixture-created") || "null");
 const state = { id: "stage-1", title: recoveredFixture?.title || "", description: recoveredFixture?.description || "", schemaId: "bootstrap", status: "OPEN", attachments: [] as Record<string, string>[] };
 const flow = { owner: "editor", id: recoveredFixture?.id || "flow-1", assetUrn: recoveredFixture?.assetUrn || "test.ontology", revision: 3, states: { "stage-1": state } as Record<string, typeof state>, currentStateIds: ["stage-1"] };
+Object.assign(window, { reviewFixtureFlow: flow });
 const content: Record<string, string> = {};
 let droppedUpload = false;
 function syncDetails() {
@@ -18,13 +28,20 @@ function review() { const manager = !location.search.includes("reader"); return 
  editableStageId: stages.find(s => s.open && s.canEdit)?.id, canOpenCycle: manager && ["BOOTSTRAP", "COALESCING"].includes(phase),
  canCoalesce: manager && phase === "REVIEW", canTerminate: manager && phase === "COALESCING", canOpenRound: manager && phase === "REVIEW" }; }
 const context = { auth: { authenticated:true, username:new URL(location.href).searchParams.get("user") || "editor" }, api: {
-  text: async (path: string) => btoa(content[path.split("/").at(-1)!]),
+  text: async (path: string) => {
+    const id = path.split("/").at(-1)!;
+    await pause(id.startsWith("proposal-") ? "proposal" : "context");
+    if (id.startsWith("proposal-") && location.search.includes("proposal-failed")) throw new Error("503 Proposal download failed");
+    return btoa(content[id]);
+  },
   get: async (path: string) => {
+    if (path === "api/v1/flows/flow-1") await pause("flow");
     syncDetails();
     if (path.endsWith("/creation")) return {canCreate: !location.search.includes("reader")};
-    if (path.endsWith("/review-cycles")) return structuredClone(review());
+    if (path.endsWith("/review-cycles")) { await pause("review"); return structuredClone(review()); }
     if (path.includes("/attachments/")) return btoa(content[path.split("/").at(-1)!]);
     if (path.endsWith("/actions")) {
+      await pause("discovery");
       if (location.search.includes("reader")) throw new Error("403 Forbidden");
       if (location.search.includes("action-failed")) throw new Error("503 Service unavailable");
       return [{ id: "prepare-review-draft", label: "Prepare review draft", revision: flow.revision,
@@ -35,6 +52,8 @@ const context = { auth: { authenticated:true, username:new URL(location.href).se
   },
   request: async (path: string, init: RequestInit) => {
     const command = JSON.parse(String(init.body)); calls.push({ path, command });
+    if (init.method === "PATCH") await pause("details");
+    if (path.includes("/actions/")) await pause("prepare");
     if (location.search.includes("conflict")) throw new Error("409 Conflict");
     if (path.endsWith("/attachments") && location.search.includes("upload-dropped") && !droppedUpload) { droppedUpload = true; throw new Error("500 Connection interrupted before save"); }
     if (path === "api/v1/flows/initialize?workflowId=ontology-review-pilot") {
@@ -94,7 +113,15 @@ const context = { auth: { authenticated:true, username:new URL(location.href).se
       selected.attachments.push({ id, ...command, createdBy: "editor" });
       if (location.search.includes("upload-interrupted")) throw new Error("500 Connection interrupted after upload");
     }
-    flow.revision++; return flow;
+    flow.revision++;
+    if (path.includes("/actions/") && location.search.includes("preparation-interrupted")) throw new Error("500 Preparation response interrupted");
+    return flow;
   },
 } };
-createApp({ render: () => h(ResourcesReview, { context: context as never }) }).mount("#app");
+const app = createApp({ render: () => h(ResourcesReview, { context: context as never }) });
+app.mount("#app");
+Object.assign(window, { leaveReview: () => {
+  app.unmount();
+  history.replaceState({}, "", "/tests/review.html?dashboard=other&cycle=keep&round=keep");
+  document.getElementById("app")!.textContent = "Another dashboard page";
+} });

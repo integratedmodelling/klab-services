@@ -1,4 +1,5 @@
 import { createApp, h } from "vue";
+import "../src/styles.css";
 import ResourcesReview from "../../../../../klab.services.resources.server/src/main/webui/extensions/ResourcesReview.vue";
 // Explicit local test identities, not login, credentials, production tokens or roles supplied to a service.
 const base = import.meta.env.VITE_REVIEW_E2E_API;

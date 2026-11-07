@@ -5,6 +5,150 @@ async function prepare(page: import("@playwright/test").Page) {
   await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
   await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
 }
+
+async function waitingFor(page: import("@playwright/test").Page, step: string) {
+  await page.waitForFunction(name => !!(window as any).pendingReviewSteps[name], step);
+}
+async function release(page: import("@playwright/test").Page, step: string) {
+  await waitingFor(page, step);
+  await page.evaluate(name => (window as any).releaseReviewStep(name), step);
+}
+async function fillPreparation(page: import("@playwright/test").Page) {
+  for (const name of ["Proposal ID", "Revision ID", "Domain", "Purpose", "Target community"]) {
+    await page.getByLabel(name, { exact: true }).fill(name === "Revision ID" ? "r1" : "test");
+  }
+}
+
+test("slow discovery and review permissions show progress instead of an empty bootstrap", async ({ page }) => {
+  await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=discovery&pause=review");
+  await waitingFor(page, "discovery");
+  await expect(page.getByRole("status").filter({ hasText: "Loading your reviews and available preparation tools" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refresh", exact: true })).toBeDisabled();
+  await expect(page.getByText("Automatic preparation is unavailable", { exact: false })).toHaveCount(0);
+  await release(page, "discovery");
+  await waitingFor(page, "review");
+  await expect(page.getByRole("status").filter({ hasText: "Loading review permissions and next steps" })).toBeVisible();
+  await release(page, "review");
+  await expect(page.getByLabel("Proposal ID", { exact: true })).toBeEnabled();
+  await expect(page.getByText("Loading your reviews and available preparation tools", { exact: false })).toHaveCount(0);
+});
+
+test("preparation stays visibly pending through delayed proposal and context downloads", async ({ page }, testInfo) => {
+  await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=prepare&pause=proposal&pause=context");
+  await fillPreparation(page);
+  await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
+  await waitingFor(page, "prepare");
+  await expect(page.getByRole("button", { name: "Preparing review draft...", exact: true })).toBeDisabled();
+  const progress = page.getByRole("status").filter({ hasText: "Preparing review draft from the ontology" });
+  await expect(progress).toBeVisible();
+  await expect(progress).toBeInViewport();
+  await page.screenshot({ path: testInfo.outputPath("preparation-pending.png"), fullPage: true });
+  await expect(page.getByLabel("Proposal ID", { exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Stage title", { exact: true })).toBeDisabled();
+  // A second dispatched click cannot issue a duplicate mutation while the first is pending.
+  await page.getByRole("button", { name: "Preparing review draft...", exact: true }).dispatchEvent("click");
+  expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
+  await release(page, "prepare");
+  await waitingFor(page, "proposal");
+  await expect(progress).toBeVisible();
+  await expect(page.getByLabel("Stage title", { exact: true })).toBeDisabled();
+  await release(page, "proposal");
+  await waitingFor(page, "context");
+  await expect(progress).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refresh", exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Stage title", { exact: true })).toBeDisabled();
+  await release(page, "context");
+  await expect(page.getByRole("status").filter({ hasText: "Proposal prepared and saved in this stage" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Proposal prepared and saved in this stage" })).toBeInViewport();
+  await expect(progress).toHaveCount(0);
+  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
+  await expect(page.getByRole("button", { name: "Start cycle from selected proposal", exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
+  await page.screenshot({ path: testInfo.outputPath("preparation-ready.png"), fullPage: true });
+});
+
+test("slow stage-detail save locks edits through the review refresh and explains the next step", async ({ page }) => {
+  await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=details");
+  await page.getByLabel("Stage title", { exact: true }).fill("Prepared for review");
+  await page.getByLabel("Stage description", { exact: true }).fill("Retain these details during saving");
+  await page.evaluate(() => history.replaceState({}, "", location.href + "&pause=review"));
+  await page.getByRole("button", { name: "Save stage details", exact: true }).click();
+  await waitingFor(page, "details");
+  await expect(page.getByRole("status").filter({ hasText: "Saving stage title and description" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Saving stage details...", exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Stage title", { exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Saving stage details...", exact: true }).dispatchEvent("click");
+  await release(page, "details");
+  await waitingFor(page, "review");
+  await expect(page.getByLabel("Stage description", { exact: true })).toHaveValue("Retain these details during saving");
+  await expect(page.getByLabel("Stage title", { exact: true })).toBeDisabled();
+  await release(page, "review");
+  await expect(page.getByRole("status").filter({ hasText: "Stage title and description saved" })).toBeVisible();
+  await expect(page.getByLabel("Proposal ID", { exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
+});
+
+test("a failed candidate download remains visible after context loads and is not reported as success", async ({ page }) => {
+  await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&proposal-failed");
+  await fillPreparation(page);
+  await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("503 Proposal download failed");
+  await expect(page.getByRole("status").filter({ hasText: "Proposal prepared and saved" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Refresh", exact: true })).toBeEnabled();
+  await page.evaluate(() => history.replaceState({}, "", location.href.replace("&proposal-failed", "")));
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
+});
+
+test("an interrupted preparation response retains fields and reconciles before any retry", async ({ page }) => {
+  await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&preparation-interrupted");
+  await fillPreparation(page);
+  await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("500 Preparation response interrupted");
+  await expect(page.getByText("Preparation has an unknown outcome", { exact: false })).toBeVisible();
+  await expect(page.getByLabel("Revision ID", { exact: true })).toHaveValue("r1");
+  await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
+  await expect(page.getByText("Preparation has an unknown outcome", { exact: false })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Start cycle from selected proposal", exact: true })).toBeEnabled();
+  expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
+});
+
+test("delayed preparation conflicts keep the entered parameters and require explicit retry", async ({ page }) => {
+  await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=prepare&conflict");
+  await fillPreparation(page);
+  await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
+  await release(page, "prepare");
+  await expect(page.getByRole("alert")).toContainText("409 Conflict");
+  await expect(page.getByLabel("Revision ID", { exact: true })).toHaveValue("r1");
+  await expect(page.getByLabel("Purpose", { exact: true })).toHaveValue("test");
+  await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toBeEnabled();
+  await expect(page.getByRole("status").filter({ hasText: "Preparing review draft from the ontology" })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
+});
+for (const step of ["flow", "review", "prepare"]) {
+  test(`leaving during delayed ${step} never rewrites the next page or publishes old review state`, async ({ page }) => {
+    await page.goto(`/tests/review.html?flow=flow-1&stage=stage-1&pause=${step}`);
+    if (step === "prepare") {
+      await fillPreparation(page);
+      await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
+    }
+    await waitingFor(page, step);
+    await page.evaluate(() => (window as any).leaveReview());
+    await release(page, step);
+    // Drain the accepted response and its Vue continuations without canceling or retrying it.
+    if (step === "prepare") await expect.poll(() => page.evaluate(() => (window as any).reviewFixtureFlow.revision)).toBe(4);
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    await expect(page).toHaveURL(/\/tests\/review.html\?dashboard=other&cycle=keep&round=keep$/);
+    await expect(page.getByText("Another dashboard page", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Ontology review stage")).toHaveCount(0);
+    expect(await page.evaluate(() => (window as any).calls.length)).toBe(step === "prepare" ? 1 : 0);
+  });
+}
+
 test("stage URL exposes explicit editor action with revision and preserves authored drafts", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1");
   await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toBeDisabled();

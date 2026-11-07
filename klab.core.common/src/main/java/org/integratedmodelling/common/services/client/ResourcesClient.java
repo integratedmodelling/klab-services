@@ -215,8 +215,17 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public Flow updateFlowStateDetails(String flowId, String stateId, Flow.StateDetailsUpdate update, UserScope scope) {
-    return client.withScope(scope).post(ServicesAPI.RESOURCES.FLOW_STATE + "/details", update, Flow.class,
+    var result = client.withScope(scope).postResourceSnapshot(ServicesAPI.RESOURCES.FLOW_STATE + "/details", update, Flow.class,
         "flowId", flowId, "stateId", stateId);
+    // A missing or stale aggregate cannot confirm a committed save. Never retry or fall back to
+    // the unguarded state update: the server may already have persisted this revision.
+    if (result == null || !java.util.Objects.equals(flowId, result.getId())
+        || result.getStates() == null || result.getStates().get(stateId) == null
+        || update == null || result.getRevision() <= update.expectedRevision()) {
+      throw new Utils.Http.Client.RequestFailure(0,
+          "Stage details response is incomplete; outcome unknown, refresh before retrying", null);
+    }
+    return result;
   }
 
   @Override

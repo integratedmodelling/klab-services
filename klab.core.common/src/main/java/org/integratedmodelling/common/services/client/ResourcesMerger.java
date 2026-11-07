@@ -31,7 +31,9 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceTransport;
 import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
+import org.integratedmodelling.klab.api.services.resources.workflow.ReviewCycles;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
+import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowBehavior;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -270,6 +272,33 @@ public class ResourcesMerger implements ResourcesService {
   @Override
   public Flow updateFlowStateDetails(String flowId, String stateId, Flow.StateDetailsUpdate update, UserScope scope) {
     return primary().updateFlowStateDetails(flowId, stateId, update, scope);
+  }
+
+  @Override
+  public List<WorkflowBehavior.AvailableAction> getFlowActions(
+      String flowId, String stateId, UserScope scope) {
+    return primary().getFlowActions(flowId, stateId, scope);
+  }
+
+  @Override
+  public Flow executeFlowAction(String flowId, String stateId, String actionId,
+      WorkflowBehavior.ActionRequest request, UserScope scope) {
+    return primary().executeFlowAction(flowId, stateId, actionId, request, scope);
+  }
+
+  @Override
+  public ReviewCycles.View getReviewCycles(String flowId, UserScope scope) {
+    return primary().getReviewCycles(flowId, scope);
+  }
+
+  @Override
+  public ReviewCycles.View reviewCycle(String flowId, ReviewCycles.Command command, UserScope scope) {
+    return primary().reviewCycle(flowId, command, scope);
+  }
+
+  @Override
+  public byte[] getReviewArtifact(String flowId, String cycleId, String attachmentId, UserScope scope) {
+    return primary().getReviewArtifact(flowId, cycleId, attachmentId, scope);
   }
 
   @Override

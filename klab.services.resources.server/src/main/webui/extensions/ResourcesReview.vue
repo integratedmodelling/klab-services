@@ -11,11 +11,25 @@ interface Upload { type: string; fileName: string; mediaType: string; content: s
 interface Flow { owner?: string; workflowVersion?: string; id: string; assetUrn: string; revision: number; states: Record<string, Stage>; currentStateIds: string[] }
 interface Action { id: string; label: string; revision: number; missing: { name: string; javaType?: string }[] }
 const flows = ref<Flow[]>([]), flowId = ref(""), stageId = ref("");
-const flow = ref<Flow>(), actions = ref<Action[]>([]), busy = ref(false), error = ref("");
+const flow = ref<Flow>(), actions = ref<Action[]>([]), error = ref("");
+const pendingOperations = ref<{ id: number; message: string; kind: string }[]>([]);
+const busy = computed(() => pendingOperations.value.length > 0);
+const progress = computed(() => pendingOperations.value[0]?.message || "");
+const preparing = computed(() => pendingOperations.value.some(operation => operation.kind === "prepare"));
+const savingDetails = computed(() => pendingOperations.value.some(operation => operation.kind === "details"));
+const uncertainPreparation = ref(false);
+let operationSequence = 0;
+function beginOperation(message: string, kind = "load") {
+  if (!busy.value) { error.value = ""; notice.value = ""; }
+  const id = ++operationSequence;
+  pendingOperations.value.push({ id, message, kind });
+  return () => { pendingOperations.value = pendingOperations.value.filter(operation => operation.id !== id); };
+}
 const actionError = ref("");
 const flowAttempted = ref(false), feedbackDirty = ref(false), reviewedCycle = ref<ReviewCycle>();
 const reviewedOntologySource = ref("");
 let reviewCandidateGeneration = 0;
+let disposed = false;
 const selectedProposal = ref(""), selectedContext = ref(""), proposalText = ref(""), originalText = ref(""), contextText = ref("");
 const values = ref<Record<string, string | number>>({});
 const reviewView = ref<ReviewView>(), creation = ref<{canCreate: boolean; version?: string}>(), newAsset = ref("");
@@ -61,7 +75,7 @@ const matchingCreations = computed(() => creationReconciled.value ? flows.value.
   && Object.values(f.states).some(s => s.schemaId === "bootstrap" && s.status === "OPEN")) : []);
 async function reconcileCreation() {
   if (busy.value) return;
-  busy.value = true; error.value = "";
+  const finish = beginOperation("Checking existing reviews for your saved bootstrap...");
   try {
     flows.value = await props.context.api.get<Flow[]>("api/v1/flows?includeClosed=true");
     creationReconciled.value = true;
@@ -69,7 +83,7 @@ async function reconcileCreation() {
       pendingCreation("");
       error.value = "No matching flow appeared in the refreshed list. Check the list before explicitly trying creation again; the earlier response was uncertain.";
     }
-  } catch (cause) { failed(cause); } finally { busy.value = false; }
+  } catch (cause) { failed(cause); } finally { finish(); }
 }
 async function openRecoveredFlow(id: string) { flowId.value = id; pendingCreation(""); resetCreation(); await changeFlow(); notice.value = "Recovered your saved private bootstrap. Check its files before continuing."; }
 function resetCreation() {
@@ -102,15 +116,18 @@ const visibleActions = computed(() => actions.value.filter(action => !action.mis
 const endpoint = computed(() => `api/v1/flows/${encodeURIComponent(flowId.value)}`);
 const stageEndpoint = computed(() => `${endpoint.value}/states/${encodeURIComponent(stageId.value)}`);
 function failed(cause: unknown) {
+  if (disposed) return;
   error.value = cause instanceof Error ? cause.message : String(cause);
   if (error.value.startsWith("409")) error.value += " The flow changed. Your text is retained; save it, or download then discard unsaved edits before refreshing and retrying.";
 }
 function routeStage(id: string) {
+  if (disposed) return;
   if (["bootstrap", "coalescing", "terminated"].includes(routedStage.value?.schemaId || "")) return;
   stageId.value = id;
   const url = new URL(window.location.href); url.searchParams.set("stage", id); window.history.replaceState({}, "", url);
 }
 async function changeFlow() {
+  if (disposed) return;
   resetCreation();
   stageId.value = ""; reviewView.value = undefined;
   const url = new URL(window.location.href); for (const name of ["stage", "cycle", "round"]) url.searchParams.delete(name);
@@ -118,18 +135,20 @@ async function changeFlow() {
   window.history.replaceState({}, "", url); panelKey.value++; await loadFlow();
 }
 async function changeStage() {
+  if (disposed) return;
   const url = new URL(window.location.href); url.searchParams.delete("cycle"); url.searchParams.delete("round");
   url.searchParams.set("stage", stageId.value); window.history.replaceState({}, "", url);
   panelKey.value++; await loadFlow();
 }
 async function flowChanged(keepStage = false) {
+  if (disposed) return;
   if (!keepStage) stageId.value = reviewView.value?.editableStageId || reviewView.value?.stages?.filter(s => s.open).at(-1)?.id || reviewView.value?.stages?.at(-1)?.id || "";
   if (!keepStage) { const url = new URL(window.location.href); url.searchParams.delete("cycle"); url.searchParams.delete("round"); window.history.replaceState({}, "", url); }
   await loadFlow(); panelKey.value++;
 }
 async function createFlow() {
   if (!showCreation.value || uncertainCreation.value || !newAsset.value.trim() || !newTitle.value.trim() || busy.value || keepDraft()) return;
-  busy.value = true; error.value = "";
+  const finish = beginOperation("Creating your private bootstrap and loading its preparation tools...");
   try {
     const attachments = await Promise.all([...(newProposal.value ? [uploadPayload(newProposal.value, "bootstrap-proposal")] : []),
       ...newReferences.value.map(file => uploadPayload(file, "supporting-material"))]);
@@ -139,16 +158,18 @@ async function createFlow() {
       body: JSON.stringify({ initialState: { schemaId: "bootstrap", assetUrn: newAsset.value.trim(), assetType: "ONTOLOGY",
         title: newTitle.value.trim(), description: newDescription.value.trim() }, attachments }),
     });
+    if (disposed) return; // Keep the recovery marker; accepted writes are not canceled on navigation.
     pendingCreation("");
     flows.value.push(created); flowId.value = created.id; stageId.value = created.currentStateIds[0] || ""; resetCreation();
     reviewView.value = undefined;
     const url = new URL(window.location.href); url.searchParams.delete("cycle"); url.searchParams.delete("round"); window.history.replaceState({}, "", url);
-    panelKey.value++; await loadFlow(); notice.value = "Private bootstrap created. Prepare a proposal or edit your uploaded proposal, then start peer review when it is ready.";
+    panelKey.value++;
+    if (await loadFlow()) notice.value = "Private bootstrap created. Prepare a proposal or edit your uploaded proposal, then start peer review when it is ready.";
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     if (/^4\d\d\b/.test(message) && !message.startsWith("408")) pendingCreation("");
     failed(cause);
-  } finally { busy.value = false; }
+  } finally { finish(); }
 }
 function inputLabel(name: string): string {
   return ({ proposal_id: "Proposal ID", revision_id: "Revision ID", domain: "Domain", purpose: "Purpose",
@@ -161,15 +182,15 @@ function keepDraft(): boolean {
 function reviewAccessLost() {
   if (canEdit.value) return; // Preserve an editor's own editable candidate for recovery.
   reviewCandidateGeneration++; reviewedCycle.value = undefined; flow.value = undefined; actions.value = [];
-  busy.value = false;
   proposalText.value = ""; originalText.value = ""; selectedProposal.value = ""; selectedContext.value = ""; contextText.value = ""; reviewedOntologySource.value = "";
 }
 async function reviewCandidate(cycle: ReviewCycle) {
+  if (disposed) return;
   reviewedCycle.value = cycle;
   if ((canEdit.value || ["bootstrap", "coalescing"].includes(stage.value?.schemaId || "")) && selectedProposal.value) return; // Keep the editable draft intact while inspecting feedback.
   if (dirty.value) return;
   const generation = ++reviewCandidateGeneration;
-  busy.value = true;
+  const finish = beginOperation("Loading the frozen review candidate...");
   try {
     const path = `${endpoint.value}/review-cycles/${encodeURIComponent(cycle.id)}/attachments/`;
     const [encoded, source] = await Promise.all([
@@ -183,7 +204,7 @@ async function reviewCandidate(cycle: ReviewCycle) {
     contextText.value = source ? new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(atob(source), c => c.charCodeAt(0))) : "";
     reviewedOntologySource.value = contextText.value;
   } catch (cause) { if (generation === reviewCandidateGeneration) failed(cause); }
-  finally { if (generation === reviewCandidateGeneration) busy.value = false; }
+  finally { finish(); }
 }
 async function attachmentText(id: string): Promise<string> {
   const encoded = await attachmentBase64(`${endpoint.value}/attachments/${encodeURIComponent(id)}`);
@@ -196,34 +217,41 @@ async function attachmentBase64(path: string): Promise<string> {
 }
 async function loadProposal() {
   const generation = reviewCandidateGeneration;
-  busy.value = true; error.value = "";
+  const finish = beginOperation("Loading the proposal draft...");
   try {
     const text = selectedProposal.value ? await attachmentText(selectedProposal.value) : "";
     if (generation !== reviewCandidateGeneration) return;
     try { proposalText.value = JSON.stringify(JSON.parse(text), null, 2); }
     catch { proposalText.value = text; }
     originalText.value = proposalText.value;
+    return true;
   }
   catch (cause) { if (generation === reviewCandidateGeneration) failed(cause); }
-  finally { if (generation === reviewCandidateGeneration) busy.value = false; }
+  finally { finish(); }
+  return false;
 }
 async function loadContext() {
   const generation = reviewCandidateGeneration;
-  busy.value = true; error.value = "";
+  const finish = beginOperation("Loading stage materials...");
   try {
     const text = selectedContext.value && textContext.value ? await attachmentText(selectedContext.value) : "";
     if (generation === reviewCandidateGeneration) contextText.value = text;
+    return generation === reviewCandidateGeneration;
   }
   catch (cause) { if (generation === reviewCandidateGeneration) failed(cause); }
-  finally { if (generation === reviewCandidateGeneration) busy.value = false; }
+  finally { finish(); }
+  return false;
 }
 async function loadFlow() {
-  if (keepDraft() || !flowId.value) return;
+  if (disposed || keepDraft() || !flowId.value) return false;
   flowAttempted.value = false; reviewedCycle.value = undefined;
   reviewCandidateGeneration++;
-  busy.value = true; error.value = ""; actionError.value = ""; actions.value = [];
+  const finish = beginOperation("Loading stage details and preparation actions. Please wait...");
+  actionError.value = ""; actions.value = [];
   try {
-    flow.value = await props.context.api.get<Flow>(endpoint.value);
+    const next = await props.context.api.get<Flow>(endpoint.value);
+    if (disposed) return false;
+    flow.value = next;
     if (!stageId.value) stageId.value = flow.value.currentStateIds[0] || Object.keys(flow.value.states)[0] || "";
     if (!stage.value) throw new Error("The requested stage is unavailable to this account. Choose an authorized stage.");
     editTitle.value = stage.value.title || ""; editDescription.value = stage.value.description || "";
@@ -232,37 +260,51 @@ async function loadFlow() {
     const link = new URL(window.location.href); link.searchParams.set("flow", flowId.value); link.searchParams.set("stage", stageId.value);
     window.history.replaceState({}, "", link);
     if (stage.value.status === "OPEN") {
-      try { actions.value = await props.context.api.get<Action[]>(`${stageEndpoint.value}/actions`); }
+      try {
+        const discovered = await props.context.api.get<Action[]>(`${stageEndpoint.value}/actions`);
+        if (disposed) return false;
+        actions.value = discovered;
+      }
       catch (cause) { const message = cause instanceof Error ? cause.message : String(cause);
         if (!message.startsWith("403")) actionError.value = `Could not load preparation actions: ${message}. Use Refresh to retry.`; }
     }
+    if (disposed) return false;
     for (const action of actions.value) for (const input of action.missing) {
       if (!(input.name in values.value)) values.value[input.name] = input.javaType === "Integer" || input.javaType === "java.lang.Integer" ? 1 : "";
     }
     selectedProposal.value = proposals.value.at(-1)?.id || "";
     selectedContext.value = contextAttachments.value[0]?.id || "";
-    await loadProposal(); await loadContext();
+    const proposalLoaded = await loadProposal(), contextLoaded = await loadContext();
+    if (disposed) return false;
     if (canEdit.value && stage.value.schemaId === "coalescing" && !selectedProposal.value && reviewView.value?.cycles.length) await reviewCandidate(reviewView.value.cycles.at(-1)!);
+    if (proposalLoaded && contextLoaded) uncertainPreparation.value = false;
+    return proposalLoaded && contextLoaded;
   } catch (cause) {
     flow.value = undefined; proposalText.value = ""; originalText.value = ""; contextText.value = "";
     if (!(cause instanceof Error && cause.message.startsWith("403"))) failed(cause);
-  } finally { busy.value = false; flowAttempted.value = true; }
+  } finally { finish(); flowAttempted.value = true; }
+  return false;
 }
 async function execute(action: Action) {
-  if (busy.value || keepDraft() || !flow.value) return;
-  busy.value = true; error.value = "";
+  if (busy.value || uncertainPreparation.value || keepDraft() || !flow.value) return;
+  const finish = beginOperation("Preparing review draft from the ontology. This can take a little while; stay on this page...", "prepare");
   try {
     const parameters = Object.fromEntries(action.missing.map(input => [input.name, values.value[input.name]]));
     await props.context.api.request(`${stageEndpoint.value}/actions/${encodeURIComponent(action.id)}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ expectedRevision: flow.value.revision, parameters }),
     });
-    await loadFlow(); notice.value = "Proposal prepared from the ontology. Review and edit the draft below, save any changes, then start peer review.";
-  } catch (cause) { failed(cause); } finally { busy.value = false; }
+    if (disposed) return;
+    if (await loadFlow()) notice.value = "Proposal prepared and saved in this stage. Review the candidate draft below, save any edits, then choose Start cycle from selected proposal to begin peer review.";
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    uncertainPreparation.value = !/^4\d\d\b/.test(message) || message.startsWith("408");
+    failed(cause);
+  } finally { finish(); }
 }
 async function saveProposal() {
   if (busy.value || !canEdit.value || (!dirty.value && !pendingCandidateSave.value) || feedbackDirty.value || detailsDirty.value || uploadFiles.value.length || preparationNote.value.trim()) return;
-  busy.value = true; error.value = "";
+  const finish = beginOperation("Saving your proposal draft and reloading the candidate...");
   try {
     const bytes = new TextEncoder().encode(proposalText.value);
     if (bytes.byteLength > 4 * 1024 * 1024) throw new Error("Proposal exceeds 4 MiB.");
@@ -281,27 +323,28 @@ async function saveProposal() {
       await props.context.api.request(`${stageEndpoint.value}/attachments`, {method: "POST", headers: {"Content-Type":"application/json"},
         body: JSON.stringify({expectedRevision: flow.value.revision, type:"candidate-ontology", fileName:"candidate.kwv", mediaType:"application/vnd.klab.ontology", content:btoa(parts.join(""))})});
     }
-    originalText.value = proposalText.value; await loadFlow(); notice.value = "New proposal draft saved. Earlier attachments are unchanged. You can start peer review when the candidate is ready.";
-  } catch (cause) { failed(cause); } finally { busy.value = false; }
+    originalText.value = proposalText.value;
+    if (await loadFlow()) notice.value = "New proposal draft saved. Earlier attachments are unchanged. You can start peer review when the candidate is ready.";
+  } catch (cause) { failed(cause); } finally { finish(); }
 }
 async function saveDetails() {
   if (busy.value || !canEdit.value || !detailsDirty.value || !editTitle.value.trim()) return;
-  busy.value = true; error.value = "";
+  const finish = beginOperation("Saving stage title and description...", "details");
   try {
     const updated = await props.context.api.request<Flow>(stageEndpoint.value, { method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ expectedRevision: detailsRevision.value, title: editTitle.value.trim(), description: editDescription.value.trim() }) });
     flow.value = updated; editTitle.value = stage.value?.title || ""; editDescription.value = stage.value?.description || "";
     originalDetails.value = JSON.stringify([editTitle.value, editDescription.value]); detailsRevision.value = updated.revision;
     await reviewPanel.value?.refresh();
-    notice.value = "Stage title and description saved.";
-  } catch (cause) { failed(cause); } finally { busy.value = false; }
+    notice.value = "Stage title and description saved. You can now continue preparing your review draft.";
+  } catch (cause) { failed(cause); } finally { finish(); }
 }
 function discardDetails() {
   [editTitle.value, editDescription.value] = JSON.parse(originalDetails.value);
 }
 async function saveUploads(note = false) {
   if (busy.value || uncertainUpload.value || !canEdit.value || dirty.value || detailsDirty.value || feedbackDirty.value) return;
-  busy.value = true; error.value = "";
+  const finish = beginOperation(note ? "Saving your preparation note..." : "Uploading selected files and refreshing stage materials...");
   try {
     const files = note ? [new File([preparationNote.value], `preparation-note-${Date.now()}.txt`, { type: "text/plain" })] : [...uploadFiles.value];
     for (const file of files) {
@@ -315,16 +358,17 @@ async function saveUploads(note = false) {
       if (note) preparationNote.value = ""; else uploadFiles.value = uploadFiles.value.filter(item => item !== file);
       flow.value = await props.context.api.get<Flow>(endpoint.value);
     }
-    uploadInputKey.value++; await loadFlow(); notice.value = note ? "Preparation note saved to this stage." : "Files saved to this stage. Proposal uploads can now be edited or selected for review.";
+    uploadInputKey.value++;
+    if (await loadFlow()) notice.value = note ? "Preparation note saved to this stage." : "Files saved to this stage. Proposal uploads can now be edited or selected for review.";
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     if (/^4\d\d\b/.test(message) && !message.startsWith("408")) { uncertainUpload.value = false; pendingUpload.value = undefined; }
     failed(cause);
-  } finally { busy.value = false; }
+  } finally { finish(); }
 }
 async function checkUploadedFiles() {
   if (busy.value) return;
-  busy.value = true;
+  const finish = beginOperation("Checking which stage files were saved...");
   try { flow.value = await props.context.api.get<Flow>(endpoint.value);
     const pending = pendingUpload.value;
     let found = false;
@@ -341,7 +385,7 @@ async function checkUploadedFiles() {
     if (!editorDirty.value) await loadFlow();
     notice.value = found ? "The saved file was found. It will not be uploaded again. Check the saved file list below."
       : "No matching saved file was found. Your selected file or note is retained; check the list before explicitly retrying.";
-  } catch (cause) { failed(cause); } finally { busy.value = false; }
+  } catch (cause) { failed(cause); } finally { finish(); }
 }
 async function downloadContext() {
   if (!selectedContextAttachment.value) return;
@@ -354,7 +398,11 @@ async function downloadContext() {
 function beforeUnload(event: BeforeUnloadEvent) {
   if (editorDirty.value || feedbackDirty.value || creationDirty.value) { event.preventDefault(); event.returnValue = ""; }
 }
-onUnmounted(() => window.removeEventListener("beforeunload", beforeUnload));
+onUnmounted(() => {
+  disposed = true;
+  reviewCandidateGeneration++;
+  window.removeEventListener("beforeunload", beforeUnload);
+});
 function discardProposalEdits() {
   proposalText.value = originalText.value;
   if (!originalText.value) selectedProposal.value = "";
@@ -369,16 +417,20 @@ onMounted(async () => {
   restorePendingCreation();
   const params = new URL(window.location.href).searchParams;
   flowId.value = params.get("flow") || ""; stageId.value = params.get("stage") || "";
-  try { creation.value = await props.context.api.get<{canCreate: boolean; version?: string}>("api/v1/workflows/ontology-review-pilot/creation"); } catch { /* Creation stays unavailable until authorized by the server. */ }
-  try { flows.value = await props.context.api.get<Flow[]>("api/v1/flows?includeClosed=true"); }
-  catch (cause) { failed(cause); }
-  if (flowId.value) await loadFlow();
+  const finish = beginOperation("Loading your reviews and available preparation tools...");
+  try {
+    try { creation.value = await props.context.api.get<{canCreate: boolean; version?: string}>("api/v1/workflows/ontology-review-pilot/creation"); } catch { /* Creation stays unavailable until authorized by the server. */ }
+    try { flows.value = await props.context.api.get<Flow[]>("api/v1/flows?includeClosed=true"); }
+    catch (cause) { failed(cause); }
+    if (flowId.value) await loadFlow();
+  } finally { finish(); }
 });
 </script>
 
 <template>
   <section class="ontology-review" aria-label="Ontology review stage">
     <h1>{{ stageTitle }}</h1>
+    <p v-if="busy" class="progress-message" role="status" aria-live="polite" aria-atomic="true"><span class="progress-spinner" aria-hidden="true"></span>{{ progress }}</p>
     <p v-if="routedStage?.schemaId === 'bootstrap'">Only you, the creating editor, can see this preparation stage. Add reference material and notes, then upload a proposal or prepare one from the ontology. Save your edits before starting peer review.</p>
     <p v-else-if="routedStage?.schemaId === 'coalescing'">Integrate submitted feedback into a fresh revision. Return to review when ready, or terminate without accepting or publishing.</p>
     <p v-else-if="flowId">Review the frozen candidate and its evidence. Peer and community feedback have separate stages and access.</p>
@@ -398,14 +450,15 @@ onMounted(async () => {
       <p>You can add a proposal now or prepare one later. Proposal files accept JSON or YAML (up to 4 MiB); reference files accept any format (up to 16 MiB each). Files and details are saved together in your private bootstrap.</p>
       <button :disabled="!newAsset.trim() || !newTitle.trim() || !!uncertainCreation" @click="createFlow">Create private bootstrap</button>
       <button v-if="(creatingAnother || creationDirty) && !uncertainCreation" @click="resetCreation">{{ creatingAnother ? 'Cancel new review' : 'Discard new review draft' }}</button>
-      <div v-if="uncertainCreation" role="status">
+      <div v-if="uncertainCreation && !busy" role="status">
         <p>Creation of {{ uncertainCreation }} has an unknown outcome. Do not create it again until you refresh existing flows and check for the saved bootstrap.</p>
         <button @click="reconcileCreation">Refresh existing flows</button>
         <button v-for="item in matchingCreations" :key="item.id" @click="openRecoveredFlow(item.id)">Open existing bootstrap {{ item.id }}</button>
       </div>
     </fieldset>
     <p v-if="error" role="alert">{{ error }}</p>
-    <p v-if="notice" role="status">{{ notice }}</p>
+    <p v-if="notice && !busy" class="success-message" role="status">{{ notice }}</p>
+    <p v-if="uncertainPreparation && !busy" role="status">Preparation has an unknown outcome. Use Refresh to check for a saved proposal before trying preparation again. Your preparation fields are retained.</p>
     <p v-if="canEdit && actionError" role="alert">{{ actionError }}</p>
     <p v-if="canEdit && unavailableContext" role="alert">The target ontology or its project could not be resolved for automatic preparation. Check that this ontology URN belongs to an accessible project, then refresh. You can still upload a prepared proposal.</p>
     <div class="controls">
@@ -421,12 +474,18 @@ onMounted(async () => {
     <p v-if="stage">{{ flow?.assetUrn }} · {{ stage.title || stage.schemaId }} · {{ stage.status }} · revision {{ flow?.revision }}</p>
     <p v-if="flow?.workflowVersion">This flow uses workflow version {{ flow.workflowVersion }}.</p>
     <p v-if="stage?.description && !canEdit">{{ stage.description }}</p>
+    <ol v-if="canEdit && stage?.schemaId === 'bootstrap'" class="preparation-steps" aria-label="Bootstrap preparation steps">
+      <li>Check the stage details and add any reference material.</li>
+      <li>Prepare or upload a proposal, then inspect the candidate draft.</li>
+      <li>Save any edits and start peer review when the candidate is ready.</li>
+    </ol>
     <fieldset v-if="canEdit" :disabled="busy">
       <legend>Stage details and materials</legend>
       <label>Stage title<input v-model="editTitle" maxlength="500" /></label>
       <label>Stage description<textarea class="short-text" v-model="editDescription" maxlength="16000" /></label>
-      <div class="controls"><button :disabled="!detailsDirty || !editTitle.trim()" @click="saveDetails">Save stage details</button>
+      <div class="controls"><button :disabled="!detailsDirty || !editTitle.trim()" @click="saveDetails">{{ savingDetails ? 'Saving stage details...' : 'Save stage details' }}</button>
         <button v-if="detailsDirty" @click="discardDetails">Discard stage detail edits</button></div>
+      <p v-if="detailsDirty" role="status">Unsaved stage details. Save or discard these edits before preparing a review draft.</p>
       <div class="controls">
         <label>File purpose<select aria-label="File purpose" v-model="uploadKind" :disabled="uploadFiles.length > 0 || uncertainUpload">
           <option value="supporting-material">Reference material</option><option value="bootstrap-proposal">Proposal JSON or YAML</option>
@@ -436,21 +495,22 @@ onMounted(async () => {
         <button :disabled="!uploadFiles.length || dirty || detailsDirty || feedbackDirty || uncertainUpload || !!preparationNote.trim()" @click="saveUploads()">Upload selected files</button>
         <button v-if="uploadFiles.length && !uncertainUpload" @click="uploadFiles = []; uploadInputKey++">Discard selected files</button>
       </div>
-      <p v-if="uncertainUpload" role="status">The last upload has an unknown outcome. Check saved files before uploading anything again. <button @click="checkUploadedFiles">Check saved files</button></p>
+      <p v-if="uncertainUpload && !busy" role="status">The last upload has an unknown outcome. Check saved files before uploading anything again. <button @click="checkUploadedFiles">Check saved files</button></p>
       <p>New files are added to this stage; earlier files are retained. Reference materials and preparation notes stay in the editorial stage. Starting review shares the frozen proposal and optional ontology source with permitted participants.</p>
       <ul v-if="stage?.attachments.length" aria-label="Saved stage files"><li v-for="item in stage.attachments" :key="item.id">{{ item.fileName }} ({{ item.type }})</li></ul>
       <label>Preparation note<textarea class="short-text" v-model="preparationNote" maxlength="16000" placeholder="Add a private editorial note or question about the materials." /></label>
       <button :disabled="!preparationNote.trim() || dirty || detailsDirty || feedbackDirty || uploadFiles.length > 0 || uncertainUpload" @click="saveUploads(true)">Save preparation note</button>
       <button v-if="preparationNote && !uncertainUpload" @click="preparationNote = ''">Discard preparation note</button>
     </fieldset>
-    <fieldset v-for="action in (canEdit ? visibleActions : [])" :key="action.id" :disabled="busy || editorDirty || feedbackDirty">
+    <fieldset v-for="action in (canEdit ? visibleActions : [])" :key="action.id" :disabled="busy || uncertainPreparation || editorDirty || feedbackDirty" :aria-busy="preparing">
       <legend>{{ action.label }}</legend>
       <p>Use the current ontology, authored review annotations and optional project BOOTSTRAP.md to generate an editable proposal. Reference files you added are retained for your preparation.</p>
+      <p>Complete all preparation fields below. Stage details only need saving if you changed them.</p>
       <div class="action-inputs"><label v-for="input in action.missing" :key="input.name">{{ inputLabel(input.name) }}
         <input v-if="input.javaType?.endsWith('Integer')" v-model.number="values[input.name]" type="number" min="1" />
         <input v-else v-model="values[input.name]" required />
       </label></div>
-      <button :disabled="action.missing.some(input => values[input.name] === '' || values[input.name] === undefined)" @click="execute(action)">{{ action.label }}</button>
+      <button :disabled="action.missing.some(input => values[input.name] === '' || values[input.name] === undefined)" @click="execute(action)">{{ preparing ? 'Preparing review draft...' : action.label }}</button>
     </fieldset>
     <div v-if="flowAttempted && flowId" class="face-to-face">
       <section><h2>{{ canEdit ? 'Current candidate draft' : 'Reviewed candidate' }}</h2>
@@ -499,6 +559,13 @@ fieldset { border: 1px solid #70999d; margin: 20px 0; }
 .face-to-face section { min-width: 0; }
 textarea { width: 100%; height: 55vh; min-height: 280px; margin-top: 12px; padding: 12px; color: #edf7f7; background: #10272a; border: 1px solid #70999d; font-family: monospace; }
 .short-text { height: 100px; min-height: 80px; font-family: inherit; }
-[role="alert"] { color: #ffb0b0; }
+[role="alert"] { color: #8c3030; background: #fbecec; border: 1px solid #f1caca; padding: 12px; border-radius: 6px; }
+.progress-message, .success-message { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid #b9d4cc; border-radius: 6px; color: #183f35; background: #edf7f3; }
+.progress-message, .success-message { position: sticky; top: 12px; z-index: 1; box-shadow: 0 2px 8px #183f3518; }
+.full-page-main .progress-message, .full-page-main .success-message { top: 90px; }
+.progress-spinner { flex: 0 0 16px; height: 16px; border: 2px solid #b9d4cc; border-top-color: #24735f; border-radius: 50%; animation: review-progress 1s linear infinite; }
+.preparation-steps { padding-left: 24px; line-height: 1.7; }
+@keyframes review-progress { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .progress-spinner { animation: none; } }
 @media (max-width: 850px) { .face-to-face { grid-template-columns: 1fr; } }
 </style>
