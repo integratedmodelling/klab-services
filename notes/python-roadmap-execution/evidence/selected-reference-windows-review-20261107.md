@@ -77,3 +77,10 @@ newselectedcontrols before checking allchangedSDK. Retained failedlog, appended 
 controls before unchanged originalreadplan gate. Exactinstalled64SDK/37HTTP-recovery/
 52selected then originalgatePASS; this is fifteenth older CI batch, not a gate waiver.
 Fresh strict-ACK fullsuite and newexacthead hostedCI remain outstanding.
+
+Coverage-order regression now recognizes multiline run blocks and isolates jobs with
+independent runner databases. First broader scan falsely compared scientific-adapter
+SDK append against unrelated simulator resets in earlier jobs; retained local failure,
+fixed the checker to compare within each job and embedded positive/negative multiline
+controls. Supplemental49governance/queue/ordering PASS; no workflow gate weakened or
+product module changed. First hosted read-plan failure remains retained separately.

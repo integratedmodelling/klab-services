@@ -2,6 +2,14 @@
 
 ## PR303 merged; selected-window implementation continues
 
+PR304strictACKcandidate5204installedSDK521sim116worker23HTTP/reference39governance
+PASS;70SDK36sim6worker rawparity/no simulatorinproduction.52SDK100%18fixture100%/
+2HTTP/15olderCI+ordered/17linkedPASS(1270SDK398sim116worker)vs17nativeNOT_RUN.
+First5200candidate and failedBooleanACKprobes/oldinstalled-plansCI gate retained;
+new exacttypevalidation and unchangedgate append verified, no waivers. Supplemental
+49governancequeueorderingPASS; simulatorservicescanempty. FinalnewheadCI/ordinarymerge
+pending;20runnable/42originalIDs/history/zero finaldispositions preserved.
+
 PR303 verified merged6c285b6b6 at2026-11-07T20:46:29Z, exact9a44d9fca/all45
 checks PASS and remote/local ancestry verified. Fresh5152SDK501sim115worker23HTTP
 PASS/69-35-6 parity/14SDKfocused CI+ordered+17linkedPASS versus17nativeNOT_RUN.

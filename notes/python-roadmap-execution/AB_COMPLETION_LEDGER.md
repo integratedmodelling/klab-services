@@ -2,6 +2,21 @@
 
 ## PR303 verified merged; selected finite reference windows active
 
+PR304strictACK finalcandidate5204installedSDK/521simulator/116worker/23workerHTTP/
+allreference39governancePASS,zero skips/errors/failures. Raw70SDK36sim6worker parity/
+no simulatorinproduction verified.52SDK100%newmodule/allchangedSDK/18fixture100%/
+2publicHTTP/15olderCI+actualorderedselectionPASS.17linkedPASS(1270SDK398sim116worker)
+vs17nativeNOT_RUN. Supplemental49governance/queue/job-localmultilineorderingPASS.
+No simulator services remain. First5200candidate/Booleanprobe failures/initial
+installed-plansCI failure retained, not rewritten. Finalreceipt/exactnewheadCI/
+ordinarymerge pending; native time/provider/science/finalrow acceptance separate.
+
+Coverage-order test expanded to multiline commands/job-local databases; first broad
+scan falsely mixed separate CI jobs, corrected with embedded samejob hostile/positive
+controls. Supplemental49governance/queue/orderingPASS. StrictACK source frozen;
+new current CI head082782ea8 includes oldreadplan append fix. FreshfullstrictACKsuite
+pending; all15installedolderCI+17linkedPASSvs17nativeNOT_RUN already verified.
+
 StrictACK52installedcontrols100%/70SDK36sim6worker rawparity/15olderCI/18fixture100%/
 orderedselection/17linkedPASSvs17nativeNOT_RUN verified. Retained initial installed-plans
 CI failure42414346536/job128529080044: oldisolatedworkflow lacked newselectedcontrols
