@@ -43,7 +43,7 @@
       "id": "SIM-WORKER-001",
       "rows": ["RC-P5", "CAP-17"],
       "routes": ["/runtime/experimental/worker/v1/register", "/runtime/experimental/worker/v1/tasks", "/runtime/experimental/worker/v1/claim", "/runtime/experimental/worker/v1/tasks/{id}/publish", "/runtime/experimental/worker/v1/tasks/{id}/fail", "/runtime/experimental/worker/v1/tasks/{id}/cancel", "/runtime/experimental/worker/v1/release"],
-      "source": "Explicit experimental protocol proposal python-worker/README.md and JAVA-GAP-0017; native Java route/ABI UNKNOWN_PENDING_REFERENCE. Planning guide Phase5 and issue127 are requirement authority, not endpoint authority.",
+      "source": "Explicit experimental protocol proposal python-worker/README.md and JAVA-GAP-0017; native Java route/ABI UNKNOWN_PENDING_REFERENCE. Planning guide Phase5 and issue127 are requirement authority, not endpoint authority. Local worker containment and retained-state cancellation polling are tested client behavior, not a new native transport or sandbox claim.",
       "confidence": "SIMULATED_PROVISIONAL",
       "java_status": "REAL_NOT_RUN; native worker contract NOT_TESTED, not asserted globally missing",
       "simulator_test": "test_worker_vertical.py::test_scoped_worker_receives_declared_input_executes_isolated_and_publishes_atomic_output",

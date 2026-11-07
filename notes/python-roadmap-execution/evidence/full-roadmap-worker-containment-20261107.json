@@ -1,0 +1,17 @@
+{
+  "verified_utc": "2026-11-07T00:02:16.545159+00:00",
+  "integration_baseline": "8f9fe3805140bdcc252b4d53a91fee5ffb978598",
+  "attribution": "Feature was uncommitted during verification; parent fast-forwarded to actual PR269 merge during final suite. Module bytes, not parent commit alone, identify tested implementation.",
+  "worker_wheel_sha256": "b056152a32517a8760ea077e390bae90c9eefca298de145dc633bcb32fb4831c",
+  "worker_sdist_sha256": "7ff8c15c89b7830658e5ad536f72a75472fd1a80ce65838dfa93a4a55dd62c8a",
+  "simulator_wheel_sha256": "ff9eed37fe73488ccedd7b2f223f39f1c6ed61e19899db0179bee88532c8c57f",
+  "simulator_sdist_sha256": "01a03a3f8d39a56decaa8220e9e909adfc12f069a103461fc1fd38c1dd1bc402",
+  "source_wheel_sdist_installed_parity": {"worker_modules": 5, "simulator_modules": 14},
+  "installed_tests": {"worker_unit": 49, "worker_http_and_recovery": 20, "full_simulator": 127, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "coverage": {"combined_percent": 92.97820823244552, "covered_lines": 288, "statements": 305, "covered_branches": 96, "branches": 108, "excluded_lines": 0, "aggregate_ci_gate": 80, "common_code_ci_gate": 90, "reason": "Platform-specific Windows and POSIX kernel branches remain in full report without exclusions; common-code gate remains90% while Ubuntu/Windows CI tests both implementations separately."},
+  "types_and_lint": "PASS mypy --check-untyped-defs5files and fatal-error lint",
+  "execution_evidence": "Windows local installed tests verify owned descendant termination after success/crash/deadline/localcancel, containment refusal before operator code, remote owner cancellation during execution with no publication, and fail-closed status loss before script execution. POSIX kernel acceptance awaits hosted Ubuntu matrix.",
+  "remaining": "Normal feature PR/hosted cross-platform CI/permitted merge; memory/disk quotas, hostile-code isolation, deliberate POSIX session escape, maintained native transport/ABI/deployment/scientific acceptance remain separate unfinished gates.",
+  "not_claimed": "No new native Java science, no end-user SDK source change or full SDK regression rerun, no independently reviewed sandbox or production release. Test interpreter borrows existing dependencies; psutil is test-only, not production worker dependency.",
+  "superseded_local_attempt": "Earlier48worker/20HTTP+recovery/127simulator/33governance pass retained privately; final startup guard/status timeout changed afterward, so earlier artifacts are not relabeled final. Final49worker pass above uses rebuilt package bytes."
+}

@@ -1,0 +1,68 @@
+"""JAVA-GAP-0017 / SIMULATED_PROVISIONAL owned process-tree cleanup controls."""
+import json
+import threading
+import time
+
+import psutil
+import pytest
+
+from klab_worker import Limits, WorkerError, execute
+from test_worker import sample
+
+
+def terminated(pid):
+    try:
+        return psutil.Process(pid).status() == psutil.STATUS_ZOMBIE
+    except psutil.NoSuchProcess:
+        return True
+
+
+@pytest.mark.parametrize("outcome", ["success", "deadline", "cancel", "crash"])
+def test_owned_descendant_does_not_outlive_execution(tmp_path, outcome):
+    marker = tmp_path / "descendant.json"
+    script = tmp_path / "trusted.py"
+    script.write_text('import json,subprocess,sys,time\n'
+        'p=subprocess.Popen([sys.executable,"-I","-c","import time;time.sleep(60)"])\n'
+        f'open({str(marker)!r},"w").write(json.dumps({{"pid":p.pid}}))\n' +
+        ('import os;os._exit(1)\n' if outcome == "crash" else
+         'print(sys.stdin.read())\n' if outcome == "success" else 'time.sleep(60)\n'))
+    cancellation = threading.Event()
+    def cancel_started():
+        deadline = time.monotonic() + 5
+        while not marker.exists() and time.monotonic() < deadline:
+            cancellation.wait(.01)
+        cancellation.set()
+    thread = threading.Thread(target=cancel_started) if outcome == "cancel" else None
+    if thread:
+        thread.start()
+    start = time.monotonic()
+    try:
+        if outcome == "success":
+            result, _ = execute(script, sample())
+            assert result == sample()
+        else:
+            with pytest.raises(WorkerError):
+                execute(script, sample(), limits=Limits(seconds=1 if outcome == "deadline" else 10), cancel=cancellation)
+        assert time.monotonic() - start < 5
+        pid = json.loads(marker.read_text())["pid"]
+        deadline = time.monotonic() + 3
+        while not terminated(pid) and time.monotonic() < deadline:
+            time.sleep(.01)
+        assert terminated(pid)  # A disappeared PID or dead zombie is not a live descendant.
+    finally:
+        cancellation.set()
+        if thread:
+            thread.join(timeout=5)
+
+
+def test_containment_refusal_never_executes_operator_code(tmp_path, monkeypatch):
+    import klab_worker.execution as module
+    marker = tmp_path / "must-not-exist"
+    script = tmp_path / "trusted.py"
+    script.write_text(f'open({str(marker)!r},"w").write("unsafe")\n')
+    def refuse(_):
+        raise WorkerError("Synthetic containment unavailable")
+    monkeypatch.setattr(module, "ProcessTree", refuse)
+    with pytest.raises(WorkerError, match="containment"):
+        execute(script, sample())
+    assert not marker.exists()

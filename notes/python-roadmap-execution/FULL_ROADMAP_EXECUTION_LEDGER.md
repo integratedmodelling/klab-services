@@ -65,9 +65,39 @@ original assertion removed or skipped. Code/installed verification complete; nor
 PR/final-head hosted CI/permitted merge remain pending. Issue127 received verified
 idempotent keep-open scope correction after merged268 (comment6698860944), zero
 closures/owner/label/priority operations; original native obligations preserved.
-Next command: commit/push durable recovery PR with updated0004/0017handoff and
-evidence; then continue worker resource/descendant/cancellation hardening or next
-independent A/B vertical without stopping at the PR/checkpoint.
+Durable recovery PR269 verified remotely MERGED
+`8f9fe3805140bdcc252b4d53a91fee5ffb978598`,2026-11-07T00:02:13Z. Applicable
+final-head build/Jenkins/worker3.11+3.13/schema/simulator/notebook/scientific checks
+PASS; no independent maintainer review claimed. Local parent fast-forwarded to
+that actual integration merge, without changing the next feature's uncommitted work.
+Current next branch `feat/python-worker-cancellation-containment`, parent8f9fe3805,
+implements startup-gated Windows Job Object/POSIX process group cleanup and retained
+task-state polling during execution. Source tests49worker+5HTTP PASS including
+descendant cleanup after success/crash/deadline/cancel, setup refusal before script
+execution and remote cancellation with no publication. Cross-platform hosted and
+fresh installed verification remain pending. Hard memory/disk budgets and hostile
+code isolation remain unfinished; no native contract status promotion.
+First installed48worker/20HTTP+recovery/127simulator/33governance pass succeeded;
+subsequent empty-bootstrap-input guard and shorter monitoring timeouts changed
+source afterward, so those artifacts are superseded for final-head attribution.
+Final rebuilt installed verification PASS49worker unit/20HTTP+recovery/127full
+simulator/33governance tests, zero skips/errors/failures;5worker+14simulator module
+source/wheel/sdist/installed parity,92.98%aggregate Windows coverage/no exclusions,
+common-code90%gate PASS, mypy5files/lint PASS. Evidence:
+`evidence/full-roadmap-worker-containment-20261107.json`. Windows process-tree
+behavior is verified locally; POSIX kernel acceptance awaits hosted Ubuntu matrix.
+Coverage CI reports all platform-specific lines without exclusions:80% aggregate
+gate and90% common-code gate, Windows/Ubuntu3.11+3.13 matrix. Kernel-specific code
+cannot execute on the opposite OS; this is not silently lowering common-code gates.
+Next command: finish installed verification/types/lint/generated handoff and publish
+hardening PR after269 integration; continue independent full-roadmap requirements.
+PR270 first CI failed: generated CONTRACT_MATRIX was omitted from staging and a
+POSIX dead-PID inspection raced process disappearance. Corrective commit194a429d7
+preserves the cleanup assertion and includes generated output. Its local run also
+exposed a Windows asynchronous Job-termination/temp-directory cleanup race
+(48passed/1failed), not claimed green: implementation now waits for zero active
+Job processes before removing owned temporary custody. Reverification and final
+head hosted matrix remain required; PR270 must not merge until those pass.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan

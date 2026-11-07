@@ -10,6 +10,14 @@ Follow-up installed durable simulator restart/fencing/recomputation/cleanup pass
 has126simulator tests,15focused recovery,33governance and94.46%worker coverage;
 normal follow-up publication remains pending. Deployment resource/descendant/
 cancellation hardening and native backend/ABI/restart acceptance remain separate.
+
+Durable-recovery follow-up is verified mergedPR269/8f9fe3805 after applicable hosted
+checks PASS. The next containment pass has49worker/5HTTP source tests passing:
+startup-gated Windows Job/POSIX process-group descendant cleanup, prompt retained
+task cancellation and setup refusal before operator code. Installed/cross-platform
+verification and delivery are still pending; hard memory/disk quotas and hostile
+code isolation remain deficits. This does not change original row definitions or
+promote any native/scientific acceptance status.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),

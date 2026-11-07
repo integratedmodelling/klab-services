@@ -12,11 +12,12 @@ permissions:
 
 jobs:
   installed-worker:
-    runs-on: ubuntu-latest
+    runs-on: '${{ matrix.os }}'
     timeout-minutes: 10
     strategy:
       matrix:
         python: ['3.11', '3.13']
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,14 +28,17 @@ jobs:
           python -m pip install build setuptools wheel
           python -m build --outdir worker-dist python-worker
       - name: Install actual wheel and development-only simulator separately
-        run: python -m pip install worker-dist/*.whl './python-client[dev]' './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+        shell: bash
+        run: python -m pip install worker-dist/*.whl './python-client[dev]' './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2' 'psutil>=5.9,<8'
       - name: Verify package separation before tests
-        working-directory: /tmp
+        working-directory: '${{ runner.temp }}'
         run: python -c "import klab_worker,sys; assert all(m not in sys.modules for m in ('klab_simulator','klab_client','numpy','rasterio')); print(klab_worker.__file__)"
       - name: Worker envelope and trusted-process failure controls
         run: python -m pytest -q python-worker/tests --cov=klab_worker --cov-branch --cov-report=json:worker-coverage.json --junitxml=worker-tests.xml
       - name: Coherent SDK scope and real HTTP worker simulator lifecycle
-        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_worker_vertical.py developer-tools/klab-service-simulator/tests/test_durable_recovery.py --cov=klab_worker --cov-branch --cov-append --cov-fail-under=90 --cov-report=json:worker-coverage.json --junitxml=worker-http-tests.xml
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_worker_vertical.py developer-tools/klab-service-simulator/tests/test_durable_recovery.py --cov=klab_worker --cov-branch --cov-append --cov-fail-under=80 --cov-report=json:worker-coverage.json --junitxml=worker-http-tests.xml
+      - name: Require 90 percent common-code coverage (platform code reported separately)
+        run: python python-worker/tests/check_coverage.py worker-coverage.json
       - name: Fatal-error lint
         run: python -m ruff check python-worker/src python-worker/tests python-worker/examples --select E9,F63,F7,F82
       - name: Check typed envelopes and untyped implementation bodies
@@ -43,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: worker-contract-${{ matrix.python }}-native-NOT_RUN
+          name: worker-contract-${{ matrix.os }}-${{ matrix.python }}-native-NOT_RUN
           path: |
             worker-dist/*
             worker-coverage.json

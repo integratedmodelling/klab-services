@@ -32,6 +32,13 @@ Fresh4worker+14simulator module artifact/install parity and exact limits in
 `evidence/full-roadmap-durable-recovery-20261106.json`; normal feature delivery
 pending, then continue independent full-roadmap work. Native acceptance not promoted.
 
+Recovery publication update: PR269 verified MERGED8f9fe3805140bdcc252b4d53a91fee5ffb978598
+at2026-11-07T00:02:13Z, applicable final-head hosted checksPASS.
+Next worker-only containment pass changes no end-user SDK API or Java source;
+48worker/5HTTP source tests verify owned descendant cleanup and remote cancellation.
+Fresh installed and cross-platform acceptance remains pending; no new SDK full-suite
+or native scientific result is claimed for this pass.
+
 ### Sequential execution queue — user directive 2026-11-06
 
 Previous phase: **A+B Service Simulator development — COMPLETED_BOUNDED**.

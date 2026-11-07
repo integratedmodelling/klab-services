@@ -251,7 +251,7 @@
       "api_contract": {"method": null, "path": null, "request_schema_ref": "python-worker/README.md", "expected_response_schema_ref": "python-worker/README.md"},
       "requirement_ids": ["RC-P5", "CAP-17"],
       "original_issues": ["https://github.com/integratedmodelling/klab-services/issues/127"],
-      "python_test_refs": ["python-worker/tests/test_worker.py", "python-worker/tests/test_client_failures.py", "developer-tools/klab-service-simulator/tests/test_worker_vertical.py", "developer-tools/klab-service-simulator/tests/test_durable_recovery.py"],
+      "python_test_refs": ["python-worker/tests/test_worker.py", "python-worker/tests/test_client_failures.py", "python-worker/tests/test_containment.py", "developer-tools/klab-service-simulator/tests/test_worker_vertical.py", "developer-tools/klab-service-simulator/tests/test_durable_recovery.py"],
       "simulator_scenario_refs": ["SIM-WORKER-001", "SIM-DURABLE-RESTORE-001"],
       "reproducer_ref": "python-worker/README.md",
       "observed_java_behavior": "NOT_TESTED. ServicesAPI source exposes Resources contextualize endpoints, not proof of a maintained remote computation-worker registration/lease/result protocol. No current native worker endpoint or ABI is asserted missing globally.",
@@ -266,7 +266,7 @@
         "Reject foreign identities, unknown versions, invalid geometry/units/budgets; verify lease fencing, cancellation, duplicate/ambiguous delivery, restart and independently confirmed cleanup",
         "Provide operator-approved resource/isolation/security and package/provenance policy; trusted process isolation is not an adversarial sandbox or hard resident-memory guarantee"
       ],
-      "notes": "C now in scope under full-roadmap directive; issue127 remains open because a proposal/local process is not actual backend integration. Experimental routes are explicitly proposed, not invented authoritative Java APIs. Initial worker vertical remains partial: simulator restart/recovery is implemented separately from native restart acceptance; hardened deployment resource isolation and maintained native transport/ABI acceptance remain unestablished. No server-supplied code, credentials or scientific model port; no production SDK dependency on simulator."
+      "notes": "C now in scope under full-roadmap directive; issue127 remains open because a proposal/local process is not actual backend integration. Explicit experimental routes are not authoritative Java APIs. Worker now polls retained task state during execution and fails closed on cancellation/status loss; startup-gated Windows Job Object or POSIX process-group cleanup removes owned descendants after success/failure/deadline/cancel. Trusted scripts only: deliberate POSIX setsid escape, hostile-code sandboxing, hard memory/disk quotas and maintained native transport/ABI/deployment acceptance remain unestablished. No server-supplied code/credentials/scientific model port or production SDK dependency on simulator."
     }
   ]
 }
