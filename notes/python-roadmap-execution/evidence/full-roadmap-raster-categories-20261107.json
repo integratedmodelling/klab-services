@@ -18,5 +18,6 @@
   "contract_matrix": {"simulated_pass": 17, "sdk_protocol_tests": 205, "simulator_capture_reference_tests": 82, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_mode_exit": 3},
   "native_scientific_acceptance": "REAL_NOT_RUN / JAVA-GAP-0014; no native dictionary/block/multishard/revision acceptance or scientific model claim",
   "dependency_custody": "Fresh wheel/sdist/pip-target installs borrow existing test dependencies; no existing environment modification or fresh dependency-isolation certification",
-  "remaining": "Normal featurePR/finalheadCI/permittedmerge, then remaining multishard/managedagents/provenance/federation requirements. Entire-roadmap sleep remains pending."
+  "delivery": {"pr": 275, "head": "19078f5471e7f4078315210aa6fe4e7dd0bd0e8c", "merge": "c1ab4dd669941df8ef5d3d0eedde7204726d4236", "merged_utc": "2026-11-07T01:40:54Z", "applicable_final_head_checks": "PASS SDK3.11/12/13/core/scientific/workerWindows+Ubuntu/schema/simulator/notebook/build/Jenkins; no failed-check rerun needed for275", "independent_maintainer_review": false},
+  "remaining": "Native dictionary/block/multishard/revision acceptance remains unverified. Continue other multishard/managedagents/provenance/federation requirements. Entire-roadmap sleep remains pending."
 }

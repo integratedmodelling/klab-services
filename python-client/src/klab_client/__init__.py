@@ -47,6 +47,9 @@ from klab_client.durable_notifications import (NotificationCursor, NotificationB
 from klab_client.revision_drafts import (DraftRevision, DraftConflict, read_draft, write_draft,
     async_read_draft, async_write_draft)
 from klab_client.raster_categories import RasterCategories, CategoricalRasterAnalysis, categorize_raster
+from klab_client.read_plans import (ReadPlan, ReadShardSpec, ReadShard, ReadPlanData,
+    open_read_plan, read_plan_shard, release_read_plan, assemble_read_plan,
+    async_open_read_plan, async_read_plan_shard, async_release_read_plan)
 from klab_client.provenance import ProvenanceNode, ProvenanceLink, ProvenanceView, fetch_provenance, async_fetch_provenance
 from klab_client.vector import VectorAnalysis, open_vector
 from klab_client.semantics import (SemanticExplorer, AsyncSemanticExplorer, SemanticResult, KnowledgeState,
@@ -68,6 +71,8 @@ from klab_client.scan_slices import ScanSlice
 from klab_client.imports import ResourceImporter, AsyncResourceImporter, ImportFormat, ImportSubmission
 
 __all__ = [
+    "ReadPlan", "ReadShardSpec", "ReadShard", "ReadPlanData", "open_read_plan", "read_plan_shard",
+    "release_read_plan", "assemble_read_plan", "async_open_read_plan", "async_read_plan_shard", "async_release_read_plan",
     "ResourceImporter", "AsyncResourceImporter", "ImportFormat", "ImportSubmission",
     "ScanSlice",
     "ActivityNotifications", "ActivityNotification", "NotificationBroker",

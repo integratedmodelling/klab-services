@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-READ-PLAN-001/JAVA-GAP-0006/0014 adds explicit proposed snapshot shards under
+`klab.experimental.read-plans/1`. Bounded pinned numerical buffers and digests are
+not native committed revisions. Current-owner/root/Runtime grants are process-local,
+expire and disappear on restart; epoch fences prevent accidental reuse. No automatic
+replan/replay or real-service fallback. See
+[proposal and limits](../../python-client/docs/read-plan-reference.md).
+
 SIM-CATEGORY-CODES-001/JAVA-GAP-0014 exports a separately pinned2x3int16synthetic
 code TIFF (`category-code-export`, observable `synthetic:CategoryCode`, units absent).
 SDK caller-declared `RasterCategories` labels preserve all raw codes/masks, including

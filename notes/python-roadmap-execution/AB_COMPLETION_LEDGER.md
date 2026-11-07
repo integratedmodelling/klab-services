@@ -101,6 +101,24 @@ all changedSDKdecisionsPASS. Finalscientific73unit/9HTTPPASS.17linkedcasesPASS
 (205SDK/82simulator/57worker) versus17realNOT_RUN/exit3. Earlier artifact before
 mask-dimension guard remains separately attributed in
 `evidence/full-roadmap-raster-categories-20261107.json`; normal delivery pending.
+CategoricalPR275 verified remotely MERGEDc1ab4dd669941df8ef5d3d0eedde7204726d4236
+at2026-11-07T01:40:54Z, applicable final-head checksPASS without failed-check rerun.
+Next read-plan/shard prototype under0006/0014 has3sourceHTTP/server controlsPASS,
+bodytypes/lintPASS; SDK-only coverage/nativeasync/fresh artifacts/handoff/delivery
+not yet complete. Reference content hashes are NOT native scientific commit IDs.
+Read-plan follow-up now64SDK-only tests/180lines62branches100%unexcluded and
+22sourceHTTP/server testsPASS; sync/nativeasync, complete assembly, explicit
+unknown-outcome refusal, budgets/capacity/TTL/restart fencing/save rollback/reset
+verified. Same0006/0014handoff/docs/scenario/CI/publicexports updated. Fresh installed
+packages/full regressions running; no read-planPR yet or native acceptance promoted.
+Read-plan installed4157SDK/61referenceHTTPstorage+recovery/175simulator/57worker/
+21workerHTTP+recovery/33governancePASS, zero skips/failures/errors.52SDK+17simulator+
+5worker rawmodule parity; SDK-only180lines62branches100%unexcluded.17linked matrix
+running;17realNOT_RUN/exit3 verified. Same0006/0014handoff updated, no native revision
+or block-contract promotion; ordinaryPR/delivery and other roadmap work pending.
+Final SDK-only changed-code/newmodulegatePASS;17linkedcasesPASS(269SDK/104simulator/
+57worker), zero skips/failures/errors versus17realNOT_RUN/exit3. Bounded private
+read-plan reference locally verified; ordinaryPR/finalheadCI/permittedmerge next.
 
 ### Sequential execution queue — user directive 2026-11-06
 

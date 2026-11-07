@@ -1,0 +1,23 @@
+{
+  "verified_utc": "2026-11-07T01:54:44.668722+00:00",
+  "baseline_head": "c1ab4dd669941df8ef5d3d0eedde7204726d4236",
+  "attribution": "Uncommitted explicit read-plan reference; source/wheel/sdist/installed raw module bytes, not parent alone, identify tested implementation. SDK-only coverage does not append HTTP/server tests.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "17ed78adeceb646102dd14f7bee227d10317c5ec765388f3753d3f5cb39c55fa", "sdist_sha256": "9a7709c5842e230b0d4e12c74e889ebe99d0c2de7a82ebfa2fb08c3bded34cab", "parity_modules": 52},
+    "simulator": {"wheel_sha256": "a96c1dd57c6c622b313b11c56187a4cbf60289d2f8d2c2a13413423fa46aa43d", "sdist_sha256": "ad45068676342c81ce3485dd1b5717f0feb1113f6ebc11f1a291a9d4e8155ea3", "parity_modules": 17},
+    "worker": {"wheel_sha256": "7a7b094249a4fd4530dfe1c2bc445a3c6c94e5f20c905f75f43e882675193133", "sdist_sha256": "cb5e0707566177971bdfaedfa192e4d53ca1d85ed7fcc34b9cfe848d03582d77", "parity_modules": 5}
+  },
+  "installed_tests": {"sdk_unit_integration": 4157, "reference_http_storage_recovery": 61, "worker_unit": 57, "worker_http_recovery": 21, "full_simulator": 175, "governance": 33, "skips": 0, "failures": 0, "errors": 0, "late_test_additions_included": "64new SDK tests and22new HTTP/server tests included in observed totals"},
+  "new_sdk_module": {"unit_tests": 64, "covered_lines": 180, "statements": 180, "covered_branches": 62, "branches": 62, "excluded_lines": 0, "scope": "SDK-only installed unit/integration, no simulator coverage append"},
+  "sdk_coverage": {"combined_percent": 98.44906234161176, "covered_lines": 7402, "statements": 7501, "covered_branches": 2310, "branches": 2364, "historical_excluded_lines": 165, "current_raw_module_bytes_and_unique_sdk_only_paths": "PASS52SDK/17simulator/5worker modules"},
+  "typing_lint_generated_reports": "PASS new module implementation-body mypy/fatal lint;17stable gap IDs and42historical rows preserved, generated companions consistent; not native acceptance",
+  "assertions": ["Explicit opt-in/root-owner/originating Runtime and bound observation; sync/nativeasync real SDK-only MockTransport paths", "Immutable contiguous manifest and shard origin/epoch/revision/layout/hash; complete immutable ordered assembly only", "Valid zero/negative cells preserved; invalid cells None with exact boolean mask; finite float64 reference values", "4KiBrequest/64KiBresponse and cell4096/shard128/lease60s/grants16 finite budgets; no grant allocated on oversized manifest", "Current principal/root/Runtime/epoch denial, release/TTL/context cleanup; pinned copied buffers unaffected by explicit synthetic fixture change", "Restart deliberately loses process-local grants, changes epoch and fails410; new plan only via explicit caller action", "Failed durable open/release/reset restores ephemeral rows+epoch and durable state; successful reset rotates epoch", "Unknown mutation outcomes never retried; exact boolean release confirmation rejects numeric1; no real-error simulator fallback"],
+  "retained_initial_failures": "SDK fixture initially omitted required observable DTO:6PASS/47FAIL. Expanded direct-state controls initially used400cell manifest below64KiB and seeded observation with reusable counter:4PASS/4FAIL. Corrected test fixtures (1600cells/counter2), no weakened decoding/assertion/coverage/production policy.",
+  "contract_matrix": {"simulated_pass": 17, "sdk_protocol_tests": 269, "simulator_capture_reference_tests": 104, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_mode_exit": 3},
+  "SDK_only_changed_decisions": "PASS all changed SDK lines/arcs and unexcluded newmodule100percent against installed4157test report",
+  "native_contract": "UNKNOWN_PENDING_REFERENCE / JAVA-GAP-0006 MISSING_API and JAVA-GAP-0014 NOT_TESTED; proposed klab.experimental.read-plans/1 routes are NOT native Point/READ_VALUE API authority",
+  "revision_kind": "REFERENCE_CONTENT_SHA256_NOT_NATIVE_COMMIT",
+  "scientific_acceptance": false,
+  "dependency_custody": "Fresh wheels/sdists/separate pip-target installs borrow existing test dependencies; no existing environment modification or fresh dependency-isolation certification",
+  "remaining": "Ordinary featurePR/finalheadCI/permittedmerge. Native block/layout/revision lease acceptance and remaining managedagents/provenance/federation/full42criterion completion remain separate. Entire-roadmap sleep pending."
+}
