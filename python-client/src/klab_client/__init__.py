@@ -51,6 +51,7 @@ from klab_client.model_candidates import (ModelCandidateQuery, ModelCandidateSou
     inspect_model_candidates, async_inspect_model_candidates)
 from klab_client.provider_data import ProviderData, ProviderDataJob, AsyncProviderDataJob
 from klab_client.selections import RelationshipSelection, ObservationPage
+from klab_client.shared_access import SharedAccess, AsyncSharedAccess, ReadGrant, AccessInspection, GrantInspection
 from klab_client.read_plan_analysis import ReadPlanAnalysis, analyze_read_plan
 from klab_client.managed_agents import (ManagedAgentReference, ManagedAgentStatus, create_managed_reference,
     read_managed_reference, command_managed_reference, async_create_managed_reference,
@@ -79,6 +80,7 @@ from klab_client.scan_slices import ScanSlice
 from klab_client.imports import ResourceImporter, AsyncResourceImporter, ImportFormat, ImportSubmission
 
 __all__ = [
+    "SharedAccess", "AsyncSharedAccess", "ReadGrant", "AccessInspection", "GrantInspection",
     "RelationshipSelection", "ObservationPage",
     "ProviderData", "ProviderDataJob", "AsyncProviderDataJob",
     "ModelCandidateQuery", "ModelCandidateSource", "ModelCandidateCatalog", "inspect_model_candidates", "async_inspect_model_candidates",

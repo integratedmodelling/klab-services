@@ -1,5 +1,66 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Sharing fresh installed checkpoint
+
+PR292 publisheda566359f2; final17linkedcasesPASS(644SDK/203simulator/57worker)
+vs17nativeREAL_NOT_RUN/expectedexit3 explicitly asserted. Full matrix recorded in
+sharing artifact receipt. Exact final-headCI and ordinary permitted merge remain
+delivery gates; no production source changed after final packages.
+
+shared-access-first4575SDK/326simulator/allreference-worker/39governance suites
+PASS with zero skips/errors/failures. Raw59SDK/26simulator/5worker source-wheel-
+sdist-installed parity rechecked; simulator not bundled in SDK/worker. Installed
+SDK-only newmodule/allchangedcode100%unexcludedPASS; focused672/580/458/82controls
+and10supplementaryfixture100%PASS. Existing dependencies borrowed, no fresh isolation
+claim. Receipt evidence/full-roadmap-shared-access-20261107.json retains artifact/
+source custody and development failures.17gapmatrix running; ordinary sharing PR/
+exactheadCI/merge still pending.42originalrows/history retained; no fullrow/native
+acceptance inferred. Immediately continue revision-aware validation after delivery.
+
+## Material merge checkpoint; next shared-read implementation
+
+Sharing final source freeze82SDK+9queue=91PASS, whole new SDK and changed-code
+100%unexcluded;6publicHTTP/10supplementaryfixturePASS, fixture100%. Final strict
+revocation boolean, invalid context/client binding and non-text root guards tested;
+no broadened permissions. Source full326simulatorPASS preceded these narrow
+refusal hardenings, so final fresh installed candidate remains mandatory. No new
+sharing PR yet; no native granular rights or management acceptance inferred.
+
+Shared-read pass74SDK/6publicHTTP/10supplementaryfixture controlsPASS, both new
+modules100%unexcluded;83SDK+queue controlsPASS and changedSDKgatePASS. Public
+owner grant lookup reconciles actual lost replies without replay, and revoked
+multi-point reads emit no partial scientific object. Binding changes after mutation
+report unknown; configured-credential reflection refuses. Initial foreign-cap guard
+ordering mismatch and fixture98.21%missing hostile read-header/focus coverage fixed
+without weakened policies/exclusions. Body types/fatal lintPASS; native read-only
+fixture prepared/NOT_RUN. Source review explicitly separates generic native ACL
+(including release path) from proposed granular READ/TTL reference.
+
+Corrected current queue mapping: RC-P1.3 directly requires collaborator reads/denial/
+expiry. CAP-01 is existing certificate/token/profile renewal, moved to onboarding
+integration rather than pretending grants implement certificates. Embedded42row
+audit/history untouched; priority-aware next selection regression added. Full source
+simulator suite running; installed full verification/ordinary sharing PR remain
+pending. User-facing updates delivered in chat; no Java/IDE/native/power action.
+
+PR291 remotely verified MERGEDceeaf623ae438d3ba52b8924ae0026a5ca7c9848,
+2026-11-07T14:24:20Z; exactdf2e1f1020bf38b0bfbfcc90467e53d1dc8c3b78/
+all37reported final-headchecksPASS/no outstanding review requests. Actualmerge
+integrated on `feat/python-explicit-collaborator-rights`; queue checkpoint verifies
+remote merge/local ancestry.42rows/37runnable/zero finaldispositions; neither
+implementation delivery nor simulator success promotes native/science acceptance.
+No previous verifier/matrix/CI watcher remains running.
+
+Next CAP-01/RC-P1.3 implementation begun, not merely planned: production SDK opt-in
+capability-gated SharedAccess/AsyncSharedAccess, immutable READ-grant/access DTOs;
+independent ephemeral shared-read service.2public HTTP workflowsPASS for current
+principal rights/owner grant, normal SDK Observation/Job restoration and exact point
+values/units; collaborator write/release/cancel/reshare/revoke/foreign-root denial;
+revocation leaves owner usable, injected fixture expiry410 distinct from403, and
+owner cleanup removes all owned grants/scopes/Jobs/observations. No native grant
+contract assumed, no fallback. Security/coverage/native plan/docs/governance/fresh
+installed/PR acceptance pending; this is not complete shared-session native acceptance.
+
 ## Selection merge checkpoint and immediate material-selection work
 
 DraftPR291 publishedb27748f78. Corrected unique installed artifact candidate:

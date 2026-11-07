@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario shared-read` advertises an explicitly proposed capability-gated
+ephemeral Runtime READ-grant protocol. Owner-created grants permit current-principal
+point/Observation/Job reads, never collaborator submission/cancel/disposal/re-sharing.
+Public SDK controls cover expiry/revocation, mid-read denial without partial data,
+lost reply reconciliation and owner cleanup. Generic native ACL is not assumed to
+provide the same granularity. See [reference boundaries](../../python-client/docs/shared-access-reference.md).
+
 `--scenario material-selections` independently exercises typed plan versus actual
 numerical execution effects from lexical preferences, two declared observer biases
 and two anchored lattices. It is a finite three-candidate x+2*y arithmetic fixture,

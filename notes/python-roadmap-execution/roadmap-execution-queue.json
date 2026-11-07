@@ -3,22 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-material-selection-effects",
-    "pr": 291,
-    "requirement": "RC-P1.5",
-    "ci_review_dependencies": ["PR291 corrected root-scope artifact verification, exact final-head CI and ordinary permitted merge"]
+    "branch": "feat/python-explicit-collaborator-rights",
+    "pr": 292,
+    "requirement": "RC-P1.3",
+    "ci_review_dependencies": ["PR292 exact final-head CI and ordinary permitted merge"]
   },
   "last_verified_checkpoint": {
-    "pr": 290,
-    "merge": "6307e93f4bbae747b2908a40e1d55f2b016ad34b",
-    "head": "f38a332e8d3f2b98ddd3d51abfc8c8c2ac15d3ce",
-    "utc": "2026-11-07T13:52:56Z",
+    "pr": 291,
+    "merge": "ceeaf623ae438d3ba52b8924ae0026a5ca7c9848",
+    "head": "df2e1f1020bf38b0bfbfcc90467e53d1dc8c3b78",
+    "utc": "2026-11-07T14:24:20Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P1.5",
+  "next_actionable_requirement": "RC-P1.3",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "material-selection-effects",
     "explicit-collaborator-rights",
     "revision-aware-validation",
     "conditional-authoring",
@@ -176,7 +175,9 @@
       "simulator_acceptance_status": "INSTALLED_PUBLIC_SYNC_ASYNC_WORKFLOWS_PASS_FULL_ROW_FINAL_DISPOSITION_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
-      "java_gap_ids": ["JAVA-GAP-0013"],
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
       "pr_and_merge_evidence": {
         "historical_prs": [
           56,
@@ -356,11 +357,13 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: material-selection-effects"
       },
       "simulator_support_needed": "Verify project/namespace/scenario/observer/grid options change declared synthetic plan and executed input, not only echoed request metadata; reject unsupported forced models.",
-      "implementation_status": "TYPED_RESOLVE_AND_MATERIAL_EFFECTS_INSTALLED_VERIFIED_PR291_PENDING",
+      "implementation_status": "TYPED_PLANNING_AND_MATERIAL_EFFECTS_DELIVERED_PR291",
       "simulator_acceptance_status": "CORRECTED_INSTALLED_PUBLIC_HTTP_60_NUMERICAL_COMBINATIONS_PASS_FULL_ROW_FINAL_DISPOSITION_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
-      "java_gap_ids": ["JAVA-GAP-0013"],
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
       "pr_and_merge_evidence": {
         "historical_prs": [
           56,
@@ -410,12 +413,20 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "material_delivery": {
+          "pr": 291,
+          "head": "df2e1f1020bf38b0bfbfcc90467e53d1dc8c3b78",
+          "merge": "ceeaf623ae438d3ba52b8924ae0026a5ca7c9848",
+          "merged_at": "2026-11-07T14:24:20Z",
+          "final_head_checks": 37,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-material-selections-20261107.json"
+        }
       },
       "work_group": "material-selection-effects",
       "priority": 1,
-      "task_state": "in_progress",
-      "next_executable_action": "Complete SDK-only typed resolve option tests/coverage, fixture refusal controls, native compatibility plan, source custody/governance/docs and fresh installed verification before ordinary PR delivery.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile final full-roadmap row acceptance after cross-cutting integration; native ranking/semantic/grid scientific execution remains separate NOT_RUN.",
       "disposition": null
     },
     {
@@ -467,7 +478,7 @@
         ]
       },
       "current_ledger_baseline": "PARTIAL providers/profiles plus delivered279",
-      "remaining_implementation": "Add explicit opt-in shared read grants in independent simulator and public client access inspection; read-only collaborator positive control plus write/release denial, expired versus forbidden and grant revocation.",
+      "remaining_implementation": "No new certificate/token/profile provider implementation identified. Reverify installed issuer/certificate/profile renewal, expiry, privacy and provider-failure controls across integration; actual production issuer/license approval remains external, not missing shared-read grant code.",
       "required_tests": {
         "existing_unit": [],
         "existing_simulator": [
@@ -477,10 +488,10 @@
           "python-client/tests/functional/test_connection.py",
           "python-client/tests/functional/test_onboarding_journey.py"
         ],
-        "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: explicit-collaborator-rights"
+        "new_acceptance": "Installed public onboarding/issued-token/Hub-certificate/profile renewal controls with expiry, provider failure, privacy and no silent identity/fallback drift; native issuer/license approval separate."
       },
-      "simulator_support_needed": "Add explicit opt-in shared read grants in independent simulator and public client access inspection; read-only collaborator positive control plus write/release denial, expired versus forbidden and grant revocation.",
-      "implementation_status": "REMAINDER_PENDING",
+      "simulator_support_needed": "Existing owned bootstrap/expiry/current-principal scenarios; no new provider inference from granular shared-read grants.",
+      "implementation_status": "CERTIFICATE_TOKEN_PROVIDERS_DELIVERED_INTEGRATED_ACCEPTANCE_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -498,16 +509,16 @@
         ],
         "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
       },
-      "work_group": "explicit-collaborator-rights",
-      "priority": 2,
+      "work_group": "onboarding-and-routing-acceptance",
+      "priority": 15,
       "task_state": "pending",
-      "next_executable_action": "Add explicit opt-in shared read grants in independent simulator and public client access inspection; read-only collaborator positive control plus write/release denial, expired versus forbidden and grant revocation.",
+      "next_executable_action": "Reverify installed certificate/token/profile renewal integration and record row-specific Python disposition separately from native production issuer/license approval; granular collaborator rights belong directly to RC-P1.3.",
       "disposition": null
     },
     {
       "id": "RC-P1.3",
       "original_requirement": "A collaborator reads, forbidden writes and expiry diagnosis",
-      "required_public_python_functionality": "Connection.refresh; Client/AsyncClient attach_context and typed authorization/expiry errors",
+      "required_public_python_functionality": "Existing current-credential attach/restore/read plus opt-in capability-gated SharedAccess/AsyncSharedAccess inspection, READ grant/revoke and owner grant-state reconciliation; explicit rights/expiry denial and no local authority from DTOs",
       "historical_audit": {
         "acceptance_id": "RC-P1.3",
         "original_requirement": "A collaborator reads, forbidden writes and expiry diagnosis",
@@ -599,7 +610,7 @@
         ]
       },
       "current_ledger_baseline": "PARTIAL; scope selection/279expiry plus independent notebook race active",
-      "remaining_implementation": "Add explicit opt-in shared read grants in independent simulator and public client access inspection; read-only collaborator positive control plus write/release denial, expired versus forbidden and grant revocation.",
+      "remaining_implementation": "Public opt-in READ grant/inspection/revoke/owner lookup and independent current-principal fixture implemented. Fresh installed, full regression, source/governance/CI and ordinary PR delivery remain pending; native granular rights and grant transport remain separately unverified.",
       "required_tests": {
         "existing_unit": [
           "python-client/tests/unit/test_connection_guards.py",
@@ -614,9 +625,9 @@
         ],
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: explicit-collaborator-rights"
       },
-      "simulator_support_needed": "Add explicit opt-in shared read grants in independent simulator and public client access inspection; read-only collaborator positive control plus write/release denial, expired versus forbidden and grant revocation.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "simulator_support_needed": "shared-read ephemeral current-principal policy, root-bound Runtime READ, quota/tombstones, owner grant lookup, expiry/revocation, no partial scientific output on revocation, lost reply recovery and owner cleanup implemented; six public sync/nativeasync HTTP controls pass, installed verification pending.",
+      "implementation_status": "PUBLIC_SHARED_READ_REFERENCE_INSTALLED_VERIFIED_PR292_PENDING",
+      "simulator_acceptance_status": "INSTALLED_SIX_PUBLIC_HTTP_WORKFLOWS_AND_17LINKED_CASES_PASS_FINAL_ROW_DISPOSITION_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -677,8 +688,8 @@
       },
       "work_group": "explicit-collaborator-rights",
       "priority": 2,
-      "task_state": "pending",
-      "next_executable_action": "Add explicit opt-in shared read grants in independent simulator and public client access inspection; read-only collaborator positive control plus write/release denial, expired versus forbidden and grant revocation.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish same-feature source/coverage/governance/docs and uniquely named installed packages/full acceptance; ordinary sharing PR, exact-head CI, permitted merge and checkpoint, then immediately revision-aware validation.",
       "disposition": null
     },
     {

@@ -33,8 +33,13 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent initial checkpoint: verified PR289 merge `48ef20741`, corrected head
-`43acd7618`, all17reported final-head checks PASS; earlier provider coverage failures
-remain in the receipt. Active branch initially `test/python-selection-workflow-audit`.
-Next implementation: CAP-04 persisted relationship endpoints and collection queries.
-Inspect current queue rather than assuming this initial checkpoint stays current.
+Most recent verified checkpoint: PR291 merge `ceeaf623a`, exact `df2e1f102`,
+all37reported final-head checks PASS. PR290 selection merge `6307e93f4` also verified.
+Active child `feat/python-explicit-collaborator-rights`, direct requirement RC-P1.3;
+new advertised opt-in shared-read SDK/simulator source is implemented with82SDK/
+6publicHTTP/10fixture controls passing. Fresh installed verification and ordinary
+sharing PR delivery remain pending; source freeze is recorded in both ledgers.
+CAP-01 remains the existing certificate/token/profile seam, not shared-grant code.
+Inspect actual queue and running jobs rather than assuming this checkpoint stays
+current. After this delivery, immediately begin revision-aware validation and the
+remaining independently runnable work; never stop at the next merge.
