@@ -1,5 +1,16 @@
 # A+B completion ledger — ongoing campaign
 
+## PR295 CI ordering defect corrected without coverage relaxation
+
+PR295 current2343a220cOPEN; hostedselectiongate42393814235/job128466810363
+failed because membershipSDKcoverageappend followed simulatorfixture.coverage reset.
+Localfocusedrunner omitted intervening fixture step, so missedordering defect.
+Movedappend beforefixture; actualorderedinstalled693SDK/34append/6HTTP/21fixture
+thenunchanged100%selection+changedcodegatePASS. Staticallworkflowordering regression
+PASS. Originalfailurelog/investigation retained, no productionmodulebytechange or
+threshold/exclusion relaxation. FinalnewheadhostedCI/ordinarymergepending. Graph
+childsource76SDK100%/6publicHTTP/bodymypyPASS, not installed/native/fullacceptance.
+
 ## PR294 verified merge; native membership slice underway, deeper graph still owed
 
 Final dependency-membership-first installed4722SDK/362simulator/72worker/allreference/

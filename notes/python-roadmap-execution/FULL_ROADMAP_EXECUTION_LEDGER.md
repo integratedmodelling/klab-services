@@ -1,5 +1,14 @@
 # Full Python A+B+C roadmap execution ledger
 
+## PR295 failed selection coverage report retained and actual workflow fixed
+
+Hostedselectioncoveragegatefailed at2343a220c: SDKappend ran afterfixture reset of
+shared.coverage; localfocusedrunner skippedfixture ordering. Correctedappendposition,
+actualorderedinstalled693/34/6/21controlsPASS andunchanged100%gatePASS; addedstatic
+allworkfloworderingcontrolPASS. Failurecustody inpr295-selection-coverage-ordering.json.
+No productionSDK/simulatorbytechange, skip/threshold/exclusionrelaxation or native
+promotion. Graphchild76SDK100%/6publicHTTP/bodymypyPASS; finalCI/deliverypending.
+
 ## Conditional reference verified delivered; dependency requirement remains active
 
 Membership finalinstalled4722SDK/362simulator/72worker/allreference/39governance
