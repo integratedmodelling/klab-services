@@ -1,5 +1,40 @@
 # A+B completion ledger — ongoing campaign
 
+PR307 published12c8ef11a with final onboarding support-pinned190SDK/1HTTP/18simHTTP
+receipt,13runnernegativecontrols/types-lintPASS;33reviewedmapped473missing assertions.
+Ready for final-head CI; ordinarymerge/checkpoint remain.306verifiedmerged/all19checks
+PASS. Sourcefrozen; independent restoration/lifecycle acceptance is next, no native/
+issuer/license/scientific/finalrow promotion.
+
+## PR306 verified merged; onboarding delivery preparation
+
+306MERGEDa9faa8513e6a62b479be8b18a60e9e9aaa8c9f9c at2026-11-07T22:14:50Z;
+exact10caa5027b57126e579b62b9b66e21f8d968ab1c/all19checksPASS, remote/local ancestry
+checkpointverified. Hosted13failedvector/5230passed missingextra failure retained;
+corrected explicitvector/importpreflight jobPASS. Tooling delivered, RC-P0 reviewed
+assertion mapping stillpartial; no fullfunctional/native/finalrow promotion.
+Current onboarding fe5028fb4 source+support-pinned190/1/18matrix/13runnercontrols/
+types-lintPASS,33reviewedmapped473missing; no307PRyet. No simulator services remain.
+42originalIDs/history16runnable/zero finaldispositions. Next restoration/lifecycle
+matrix independently runnable; native issuer/license/scientific/deployment gates separate.
+
+## Integrated onboarding acceptance active; PR306 CI correction pending
+
+Active feat/python-integrated-onboarding-acceptance/noPR. Installed public matrix
+190SDK/1isolatedHTTPbootstrap-origin/18independentHTTPexpiry-routingPASS, no failures/
+errors/skips. Checked runner pins71SDK37sim6worker installed bytes to explicit305
+artifact receipt and pins executed tests/support helpers/runner bytes before/after.
+13runner refusal controls/type/fatallintPASS; fresh-source parity mode also190/1/18PASS
+but explicitly does not claim wheel/sdist/dependency isolation. No simulator services
+remain. Added reviewed onboarding assertion mappings:33mapped473missing across506,
+not full functional/native acceptance. Receipt integrated-onboarding-installed-20261107.json.
+
+ParentPR306 remainsOPEN10caa5027; initial hosted13vectorfailures/5230passed retained,
+missing vector extra now explicit with import preflight. NewexactheadCIwatcher active;
+ordinarymerge/checkpoint remain. Its prior22mapped/484missing receipt remains unchanged.
+42originalIDs/history16runnable/zero final dispositions preserved. Native issuer/
+license/production permission/deployment/scientific approval remain externalNOTRUN.
+
 PR306 hosted installed-operation-presence failed13vectorcontrols/5230passed at
 run42418781221/job128542504869: workflow omitted vector dependency extra. Failure
 retained; add vector extra and explicit imports, no test skipping or gate waiver.

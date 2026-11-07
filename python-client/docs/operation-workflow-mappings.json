@@ -4,6 +4,42 @@
   "workflows": [
     {
       "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection.py::test_provider_substitution_uses_same_client_and_origin_headers",
+      "operations": [["connection.py", "connect"], ["connection.py", "Connection.client"], ["connection.py", "Connection.selected"], ["connection.py", "Connection.initialize_peers"], ["connection.py", "Connection.close"], ["credentials.py", "IssuedTokenProvider.acquire"], ["credentials.py", "HubCertificateProvider.acquire"]],
+      "assertions": "Both explicitly selected synthetic issued-token and certificate providers return the same public Client contract, exact Runtime identity and origin-bound request credentials. Peer notification carries actual Runtime ID, summaries/reprs omit tokens, local close performs no remote release and later client use refuses. Certificate exchange is mock-wire evidence, not production issuer/license approval."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection.py::test_readiness_and_latest_pending_advertisement",
+      "operations": [["connection.py", "Connection.wait_ready"], ["connection.py", "Connection.refresh"], ["connection.py", "Connection.client"]],
+      "assertions": "Unavailable Runtime blocks client access/zero-time wait; later readiness sends the latest operational advertisement. Changed Runtime UUID fences refresh and subsequent client use; stale healthy state does not authorize requests."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection.py::test_renewal_is_atomic_identity_bound_and_never_replays_mutation",
+      "operations": [["connection.py", "Connection.renew"], ["connection.py", "Connection.refresh"]],
+      "assertions": "Renewal uses newly issued credential for exactly one ambiguous mutation; issuer/principal drift refuses later renewal and refresh rather than rebinding or replaying mutation."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection.py::test_ambiguity_explicit_choice_and_policy_cannot_expand_trust",
+      "operations": [["connection.py", "SelectionPolicy.select"], ["connection.py", "connect"]],
+      "assertions": "Ambiguous multiple providers require explicit selection; explicit origin choice is retained and custom policy cannot nominate an unverified endpoint. No credential forwarding or implicit failover authority inferred."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_bootstrap_recovery.py::test_bootstrap_expiry_reacquires_same_identity_without_replaying_existing_job",
+      "operations": [["connection.py", "connect"], ["connection.py", "Connection.renew"], ["credentials.py", "IssuedTokenProvider.acquire"]],
+      "assertions": "Owned independent HTTP workflow renews locally expired credentials under the same identity, preserves existing Job and obtains exact400 finite reference values with one submission; owner cleanup empties service counts. Not actual issuer renewal or native provider science."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_bootstrap_recovery.py::test_mixed_runtime_outage_recovery_preserves_explicit_selection_and_never_fails_over",
+      "operations": [["connection.py", "Connection.refresh"], ["connection.py", "Connection.client"]],
+      "assertions": "With two owned HTTP providers, selected Runtime outage invalidates readiness without switching to reachable standby. Explicit same-ID restart refreshes readiness and a new owned workflow succeeds; standby never acquires work and all owned scopes are cleaned up."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
       "test_ref": "python-client/tests/unit/test_client.py::test_explicit_unsupported_and_unconfigured_methods",
       "operations": [["api/services.py", "ResolverImpl.encode_dataflow"]],
       "assertions": "Existing unconditional resolver encoder refusal raises UnsupportedOperationError before any HTTP. This exact unsupported disposition remains pending maintained scientific encoding authority; no other operation is classified unsupported by missing evidence."
