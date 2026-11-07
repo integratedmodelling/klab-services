@@ -1,5 +1,18 @@
 # A+B completion ledger — ongoing campaign
 
+308 final local receipt includes17linked simulatedPASS(1319SDK414sim116worker)
+vs17nativeREAL_NOT_RUN/expectedexit3.453/32/30matrix+onboarding190/1/18regression,
+20runner-recipe-HTTPcontrols/types-lint68governancequeueorderingPASS. No simulator
+services remain. FinalreceiptheadCI/ordinarymerge pending; native incarnation,
+retention/TTL/rights/deployment/science not promoted. Sourcefrozen for308delivery.
+
+Draft30873ad1de35 published with installed453/32/30restoration matrixPASS,
+onboarding190/1/18regression20runner-recipe-HTTPcontrols/types-lintPASS. Supplemental
+68governance/runner/queue/ordercontrolsPASS; stableJAVA-GAP-0004registry/handoff/
+reproduction synchronized without native retention promotion.47reviewedmaps459missing.
+17linkedmatrix stillrunning; finalreceipt-headCI/ordinarymerge pending. Sourcefrozen,
+no simulator services after lastcompleted matrix.307verifiedmerged/all19checksPASS.
+
 ## PR307 verified merged; restoration/lifecycle matrix verified locally
 
 307MERGED0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0 at2026-11-07T22:23:23Z;
