@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-SOURCE-VALIDATION-001",
+      "rows": ["RC-P4.2", "CAP-05"],
+      "routes": ["/resources/parseAsset/NAMESPACE", "/reasoner/api/v1/validate/document", "/reasoner/public/capabilities"],
+      "source": "Existing SemanticValidationRequest/Response and ReasonerController/ReasonerService source-defined namespace diagnostics, no experimental endpoint. Explicit document version, parsed-source SHA256 and knowledge service/worldview/revision/session/content; immutable server reports and stale refusal require explicit revalidation. Two literal namespace fixtures/one declared diagnostic, not a parser/compiler. Ontology validation refused because native path can synchronize/load worldview knowledge; no publication/executable-model/context/classifier admission or repair.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; source-defined DTO does not establish native semantics/scientific acceptance",
+      "simulator_test": "test_source_validation.py::test_public_parse_semantic_diagnostics_and_explicit_revision_revalidation",
+      "java_gap_ids": ["JAVA-GAP-0011"]
+    },
+    {
       "id": "SIM-SHARED-READ-001",
       "rows": ["RC-P1.3"],
       "routes": ["/runtime/experimental/shared-access/v1/access", "/runtime/experimental/shared-access/v1/grants", "/runtime/api/v1/connect", "/runtime/api/v1/query", "/runtime/api/v1/observation/value"],

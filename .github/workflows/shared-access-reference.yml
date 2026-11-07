@@ -23,7 +23,7 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
       - name: Public SDK-only receipts, privacy, binding and opt-in guards
-        run: python -m pytest -q python-client/tests/unit/test_shared_access.py --cov=klab_client --cov-branch --cov-report=json:shared-read-sdk-coverage.json
+        run: python -m pytest -q python-client/tests/unit/test_source_validation.py python-client/tests/unit/test_shared_access.py --cov=klab_client --cov-branch --cov-report=json:shared-read-sdk-coverage.json
       - name: Entire new SDK module and all changed SDK decisions unexcluded
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"

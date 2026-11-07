@@ -1,5 +1,35 @@
 # A+B completion ledger — ongoing campaign
 
+## PR292 verified merge; revision-aware namespace validation underway
+
+Validation source frozen; fresh unique source-validation-first full verifier and
+17linkedmatrix running. Installed focusedCI722provider/630selection/508material/
+132sharing/50validation controlsPASS with unchanged newmodule/changedSDKgates;
+12installedsupplementaryfixture100%PASS. No validation PR yet. No native call or
+ontology synchronization performed; maintainers' original Java-gap obligations intact.
+
+PR292 remotely MERGED63e4f33c817caa45a8fef3f898fe27913f79372b at
+2026-11-07T15:39:22Z, exact32852ca9cd6b0951b0c8a341758f2358bdf8efaf,
+all23reported final-headchecksPASS/no outstanding review requests. Actualmerge
+integrated on feat/python-revision-aware-validation; checkpoint verifies remote
+state/local ancestry. Sharing receipt updated with actual checks/merge;42original
+rows/history preserved,36runnable/zero finaldispositions. No verifier/watcher remains.
+
+Next requirement already implemented locally: SourceValidation/AsyncSourceValidation
+use existing native /api/v1/validate/document namespace DTO, exact source/version/
+knowledge service/worldview/revision/session/content pinning, pre/post binding and
+current knowledge checks, explicit stale refusal/revalidation with no blind retries.
+50SDKcontrols100%unexcluded,2publicHTTP and12supplementaryfixturecases100%PASS;
+bodymypyPASS after correcting async helper typing and fixture source narrowing.
+Initial13-control coverage82.22% preserved in development history; expanded hostile
+intake/identity/status/race tests achieve100%, no exemptions. Independent fixture
+admits two namespace literals and a declared diagnostic, not a compiler/ontology.
+Inspected native ontology validation can synchronize/load knowledge, so API refuses
+ontology beforeHTTP and never requests executable-model/context/classifier admission.
+Prepared native namespace-only test NOT_RUN; no live diagnostics/repair requested.
+Governance, full regression/installed packages/ordinary PR delivery pending; no new
+validation PR yet, no whole-row or scientific acceptance claimed.
+
 ## Sharing installed artifact verification — 2026-11-07
 
 PR292 openeda566359f2. Final installed17linkedcasesPASS(644SDK/203simulator/
