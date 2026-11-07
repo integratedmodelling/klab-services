@@ -3,22 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-public-copied-composition",
-    "pr": 301,
-    "requirement": "CAP-03",
+    "branch": "feat/python-managed-behavior-workflow",
+    "pr": null,
+    "requirement": "RC-P4.5",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 300,
-    "merge": "1f879772d5d373c1d0921ce74867f78f189d90e8",
-    "head": "4dd1a2819d9cb320ac140e6a2c919040a1644d86",
-    "utc": "2026-11-07T19:29:08Z",
+    "pr": 301,
+    "merge": "a662bf884f8c56c2db7ad4b05e1f71f363768991",
+    "head": "001ca0e2bfffb7aa298fe615c5e92e1314927601",
+    "utc": "2026-11-07T19:55:28Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "CAP-03",
+  "next_actionable_requirement": "RC-P4.5",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "public-copied-composition",
     "managed-behavior-workflow",
     "worker-output-and-budget-custody",
     "selected-reference-windows",
@@ -2437,8 +2436,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: public-copied-composition"
       },
       "simulator_support_needed": "Replace raw-transport-only copied composition examples with typed public opt-in SDK source snapshots/vector/result lifecycle API; independently authorized sources, pinned identity, no upstream grants inferred; native live federation separate.",
-      "implementation_status": "PUBLIC_TYPED_COPIED_SOURCE_VECTOR_RESULT_LIFECYCLE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "PUBLIC_TYPED_COPIED_COMPOSITION_DELIVERED_PR301",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_THREE_SERVICE_COPIED_SOURCE_RESULT_LIFECYCLE_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -2495,12 +2494,21 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "public_copied_composition_delivery": {
+          "pr": 301,
+          "head": "001ca0e2bfffb7aa298fe615c5e92e1314927601",
+          "merge": "a662bf884f8c56c2db7ad4b05e1f71f363768991",
+          "merged_at": "2026-11-07T19:55:28Z",
+          "final_head_checks": 33,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-public-copied-composition-20261107.json"
+        }
       },
       "work_group": "public-copied-composition",
       "priority": 9,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish typed public sync/async independent A/B capture and C-owned result lifecycle, exact sourcevector/descriptor/secret/budget/ambiguousack/cleanup controls,100%SDK and independentfixture acceptance/installed delivery; no native livefederation or upstream grants inferred.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile integrated original-row acceptance; native live federation/delegated authority/revocation/migration/failover remains separate JAVA-GAP-0007 contract/evidence obligation.",
       "disposition": null
     },
     {
@@ -2577,7 +2585,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: managed-behavior-workflow"
       },
       "simulator_support_needed": "Complete public reconnectable synthetic managed behavior/agent source validation and outcome workflow including private-session disposal evidence in simulator; distinguish declared fixture execution from native k.Actors/compiler.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "FINITE_SOURCE_MANAGED_BEHAVIOR_WORKFLOW_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2607,8 +2615,8 @@
       },
       "work_group": "managed-behavior-workflow",
       "priority": 10,
-      "task_state": "pending",
-      "next_executable_action": "Complete public reconnectable synthetic managed behavior/agent source validation and outcome workflow including private-session disposal evidence in simulator; distinguish declared fixture execution from native k.Actors/compiler.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish public finite source admission/reconnect/outcome/private-session disposal controls and independent fixture/coverage/installed delivery; no native parser/compiler/scientific execution or private-session acceptance inferred.",
       "disposition": null
     },
     {

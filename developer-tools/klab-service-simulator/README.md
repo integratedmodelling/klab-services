@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario managed-behavior` advertises a separate finite literal source-managed
+workflow: admission/hash, deferred create, explicit reconnect/start/stop, declared
+finish/failure outcomes and independent synthetic private-session disposal/purge.
+Public sync/async tests verify session-count removal and owner survival. This is not
+k.Actors parsing/compilation/execution or native private-session acceptance; old
+managed-agents/1 and native AgentExecutions contracts remain separate.
+
 The existing `--scenario copied-composition` now advertises its exact reference
 protocol to the public typed CopiedCompositions sync/async facade. Independent
 authorized A/B captures release their read grants before C receives copied values;

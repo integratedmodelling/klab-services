@@ -31,6 +31,8 @@ jobs:
       - name: Check unchanged graph gate
         run: python -m pytest -q python-client/tests/unit/test_copied_composition.py python-client/tests/unit/test_execution_explanations.py --cov=klab_client --cov-branch --cov-append --cov-report=json:dependency-graphs-sdk.json
       - name: Verify graph coverage threshold
+        run: python -m pytest -q python-client/tests/unit/test_managed_behaviors.py --cov=klab_client --cov-branch --cov-append --cov-report=json:dependency-graphs-sdk.json
+      - name: Enforce original graph threshold
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py dependency-graphs-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/dependency_graphs.py

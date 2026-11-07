@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 401,
+    "IMPLEMENTED_SOURCE_ONLY": 412,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -2659,6 +2659,83 @@
       "path": "managed_agents.py",
       "owner": null,
       "operation": "async_command_managed_reference",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "ManagedBehaviorReference",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "ManagedBehaviors",
+      "operation": "validate",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "ManagedBehaviors",
+      "operation": "create",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "ManagedBehaviors",
+      "operation": "reconnect",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "ManagedBehaviors",
+      "operation": "read",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "ManagedBehaviors",
+      "operation": "command",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "AsyncManagedBehaviors",
+      "operation": "validate",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "AsyncManagedBehaviors",
+      "operation": "create",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "AsyncManagedBehaviors",
+      "operation": "reconnect",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "AsyncManagedBehaviors",
+      "operation": "read",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "managed_behaviors.py",
+      "owner": "AsyncManagedBehaviors",
+      "operation": "command",
       "async": true,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },

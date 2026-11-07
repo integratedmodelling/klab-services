@@ -1,5 +1,21 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Public copied composition delivered; managed behavior active
+
+14installedfocusedCI/actualordered693/214/92/115/40/6/21+unchanged100%gatePASS.
+Local focused-harness240s timeout after12batches retained; remaining2sameartifactPASS,
+no producttimeout relaxation. Freshfullartifactverifier+17linkedmatrixrunning/no newPR.
+
+PR301verifiedMERGEDa662bf884f8c56c2db7ad4b05e1f71f363768991 at19:55:28Z,
+exact001ca0e2bfffb7aa298fe615c5e92e1314927601/all33checksPASS; remote/local ancestry
+checkpoint verified.42originalrows/history/23runnable/zero dispositions.5110SDK467sim/
+72worker/reference-governancePASS;68SDK34sim5workerparity/17linkedPASSvs17nativeNOT_RUN.
+Managedbehavior nextsource implemented40SDK100%newmodule/changedSDK/6publicHTTP/
+26fixture100%+12oldagentregressions/types-lint-49governancePASS; finaldriftcontrol rerun
+pending. Separate literal admission/state machine/private session removal—not k.Actors
+parser/compiler or native execution. Review retains type/coverage development evidence.
+No newPR/installed acceptance; no unrelated service or originalrow/native promotion.
+
 ## Execution explanation delivered; typed copied composition continues
 
 PR301 final candidate5110installedSDK467sim72worker/reference-39governancePASS;
