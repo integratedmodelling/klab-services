@@ -30,6 +30,63 @@ no productioncode/policy weakening, no native collaboration/accepted-source clai
 Corrected SDK-only wholeexistingConnection/changeddecision gatesPASS;17linkedcases
 PASS using322SDK/127simulator/57worker tests, zero skips/errors/failures.17realNOT_RUN/
 exit3unchanged. Correctionready for279commit/push/updatedPRbody and freshfinalCI.
+Corrected279head84b1cbea66f23aec2399f030a2e2bc1b3c428bec subsequently passed all
+applicable checks including dedicatedUbuntu+Windows/bootstrap/mypy and SDK3.11/12/13.
+Verified remotely MERGEDbcade3d59e7806a58cbdceb36b9965e1a01a2cd1 at
+2026-11-07T03:02:41Z. Initialpinloss failures retained; no policyweakening/unchanged
+failedjobrerun/independentmaintainerreview claimed. Notebook branch fastforwarded
+actualintegrationmerge; no279watcher remains.
+
+### Active independent-client notebook race acceptance
+
+Current `test/python-notebook-principal-races` parentbcade3d59. New installedSDK
+exact ownedkernel scenario creates one observation; two independent same-owner
+clients race private-draftCAS with one200/one409, currentrevision2/exactrevision1.
+Anotherprincipal read/write/query all403even with root/RuntimeIDs. Readerclose
+preserves ownerdata/draft; finally releases ownedcontext/session, retaineddrafts
+cleared, kernelPIDshutdown/connectionfiles removed. Credentials only private runtime
+environment, absent from cellsource/output/error under unchanged sanitizer.
+No productionSDK/servicecodechange or newprotocol; drafts remain
+UNVALIDATED_PRIVATE_DRAFT, NOT native accepted-source/sharing/issuer evidence.
+Focused installed16notebook+drafttestsPASS, fatallint/governancevalidationPASS.
+Earlier temporaryprototype failures: missing explicitReasonerendpoint, credentials
+embedded in cellsource (sanitizer rejected), onecell instead of required three
+once-executedcells. Corrected fixtures/configuration, no sanitizerweakening.
+Localkernel authenticatedloopbackTCP warning is not encryptedtransport or hostilehost
+certification. Same0009/0015refs/scenario/handoff/docs/CIupdated. Fresh fullwheel/
+sdist/install verifier running automatically in
+`full-roadmap-20261106/notebook-principal-races-first` shell
+sh_1b3f59a03001Hd8CKv6o1FysHq; do not poll/overwrite. Next parity/SDK-onlyreport/
+17linkedvsreal/receipt/ordinaryPR/finalCI; continue remaining42rows. No native
+acceptance/stagingexecution/research/IDErepair or sleep implied by this slice.
+
+Next independently actionable source-grounded capability (read-only inspection,
+not implemented/accepted yet): JAVA-GAP-0003 candidate source catalog. Current
+ModelCandidateRequest(version1,namespaces,projects,scenarios), authenticated UserScope
+ResourcesProviderController POSTServicesAPI.RESOURCES.MODEL_CANDIDATES, ResourceSet
+source snapshots and exactUTF8SHA256 are present in source. Native ResourcesClient
+gates protocol1advertisement; its supplier request strips workflow/Runtime headers
+in Utils.Http.Client.withResourceSupplierScope rather than delegating a context.
+An adapter can therefore be capability-gated/read-only without inventing a native
+route, graph admission or selected-model guarantee. Old installedbuild capability
+omission remains historical; no fresh deployed compatibility inferred. Need SDK
+strict bounded DTO/sourcehash/identity validation plus ownership/visibility/denial
+simulator controls and no automatic fallback. Source-only inspection does not require
+IDE/staging startup. This work follows current notebook feature delivery, not an
+excuse to stop after governance; original0003NOT_TESTEDstatus staysunchanged.
+Notebook fullverifier completed03:08:29UTC:4210SDK/199simulator/86referenceHTTP+
+notebook+storage+recovery/57worker/21workerHTTP/33governancePASS, zero skips/errors/
+failures.54SDK+18simulator+5worker raw source/wheel/sdist/installedparity, current
+source rechecked; productiondiffempty. SDK-only report remains separate98.49%with
+165historical exclusions; no newproductionmodule so newmodulegateN/A, not fake100%.
+Exact custody `evidence/full-roadmap-notebook-principal-races-20261107.json`.
+17linkedmatrix running,17realNOT_RUN/exit3verified. Next automaticcompletion then
+normalPR/finalCI/permittedmerge; candidate-source adapter next independently useful
+implementation. Full42scope/nativeacceptance/sleep incomplete.
+Finalnotebook17linkedcasesPASS(322SDK/128simulator/57worker), zero skips/errors/
+failures vs17realNOT_RUN/exit3. Bounded installedreference acceptance verified;
+publish ordinaryPR/finalheadCI now, merge only applicablechecksPASS. No native
+sharing/sourceadmission/issuer or full42criterion acceptance promoted.
 
 ## Current authority, scope and recovery
 
@@ -709,10 +766,10 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |Original ID|Current Python implementation / simulator baseline|Next independently actionable item or exact external gate|
 |---|---|---|
 |RC-P0|PARTIAL; discovery/compatibility guards|Complete operation inventory against supported source and simulator coverage; production support decision separate.|
-|RC-P1.1|PARTIAL; SIM-DISCOVERY-001 vertical|Exercise bootstrap through computation with positive/denial/expiry; actual issuer/license evidence external.|
+|RC-P1.1|PARTIAL; discovery plus delivered279expiry/recovery|Bootstrap through400cells/renewal/denial/no replay verified; production issuer/license/deployed positive-negative matrix remains external.|
 |RC-P1.2|PARTIAL; SIM-RESTORE-001 and SIM-DURABLE-RESTORE-001 delivered269/8f9fe3805 (0004/0017)|Completed/in-flight saved Job, context and observation reattach across owned simulator processes without replay; native retained-Job/incarnation semantics still external.|
-|RC-P1.3|PARTIAL; SIM-SCOPE-SELECTION-001|Complete collaborator/forbidden/expiry scenario, preserving server authority.|
-|RC-P1.4|PARTIAL; discovery guards|Mixed-provider outage/recovery and identity drift scenario.|
+|RC-P1.3|PARTIAL; scope selection/279expiry plus independent notebook race active|Same-owner independent credentials and foreign read/write/query denial tested; not a fabricated cross-principal sharing/grant contract. Native collaborator policy/deployed approval remains unverified.|
+|RC-P1.4|PARTIAL; delivered279mixed-provider outage/recovery and identity drift|Same-URL selectedUUID retention SDKfix verified Ubuntu+Windows; no automatic failover. Supported native deployment matrix remains external.|
 |RC-P1.5|PARTIAL; SIM-SELECTION-001|Cover material project/observer/grid option effects, distinguishing advertised model from actual selected input.|
 |RC-P2.1|PARTIAL; exports/adapters plus delivered276read-plan/278offlinearray references|Bounded400cell multishard reference and complete offline layout/mask association verified; maintained native exporter/scanner/block descriptor acceptance still external.|
 |RC-P2.2|PARTIAL; grid/selectedexport/declaredbands272 and delivered276read-plan/278array references|Explicit proposed snapshot shards verified; native committed history/versioned temporal mapping remains unestablished; reference content/manifest hashes never native commits.|
@@ -723,7 +780,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P3.2|COMPLETE bounded refresh; SIM-REFRESH-001|Retain stale/partial/outage controls while broadening linked protocols.|
 |RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001 plus delivered269 durable restart/no-replay controls|Preserve expiry/cancel/no-replay and scoped results; native durable history/incarnation acceptance separate.|
 |RC-P3.4|PARTIAL; SIM-PROVENANCE-001|Broaden dependency/semantic-effect fixtures without calling finite simulator lineage authoritative Java.|
-|RC-P3.5|PARTIAL; SIM-NOTEBOOK-001|Multi-principal notebook/race acceptance over ordinary installed async client.|
+|RC-P3.5|PARTIAL; notebook plus active SIM-NOTEBOOK-PRINCIPAL-RACE-001|Exact installed asyncSDK kernel/two-client CAS/foreign denial/cleanup focusedPASS; fullfreshverification/delivery pending, native sharing/currentness semantics separate.|
 |RC-P4.1|PARTIAL; SIM-SEMANTICS-001/SIM-INSPECTION-001|Capability-aware applicability/version/access and actual candidate source protocol adapter.|
 |RC-P4.2|PARTIAL; source previews|Revision-aware validation scenario, parser and semantic admission kept distinct.|
 |RC-P4.3|PARTIAL delivered imports; SIM-IMPORT-001/SIM-INPUT-BINDING-001|Broader annotation/compute input provenance with owned cleanup; native resource custody gate separate.|
@@ -732,8 +789,8 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P5|IN_SCOPE PARTIAL; worker268/30460119d, recovery269/8f9fe3805, containment270/a58281643, memory271/96f696218 merged|Declared trusted worker lifecycle implemented/tested across Windows+POSIX; total disk/hostile-code isolation and maintained native backend/ABI/deployment acceptance remain separate deficits/gates.|
 |RC-R1|PARTIAL layered CI/test tooling|Install/coverage/contract/handoff CI per feature; external scheduled worker adoption is not local test success.|
 |RC-R2|PARTIAL release checker|Package development artifacts; production release/support/owner approval remains external, no upload inferred.|
-|CAP-01|PARTIAL providers/profiles|Expiry/reacquisition and simulator bootstrap matrix; actual issuer approval external.|
-|CAP-02|PARTIAL catalog/peers|Mixed capabilities/explicit selection/recovery, no trust expansion.|
+|CAP-01|PARTIAL providers/profiles plus delivered279|Synthetic expiry/reacquisition/bootstrap positive-negative matrix verified; actual issuer/license approval external.|
+|CAP-02|PARTIAL catalog/peers plus delivered279|Mixed provider outage/recovery/selectedUUID retention and genuine drift refusal verified; no trust expansion or native deployment approval.|
 |CAP-03|PARTIAL origin-qualified routing|Explicit provisional composition/migration workflow behind contract adapter; no silent automatic failover.|
 |CAP-04|PARTIAL typed requests|Broaden supported collections/relationship/context selection scenarios.|
 |CAP-05|PARTIAL semantic explorers|Supported remote operations and revision/applicability fixtures, no local ontology inference.|

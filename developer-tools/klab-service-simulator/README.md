@@ -8,6 +8,12 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-NOTEBOOK-PRINCIPAL-RACE-001/JAVA-GAP-0009/0015 adds exact owned-kernel acceptance
+with separate SDK clients, a same-owner private CAS race, foreign-principal denial,
+reader-close preservation and explicit cleanup. No native sharing/admission or
+issuer approval is inferred; see
+[notebook boundaries](../../python-client/docs/notebook-principal-races.md).
+
 SIM-BOOTSTRAP-RECOVERY-001/JAVA-GAP-0015/0007 exercises existing SDK bootstrap,
 localSDKexpiry/reacquisition through one400cellJob, denial/no-replay and actual owned
 Runtime outage/recovery/service-IDdrift. No automatic standby work or native issuer/

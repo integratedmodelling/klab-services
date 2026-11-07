@@ -1,0 +1,24 @@
+{
+  "verified_utc": "2026-11-07T03:08:29.641312+00:00",
+  "baseline_head": "bcade3d59e7806a58cbdceb36b9965e1a01a2cd1",
+  "scope": "Independent installedSDK notebook acceptance over existing private-draft/observation contracts; no productionSDK/worker/simulator service implementation change",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "8c5b7895ff222178fb5cd873e34bf8abc1bc2eee1adb71f324dde31a2deda805", "sdist_sha256": "a39c5c11ad378f37435a8df6e87a020924159e8d2e9f2bf6d419c956bd1d4097", "parity_modules": 54},
+    "simulator": {"wheel_sha256": "761e325fc6b79684291b07be0f140d1ee4497f3951d3bc065867be412b990b4d", "sdist_sha256": "eab2b8bae964b97fc8bc0e432bf3a58a37bb7bed9c1b931b8eda75ad322cc308", "parity_modules": 18},
+    "worker": {"wheel_sha256": "822c8d8aba79febf6b757c686216139b5fc55cf580e4e570642a4481ad58a44e", "sdist_sha256": "52a81729c5e3c2bec4b9d0be4afe22db0a5659937352a946df4e8f3a07f9e033", "parity_modules": 5}
+  },
+  "installed_tests": {"SDK_unit_integration": 4210, "reference_HTTP_notebook_storage_recovery": 86, "simulator": 199, "worker": 57, "worker_HTTP": 21, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "focused_installed_tests": {"notebooks_plus_drafts": 16, "fatal_lint": "PASS"},
+  "SDK_only_coverage": {"covered_lines": 7591, "statements": 7690, "covered_branches": 2372, "branches": 2426, "historical_excluded_lines": 165, "combined_percent": 98.48754448398577, "new_module_gate": "NOT_APPLICABLE: no new or changed production module", "unique_report_paths_and_current_raw_module_parity": true},
+  "source": "SIMULATED_PROVISIONAL",
+  "scenario": "SIM-NOTEBOOK-PRINCIPAL-RACE-001",
+  "java_gap_ids": ["JAVA-GAP-0009", "JAVA-GAP-0015"],
+  "assertions": ["Exact installedSDK/interpreter in owned childkernel, exactlythree once-executedcells", "Two independent same-owner HTTPclients CASrace on observedrevision1: one200/one409, no overwrite/retry, revision2and exactrevision1history", "Foreignprincipal possessing root/RuntimeIDs denied privateread/write and ordinaryobservationquery; no sharing/grant API invented", "Readerclose preserves ownerobservation/draft; oneJobsubmission, finallyownedcontext/sessionrelease clearsdrafts/state", "Credentials enter only private runtimeconfiguration, not notebooksource/output/errors; unchanged sanitizer/bytebudget and kernelPIDshutdown/connectionfilecleanup checks"],
+  "prototype_failures_retained": "Missing explicitReasonerendpoint; syntheticcredentials embedded in cellsource rejected by sanitizer; onecell instead of helper-requiredthree. Corrected fixtures/runtimeconfiguration, no sanitizer/policy weakening.",
+  "kernel_transport_limit": "Existing authenticated loopbackTCP emits encryption warning; no encryptedtransport/hostilehost certification claimed",
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 322, "simulator_tests": 128, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "native_status": "0009CONTRACT_PROVISIONAL/0015NOT_TESTED unchanged; drafts UNVALIDATED_PRIVATE_DRAFT, not native sourceadmission/publication or deployedissuer approval",
+  "scientific_acceptance": false,
+  "dependency_custody": "Fresh wheels/sdists/separate pip-targets borrow prior dependencies, not newly isolated dependency certification",
+  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; continue remaining42rows. Nativeacceptance and fullroadmap completion separate; sleep pending."
+}

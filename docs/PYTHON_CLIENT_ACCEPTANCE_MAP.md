@@ -10,6 +10,16 @@ refuse. Fresh installed4210SDK/198simulator/84reference/57worker/21workerHTTP/
 112branches100%unexcluded; linked gates and corrected-head CI/delivery pending.
 Earlier test-only/emptyproductiondiff claims describe the initial pre-fix pass only.
 Original42row criteria and native Java/scientific acceptance remain distinct.
+PR279 subsequently verified mergedbcade3d59 on corrected84b1cbea6after allapplicable
+checksPASS including Windows+Ubuntu bootstrap. Next notebook race acceptance has
+16focused installed testsPASS: separate same-owner clients/privateCAS singlewinner,
+foreignread-write-query denial, readerclosepreservesowner and explicitcleanup.
+Freshfullpackages/CI/delivery pending; no native sharing/sourceadmission implied.
+Fresh notebookacceptance4210SDK/199simulator/86reference/57worker/21HTTP/33govPASS,
+zero skips/errors/failures; rawmoduleparity and emptyproductiondiff. Linkedmatrix/
+ordinarydelivery pending, all17realNOT_RUN; no native sharing/sourceadmission implied.
+Finalnotebook17linkedcasesPASS(322SDK/128simulator/57worker) vs17realNOT_RUN/exit3;
+normalPR/finalCI pending. No native sharing/sourceadmission or fullroadmap completion.
 
 ## Active full-roadmap campaign — user directive 6 November 2026
 

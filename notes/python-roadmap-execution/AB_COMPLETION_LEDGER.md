@@ -12,6 +12,20 @@ review02:54:38UTC unchanged/no safe closure; nativeacceptance/full42scope incomp
 Corrected wholeexistingConnection/changedSDKgatePASS;17linkedcasesPASS(322SDK/
 127simulator/57worker), zero skips/errors/failures vs17realNOT_RUN/exit3.279corrected
 head publication/finalCI stillrequired; normalnext independentwork continues.
+279subsequently verified MERGEDbcade3d59e7806a58cbdceb36b9965e1a01a2cd1 at
+03:02:41Z, exact84b1cbea6correctedhead/allapplicablechecksPASS includingbootstrap
+Ubuntu+Windows. Initialpinlossfailuresretained; no policyweakening. Next independent
+notebookrace/foreignread-write-querydenial/readerclose/cleanup acceptance has
+16installedfocusedtestsPASS; same0009/0015handoff/docs/scenario/CIupdated, fresh
+fullpackageverifier running notebook-principal-races-first. No native collaboration/
+accepted-source/deployedissuer or fullroadmap completion implied.
+Notebook fresh4210SDK/199simulator/86HTTPnotebook+recovery/57worker/21HTTP/33govPASS,
+zero skips/errors/failures;54SDK+18simulator+5worker rawmoduleparity/emptyproductiondiff.
+SDK-only98.49%retained/historicalexclusions165, newmodulegateN/A.17linkedmatrixrunning
+vs17realNOT_RUN/exit3; normalfeaturedeliverypending. Exactnotebookcustody in
+`evidence/full-roadmap-notebook-principal-races-20261107.json`.
+Notebookfinal17linkedcasesPASS(322SDK/128simulator/57worker), zero skips/errors/
+failures vs17realNOT_RUN/exit3; ordinaryPR/finalCI/permittedmerge next.
 
 ## Authority and current decision
 
