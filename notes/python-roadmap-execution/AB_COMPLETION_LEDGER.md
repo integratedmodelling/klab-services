@@ -136,6 +136,11 @@ attestation running;17realNOT_RUN/exit3verified. Exact custody/synthetic-onlylim
 Managed finalSDK-only changed-code/newmodulegatePASS;17linkedcasesPASS(304SDK/
 116simulator/57worker), zero skips/failures/errors;17realNOT_RUN/exit3unchanged.
 Bounded synthetic reference locally verified, normalPR/finalCI/permittedmerge next.
+ManagedPR277 OPENd5c2f3af5; hosted drift gate correctly rejected omitted generated
+JAVA_GAP_STATUS.md. Local dirty-file generatedcheck had passed; missing gitadd is
+the delivery defect, not Java/native status or simulator-code failure. Correction
+commits companion without weakening gate; local33governance+generatedcheckPASS,
+push/finalheadCI/permittedmerge still required. Failure retained in feature receipt.
 
 ### Sequential execution queue — user directive 2026-11-06
 

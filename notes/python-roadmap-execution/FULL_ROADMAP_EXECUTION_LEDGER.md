@@ -510,6 +510,17 @@ PASS(304SDK/116simulator-capture-reference/57worker), zero skips/errors/failures
 17realNOT_RUN/exit3unchanged. Publish ordinary managed-referencePR next and await
 applicable final-head checks before permitted merge. Synthetic lifecycle success
 does NOT satisfy native execution/private-session/resource-disposal acceptance.
+Managed-reference normalPR277 published atd5c2f3af5. Hosted schema-and-substitutes
+failed runs42327949766/job128267539442 and42327954764/job128267555276 on generated
+JAVA_GAP_STATUS.md drift. This file WAS generated locally but omitted from explicit
+gitadd, so local33governance/generated-checkPASS did not establish committed report
+parity. No rerun can fix an unchanged deterministic missing-file commit. Correction
+adds the missing generated companion only, keeps0008nativeNOT_TESTED and all drift
+gates unchanged. Local33governance and generated-checkPASS again; push correction
+then require final-head hosted checks before merge. Earlier installed production
+code evidence remains attributable because this fix changes no tracked production
+SDK/simulator/worker code. A separate untracked read_plan_analysis.py prototype
+belongs to the next branch and is NOT part of277's artifacts or correction.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan

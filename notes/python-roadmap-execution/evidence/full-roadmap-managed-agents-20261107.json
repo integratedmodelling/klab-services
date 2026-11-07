@@ -21,5 +21,6 @@
   "scientific_acceptance": false,
   "issue_review": "2026-11-07T02:04:41.345451+00:00 all11open bodies unchanged/comments retrieved/no newunclassifiedURLs/no safe closure candidate; issue125 remainsopen/no mutation",
   "dependency_custody": "Fresh wheels/sdists/separate pip-target installs borrow existing test dependencies; no existing environment modification or fresh dependency-isolation certification",
-  "remaining": "NormalPR/finalheadCI/permittedmerge. Native execution/cleanup, provenance/committed revisions/federation/full42criteria remain separate; entire-roadmap sleep pending."
+  "delivery_attempt": {"pr": 277, "initial_head": "d5c2f3af5", "status": "OPEN_CORRECTION_PENDING", "retained_failure": "Hosted schema-and-substitutes runs42327949766/job128267539442 and42327954764/job128267555276 failed generate--check: JAVA_GAP_STATUS.md changed locally with0008confidence but was omitted from explicit gitadd list. Local generated checks saw the dirty file, so33localgovernancePASS did not establish committed report parity. Fix is to commit missing generated companion and rerun unchanged hosted drift gate, not weaken it.", "correction_local_governance": "33PASS and generate--checkPASS; no tracked production SDK/simulator/worker code change"},
+  "remaining": "Push missing generated companion correction; final-headCI/permittedmerge required. Native execution/cleanup, provenance/committed revisions/federation/full42criteria remain separate; entire-roadmap sleep pending."
 }
