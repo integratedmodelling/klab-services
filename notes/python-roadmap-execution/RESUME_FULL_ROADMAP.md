@@ -1,5 +1,12 @@
 # Resume the full Python A+B+C campaign
 
+Current draft3066b27f5792 operation-attribution source; final5243unit/536simulator
+exact-test-source tracesPASS,455nonabstractcallables observed51abstractuncalled/506
+classifications preserved.22reviewedassertionmaps/484missing including abstract ones;
+presence not functional/native acceptance. Receipt recorded; hostedCI watcher active.
+Need finalreceipt head/CI/ordinarydelivery then broader RC-P0mapping and independent
+installed onboarding/routing acceptance.16runnable/42originalIDs/history preserved.
+
 Latest verified305MERGED971f2a987 at2026-11-07T21:48:46Z/exact1863a62ae/all36checksPASS,
 remote-local checkpointverified.42originalIDs/history16runnable/zero dispositions.
 Active feat/python-operation-test-attribution, uncommitted tools operation_trace.py,

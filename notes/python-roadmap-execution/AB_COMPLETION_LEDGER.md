@@ -2,6 +2,14 @@
 
 ## PR305 verified merged; RC-P0 attribution active
 
+DraftPR3066b27f5792 published. Fresh source-pinned installed5243unit/536simulator
+testsPASS; all506classifications preserved,455nonabstractcallables observed and51
+abstract declarations uncalled, no truncation.22operations have reviewed assertions
+linked to passed same-operation/exact-test-byte scopes;484remain without reviewed
+assertionmapping (including abstract declarations). No full functional/nativeacceptance.
+Receipt operation-test-attribution-installed-20261107.json recorded; hostedCI running.
+Next independent installed onboarding/routing matrix under review; RC-P0 staysactive.
+
 Latest attribution31tool/accessor/orchestration/queue-order controls/fatal lintPASS.
 Initialfullinstalledunit5235PASS/HTTP536PASS; plus8gapcontrols observes455nonabstract,
 51abstractuncalled. Initial5orchestration-double setup failures retained/corrected.

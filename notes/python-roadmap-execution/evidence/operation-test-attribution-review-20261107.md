@@ -1,5 +1,12 @@
 # RC-P0 operation-to-test attribution development evidence
 
+DraftPR3066b27f5792. Final source-pinned runs5243installedunit/536simulatorPASS,
+455nonabstractobserved51abstractuncalled/506classifications preserved/no truncation.
+22reviewedassertionmappedoperations;484missingreviewedmapping including abstract
+declarations. Receipt operation-test-attribution-installed-20261107.json retains exact
+rawtrace hashes and executable testrefs. HostedCI/finalreceipt delivery remain; no full
+functional/native/finalrow promotion. Broader workflowreview and onboarding continue.
+
 Parent305 verified merged971f2a98751b3f458eb4b0280a7093a4a4e716cd at
 2026-11-07T21:48:46Z; exact1863a62ae8c8816492fa1ba3654c6056ed05350f/all36checks
 PASS and remote/local checkpoint verified.5253installedSDK536sim116worker23HTTP/
