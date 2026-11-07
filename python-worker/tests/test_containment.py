@@ -10,6 +10,13 @@ from klab_worker import Limits, WorkerError, execute
 from test_worker import sample
 
 
+def terminated(pid):
+    try:
+        return psutil.Process(pid).status() == psutil.STATUS_ZOMBIE
+    except psutil.NoSuchProcess:
+        return True
+
+
 @pytest.mark.parametrize("outcome", ["success", "deadline", "cancel", "crash"])
 def test_owned_descendant_does_not_outlive_execution(tmp_path, outcome):
     marker = tmp_path / "descendant.json"
@@ -39,12 +46,9 @@ def test_owned_descendant_does_not_outlive_execution(tmp_path, outcome):
         assert time.monotonic() - start < 5
         pid = json.loads(marker.read_text())["pid"]
         deadline = time.monotonic() + 3
-        while psutil.pid_exists(pid) and time.monotonic() < deadline:
-            process = psutil.Process(pid)
-            if process.status() == psutil.STATUS_ZOMBIE:
-                break  # Dead group member awaits reaping by its OS parent.
+        while not terminated(pid) and time.monotonic() < deadline:
             time.sleep(.01)
-        assert not psutil.pid_exists(pid) or psutil.Process(pid).status() == psutil.STATUS_ZOMBIE
+        assert terminated(pid)  # A disappeared PID or dead zombie is not a live descendant.
     finally:
         cancellation.set()
         if thread:
