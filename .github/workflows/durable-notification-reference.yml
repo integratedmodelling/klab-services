@@ -31,6 +31,7 @@ jobs:
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: |
+          python -m pip install './python-client[dev,local,analysis,tabular,vector,notebook,events]'
           python -m pytest -q python-client/tests/unit --cov=klab_client --cov-branch --cov-append --cov-report=json:notifications-coverage.json
           python python-client/tools/check_feature_coverage.py notifications-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/durable_notifications.py
       - name: Typed reference implementation bodies

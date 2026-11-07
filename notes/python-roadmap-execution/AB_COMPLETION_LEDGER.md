@@ -1,5 +1,9 @@
 # A+B completion ledger — ongoing campaign
 
+Current child313 integrates parent312 dependency-setup correction77d3c854a; new exact
+childhead CI will supersede inherited failed dependency jobs. Both PRs remain open,
+not merged; retain all earlier pass/failure histories below without promotion.
+
 PR313 published9f85e775f:51explicit reviewedworkflows/219linked287missing across506,
 fresh5270SDK538reference traces/24controlsPASS. Parent312corrected01395fa76 CIrunning,
 not yetmerged. Both finalheadCI/ordinarydelivery/checkpoint owed; no functional/native/
@@ -25,6 +29,21 @@ localDTO/mockHTTP/referenceHTTP/orchestration doubles as declared; no native sci
 issuer/rights/durability/actor execution/OSsecurity/final-row/release promotion.
 All42originalIDs/history3runnable/zero finaldispositions retained. Continue missing287
 review and exactmergedpackage/readiness reconciliation; no milestone stopping gate.
+
+## PR312 second CI pass exposes expanded-suite dependency setup gap
+
+01395fa767cd6f1d8899c86fe061be4b72bfd89c offline3.11/3.12/3.13 nowPASS and both
+whole-tree platform jobsPASS, but feature jobs fail added full-suite collection or
+optional vector tests. Inspected candidate run42426782552 lacks cryptography/numpy/
+psutil; rasterlabel run42426782662 lacks vector dependencies. Fullsuite measurement
+needs fullsuite extras, not the old narrow-feature install. Second failed rollup/logs
+retained privately; no merge or waiver. Corrective pass installs the same existing
+SDKextras as offlineCI before full-unit append in all21featurejobs; workflow guard
+now verifies dependency ordering. Dependency/input/order/delivery controls3PASS.
+No production dependency/default-extra/API changes, no skip/error relaxation; local
+5272fullSDK/40unchangedgates evidence uses the already complete borrowed environment.
+Fresh new-head CI still required. Child313ready9e25692c1 inherits parent blocker;
+its219reviewedmaps287missing/24controls remain local, not delivery acceptance.
 
 Corrected local5272installedSDKPASS/no failures/errors/skips; all40unchanged coverage
 checker commandsPASS against currentintegrationb342a674a and historicalofflinead2bc949c.
