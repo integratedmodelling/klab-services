@@ -1,5 +1,12 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR302managedbehaviorcandidate5150installedSDK499sim72worker/reference-governancePASS;
+69SDK35sim5worker rawparity,17linkedPASSvs17nativeNOT_RUN.40SDK100%/6publicHTTP26fixture
+100%/14focusedCI+orderedselectionPASS. Literal source admission/declared synthetic outcome/
+private-session disposal evidence is not native actor/parser/compiler/scientific acceptance.
+Finalreceipt/exactheadCI/ordinarymerge pending; parent301verifiedmergeda662bf884/all33
+checksPASS;42originalrows/history/23runnable/zero finaldispositions preserved.
+
 PR301 copied-reference candidate5110installedSDK467sim72worker/reference-governance
 PASS;68SDK34sim5worker rawparity,17linkedPASSvs17nativeNOT_RUN.57SDK100%,2public
 HTTP/2fixture100%,13focusedCI+actualorderedselectionPASS. Independently authorized A/B

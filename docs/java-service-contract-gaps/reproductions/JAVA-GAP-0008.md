@@ -28,13 +28,16 @@ NOT_TESTED complete managed Runtime execution/terminal cleanup. Native Java/Qpid
 Explicit klab.experimental.managed-agents/1 finite synthetic lifecycle, NOT k.Actors parsing/compilation/registration/execution. Named idle/finish/fail fixtures, root-owner/Runtime/epoch binding, single-use start, stop acknowledgement distinct from terminal and later synthetic cleanup confirmation; CASrevision/purge/capacity/SDKrebind/restart loss/save rollback controls. No actual native/private-session cleanup proof.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-MANAGED-AGENT-001
+Scenarios: SIM-MANAGED-AGENT-001, SIM-MANAGED-BEHAVIOR-001
 
 Exact executable controls:
 
 - `python-client/tests/unit/test_agent_execution.py`
 - `python-client/tests/unit/test_managed_agents.py`
 - `developer-tools/klab-service-simulator/tests/test_managed_agents.py`
+- `python-client/tests/unit/test_managed_behaviors.py`
+- `developer-tools/klab-service-simulator/tests/test_managed_behavior_workflow.py`
+- `developer-tools/klab-service-simulator/tests/test_managed_behavior_fixture.py`
 
 ## Reproduction commands
 

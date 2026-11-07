@@ -27,6 +27,8 @@ jobs:
       - name: Entire new SDK module and changed SDK decisions unexcluded
         run: python -m pytest -q python-client/tests/unit/test_copied_composition.py --cov=klab_client --cov-branch --cov-append --cov-report=json:explanations-sdk.json
       - name: Verify unchanged explanation coverage threshold
+        run: python -m pytest -q python-client/tests/unit/test_managed_behaviors.py --cov=klab_client --cov-branch --cov-append --cov-report=json:explanations-sdk.json
+      - name: Enforce original explanation threshold
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py explanations-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/execution_explanations.py

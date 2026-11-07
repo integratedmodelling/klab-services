@@ -1,5 +1,43 @@
 # A+B completion ledger — ongoing campaign
 
+## PR301 verified merged; managed source/outcome/disposal active
+
+PR302 final installed candidate5150SDK/499simulator/72worker/allreference/39governance
+PASS zero skips/errors/failures;69SDK35sim5worker rawsource-wheel-sdist-installed parity
+verified/no simulatorinproduction.17linkedPASS(1218SDK/376sim/72worker)vs17nativeNOT_RUN.
+Fullinstalled newmodule/changedSDK100%PASS;14focusedCI+actualorderedselectionPASS.
+No simulator services remain. Finalreceipt/exactnewheadCI/ordinarymerge pending;
+native actor/private-session/scientific/finalrow acceptance remains separate. Borrowed
+dependencies, no fresh dependency isolation. Next worker probes retain two controls:
+current stdout/stderr budget is per-stream, and protocol-only ACK is accepted; neither
+is claimed to satisfy the next aggregate-output/strict-ACK acceptance requirement.
+
+DraftPR302 published4db8186bd; sourcefrozen/fullartifactverifier+17linkedmatrix+
+CIwatcher running.40SDK100%/6publicHTTP26fixture100%/14focusedCI+actualorderedselection
+PASS. No finalinstalled/exactheadCI/mergeclearance yet. Worker output/deployment custody
+next-review continues independently; OS/container hostilecode/harddisk approval distinct.
+
+Managed source final40SDK100%newmodule/allchangedSDK/6publicHTTP26fixture100%/types-
+lint49governancePASS;14installedfocusedCI+actualordered693/214/92/115/40/6/21+original
+100%gatePASS. First local focused-harness240s ceiling after12batches retained; remaining
+2batches rerun sameartifactsPASS, no producttimeout change. Freshmanaged-behavior-
+workflow-first fullartifactverifier+17linkedmatrix running; no newPR yet/sourcefrozen.
+
+PR301MERGEDa662bf884f8c56c2db7ad4b05e1f71f363768991 at2026-11-07T19:55:28Z,
+exact001ca0e2bfffb7aa298fe615c5e92e1314927601/all33checksPASS; actual remote/local
+ancestry checkpoint verified.5110installedSDK467sim72worker/reference-governancePASS,
+68SDK34sim5workerparity,57SDK100%/2HTTP2fixture100%/13focusedCI+orderedselection/
+17linkedPASSvs17nativeNOT_RUN.42originalIDs/history/23runnable/zero dispositions.
+All301jobs finished; no native federation/science/final-row promotion.
+
+Active feat/python-managed-behavior-workflow: separate advertised literal-source admission,
+typed sync/async reconnect/outcome and synthetic private-session disposal.40SDK100%
+newmodule/changedSDK,6publicHTTP/26fixture100%/12oldmanagedagentregressions/types-lint/
+49governancePASS; final driftcontrol rerun pending. Actual independent sessioncounts and
+owner survival, interference refusal, no parser/compiler/nativeexecution claim. Initial
+7mypy inference errors/99.52%SDK/98.22%-98.82%fixture coverage retained and corrected
+without exclusions. No managedbehaviorPR/fullinstalled acceptance yet; sourceuncommitted.
+
 ## PR300 verified merged; public copied composition active
 
 PR301 final installed candidate:5110SDK/467simulator/72worker/allreference/39governance

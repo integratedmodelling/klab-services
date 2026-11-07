@@ -1,5 +1,32 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Public copied composition delivered; managed behavior active
+
+PR302candidate5150installedSDK499sim72worker/reference-39governancePASS;69SDK35sim5worker
+rawparity/no simulatorinproduction.17linkedPASS(1218SDK376sim72worker)vs17nativeNOT_RUN;
+fullSDKnewmodule/changedcode100%/14focusedCI+orderedselectionPASS. No simulatorservices
+remain. Finalreceipt/exactheadCI/ordinarymergepending; no native/science/finalrow promotion.
+Nextworker aggregateoutput/strictACK probes failed as retained expected design evidence;
+worker production remains unchanged until current artifactcustody complete.
+
+DraftPR3024db8186bdpublished; frozen source/fullverifier+17linkedmatrix+CIwatcher
+running.40SDK100%/6HTTP26fixture100%/14focusedCI+orderedselectionPASS. Finalartifact/
+exactheadCI/ordinarymerge pending; nextworker budget/deployment custody review active.
+
+14installedfocusedCI/actualordered693/214/92/115/40/6/21+unchanged100%gatePASS.
+Local focused-harness240s timeout after12batches retained; remaining2sameartifactPASS,
+no producttimeout relaxation. Freshfullartifactverifier+17linkedmatrixrunning/no newPR.
+
+PR301verifiedMERGEDa662bf884f8c56c2db7ad4b05e1f71f363768991 at19:55:28Z,
+exact001ca0e2bfffb7aa298fe615c5e92e1314927601/all33checksPASS; remote/local ancestry
+checkpoint verified.42originalrows/history/23runnable/zero dispositions.5110SDK467sim/
+72worker/reference-governancePASS;68SDK34sim5workerparity/17linkedPASSvs17nativeNOT_RUN.
+Managedbehavior nextsource implemented40SDK100%newmodule/changedSDK/6publicHTTP/
+26fixture100%+12oldagentregressions/types-lint-49governancePASS; finaldriftcontrol rerun
+pending. Separate literal admission/state machine/private session removal—not k.Actors
+parser/compiler or native execution. Review retains type/coverage development evidence.
+No newPR/installed acceptance; no unrelated service or originalrow/native promotion.
+
 ## Execution explanation delivered; typed copied composition continues
 
 PR301 final candidate5110installedSDK467sim72worker/reference-39governancePASS;

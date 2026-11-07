@@ -62,6 +62,8 @@ from klab_client.reference_commits import (ReferenceCommits, AsyncReferenceCommi
     ReferenceGraphSnapshot, ReferenceGraphView, ReferenceGraphProjection,
     AsyncReferenceGraphProjection, ReferenceResyncRequired)
 from klab_client.execution_explanations import ExecutionExplanations, AsyncExecutionExplanations, ExecutionExplanation
+from klab_client.managed_behaviors import (ManagedBehaviors, AsyncManagedBehaviors,
+    BehaviorAdmission, ManagedBehaviorReference, ManagedBehaviorStatus)
 from klab_client.copied_composition import (CopiedCompositions, AsyncCopiedCompositions,
     CopiedSourceIdentity, CopiedSourceSnapshot, CopiedCompositionResult,
     capture_copied_source, async_capture_copied_source)
@@ -93,6 +95,7 @@ from klab_client.scan_slices import ScanSlice
 from klab_client.imports import ResourceImporter, AsyncResourceImporter, ImportFormat, ImportSubmission
 
 __all__ = [
+    "ManagedBehaviors", "AsyncManagedBehaviors", "BehaviorAdmission", "ManagedBehaviorReference", "ManagedBehaviorStatus",
     "CopiedCompositions", "AsyncCopiedCompositions", "CopiedSourceIdentity", "CopiedSourceSnapshot",
     "CopiedCompositionResult", "capture_copied_source", "async_capture_copied_source",
     "ExecutionExplanations", "AsyncExecutionExplanations", "ExecutionExplanation",

@@ -33,8 +33,20 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent verified checkpoint: PR299 merge `5d6d5139d`, exact `7c25a73f3`,
-all31reported final-head checks PASS. PR298 native cache/PR297 input also verified.
+Most recent verified checkpoint: PR301 merge `a662bf884`, exact `001ca0e2b`,
+all33reported final-head checks PASS. PR300 explanation/PR299 convergence also verified.
+
+Current active `feat/python-managed-behavior-workflow`, draftPR302 `4db8186bd`:
+40SDK100%newmodule/changedSDK,6publicsync/async source-admission/reconnect/finish-fail-
+stop/private-sessiondisposal/owner-survival workflows,26fixture100%+12oldagentregressions/
+types-lint-49governancePASS.14installedfocusedCI+actualordered693/214/92/115/40/6/21+
+original100%gatePASS. Initialfocusedhelper240s timeout after12batches retained; remaining
+2sameartifactPASS. Fullmanaged-behavior-workflow-first verifier+17linkedmatrix+PR302
+watcher running; sourcefrozen/no finalinstalled/exactheadCI/mergeacceptance yet.
+Literal source admission is not native k.Actors parsing/compiler/execution; genuine
+private-session/agent evidence stays JAVA-GAP-0008.42originalrows/history/23runnable/
+zero finaldispositions. Next worker output/deployment custody review active; no worker
+production modifications before302artifactcustody. Historical entries below superseded.
 
 Current active child `feat/python-execution-dependency-explanation`,RC-P3.4/CAP-06:
 58SDK100%newmodule/changedcode,2actualpublicHTTP with actualupload/source/selected

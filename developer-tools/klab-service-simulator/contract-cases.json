@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-MANAGED-BEHAVIOR-001",
+      "rows": ["RC-P4.5"],
+      "routes": ["/runtime/experimental/managed-behaviors/v1/validate", "/runtime/experimental/managed-behaviors/v1/create", "/runtime/experimental/managed-behaviors/v1/"],
+      "source": "Separate advertised opt-in finite literal source admission/hash/recipe and deferred single-use managed behavior protocol. Public sync/async validation/create/explicit savedreference reconnect/start-or-stop/finish-fail-stop outcome/separate private-session disposal/purge410/Bob denial and owner survival. Independently inspectable synthetic private session counts fall only after explicit disposal; private ID pinned, ownership-marker/independent-context interference refuses instead of deleting unrelated state. No k.Actors parser/compiler/execution, scientific engine or native private-session evidence; existing managed-agents/1 and native AgentExecutions unchanged. Bounded source/membership/bytes/CAS/epoch/currentidentity/secret/cancellation/no-replay controls.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native script/agent execution and independent private-session disposal remain external",
+      "simulator_test": "test_managed_behavior_workflow.py::test_public_source_admission_reconnect_outcome_and_independent_private_session_disposal",
+      "java_gap_ids": ["JAVA-GAP-0008"]
+    },
+    {
       "id": "SIM-PUBLIC-COPIED-COMPOSITION-001",
       "rows": ["CAP-03"],
       "routes": ["/runtime/experimental/copied-composition/v1/create", "/runtime/experimental/copied-composition/v1/", "/runtime/experimental/read-plans/v1/"],

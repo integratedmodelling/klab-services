@@ -35,6 +35,7 @@ SCENARIOS += ("annotated-input",)
 SCENARIOS += ("commit-inspection",)
 SCENARIOS += ("graph-convergence",)
 SCENARIOS += ("execution-explanation",)
+SCENARIOS += ("managed-behavior",)
 
 
 class ContractError(Exception):
@@ -88,6 +89,8 @@ class State:
         self.read_plans = ReadPlans(self)
         from .managed_agents import ManagedAgents
         self.managed_agents = ManagedAgents(self)
+        from .managed_behaviors import ManagedBehaviors
+        self.managed_behaviors = ManagedBehaviors(self) if scenario == "managed-behavior" else None
         from .shared_access import SharedReads
         self.shared_reads = SharedReads(self) if scenario == "shared-read" else None
         self.validation_revision = 1
@@ -261,6 +264,7 @@ class State:
                         "compositions": len(self.compositions.rows),
                         "read_plans": len(self.read_plans.rows),
                         "managed_agents": len(self.managed_agents.rows),
+                        **({"managed_behaviors":len(self.managed_behaviors.rows)} if self.managed_behaviors is not None else {}),
                         "authoring_assets": len(self.authoring.assets),
                         "project_locks": len(self.authoring.project_locks), "trace": list(self.trace)}, "application/json"
             if method == "POST" and path == "/__sim__/expireJobs":
@@ -314,6 +318,9 @@ class State:
                 self.read_plans = ReadPlans(self)
                 from .managed_agents import ManagedAgents
                 self.managed_agents = ManagedAgents(self)
+                if self.managed_behaviors is not None:
+                    from .managed_behaviors import ManagedBehaviors
+                    self.managed_behaviors = ManagedBehaviors(self)
                 self.worldview_id = "synthetic"
                 self.next_context = self.next_job = self.next_observation = 1
                 return True, "application/json"
@@ -367,6 +374,7 @@ class State:
                     **({"graphCommitProtocol":"klab.experimental.graph-commits/1"} if self.graph_commits is not None and service == "runtime" else {}),
                     **({"executionExplanationProtocol":"klab.experimental.execution-explanations/1"} if self.execution_explanations is not None and service == "runtime" else {}),
                     **({"copiedCompositionProtocol":"klab.experimental.copied-composition/1"} if self.scenario == "copied-composition" and service == "runtime" else {}),
+                    **({"managedBehaviorProtocol":"klab.experimental.managed-behaviors/1"} if self.managed_behaviors is not None and service == "runtime" else {}),
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                      "importSchemata": schemas() if service == "resources" else {},
                      **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
@@ -490,6 +498,9 @@ class State:
             return self.commit_reports.request(method,original_path.split("/runtime",1)[1],principal,scope,headers)
         if service == "runtime" and route.startswith("/experimental/execution-explanations/v1/") and self.execution_explanations is not None:
             return self.execution_explanations.request(method,original_path.split("/runtime",1)[1],principal,scope,headers)
+        if service == "runtime" and route.startswith("/experimental/managed-behaviors/v1/") and self.managed_behaviors is not None:
+            if len(body)>8192:raise ContractError(413,"Finite managed behavior request budget exceeded")
+            return self.managed_behaviors.request(method,original_path.split("/runtime",1)[1],principal,scope,headers,data)
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
                 raise ContractError(400, "Scope advertisement requires service descriptors")
@@ -623,6 +634,7 @@ class State:
                 if self.commit_reports is not None:self.commit_reports.release(root)
                 if self.graph_commits is not None:self.graph_commits.release(root)
                 if self.execution_explanations is not None:self.execution_explanations.release(root)
+                if self.managed_behaviors is not None:self.managed_behaviors.release(root)
                 del self.contexts[root]
                 self.query_faults.pop(root, None)
                 self.jobs = {key: row for key, row in self.jobs.items() if row["scope"] != root}
