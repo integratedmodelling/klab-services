@@ -2,6 +2,30 @@
 
 ## Graph delivery checkpoint and immediate annotated-input work
 
+Finalsameartifact390simulatorPASS233.376s,39governance/fatallint/workercov/custody
+PASS;zero skipsfailureserrors. Original240stimeout/missingstdout/unknownexactroot
+retained; diagnosticbelowoldceiling doesn't prove originalstoppingstate/productionfix.
+Exactownedservice/console16632/50032/47016cleanupverified/no survivorsor simulator
+services; unrelateduser services/terminals untouched. Final4862SDK/390sim/72worker/
+reference-governancePASS,64SDK/31sim/5worker rawmoduleparity/no simulatorinproduction.
+17linkedPASS(930SDK/267sim/72worker)vs17nativeNOT_RUN; fullSDKnewmodule+changedcode
+100%unexcludedPASS. PR297finalreceipt/exactheadCI/ordinarymergepending; nextnative
+commitreadslice draft11private designprobesPASSnot shipped/nativeacceptance.
+
+PR297draftfullinstalledheld:4862SDK/reference/72worker/21HTTPPASS, simulatorbatch
+exceeded240s harnessceiling. Prior387casebatch236.835s+new8.61sworkflows suggests
+totalbudget too tight; exactoriginalstoppingtest unrecorded. Sameartifact diagnostic
+fullbatch480srunnerceiling+streamedlogs/faulthandler90 pending; no producttimeout/
+assertion/skip relaxation. Orphan16632/50032 plus directlyownedconhost47016 identified;
+initialguard refused extra descendantbeforekill, finalownedonlyscope verified;
+attempt2directory preserves emptyfirstattempt/failure.17linkedPASS/17nativeNOT_RUN
+remain separate from unresolvedfullsimulatorbatch. Receipt retains custodylimitations.
+
+DraftPR2971206906e8 published, sourcefrozen. Fullartifactverifier/17linkedmatrix/
+CIwatcher running;9installedfocusedgates+actualorderedselectionPASS.55SDK100%/
+2publicHTTP/18fixture100%/bodytypes-lint-49governancePASS. Fullinstalled/finalheadCI/
+ordinarymerge pending. Next referencecommitwork onlysource-reviewed, not nativecommit.
+
 NineinstalledfocusedCIgatesPASS(olderbatchesappend173,membership34append139,
 graph84append55,input55);18fixture100%. Actualorderedselection693/173/6/21plus
 unchanged100%gatePASS inuniqueattempt2. Combinedshell120s harnessbudget expiration

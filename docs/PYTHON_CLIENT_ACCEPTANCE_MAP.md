@@ -1,5 +1,12 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR297candidate final4862installedSDK/390simulator/72worker/reference-governancePASS,
+64SDK31sim5worker rawmoduleparity;17linkedPASSvs17nativeNOT_RUN. Source55SDK100%,
+2actualpublicHTTP/18fixture100%/9focusedCI+actualorderedselectionPASS. Originalfullsim
+240srunner timeout retained with missingstdout/exactrootUNKNOWN; sameartifactdiagnostic
+390PASS233.376s, producttimeouts/assertions unchanged, ownedservice+consolecleanup
+verified. Finalreceipt/exactnewheadCI/ordinarymergepending; no native/fullrowpromotion.
+
 PR296 verifiedmergeda17f8c3fe/exactffd3fb185/all28checksPASS; remote/local ancestry
 checkpointverified. RC-P4.3active: annotatedinputjoin55SDK100%newmodule/changedcode,
 2publicHTTPactualupload/sourceADD/selectedactuator/freshinput/graph/recorded400cells/

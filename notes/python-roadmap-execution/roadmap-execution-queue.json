@@ -4,9 +4,11 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-annotated-input-provenance",
-    "pr": null,
+    "pr": 297,
     "requirement": "RC-P4.3",
-    "ci_review_dependencies": []
+    "ci_review_dependencies": [
+      "PR297 final installed artifacts/matrix/exact-head CI and ordinary merge; native annotation-lineage-science/RESOURCE deletion remain distinct"
+    ]
   },
   "last_verified_checkpoint": {
     "pr": 296,
@@ -1660,7 +1662,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: annotated-input-provenance"
       },
       "simulator_support_needed": "Compose public import/annotation/observation and dependency inspection into one owned flow with explicit selected-input provenance, denial/failed-import cleanup and no fabricated native resource deletion.",
-      "implementation_status": "EXPLICIT_ANNOTATED_INPUT_PROVENANCE_JOIN_SOURCE_IMPLEMENTED_ACCEPTANCE_PENDING",
+      "implementation_status": "EXPLICIT_SOURCE_INPUT_PROVENANCE_JOIN_INSTALLED_VERIFIED_PR297_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1687,12 +1689,17 @@
           "1fd759605e45fb384a088a3f4b4e0d305b50605f",
           "2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "annotated_input_candidate": {
+          "pr": 297,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-annotated-input-provenance-20261107.json",
+          "native_or_full_row_acceptance": false
+        }
       },
       "work_group": "annotated-input-provenance",
       "priority": 6,
       "task_state": "in_progress",
-      "next_executable_action": "Finish public sync/async completed upload/source ADD/selected plan/current recorded input/sourcebound graph join; test refusal, privacy, full installed packaging and ordinary PR delivery. No invented native annotation/update or RESOURCE deletion.",
+      "next_executable_action": "Require PR297 exact final-head CI and ordinary permitted merge; checkpoint remote/local ancestry then begin reference-commit convergence. Keep native annotation/lineage/science and RESOURCE cleanup separate.",
       "disposition": null
     },
     {

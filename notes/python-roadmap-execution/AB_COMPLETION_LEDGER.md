@@ -2,6 +2,36 @@
 
 ## PR296 verified merged; annotated-input provenance source pass
 
+Finalsameartifact diagnostic390simulatorPASSin233.376s (zero skips/errors/failures),
+39governance/fatallint/workercoverage/custodyPASS. Original240stotalrunner timeout
+retained; diagnosticbelowoldceiling, so originalexactroot/stoppingtest remainsUNKNOWN,
+not a productionfix/flakeclaim. Guarded16632/50032/ownedconhost47016cleanupverified;
+finalcreate-time-qualified survivorsnone/current simulatorservicesnone, unrelated
+services/terminals untouched. Final4862SDK/390sim/72worker/allreference-governancePASS;
+64SDK/31simulator/5worker rawsource-wheel-sdist-installed parity/no simulatorinSDKworker.
+17linkedPASS(930SDK/267simulator/72worker)vs17nativeNOT_RUN/expectedexit3. FullSDK
+100%unexcluded newmodule+changedcodegatePASS. Receiptcomplete, PR297finalreceiptcommit/
+exactheadCI/ordinarymergepending. Nextcommitinspectiondraft11designprobesPASSoutside
+shippedpackages, not installed/native/convergenceacceptance; no campaign stoppinggate.
+
+PR297draft1206906e8mergeheld: originalfullinstalledSDK4862/allreference/72worker/
+21workerHTTPPASS, but complete simulator batch exceeded240s runnerceiling. Prior
+PR296batch387tests236.835s plus newworkflow8.61s supports insufficient totalsuite
+budget hypothesis; original wrapper didn't preserve partialstdout, exactstoppingtest
+unknown. Failure retained pr297-full-suite-runner-timeout.json. Sameinstalledartifact
+diagnostic fullbatch uses480s runner-onlyceiling/streamedlogs/faulthandler90; product
+wait/assertion/skip/exclusion unchanged. Initialcleanup exactdescendants guard found
+extra conhost47016 and refused before killing; read-only tree confirmed ownedparent
+16632/deadpytestparent46176/testPython50032. Finalscope includes provenownedconsole
+only, recoveryattempt2 distinctdirectory.17linkedcasesPASSvs17nativeNOT_RUN;
+9focusedgates/orderedselection do not replace fullbatchrecovery. No mergeclearance.
+
+DraftPR297 published1206906e8; sourcefrozen after packagebuilds. Fullinstalled
+artifactverifier+17linkedmatrix+CIwatcher running. NineinstalledfocusedCIgates/
+actualorderedselectionPASS;55SDK100%/2publicHTTP/18fixture100%/types-lint-49governance
+PASS. No finalfullinstalled/exactheadCI/mergeclearance claimed yet. Next independent
+reference-commit-convergence source review only; no native scientific commit inferred.
+
 NineinstalledfocusedCIgatesPASS:older785/693/571/195/113/63append173controls,
 membership34append139,graph84append55,input55dedicated;18fixturecases100%.
 Actualorderedselection693SDK/173append/6HTTP/21fixture+unchanged100%gatePASS.
