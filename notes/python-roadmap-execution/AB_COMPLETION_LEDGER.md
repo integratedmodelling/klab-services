@@ -1,5 +1,22 @@
 # A+B completion ledger — ongoing campaign
 
+## Integrated onboarding acceptance active; PR306 CI correction pending
+
+Active feat/python-integrated-onboarding-acceptance/noPR. Installed public matrix
+190SDK/1isolatedHTTPbootstrap-origin/18independentHTTPexpiry-routingPASS, no failures/
+errors/skips. Checked runner pins71SDK37sim6worker installed bytes to explicit305
+artifact receipt and pins executed tests/support helpers/runner bytes before/after.
+13runner refusal controls/type/fatallintPASS; fresh-source parity mode also190/1/18PASS
+but explicitly does not claim wheel/sdist/dependency isolation. No simulator services
+remain. Added reviewed onboarding assertion mappings:33mapped473missing across506,
+not full functional/native acceptance. Receipt integrated-onboarding-installed-20261107.json.
+
+ParentPR306 remainsOPEN10caa5027; initial hosted13vectorfailures/5230passed retained,
+missing vector extra now explicit with import preflight. NewexactheadCIwatcher active;
+ordinarymerge/checkpoint remain. Its prior22mapped/484missing receipt remains unchanged.
+42originalIDs/history16runnable/zero final dispositions preserved. Native issuer/
+license/production permission/deployment/scientific approval remain externalNOTRUN.
+
 PR306 hosted installed-operation-presence failed13vectorcontrols/5230passed at
 run42418781221/job128542504869: workflow omitted vector dependency extra. Failure
 retained; add vector extra and explicit imports, no test skipping or gate waiver.

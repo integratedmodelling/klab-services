@@ -1,0 +1,37 @@
+name: Installed onboarding and provider routing (issuer approval NOT_RUN)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/integrated-onboarding.yml']
+  push:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/integrated-onboarding.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-onboarding-routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: ${{ github.workspace }}/python-client/tools
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev,analysis,notebook,local]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: Runner refuses stale/source imports, empty/skipped evidence and overwritten runs
+        run: python -m pytest -q python-client/tests/tools/test_verify_onboarding_matrix.py
+      - name: Exact current installed modules and public onboarding-routing matrix
+        run: python python-client/tools/verify_onboarding_matrix.py --capture-current-source --output-directory onboarding-evidence
+      - name: Types and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/tools/verify_onboarding_matrix.py
+          python -m ruff check python-client/tools/verify_onboarding_matrix.py python-client/tests/tools/test_verify_onboarding_matrix.py --select E9,F63,F7,F82
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installed-onboarding-not-production-issuer-approval
+          path: onboarding-evidence

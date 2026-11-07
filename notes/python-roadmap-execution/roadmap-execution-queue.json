@@ -3,9 +3,9 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-operation-test-attribution",
-    "pr": 306,
-    "requirement": "RC-P0",
+    "branch": "feat/python-integrated-onboarding-acceptance",
+    "pr": null,
+    "requirement": "RC-P1.1",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
@@ -16,7 +16,7 @@
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P0",
-  "pending_deliveries": [],
+  "pending_deliveries": [{"pr": 306, "head": "10caa5027", "state": "EXACT_HEAD_CI_PENDING_AFTER_RETAINED_MISSING_VECTOR_DEPENDENCY_FAILURE_NOT_FULL_RC_P0_ACCEPTANCE"}],
   "remaining_runnable_work": [
     "operation-workflow-attribution",
     "onboarding-and-routing-acceptance",

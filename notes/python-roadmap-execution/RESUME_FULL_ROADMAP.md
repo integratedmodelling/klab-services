@@ -1,5 +1,15 @@
 # Resume the full Python A+B+C campaign
 
+Current child feat/python-integrated-onboarding-acceptance/noPR/uncommitted tool/docs/
+receipt/mappings.190SDK/1isolatedHTTP/18independentHTTPmatrixPASS,13runnercontrols/
+types-lintPASS; source/import/test/supportbytes pinned. Receipt integrated-onboarding-
+installed-20261107.json;33reviewedassertionmapped473missing, no nativeissuer/license/
+science/finalrowpromotion. Lastsimulator scanempty. Parent306OPEN10caa5027 newCI
+watcher running after retained13failedvector/5230passed missingextraCI issue; explicit
+vector extra/importpreflight pushed, no SDK/testguard changes. Oldtwo306watchersfinished.
+No worktree from CI fix remains. Parent306merge/checkpoint and childdelivery owed;
+then restoration/lifecycle/remainingintegrated queue.42originalIDs/history16runnable.
+
 Current draft3066b27f5792 operation-attribution source; final5243unit/536simulator
 exact-test-source tracesPASS,455nonabstractcallables observed51abstractuncalled/506
 classifications preserved.22reviewedassertionmaps/484missing including abstract ones;
