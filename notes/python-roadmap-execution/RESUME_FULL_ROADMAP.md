@@ -1,5 +1,19 @@
 # Resume the full Python A+B+C campaign
 
+NEWEST312 secondhead01395fa76 stillFAIL: offlineall3versions and whole-treeWin/Linux
+PASS, but addedfullunit steps need complete extras. Inspected run42426782552 missing
+cryptography/numpy/psutil;42426782662 vector missing. Logs and rollup retained at
+full-roadmap-20261106/pr312-second-finalhead-ci-failures.json and failed-run-*.log.
+Current312branch has uncommitted21workflow dependency-setup correction: install exact
+existing offlineextrasdev,local,analysis,tabular,vector,notebook,events before fullunit
+append. Updated dependency-order guard plus ordering/delivery3controlsPASS. Need
+commit/push then exactheadCI; no thresholds/checker/API/default-extra changes.
+313ready9e25692c1/219maps287missing/24controls inherits parent blocker;313watcher active.
+Separateboundary worktree merged313history and full installed5305SDKPASS; statement
+coverage100percent/10481 statements, branches3320of3322/99.9398percent,165existing
+exclusions retained. Full report boundary-controls-full-sdk-first; not100percent
+unexcluded/functional/native acceptance. No boundaryPR yet; ec98ed989 new33tests saved.
+
 LATEST312 firstfinalhead6f4b22ae9 has47checks21FAIL (coverage only in inspectedlogs),
 no merge. Corrective pass adds missingdelivery branch control and extends all21feature
 SDKcoverage reports with full unit suite before unchanged globalchecker, preserving
