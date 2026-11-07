@@ -12,9 +12,34 @@ from test_worker import sample
 
 def terminated(pid):
     try:
-        return psutil.Process(pid).status() == psutil.STATUS_ZOMBIE
+        return psutil.Process(pid).status() in (psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD)
     except psutil.NoSuchProcess:
         return True
+
+
+@pytest.mark.parametrize("status", [psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD,
+    "running", "sleeping", "disk-sleep", "stopped", "tracing-stop", "wake-kill",
+    "waking", "idle", "locked", "waiting", "parked"])
+def test_cleanup_oracle_accepts_only_dead_states(monkeypatch, status):
+    class Observed:
+        def status(self): return status
+    monkeypatch.setattr(psutil, "Process", lambda pid: Observed())
+    assert terminated(123) is (status in (psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD))
+
+
+def test_cleanup_oracle_accepts_disappeared_process(monkeypatch):
+    def absent(pid): raise psutil.NoSuchProcess(pid)
+    monkeypatch.setattr(psutil, "Process", absent)
+    assert terminated(123)
+
+
+def test_zombie_to_dead_reaping_transition_remains_terminated(monkeypatch):
+    states = iter((psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD))
+    class Reaping:
+        def status(self): return next(states)
+    monkeypatch.setattr(psutil, "Process", lambda pid: Reaping())
+    assert terminated(123)
+    assert terminated(123)  # Linux /proc Z -> X is death, not a revived descendant.
 
 
 @pytest.mark.parametrize("outcome", ["success", "deadline", "cancel", "crash"])

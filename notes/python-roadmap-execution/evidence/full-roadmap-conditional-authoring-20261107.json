@@ -667,5 +667,13 @@
       ]
     },
     "native_expected_exit": 3
+  },
+  "hosted_worker_failure_investigation": "notes/python-roadmap-execution/evidence/pr294-worker-containment-investigation.json",
+  "post_artifact_test_only_correction": {
+    "production_module_bytes_changed": false,
+    "worker_isolated_pass": 72,
+    "public_worker_http_pass": 6,
+    "original_hosted_failure_preserved": true,
+    "hosted_final_head_matrix": "PENDING"
   }
 }

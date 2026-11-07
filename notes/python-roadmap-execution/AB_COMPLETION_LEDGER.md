@@ -1,5 +1,27 @@
 # A+B completion ledger — ongoing campaign
 
+## PR294 hosted containment failure investigation
+
+Owned Linux300crash probe reproduced8Z->X consecutive state pairs. psutil maps
+XtoSTATUS_DEAD; existing test incorrectly recognized onlyZOMBIE/absent. Corrected
+testoracle acceptsDEADtoo, preserves live/stopped/waking refusal and adds explicit
+Z->X regression. Production containment/packagebytes unchanged. Original hosted raw
+state wasn't captured, so exactXatfailure remains retrospective hypothesis, not fact.
+Final installed72workerPASS and6publicworkerHTTPPASS in separate processes; initial
+platform-onlyconstant collection error and combined-worker/simulator isolation failure
+retained in investigationreceipt. No threshold/cleanupdeadline weakened. Exact newhead
+Linux/Windows3.11/3.13CI still needed before ordinary merge.
+
+PR294 OPEN currentheadb1ce04dd98c916a9c1c5dac7deeb9bfadbd93448.
+Initial hosted42390987841/job128458311008 Ubuntu3.13 crash-descendant cleanup
+failed56PASS/1FAIL in1.71s; failure log preserved privately and tracked investigation
+receipt records exact URL/source findings. Current-head Ubuntu3.13 passes but does
+not erase failure. No root cause classified or merge authorized by passing reruns.
+Polling observed terminal state before a separate assertion observed nonterminal
+state (suite1.71s is shorter than3s poll budget); PID reuse/kernel transition remains
+unproven. Bounded owned Linux crash stress running; production/test gates unchanged.
+Exact current-head CI watcher running. Python-only investigation, no live IDE gates.
+
 ## PR293 verified merge; conditional source workflow begun
 
 Final fresh conditional-authoring-first installed4688SDK/359simulator/allreference-

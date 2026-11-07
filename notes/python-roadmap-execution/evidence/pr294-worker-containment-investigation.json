@@ -1,0 +1,30 @@
+{
+  "pr": 294,
+  "state": "REPRODUCED_ORACLE_DEFECT_CORRECTED_HOSTED_VERIFICATION_PENDING",
+  "failed_run": 42390987841,
+  "failed_job": 128458311008,
+  "url": "https://github.com/integratedmodelling/klab-services/actions/runs/42390987841/job/128458311008",
+  "platform": "ubuntu-latest Python3.13.18",
+  "test": "test_containment.py::test_owned_descendant_does_not_outlive_execution[crash]",
+  "result": "56PASS/1FAIL in1.71s; final terminated(2396) false",
+  "log_custody": "C:/Users/lumsd/AppData/Local/Temp/opencode/pr294-initial-worker-failure.log",
+  "verified_source_findings": [
+    "POSIX execute uses start_new_session, establishes containment before supplying input to bootstrap, and kills the owned group in finally even after direct-child crash.",
+    "POSIX killpg(SIGKILL) initiates asynchronous termination; unlike Windows Job Object cleanup it does not wait for descendant state.",
+    "The test polls terminated(pid) and then calls terminated(pid) again in a separate assertion. Total suite1.71s is below its3s polling budget, indicating the polling loop observed termination before the separate assertion observed nontermination. This does not establish PID reuse or explain the kernel/psutil transition.",
+    "Current-head Ubuntu3.13 worker check passes; earlier parallel check also passes. Neither erases failed evidence or establishes flakiness."
+  ],
+  "root_cause": "Confirmed cleanup-oracle defect: psutil STATUS_DEAD was incorrectly rejected. Linux owned-crash stress reproduces Z->X between consecutive reads, which recreates the test's terminal-loop/nonterminal-assertion sequence. Original hosted job lacked raw state capture, so its exact X state is not retrospectively proven.",
+  "linux_probe": {
+    "environment": "WSL Ubuntu Python3.12; actual production execution/protocol/containment source loaded without package __init__; stdlib-only probe, not installed pytest acceptance",
+    "iterations": 300,
+    "zombie_to_dead_pairs": 8,
+    "iterations_with_pairs": [47, 86, 144, 165, 206, 257, 281, 296],
+    "source": "C:/Users/lumsd/AppData/Local/Temp/opencode/diagnose-worker-crash.py",
+    "initial_probe_failures_retained": ["Missing httpx package during import; isolated actual execution modules without installing/faking HTTP dependencies", "ProcessLookupError reading disappearing /proc stat; treated ESRCH as absent then complete300iteration rerun"]
+  },
+  "correction": "Test only: accept STATUS_ZOMBIE and STATUS_DEAD or absent PID; reject all live/stopped/waking states. Production killpg/Job Object code and3s assertion budget unchanged. Add deterministic Z->X regression.",
+  "local_installed_worker": "72PASS isolated worker process;6PASS separate public HTTP worker process. Existing accepted installed package bytes unchanged; only test oracle corrected.",
+  "development_failures": ["First portable test parameter list referenced platform-unavailable psutil.STATUS_WAKE_KILL on Windows; corrected to status value strings, no coverage skip", "Mistyped worker HTTP test filename produced no tests; corrected path", "Combined worker and simulator test collection imported klab_simulator into worker test process, correctly failing package isolation assertion (77PASS/1FAIL). Reran in separate processes:72workerPASS/6HTTPPASS; assertion unchanged and failedXML retained."],
+  "next": "Run final installed worker suites and exact new-head hosted Python3.11/3.13 Linux/Windows matrix; preserve original failure and do not infer original raw state."
+}

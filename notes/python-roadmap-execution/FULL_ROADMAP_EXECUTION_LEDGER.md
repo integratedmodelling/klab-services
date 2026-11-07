@@ -1,5 +1,21 @@
 # Full Python A+B+C roadmap execution ledger
 
+## PR294 hosted worker failure retained, merge held
+
+Linux owned300crash stateprobe reproduces8Z->X transitions: zombie becomes dead
+duringreaping. psutilSTATUS_DEAD omitted by oldtestoracle. Corrected testonly plus
+live/stopped/waking negative controls and explicitZ->Xregression; no production/package
+bytechange. Exact originalhostedXstate not captured, cannot prove retrospectively.
+Final separate installed72worker/6publicHTTPPASS; platformconstant/mixedcollection
+failures retained. Final newheadLinux/Windows3.11/3.13matrix remains mergegate.
+
+Initial hosted run42390987841/job128458311008 Ubuntu3.13 failed crash descendant
+cleanup56PASS/1FAIL in1.71s. Currentheadb1ce04dd98c916a9c1c5dac7deeb9bfadbd93448
+Ubuntu3.13 passes, not clearance of earlier failure. Investigation receipt/log custody
+preserved; asynchronous POSIX group kill/test double-observation reviewed, root cause
+UNKNOWN. Bounded owned Linux state-trace probe and currentheadCI watcher running.
+No speculative production fix, weakened cleanup gate, native call or IDE repair.
+
 ## Namespace validation delivery; immediate conditional-authoring implementation
 
 Conditional fresh installed4688SDK/359simulator/allreference-worker/39governance
