@@ -3,7 +3,7 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-integrated-packaging-readiness",
+    "branch": "feat/python-whole-tree-type-contracts",
     "pr": null,
     "requirement": "RC-R1",
     "ci_review_dependencies": []
@@ -3483,7 +3483,7 @@
       "work_group": "operation-workflow-attribution",
       "priority": 14,
       "task_state": "in_progress",
-      "next_executable_action": "Continue reviewed operation assertion/workflow mappings and original-row integrated acceptance; all506 classifications preserved. PR306 maps22operations with explicit assertion descriptions,484remain without reviewed maps including abstract declarations. Current onboarding supplement maps33/473missing; no missing evidence becomes invented unsupported or native acceptance.",
+      "next_executable_action": "Continue reviewed operation assertion/workflow mappings and original-row integrated acceptance; preserve all506 classifications and historical PR306 mappings. Latest pre-correction baseline60reviewedmaps446missing requires fresh installed-source and current-test-byte trace reconciliation after whole-tree typing corrections. Missing evidence never becomes invented unsupported or native acceptance.",
       "disposition": null
     },
     {

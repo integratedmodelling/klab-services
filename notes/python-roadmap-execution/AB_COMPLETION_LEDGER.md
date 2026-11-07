@@ -2,6 +2,13 @@
 
 ## Whole-tree type correction pass — verification in progress
 
+Complete reference source regression538PASS/no failures/errors/skips; SDK source
+failures above remain retained. Corrected focused243PASS. Commit1e740c34b saves code;
+fresh installed builds/fullsuite running in whole-tree-types-installed-first, noPR.
+Next fresh operation traces will check changed installed SDK and executed test bytes;
+reviewed semantic/catalog/source-validation/import/localDTO descriptions are prepared
+privately but do not yet count toward accepted current-candidate mappings.
+
 Source SDK sweep5264PASS/6FAIL retained: one new callback test asserted nonexistent
 private `_result`; corrected to public cancellation state. Three reliability preflights
 correctly require noneditable installedSDK; two notebook conversions lacked JUPYTER_PATH.
