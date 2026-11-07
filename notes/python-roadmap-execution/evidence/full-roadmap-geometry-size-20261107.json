@@ -1,0 +1,22 @@
+{
+  "verified_utc": "2026-11-07T06:09:35.628001+00:00",
+  "baseline_head": "7c7d6edb3977fd8f762522f8d58088fb5c655d66",
+  "scope": "Direct GeometryImpl.size finite-shape validation; not geospatial units, scientific axis inference, native scanner repair or Java acceptance",
+  "attribution": "Uncommitted source during build identified by raw source/wheel/sdist/installed module parity and artifact hashes",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "361af7cf176fc4a27503e6bba64b2a1e22ccf70b23a34b622978b40029a20e07", "sdist_sha256": "929f9e8e47e34775a39b77b6d51f8233522c61b70d24945eef4109bcf4ca0277", "parity_modules": 57},
+    "simulator": {"wheel_sha256": "1445a0aa23467d1299e012842330894f7d28c0ed3febcca3a5283bba2b59379f", "sdist_sha256": "227d27021b95a3cf1c25e230b43a717ddb7c0776db3cd4266127524ba0971f7a", "parity_modules": 23},
+    "worker": {"wheel_sha256": "cdeb1ef0d845af30df835bcf80d641b57c59664b91da90f8ac51f7cf5d58709a", "sdist_sha256": "44470a81c90c6ff7bc22d9b3a35886cd10570e2bb186e21117217349cf6e197a", "parity_modules": 5}
+  },
+  "installed_suites": {"SDK": 4407, "simulator": 248, "operation_inventory": 11, "operation_coverage": 6, "provenance_reference": 18, "provider_reference": 18, "revision_reference": 4, "composition_reference": 3, "other_reference": 98, "worker": 57, "worker_HTTP": 21, "governance": 37, "skips_failures_errors": 0},
+  "overlapping_counts_not_unique_total": true,
+  "focused_controls": 17,
+  "changed_code_coverage": "PASS source and installed SDK-only reports via existing evaluate function, no new module; new-module gate NOT_APPLICABLE",
+  "fatal_lint": "PASS",
+  "pre_fix_reproduction": ["shape(-2,3) returned -6", "shape(True,3) returned3", "shape(1.5,2) returned3.0"],
+  "behavior": "Each finite size call requires tuple/list of exact nonnegative integers; malformed direct input raises InvalidRequestError. Wire decoding retains ProtocolError. Scalar one, explicit empty zero, universal refusal, unknown non-scalar refusal, zero dimension and exact arbitrary-size integer product retained; mutation rechecked.",
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 485, "simulator_tests": 177, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "dependency_custody": "Fresh wheels/sdists/pip-target installs borrow prior test dependencies; no fresh dependency-isolation certification",
+  "native_java": "REAL_NOT_RUN; all17gap statuses unchanged. No Java/IDE/scanner/GeoTIFF unit repair or scientific acceptance",
+  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; continue original42row implementation/acceptance work. FullABC/native acceptance/sleep pending."
+}

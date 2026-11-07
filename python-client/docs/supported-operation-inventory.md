@@ -17,6 +17,14 @@ records the read-only authority used below. It is not a deployed Java test.
 
 ## Measured callable-body custody
 
+`GeometryImpl.size()` validates directly supplied finite shapes on every call:
+dimensions must be nonnegative exact integers (booleans are refused). Invalid direct
+input raises `InvalidRequestError`; malformed wire dimensions retain `ProtocolError`.
+Valid tuple/list shapes use exact integer multiplication, including zero dimensions.
+Scalar size remains one; explicitly empty geometry remains zero; universal geometry
+and non-scalar geometry without a checked finite shape retain explicit refusal.
+This local DTO validation does not infer units, axes or scientific compatibility.
+
 `tools/operation_coverage.py` joins the source inventory to an **SDK-only** coverage
 JSON report, requiring that every measured module still exists and matches current
 source bytes. It refuses mixed simulator/worker/tool reports, path traversal, duplicate

@@ -1,5 +1,29 @@
 # A+B completion ledger — ongoing campaign
 
+Final geometry17linkedcasesPASS(485SDK/177simulator/57worker), zero skips/errors/
+failures vs17realNOT_RUN/exit3. Ordinary geometryPR/finalheadCI next; no native
+unit/scanner/scientific or fullABC acceptance promotion.
+
+Fresh geometry4407SDK/248simulator and all reference/worker/governance suitesPASS,
+zero skips/errors/failures.57SDK+23simulator+5worker rawpackageparity verified;
+installed changed-code coveragePASS, no newmodule/newmodulegateN/A. Final17linked
+matrix running sh_1b4a09173001N2biCMmnNImpkR vs17realNOT_RUN/exit3. GeometryPR
+not yet published; Pythonvalidation not native unit/scanner/scientific acceptance.
+
+PR288 verified MERGED7c7d6edb3977fd8f762522f8d58088fb5c655d66 at06:08:20Z,
+exact1df52f51188ec828915873f94d5ffb127dde2fb9/all36checksPASS/no failedrerun.
+Geometry child integrated actual merge preserving uncommitted fix/tests/ledgers;
+fresh geometry-size-first verifier remains running, no remote CI watcher remains.
+Native/fullABC acceptance unchanged.
+
+Operation-custody published PR288 head1df52f511, exact-head CI watcher
+sh_1b4997c4f001bouJP63VWpLY8b running; no merge claimed. Child
+fix/python-direct-geometry-size-validation reproduces malformed direct shapes:
+(-2,3)->-6, (True,3)->3, (1.5,2)->3.0 before fix. size now refuses malformed
+finite shapes with InvalidRequestError; wire decoding retains ProtocolError.
+17focused controls and fatal lint PASS; scalar/empty/universal/zero/exactlargeinteger
+policies preserved. Full installed verification pending; no native unit/scanner fix.
+
 Final operation-custody17linkedcasesPASS(485SDK/177simulator/57worker), zero
 skips/errors/failures versus17realNOT_RUN/exit3. OrdinaryPR/finalheadCI next;
 measurement is not functional support/native acceptance. Python-only delivery
