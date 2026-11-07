@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 345,
+    "IMPLEMENTED_SOURCE_ONLY": 353,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -2897,6 +2897,62 @@
       "path": "semantics.py",
       "owner": "AsyncSemanticExplorer",
       "operation": "satisfiable",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "shared_access.py",
+      "owner": "SharedAccess",
+      "operation": "inspect",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "shared_access.py",
+      "owner": "SharedAccess",
+      "operation": "grant_read",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "shared_access.py",
+      "owner": "SharedAccess",
+      "operation": "inspect_grant",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "shared_access.py",
+      "owner": "SharedAccess",
+      "operation": "revoke",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "shared_access.py",
+      "owner": "AsyncSharedAccess",
+      "operation": "inspect",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "shared_access.py",
+      "owner": "AsyncSharedAccess",
+      "operation": "grant_read",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "shared_access.py",
+      "owner": "AsyncSharedAccess",
+      "operation": "inspect_grant",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "shared_access.py",
+      "owner": "AsyncSharedAccess",
+      "operation": "revoke",
       "async": true,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },

@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-SHARED-READ-001",
+      "rows": ["RC-P1.3"],
+      "routes": ["/runtime/experimental/shared-access/v1/access", "/runtime/experimental/shared-access/v1/grants", "/runtime/api/v1/connect", "/runtime/api/v1/query", "/runtime/api/v1/observation/value"],
+      "source": "Existing native ScopeManager/ResourcePrivileges generic context ACL is not proven granular READ/TTL management. Explicitly proposed sharedAccessProtocol advertisement plus caller opt-in admits two synthetic principals and owner-controlled ephemeral Runtime READ; current-credential public sync/nativeasync SDK restoration, value reads, denied writes/releases, expiry/revocation, lost reply lookup and no partial result on mid-read revocation. No native grant endpoint, persistence, groups/federation or cryptographic authority inferred.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native generic ACL differs in granularity and proposed grant transport awaits maintainer confirmation",
+      "simulator_test": "test_shared_access.py::test_read_grant_public_restore_denied_mutation_revocation_expiry_and_owner_cleanup",
+      "java_gap_ids": ["JAVA-GAP-0015"]
+    },
+    {
       "id": "SIM-MATERIAL-SELECTIONS-001",
       "rows": ["RC-P1.5", "CAP-04"],
       "routes": ["/runtime/createContext", "/resolver/api/v1/resolve", "/runtime/api/v1/submit", "/runtime/api/v1/observation/value"],

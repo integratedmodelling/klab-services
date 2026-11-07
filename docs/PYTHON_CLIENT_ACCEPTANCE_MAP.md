@@ -1,5 +1,13 @@
 # Python roadmap acceptance map — 3 November 2026
 
+RC-P1.3 sharing candidate: explicitly advertised opt-in SharedAccess/AsyncSharedAccess
+and independent ephemeral Runtime READ reference verified through installed4575SDK/
+326simulator/allreference-worker-governance suitesPASS,59SDK/26simulator/5worker
+rawpackageparity. Six publicHTTP workflows cover read/restoration, denied mutations,
+expiry/revocation and lost reply recovery without replay. Newmodule/changedcode100%
+unexcluded; proposed receipts are not native ACL/grant authority. No sharing PR yet;
+final exactheadCI/merge pending, native read-only compatibility prepared NOT_RUN.
+
 Material candidate PR291 adds public typed sync/nativeasync Context.resolve with
 the same observe options. Corrected installed4492SDK/310simulator/allreference-
 worker suitesPASS;58SDK/25simulator/5worker rawpackageparity;17linkedcasesPASS

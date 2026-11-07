@@ -1,5 +1,69 @@
 # A+B completion ledger — ongoing campaign
 
+## Sharing installed artifact verification — 2026-11-07
+
+Fresh unique shared-access-first4575SDK/326simulator and all reference/worker/
+39governance suitesPASS, zero skips/errors/failures.59SDK/26simulator/5worker
+source/wheel/sdist/installed rawmodule parity rechecked; SDK/worker contain no
+simulator modules. Installed SDK-only whole newmodule/allchangedcode100%unexcluded
+PASS; focusedCI672provider/580selection/458material/82shared-read controlsPASS,
+10supplementaryfixture100%. Dependency custody borrows existing test dependencies,
+not fresh dependency isolation. Receipt evidence/full-roadmap-shared-access-20261107.json
+records exact artifact hashes and source bytes, earlier development failures retained.
+Linked17gap matrix running; no sharing PR yet. Native granularity/TTL/science stays
+NOT_RUN; next independent revision-aware validation remains queued.
+
+## PR291 verified merge; explicit collaborator rights begun
+
+Final sharing source freeze:82SDK controls plus9queue controlsPASS (91total),
+new SDK module/all changed SDK decisions100%unexcluded;6publicHTTP workflows and
+10supplementaryfixturecontrolsPASS, new fixture100%unexcluded. Strict literal true
+required for revoke confirmation (integer1refuses), invalid context/client rebinding
+and non-text server root IDs refuse. Broad source326simulator suitePASS before
+these narrow final refusal hardenings; fresh installed full candidate required.
+No shared-read PR yet; native granularity/management/science unchanged NOT_RUN.
+
+Shared-read development now74SDK/6publicHTTP/10supplementaryfixture controlsPASS;
+both new modules100%unexcluded,83SDK+queue controls and all changed SDK codePASS.
+Owner grant lookup supports explicit lost-reply reconciliation; actual HTTP reply
+loss creates exactly one grant, no replay, lookup/revoke succeeds. Revocation between
+point reads aborts without partial ScientificData. Bound-response mutation changes
+report SubmissionOutcomeUnknown, inspections discard mismatched state; credential
+reflection refuses. Initial one foreign-cap error ordering mismatch corrected to
+explicit protocol identity refusal; fixturecoverage98.21%initially missed hostile
+read-header/focus branches, added controls reaches100% without exclusions/gate changes.
+Body mypy alias inference gaps fixed with distinct local variable names, not runtime
+policy changes. Native read-only fixture test prepared but NOT_RUN; source review
+pins generic native ACL versus proposed granular READ/TTL semantics.
+
+Original-ID mapping correction: direct shared-read requirement is RC-P1.3. CAP-01
+is certificate/token/profile/renewal, already implemented; moved its current queue
+work to onboarding integration, not shared-grant code. All42embedded audit records
+unchanged. Queue next now sorts current priorities rather than old array order;
+new regression verifies this. No row/native promotion. Full source simulator suite
+running; fresh installed/CI/PR delivery pending, no new sharing PR yet.
+
+PR291 verified remotely MERGEDceeaf623ae438d3ba52b8924ae0026a5ca7c9848 at
+2026-11-07T14:24:20Z; exactdf2e1f1020bf38b0bfbfcc90467e53d1dc8c3b78,
+all37reported final-headchecksPASS, no outstanding review requests. Active child
+`feat/python-explicit-collaborator-rights` integrated actualmerge and ran remote/
+ancestry queue checkpoint; material receipt contains actual merged remote evidence.
+42original rows/history preserved,37runnable/zero finaldispositions. No previous
+artifact verifier, matrix runner or CI watcher remains running.
+
+Immediately implemented new experimental/capability-gated SharedAccess and native
+AsyncSharedAccess APIs, immutable server-reported READ grants/access inspection;
+independent ephemeral `shared-read` fixture over current principals/root ownership.
+2public sync/nativeasync HTTP workflowsPASS: owner-created grants, normal SDK saved
+Observation/Job restoration and exact native-unit synthetic reads; collaborator
+submission/release/cancel/resharing/revocation/other-root access denied; owner revoke
+removes access without harming owner, grant expiry410 distinct from forbidden403;
+explicit owner cleanup removes grants/tombstones and all owned state. Fixture expiry
+injected only through existing authenticated test-control boundary. This proposed
+API is not native Java ACL/grant authority; no real endpoints called or fallback.
+SDK-only/fixture security+coverage, native plan/source custody/governance/docs and
+fresh installed acceptance remain pending; no new sharing PR yet.
+
 ## PR290 verified merge; material-selection execution begun
 
 DraftPR291 publishedb27748f78. Corrected fresh `material-selections-root-scope-fixed`

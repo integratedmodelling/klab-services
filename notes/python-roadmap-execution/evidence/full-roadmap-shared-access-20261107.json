@@ -1,0 +1,273 @@
+{
+  "verified_utc": "2026-11-07T15:29:09.445828+00:00",
+  "source_head": "ceeaf623ae438d3ba52b8924ae0026a5ca7c9848",
+  "uncommitted_source_attributed_by_artifact_hashes": true,
+  "artifacts": {
+    "worker": {
+      "wheel_sha256": "0b58576f0d8ab7d263bbc29806690af20f0768559ce480dd6464daeb5fdde961",
+      "sdist_sha256": "7f828f0247e7420f42e81f22dfdad189b58bc2f6302d6c15c5d8e941c947daae",
+      "source_wheel_sdist_installed_modules": 5
+    },
+    "simulator": {
+      "wheel_sha256": "90542f6b869e6484216035326829f08a60c843cea431cd34808b878a16fcab01",
+      "sdist_sha256": "4da54756a98502c2bc940dfcb8af523f42cb6999fa259638eabd5db3e613d0c3",
+      "source_wheel_sdist_installed_modules": 26,
+      "provider_fixture_sha256": "12b7727d8bff06103480097b9c2a2f334bb463abc5f05d4697c082b7acb70b86"
+    },
+    "sdk": {
+      "wheel_sha256": "d6de44080832e3ac772b0c29e344e92b428736fdbe5563b67498115252a50fb0",
+      "sdist_sha256": "74bb38e0e7cf3b1fefd17c95e7b55ed738c7542ce0b31512cab733c38c121919",
+      "source_wheel_sdist_installed_modules": 59
+    }
+  },
+  "suites": {
+    "sdk": {
+      "tests": 4575,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "operation-inventory": {
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "provenance-reference": {
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "provider-reference": {
+      "tests": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "revision-reference": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "composition-reference": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "operation-coverage": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "sdk-reference": {
+      "tests": 98,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "worker": {
+      "tests": 57,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "worker-http": {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "simulator": {
+      "tests": 326,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "governance": {
+      "tests": 39,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "worker_coverage": {
+    "covered_lines": 322,
+    "num_statements": 348,
+    "percent_covered": 90.42553191489361,
+    "percent_covered_display": "90",
+    "missing_lines": 26,
+    "excluded_lines": 0,
+    "percent_statements_covered": 92.52873563218391,
+    "percent_statements_covered_display": "93",
+    "num_branches": 122,
+    "num_partial_branches": 15,
+    "covered_branches": 103,
+    "missing_branches": 19,
+    "percent_branches_covered": 84.42622950819673,
+    "percent_branches_covered_display": "84"
+  },
+  "actual_installed_worker_import": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\shared-access-first\\worker-installed\\klab_worker\\__init__.py",
+  "native_java": "REAL_NOT_RUN",
+  "scientific_acceptance": false,
+  "scope": "Explicit opt-in advertised ephemeral Runtime READ reference, current-principal public sync/nativeasync restoration/read/denial/expiry/revocation/lost-reply lookup and owner cleanup. Not native granular ACL, issuer, federation or scientific execution. SDK/simulator changed; worker unchanged.",
+  "dependency_custody": "Disposable prior test interpreter borrows existing dependencies; fresh package pip-target installs, no existing environment modifications or fresh dependency-isolation claim",
+  "delivery_state": "INSTALLED_VERIFIED_PR_PENDING",
+  "source_raw_sha256": {
+    "sdk": {
+      "klab_client/agents.py": "077d25dca52c41a76c58ed74c68fdacd477c30a06f9bfec896d1a824d306816d",
+      "klab_client/agent_control.py": "8b282045ef28349f0b0fedcdf9f36805f34d13644e529da203177ab580b9bb43",
+      "klab_client/agent_execution.py": "ed805d7cb2e5fe145fab1af2c38cab8b248c69b65762492258e96bef15e74df6",
+      "klab_client/agent_messaging.py": "11e98c334359745ce4574f5abd33e5da1db60dda8ed393322bbc5dafe1daf6ab",
+      "klab_client/agent_status.py": "634843b5aaed9b72c28895ad20684937e19c2d1a53abf88706028817e9a73ba2",
+      "klab_client/analysis.py": "67b9fa2e95c1f4f1c5665a15217ffc910abd3e89d00e15ad20d3be3f70acc7bd",
+      "klab_client/async_client.py": "c0ccb80e46c16b50c3a08e4672eba80ddeca5ffdaa82dce83c6947fc8b654677",
+      "klab_client/authoring.py": "5896cf1710f8539944a41b5fc2016951712a775f7de551ecf500be80ba5dab8a",
+      "klab_client/client.py": "142f7df32d9148a612579c9d4a2d4e682e504ba26232e2405b5f0220be516c97",
+      "klab_client/connection.py": "e0380b8c68ecc1fc395151c91721ba27acf23784ecef0f350bc6f8e01025a616",
+      "klab_client/connection_models.py": "2e2a84ed7e93b0b8786f45df904500b97483b9e7ef28b613c71a4ba345013bd6",
+      "klab_client/credentials.py": "be1f3a6e7c09eb3b6bbd1d2620da16c54b8a9217262ab6f4aa1b46c61034d81e",
+      "klab_client/dto.py": "de430cc8b4ed6bcce5ac4abb6c71c15781c364783161dac1d94ec6862deb228f",
+      "klab_client/durable_notifications.py": "3ded4887836696086f6570c03ace56e4f486f82564269eaddde860f80b586ee5",
+      "klab_client/errors.py": "e41cb9abee9febff12ecec88786248be714cab4e7a127ea01868384be748d9d2",
+      "klab_client/evidence.py": "b39bbd83372adcc21c98888507b7a789298d9ca26a54d3e87818468a036041bb",
+      "klab_client/experiment.py": "b3644023cb9ec12d7b209b618407ec32ddbfa3e3217ef6aba1296bdd348b9f3d",
+      "klab_client/experiments.py": "a48b455452d018a08db6304402972a5df8cc87d2bc5eb51be00b1ce4e73c0e1a",
+      "klab_client/exports.py": "9e9e458c4e9e790119b16b52189e3baba7b23616d79bd2e3debf033bdf310269",
+      "klab_client/graph.py": "8a6f685bd7a1602fc36c0947ed0ee01728ff3c7b6f35fc3da2c04f15b963f1b7",
+      "klab_client/graph_projection.py": "ad659299bdf3847ce050c5493947f2a8f224a776928e2466b1f7690ad7df0108",
+      "klab_client/handles.py": "c7a20b8ae74fd83ce1174a067dad9355a0c1d5f6e346fcddd785d03d378b6fc2",
+      "klab_client/imports.py": "ef9c3ba422cf343f06051dc9d2fc39b58e3f60a6b5ea71fba5884d8f2f8016cd",
+      "klab_client/inspection.py": "5fa2139b3c6953ff607f3035a924c78232d78e8f0a501b489ad47545c62a17b0",
+      "klab_client/managed_agents.py": "a4f4dd14f013f05fd46cf27f242c44a41a14a7ad0e40f2b602db2d2acb59582e",
+      "klab_client/model_candidates.py": "c124d318155ca68a7c79c0451239c3bc18bff93f33a981e8c121b530ccafce8c",
+      "klab_client/notifications.py": "ebf3084fb8bf5190817b2ef3e56a78456d6d91c5db1df4c820e8fd471a67f30e",
+      "klab_client/project_locks.py": "f624fd20defc46c053d79bc1c0b5c808d9d588dc2ec4fe509595714cebe76c8f",
+      "klab_client/provenance.py": "48a024546ed2314f16052ca0ee7aa806ef2d93ce87791b2b740ab3afc3d1b3a4",
+      "klab_client/provider_data.py": "1375891fdc27778f40a438132168bdc6f8a02324e26f8d6fe3a3822c05b1f0c8",
+      "klab_client/raster_categories.py": "3f6bc8f334b61640699997c3e305c68b4032e3aed2a0e0f8ac3fe91d25bac0e4",
+      "klab_client/read_plans.py": "1b13ebe7b432fece5eaf7c06747dc68132da414775dc8ed4fe3e5b83a3695055",
+      "klab_client/read_plan_analysis.py": "5a64ad8a46ccf65378c99020af65dbf2cc2a8d97887c152726066850b4899197",
+      "klab_client/requests.py": "d1b5bb73fe4a432f15376b611aae1e5442b04c3243d451926cf43257e9e6b55e",
+      "klab_client/revision_drafts.py": "bb800b6688f09acf0a5adecb33c1530e0922b2b468a6a1385bc768b7ec532258",
+      "klab_client/scan_slices.py": "4f4861dbd464da43b9e8e3eaed63bca97b8a999a5891ab4db6feb1989953e968",
+      "klab_client/selections.py": "9b2ec21947ffe488917aaae350c9f2c5c47474fa906f5d481d1347e0911a3582",
+      "klab_client/semantics.py": "b5602ca02295ce132b53dc237c9911d1e362535f38a409aa00996930022c486f",
+      "klab_client/shared_access.py": "683a342966b34e4585a490d233ea2126212ccf4366d8b206f3830e0ae184ff2d",
+      "klab_client/source_previews.py": "7fb3ab5892bddcb7054f748d3e86f2d020723a1e9fa5427bd51651fb8f786140",
+      "klab_client/tables.py": "966fb558a23b578c101f0dd92ee6817cde0acc86b0ffcdcb521272d037e570cb",
+      "klab_client/transport.py": "32cc46771f647b9457b3ebdeb2ceff24610ff006f6f869081b596e2469b54760",
+      "klab_client/vector.py": "c24c92df02bb8e7ccac3ac66af270b61e6a12f628c32036d3834744c2cd3a635",
+      "klab_client/_agent_wire.py": "c2d21b3178b65bf49bbca87af7480a23cd07754ef0ab95dc49f474d01a0941ee",
+      "klab_client/_async_exports.py": "55348b51d13b9ba99d924a08195c8b5077bfa166efa2b5c0f95124833097fc56",
+      "klab_client/_async_transport.py": "ad70ac3ca2946eb18184f4c3220a03a116a863d8d56b4ff45ff86b61139b96a2",
+      "klab_client/_bootstrap.py": "8f0cbcd369f0832ab3aa9a8ec01ba11979786c5d26f6309532514ea1571cb1f3",
+      "klab_client/_inspection.py": "1acd286e210fb16c767914fd0b845cf05c7dd4c1b060a7457c40940559e8d30f",
+      "klab_client/_job_binding.py": "9b05cf45a6b4f43190a04de41bdec6759919edb187d3c2a8887c260a9263ea4a",
+      "klab_client/_provider_avro.py": "772f1bd550c740e7071877824339635ca46673813ead3dd7608b0600e577fc52",
+      "klab_client/_scientific_snapshot.py": "7ec13635bc09cb46c88b9b219576f7eeaca9401dda07af69622c856205418adc",
+      "klab_client/__init__.py": "e96990ef0eb07df2702ac4e7b3f4db3b0e009f5315ba7526a72615fca1f91eda",
+      "klab_client/api/knowledge.py": "3b3a936bda609fa60da4be1b4cb80e03c145c5f15fab39be50d6c94b3da445e6",
+      "klab_client/api/modeler.py": "1afa2cce4f9fd1747e237b59eecec8f80bb3f06156ca529946b2558cee8f65dc",
+      "klab_client/api/primitives.py": "d8237bd4f334600e16c7ed1c26325a495d016a1e559ce5fe7ac3fd9ef7252602",
+      "klab_client/api/runtime.py": "cf45307d823618d19a66b31d40e1cbcd1ddc4414e672666d10e2fa616e172a50",
+      "klab_client/api/scopes.py": "85fec61b102a3186c076f84ba5985ff0f405f28549a7f6de8c8ae8bc5ee15c5f",
+      "klab_client/api/services.py": "d9f7889097aca04bcf6ac8f34693c27bac24c9834fcb49fed370c483021e0f37",
+      "klab_client/api/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "simulator": {
+      "klab_simulator/authoring.py": "fb14c6e7c993bee8cb8fd9a859812fef4fcc9681068c9bb83386e849f36edc52",
+      "klab_simulator/compare.py": "4ef7b4955f9c722237279453fce1544c0b9978f3cd14ef4dda453179d3c5b9ce",
+      "klab_simulator/composition.py": "7575a52bfdf7a7bd776ddac482e56ed21372df42b0784059bcf347a63c425aaa",
+      "klab_simulator/contracts.py": "39eaced0693146e84f62912fefc049aa5afdefb80790678bafdac21fd0a3453e",
+      "klab_simulator/drafts.py": "4ad43825704df46fff843a7c6652164d59c8679258740750df3187cc7ce6d722",
+      "klab_simulator/exports.py": "b2111259dfffeb5bb0a1966cf0cd4cfd698ac21227ca949f44dd42ffdf90a96b",
+      "klab_simulator/fixtures.py": "0498c99632e83fcd889f494fda67c89cdda4dc190beb174fe61b203b63c64ea5",
+      "klab_simulator/managed_agents.py": "bfa6049127c95c7c0bb35665ac1618ff2086b8c45e89651656a533a367286e2a",
+      "klab_simulator/material_selections.py": "63c42a3333d280206825e1086838aa05774fd29c00cd9df11cc466065782a6d8",
+      "klab_simulator/model_candidates.py": "6d4c492ebd2ea41b066b7bf880659716711bfd60707c2c333954590f9e38d651",
+      "klab_simulator/notifications.py": "fdaa773d987156e08e8cf29b5612220ceb3b64956be1a9c2dc56ff360994d92f",
+      "klab_simulator/observation_selections.py": "78e4e7e92dafb46b7cb92614b8d7180ce45c2c351a705d8b586087b20db39230",
+      "klab_simulator/persistence.py": "815064fe3f54712a47c7212dce329d4e62940bfe727f1be89d639229d61e8ae9",
+      "klab_simulator/provenance_fixture.py": "139b382a75e7cc95c5cd2286087c113fc2497f5ecb2192ebbcea3b80ac8d8442",
+      "klab_simulator/provider_avro.py": "283ad64e545da71520dc5e6dbc84e359c22fd3aa4e81614bb6b135892fb1fc06",
+      "klab_simulator/read_plans.py": "5454d29980235c7c61ed8c0fc06c2beaf7fc82d5e4520d80f4f1a0b4bad0d900",
+      "klab_simulator/replay.py": "1bbcceb2f35edb96b4d55a086dc1b69a8e1b3bdaf2c683808a9e8f2f513738e4",
+      "klab_simulator/resource_imports.py": "6e677b27ed97766c17b74cfd38da544521ffe3c0793182b4444eb3c790a17db7",
+      "klab_simulator/revision_snapshots.py": "991e12fc81c697e4829d54d14a709be015d5bdc456d6f0fbc43f58f7841ce5d2",
+      "klab_simulator/semantics.py": "ff634eb13667428faf919429941cdd97e7b29f923258a7179e2f04e75c7944e7",
+      "klab_simulator/server.py": "29ed9c2801088ff9a553c586393890125bc8592cb795e430e1480f92f67c09b4",
+      "klab_simulator/shared_access.py": "c67500fbacc123baf950db64937b4321daf70b6dd6afa299ac849c5e71e6baf3",
+      "klab_simulator/state.py": "2fb459c03d308abaf8e2bb1fcd06f444b52cc92ee13e8207fe4eebad2d0c11e2",
+      "klab_simulator/workers.py": "520fe7716a8bbefa2d3eeb25a7aa4e82f6453fa3ff818247c380e35518b1eda9",
+      "klab_simulator/__init__.py": "a7413dd7e1496076a975d5532ba514bff503f81da2ec3bff6b03eec0cdeb26c1",
+      "klab_simulator/__main__.py": "ddd60a1df996b2b744c45953165711e5afe2711f5f0249f4e98875e1342411df"
+    },
+    "worker": {
+      "klab_worker/client.py": "04e9fa7d81eecda2a5f9f3d4ea659943cf12573f010b7637af0ac9beaf208381",
+      "klab_worker/containment.py": "d883b15d6d9539bb086a1a65a5d76187152e0e8b0e42a4930fba2ca4a8ba3cb8",
+      "klab_worker/execution.py": "1dd3bbef7ed03ad335a0b8440d9c113a1453a6cf24d5b6dcba1b886ac308fe8d",
+      "klab_worker/protocol.py": "08c0b133c8998677027eba662c0857c3bf75e833e0a1ea9c90496e04905bb42d",
+      "klab_worker/__init__.py": "505a475c3be7559a3efeeb207d24c6360b95c8db86a68e2757db49f1148745ec"
+    }
+  },
+  "sdk_only_new_module_coverage": {
+    "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\shared-access-first\\sdk-installed\\klab_client\\shared_access.py": {
+      "covered_lines": 158,
+      "num_statements": 158,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100",
+      "num_branches": 46,
+      "num_partial_branches": 0,
+      "covered_branches": 46,
+      "missing_branches": 0,
+      "percent_branches_covered": 100.0,
+      "percent_branches_covered_display": "100"
+    }
+  },
+  "supplementary_simulator_only_coverage": {
+    "covered_lines": 106,
+    "num_statements": 106,
+    "percent_covered": 100.0,
+    "percent_covered_display": "100",
+    "missing_lines": 0,
+    "excluded_lines": 0,
+    "percent_statements_covered": 100.0,
+    "percent_statements_covered_display": "100",
+    "num_branches": 76,
+    "num_partial_branches": 0,
+    "covered_branches": 76,
+    "missing_branches": 0,
+    "percent_branches_covered": 100.0,
+    "percent_branches_covered_display": "100"
+  },
+  "focused_ci_batches": {
+    "provider": 672,
+    "selections": 580,
+    "material": 458,
+    "shared-read": 82
+  },
+  "development_failures_preserved": [
+    "Foreign capability guard error-order mismatch before correction; no experimental route called",
+    "Supplementary fixture98.21% initial coverage before adding hostile read-header/focus cases; unchanged100% gate"
+  ],
+  "native_compatibility_test": {
+    "path": "python-client/tests/functional/test_shared_context_read.py",
+    "result": "NOT_RUN",
+    "scope": "Prepared read-only current-credential compatibility, not granular grants, TTL or disposal denial"
+  },
+  "queue": {
+    "original_records": 42,
+    "runnable": 37,
+    "final_dispositions": 0,
+    "direct_requirement": "RC-P1.3",
+    "CAP-01": "Certificate/token/profile renewal integrated acceptance, not shared-grant implementation"
+  }
+}

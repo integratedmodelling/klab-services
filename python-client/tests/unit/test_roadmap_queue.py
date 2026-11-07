@@ -65,3 +65,11 @@ def test_checkpoint_requires_ancestry_and_preserves_acceptance(tmp_path, monkeyp
     saved = json.loads(target.read_text())
     assert saved["requirements"] == value["requirements"] and saved["active"]["branch"] == "test/child"
     assert calls == [["git", "merge-base", "--is-ancestor", "abc", "HEAD"]]
+
+
+def test_next_uses_current_priority_not_historical_array_order(tmp_path, monkeypatch, capsys):
+    value = queue.seed()
+    value["requirements"][0]["priority"] = 99
+    target = tmp_path / "queue.json"; target.write_text(json.dumps(value)); monkeypatch.setattr(queue, "QUEUE", target)
+    assert queue.main(["next"]) == 0
+    assert '"id": "RC-P1.5"' in capsys.readouterr().out

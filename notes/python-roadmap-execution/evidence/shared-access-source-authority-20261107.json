@@ -1,0 +1,22 @@
+{
+  "baseline": "ceeaf623ae438d3ba52b8924ae0026a5ca7c9848",
+  "evidence": "READ_ONLY_SOURCE_NOT_NATIVE_EXECUTION",
+  "source_raw_sha256": {
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/authentication/ResourcePrivileges.java": "690846b2d46fb1e024eeb6e8294a862dbb18550b523a9e33f376446a3bd0877f",
+    "klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ScopeManager.java": "7735313a84c3ab20a398f2ad6613d15e86f7f2ba08dc024c36fefcf99f8ee9fc",
+    "klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/RuntimeService.java": "413e282257e144781b2210b2658d5d57ecbd7939a4370e817487f0e772938afb",
+    "klab.services.runtime.server/src/main/java/org/integratedmodelling/klab/services/runtime/server/controllers/RuntimeServerController.java": "4014d544069a1b09062397d1705d473631352553805afe9ebd50a68cf709c227"
+  },
+  "observations": [
+    "ResourcePrivileges describes public/user/group allow/deny authorization; these inspected APIs do not establish granular READ-only TTL grant/revoke semantics.",
+    "ScopeManager.allowsManagedScope checks context owner or configuration accessRights.checkAuthorization, explicitly independent of parent federation membership.",
+    "RuntimeService.connectContext retrieves current configuration using the requesting UserScope and binds a request-derived identity; source does not justify copying an owner's credentials into a reader.",
+    "RuntimeServerController.closeContext delegates to RuntimeService.releaseContext, which checks allowsManagedScope before closing registered root. This generic ACL path is NOT proof of a native READ-versus-RELEASE distinction; do not run negative disposal tests against unrelated real roots.",
+    "No maintained deployed grant-management/TTL advertisement was established. New SDK calls require exact opt-in and matching sharedAccessProtocol advertisement; proposed experimental routes are not claimed existing Java endpoints.",
+    "Separate read-only native fixture test uses existing attach/query/point routes with explicit reader credentials; it does not prove the proposed grant protocol, native expiry, mutation denial or real scientific computation."
+  ],
+  "native_result": "NOT_RUN",
+  "real_read_test": "python-client/tests/functional/test_shared_context_read.py",
+  "required_architectural_decision": "Maintainer confirmation of granular context rights, principal/group issuer binding, grant/revoke/TTL transport and service incarnation/durable authorization semantics before native management compatibility can be claimed",
+  "fixture_limit": "Explicit advertised ephemeral Runtime READ reference for two synthetic principals, max128 retained grants/tombstones, owner mutation only; no cross-service grants, federation rights, native Java ACL translation or persistence"
+}

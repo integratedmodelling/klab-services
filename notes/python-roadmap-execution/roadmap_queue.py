@@ -19,7 +19,7 @@ AUDIT = ROOT / "docs/java-service-contract-gaps/acceptance-audit.json"
 WORK = [
     ("CAP-04", "persisted-relationship-selection", "Add public sync/async persisted endpoint selection with exact source/target headers, origin/root binding and saved-reference refusal until versioned; independent simulator graph/query workflow and collection enumeration."),
     ("RC-P1.5", "material-selection-effects", "Verify project/namespace/scenario/observer/grid options change declared synthetic plan and executed input, not only echoed request metadata; reject unsupported forced models."),
-    ("RC-P1.3 CAP-01", "explicit-collaborator-rights", "Add explicit opt-in shared read grants in independent simulator and public client access inspection; read-only collaborator positive control plus write/release denial, expired versus forbidden and grant revocation."),
+    ("RC-P1.3", "explicit-collaborator-rights", "Add explicit opt-in shared read grants in independent simulator and public client access inspection; read-only collaborator positive control plus write/release denial, expired versus forbidden and grant revocation."),
     ("RC-P4.2 CAP-05", "revision-aware-validation", "Expose typed validation evidence pinned to source hash and knowledge service/worldview/revision; explicit revalidation after revision change, parser success distinct from semantic admission; independent finite validator fixture."),
     ("RC-P4.4 CAP-14", "conditional-authoring", "Implement opt-in reference accepted-document revision/update/validate/publish workflow with public SDK DTOs, CAS conflicts and permission checks; private draft CAS alone is insufficient; synthetic admission not Java compilation."),
     ("RC-P4.1 CAP-13", "dependency-inspection", "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection."),
@@ -32,7 +32,7 @@ WORK = [
     ("RC-P2.2 CAP-09", "selected-reference-windows", "Extend public reference read plans to explicit bounded spatial windows and selected synthetic temporal states with per-selection layout/masks/units/pins, immutable assembled data and cancellation/expiry controls."),
     ("RC-P2.5 CAP-15", "categorical-reference-data", "Expose reference categorical dictionaries/worldview and explicit temporal labels through public data adapters, not only caller labels; verify raw integer codes, masks and metadata across installed notebook/array/raster paths."),
     ("RC-P0", "operation-workflow-attribution", "Map every public operation to executable tests/workflows or exact unsupported disposition; measured body lines alone insufficient. Resolver encoder remains unsupported until maintained scientific encoding authority, with all independent preparation/inspection available."),
-    ("RC-P1.1 RC-P1.4 CAP-02", "onboarding-and-routing-acceptance", "Run installed public onboarding/catalog/expiry/mixed-provider positive-negative scenarios and record Python completion separately from actual production issuer/license/deployment approval."),
+    ("RC-P1.1 RC-P1.4 CAP-01 CAP-02", "onboarding-and-routing-acceptance", "Run installed public onboarding/catalog/expiry/mixed-provider positive-negative scenarios and record Python completion separately from actual production issuer/license/deployment approval."),
     ("RC-P1.2 RC-P3.3 CAP-07", "restoration-lifecycle-acceptance", "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations."),
     ("RC-P3.5", "notebook-integrated-acceptance", "Run installed independent notebook clients through bounded concurrent Jobs, own-wait cancellation, collaboration denial and graph reconciliation without deleting owner state."),
     ("RC-P2.1", "multishard-scientific-acceptance", "Integrate public synthetic multishard and authentic recorded-data read/export/analysis known-answer workflows with independent coordinates/masks/precision checks; real provider science remains separately gated."),
@@ -125,7 +125,8 @@ def main(argv=None):
         value["active"]["branch"] = subprocess.check_output(["git", "branch", "--show-current"], cwd=ROOT, text=True).strip()
         value["active"]["pr"] = None
         QUEUE.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
-    runnable = [r for r in rows if r["task_state"] in ("pending", "in_progress") and r["work_group"] in value["remaining_runnable_work"]]
+    runnable = sorted((r for r in rows if r["task_state"] in ("pending", "in_progress") and r["work_group"] in value["remaining_runnable_work"]),
+        key=lambda row: (row["priority"], row["id"]))
     if args.command == "next":
         print(json.dumps({"id": runnable[0]["id"], "action": runnable[0]["next_executable_action"]} if runnable else {"no_runnable_work": True}, indent=2))
     else: print(json.dumps({"requirements": len(rows), "runnable": len(runnable), "complete": sum(r["disposition"] is not None for r in rows)}))

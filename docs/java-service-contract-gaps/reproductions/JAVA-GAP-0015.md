@@ -25,10 +25,10 @@ NOT_TESTED complete production issuer/license/role/expired-credential and two-de
 
 ## Independent simulator implementation and fixtures
 
-Synthetic credentials/private owners/administrator roles only. ExistingSDK connect→singleJob→400cells with injected local SDK expiry/reacquisition; expired intake/principal drift/provider failure refuse before scientific HTTP and no replay. Owned mixed-Runtime outage/recovery preserves explicit selection, marks incomplete readiness unknown, sends no standby work; changed endpoint serviceID requires explicit reconnect. No real issuer/license/native role or federation acceptance.
+Synthetic credentials/private owners/administrator roles only. ExistingSDK connect→singleJob→400cells with injected local SDK expiry/reacquisition; expired intake/principal drift/provider failure refuse before scientific HTTP and no replay. Owned mixed-Runtime outage/recovery preserves explicit selection, marks incomplete readiness unknown, sends no standby work; changed endpoint serviceID requires explicit reconnect. Separate advertised shared-read reference grants ephemeral Runtime READ to current synthetic principal; public sync/nativeasync SDK owner inspection/grant/revoke, read-only Observation/Job restoration, denied mutation/disposal, expired410 versus revoked403, mid-point revocation without partial data, lost reply owner lookup without replay and owned cleanup. Owner/grantee/TTL protocol and granular rights are explicitly provisional, not native ACL translation, production issuer/license or federation acceptance.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-DISCOVERY-001, SIM-SCOPE-SELECTION-001, SIM-PROJECT-LOCK-001, SIM-BOOTSTRAP-RECOVERY-001, SIM-NOTEBOOK-PRINCIPAL-RACE-001
+Scenarios: SIM-DISCOVERY-001, SIM-SCOPE-SELECTION-001, SIM-PROJECT-LOCK-001, SIM-BOOTSTRAP-RECOVERY-001, SIM-NOTEBOOK-PRINCIPAL-RACE-001, SIM-SHARED-READ-001
 
 Exact executable controls:
 
@@ -37,6 +37,9 @@ Exact executable controls:
 - `developer-tools/klab-service-simulator/tests/test_bootstrap_recovery.py`
 - `python-client/tests/unit/test_connection.py::test_completed_failed_probe_preserves_identity_pin_without_readiness_or_failover`
 - `python-client/tests/unit/test_connection.py::test_failed_unselected_runtime_never_inherits_selected_runtime_identity`
+- `python-client/tests/unit/test_shared_access.py`
+- `developer-tools/klab-service-simulator/tests/test_shared_access.py`
+- `developer-tools/klab-service-simulator/tests/test_shared_access_fixture.py`
 
 ## Reproduction commands
 
@@ -59,7 +62,7 @@ It is an executable missing-adapter disposition, **not** an actual native test o
 5. Capture request/response/error, positive/negative authorization, independent scientific checks where relevant and owned cleanup; compare with the acceptance criteria above.
 6. If no reviewed adapter/build/permission exists, retain NOT_RUN. Do not invent native endpoints or turn simulator success into a Java fix.
 
-Existing native test references: none reviewed for this complete gap
+Existing native test references: python-client/tests/functional/test_shared_context_read.py
 
 ## Custody, related trackers and remaining questions
 
