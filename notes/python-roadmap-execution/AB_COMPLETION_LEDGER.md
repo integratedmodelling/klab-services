@@ -1,5 +1,11 @@
 # A+B completion ledger — ongoing campaign
 
+PR307 published12c8ef11a with final onboarding support-pinned190SDK/1HTTP/18simHTTP
+receipt,13runnernegativecontrols/types-lintPASS;33reviewedmapped473missing assertions.
+Ready for final-head CI; ordinarymerge/checkpoint remain.306verifiedmerged/all19checks
+PASS. Sourcefrozen; independent restoration/lifecycle acceptance is next, no native/
+issuer/license/scientific/finalrow promotion.
+
 ## PR306 verified merged; onboarding delivery preparation
 
 306MERGEDa9faa8513e6a62b479be8b18a60e9e9aaa8c9f9c at2026-11-07T22:14:50Z;
