@@ -131,7 +131,7 @@ class ProposalReviewProtocolTest {
   @Test void evidenceAndLifecycleCannotBeDeletedOrForgedThroughCrud() throws Exception {
     var s=store();var m=manager(s);var user=scope("editor","EDITOR");var f=m.initializeFlow(WORKFLOW,initialization(true),user);
     assertThrows(KlabIllegalStateException.class,()->m.deleteAttachment(f.getId(),current(f).getProposalReview().candidate().proposal().attachmentId(),user));
-    assertThrows(KlabIllegalStateException.class,()->m.deleteFlow(f.getId(),user));
+    assertThrows(KlabResourceAccessException.class,()->m.deleteFlow(f.getId(),user));
     var update=current(f); update.setStatus(Flow.StateStatus.CLOSED);
     assertThrows(KlabIllegalStateException.class,()->m.updateState(f.getId(),update.getId(),update,user));
   }

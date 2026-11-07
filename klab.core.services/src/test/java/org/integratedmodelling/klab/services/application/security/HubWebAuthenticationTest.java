@@ -65,6 +65,24 @@ class HubWebAuthenticationTest {
     return bridge;
   }
 
+  @Test void browserScopeBindsOnlyItsAuthenticatedHostWithoutEngineAdvertisement() throws Exception {
+    var instance = instance(true);
+    var host = mock(BaseService.class, withSettings().extraInterfaces(org.integratedmodelling.klab.api.services.ResourcesService.class));
+    when(host.serviceId()).thenReturn("browser-host"); when(host.isLocal()).thenReturn(true);
+    var status = mock(org.integratedmodelling.klab.api.services.KlabService.ServiceStatus.class);
+    when(status.isOperational()).thenReturn(true); when(host.status()).thenReturn(status);
+    doReturn(host).when(instance).klabService();
+    String jwt = token("alice", "im", "engine", now.plusSeconds(900).getEpochSecond(), List.of("ROLE_USER"));
+    var bridge = bridge(jwt, "alice");
+    var login = bridge.exchange("keycloak-access-token", instance);
+    var authorization = bridge.authorize(login.token(), Map.of());
+    var scope = (ServiceUserScope) authorization.getScope();
+    assertSame(host, scope.getService(org.integratedmodelling.klab.api.services.ResourcesService.class));
+    assertEquals(List.of(host), List.copyOf(scope.getServices(org.integratedmodelling.klab.api.services.KlabService.class)));
+    verify(host, never()).serviceScope(); // No privileged clients or remote host topology is copied.
+    assertEquals(jwt, scope.getUser().getId());
+    assertFalse(scope.isLocal());
+  }
   @Test void localOwnerReceivesServiceAdministrationWithoutSecretOrScopeReuse() throws Exception {
     String jwt = token("alice", "im", "engine", now.plusSeconds(900).getEpochSecond(), List.of("ROLE_USER"));
     var bridge = bridge(jwt, "alice");

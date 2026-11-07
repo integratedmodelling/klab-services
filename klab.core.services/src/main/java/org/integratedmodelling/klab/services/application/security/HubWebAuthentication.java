@@ -186,6 +186,10 @@ public class HubWebAuthentication {
                   now.plusSeconds(300).getEpochSecond(), claims.getExpirationTime().getValue()));
       var scope = new ServiceUserScope(user, instance.klabService());
       scope.setId("webui:" + UUID.randomUUID());
+      // Browser sessions have no engine service advertisement. Bind only this authenticated
+      // host; do not copy service-authenticated clients or remote topology into the user scope.
+      if (org.integratedmodelling.klab.api.services.KlabService.Type.classify(instance.klabService()) != null)
+        scope.addService(instance.klabService());
       scope.getRoles().addAll(grant.roles());
       scope.setLocal(false);
       scope.setPermissions(grant.permissions());

@@ -174,8 +174,7 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
 
   @Override
   public boolean deleteFlow(String flowId, UserScope scope) {
-    client.withScope(scope).delete(ServicesAPI.RESOURCES.FLOW, "flowId", flowId);
-    return true;
+    return client.withScope(scope).deleteBooleanOrThrow(ServicesAPI.RESOURCES.FLOW, "flowId", flowId);
   }
 
   @Override

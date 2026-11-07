@@ -85,7 +85,7 @@ public interface ResourcesService extends KlabService {
   /** Retrieve the caller-specific projection of a flow. */
   Flow getFlow(String flowId, UserScope scope);
 
-  /** Delete a complete flow when requested by its editor/creator or an administrator. */
+  /** Permanently delete a complete flow and its attachments; requires administrator authority. */
   boolean deleteFlow(String flowId, UserScope scope);
 
   /** Reopen a closed flow. This operation is restricted to workflow administrators. */

@@ -176,7 +176,7 @@ public class WorkflowController {
 
   @Operation(
       summary = "Delete a flow",
-      description = "Delete a flow and its attachments as its editor/creator or an administrator")
+      description = "Permanently delete a complete flow and its attachments as an administrator")
   @DeleteMapping(ServicesAPI.RESOURCES.FLOW)
   public boolean deleteFlow(@PathVariable String flowId, Principal principal) {
     return resourcesServer.klabService().deleteFlow(flowId, userScope(principal));

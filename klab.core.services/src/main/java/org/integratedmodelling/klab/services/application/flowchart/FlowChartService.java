@@ -24,8 +24,10 @@ import org.eclipse.elk.core.util.Maybe;
 import org.eclipse.elk.graph.json.ElkGraphJson;
 import org.eclipse.elk.graph.json.JsonImporter;
 import org.integratedmodelling.klab.api.documentation.FlowChart;
+import org.integratedmodelling.klab.api.documentation.FlowFlowChartAdapter;
 import org.integratedmodelling.klab.api.documentation.WorkflowFlowChartAdapter;
 import org.integratedmodelling.klab.api.services.resources.workflow.Workflow;
+import org.integratedmodelling.klab.api.services.resources.workflow.Flow;
 
 /**
  * Service-local adapter registry, ELK layout and headless PNG rendering. Does not mutate inputs.
@@ -49,6 +51,7 @@ public class FlowChartService {
 
   public FlowChartService() {
     register(Workflow.class, new WorkflowFlowChartAdapter());
+    register(Flow.class, new FlowFlowChartAdapter());
     register(FlowChart.class, chart -> chart);
   }
 

@@ -311,7 +311,7 @@ class WorkflowManagerAuthorizationTest {
   }
 
   @Test
-  void editorCreatorCanDeleteTheCompleteFlowButAnotherEditorCannot() {
+  void onlyAdministratorCanDeleteTheCompleteFlow() {
     var store = new MemoryStore();
     var manager = new WorkflowManager(store);
     var creator = scope("creator", "EDITOR");
@@ -326,7 +326,8 @@ class WorkflowManagerAuthorizationTest {
     assertThrows(
         KlabResourceAccessException.class,
         () -> manager.deleteFlow(flow.getId(), scope("another-editor", "EDITOR")));
-    assertTrue(manager.deleteFlow(flow.getId(), creator));
+    assertThrows(KlabResourceAccessException.class, () -> manager.deleteFlow(flow.getId(), creator));
+    assertTrue(manager.deleteFlow(flow.getId(), scope("admin", "ADMIN")));
     assertTrue(store.listFlows().isEmpty());
     assertTrue(store.attachments.isEmpty());
   }

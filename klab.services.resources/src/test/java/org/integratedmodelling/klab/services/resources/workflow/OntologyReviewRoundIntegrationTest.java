@@ -46,7 +46,7 @@ class OntologyReviewRoundIntegrationTest {
         fixture.manager.getReviewArtifact(flow.getId(), cycle.id(), ontology.getId(), citizen));
     assertThrows(KlabResourceAccessException.class, () -> fixture.manager.getReviewArtifact(flow.getId(), cycle.id(), manifest.getId(), citizen));
     assertThrows(KlabIllegalStateException.class, () -> fixture.manager.deleteAttachment(flow.getId(), proposal.getId(), fixture.editor));
-    assertThrows(KlabIllegalStateException.class, () -> fixture.manager.deleteFlow(flow.getId(), fixture.editor));
+    assertThrows(KlabResourceAccessException.class, () -> fixture.manager.deleteFlow(flow.getId(), fixture.editor));
   }
 
   @Test void unrelatedWorkflowEditorCannotManageOrCreateAnAssignmentToEscalate() throws Exception {

@@ -2876,6 +2876,101 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
       }
 
       /**
+       * DELETE a command with an explicit Boolean result. Failures preserve the HTTP status without
+       * exposing response bodies, credentials or URLs. A missing/invalid response is an unknown
+       * outcome, not success or refusal: callers must refresh state before considering another try.
+       *
+       * <p>This deliberately does not use the JDK client, which may retry an idempotent DELETE after
+       * a lost response. Automatic retries, authentication retries and redirects are disabled only
+       * for this request; existing DELETE callers retain their legacy behavior.
+       */
+      public boolean deleteBooleanOrThrow(String apiRequest, Object... parameters) {
+        responseHeaders.clear();
+        int status = 0;
+        try {
+          var params = makeKeyMap(new Options(), parameters);
+          var apiCall = substituteTemplateParameters(apiRequest, params);
+          var request = new org.apache.http.client.methods.HttpDelete(
+              URI.create(uri + apiCall + encodeParameters(params)));
+          if (timeoutSeconds <= 0) throw new IllegalArgumentException("Timeout must be positive");
+          int timeoutMillis = Math.toIntExact(Duration.ofSeconds(timeoutSeconds).toMillis());
+          int connectTimeoutMillis = Math.toIntExact(
+              client.connectTimeout().orElse(Duration.ofSeconds(10)).toMillis());
+          request.setConfig(org.apache.http.client.config.RequestConfig.custom()
+              .setConnectTimeout(Math.min(connectTimeoutMillis, timeoutMillis))
+              .setConnectionRequestTimeout(timeoutMillis)
+              .setSocketTimeout(timeoutMillis)
+              .setAuthenticationEnabled(false)
+              .build());
+          if (authorization != null) request.addHeader(HttpHeaders.AUTHORIZATION, authorization);
+          headers.forEach(request::addHeader);
+          if (forcedAcceptHeader != null) request.addHeader(HttpHeaders.ACCEPT, forcedAcceptHeader);
+
+          // Bound the entire exchange, including a peer that trickles bytes within the socket timeout.
+          var deadline = Thread.startVirtualThread(() -> {
+            try {
+              Thread.sleep(Duration.ofSeconds(timeoutSeconds));
+              request.abort();
+            } catch (InterruptedException completed) {
+              Thread.currentThread().interrupt();
+            }
+          });
+          try (var transport = HttpClientBuilder.create()
+              .useSystemProperties()
+              .setSSLContext(client.sslContext())
+              .setDefaultConnectionConfig(org.apache.http.config.ConnectionConfig.custom()
+                  .setMessageConstraints(org.apache.http.config.MessageConstraints.custom()
+                      .setMaxHeaderCount(64).setMaxLineLength(8192).build())
+                  .build())
+              .setRoutePlanner(new org.apache.http.impl.conn.SystemDefaultRoutePlanner(
+                  client.proxy().orElseGet(ProxySelector::getDefault)))
+              .disableAutomaticRetries()
+              .disableRedirectHandling()
+              .disableCookieManagement()
+              .build();
+              var response = transport.execute(request)) {
+            status = response.getStatusLine().getStatusCode();
+            if (status < 200 || status >= 300)
+              throw new RequestFailure(status, "Delete request failed (HTTP " + status + ")", null);
+            for (var header : response.getAllHeaders()) {
+              responseHeaders.computeIfAbsent(header.getName().toLowerCase(Locale.ROOT),
+                  ignored -> new ArrayList<>()).add(header.getValue());
+            }
+            var entity = response.getEntity();
+            if (entity != null) {
+              try (var input = entity.getContent()) {
+                // A Boolean needs only a few bytes. Bound unexpected/hostile response bodies.
+                byte[] bytes;
+                try {
+                  bytes = input.readNBytes(1025);
+                } finally {
+                  // Do not drain an oversized entity when closing its stream.
+                  request.abort();
+                }
+                if (bytes.length <= 1024) {
+                  var body = new String(bytes, StandardCharsets.UTF_8);
+                  if (body.matches("[ \\t\\r\\n]*true[ \\t\\r\\n]*")) return true;
+                  if (body.matches("[ \\t\\r\\n]*false[ \\t\\r\\n]*")) return false;
+                }
+              }
+            }
+            throw new RequestFailure(status,
+                "Delete response was not a Boolean; outcome unknown, refresh before retrying", null);
+          } finally {
+            deadline.interrupt();
+          }
+        } catch (RequestFailure failure) {
+          if (failure.getSuppressed().length > 0)
+            throw new RequestFailure(failure.getStatus(), failure.getMessage(), Logging.safeFailure(failure));
+          throw failure;
+        } catch (Exception failure) {
+          throw new RequestFailure(status,
+              "Delete transport or response failed; outcome unknown, refresh before retrying",
+              Logging.safeFailure(failure));
+        }
+      }
+
+      /**
        * DELETE helper that sets all headers and returns true if the request was 2xx. What to delete
        * must be set in the URL. Any response body is discarded.
        *

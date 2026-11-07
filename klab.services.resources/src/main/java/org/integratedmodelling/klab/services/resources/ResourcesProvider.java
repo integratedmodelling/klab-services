@@ -1967,6 +1967,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return result;
   }
 
+  /** Graphs use the same authorized projection as CRUD, never raw workflow-store aggregates. */
+  @Override
+  protected Object flowChartSource(String urn, KnowledgeClass assetClass, UserScope scope) {
+    if (assetClass == KnowledgeClass.FLOW || assetClass == KnowledgeClass.WORKFLOW)
+      return workflowManager.retrieve(urn, assetClass, scope);
+    return super.flowChartSource(urn, assetClass, scope);
+  }
+
   @Override
   public <T> T info(String urn, KnowledgeClass assetClass, Class<T> infoClass, UserScope scope) {
     if (isCommonInformationClass(assetClass, infoClass)) {

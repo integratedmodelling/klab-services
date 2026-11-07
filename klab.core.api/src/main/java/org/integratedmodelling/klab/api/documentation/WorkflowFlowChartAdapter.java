@@ -21,10 +21,12 @@ public class WorkflowFlowChartAdapter implements FlowChart.Adapter<Workflow> {
   @Override
   public FlowChart adapt(Workflow workflow) {
     Objects.requireNonNull(workflow, "workflow");
+    boolean stagedReview = Boolean.TRUE.equals(workflow.getMetadata().get("reviewStages"));
     var builder = FlowChart.builder("workflow");
     builder.root(
         root -> {
-          root.label(workflow.getName() == null ? workflow.getId() : workflow.getName())
+          root.label((workflow.getName() == null ? workflow.getId() : workflow.getName())
+                  + (stagedReview ? " (planned lifecycle; rounds may overlap and repeat)" : ""))
               .layout("elk.algorithm", "layered")
               .layout("elk.direction", "RIGHT")
               .metadata("workflowId", workflow.getId())
@@ -98,6 +100,10 @@ public class WorkflowFlowChartAdapter implements FlowChart.Adapter<Workflow> {
           for (var transition : workflow.getTransitions().values()) {
             transitionSources.addAll(transition.getSourceStates());
           }
+          if (stagedReview) {
+            reviewLifecycle(root, workflow);
+            transitionSources.addAll(List.of("bootstrap", "peer-review", "community-review", "coalescing"));
+          }
           for (String terminal : new TreeSet<>(workflow.getStates().keySet())) {
             if (transitionSources.contains(terminal)) continue;
             String portId = outputPortId(terminal);
@@ -119,6 +125,45 @@ public class WorkflowFlowChartAdapter implements FlowChart.Adapter<Workflow> {
           }
         });
     return builder.build();
+  }
+
+  /** Code-managed commands are not transition-schema rows. Show their plan, never fake history. */
+  private static void reviewLifecycle(FlowChart.NodeBuilder root, Workflow workflow) {
+    for (String state : List.of("bootstrap", "peer-review", "community-review", "coalescing", "terminated"))
+      requireState(workflow, state);
+    root.metadata("projection", "planned-review-lifecycle")
+        .metadata("lifecycleNote", "Commands describe possible routes, not completed actions. Peer and community rounds may overlap and repeat. Coalescing closes all rounds; termination does not publish or accept.");
+    String cycle = "planned-review-cycle";
+    root.node(cycle, node -> node.label("Review cycle (parallel / repeated rounds)")
+        .port(cycle + ":in", FlowChart.Role.INPUT).port(cycle + ":out", FlowChart.Role.OUTPUT)
+        .metadata("kind", "plannedReviewCycle"));
+    planned(root, "open-cycle", stateId("bootstrap"), cycle,
+        "Open cycle + first round", "OPEN_CYCLE", false);
+    planned(root, "repeat-cycle", stateId("coalescing"), cycle,
+        "New candidate / next cycle", "OPEN_CYCLE", true);
+    planned(root, "peer-round", cycle, stateId("peer-review"),
+        "Peer round (repeatable)", "OPEN_ROUND", true);
+    planned(root, "community-round", cycle, stateId("community-review"),
+        "Community round (repeatable)", "OPEN_ROUND", true);
+    planned(root, "coalesce", cycle, stateId("coalescing"),
+        "Close cycle and all rounds", "ENTER_COALESCING", false);
+    planned(root, "coalesce-peer", stateId("peer-review"), stateId("coalescing"),
+        "Closed round for coalescing", "ENTER_COALESCING", false);
+    planned(root, "coalesce-community", stateId("community-review"), stateId("coalescing"),
+        "Closed round for coalescing", "ENTER_COALESCING", false);
+    planned(root, "terminate", stateId("coalescing"), stateId("terminated"),
+        "Terminate (no publication)", "TERMINATE", false);
+  }
+
+  private static void planned(FlowChart.NodeBuilder root, String id, String source, String target,
+      String label, String command, boolean repeatable) {
+    root.link("planned:" + id, source + ":out", target + ":in", link -> {
+      link.getLabels().add(FlowChart.labelOf(label));
+      link.getMetadata().put("kind", "plannedLifecycleCommand");
+      link.getMetadata().put("operation", command);
+      link.getMetadata().put("repeatable", repeatable);
+      link.getMetadata().put("roles", List.of("ADMIN", "EDITOR"));
+    });
   }
 
   // Length-prefixing keeps node IDs distinct from port IDs even for arbitrary schema keys.

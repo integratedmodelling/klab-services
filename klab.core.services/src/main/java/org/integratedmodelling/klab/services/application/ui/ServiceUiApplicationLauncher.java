@@ -65,8 +65,7 @@ public final class ServiceUiApplicationLauncher implements UiApplicationLauncher
   private void prepareBrowserServices(UserScope scope) {
     if (!(scope instanceof org.integratedmodelling.klab.services.scopes.ServiceUserScope browser)
         || browser.getId() == null
-        || !browser.getId().startsWith("webui:")
-        || !browser.getServices(ResourcesService.class).isEmpty()) return;
+        || !browser.getId().startsWith("webui:")) return;
     var host = instance.klabService();
     var topology = host.serviceScope();
     if (topology == null) return;
@@ -74,6 +73,8 @@ public final class ServiceUiApplicationLauncher implements UiApplicationLauncher
         List.of(
             ResourcesService.class, org.integratedmodelling.klab.api.services.Reasoner.class,
             org.integratedmodelling.klab.api.services.Resolver.class, RuntimeService.class)) {
+      // Authentication already supplies the host. Fill only missing application services.
+      if (!browser.getServices(type).isEmpty()) continue;
       var trusted = type.isInstance(host) ? host : topology.getService(type);
       if (trusted == null) continue;
       if (trusted == host

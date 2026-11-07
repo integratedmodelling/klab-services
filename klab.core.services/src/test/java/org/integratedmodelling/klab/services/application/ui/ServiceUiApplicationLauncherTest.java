@@ -58,6 +58,11 @@ class ServiceUiApplicationLauncherTest {
 
   @Test
   void browserScopesReceiveCallerBoundClientsFromTrustedHostTopology() throws Exception {
+    verifyBrowserServices(false);
+    verifyBrowserServices(true);
+  }
+
+  private void verifyBrowserServices(boolean resourcesAlreadyBound) throws Exception {
     var instance = mock(ServiceNetworkedInstance.class);
     var host =
         mock(
@@ -94,6 +99,7 @@ class ServiceUiApplicationLauncherTest {
             ApplicationUiRuntimeTest.parse(
                 "web app tests.ui.browser \"Browser\" version 1.0 using core.ui as ui action main:"
                     + " ui.text(\"Hello\")"));
+    if (resourcesAlreadyBound) browser.addService(scoped);
     var launcher =
         new ServiceUiApplicationLauncher(
             instance,
@@ -106,6 +112,7 @@ class ServiceUiApplicationLauncherTest {
     when(user.getScope()).thenReturn(browser);
     launcher.resolve("runtime-service:app:bundled", "en", user);
     assertSame(scoped, browser.getService(ResourcesService.class));
+    assertSame(host, browser.getService(org.integratedmodelling.klab.api.services.RuntimeService.class));
     assertNotSame(trusted, browser.getService(ResourcesService.class));
     assertFalse(browser.isLocal());
     assertEquals(Set.of(CRUDOperation.READ), browser.getPermissions());

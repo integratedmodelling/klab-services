@@ -618,34 +618,45 @@ public class WorkflowManager {
     return ReviewWorkflowArchives.committedIntent(flow, cycleId);
   }
 
-  /** Delete a flow aggregate, its attachment payloads, and its target-asset catalog entry. */
+  /**
+   * Permanently remove a complete flow as an administrator. This explicit aggregate operation
+   * is distinct from editing/deleting frozen review stages, which remain immutable.
+   * Project source and already exported archives are not removed.
+   */
   public synchronized boolean deleteFlow(String id, UserScope scope) {
     var participant = WorkflowParticipant.from(scope);
+    requireAdmin(participant);
     var flow = requiredFlow(id);
     var workflow = requiredWorkflowVersion(flow);
-    if (ProposalReviewProtocol.enabled(workflow) || Boolean.TRUE.equals(workflow.getMetadata().get("reviewCycles"))
-        || !flow.getReviewCycles().isEmpty())
-      throw new KlabIllegalStateException("Proposal review stages and evidence use the transition lifecycle; direct create/delete/reopen is blocked");
-    boolean administrator = participant.getRoles().contains(WorkflowRole.ADMIN);
-    boolean editorCreator =
-        participant.getRoles().contains(WorkflowRole.EDITOR)
-            && Objects.equals(flow.getOwner(), participant.getIdentity());
-    if (!administrator
-        && (!editorCreator || !participant.isWorkflowPermitted(workflow))) throw access(id);
 
     // Run every veto-capable lifecycle callback before removing any persistent data.
     for (var state : flow.getStates().values()) {
       notifyStageDeleting(
           flow, state, workflow, requiredStateSchema(workflow, state.getSchemaId()), scope);
     }
-    for (var state : flow.getStates().values())
-      for (var attachment : state.getAttachments())
-        kbox.deleteWorkflowAttachment(attachment.getId());
+
+    // Do not destroy payloads if the aggregate delete fails. Once the aggregate is gone,
+    // remaining payloads are inaccessible through workflow APIs even if cleanup fails.
     if (!kbox.deleteFlow(id))
       throw new KlabIllegalStateException("Cannot delete flow " + id);
-    if (!kbox.removeResourceInfoForFlow(flow))
+    var attachmentIds = new java.util.LinkedHashSet<String>();
+    for (var state : flow.getStates().values())
+      for (var attachment : state.getAttachments()) attachmentIds.add(attachment.getId());
+    for (var cycle : flow.getReviewCycles()) {
+      if (cycle.candidate() != null && cycle.candidate().proposal() != null)
+        attachmentIds.add(cycle.candidate().proposal().attachmentId());
+      if (cycle.candidate() != null && cycle.candidate().ontology() != null)
+        attachmentIds.add(cycle.candidate().ontology().attachmentId());
+    }
+    boolean payloadCleanup = true;
+    for (var attachmentId : attachmentIds) {
+      if (attachmentId != null && kbox.getWorkflowAttachment(attachmentId) != null
+          && !kbox.deleteWorkflowAttachment(attachmentId)) payloadCleanup = false;
+    }
+    boolean catalogCleanup = kbox.removeResourceInfoForFlow(flow);
+    if (!payloadCleanup || !catalogCleanup)
       throw new KlabIllegalStateException(
-          "Flow was deleted but its resource catalog entry could not be removed");
+          "Flow was deleted, but attachment or resource catalog cleanup did not complete");
     return true;
   }
 
