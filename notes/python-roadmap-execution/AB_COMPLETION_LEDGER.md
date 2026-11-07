@@ -1,5 +1,39 @@
 # A+B completion ledger — ongoing campaign
 
+## PR300 verified merged; public copied composition active
+
+13installedfocusedCIgatesPASS;olderbatches append115(explanation58+copied57),
+convergence92+115/explanation58+57/copied57dedicated. Actualorderedselection693/
+214/92/115/6HTTP/21fixture+unchanged100%gatePASS;2independentfixturepolicytests100%.
+Freshfullartifactverifier+17linkedmatrix running, no copiedPRyet; sourcefrozen.
+
+Copiedsource57SDK100%unexcluded newmodule/allchangedSDK,2publicsync/asyncthree-
+serviceHTTP with independentA/B/Ccredentials/collidingIDs/400cells/sourceBobdenial/
+foreignCdenial/C-onlyrelease/sourcecounts-data preservation/expiry/cleanupPASS;2existing
+inprocessfixturepolicytests100%compositionmodule,types-lint-49governancequeueordering
+PASS. Requesttimepins/descriptor clones prevent caller races; no sourcecredentials/
+grants or SDKarithmetic delegated/shipped. Freshpublic-copied-composition-first full
+artifactverifier running; no compositionPRyet. Nativefederation stillseparateexternalgate.
+
+PR300MERGED1f879772d5d373c1d0921ce74867f78f189d90e8 at2026-11-07T19:29:08Z,
+exact4dd1a2819d9cb320ac140e6a2c919040a1644d86/all32finalheadchecksPASS. Actual
+remote/localancestrycheckpointverified;42originalIDs/history/24runnable/zero final
+dispositions. Explanationdelivered5053installedSDK465sim72worker/reference-governance
+PASS,67SDK34sim5workerparity,58SDK100%/2HTTP24fixture100%/12focusedCI+orderedselection/
+17linkedPASSvs17nativeNOT_RUN. Native scientific/numericmediation/finalrow separate.
+All300jobs finished; no owned simulatorservices at finalcheck.
+
+Active feat/python-public-copied-composition: typed independent A/B capture and C-owned
+result compose/inspect/release implemented, no nativefederation/grantforwarding.57SDK
+100%unexcluded(newmoduleonly;allchanged/exportgate pending),2publicsync/asyncthree-
+serviceHTTP with distinctA/B/Ccredentials/sourceBobdenial/Cforeigndenial/400cells/
+sourcepreservation/expiry/cleanupPASS;bodymypyPASS. Existing2inprocesscompositionpolicy
+tests100%fixturecoverage, fullfixture/publicregression pending. Early3designprobesPASS;
+initial54SDK99.18%expandedto57/100%without exclusions. Reviewpins copied from immutable
+requestbody beforePOST so mutablecaller vector afterwrite cannot replace originpins;
+sourceconfiguredsecrets refused beforecopy forwarding, descriptor must match exactly.
+No compositionPR/packaging/governance/installedacceptance yet; sourceuncommitted.
+
 ## PR299 verified merged; execution-dependency explanation continues
 
 FinalPR300candidate installed5053SDK/465simulator/72worker/allreference/39governance

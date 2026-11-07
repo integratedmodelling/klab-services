@@ -1,0 +1,46 @@
+name: Public copied reference composition (native federation NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/src/klab_client/copied_composition.py', 'python-client/src/klab_client/__init__.py', 'python-client/tests/unit/test_copied_composition.py', 'developer-tools/klab-service-simulator/**', '.github/workflows/copied-composition-public.yml']
+  pull_request:
+    paths: ['python-client/src/klab_client/copied_composition.py', 'python-client/src/klab_client/__init__.py', 'python-client/tests/unit/test_copied_composition.py', 'developer-tools/klab-service-simulator/**', '.github/workflows/copied-composition-public.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-public-copied-composition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: SDK-only copied source/vector/result lifecycle and no delegated authority controls
+        run: python -m pytest -q python-client/tests/unit/test_copied_composition.py --cov=klab_client --cov-branch --cov-report=json:copied-sdk.json
+      - name: Entire new SDK module and changed SDK decisions unexcluded
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py copied-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/copied_composition.py
+      - name: Actual public sync-async three-service independently authorized A/B and C-owned copied lifecycle
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_public_copied_composition.py --junitxml=copied-http.xml
+      - name: Independent finite fixture intake atomicity/authority/retention controls
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_copied_composition.py::test_direct_atomicity_bad_sources_vectors_descriptors_and_release developer-tools/klab-service-simulator/tests/test_copied_composition.py::test_composition_refuses_unselected_scenario_or_durable_storage --cov=klab_simulator.composition --cov-branch --cov-fail-under=100 --cov-report=json:copied-fixture.json
+      - name: Types and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/copied_composition.py
+          python -m ruff check python-client/src developer-tools/klab-service-simulator/src --select E9,F63,F7,F82
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-copied-reference-not-native-federation
+          path: |
+            copied-sdk.json
+            copied-http.xml
+            copied-fixture.json

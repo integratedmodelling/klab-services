@@ -62,6 +62,9 @@ from klab_client.reference_commits import (ReferenceCommits, AsyncReferenceCommi
     ReferenceGraphSnapshot, ReferenceGraphView, ReferenceGraphProjection,
     AsyncReferenceGraphProjection, ReferenceResyncRequired)
 from klab_client.execution_explanations import ExecutionExplanations, AsyncExecutionExplanations, ExecutionExplanation
+from klab_client.copied_composition import (CopiedCompositions, AsyncCopiedCompositions,
+    CopiedSourceIdentity, CopiedSourceSnapshot, CopiedCompositionResult,
+    capture_copied_source, async_capture_copied_source)
 from klab_client.read_plan_analysis import ReadPlanAnalysis, analyze_read_plan
 from klab_client.managed_agents import (ManagedAgentReference, ManagedAgentStatus, create_managed_reference,
     read_managed_reference, command_managed_reference, async_create_managed_reference,
@@ -90,6 +93,8 @@ from klab_client.scan_slices import ScanSlice
 from klab_client.imports import ResourceImporter, AsyncResourceImporter, ImportFormat, ImportSubmission
 
 __all__ = [
+    "CopiedCompositions", "AsyncCopiedCompositions", "CopiedSourceIdentity", "CopiedSourceSnapshot",
+    "CopiedCompositionResult", "capture_copied_source", "async_capture_copied_source",
     "ExecutionExplanations", "AsyncExecutionExplanations", "ExecutionExplanation",
     "ReferenceCommits", "AsyncReferenceCommits", "ReferenceGraphSnapshot", "ReferenceGraphView",
     "ReferenceGraphProjection", "AsyncReferenceGraphProjection", "ReferenceResyncRequired",

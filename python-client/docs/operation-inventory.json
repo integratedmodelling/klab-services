@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 391,
+    "IMPLEMENTED_SOURCE_ONLY": 401,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -1925,6 +1925,76 @@
       "owner": "DeploymentProfile",
       "operation": "save",
       "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": null,
+      "operation": "capture_copied_source",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": null,
+      "operation": "async_capture_copied_source",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": "CopiedSourceIdentity",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": "CopiedSourceSnapshot",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": "CopiedCompositions",
+      "operation": "compose",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": "CopiedCompositions",
+      "operation": "inspect",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": "CopiedCompositions",
+      "operation": "release",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": "AsyncCopiedCompositions",
+      "operation": "compose",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": "AsyncCopiedCompositions",
+      "operation": "inspect",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "copied_composition.py",
+      "owner": "AsyncCopiedCompositions",
+      "operation": "release",
+      "async": true,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
     {

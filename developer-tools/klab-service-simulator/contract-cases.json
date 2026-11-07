@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-PUBLIC-COPIED-COMPOSITION-001",
+      "rows": ["CAP-03"],
+      "routes": ["/runtime/experimental/copied-composition/v1/create", "/runtime/experimental/copied-composition/v1/", "/runtime/experimental/read-plans/v1/"],
+      "source": "Typed public sync/nativeasync independently authorized A/B source capture and C-owned compose/inspect/release lifecycle. Source read grants released in finally; configuredsource secrets checked before forwarding, copiedorigin/epoch/plan/content vectors and exact descriptors/digests/budgets validated. Actual three-service distinctcredential/collidingnumericID/400cell/sourceBobdenial/foreignCdenial/expiry/C-onlyrelease/sourcepreservation/ownedcleanup flows, no rawtransport composition API in new public tests. C never fetches/verifies arbitrary upstream URLs or receives source clients/grants. Requesttime pins survive caller mutation; lost/bad write acknowledgments unknown/no replay. Reference arithmetic only in separate fixture, no SDK scientific engine or native federation/grant/revocation/migration authority.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native composed-twin/delegated-source/migration/failover contract remains external",
+      "simulator_test": "test_public_copied_composition.py::test_public_independent_a_b_capture_and_c_result_lifecycle_never_delegates_source_grants",
+      "java_gap_ids": ["JAVA-GAP-0007"]
+    },
+    {
       "id": "SIM-EXECUTION-EXPLANATION-001",
       "rows": ["RC-P3.4", "CAP-06"],
       "routes": ["/runtime/experimental/execution-explanations/v1/observations/", "/resources/experimental/dependencies/v1/graphs/MODEL/simulator.uploaded.elevation-quantifier"],

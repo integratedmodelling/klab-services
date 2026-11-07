@@ -28,13 +28,15 @@ Source audit found connect(ContextScope) stubs returning null; no maintained rem
 Reject foreign binding. Separate explicit copied-composition scenario combines two independently client-read reference snapshots into a C-owned result with origin-qualified IDs and pinned source vector; C-only release preserves A/B. Coordinator does not fetch/verify upstream authority: source claims labelled caller asserted, not remote grants. No native live twin/federation, migration, failover or revocation propagation simulated.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-SCOPE-SELECTION-001, SIM-LIFECYCLE-001, SIM-BOOTSTRAP-RECOVERY-001, SIM-COPIED-COMPOSITION-001
+Scenarios: SIM-SCOPE-SELECTION-001, SIM-LIFECYCLE-001, SIM-BOOTSTRAP-RECOVERY-001, SIM-COPIED-COMPOSITION-001, SIM-PUBLIC-COPIED-COMPOSITION-001
 
 Exact executable controls:
 
 - `developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http`
 - `developer-tools/klab-service-simulator/tests/test_bootstrap_recovery.py`
 - `developer-tools/klab-service-simulator/tests/test_copied_composition.py`
+- `python-client/tests/unit/test_copied_composition.py`
+- `developer-tools/klab-service-simulator/tests/test_public_copied_composition.py`
 
 ## Reproduction commands
 

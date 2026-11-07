@@ -366,6 +366,7 @@ class State:
                     **({"dependencyGraphProtocol":"klab.experimental.dependency-graphs/1"} if self.dependency_graphs is not None and service == "resources" else {}),
                     **({"graphCommitProtocol":"klab.experimental.graph-commits/1"} if self.graph_commits is not None and service == "runtime" else {}),
                     **({"executionExplanationProtocol":"klab.experimental.execution-explanations/1"} if self.execution_explanations is not None and service == "runtime" else {}),
+                    **({"copiedCompositionProtocol":"klab.experimental.copied-composition/1"} if self.scenario == "copied-composition" and service == "runtime" else {}),
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                      "importSchemata": schemas() if service == "resources" else {},
                      **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
