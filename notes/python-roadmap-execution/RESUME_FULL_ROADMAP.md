@@ -1,5 +1,22 @@
 # Resume the full Python A+B+C campaign
 
+Newest work is ownedsecondary `feat/python-whole-tree-type-contracts`, DraftPR312
+source4a217c1d2/code1e740c34b, includes primary57c9b3dd7 and verified309–311mergehistory.
+All source changes safelycommitted/pushed. Fresh installed5270SDK/38tools/116worker/
+538reference/39governancePASS; parity71/6/37modules13assetsPASS. Windows/Linux-target
+whole-tree114mypy/fatallintPASSwithoutignores; full history144→105→79→44→12→1→PASS
+retained. Receipt whole-tree-types-installed-20261107.json. EarlierSDKsource6failures
+retained, correctedfocused243PASS/source538referencePASS, no guard weakened.
+
+Fresh operation traces run through private verify-whole-tree-operation-traces.py,
+output full-roadmap-20261106/whole-tree-operation-traces-first using exact new packages.
+Do not alter SDK/test/tool/example bytes while tracing. Private reviewed supplement
+whole-tree-reviewed-mapping-supplement.json does not yet count as current mapped
+acceptance. Need evidence/finalheadCI/ordinary312merge/remotecheckpoint, then continue
+RC-P0assertionreview, exactmergedpackage/readiness/42-rowreconciliation and owned
+cleanup. Native science/issuer/rights/history/deployment/scale/OSsecurity/release remain
+separate external gates; preserve preexisting coverage/caches and unrelated resources.
+
 Latest310MERGED3df3ee48d at2026-11-07T23:00:03Z/exact336ea7604/all40checksPASS,
 remote-localcheckpointverified.42originalIDs/history7runnable/zero dispositions.
 Primary feat/python-integrated-packaging-readiness has uncommitted evidence/checkpoint

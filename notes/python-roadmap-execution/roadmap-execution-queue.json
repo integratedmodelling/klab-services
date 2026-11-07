@@ -4,7 +4,7 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-whole-tree-type-contracts",
-    "pr": null,
+    "pr": 312,
     "requirement": "RC-R1",
     "ci_review_dependencies": []
   },

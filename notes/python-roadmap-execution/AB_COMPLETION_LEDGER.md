@@ -1,6 +1,30 @@
 # A+B completion ledger — ongoing campaign
 
+## PR312 fresh installed/type verification passes; tracing continues
+
+Fresh source/wheel/sdist/installed parity71SDK/6worker/37reference modules and13
+referenceassetsPASS at codecandidate1e740c34b. Installed5270SDK/38tooling/116worker/
+538reference/39governancePASS, zero failures/errors/skips. Windows/Linux-target
+whole-tree114filemypy and fatal lintPASS without type ignores. Earlier144→1diagnostics
+and source5264PASS/6FAIL retained separately; corrected focused243PASS, source538sim
+PASS. Receipt evidence/whole-tree-types-installed-20261107.json pins artifacts,
+source/support bytes, coverage and diagnostics, not final merged-candidate acceptance.
+
+Draft312 source4a217c1d2 to receive evidence and exact-headCI; ordinary merge/remote
+checkpoint still owed. Fresh owning-thread SDK/reference operation traces running
+against new installedbytes and current tests. Historical60maps446missing not promoted;
+private reviewed supplement awaits trace linkage. No kernel/thread/subprocess
+invocation attribution or native science/rights/deployment/OSsecurity/release inferred.
+42originalIDs/history3runnable/zero finaldispositions preserved. ContinueRC-P0review
+and exactmerged-candidate reconciliation immediately after delivery; no milestone stop.
+
 ## Whole-tree type correction pass — verification in progress
+
+DraftPR312 published4a217c1d2; code1e740c34b plus inherited packaging checkpoint and
+verified309–311 merge history. Final installed artifacts/fullsuite/current-byte traces
+and exactheadCI/ordinarymerge remain pending. Windows/Linux-target whole-tree114types
+and fatal lintPASS; reference source538PASS; corrected focused SDK243PASS. No final
+roadmap/native/release promotion. Session now uses the owned secondary worktree.
 
 Complete reference source regression538PASS/no failures/errors/skips; SDK source
 failures above remain retained. Corrected focused243PASS. Commit1e740c34b saves code;
