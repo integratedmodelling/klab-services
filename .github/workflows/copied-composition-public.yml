@@ -33,7 +33,9 @@ jobs:
       - name: Preserve copied threshold after selected-window controls
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
-        run: python python-client/tools/check_feature_coverage.py copied-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/copied_composition.py
+        run: |
+          python -m pytest -q python-client/tests/unit --cov=klab_client --cov-branch --cov-append --cov-report=json:copied-sdk.json
+          python python-client/tools/check_feature_coverage.py copied-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/copied_composition.py
       - name: Actual public sync-async three-service independently authorized A/B and C-owned copied lifecycle
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_public_copied_composition.py --junitxml=copied-http.xml
       - name: Independent finite fixture intake atomicity/authority/retention controls

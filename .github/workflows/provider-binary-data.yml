@@ -45,7 +45,9 @@ jobs:
       - name: Preserve provider threshold after selected-window controls
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
-        run: python python-client/tools/check_feature_coverage.py provider-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/_provider_avro.py --new-module src/klab_client/provider_data.py
+        run: |
+          python -m pytest -q python-client/tests/unit --cov=klab_client --cov-branch --cov-append --cov-report=json:provider-coverage.json
+          python python-client/tools/check_feature_coverage.py provider-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/_provider_avro.py --new-module src/klab_client/provider_data.py
       - name: Typecheck implementation bodies
         run: python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/_provider_avro.py python-client/src/klab_client/provider_data.py
       - uses: actions/upload-artifact@v4

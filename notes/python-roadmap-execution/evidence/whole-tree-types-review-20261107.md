@@ -1,5 +1,28 @@
 # Whole-tree type correction and fresh installed regression
 
+## First final-head CI failure and gate-preserving correction
+
+PR312 first finalhead6f4b22ae9070ef85d6a07c277c7fee3f7824133d reports47checks,
+21FAIL. Candidate-source run42425570607 shows global changed-SDK line/branch checks
+fed a narrow feature-only coverage report; offline run42425570586 separately finds
+one truly uncovered new missing-delivery guard atagent_messaging.py321. Rollup and
+failed logs retained by exact runIDs; local installed/type passes are not CI acceptance.
+
+Corrective pass adds explicit mocked missing-delivery/noack/DISCONNECTED/unconfirmed
+cleanup control. All21SDK feature workflows extend existing coverage with full SDK
+unit contracts before the unchanged repository-wide diff gate. Selection workflow
+append precedes simulator coverage database reset. No exclusion, checker scope
+reduction, threshold relaxation or silent merge bypass. New workflow-input and
+existing ordering controls plus delivery negative control3PASS. First local correction
+run5269PASS2FAIL retained (test cleanup expectation and append ordering), both corrected;
+fresh final local full SDK/coverage gate reproduction running. No production bytes
+changed from the already rebuilt candidate; added tests require separate evidence.
+
+Fresh original5270SDK/538reference tracesPASS/455observed51abstractuncalled; reviewed
+private supplement links219mapped287missing with exact executed test hashes. Addition
+of new test files does not fabricate their invocation evidence or invalidate unchanged
+executed old-test bytes. Broader mapping delivery and finalheadCI remain pending.
+
 PR312 draft, code1e740c34b on inherited packaging57c9b3dd7 and verified309–311 merges.
 Final-head CI/merge and exact merged-candidate acceptance remain pending.42original
 requirementIDs/history, three runnable/zero final dispositions preserved.

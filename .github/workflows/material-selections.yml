@@ -39,7 +39,9 @@ jobs:
       - name: Preserve material threshold after selected-window controls
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
-        run: python python-client/tools/check_feature_coverage.py material-sdk-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/requests.py
+        run: |
+          python -m pytest -q python-client/tests/unit --cov=klab_client --cov-branch --cov-append --cov-report=json:material-sdk-coverage.json
+          python python-client/tools/check_feature_coverage.py material-sdk-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/requests.py
       - name: Public SDK independent numerical plan and execution acceptance
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_material_selections.py --junitxml=material-public-http.xml
       - name: Supplementary finite fixture intake controls, not SDK acceptance
