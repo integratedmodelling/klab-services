@@ -3,9 +3,9 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-whole-tree-type-contracts",
-    "pr": 312,
-    "requirement": "RC-R1",
+    "branch": "feat/python-reviewed-operation-assertions",
+    "pr": null,
+    "requirement": "RC-P0",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
@@ -16,7 +16,7 @@
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P3.5",
-  "pending_deliveries": [],
+  "pending_deliveries": [{"pr": 312, "head": "01395fa76", "state": "CORRECTED_FINAL_HEAD_CI_RUNNING_5272SDK_AND_40_UNCHANGED_COVERAGE_GATES_LOCAL_PASS_FIRST21FAIL_RETAINED"}],
   "remaining_runnable_work": [
     "operation-workflow-attribution",
     "integrated-packaging-compatibility"
@@ -3483,7 +3483,7 @@
       "work_group": "operation-workflow-attribution",
       "priority": 14,
       "task_state": "in_progress",
-      "next_executable_action": "Continue reviewed operation assertion/workflow mappings and original-row integrated acceptance; preserve all506 classifications and historical PR306 mappings. Latest pre-correction baseline60reviewedmaps446missing requires fresh installed-source and current-test-byte trace reconciliation after whole-tree typing corrections. Missing evidence never becomes invented unsupported or native acceptance.",
+      "next_executable_action": "Continue reviewed assertion mappings and original-row integrated acceptance. Fresh exact-installed5270SDK538reference traces preserve506classifications/455observed51abstractuncalled; expanded registry links219mapped287missing using current executed-test hashes. Deliver reviewed supplement separately; parent312correctedCI pending. Missing evidence never becomes invented unsupported, subprocess/kernel attribution or native acceptance.",
       "disposition": null
     },
     {

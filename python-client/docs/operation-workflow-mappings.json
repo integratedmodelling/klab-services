@@ -3,6 +3,180 @@
   "scope": "Explicit reviewed assertion descriptions; only linked passed trace scopes count as observed. Not native acceptance; all unlisted operations remain assertion-evidence missing.",
   "workflows": [
     {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_scientific_snapshots.py::test_independent_known_values_metadata_and_detached_roundtrip",
+      "operations": [["_scientific_snapshot.py", "dumps"], ["_scientific_snapshot.py", "loads"], ["api/runtime.py", "GeometryImpl.to_wire"]],
+      "assertions": "Detached local snapshot preserves duplicate4/0/4/9 offsets, integer2**53+1, Decimal1.2300 scale, zero/null, wire text, source meaning/units/origin and scalar geometry. Mutating restored slice/geometry leaves source unchanged; redundant values field absent. Local codec, not scientific execution or permission/revision lease."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_scientific_tables.py::test_indexed_frame_preserves_order_duplicates_zero_missing_and_metadata",
+      "operations": [["client.py", "ScientificData.to_dataframe"], ["tables.py", "to_dataframe"]],
+      "assertions": "Exact four dataframe columns preserve0/2/2 offsets, integerzero/null/Decimal123.25 and explicit wire missingness. Origin/source units/curve/slice remain explicit; detached metadata mutation preserves source. No committed revision or inferred coordinates; optional local pandas adapter only."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_shared_access.py::test_read_grant_public_restore_denied_mutation_revocation_expiry_and_owner_cleanup",
+      "operations": [["shared_access.py", "SharedAccess.inspect"], ["shared_access.py", "SharedAccess.grant_read"], ["shared_access.py", "SharedAccess.inspect_grant"], ["shared_access.py", "SharedAccess.revoke"], ["shared_access.py", "AsyncSharedAccess.inspect"], ["shared_access.py", "AsyncSharedAccess.grant_read"], ["shared_access.py", "AsyncSharedAccess.inspect_grant"], ["shared_access.py", "AsyncSharedAccess.revoke"]],
+      "assertions": "Explicit sync/async READ grant lets Bob restore/read exact100/103/102/195 values and saved Job, never submit/release/cancel/share/revoke or access other context. Denials preserve counts; revoke blocks reader while owner reads; expiry410 differs from403. Owner cleanup empties scopes. Finite reference ACL/TTL, not real issuer/current native rights."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_durable_notifications.py::test_retained_events_replay_with_explicit_checkpoint_and_survive_process_restart",
+      "operations": [["durable_notifications.py", "read_notifications"], ["durable_notifications.py", "NotificationCursor.to_dict"], ["durable_notifications.py", "NotificationCursor.from_dict"]],
+      "assertions": "Explicit cursor opt-in starts0; same cursor repeats JOB_WAITING without implicit acknowledgement. Serialized checkpoint survives reference-process restart with exact JOB_STARTED/JOB_FINISHED tail, same epoch/sequence3; Bob denied, wrong epoch requires resync. Cleanup removes streams/scopes. SQLite reference retention, not native AMQP durability/history."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_durable_notifications.py::test_native_async_reference_uses_same_explicit_cursor_protocol",
+      "operations": [["durable_notifications.py", "async_read_notifications"]],
+      "assertions": "Native Python coroutine reads explicit reference cursor before/after one completed Job and gets exact sequences1/2/3; owner scopes explicitly released. Not actual Java notification ordering/durability."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_managed_behavior_workflow.py::test_public_source_admission_reconnect_outcome_and_independent_private_session_disposal",
+      "operations": [["managed_behaviors.py", "ManagedBehaviors.validate"], ["managed_behaviors.py", "ManagedBehaviors.create"], ["managed_behaviors.py", "ManagedBehaviors.reconnect"], ["managed_behaviors.py", "ManagedBehaviors.read"], ["managed_behaviors.py", "ManagedBehaviors.command"], ["managed_behaviors.py", "AsyncManagedBehaviors.validate"], ["managed_behaviors.py", "AsyncManagedBehaviors.create"], ["managed_behaviors.py", "AsyncManagedBehaviors.reconnect"], ["managed_behaviors.py", "AsyncManagedBehaviors.read"], ["managed_behaviors.py", "AsyncManagedBehaviors.command"], ["managed_behaviors.py", "ManagedBehaviorReference.to_wire"]],
+      "assertions": "Only declared recipe source validates; READY reference creates one separate private session. Bob denied, owner reader reconnects exact receipt; stale commands refuse. FINISHED/FAILED/STOPPED precede independent declared disposal, premature purge refuses, disposal decrements sessions, explicit purge yields410 and owner context survives. Finite state machine, never real k.Actors or native private-session disposal."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+      "operations": [["client.py", "Client.create_session"], ["client.py", "Session.create_context"], ["client.py", "Context.observe"], ["client.py", "Context.fetch_data"], ["client.py", "Job.status"], ["client.py", "Context.release"], ["client.py", "Session.release"], ["api/services.py", "ResourcesServiceImpl.list"], ["api/services.py", "ResourcesServiceImpl.retrieve"], ["api/services.py", "ReasonerImpl.resolve_observable"], ["api/services.py", "ResolverImpl.resolve"], ["api/services.py", "RuntimeServiceImpl.release_context"], ["api/services.py", "RuntimeServiceImpl.release_session"], ["api/runtime.py", "ObservationImpl.fetch_data"], ["api/runtime.py", "ObservationImpl.units"], ["client.py", "ScientificData.dumps"], ["client.py", "ScientificData.loads"], ["provenance.py", "fetch_provenance"]],
+      "assertions": "Four-service discovery preserves explicit modelURN and RESOLVED plan association. Jobs show WAITING/STARTED; all400 independent oracle values/grid/cell centres and scalar roundtrip match. Partial MEASURED provenance has exact target/SUCCESS; Bob attach denied. Explicit releases true, zero final counts, SIMULATED_PROVISIONAL/SYNTHETIC origins and no token leakage. Not Java science/full lineage."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java",
+      "operations": [["async_client.py", "AsyncClient.initialize_user_scope"], ["async_client.py", "AsyncClient.create_session"], ["async_client.py", "AsyncSession.create_context"], ["async_client.py", "AsyncContext.observe"], ["async_client.py", "AsyncContext.fetch_data"], ["async_client.py", "AsyncContext.release"], ["async_client.py", "AsyncSession.release"], ["async_client.py", "AsyncRuntime.release_context"], ["async_client.py", "AsyncRuntime.release_session"], ["provenance.py", "async_fetch_provenance"]],
+      "assertions": "Explicit native async peers/scopes/Jobs preserve WAITING/STARTED and all400 independent values, grid metadata and centres. Partial provenance targets returned observation, explicit releases succeed, counts zero. Synthetic and authentic-recorded fixture origins remain distinct; neither is a new actual Java scientific execution."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_client.py::test_complete_typed_async_workflow_and_shared_scientific_decoding",
+      "operations": [["async_client.py", "AsyncContext.submit"], ["async_client.py", "AsyncReasoner.resolve_observable"], ["async_client.py", "AsyncRuntime.submit"], ["async_client.py", "AsyncClient.aclose"], ["client.py", "Job.to_handle"]],
+      "assertions": "Twelve mock requests preserve generated session length, context name, focused session.context.8#9, RuntimeID and Observer constraint. Typed AsyncJob/AsyncContext yield Decimal0/null/123.25, m units and observation42; release headers target roots, Job handle retains RuntimeID and local client closes. Mock contract, not native service/science."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_scaffold.py::test_concept_collective_roundtrip",
+      "operations": [["api/knowledge.py", "ConceptImpl.collective"], ["api/knowledge.py", "ConceptImpl.singular"], ["api/knowledge.py", "ConceptImpl.is_collective"]],
+      "assertions": "Local im:Thing collective view reportsTrue and explicit singular roundtrip reportsFalse. Descriptor metadata only; no server ontology/science authority."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_existing_java_compatibility.py::test_existing_java_semantic_flags_are_not_dropped_by_the_decoder",
+      "operations": [["api/knowledge.py", "ConceptImpl.get_type"], ["dto.py", "concept_from_wire"]],
+      "assertions": "Every one of81 independently frozen existing-Java semantic flags decodes to its exact one-element SemanticType set while retaining raw payload. Pinned local codec compatibility, not current running Java or scientific admission."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_existing_java_compatibility.py::test_requests_preserve_existing_java_contextualization_and_server_wire_data",
+      "operations": [["dto.py", "observable_from_wire"], ["dto.py", "observable_to_wire"], ["requests.py", "ObservationRequest.to_wire"]],
+      "assertions": "Every frozen supported nonVOID activity preserves observable wire fields and semantic type array through decoding/encoding and ObservationRequest. No translation to parser enum names/ordinals or invented activity; pinned local wire contract only."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_remote_semantic_description_is_explicit_not_default",
+      "operations": [["api/knowledge.py", "ConceptImpl.get_description_type"], ["api/knowledge.py", "ObservableImpl.get_description_type"], ["api/knowledge.py", "ObservableImpl.contextualization"], ["dto.py", "legacy_description_type"]],
+      "assertions": "Explicit MEASURE/QUANTIFICATION/INSTANTIATION/DETECTION/CATEGORIZATION retain declared activity and exact legacy description mapping, never defaulting to local instantiation. Pure DTO interpretation, not actual observation execution."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_experiment_runner.py::test_four_sequential_owned_experiments_have_stable_associations_and_local_close",
+      "operations": [["experiments.py", "ExperimentRunner.run"], ["experiments.py", "ExperimentRunner.outcomes"], ["experiments.py", "ExperimentRunner.close"], ["experiments.py", "ExperimentOutcome.job_handle"], ["experiments.py", "ExperimentOutcome.result_handle"], ["experiments.py", "ExperimentOutcome.to_dict"], ["experiments.py", "ExperimentBatch.counts"], ["experiments.py", "ExperimentBatch.summary"], ["experiments.py", "ExperimentBatch.dumps"], ["experiments.py", "ExperimentBatch.loads"]],
+      "assertions": "Four independent mock-wire experiments retain ordered cases, two Job/result handles per initialized context, Job2/observation42/runtimehome and four distinct contexts. Summary/JSON roundtrip preserve receipts, not live Jobs/results; local close releases no remote scopes. Waits are orchestration doubles; worker-thread calls unmeasured, no real scheduler/science claim."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_execution_explanations.py::test_actual_supplied_input_model_component_plan_recorded_and_semantic_effects",
+      "operations": [["execution_explanations.py", "ExecutionExplanations.inspect"], ["execution_explanations.py", "AsyncExecutionExplanations.inspect"], ["input_provenance.py", "InputProvenance.inspect"], ["input_provenance.py", "AsyncInputProvenance.inspect"], ["authoring.py", "Authoring.parse"], ["authoring.py", "Authoring.create_document"], ["authoring.py", "AsyncAuthoring.parse"], ["authoring.py", "AsyncAuthoring.create_workspace"], ["authoring.py", "AsyncAuthoring.create_project"], ["authoring.py", "AsyncAuthoring.create_document"]],
+      "assertions": "Frozen imported input/authored source join exact model/component/version, source/binary hashes and plannedCREATE/recordedSUCCESS. Unplanned explanation refuses; explicit semantic update changes revision0to1/digest, not original400 numeric values or observable. Fresh owner reader agrees, Bob/focused misuse denied, cleanup empties counts. Reference provenance only, not real scientific execution/conversion."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_dependency_graphs.py::test_public_multipage_source_version_access_graph_and_current_principal_denial",
+      "operations": [["dependency_graphs.py", "DependencyGraphs.inspect"], ["dependency_graphs.py", "AsyncDependencyGraphs.inspect"]],
+      "assertions": "Opted-in paged graph preserves exact5namednodes/4edges, source hashes and contextREAD/revision metadata. Refresh changes revision1to2 and source/snapshot identity; provider URL passive, nodebudget2 refuses, Bob denied. REFERENCE_DECLARED_COMPLETE/not-native remains explicit, not native closure or permission lease."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_commits.py::test_public_completed_observation_named_commit_cache_and_expiry_denial_cleanup",
+      "operations": [["commits.py", "CommitInspector.inspect"], ["commits.py", "AsyncCommitInspector.inspect"]],
+      "assertions": "Absent/incomplete commitIDs refuse; completed observation names exact added observation and link endpoints including source999. Bob denied; expiry blocks fresh reads but preserves historical local receipt. Cleanup clears commit reports/scopes. Finite cache only, not full native graph/history/retention/convergence."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_accepted_documents.py::test_public_conditional_source_conflicts_validation_publication_and_owner_cleanup",
+      "operations": [["accepted_documents.py", "AcceptedDocuments.knowledge"], ["accepted_documents.py", "AcceptedDocuments.read"], ["accepted_documents.py", "AcceptedDocuments.update"], ["accepted_documents.py", "AcceptedDocuments.validate"], ["accepted_documents.py", "AcceptedDocuments.publish"], ["accepted_documents.py", "AcceptedDocuments.published"], ["accepted_documents.py", "AsyncAcceptedDocuments.knowledge"], ["accepted_documents.py", "AsyncAcceptedDocuments.read"], ["accepted_documents.py", "AsyncAcceptedDocuments.update"], ["accepted_documents.py", "AsyncAcceptedDocuments.validate"], ["accepted_documents.py", "AsyncAcceptedDocuments.publish"], ["accepted_documents.py", "AsyncAcceptedDocuments.published"]],
+      "assertions": "Explicit finite source workflow preserves revision1/source/history; unvalidated/invalid publication and stale edits refuse. Knowledge drift invalidates validation; explicit revalidation permits revision3/new publicationID. Other context and Bob reads/writes denied; owner receipt survives and cleanup empties counts. Publication labelled not-native, not actual admission/release authorization."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_native_project_lock_principal_sharing_and_explicit_release",
+      "operations": [["project_locks.py", "ProjectLock.acquire"], ["project_locks.py", "ProjectLock.release"], ["project_locks.py", "AsyncProjectLock.acquire"], ["project_locks.py", "AsyncProjectLock.release"], ["authoring.py", "Authoring.create_workspace"], ["authoring.py", "Authoring.create_project"]],
+      "assertions": "Two explicitly authored fixture assets remain. Alice admin acquires; local close never unlocks, Bob getsFalse, same principal reacquires then explicitly releases. Exactly3lock/1unlock requests, no final locks/scopes, two retained assets. Native-shaped reference HTTP only, not actual Java ACL or cleanup lease."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_administrator_role_remains_server_authoritative_and_unknown_project_false_is_not_a_diagnosis",
+      "operations": [["project_locks.py", "ProjectLock.receipt"], ["project_locks.py", "ProjectLock.state"]],
+      "assertions": "Nonadministrator acquisition raises AuthorizationError with receiptNone/stateOUTCOME_UNKNOWN; absent project returns unconfirmedFalse, not an ownership/authorization diagnosis. No lock retained; finite role fixture, not real issuer/rights acceptance."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_dependencies.py::test_public_group_membership_versions_current_credentials_and_no_provider_follow",
+      "operations": [["dependencies.py", "DependencyInspector.inspect"], ["dependencies.py", "AsyncDependencyInspector.inspect"]],
+      "assertions": "Exact namespace group order, external resource serviceID/passive untrusted URL and recorded build1to2 refresh retained. ClosureUNKNOWN/edgeUNAVAILABLE and secret redaction remain explicit. Current Bob credentials deny; owner cleanup empties scopes. No complete native graph, permission lease or automatic provider routing."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_public_dto_operation_contracts.py::test_local_modeler_session_and_scope_metadata_do_not_grant_remote_rights",
+      "operations": [["api/modeler.py", "ModelerImpl.open_user"], ["api/modeler.py", "ModelerImpl.open_session"], ["api/modeler.py", "ModelerImpl.open_context"], ["api/modeler.py", "ModelerImpl.get_open_context"], ["api/scopes.py", "UserScopeImpl.get_user_id"], ["api/scopes.py", "SessionScopeImpl.get_session_id"], ["api/scopes.py", "ContextScopeImpl.get_context_id"]],
+      "assertions": "Empty local modeler has no context; explicit user/session/context retain object identity and ordered user:alice/session:declared-session/context:declared-session.context log. Roles/observer remain metadata, missing observerNone. No remote rights or live Modeler readiness authority."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_geometry_size.py::test_scalar_empty_unknown_and_universal_policies_remain_explicit",
+      "operations": [["api/runtime.py", "GeometryImpl.dimension"], ["api/runtime.py", "GeometryImpl.is_scalar"], ["api/runtime.py", "GeometryImpl.size"]],
+      "assertions": "Scalar explicitly has size1; declared empty space/universal geometries size0. Nonempty universal and absent checked finite shape refuse with UnsupportedOperationError rather than inferred axes or scientific coverage."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_geometry_size.py::test_size_rechecks_mutated_direct_shape_and_wire_finite_dimensions",
+      "operations": [["api/runtime.py", "GeometryImpl.from_wire"]],
+      "assertions": "Mutated boolean shape refuses; independent2x3 wire geometry decodes to nonscalar space size6. Pure DTO arithmetic, not projection/provider science."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_semantics.py::test_explicit_authority_selection_hierarchy_predicates_and_passive_documentation",
+      "operations": [["semantics.py", "SemanticExplorer.resolve_observable"], ["semantics.py", "SemanticExplorer.search_authority"], ["semantics.py", "SemanticExplorer.documentation"], ["semantics.py", "SemanticExplorer.resolve_candidate"], ["semantics.py", "SemanticExplorer.parents"], ["semantics.py", "SemanticExplorer.children"], ["semantics.py", "SemanticExplorer.is_a"], ["semantics.py", "SemanticExplorer.satisfiable"], ["semantics.py", "AsyncSemanticExplorer.resolve_observable"], ["semantics.py", "AsyncSemanticExplorer.search_authority"], ["semantics.py", "AsyncSemanticExplorer.documentation"], ["semantics.py", "AsyncSemanticExplorer.resolve_candidate"], ["semantics.py", "AsyncSemanticExplorer.parents"], ["semantics.py", "AsyncSemanticExplorer.children"], ["semantics.py", "AsyncSemanticExplorer.is_a"], ["semantics.py", "AsyncSemanticExplorer.satisfiable"], ["semantics.py", "AuthoritySearch.select"], ["semantics.py", "KnowledgeState.freshness"]],
+      "assertions": "Canonical ELEVATION/ALTITUDE pagination survives identical labels; label-based selection/foreign explorer candidate refuse. Exact directed hierarchy/predicate answers and passive documentation returned without external fetch or scope creation. Revision absent/freshnessunknown. Synthetic vocabulary only, not actual authority/worldview ontology acceptance."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_semantics.py::test_meaning_based_catalog_inspection_remains_advertisement_not_selection",
+      "operations": [["inspection.py", "ResourceInspector.list"], ["inspection.py", "ResourceInspector.retrieve"], ["inspection.py", "ResourceInspector.resolve"], ["inspection.py", "AsyncResourceInspector.list"], ["inspection.py", "AsyncResourceInspector.retrieve"], ["inspection.py", "AsyncResourceInspector.resolve"]],
+      "assertions": "Listed/retrieved model advertises exact resolved observable/m unit, unknown dependency completeness and explicit not-Resolver-selection disclaimer. Resource retains raster adapter, passive catalog origin and partial result while configured Resources endpoint unchanged. No compute, automatic routing or actual selection authority."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_source_validation.py::test_public_parse_semantic_diagnostics_and_explicit_revision_revalidation",
+      "operations": [["source_previews.py", "SourcePreviews.parse"], ["source_previews.py", "AsyncSourcePreviews.parse"], ["source_validation.py", "SourceValidation.validate"], ["source_validation.py", "AsyncSourceValidation.validate"]],
+      "assertions": "Independent namespace literals produce COMPLETE/no diagnostics; unknown model Error span selects exact synthetic:Unknown. Old revision refuses after drift; explicit revision2 revalidation retains source hash and changes knowledge fingerprint. Cleanup leaves no scopes. Finite parser fixture, not actual Java parser/admission/worldview acceptance."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup",
+      "operations": [["imports.py", "ResourceImporter.formats"], ["imports.py", "ResourceImporter.upload"]],
+      "assertions": "Advertised schema/explicit allow_write gate upload; receipt preserves2032bytes/frozen TIFF hash/Resources identity. Acknowledgement is not admission; WAITING/STARTED/FINISHED yields exact resourceURN/source digest. Bob cannot list/read; owner cleanup clears resources/scopes with exactly one importPOST and no local path/name leakage. Not actual Java upload/science."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_resource_imports.py::test_native_async_upload_materialization_and_terminal_cancel",
+      "operations": [["imports.py", "AsyncResourceImporter.upload"], ["async_client.py", "AsyncJob.status"]],
+      "assertions": "Native Python async import cancel reports INTERRUPTED without resource admission. Separately uploaded resource completes to exact suggestedURN/frozen source digest; explicit owner release clears resources. Python coroutine only, not real Java import or scientific computation."
+    },
+    {
       "authority": "SIMULATED_HTTP_ONLY",
       "test_ref": "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
       "operations": [["graph_projection.py", "GraphProjection.load"], ["graph_projection.py", "GraphProjection.view"], ["graph_projection.py", "GraphProjection.clear"]],

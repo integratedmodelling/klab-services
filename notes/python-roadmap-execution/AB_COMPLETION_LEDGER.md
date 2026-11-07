@@ -1,5 +1,25 @@
 # A+B completion ledger — ongoing campaign
 
+## Reviewed operation assertions advance while corrected312 CI runs
+
+312corrected01395fa76 pushed; exactheadCIwatcher active, no merge. First47checks21FAIL
+retained. Correction5272SDK/all40unchangedcoveragegatecommands under2basesPASS; no
+production bytes changed or thresholds relaxed. Next branch
+feat/python-reviewed-operation-assertions/noPR expands explicit registry22to51workflows.
+Fresh installed5270SDK/538reference owning-thread tracesPASS; exact source/test-byte
+reconciliation preserves506classifications/455observed51abstractuncalled and now links
+219reviewedmapped287missing. Registry descriptions shortened from private reviewed
+notes and revalidated against identical traces, not blindly copied counts. Added
+delivery/CI-input tests have separate5272evidence; no invented presence for them.
+
+Mappings cover core sync/async/scalar codecs, local modeler/geometry, semantic/catalog
+inspection, imports, conditional documents, locks, dependency/commit/explanation,
+sharing/retained-notification and finite managed-behavior workflows. Authority remains
+localDTO/mockHTTP/referenceHTTP/orchestration doubles as declared; no native science,
+issuer/rights/durability/actor execution/OSsecurity/final-row/release promotion.
+All42originalIDs/history3runnable/zero finaldispositions retained. Continue missing287
+review and exactmergedpackage/readiness reconciliation; no milestone stopping gate.
+
 Corrected local5272installedSDKPASS/no failures/errors/skips; all40unchanged coverage
 checker commandsPASS against currentintegrationb342a674a and historicalofflinead2bc949c.
 Missing-delivery branch covered, explicit unconfirmed mockcleanup retained. Shared
