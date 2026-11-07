@@ -1,0 +1,23 @@
+{
+  "evidence": "READ_ONLY_JAVA_SOURCE_AND_OFFLINE_INDEPENDENT_CODEC_NOT_JAVA_EXECUTION",
+  "baseline": "18b532c310bbde9535b10ccab55cfc1d35db3800",
+  "files_sha256": {
+    "klab.core.common/src/main/java/org/integratedmodelling/common/services/client/ResourcesClient.java": "1035a45164358022ef42562adb15ed1df965f97deba760daff14552b643a082c",
+    "klab.core.common/src/main/java/org/integratedmodelling/common/utils/Utils.java": "0ddf6936f0304f7e9f5714842faa101fa8f2e80192f00b4bc86ba82f2b6c67f9",
+    "klab.core.common/src/main/java/org/integratedmodelling/klab/common/data/DataRequest.java": "97481b096b9fe95fd494ddf94a306beae8b798c3c2fcbc12ebed6bc44bee2a23",
+    "klab.services.resources.server/src/main/java/org/integratedmodelling/resources/server/controllers/ResourcesProviderController.java": "2cd3d59bd3f7414dc52147c6dffe4206fa8f058ef51b1f479345b276548c6ca5",
+    "klab.core.services/src/main/java/org/integratedmodelling/klab/services/application/controllers/KlabJobController.java": "bb536eb402ab0e35b22652c967b80119cce4be844af694dab33f7be41e83af6d",
+    "klab.core.common/src/main/java/org/integratedmodelling/common/data/BaseDataImpl.java": "8ad639e32d7e646f185fd9a8f395256428cbfcf6950407fc18aea19e4bd68343"
+  },
+  "request": "ResourcesClient587 constructs raw DataRequest; Utils.postData1293 uses SpecificDatumWriter+binaryEncoder/application-octet-stream to POST/contextualize. Controller630 requires ServiceContextScope, retrieves resource/resolves observable/registers observation and submits contextualization Job. Optional inputData is an Instance.",
+  "result": "PollingFuture1174 uses jobs/retrieveData for Data results; BaseDataImpl.copyTo149 emits raw Instance via SpecificDatumWriter. Schema field order/types and union order are pinned, no runtime class/schema loading.",
+  "source_caveat": "KlabJobController69 writes raw result without setting Content-Type, then falls through to access exception. Actual HTTP commitment/error behavior NOT_TESTED. SDK permits absent media but rejects incompatible explicit media, errors/trailing data; no salvage or fallback.",
+  "independent_oracle": "fastavro1.13.1 installed in external approved temporary target, not SDK/simulator runtime dependency.9inputlessRequest+4Instance variants matched raw encode/decode;7separate finite golden request/result fixtures generated directly from Java schema without importing SDK codec.",
+  "fixture_ref": "developer-tools/klab-service-simulator/src/klab_simulator/fixtures/provider-avro.json",
+  "fixture_local_raw_sha256": "12b7727d8bff06103480097b9c2a2f334bb463abc5f05d4697c082b7acb70b86",
+  "fixture_bytes": 10250,
+  "schema_canonical_sha256": "9c0a97ee212b02e93364e29841599d9e45930e1e6309676451a79617ce8ba8c6",
+  "native_java": "REAL_NOT_RUN",
+  "scientific_acceptance": false,
+  "limits": "Direct binary Python client implementation and finite synthetic fixtures do not repair the historical USGS scanner, prove native graph cleanup, establish worker ABI or native scientific numerical acceptance. Original17gap native statuses unchanged."
+}

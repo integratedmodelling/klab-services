@@ -1,0 +1,294 @@
+{
+  "version": 1,
+  "source": "SIMULATED_PROVISIONAL",
+  "oracle": "fastavro1.13.1 raw datum, not Java execution",
+  "schema_canonical_sha256": "9c0a97ee212b02e93364e29841599d9e45930e1e6309676451a79617ce8ba8c6",
+  "source_java_ref": "klab.core.common/src/main/java/org/integratedmodelling/klab/common/data/DataRequest.java",
+  "cases": [
+    {
+      "case": "number",
+      "request": {
+        "observable": "synthetic:Value",
+        "geometry": "1",
+        "startTime": 0,
+        "endTime": 0,
+        "resourceUrns": [
+          "urn:synthetic:provider:number"
+        ],
+        "inputData": null
+      },
+      "expected_instance": {
+        "name": "synthetic",
+        "geometry": "1",
+        "observable": "synthetic:Value",
+        "identity": "synthetic-provider",
+        "fillingCurve": "DN_LINEAR",
+        "empty": false,
+        "notifications": [],
+        "metadata": {
+          "unit": "m",
+          "source": "SIMULATED_PROVISIONAL"
+        },
+        "instances": null,
+        "doubleData": [
+          0.0
+        ],
+        "longData": null,
+        "intData": null,
+        "floatData": null,
+        "dataKey": null
+      },
+      "request_hex": "1e73796e7468657469633a56616c756502310000023a75726e3a73796e7468657469633a70726f76696465723a6e756d6265720000",
+      "response_hex": "1273796e74686574696302311e73796e7468657469633a56616c75652473796e7468657469632d70726f76696465720012444e5f4c494e45415200000408756e6974026d0c736f757263652a53494d554c415445445f50524f564953494f4e414c0000020200000000000000000000000000",
+      "response_media": "application/octet-stream"
+    },
+    {
+      "case": "input",
+      "request": {
+        "observable": "synthetic:Value",
+        "geometry": "1",
+        "startTime": 0,
+        "endTime": 0,
+        "resourceUrns": [
+          "urn:synthetic:provider:input"
+        ],
+        "inputData": {
+          "name": "synthetic",
+          "geometry": "1",
+          "observable": "synthetic:Value",
+          "identity": "synthetic-provider",
+          "fillingCurve": "DN_LINEAR",
+          "empty": false,
+          "notifications": [],
+          "metadata": {
+            "unit": "m",
+            "source": "SIMULATED_PROVISIONAL"
+          },
+          "instances": null,
+          "doubleData": [
+            0.0
+          ],
+          "longData": null,
+          "intData": null,
+          "floatData": null,
+          "dataKey": null
+        }
+      },
+      "expected_instance": {
+        "name": "synthetic",
+        "geometry": "1",
+        "observable": "synthetic:Value",
+        "identity": "synthetic-provider",
+        "fillingCurve": "DN_LINEAR",
+        "empty": false,
+        "notifications": [],
+        "metadata": {
+          "unit": "m",
+          "source": "SIMULATED_PROVISIONAL"
+        },
+        "instances": null,
+        "doubleData": [
+          -2.5
+        ],
+        "longData": null,
+        "intData": null,
+        "floatData": null,
+        "dataKey": null
+      },
+      "request_hex": "1e73796e7468657469633a56616c756502310000023875726e3a73796e7468657469633a70726f76696465723a696e70757400021273796e74686574696302311e73796e7468657469633a56616c75652473796e7468657469632d70726f76696465720012444e5f4c494e45415200000408756e6974026d0c736f757263652a53494d554c415445445f50524f564953494f4e414c0000020200000000000000000000000000",
+      "response_hex": "1273796e74686574696302311e73796e7468657469633a56616c75652473796e7468657469632d70726f76696465720012444e5f4c494e45415200000408756e6974026d0c736f757263652a53494d554c415445445f50524f564953494f4e414c0000020200000000000004c00000000000",
+      "response_media": "application/octet-stream"
+    },
+    {
+      "case": "event",
+      "request": {
+        "observable": "synthetic:Value",
+        "geometry": "1",
+        "startTime": 1,
+        "endTime": 2,
+        "resourceUrns": [
+          "urn:synthetic:provider:event"
+        ],
+        "inputData": null
+      },
+      "expected_instance": {
+        "name": "synthetic",
+        "geometry": "1",
+        "observable": "synthetic:Value",
+        "identity": "synthetic-provider",
+        "fillingCurve": "DN_LINEAR",
+        "empty": false,
+        "notifications": [],
+        "metadata": {
+          "unit": "m",
+          "source": "SIMULATED_PROVISIONAL"
+        },
+        "instances": null,
+        "doubleData": [
+          1.25
+        ],
+        "longData": null,
+        "intData": null,
+        "floatData": null,
+        "dataKey": null
+      },
+      "request_hex": "1e73796e7468657469633a56616c756502310204023875726e3a73796e7468657469633a70726f76696465723a6576656e740000",
+      "response_hex": "1273796e74686574696302311e73796e7468657469633a56616c75652473796e7468657469632d70726f76696465720012444e5f4c494e45415200000408756e6974026d0c736f757263652a53494d554c415445445f50524f564953494f4e414c00000202000000000000f43f0000000000",
+      "response_media": "application/octet-stream"
+    },
+    {
+      "case": "empty",
+      "request": {
+        "observable": "synthetic:Value",
+        "geometry": "1",
+        "startTime": 0,
+        "endTime": 0,
+        "resourceUrns": [
+          "urn:synthetic:provider:empty"
+        ],
+        "inputData": null
+      },
+      "expected_instance": {
+        "name": "synthetic",
+        "geometry": "1",
+        "observable": "synthetic:Value",
+        "identity": "synthetic-provider",
+        "fillingCurve": "DN_LINEAR",
+        "empty": true,
+        "notifications": [],
+        "metadata": {
+          "unit": "m",
+          "source": "SIMULATED_PROVISIONAL"
+        },
+        "instances": null,
+        "doubleData": null,
+        "longData": null,
+        "intData": null,
+        "floatData": null,
+        "dataKey": null
+      },
+      "request_hex": "1e73796e7468657469633a56616c756502310000023875726e3a73796e7468657469633a70726f76696465723a656d7074790000",
+      "response_hex": "1273796e74686574696302311e73796e7468657469633a56616c75652473796e7468657469632d70726f76696465720012444e5f4c494e45415201000408756e6974026d0c736f757263652a53494d554c415445445f50524f564953494f4e414c00000000000000",
+      "response_media": "application/octet-stream"
+    },
+    {
+      "case": "error",
+      "request": {
+        "observable": "synthetic:Value",
+        "geometry": "1",
+        "startTime": 0,
+        "endTime": 0,
+        "resourceUrns": [
+          "urn:synthetic:provider:error"
+        ],
+        "inputData": null
+      },
+      "expected_instance": {
+        "name": "synthetic",
+        "geometry": "1",
+        "observable": "synthetic:Value",
+        "identity": "synthetic-provider",
+        "fillingCurve": "DN_LINEAR",
+        "empty": false,
+        "notifications": [
+          {
+            "message": "Synthetic provider fixture error",
+            "activityUrn": null,
+            "metadata": null,
+            "code": null,
+            "level": "ERROR"
+          }
+        ],
+        "metadata": {
+          "unit": "m",
+          "source": "SIMULATED_PROVISIONAL"
+        },
+        "instances": null,
+        "doubleData": [
+          0.0
+        ],
+        "longData": null,
+        "intData": null,
+        "floatData": null,
+        "dataKey": null
+      },
+      "request_hex": "1e73796e7468657469633a56616c756502310000023875726e3a73796e7468657469633a70726f76696465723a6572726f720000",
+      "response_hex": "1273796e74686574696302311e73796e7468657469633a56616c75652473796e7468657469632d70726f76696465720012444e5f4c494e45415200024053796e7468657469632070726f76696465722066697874757265206572726f7200000006000408756e6974026d0c736f757263652a53494d554c415445445f50524f564953494f4e414c0000020200000000000000000000000000",
+      "response_media": "application/octet-stream"
+    },
+    {
+      "case": "malformed",
+      "request": {
+        "observable": "synthetic:Value",
+        "geometry": "1",
+        "startTime": 0,
+        "endTime": 0,
+        "resourceUrns": [
+          "urn:synthetic:provider:malformed"
+        ],
+        "inputData": null
+      },
+      "expected_instance": {
+        "name": "synthetic",
+        "geometry": "1",
+        "observable": "synthetic:Value",
+        "identity": "synthetic-provider",
+        "fillingCurve": "DN_LINEAR",
+        "empty": false,
+        "notifications": [],
+        "metadata": {
+          "unit": "m",
+          "source": "SIMULATED_PROVISIONAL"
+        },
+        "instances": null,
+        "doubleData": [
+          0.0
+        ],
+        "longData": null,
+        "intData": null,
+        "floatData": null,
+        "dataKey": null
+      },
+      "request_hex": "1e73796e7468657469633a56616c756502310000024075726e3a73796e7468657469633a70726f76696465723a6d616c666f726d65640000",
+      "response_hex": "626164",
+      "response_media": "application/octet-stream"
+    },
+    {
+      "case": "media",
+      "request": {
+        "observable": "synthetic:Value",
+        "geometry": "1",
+        "startTime": 0,
+        "endTime": 0,
+        "resourceUrns": [
+          "urn:synthetic:provider:media"
+        ],
+        "inputData": null
+      },
+      "expected_instance": {
+        "name": "synthetic",
+        "geometry": "1",
+        "observable": "synthetic:Value",
+        "identity": "synthetic-provider",
+        "fillingCurve": "DN_LINEAR",
+        "empty": false,
+        "notifications": [],
+        "metadata": {
+          "unit": "m",
+          "source": "SIMULATED_PROVISIONAL"
+        },
+        "instances": null,
+        "doubleData": [
+          0.0
+        ],
+        "longData": null,
+        "intData": null,
+        "floatData": null,
+        "dataKey": null
+      },
+      "request_hex": "1e73796e7468657469633a56616c756502310000023875726e3a73796e7468657469633a70726f76696465723a6d656469610000",
+      "response_hex": "1273796e74686574696302311e73796e7468657469633a56616c75652473796e7468657469632d70726f76696465720012444e5f4c494e45415200000408756e6974026d0c736f757263652a53494d554c415445445f50524f564953494f4e414c0000020200000000000000000000000000",
+      "response_media": "application/json"
+    }
+  ]
+}

@@ -1,5 +1,59 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Active source-defined binary provider workflow
+
+PR283 verified MERGED18b532c310bbde9535b10ccab55cfc1d35db3800 at04:10:35Z,
+exact68f7f09416477add8d1be275b11dd175f2a8920c/allapplicablechecksPASS/no failedrerun.
+Current feat/python-resource-binary-contextualization fastforwarded actualmerge,
+uncommitted implementation preserved. No CIwatcher remains.
+
+New bounded rawAvrocodec `_provider_avro.py` source-defined DataRequest/Instance
+fields, no runtime schema/class loading or dependencies:47unitcontrolsPASS,
+140lines98branches100%unexcluded/bodymypyPASS. Independentfastavro1.13.1 temporary
+oracle matches9inputlessRequest+4completeInstance variants; no Javaexecution.
+Transport now has explicit mutuallyexclusive boundedbinary body/application-octet
+response mode; existingJob retrieval hook permits source-defined /jobs/retrieveData.
+New ProviderData immutablebinary/typedchannel inspection and sync/nativeasync
+Resource.contextualize sourceimplementation underway. Typed channels preserve raw
+NaN/Infinity without guessed nodata/units/axes or scientific acceptance. No Runtime
+observation replay/fallback or workerlease conflation. First focusedJobrun17PASS/
+1FAIL: successful-payload credential refusal masked top-levelERROR notification.
+Corrected ordering reports redactedJobFailedError first; successful secret-bearing
+payloads stillrefuse.19focusedJobcontrolsPASS,84lines18branches100%unexcluded/typesPASS.
+No installed acceptance yet; legacyunsupported expectations/inventory regeneration,
+binding/cancel/timeout/denial/media/error controls, independentfinitebinarysimulator
+fixtures, same-featuregap/handoff/docs/CI and fullartifactverification remain pending.
+This code is NOT delivered/nativeverified/fullroadmap complete. SDKsource changing;
+do not reuse oldinstalledbytes for wholeSDK sourceidentity acceptance.
+Finalsource pass275SDKcontrols (92new+183regression)/14simulatorcontrolsPASS;
+newSDKmodules140lines98branches+95lines20branches100%unexcluded, simulator-only
+fixture24lines12branches100%; types/lint/sourcechangedcodegatePASS. Additional
+media/source review: KlabJobController does not set Content-Type and falls through
+after streaming to an access exception; deployedHTTP behavior unknown. SDK permits
+absent media but rejects incompatible explicitmedia/errors/trailingbytes, no salvage.
+Source-shaped event/input/empty/error cases use independentfastavro golden bytes,
+not sharedSDKcodec. Firstsimintake13PASS/1FAIL400vs415 corrected by moving binaryroute
+beforeJSONparser, not relaxing415. OriginalJob17PASS/1FAIL retained separately.
+
+Fresh installed provider-binary-first verifier completed04:41:27UTC:
+4366SDK/237simulator/14provider/18provenance/98otherreference/11inventory/57worker/
+21workerHTTP/37governancePASS, zero skips/errors/failures.57SDK+21simulator+5worker
+currentrawmoduleparity and goldenfile source/wheel/sdist/installed bytes verified.
+Both newSDKmodules remain100%unexcluded in SDK-only report; fullSDK98.587%retains165
+historical exclusions. Simulator-only fixturecoverage distinct. Finalchangedcodegate/
+17linkedcases running in sh_1b4500a5a001wNI3pzhjG11rj2 vs17realNOT_RUN/exit3verified.
+Exactcustody `evidence/full-roadmap-provider-binary-20261107.json`.
+Latest04:37:52UTCissue review11bodies/35comments: original body ANDcommenthashes
+unchanged,12campaigncomments fully reinspected/pinned; no newURLs/closurecandidates/
+mutations. Same0001/0013handoff/registry/scenario/docs/CI aligned; scannerunchanged.
+Next normalPR/finalCI/permittedmerge then explicitbinaryProviderJob handle restoration
+(currently refused, not restored as JSON), followed by remainingrevision/federation/
+workflowscope. No providerPR yet; freeze productioncode through finalgateattestation.
+FinalproviderSDK-onlynewmodule/changedcodegatePASS;17linkedcasesPASS(467SDK/
+166simulator/57worker), zero skips/errors/failures vs17realNOT_RUN/exit3. Publish
+ordinaryfeaturePR now; finalheadCI/permittedmerge stillrequired. Native scanner/
+schema/roles/cleanup/workerABI/science and full42scope not promoted.
+
 ## Active supported-operation source inventory
 
 ProvenancePR282OPENca32b1f2f, finalheadwatcher sh_1b4208e62001EIICUDmOiPnFJe

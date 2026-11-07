@@ -1,0 +1,26 @@
+{
+  "verified_utc": "2026-11-07T04:41:27.978962+00:00",
+  "baseline_head": "18b532c310bbde9535b10ccab55cfc1d35db3800",
+  "attribution": "Source-defined raw Avro SDK/Job feature uncommitted during build; hashes and raw source/wheel/sdist/installed module+golden-fixture parity identify tested bytes, not baseline HEAD alone",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "bb4b10bf182dfb5be92b6b34651698faf2d4df18de935a1782aa3b1541fe63b0", "sdist_sha256": "9754049a07e9c809990cfef294e8997b72dd4ec549c9c6bc2af3fc37bb50a718", "parity_modules": 57},
+    "simulator": {"wheel_sha256": "3b757837142887670c9c83ed3053493fae446043de5b523189164f312e037af8", "sdist_sha256": "b2a5da6a3eaffeef2c2e68f316e9d3e62b4e7ea5e5cce55a0a4a3b9b629fc173", "parity_modules": 21, "provider_fixture_sha256": "12b7727d8bff06103480097b9c2a2f334bb463abc5f05d4697c082b7acb70b86"},
+    "worker": {"wheel_sha256": "61c33af9b35d6840ce3754355b0486ccfd9218eb2cf45c488dc9d5c3c6faed9d", "sdist_sha256": "58f8fc187575c8c91995978af15a078d7cb872b4bbbc428ebafc79e5b4ec6d3a", "parity_modules": 5}
+  },
+  "installed_suites": {"SDK": 4366, "operation_inventory": 11, "provenance_reference": 18, "provider_reference": 14, "other_reference": 98, "simulator": 237, "worker": 57, "worker_HTTP": 21, "governance": 37, "skips_failures_errors": 0},
+  "suite_count_basis": "Separate process counts overlap; not an aggregate unique-test or roadmap-completion count",
+  "SDK_only_new_modules": {"_provider_avro": {"covered_lines": 140, "statements": 140, "covered_branches": 98, "branches": 98, "excluded_lines": 0}, "provider_data": {"covered_lines": 95, "statements": 95, "covered_branches": 20, "branches": 20, "excluded_lines": 0}, "changed_code_gate": "PASS"},
+  "SDK_only_aggregate": {"covered_lines": 7991, "statements": 8089, "covered_branches": 2545, "branches": 2598, "historical_excluded_lines": 165, "combined_percent": 98.58706840086086},
+  "simulator_only_fixture": {"covered_lines": 24, "statements": 24, "covered_branches": 12, "branches": 12, "excluded_lines": 0, "not_SDK_coverage": true},
+  "source_controls": {"new_SDK_tests": 92, "selected_SDK_plus_regressions": 275, "simulator_HTTP_direct": 14, "body_mypy": "PASS two new SDK modules", "fatal_lint": "PASS", "source_only_changed_code_gate": "PASS"},
+  "source_authority": "notes/python-roadmap-execution/evidence/provider-binary-source-authority-20261107.json",
+  "independent_oracle": "Development-only fastavro1.13.1,9inputlessRequest+4Instance controls and7golden cases from Java generated schema. Generator--checkPASS; no SDK codec import into simulator service or runtime oracle dependency. Golden raw bytes match source/wheel/sdist/installed.",
+  "assertions": ["Native-shaped rawDataRequest POST/contextualize and binaryDataJob retrieval, ordinary scoped statuses/cancel; no JSON or workerlease fallback", "Bounded typed Instance fields/numeric channels/nesting/maps/unions/counts/truncation/trailing validation, no runtime schema/class loading", "Immutable rawbyte/field view and exact field builder; NaN/Infinity preserved without guessed nodata/units/shape", "Configured credential refusal on successful payloads and redacted ERROR JobFailedError; explicit empty result retained", "Positive/negative principals, explicit input/event cases, timeout/cancel/cleanup, origin-change/ambiguous acknowledgement/no replay", "Absent native media header permitted based on source; incompatible explicit media/errors/trailing bytes refuse without salvage"],
+  "retained_failures": ["Initial Job controls17PASS/1FAIL: successful-payload credential refusal masked ERROR notification; corrected ordering preserves redacted JobFailedError and successful-secret refusal", "Initial simulator intake13PASS/1FAIL: generic JSON parser returned400 before media check; binary route moved before parser, retaining expected415; corrected14PASS/fixture100percent"],
+  "source_caveat": "Inspected KlabJobController does not set media and falls through after streaming to an access exception. Deployed HTTP behavior NOT_TESTED; not a newly observed runtime defect. No Java change or scientific scanner repair.",
+  "issue_review": "notes/python-roadmap-execution/evidence/provider-live-issue-review-20261107.json;11open bodies/35comments, original hashes unchanged and12campaign comments reinspected/pinned, no closurecandidate/mutation",
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 467, "simulator_tests": 166, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "native_status": "All17 REAL_NOT_RUN. JAVA-GAP-0001 CONFIRMED_DEFECT and0013CONTRACT_PROVISIONAL unchanged; synthetic direct provider data is not native scanner/graph cleanup, worker ABI or scientific acceptance",
+  "dependency_custody": "Fresh wheels/sdists/separate pip-targets borrow prior test dependencies; independent fastavro only in temporary development oracle target, no newly isolated dependency certification",
+  "remaining": "Publish ordinaryPR/finalheadCI/permittedmerge; then binary ProviderJob saved-handle restoration, remaining revision/federation/workflow obligations. FullABC/nativeacceptance/sleep pending."
+}

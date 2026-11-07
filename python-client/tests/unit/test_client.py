@@ -242,7 +242,7 @@ def test_explicit_unsupported_and_unconfigured_methods():
     with pytest.raises(ConfigurationError):
         ReasonerImpl().resolve_concept("im:Thing")
     with make_client(lambda r: pytest.fail("Must not make a request")) as client:
-        with pytest.raises(UnsupportedOperationError):
+        with pytest.raises(InvalidRequestError):
             client.resources.contextualize(None, None, None, None)
         with pytest.raises(UnsupportedOperationError):
             client.resolver.encode_dataflow(None)

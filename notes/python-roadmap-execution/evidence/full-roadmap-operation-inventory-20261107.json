@@ -16,5 +16,6 @@
   "fatal_lint": "PASS",
   "contract_matrix": {"simulated_pass": 17, "SDK_tests": 375, "simulator_tests": 152, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
   "dependency_custody": "Fresh wheel/sdist/separate pip-target verification borrows prior test dependencies; no fresh dependency-isolation certification",
-  "remaining": "Publish ordinary PR/final-head CI/permitted merge; continue native binary contextualization and remaining42rows. Native/fullABC acceptance and sleep pending."
+  "delivery": {"pr": 283, "head": "68f7f09416477add8d1be275b11dd175f2a8920c", "merge": "18b532c310bbde9535b10ccab55cfc1d35db3800", "merged_utc": "2026-11-07T04:10:35Z", "applicable_checks": "PASS; no failed-check rerun", "independent_maintainer_review": false},
+  "remaining": "Continue native binary contextualization and remaining42rows. Native/fullABC acceptance and sleep pending."
 }

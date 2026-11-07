@@ -44,11 +44,11 @@ def _private_helper(): return 1
     assert value["evidence"] == "READ_ONLY_PYTHON_SOURCE_NOT_EXECUTION_OR_NATIVE_ACCEPTANCE"
 
 
-def test_live_inventory_four_wrappers_are_only_two_distinct_unsupported_operations():
+def test_live_inventory_remaining_encoder_wrappers_are_one_unsupported_operation():
     value = tool.inventory(tool.PACKAGE / "src" / "klab_client")
     unsupported = [row for row in value["operations"] if row["classification"] == "UNCONDITIONALLY_UNSUPPORTED"]
-    assert len(unsupported) == 4
-    assert {row["operation"] for row in unsupported} == {"contextualize", "encode_dataflow"}
+    assert len(unsupported) == 2
+    assert {row["operation"] for row in unsupported} == {"encode_dataflow"}
     assert {row["async"] for row in unsupported} == {True, False}
     for name in ("decode_cell", "encode"):
         assert any(row["operation"] == name and row["classification"] == "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS" for row in value["operations"])
@@ -56,7 +56,7 @@ def test_live_inventory_four_wrappers_are_only_two_distinct_unsupported_operatio
 
 def test_committed_inventory_and_drift_refusal(tmp_path, monkeypatch, capsys):
     assert tool.main(["--check"]) == 0
-    assert json.loads(capsys.readouterr().out)["UNCONDITIONALLY_UNSUPPORTED"] == 4
+    assert json.loads(capsys.readouterr().out)["UNCONDITIONALLY_UNSUPPORTED"] == 2
     output = tmp_path / "inventory.json"
     monkeypatch.setattr(tool, "OUTPUT", output)
     with pytest.raises(ValueError, match="drift"): tool.main(["--check"])

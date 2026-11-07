@@ -54,10 +54,11 @@ class AsyncTransport(_TransportPolicy):
 
     async def _request(self, service, method, route, *, scope=None, service_id=None,
                       json=None, text=None, params=None, response="json", ambiguous=False,
-                      timeout=None, deadline=None, max_response_bytes=None, files=None):
+                      timeout=None, deadline=None, max_response_bytes=None, files=None, binary=None):
         endpoint = self.endpoint(service)
+        content = self._content(binary, json, text, files)
         headers = self._headers(route, response=response, scope=scope, service_id=service_id,
-                                text=text, max_response_bytes=max_response_bytes)
+                                text=text, max_response_bytes=max_response_bytes, binary=binary)
         if deadline is not None and time.monotonic() >= deadline:
             raise TransportError("Request waiting deadline expired")
         sent = False
@@ -72,7 +73,7 @@ class AsyncTransport(_TransportPolicy):
                     headers["Authorization"] = credential
                 sent = True
                 async with self._http.stream(method, endpoint.url.rstrip("/") + route,
-                         headers=headers, json=json, files=files, content=text.encode() if text is not None else None,
+                         headers=headers, json=json, files=files, content=content,
                         params=params, timeout=timeout or self.timeout) as streamed:
                     if max_response_bytes is not None and streamed.headers.get("content-encoding", "identity").lower() != "identity":
                         raise ProtocolError("Byte-bounded responses require identity content encoding")

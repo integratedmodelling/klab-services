@@ -72,12 +72,14 @@ class _TransportPolicy:
         return endpoint.credential
 
     def _headers(self, route, *, response="json", scope=None, service_id=None,
-                 text=None, max_response_bytes=None):
+                 text=None, max_response_bytes=None, binary=None):
         if max_response_bytes is not None and (type(max_response_bytes) is not int or max_response_bytes <= 0):
             raise InvalidRequestError("Response byte budget must be a positive integer")
         if not route.startswith("/") or ".." in route or route.startswith("//"):
             raise InvalidRequestError("Route must be a service-relative absolute path")
         headers = {"Accept": "text/plain, application/json;q=0.9" if response == "text" else "application/json"}
+        if response == "avro":
+            headers["Accept"] = "application/octet-stream"
         if max_response_bytes is not None:
             headers["Accept-Encoding"] = "identity"
         if scope:
@@ -86,7 +88,20 @@ class _TransportPolicy:
             headers["klab-service"] = service_id
         if text is not None:
             headers["Content-Type"] = "text/plain"
+        if binary is not None:
+            headers["Content-Type"] = "application/octet-stream"
         return headers
+
+    def _content(self, binary, json, text, files):
+        if binary is None:
+            try:
+                return text.encode() if text is not None else None
+            except (AttributeError, TypeError, ValueError):
+                raise InvalidRequestError("Text body cannot be encoded as checked UTF8") from None
+        if (not isinstance(binary, bytes) or len(binary) > 8 * 1024 * 1024
+                or json is not None or text is not None or files is not None):
+            raise InvalidRequestError("Binary body requires at most8MiB explicit bytes and no competing body")
+        return binary
 
     def _response(self, result, service, method, route, *, response="json", ambiguous=False):
         if not 200 <= result.status_code < 300:
@@ -102,6 +117,11 @@ class _TransportPolicy:
             raise failure
         if response == "text":
             return result.text
+        if response == "avro":
+            media = result.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+            if media not in ("", "application/octet-stream"):
+                raise ProtocolError("Provider data response declares an incompatible media type")
+            return result.content
         if response == "bytes":
             return result.content
         if (response == "json" and service == "resources" and method == "GET"
@@ -133,10 +153,11 @@ class Transport(_TransportPolicy):
                 service_id: str | None = None, json=None, text: str | None = None,
                 params=None, response: str = "json", ambiguous: bool = False,
                  timeout: float | None = None, deadline: float | None = None,
-                  max_response_bytes: int | None = None, files=None):
+                   max_response_bytes: int | None = None, files=None, binary=None):
         endpoint = self.endpoint(service)
+        content = self._content(binary, json, text, files)
         headers = self._headers(route, response=response, scope=scope, service_id=service_id,
-                                text=text, max_response_bytes=max_response_bytes)
+                                text=text, max_response_bytes=max_response_bytes, binary=binary)
         credential = self._credential(service, endpoint, deadline)
         if credential:
             headers["Authorization"] = credential
@@ -145,7 +166,7 @@ class Transport(_TransportPolicy):
                 raise TransportError("Request waiting deadline expired")
             with self._http.stream(method, endpoint.url.rstrip("/") + route,
                                          headers=headers, json=json, files=files,
-                                        content=text.encode() if text is not None else None,
+                                         content=content,
                                          params=params, timeout=timeout or self.timeout) as streamed:
                 if max_response_bytes is not None and streamed.headers.get("content-encoding", "identity").lower() != "identity":
                     raise ProtocolError("Byte-bounded responses require identity content encoding")
