@@ -1,5 +1,18 @@
 # A+B completion ledger — ongoing campaign
 
+Renewed self-contained directive: seed reconciled and committed851b5d056, original
+16gap records preserved plus worker0017;33governancePASS. PR279 remainsopen pending
+corrected-head delivery. Fresh pinfix packages4210SDK/198simulator/84reference/
+57worker/21workerHTTP/33governancePASS, zero skips/failures/errors.54SDK+18simulator+
+5worker rawmodule parity; SDK-only existingConnection277lines112branches100%, no
+exclusions; changeddecision gate/17linked cases running versus17realNOT_RUN/exit3.
+Fresh custody `evidence/full-roadmap-bootstrap-pin-fix-20261107.json`; earlier
+bootstrap-recovery-first artifacts remain pre-fix only. Latest11issue body/comment
+review02:54:38UTC unchanged/no safe closure; nativeacceptance/full42scope incomplete.
+Corrected wholeexistingConnection/changedSDKgatePASS;17linkedcasesPASS(322SDK/
+127simulator/57worker), zero skips/errors/failures vs17realNOT_RUN/exit3.279corrected
+head publication/finalCI stillrequired; normalnext independentwork continues.
+
 ## Authority and current decision
 
 ### Superseding full-roadmap directive — 2026-11-06 after verified PR266
@@ -159,6 +172,27 @@ pending. Content/manifesthashes explicitly not nativecommits/authentication/prov
 Offlineanalysis final17linkedcasesPASS(317SDK/117simulator/57worker), zero
 skips/errors/failures versus17realNOT_RUN/exit3. Bounded localreference verified;
 normalPR/finalheadCI/permittedmerge next, no native/scientific statuspromotion.
+OfflineanalysisPR278 verified MERGED40b05b001a048215a197521c461713dfd832f6dd at
+2026-11-07T02:33:54Z, finalhead69dc80736checksPASS/no failedrerun. Next existingSDK
+bootstrap/renewal/outage pass10sourceHTTPtestsPASS, same0015/0007handoff/docs/scenario/
+crossplatformCIupdated; no productionSDK/servicecodechange. Initialtestassumptions
+and boundeddiscoverydeadline outcomes retained in fullledger; no timeout weakening.
+Productionissuer/license and actualcomposedtwins remain externally unverified.
+Bootstrap installed4205SDK/84referenceHTTPstorage+recovery/198simulator/57worker/
+21workerHTTP+recovery/33governancePASS;54SDK+18simulator+5worker rawmoduleparity,
+emptyproductiondiff. NewmodulecoverageN/A(no productionmodulechange), not a false
+100%claim; initialCLIusageerror retained.17linkedmatrixrunning vs17realNOT_RUN/
+exit3verified. Ordinarydelivery/crossplatformCI pending; nativeissuer/federation
+statuses unchanged. Exact receipt `evidence/full-roadmap-bootstrap-recovery-20261107.json`.
+Bootstrap final17linkedcasesPASS(317SDK/127simulator/57worker), zero skips/errors/
+failures;17realNOT_RUN/exit3unchanged. NormalPR/dedicatedWindows+Ubuntu/finalCI/
+permittedmerge next, not nativeissuer/federation/full42criterion completion.
+PR279open9ea9d7dcb exposed real SDKpinloss on hosted fastfailedprobe; previous local
+Windowsdeadlinepath masked it.4deterministic SDKredregressions reproduced lostUUID;
+sameURLlastverifiedpinretention fix keepsfailedreadiness/no foreignpin inheritance/
+genuinedriftrefusal.32connection+10HTTPcontrolsPASS; fresh rebuilt fullverification
+required before correctionpush/finalCI. Earlier test-only/N/Acoverage receipts remain
+initialpass attribution, not finalcorrectedmodule acceptance. Native statuses unchanged.
 
 ### Sequential execution queue — user directive 2026-11-06
 

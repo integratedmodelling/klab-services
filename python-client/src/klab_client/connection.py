@@ -9,7 +9,7 @@ from types import MappingProxyType
 from ._bootstrap import public_fields, wire_request
 from .client import Client
 from .connection_models import (CatalogEntry, ConnectionIdentityError, DeploymentProfile,
-    ReadinessError, SERVICE_TYPES, ServiceCatalog, ServiceSelectionError, checked_url, loopback)
+    ReadinessError, SERVICE_TYPES, ServiceCatalog, ServiceReference, ServiceSelectionError, checked_url, loopback)
 from .credentials import CredentialGrant
 from .errors import (AuthenticationError, AuthorizationError, ConfigurationError, KlabError, ProtocolError,
     TransportError)
@@ -47,7 +47,7 @@ class Connection:
         self._initialize = initialize
         self.catalog = ServiceCatalog()
         self._selected = {}
-        self._sensitive = ()
+        self._sensitive: tuple[str, ...] = ()
         try:
             deadline = time.monotonic() + self.profile.timeout
             self._grant = self._acquire(deadline)
@@ -132,6 +132,7 @@ class Connection:
             diagnostic=None if trusted and supported else "Untrusted destination" if not trusted else "Unsupported service type")
         if not trusted or not supported:
             return entry
+        previous = self.selected.get(reference.service_type)
         try:
             credential = self._grant.for_url(reference.url)
             capabilities = wire_request(reference.url + "/public/capabilities", "GET", credential=credential,
@@ -145,7 +146,6 @@ class Connection:
                 raise ProtocolError("Capabilities require a verified declared service type")
             if any(secret and secret in identity for secret in self._sensitive):
                 raise ProtocolError("Service identity contains sensitive material")
-            previous = self.selected.get(reference.service_type)
             if previous is not None and previous.reference.url == reference.url and previous.service_id != identity:
                 self._stale = True
                 raise ConnectionIdentityError("Pinned service ID changed; explicitly reconnect")
@@ -175,7 +175,8 @@ class Connection:
         except KlabError as error:
             if deadline is not None and time.monotonic() >= deadline:
                 raise
-            return replace(entry, reachable=not isinstance(error, TransportError), supported=False,
+            return replace(entry, service_id=previous.service_id if previous is not None and previous.reference.url == reference.url else None,
+                reachable=not isinstance(error, TransportError), supported=False,
                 diagnostic=type(error).__name__ + ": service observation failed", error_code=type(error).__name__)
 
     def refresh(self, *, _deadline=None):
@@ -191,7 +192,7 @@ class Connection:
                 diagnostic="Refresh incomplete; readiness unknown") for kind, entry in self.selected.items()}
             self.catalog = ServiceCatalog(tuple(replace(entry, reachable=None, available=None, operational=None,
                 diagnostic="Refresh incomplete; readiness unknown") for entry in self.catalog.entries), self.catalog.observed_at)
-            by_key = {}
+            by_key: dict[tuple[str, str], ServiceReference] = {}
             for reference in self._grant.references:
                 key = reference.service_type, reference.url
                 if key in by_key and by_key[key] != reference:

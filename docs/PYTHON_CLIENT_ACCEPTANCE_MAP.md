@@ -1,5 +1,16 @@
 # Python roadmap acceptance map — 3 November 2026
 
+## Latest correction checkpoint — 7 November 2026
+
+PR279 remains OPEN after hosted Ubuntu exposed loss of the selected Runtime UUID
+on completed failed probes. Correction retains only the same-URL verified identity,
+not healthy readiness; real drift and foreign/unselected identity inheritance still
+refuse. Fresh installed4210SDK/198simulator/84reference/57worker/21workerHTTP/
+33governancePASS, zero skips/errors/failures. SDK-only existingConnection277lines/
+112branches100%unexcluded; linked gates and corrected-head CI/delivery pending.
+Earlier test-only/emptyproductiondiff claims describe the initial pre-fix pass only.
+Original42row criteria and native Java/scientific acceptance remain distinct.
+
 ## Active full-roadmap campaign — user directive 6 November 2026
 
 The new A+B+C directive supersedes prior prospective C exclusions and audit-stop
@@ -102,6 +113,20 @@ attestation/normaldelivery pending; fullparent/native acceptance remains incompl
 Offlineanalysis final17linkedcasesPASS(317SDK/117simulator/57worker) vs17realNOT_RUN/
 exit3. Bounded localreference acceptance verified; normalPR/finalCI pending, not
 native committed revisions/layout/provenancegraph or full42criterion completion.
+OfflineanalysisPR278 subsequently verified merged40b05b001 with applicable finalhead
+checksPASS/no failedrerun. Next existingSDKbootstrap acceptance has10sourceHTTPtests
+PASS: SDK-local expiry/reacquisition through one400cellJob, initialexpiredintake/
+providerfailure/principaldrift denialbeforeHTTP, actualownedRuntimeoutage/recovery/
+serviceIDdrift with pinnedselection/no standbywork/replay. No productionSDK/service
+code changes; freshinstalled/fullmatrix/delivery pending. Nativeissuer/license0015
+and actualcomposition0007stillNOT_TESTED/MISSING_API respectively, not completed.
+Bootstrap installed4205SDK/198simulator/84reference/57worker/21HTTP/33governance
+PASS, zero skips; rawmoduleparity/emptyproductiondiff verified. Newmodulecoverage
+N/A(no SDKimplementationchange), retainedfullSDKreport98.49%with historicalexclusions.
+17linkedmatrixattestation/ordinarydelivery/crossplatformCI pending; real17NOT_RUN.
+Bootstrap final17linkedcasesPASS(317SDK/127simulator/57worker) vs17realNOT_RUN/exit3;
+bounded local existingSDKacceptance verified. OrdinaryPR/finalcrossplatformCIpending,
+no nativeissuer/license/composition or full42criterion acceptance promoted.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),

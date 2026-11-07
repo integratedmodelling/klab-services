@@ -1,5 +1,36 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Renewed self-contained directive reconciliation
+
+The renewed directive retains complete A+B+C scope and the permanent seeded handoff.
+Seed text already installed; reconciled against17actual records without replacing
+original0001–0016or historical42row statuses. Native totals unchanged:
+2CONFIRMED_DEFECT/3MISSING_API/7CONTRACT_PROVISIONAL/5NOT_TESTED/0JAVA_FIXED_VERIFIED.
+Live GitHub recheck confirms265MERGED8fe0f449c and266MERGEDeda8697da;279OPEN
+head9ea9d7dcb targetsfeature/python-experiment-runner. ExistingSDKpinfix remains
+uncommitted; verifier sh_1b3ea7921001vW21P7pgLPS13o awaits automatic completion,
+no polling/overwriting. Reconciliation commit precedes correction delivery; no SDK
+acceptance inferred from documentation. No liveIDEgate needed; retain recorded
+2026-11-06T14:20:57Z. Next verify corrected installed artifacts/SDKcoverage/17cases,
+push279correction/finalCI, then continue remaining independently executable rows.
+
+Verifier completed automatically02:56:14UTC:4210SDK/198simulator/84reference/
+57worker/21workerHTTP/33governancePASS, zero skips/errors/failures. Current54SDK+
+18simulator+5worker rawmodule bytes match installed; originalwheel/sdist parity
+retained. SDK-only existingConnection277lines112branches100%unexcluded. Gate uses
+--new-module selector for WHOLE EXISTING module, not a new-file claim; changedSDK
+decisions and17linked matrix running,17realNOT_RUN/exit3verified. Fresh receipt:
+`evidence/full-roadmap-bootstrap-pin-fix-20261107.json`. Pre-fix artifacts untouched.
+Independent temporary notebook prototype is NOT part of279: exact installedSDK
+kernel, separate same-owner clients race private-draftCAS, foreign principal denied,
+owner observation/history survives readerclose. First prototype omitted explicit
+Reasoner endpoint; second executed but sanitizer correctly rejected synthetic
+credentials in cellsource. Runtime-only configuration correction awaits rerun;
+no productioncode/policy weakening, no native collaboration/accepted-source claim.
+Corrected SDK-only wholeexistingConnection/changeddecision gatesPASS;17linkedcases
+PASS using322SDK/127simulator/57worker tests, zero skips/errors/failures.17realNOT_RUN/
+exit3unchanged. Correctionready for279commit/push/updatedPRbody and freshfinalCI.
+
 ## Current authority, scope and recovery
 
 Active directive: user's self-contained **Single OpenCode directive: complete Python
@@ -580,6 +611,83 @@ Final offlineanalysis17linkedcasesPASS(317SDK/117simulator-capture-reference/
 reference acceptance verified; publish ordinary featurePR now and require finalhead
 hostedchecks before permittedmerge. Native scientific/layout/commit/provenance and
 remaining full42scope remain separate and sleep stayspending.
+OfflineanalysisPR278 published69dc80736 then verified remotely MERGED
+`40b05b001a048215a197521c461713dfd832f6dd`,2026-11-07T02:33:54Z, exact head
+69dc80736527401aa559da1177c59f3c91644fa3. All applicable finalheadchecksPASS,
+including scientific/newmodule/schema/workerWindows+Ubuntu; no failed-check rerun.
+Generated companions confirmed clean after commit and before push. No native
+commit/provenance/scientific acceptance or independent maintainer review claimed.
+
+### Active existing-SDK bootstrap/renewal/outage acceptance pass
+
+Current `test/python-bootstrap-renewal-outage-controls` fast-forwarded actual278merge
+without discarding uncommitted tests/docs. Audited proposed DISTRIBUTED_TWINS contract:
+coordinator-ownedC/sourceownership/origin-qualifiedIDs/pinnedper-source revisions
+required; client union or standby tests are NOT composed-twin acceptance.0007native
+contract remainsMISSING_API; no invented composition route/Java implementation.
+Independent currentSDK controls now10sourceHTTPtestsPASS in28.76s: connect→oneJob→
+400cells acrossSDK-local expiry/reacquisition, initialexpiredgrant/refreshedprincipal
+drift/providerfailure denied before scientificHTTP, no submissionreplay/tokenleak,
+explicit ownedcleanup, mixedRuntime actual ownedprocessoutage→no standbywork→sameID
+recovery/new requestedwork, changedID→staleoldconnection/explicitnewcatalog. Launcher
+gets exact bounded seed (default7) for distinct owned identities; rejects invalid
+seed before process spawn, CREATE_NO_WINDOW/ownedcleanup unchanged. No production
+SDK/simulator service-code edits or new protocol introduced. Same0015+0007handoff/
+scenario/docs and dedicated Windows+Ubuntu installedbootstrapCI updated.
+Initial5test pass3FAIL2 used400offsetread(violatesexisting256limit) and expected a
+completed catalog after fourdeadpeers consumed existing3sglobaldeadline. Next3PASS/
+2FAIL used wrongsubmissiontracepath and still assumed refreshsuccess. Corrected to
+256+144reads/native-shaped `/api/v1/submit`, reachablemixeddiscoverypeers and exact
+allowed refreshoutcomes: unreachablecatalog OR boundedTransportError with readiness
+UNKNOWN, alwayspinnedselection/notready/no standbywork. No productiontimeouts or
+retry/assertiongates weakened. Expiry clock is injected SDK-local only, not real Hub
+issuer/license/roles evidence;0015nativeNOT_TESTEDunchanged. Fresh installed/full
+SDK/simulator/governance/17case verification and ordinarydelivery remain pending.
+No278watcher remains. Entire42criteria/sleep still pending; no IDErepair authorized.
+Bootstrap fresh installed4205SDK/84referenceHTTP+storage+recovery/198simulator/
+57worker/21workerHTTP+recovery/33governancePASS, zero skips/errors/failures.54SDK+
+18simulator+5worker source/wheel/sdist/installed rawmodule parity; empty production
+source diff reverified, SDK-only report paths unique. FullSDK98.49% retains165
+historical exclusions; no newproductionmodule so newmodule100%gate NOT_APPLICABLE.
+Initial check_feature_coverage CLI invocation omitted mandatory--new-module and
+exited2before linkedtests; no fake newmodule selected or toolpolicy weakened.
+Linkedmatrix now running separately.17realNOT_RUN/exit3verified. Exact custody and
+retained failures `evidence/full-roadmap-bootstrap-recovery-20261107.json`.
+Next awaitautomaticmatrixcompletion, ordinaryPR/finalheadCI (dedicatedWindows+
+Ubuntu), permittedmerge and continue original42scope. Include generatedstatus
+companion reflecting0015SIMULATED_PROVISIONAL while nativeNOT_TESTEDunchanged;
+verifyclean generateddiff aftercommit beforepush. Entire-roadmap sleep pending.
+Bootstrap final17linkedcasesPASS(317SDK/127simulator-capture-reference/57worker),
+zero skips/errors/failures;17realNOT_RUN/exit3unchanged. Bounded existingSDKacceptance
+verified locally; publish ordinaryPR now, require dedicatedWindows+Ubuntu and all
+applicable finalheadchecks before permittedmerge. No realissuer/federation approval.
+Bootstrap normalPR279 published9ea9d7dcb; hostedUbuntu installedbootstrap failed
+run42330659337/job128276182622 and simulator3.13failed run42330659347/job128276183029.
+Fast failed probe completes onLinux, replaces selected CatalogEntry with service_id
+None; same-ID recovery then falsely triggers ConnectionIdentityError. Windows's
+deadline-expired path had preserved old pin, masking this SDK defect in local passes.
+No unchanged rerun or test weakening can fix it. Added4deterministic SDK-only red
+regressions (transport/503 × capabilities/status), all4FAILED on lostUUID assertion
+before production fix. Correction retains previousverifiedUUID only for same
+selectedURL on failed probe, leaving failed/unknown readiness; failedunselectedURL
+cannot inherit anotherRuntime'sUUID. Genuine changedID stillstale/refuses. New
+fifth regression tests failedstandby noninheritance. Focused32connectiontests+
+10ownedbootstrapHTTPtestsPASS afterfix, unchanged production deadlines/retry/guards.
+This pass is no longer test-only: earlier emptyproductiondiff/N/Anewmodule claims
+apply ONLY to initial9ea9d7dcb/artifacts. New code is an existing SDK modulefix,
+not a newmodule; require SDK-only changeddecisions AND wholeexistingconnectionmodule
+100%unexcluded coverage. Fresh rebuilt artifacts/fullregressions/17cases required
+in a NEW `bootstrap-recovery-pin-fix` target; never relabel earlier Windows-only
+passing artifacts as finalfix. PR279staysOPEN until corrected finalhead checksPASS.
+Corrected Connection bodytypecheck initially exposed3existing inference gaps
+(secret iterators/by_key), thenTransport.sensitive_values emptytuple inference.
+Added concrete tuple[str,...]annotations in Connection/Transport and typed
+ServiceReference catalogdictionary/import, no typeignore/castAny suppression or
+behavioral transportchange. Implementation-bodymypy/fatalLint nowPASS. Dedicated
+Windows+Ubuntu workflow also runs32SDKconnectiontests/bodytypecheck and triggers
+on future Connection/test changes. Fresh `bootstrap-recovery-pin-fix` fullpackage
+verifier started; previous initialartifact receipt retained unchanged attribution.
+Same0015registry links deterministic5SDKregressions; native statuses not promoted.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
@@ -606,11 +714,11 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P1.3|PARTIAL; SIM-SCOPE-SELECTION-001|Complete collaborator/forbidden/expiry scenario, preserving server authority.|
 |RC-P1.4|PARTIAL; discovery guards|Mixed-provider outage/recovery and identity drift scenario.|
 |RC-P1.5|PARTIAL; SIM-SELECTION-001|Cover material project/observer/grid option effects, distinguishing advertised model from actual selected input.|
-|RC-P2.1|PARTIAL; SIM-EXPORT-001/SIM-ADAPTERS-001|Synthetic nonuniform multi-shard native transport/descriptor acceptance; native exporter/scanner remain external.|
-|RC-P2.2|PARTIAL; SIM-GRID-001/SIM-TEMPORAL-EXPORT-001, declared-band272/d65d940f9|Versioned explicitly provisional block/slice adapter and simulator; caller-labelled time bands are not native committed history; preserve units/masks/revision/unknown mappings.|
+|RC-P2.1|PARTIAL; exports/adapters plus delivered276read-plan/278offlinearray references|Bounded400cell multishard reference and complete offline layout/mask association verified; maintained native exporter/scanner/block descriptor acceptance still external.|
+|RC-P2.2|PARTIAL; grid/selectedexport/declaredbands272 and delivered276read-plan/278array references|Explicit proposed snapshot shards verified; native committed history/versioned temporal mapping remains unestablished; reference content/manifest hashes never native commits.|
 |RC-P2.3|PARTIAL tools; authentic recorded fixture only|Independent actual-provider model/datum/reference tuple external; no study replication or synthetic accuracy claim.|
 |RC-P2.4|COMPLETE bounded transport; synthetic stream tests|Maintain interrupt/budget evidence; representative real-provider soak external.|
-|RC-P2.5|PARTIAL; raster/vector/table and delivered declared-band272/d65d940f9|Explicit categorical dictionary/multishard still pending; native time/revision meaning remains unestablished despite caller-declared band support.|
+|RC-P2.5|PARTIAL; raster/vector/table, declaredbands272/categories275/readplans276/offlinearrays278|Caller-declared category mappings and bounded multishard references delivered; native dictionary/time/revision/representation convergence remains unverified, not pending Python dictionary code.|
 |RC-P3.1|PARTIAL; SIM-REFRESH-001|Explicit provisional committed-revision two-client simulator contract/races, native semantics remain unknown.|
 |RC-P3.2|COMPLETE bounded refresh; SIM-REFRESH-001|Retain stale/partial/outage controls while broadening linked protocols.|
 |RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001 plus delivered269 durable restart/no-replay controls|Preserve expiry/cancel/no-replay and scoped results; native durable history/incarnation acceptance separate.|
@@ -620,7 +728,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P4.2|PARTIAL; source previews|Revision-aware validation scenario, parser and semantic admission kept distinct.|
 |RC-P4.3|PARTIAL delivered imports; SIM-IMPORT-001/SIM-INPUT-BINDING-001|Broader annotation/compute input provenance with owned cleanup; native resource custody gate separate.|
 |RC-P4.4|PARTIAL ADD/locks plus delivered274 private draftCAS/history; native acceptance separate|Private CAS is not accepted-source editing/validation/publication; maintained native conditional authoring contract remains unestablished.|
-|RC-P4.5|PARTIAL native agent control/registration; protocol tests|Complete isolated managed-agent simulator lifecycle, terminal cleanup, reconnect and owner/denial.|
+|RC-P4.5|PARTIAL native agent control/registration plus delivered277finite synthetic lifecycle|Synthetic single-use/stop/terminal/latercleanup/rebind/denial/restart loss verified; actual k.Actors execution/private-session/native principal+incarnation/disposal acceptance remains unverified.|
 |RC-P5|IN_SCOPE PARTIAL; worker268/30460119d, recovery269/8f9fe3805, containment270/a58281643, memory271/96f696218 merged|Declared trusted worker lifecycle implemented/tested across Windows+POSIX; total disk/hostile-code isolation and maintained native backend/ABI/deployment acceptance remain separate deficits/gates.|
 |RC-R1|PARTIAL layered CI/test tooling|Install/coverage/contract/handoff CI per feature; external scheduled worker adoption is not local test success.|
 |RC-R2|PARTIAL release checker|Package development artifacts; production release/support/owner approval remains external, no upload inferred.|
@@ -632,13 +740,13 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-06|COMPLETE bounded evidence DTOs|Maintain plan-versus-executed-effect distinction; full lineage belongs RC-P3.4.|
 |CAP-07|PARTIAL Jobs/native async; durable completed/in-flight restoration installed-tested|Broaden bounded fairness/lifecycle where independently needed; native retention/restart contract remains unverified.|
 |CAP-08|COMPLETE bounded scalar data|Preserve exact NUMBER/BOOLEAN/TEXT/null precision while adding separate block contract.|
-|CAP-09|PARTIAL descriptors/exports|Multidimensional/category/time/multi-shard declared mappings and revision integrity.|
+|CAP-09|PARTIAL descriptors/exports plus declaredbands272/categories275/readplans276/offlinearrays278|Declared band/category/multishard reference mappings verified; maintained native layout/time/revision lease/dictionary semantics still external.|
 |CAP-10|PARTIAL graph/projections|Two-client revision/race/partial refresh scenario through explicit protocol seam.|
 |CAP-11|PARTIAL; transient hints plus delivered273/0c9825893 retained reference|Explicit provisional durable cursor/resync/gap reference verified; maintained expiry/revocation/full convergence/native acceptance still unverified.|
 |CAP-12|COMPLETE bounded offline snapshots|Maintain socket-forbidden fresh-process inspection and no queued replay.|
 |CAP-13|PARTIAL resource inspection/import|Complete declared CRUD/visibility/dependency scenarios and supported native candidates.|
-|CAP-14|PARTIAL authoring/agent facades|Complete revision-safe authoring and managed lifecycle simulator flows with separate native status.|
-|CAP-15|PARTIAL optional scientific/notebook adapters|Categories/time/multidimensional and coherent notebook examples.|
+|CAP-14|PARTIAL native facades plus private draftCAS274/synthetic managed lifecycle277|Reference CAS/history and finite lifecycle delivered; accepted-source validation/publication and actual native agent/private-session disposal contracts remain external.|
+|CAP-15|PARTIAL optional scientific/notebook plus declaredbands272/categories275/offlinearrays278|Reference categories/bands/offline400cell snapshot association verified; coherent multi-principal notebook/race and native temporal/provenance semantics still pending.|
 |CAP-16|PARTIAL compatibility/package matrix|Fresh wheel/sdk/worker installs, types/lint/coverage and reproducible starter; real deployment/support gates separate.|
 |CAP-17|IN_SCOPE PARTIAL; same separate worker as RC-P5, merged268–271 with installed and hosted lifecycle/resource controls|Total disk/hostile-code isolation and maintained native deployment remain separate; no compiler/inference/storage port or embedded engine claim.|
 |CAP-18|COMPLETE current safety invariants|Enforce per change: explicit origins, no mutation replay, no hidden fallback, optional extras and separate simulator.|

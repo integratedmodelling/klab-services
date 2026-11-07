@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-BOOTSTRAP-RECOVERY-001",
+      "rows": ["RC-P1.1", "RC-P1.4", "CAP-01", "CAP-02", "CAP-03"],
+      "routes": ["/runtime/public/capabilities", "/runtime/public/status", "/runtime/api/v1/submit"],
+      "source": "ExistingSDK connect/credentialprovider/Job/data/refresh protocols against owned synthetic HTTP, injected localSDKexpiryclock and actual ownedprocess outage/restart. Explicit selection/no standby work/no mutationreplay/principal+serviceIDdriftrefusal; NOT real issuer/license or composed-twin/migration acceptance.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN;0015productionissuer/principal matrix NOT_TESTED and0007nativecomposition MISSING_API remain unchanged",
+      "simulator_test": "test_bootstrap_recovery.py::test_bootstrap_expiry_reacquires_same_identity_without_replaying_existing_job",
+      "java_gap_ids": ["JAVA-GAP-0007", "JAVA-GAP-0015"]
+    },
+    {
       "id": "SIM-READ-PLAN-ANALYSIS-001",
       "rows": ["RC-P2.1", "RC-P2.2", "CAP-09", "CAP-15"],
       "routes": ["/runtime/experimental/read-plans/v1/open", "/runtime/experimental/read-plans/v1/{plan}/shards/{index}"],

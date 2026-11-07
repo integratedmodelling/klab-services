@@ -21,12 +21,14 @@ SIM_IMPORT_ROOT = str(Path(importlib.util.find_spec("klab_simulator").origin).re
 
 
 @contextmanager
-def launch(scenario="elevation", mode="simulated", *, port=0, state_file=None):
+def launch(scenario="elevation", mode="simulated", *, port=0, state_file=None, seed=7):
+    if type(seed) is not int or not 0 <= seed < 2**31:
+        raise ValueError("Choose an exact bounded synthetic backend identity seed")
     env = os.environ.copy()
     env["PYTHONPATH"] = os.pathsep.join((SIM_IMPORT_ROOT, env.get("PYTHONPATH", "")))
     options = ["--state-file", str(state_file)] if state_file is not None else []
     process = subprocess.Popen([sys.executable, "-m", "klab_simulator", "--port", str(port),
-        "--scenario", scenario, "--seed", "7", "--mode", mode, "--test-mode", *options], env=env,
+        "--scenario", scenario, "--seed", str(seed), "--mode", mode, "--test-mode", *options], env=env,
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     try:
