@@ -116,11 +116,12 @@ class Handle:
         job_fields = (self.job_id, self.service, self.service_id, self.service_url, self.result_kind)
         if self.kind == "job":
             _id(self.job_id)
-            if self.observation_id is not None or self.service not in ("runtime", "resolver"):
+            if self.observation_id is not None or self.service not in ("runtime", "resolver", "resources"):
                 raise HandleFormatError("Invalid job service or extra observation identity")
             _service_identity(self.service_id)
             object.__setattr__(self, "service_url", _url(self.service_url))
-            allowed = {"observation", "mapping"} if self.service == "runtime" else {"dataflow", "mapping"}
+            allowed = ({"observation", "mapping"} if self.service == "runtime" else
+                {"provider-data"} if self.service == "resources" else {"dataflow", "mapping"})
             if not isinstance(self.result_kind, str) or self.result_kind not in allowed:
                 raise HandleFormatError("Unknown or incompatible saved job decoder")
             if self.service == "runtime" and (self.service_id != self.runtime_id or self.service_url != self.runtime_url):
@@ -246,7 +247,7 @@ def to_handle(source):
         if source.result_kind is None:
             raise UnsupportedOperationError("Custom job decoders cannot be saved; use supported service job helpers")
         service = source.service
-        if service not in ("runtime", "resolver"):
+        if service not in ("runtime", "resolver", "resources"):
             raise UnsupportedOperationError("Unsupported saved executing-service kind")
         service_id = _runtime_identity(client) if service == "runtime" else client._service_id_cache.get(service)
         if not service_id:
@@ -370,8 +371,8 @@ def restore_handle(client, reference, *, allow_relocation=False):
     runtime_id = client.runtime.capabilities().service_id
     if runtime_id != reference.runtime_id or client.runtime_service_id not in (None, runtime_id):
         raise HandleIdentityError("Authenticated/configured home Runtime identity differs from the saved reference")
-    if reference.kind == "job" and reference.service == "resolver":
-        if client.resolver.capabilities().service_id != reference.service_id:
+    if reference.kind == "job" and reference.service != "runtime":
+        if getattr(client, reference.service).capabilities().service_id != reference.service_id:
             raise HandleIdentityError("Executing peer identity differs from the saved reference")
     client.runtime_service_id = runtime_id
     root = client.attach_context(reference.context_id)
@@ -398,7 +399,11 @@ def restore_handle(client, reference, *, allow_relocation=False):
         decoder = lambda payload: _decode_observation(context, payload)
     elif reference.result_kind == "dataflow":
         decoder = lambda payload: object_payload(payload, "dataflow")
-    job = Job(client, reference.job_id, context, service=reference.service, decoder=decoder, result_kind=reference.result_kind)
+    job_type = Job
+    if reference.result_kind == "provider-data":
+        from .provider_data import ProviderDataJob
+        job_type = ProviderDataJob
+    job = job_type(client, reference.job_id, context, service=reference.service, decoder=decoder, result_kind=reference.result_kind)
     if job.status().status == "EMPTY":
         raise JobUnavailableError(job.id, "Saved job is unavailable or expired; no work was recreated")
     return job

@@ -1,0 +1,22 @@
+{
+  "verified_utc": "2026-11-07T04:55:53.005745+00:00",
+  "baseline_head": "6e3ff36c5da070bf92699443cde220583a4951dc",
+  "scope": "Provider binary Job saved-handle restoration with exact service/decoder pairing, current credentials and independent supplier/home Runtime identity checks; no computation replay",
+  "attribution": "Uncommitted feature during build; raw source/wheel/sdist/installed module parity and hashes identify tested bytes, not baseline HEAD alone",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "abf2c1ba495035d4f2635504fe196ba32c0b3f4f960a9527ab80790bbdb7c203", "sdist_sha256": "867b254c36779f3c2601d9f43e259aef846c5543c51b663f8e7c585b729041a2", "parity_modules": 57},
+    "simulator": {"wheel_sha256": "d19fd452b0e059b76b57b958c0a78f7cb39730125a430feab686ba74d51ba401", "sdist_sha256": "90369bf6a5dfe492fbd1f1f019bdc62bf9ee14930c18ef830b32b41641407930", "parity_modules": 21, "provider_fixture_sha256": "12b7727d8bff06103480097b9c2a2f334bb463abc5f05d4697c082b7acb70b86"},
+    "worker": {"wheel_sha256": "8aac8494e26799005cfc3f73d9a51d33a658f0a7bf2db6c522437e73e3733280", "sdist_sha256": "12c1d0f91d8a207406b1bbbf38b7e61bf9189429959bc8c429ae0cf48bc5e144", "parity_modules": 5}
+  },
+  "installed_suites": {"SDK": 4384, "simulator": 241, "provider_reference": 18, "provenance_reference": 18, "operation_inventory": 11, "other_reference": 98, "worker": 57, "worker_HTTP": 21, "governance": 37, "skips_failures_errors": 0},
+  "overlapping_counts_not_unique_total": true,
+  "source_controls": {"saved_handle_controls": 232, "new_unit_controls": 18, "selected_SDK_controls": 496, "new_independent_HTTP_workflows": 4, "changed_code_gate": "PASS source and installed reports", "fatal_lint": "PASS"},
+  "SDK_only_aggregate": {"covered_lines": 7999, "statements": 8097, "covered_branches": 2549, "branches": 2602, "historical_excluded_lines": 165, "combined_percent": 98.58865314515376},
+  "new_production_modules": "NONE; existing handles/async restore changed, codec/provider modules from PR284 retain full coverage; do not relabel as new restoration modules",
+  "assertions": ["Resources requires provider-data decoder; runtime/resolver reject it and Resources rejects JSON mapping/dataflow/observation decoders", "Offline creation needs cached supplier identity, stores neither credentials nor binary payload", "Restore verifies configured URLs and authenticated Runtime/supplier identities using current credentials", "Denied, expired and drifted references refuse without creating Jobs or computations", "Independent sync/nativeasync clients restore waiting/finished synthetic Jobs, exactly one original contextualize submission, binary retrieval and unowned contexts", "Reader closure preserves owner state; owner context/session cleanup clears simulator state"],
+  "retained_failures": ["Initial226PASS/6FAIL: test assumed GET-only; native attach uses POST/connect. Corrected exact method/route assertion allows only POST/connect, not computation replay", "Initial coverage CLI invocation omitted mandatory --new-module flags and exited2. Corrected invocation checks existing PR284 codec/provider modules plus restoration changed lines; PASS, not new-module implementation claim"],
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 485, "simulator_tests": 170, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "dependency_custody": "Fresh wheels/sdists/separate pip-targets borrow prior test dependencies; no fresh dependency-isolation certification",
+  "native_java": "REAL_NOT_RUN; retained Job/incarnation, supplier authorization, native graph cleanup/scanner and scientific acceptance unchanged",
+  "remaining": "Ordinary PR/final-head CI/permitted merge; continue remaining42row revision/federation/workflow obligations. FullABC/sleep pending."
+}

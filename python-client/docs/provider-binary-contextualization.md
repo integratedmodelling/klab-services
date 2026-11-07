@@ -50,9 +50,16 @@ strict bounded datum validation still apply. Failed/malformed/oversized
 submission acknowledgements do not authorize replay; ambiguous outcomes require
 inspection. Origin/scope rebinding at acknowledgement refuses as unknown. Local
 wait timeout or async waiter cancellation retains the remote Job; explicit cancel
-uses the existing server transition. Ordinary saved-handle restoration does not yet
-support this new provider-data result kind, rather than silently restoring it as a
-JSON mapping Job. Context/session ownership and explicit cleanup remain with caller.
+uses the existing server transition. Saved-handle restoration must not
+silently treat provider data as a JSON mapping Job. The restoration feature now
+supports Resources/provider-data references after reading supplier capabilities:
+save with `save_handle(job, path)` and restore with a new client's `restore_handle`.
+Both home Runtime and supplier identities/URLs are checked using current credentials.
+Restoration reconnects the existing context (native POST `/connect`), polls the
+existing Job and uses binary retrieval; it never resubmits contextualization.
+Restored contexts are unowned; reader closure does not dispose owner state.
+Missing/expired or inaccessible Jobs refuse without recreation. Context/session
+ownership and explicit cleanup remain with caller.
 
 ## Evidence and remaining gates
 

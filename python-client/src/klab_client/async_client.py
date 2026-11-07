@@ -361,8 +361,8 @@ class AsyncClient:
         runtime_id = (await self.runtime.capabilities()).service_id
         if runtime_id != reference.runtime_id or self.runtime_service_id not in (None, runtime_id):
             raise HandleIdentityError("Authenticated/configured home Runtime identity differs from the saved reference")
-        if reference.kind == "job" and reference.service == "resolver":
-            if (await self.resolver.capabilities()).service_id != reference.service_id:
+        if reference.kind == "job" and reference.service != "runtime":
+            if (await getattr(self, reference.service).capabilities()).service_id != reference.service_id:
                 raise HandleIdentityError("Executing peer identity differs from the saved reference")
         self.runtime_service_id = runtime_id
         root = await self.attach_context(reference.context_id)
@@ -399,7 +399,11 @@ class AsyncClient:
             decoder = lambda payload: _decode_observation(context, payload)
         elif reference.result_kind == "dataflow":
             decoder = lambda payload: object_payload(payload, "dataflow")
-        job = AsyncJob(self, reference.job_id, context, service=reference.service,
+        job_type = AsyncJob
+        if reference.result_kind == "provider-data":
+            from .provider_data import AsyncProviderDataJob
+            job_type = AsyncProviderDataJob
+        job = job_type(self, reference.job_id, context, service=reference.service,
             decoder=decoder, result_kind=reference.result_kind)
         if (await job.status()).status == "EMPTY":
             raise JobUnavailableError(job.id, "Saved job is unavailable or expired; no work was recreated")
