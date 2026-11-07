@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 334,
+    "IMPLEMENTED_SOURCE_ONLY": 342,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -1174,6 +1174,13 @@
     {
       "path": "async_client.py",
       "owner": "AsyncContext",
+      "operation": "observations",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncContext",
       "operation": "job",
       "async": false,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
@@ -1518,6 +1525,27 @@
       "path": "client.py",
       "owner": "Context",
       "operation": "within",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "between",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "relationship_selection",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "observations",
       "async": false,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
@@ -2660,6 +2688,34 @@
       "owner": "ScanSlice",
       "operation": "to_wire",
       "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "selections.py",
+      "owner": null,
+      "operation": "relationship_options",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "selections.py",
+      "owner": null,
+      "operation": "between",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "selections.py",
+      "owner": null,
+      "operation": "observations",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "selections.py",
+      "owner": null,
+      "operation": "async_observations",
+      "async": true,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
     {

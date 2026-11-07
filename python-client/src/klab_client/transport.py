@@ -72,7 +72,7 @@ class _TransportPolicy:
         return endpoint.credential
 
     def _headers(self, route, *, response="json", scope=None, service_id=None,
-                 text=None, max_response_bytes=None, binary=None):
+                 text=None, max_response_bytes=None, binary=None, relationship=None):
         if max_response_bytes is not None and (type(max_response_bytes) is not int or max_response_bytes <= 0):
             raise InvalidRequestError("Response byte budget must be a positive integer")
         if not route.startswith("/") or ".." in route or route.startswith("//"):
@@ -86,6 +86,13 @@ class _TransportPolicy:
             headers["klab-scope"] = scope
         if service_id:
             headers["klab-service"] = service_id
+        if relationship is not None:
+            if (not isinstance(relationship, tuple) or len(relationship) != 2
+                    or any(type(n) is not int or not 1 <= n <= 2**63 - 1 for n in relationship)
+                    or relationship[0] == relationship[1] or not scope or not service_id):
+                raise InvalidRequestError("Relationship headers require a scoped Runtime and two distinct persisted IDs")
+            headers["klab-source-observation"] = str(relationship[0])
+            headers["klab-target-observation"] = str(relationship[1])
         if text is not None:
             headers["Content-Type"] = "text/plain"
         if binary is not None:
@@ -153,11 +160,11 @@ class Transport(_TransportPolicy):
                 service_id: str | None = None, json=None, text: str | None = None,
                 params=None, response: str = "json", ambiguous: bool = False,
                  timeout: float | None = None, deadline: float | None = None,
-                   max_response_bytes: int | None = None, files=None, binary=None):
+                    max_response_bytes: int | None = None, files=None, binary=None, relationship=None):
         endpoint = self.endpoint(service)
         content = self._content(binary, json, text, files)
         headers = self._headers(route, response=response, scope=scope, service_id=service_id,
-                                text=text, max_response_bytes=max_response_bytes, binary=binary)
+                                text=text, max_response_bytes=max_response_bytes, binary=binary, relationship=relationship)
         credential = self._credential(service, endpoint, deadline)
         if credential:
             headers["Authorization"] = credential

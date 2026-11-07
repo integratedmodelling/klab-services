@@ -17,7 +17,8 @@ def _scope_identity(scope):
     if not isinstance(configuration, dict):
         raise ProtocolError("Job scope configuration identity is malformed")
     return (_endpoint(client.transport, "runtime"), client.runtime_service_id,
-            configuration.get("serviceId"), configuration.get("id"))
+            configuration.get("serviceId"), configuration.get("id"),
+            getattr(scope, "_relationship_selection", None))
 
 
 @dataclass(frozen=True)

@@ -21,6 +21,7 @@ MAX_HANDLE_BYTES = 65536
 MAX_PERCENT_DECODINGS = 4
 _COMMON = {"version", "kind", "runtime_id", "runtime_url", "context_id", "scope"}
 _JOB_FIELDS = {"job_id", "service", "service_id", "service_url", "result_kind"}
+_RELATIONSHIP_FIELDS = {"source_observation_id", "target_observation_id"}
 
 
 class HandleFormatError(InvalidRequestError):
@@ -102,12 +103,22 @@ class Handle:
     service_id: str | None = None
     service_url: str | None = None
     result_kind: str | None = None
+    source_observation_id: int | None = None
+    target_observation_id: int | None = None
 
     def __post_init__(self):
         if type(self.version) is not int:
             raise HandleFormatError("Handle schema version must be an integer")
-        if self.version != 1:
+        if self.version not in (1, 2):
             raise UnsupportedOperationError("Unsupported saved-handle schema version")
+        if self.version == 2:
+            if self.source_observation_id is None or self.target_observation_id is None:
+                raise UnsupportedOperationError("Handle version2 requires an explicit persisted relationship pair")
+            _id(self.source_observation_id); _id(self.target_observation_id)
+            if self.source_observation_id == self.target_observation_id:
+                raise HandleFormatError("Saved relationship endpoints must be distinct")
+        elif self.source_observation_id is not None or self.target_observation_id is not None:
+            raise HandleFormatError("Version1 cannot carry relationship endpoint fields")
         if self.kind not in ("context", "observation", "job"):
             raise HandleFormatError("Unknown handle kind")
         _service_identity(self.runtime_id)
@@ -136,6 +147,8 @@ class Handle:
 
     def to_dict(self):
         values = {key: getattr(self, key) for key in _COMMON}
+        if self.version == 2:
+            values.update({key: getattr(self, key) for key in _RELATIONSHIP_FIELDS})
         if self.kind == "observation":
             values["observation_id"] = self.observation_id
         elif self.kind == "job":
@@ -169,6 +182,7 @@ class Handle:
             raise HandleFormatError("Saved handle must be a JSON object")
         kind = values.get("kind")
         expected = _COMMON | ({"observation_id"} if kind == "observation" else _JOB_FIELDS if kind == "job" else set())
+        if values.get("version") == 2: expected |= _RELATIONSHIP_FIELDS
         if set(values) != expected:
             raise HandleFormatError("Saved handle fields are missing or unknown; snapshots/secrets are not supported")
         return cls(**values)
@@ -256,6 +270,10 @@ def to_handle(source):
             service_url=client.transport.endpoint(service).url, result_kind=source.result_kind)
     else:
         raise HandleFormatError("Only Context, bound ObservationImpl, Job or Handle objects can be saved")
+    from .selections import relationship_options
+    selection = relationship_options(context).get("relationship")
+    if selection is not None:
+        extra.update(version=2, source_observation_id=selection[0], target_observation_id=selection[1])
     runtime_url = _url(client.transport.endpoint("runtime").url)
     try:
         client._validate_context_binding(context)
@@ -388,6 +406,10 @@ def restore_handle(client, reference, *, allow_relocation=False):
         if "AGENT" not in selected.observable.semantics.raw.get("type", []):
             raise HandleIdentityError("Saved observer selection is not a persisted agent")
     context = Context(client, root.configuration, token=reference.scope, owned=False)
+    if reference.version == 2:
+        source = _lookup(root, reference.source_observation_id)
+        target = _lookup(root, reference.target_observation_id)
+        context = context.between(source, target)
     if reference.kind == "context":
         return context
     if reference.kind == "observation":

@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-OBSERVATION-SELECTIONS-001",
+      "rows": ["CAP-04", "RC-P1.5"],
+      "routes": ["/runtime/api/v1/submit", "/resolver/api/v1/resolve", "/runtime/api/v1/query"],
+      "source": "Java ContextScope.between, Utils.Http.Client.withScope source/target headers, ScopeManager persisted lookup and ClientContextScope.getObservations direct HAS_CHILD query. Two finite synthetic entity/connection observables only; declared admission is not a scientific engine. Public sync/nativeasync SDK, bounded collections, endpoint origin/current owner checks and v2 secret-free saved relationship restoration without resubmission.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; source-defined native shapes, matching deployed fixture and semantic execution NOT_RUN",
+      "simulator_test": "test_observation_selections.py::test_public_relationship_endpoints_collections_plan_foreign_denial_and_cleanup",
+      "java_gap_ids": ["JAVA-GAP-0013"]
+    },
+    {
       "id": "SIM-COPIED-COMPOSITION-001",
       "rows": ["CAP-03"],
       "routes": ["/runtime/experimental/copied-composition/v1/create", "/runtime/experimental/copied-composition/v1/{id}"],

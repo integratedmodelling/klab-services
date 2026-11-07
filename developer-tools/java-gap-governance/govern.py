@@ -239,17 +239,57 @@ def outputs(registry, audit, issues):
             "ISSUE_RECONCILIATION.md": reconciliation, "ACCEPTANCE_AUDIT.md": rows}
 
 
+def reproduction_document(gap):
+    """Stable individual handoff generated only from attributed registry evidence."""
+    contract = gap["api_contract"]
+    lines = [f"# {gap['id']} — {gap['title']}", "",
+        "Generated from `gaps.yaml`; simulator evidence is not native acceptance.", "",
+        "## Classification and affected contract", "",
+        f"- Java: **{gap['java_status']}**; current execution **{gap['current_real_result']}**; historical **{gap['historical_real_result']}**.",
+        f"- Service: {gap['subsystem']}; component: {gap['java_component']}.",
+        f"- Original roadmap: {', '.join(gap['requirement_ids'])}.",
+        f"- API: {contract['method'] or 'UNKNOWN_PENDING_REFERENCE'} {contract['path'] or 'UNKNOWN_PENDING_REFERENCE'}.",
+        f"- Request/schema: {contract['request_schema_ref'] or 'UNKNOWN_PENDING_REFERENCE'}.",
+        f"- Tested Java build/environment: {gap['source_build_or_commit'] or 'NOT_RUN / exact native build and environment not established'}.",
+        f"- Evidence basis: {gap['last_verified_basis']}; last verified {gap['last_verified']}.", "",
+        "## Expected behavior / native compatibility acceptance", ""]
+    lines.extend(f"- {item}" for item in gap["resolution_criteria"])
+    lines.extend(["", "## Actual observed Java behavior", "", gap["observed_java_behavior"], "",
+        "## Independent simulator implementation and fixtures", "", gap["simulator_behavior"], "",
+        "Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.",
+        "Scenarios: " + ", ".join(gap["simulator_scenario_refs"]), "", "Exact executable controls:", ""])
+    lines.extend(f"- `{reference}`" for reference in gap["python_test_refs"])
+    lines.extend(["", "## Reproduction commands", "", "From repository root with the test extras installed:", "", "```powershell",
+        f"python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap {gap['id']} --output simulated-{gap['id']}.json",
+        f"python developer-tools/java-gap-governance/govern.py contracts --mode real --gap {gap['id']} --output real-{gap['id']}.json", "```", "",
+        "The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.",
+        "It is an executable missing-adapter disposition, **not** an actual native test or a simulator fallback.", "",
+        "## Required native startup prerequisites and executable test plan", "",
+        "1. Obtain authorization for an owned disposable native fixture and its cleanup policy; never reuse unrelated Jobs.",
+        "2. Pin service/component build hashes, endpoint identities, principal roles, worldview and fixture revisions; consult MODELER_IDE_STATE.md and run its bounded read-only gates only for this live-dependent work.",
+        "3. Start the maintained service tuple using the operator's supported procedure. Python-only development does not authorize IDE/service repair.",
+        "4. Supply a reviewed bounded native adapter for the exact contract and run the linked public Python workflow with explicit real endpoints, no automatic retries or simulation fallback.",
+        "5. Capture request/response/error, positive/negative authorization, independent scientific checks where relevant and owned cleanup; compare with the acceptance criteria above.",
+        "6. If no reviewed adapter/build/permission exists, retain NOT_RUN. Do not invent native endpoints or turn simulator success into a Java fix.", "",
+        "Existing native test references: " + (", ".join(gap["real_java_test_refs"]) or "none reviewed for this complete gap"), "",
+        "## Custody, related trackers and remaining questions", "", f"Original reproducer/evidence: {gap['reproducer_ref']}", "", gap["notes"], ""])
+    lines.extend(f"- {reference}" for reference in dict.fromkeys([*gap["original_issues"], *gap["links"]]))
+    return "\n".join(lines) + "\n"
+
+
 def generate(check=False):
     registry, audit, issues = validate()
     documents = {name: "\n".join(lines) + "\n" for name, lines in outputs(registry, audit, issues).items()}
     handoff = DATA / "JAVA_GAPS_FOR_FERDINANDO.md"
     documents[handoff.name] = handoff_document(registry, handoff.read_text(encoding="utf-8"))
+    documents.update({"reproductions/" + gap["id"] + ".md": reproduction_document(gap) for gap in registry["gaps"]})
     for name, text in documents.items():
         path = DATA / name
         if check:
             if not path.is_file() or path.read_text(encoding="utf-8") != text:
                 raise ValueError("Generated governance report drift: " + name)
         else:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
 
 

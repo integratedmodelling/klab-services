@@ -109,9 +109,10 @@ class _RemoteService:
         return scope_token(scope)
 
     def _request(self, method, route, scope=None, **kwargs):
+        from klab_client.selections import relationship_options
         token = self._bound_scope_token(scope)
         return self.client.transport.request(self.service, method, route, scope=token,
-                                              service_id=self.client.runtime_service_id, **kwargs)
+                                              service_id=self.client.runtime_service_id, **relationship_options(scope), **kwargs)
 
     def _checked(self, payload, label):
         from klab_client.dto import check_notifications, object_payload

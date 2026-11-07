@@ -282,6 +282,7 @@ class Context(ContextScopeImpl):
             raise InvalidRequestError("Selected scope root differs from the context configuration")
         super().__init__(user_id=client.agent_name or "", session_id=id.split(".")[0], context_id=selected)
         self.client, self.configuration, self.owned = client, configuration, owned
+        self._relationship_selection = None
 
     @property
     def id(self):
@@ -298,6 +299,22 @@ class Context(ContextScopeImpl):
         base, marker, observer = scope_token(self).partition("#")
         token = base + f".{id}" + (marker + observer if marker else "")
         return Context(self.client, self.configuration, owned=self.owned, token=token)
+
+    def between(self, source: ObservationImpl | int, target: ObservationImpl | int) -> Context:
+        """Select distinct persisted endpoints; no remote mutation or permission grant."""
+        from .selections import between
+        return between(self, source, target)
+
+    @property
+    def relationship_selection(self):
+        from .selections import relationship_options
+        relationship_options(self)
+        return self._relationship_selection
+
+    def observations(self, *, limit=64, offset=0, max_response_bytes=1024 * 1024):
+        """Inspect one bounded page of direct children; explicitly request further pages."""
+        from .selections import observations
+        return observations(self, limit=limit, offset=offset, max_response_bytes=max_response_bytes)
 
     def submit(self, observation: ObservationImpl | dict[str, Any], *, resolution_constraints=()) -> Job:
         """Submit through Runtime; acceptance returns a job, not scientific success."""
@@ -504,10 +521,11 @@ class Client:
             raise InvalidRequestError("Source context has a different known Runtime identity")
 
     def _submit(self, observation, scope, constraints=(), *, service="runtime", decoder=None, result_kind=None):
+        from .selections import relationship_options
         context, envelope = self._submission(observation, scope, constraints, service)
         id = self.transport.request(service, "POST", "/api/v1/submit" if service == "runtime" else "/api/v1/resolve",
                                      json=envelope, scope=scope_token(scope), service_id=self.runtime_service_id,
-                                     ambiguous=True)
+                                      ambiguous=True, **relationship_options(context))
         return Job(self, id, context, service=service,
                     decoder=decoder or (lambda p: observation_from_wire(p, context)),
                     result_kind="observation" if decoder is None else result_kind)
@@ -521,6 +539,9 @@ class Client:
         if isinstance(scope, Context):
             self._validate_context_binding(scope)
             context = self._context_type(self, scope.configuration, owned=scope.owned, token=token)
+            from .selections import relationship_options
+            relationship_options(scope)
+            context._relationship_selection = scope._relationship_selection
         else:
             context = self._context_type(self, {"id": ".".join(token.split("#")[0].split(".")[:2])}, token=token)
         envelope = {"observation": observation_to_wire(observation),

@@ -1,8 +1,8 @@
-# Saved scientific handles — version 1
+# Saved scientific handles — version 1 and relationship-selected version 2
 
 The maintained saved-handle API provides local scientific references and explicit
 restoration for Context, ObservationImpl and Job. It works with the original #84
-objects and imports no typed-request module. It changes no Java contract or
+objects; the selection extension shares the checked persisted-ID validators. It changes no Java contract or
 federation-session policy; the broader promotion/federation gate remains
 unresolved and is not certified here.
 
@@ -230,3 +230,12 @@ python tools/run_local_acceptance.py --java C:\jdk\bin\java.exe --worldview C:\p
 A Python-process restart does not establish persistent job retention across Runtime restart or
 resumable simulation. No production onboarding, provider accuracy, automatic
 migration, bulk export or federation-policy redesign is certified.
+## Relationship-selected references
+
+Ordinary saved references retain version1. A relationship-selected context,
+observation or Job uses version2 to retain `source_observation_id` and
+`target_observation_id`. Both are distinct positive persisted Java-long IDs;
+version1 cannot carry them. Restoration authenticates the configured Runtime,
+reattaches the existing root and checks both endpoints before restoring selection,
+without submitting new work or acquiring ownership. Old clients reject version2
+rather than silently dropping it. See [selection contracts](observation-selections.md).

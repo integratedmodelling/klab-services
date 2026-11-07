@@ -1,0 +1,24 @@
+{
+  "baseline": "48ef20741dd5a61036d58e6ed21ff3bc2c9358af",
+  "evidence": "READ_ONLY_SOURCE_NOT_NATIVE_EXECUTION",
+  "scope": "Persisted distinct positive endpoint IDs only; unresolved transaction-bound source/target snapshots are not accepted by this SDK facade",
+  "source_raw_sha256": {
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/ServicesAPI.java": "562dcf7b1bfe03f0f52680419dba322d790cf9414dcc93f04a0fcab1bb15b7fa",
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/scope/ContextScope.java": "8e460bc40b2905c41619d9186d8eef82be563d60b04691a7fe94af34cf52b410",
+    "klab.core.common/src/main/java/org/integratedmodelling/common/utils/Utils.java": "0ddf6936f0304f7e9f5714842faa101fa8f2e80192f00b4bc86ba82f2b6c67f9",
+    "klab.core.common/src/main/java/org/integratedmodelling/common/services/client/scope/ClientContextScope.java": "1173e82183603d399ed07454f7c2369205cc6360d893b4621df0e5bfd94e0170",
+    "klab.core.common/src/main/java/org/integratedmodelling/common/services/client/runtime/KnowledgeGraphQuery.java": "c6abc7b1a1885be68cb43842b91b703dc1b2dc47c28f747d133b949720fdd214",
+    "klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ScopeManager.java": "7735313a84c3ab20a398f2ad6613d15e86f7f2ba08dc024c36fefcf99f8ee9fc"
+  },
+  "observations": [
+    "ContextScope.between(source,target) is the relationship scope API; no new native endpoint invented",
+    "Utils.Http.Client.withScope transports klab-source-observation and klab-target-observation independently of the scope path and observer marker",
+    "ClientContextScope.within(nonnull) clears prior relationship endpoints; between preserves ambient focus",
+    "ScopeManager looks up persisted source/target in owned context; missing endpoints are logged, not a complete native positive/negative acceptance proof",
+    "ClientContextScope.getObservations uses typed OBSERVATION query source(scope) along HAS_CHILD; source type is SCOPE at root or OBSERVATION for focused scope",
+    "KnowledgeGraphQuery.makeAsset omits ID/URN for SCOPE pseudoasset; positive observation IDs identify focused source",
+    "ResolverClient separately handles unresolved transaction-bound endpoint snapshots; not reinterpreted as persisted positive IDs"
+  ],
+  "native_result": "NOT_RUN",
+  "fixture_limit": "Two finite synthetic observables, source-shaped headers/queries and explicit provisional admission; not native semantic execution or general relationship Reasoner"
+}

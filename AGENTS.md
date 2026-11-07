@@ -1,5 +1,14 @@
 # Collaboration requirements
 
+- Full Python A+B+C work uses `notes/python-roadmap-execution/roadmap-execution-queue.json`
+  alongside the existing ledgers. Preserve all42original IDs/history. At a completed
+  task or verified merge, checkpoint remote state and immediately begin the next
+  independently runnable requirement; a PR/test/milestone is not a stopping gate.
+  `roadmap_queue.py check/next` validates/selects work; `checkpoint --pr N` verifies
+  remote merged state and local ancestry without promoting acceptance. Saved resume
+  instructions are not an automatic-restart guarantee. No final sleep until the full
+  implementable roadmap criteria and owned cleanup are verified.
+
 - Before Python-client A+B work, consult
   `notes/python-roadmap-execution/MODELER_IDE_STATE.md` and its timestamps. Run its
   bounded read-only check only when the task needs live Modeler gates. Python-only
