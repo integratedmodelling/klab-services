@@ -26,7 +26,7 @@ jobs:
       - name: Check golden bytes against generated Java schema through independent oracle
         run: python developer-tools/klab-service-simulator/tools/generate_provider_avro_fixture.py --check
       - name: SDK-only codec, Job, media, binary transport and regression controls
-        run: python -m pytest -q python-client/tests/unit/test_provider_avro.py python-client/tests/unit/test_provider_data.py python-client/tests/unit/test_client.py python-client/tests/unit/test_async_client.py python-client/tests/unit/test_async_transport.py --cov=klab_client --cov-branch --cov-report=json:provider-coverage.json --junitxml=provider-unit.xml
+        run: python -m pytest -q python-client/tests/unit/test_provider_avro.py python-client/tests/unit/test_provider_data.py python-client/tests/unit/test_provider_handles.py python-client/tests/unit/test_saved_handles.py python-client/tests/unit/test_async_saved_handles.py python-client/tests/unit/test_client.py python-client/tests/unit/test_async_client.py python-client/tests/unit/test_async_transport.py --cov=klab_client --cov-branch --cov-report=json:provider-coverage.json --junitxml=provider-unit.xml
       - name: Independent finite HTTP provider workflow
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_provider_avro.py --junitxml=provider-http.xml
       - name: Entire new SDK modules and changed code coverage

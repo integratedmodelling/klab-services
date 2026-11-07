@@ -1,5 +1,45 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Provider Job restoration development pass
+
+Final restoration installed changed-code gate and17linkedcasesPASS using485SDK/
+170simulator/57worker, zero skips/errors/failures versus17realNOT_RUN/exit3.
+Publish ordinary featurePR next; finalheadCI/permittedmerge still required.
+Native retainedJob/incarnation/scanner/cleanup/scientific acceptance unchanged.
+
+Fresh restoration verifier completed2026-11-07T04:55:53.005745+00:00:
+4384SDK/241simulator/18provider/18provenance/11inventory/98reference/57worker/
+21HTTP/37governancePASS, zero skips/errors/failures.57SDK+21simulator+5worker
+raw source/wheel/sdist/installed moduleparity and goldenfixtureparity verified.
+SDK-only98.58865% retains165historical exclusions; no newproductionmodule claim.
+496selectedsourcecontrols and changedcodegatePASS; initialCLI invocation omitted
+mandatory moduleflags(exit2), corrected flags validate existingPR284modules and
+restoration changedlines, no hidden implementation failure/relabeling.
+Finalinstalledgate/17linkedmatrix running sh_1b45d2058001zxg73ArxIXtjEZ versus
+17realNOT_RUN/exit3verified. Exact receipt evidence/full-roadmap-provider-handles-20261107.json.
+Next ordinaryPR/finalheadCI/permittedmerge then remaining42row implementation.
+
+PR284 subsequently verified MERGED6e3ff36c5da070bf92699443cde220583a4951dc at
+2026-11-07T04:54:46Z, exact059d42a88658fdee948b874fad64f0021fb6fc44 with all
+applicable checks PASS including installed-provider; no failed-check rerun.
+Restoration branch fast-forwarded actual merge without losing uncommitted source.
+No independent maintainer review or native/scientific acceptance inferred.
+Independent simulator provider suite18PASS includes four sync/nativeasync waiting/
+finished Job restores with exactly one contextualize request and reader-close
+preservation of owner state. Fresh installed verifier remains running.
+
+Binary feature committed059d42a88 and published PR284; final-head watcher
+sh_1b454c12a001JxxDInMLBhj09b running. No merge/native acceptance claimed.
+Child feat/python-provider-job-restoration implements strict Resources/provider-data
+saved references and sync/nativeasync binary Job restore factories. Supplier and
+home Runtime identities checked independently; current configured credentials used,
+saved payload/credentials never added. Existing URL, selection, denial, expiry and
+unowned reattachment policies retained.232saved-handle controls PASS including18new.
+First run226PASS/6FAIL was a test's incorrect GET-only assumption: native context
+reattach is POST/connect. Corrected exact method/route assertion permits that POST
+only; no computation submission/replay authorized. Full HTTP/installed workflows,
+coverage/type/registry/handoff/docs/CI receipts and delivery remain pending.
+
 ## Active source-defined binary provider workflow
 
 PR283 verified MERGED18b532c310bbde9535b10ccab55cfc1d35db3800 at04:10:35Z,

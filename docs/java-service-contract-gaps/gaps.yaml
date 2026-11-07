@@ -27,7 +27,7 @@
       "api_contract": {"method": "POST", "path": "/runtime/api/v1/submit", "request_schema_ref": "python-client/docs/contracts.md", "expected_response_schema_ref": "developer-tools/klab-service-simulator/contract-cases.json#SIM-USGS-001"},
       "requirement_ids": ["RC-P2.1", "RC-P2.3", "RC-P2.5", "CAP-09"],
       "original_issues": [],
-      "python_test_refs": ["developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java", "python-client/tests/unit/test_provider_avro.py", "python-client/tests/unit/test_provider_data.py", "developer-tools/klab-service-simulator/tests/test_provider_avro.py"],
+      "python_test_refs": ["developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java", "python-client/tests/unit/test_provider_avro.py", "python-client/tests/unit/test_provider_data.py", "python-client/tests/unit/test_provider_handles.py", "developer-tools/klab-service-simulator/tests/test_provider_avro.py"],
       "simulator_scenario_refs": ["SIM-USGS-001", "SIM-GRID-001", "REPLAY-001", "SIM-PROVIDER-AVRO-001"],
       "real_java_test_refs": [],
       "reproducer_ref": "notes/python-roadmap-execution/MODELER_REAL_DEM_REMEDIATION_REPORT.md#12-remaining-failures--smallest-next-action",

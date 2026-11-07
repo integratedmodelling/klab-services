@@ -22,5 +22,6 @@
   "contract_matrix": {"simulated_pass": 17, "SDK_tests": 467, "simulator_tests": 166, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
   "native_status": "All17 REAL_NOT_RUN. JAVA-GAP-0001 CONFIRMED_DEFECT and0013CONTRACT_PROVISIONAL unchanged; synthetic direct provider data is not native scanner/graph cleanup, worker ABI or scientific acceptance",
   "dependency_custody": "Fresh wheels/sdists/separate pip-targets borrow prior test dependencies; independent fastavro only in temporary development oracle target, no newly isolated dependency certification",
-  "remaining": "Publish ordinaryPR/finalheadCI/permittedmerge; then binary ProviderJob saved-handle restoration, remaining revision/federation/workflow obligations. FullABC/nativeacceptance/sleep pending."
+  "delivery": {"pr": 284, "head": "059d42a88658fdee948b874fad64f0021fb6fc44", "merge": "6e3ff36c5da070bf92699443cde220583a4951dc", "merged_utc": "2026-11-07T04:54:46Z", "applicable_final_head_checks": "PASS including installed-provider; no failed-check rerun", "independent_maintainer_review": false},
+  "remaining": "Continue binary ProviderJob saved-handle restoration and remaining revision/federation/workflow obligations. FullABC/nativeacceptance/sleep pending."
 }

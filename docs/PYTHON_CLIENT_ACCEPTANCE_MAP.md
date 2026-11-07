@@ -1,5 +1,11 @@
 # Python roadmap acceptance map — 3 November 2026
 
+ProviderJob restoration follow-up: fresh4384SDK/241simulator/18provider and all
+reference/worker/governance suitesPASS, zero skips/errors/failures; rawpackageparity.
+Independent clients restore waiting/finished binaryJobs without recomputation or
+reader-owned disposal. Drift/denial/expiry refuse. Finallinked/ordinaryPR/CI pending;
+native retainedJobs/incarnations/scanner/science and fullABC acceptance unchanged.
+
 Latest binary Resources feature: source-defined rawAvro context/dataJob workflow
 freshinstalled4366SDK/237simulator/14provider/37governance and other reference/worker
 suitesPASS, zero skips/errors/failures. Both newSDKmodules235lines118branches100%

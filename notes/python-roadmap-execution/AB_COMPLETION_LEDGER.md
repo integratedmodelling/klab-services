@@ -1,5 +1,32 @@
 # A+B completion ledger — ongoing campaign
 
+Final restoration installed changed-code gate and17linkedcasesPASS(485SDK/
+170simulator/57worker), zero skips/errors/failures versus17realNOT_RUN/exit3.
+Ordinary restoration PR/finalheadCI next; no native/fullABC acceptance promoted.
+
+Restoration fresh installed4384SDK/241simulator/18provider/18provenance/11inventory/
+98reference/57worker/21HTTP/37governancePASS, zero skips/errors/failures.
+57SDK+21simulator+5worker rawpackage/moduleparity verified; SDK-only98.58865% retains
+165historical exclusions.496selectedsource controls/changedcodegatePASS; initialCLI
+missing required module flags exit2 retained/corrected, not a newmodule claim.
+17linkedmatrix running vs17realNOT_RUN/exit3. Ordinary restoration PR/CI pending;
+native retainedJobs/scanner/science and fullABC acceptance unchanged.
+
+PR284 verified MERGED6e3ff36c5da070bf92699443cde220583a4951dc at04:54:46Z,
+exact059d42a88658fdee948b874fad64f0021fb6fc44/all applicable checks PASS including
+installed-provider; no failed-check rerun. Restoration child fast-forwarded actual
+integration merge preserving uncommitted work. Its provider-handles-first verifier
+remains running; no284watcher remains. Native/fullABC acceptance unchanged.
+
+Binary feature published PR284 head059d42a88; final-head CI watcher
+sh_1b454c12a001JxxDInMLBhj09b running, no merge claimed. Child branch
+feat/python-provider-job-restoration adds Resources/provider-data saved-handle
+pairing, authenticated supplier+Runtime identity checks and binary Job factories.
+232saved-handle controls PASS (18new). Initial226PASS/6FAIL assumed GET-only
+restoration; native reattach uses POST/connect. Corrected exact method/route
+assertion allows only that POST, not contextualize/submit/resolve replay.
+HTTP/installed restoration acceptance, coverage and ordinary delivery pending.
+
 PR283 verified merged18b532c31 at04:10:35Z exact68f7f0941/allchecksPASS/no rerun.
 Next binaryproviderworkflow sourceunderdevelopment:47codeccontrols140lines98branches
 100%,19Jobcontrols84lines18branches100%/typesPASS; independenttemporaryfastavro

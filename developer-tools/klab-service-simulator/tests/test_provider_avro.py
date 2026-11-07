@@ -137,3 +137,34 @@ def test_in_process_fixture_data_route_waiting_refusal_and_no_json_result_alias(
     status, raw, media = state.request("GET", f"/resources/jobs/retrieveData/{identity}", headers)
     assert status == 200 and raw == bytes.fromhex(fixture["response_hex"]) and media == "application/octet-stream"
     assert state.request("GET", f"/resources/jobs/retrieve/{identity}", headers)[0] == 422
+
+
+@pytest.mark.parametrize("native_async", [False, True])
+@pytest.mark.parametrize("completed", [False, True])
+def test_independent_client_restores_binary_job_without_resubmitting_or_owning_context(native_async, completed):
+    from klab_client import to_handle, Handle, AsyncProviderDataJob, ProviderDataJob
+    with launch("provider-avro") as ready:
+        with Client(ready["endpoints"]["runtime"], **client_args(ready)) as owner:
+            session = owner.create_session(); context = session.create_context()
+            try:
+                owner.resources.capabilities()
+                job = owner.resources.contextualize(*args(context, "number"))
+                if completed: assert job.result(timeout=2).fields["doubleData"] == (0.,)
+                reference = Handle.loads(to_handle(job).dumps())
+                async def run():
+                    async with AsyncClient(ready["endpoints"]["runtime"], **client_args(ready)) as reader:
+                        restored = await reader.restore_handle(reference)
+                        assert isinstance(restored, AsyncProviderDataJob) and not restored.scope.owned
+                        assert (await restored.result(timeout=2)).fields["doubleData"] == (0.,)
+                if native_async: asyncio.run(run())
+                else:
+                    with Client(ready["endpoints"]["runtime"], **client_args(ready)) as reader:
+                        restored = reader.restore_handle(reference)
+                        assert isinstance(restored, ProviderDataJob) and not restored.scope.owned
+                        assert restored.result(timeout=2).fields["doubleData"] == (0.,)
+                # Reader closure must not dispose the original owner's state.
+                assert job.result(timeout=2).fields["doubleData"] == (0.,)
+                assert sum(row["path"].endswith("/contextualize") for row in control(ready)["trace"]) == 1
+            finally:
+                context.release(); session.release()
+        assert not any(control(ready)["counts"].values())
