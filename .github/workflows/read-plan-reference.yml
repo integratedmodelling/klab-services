@@ -29,8 +29,8 @@ jobs:
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_read_plans.py developer-tools/klab-service-simulator/tests/test_durable_recovery.py --junitxml=plans-http.xml
       - name: Require unexcluded full new-module coverage without simulator tests
         run: |
-          python -m pip install 'numpy>=1.26,<3' 'xarray>=2024.1,<2027'
-          python -m pytest -q python-client/tests/unit/test_reference_windows.py python-client/tests/unit/test_reference_window_analysis.py --cov=klab_client --cov-branch --cov-append --cov-report=json:plans-coverage.json
+          python -m pip install 'numpy>=1.26,<3' 'xarray>=2024.1,<2027' 'rasterio>=1.4,<2'
+          python -m pytest -q python-client/tests/unit/test_reference_windows.py python-client/tests/unit/test_reference_window_analysis.py python-client/tests/unit/test_reference_raster_labels.py python-client/tests/unit/test_reference_raster_analysis.py --cov=klab_client --cov-branch --cov-append --cov-report=json:plans-coverage.json
       - name: Preserve original read-plan and changed SDK coverage threshold
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"

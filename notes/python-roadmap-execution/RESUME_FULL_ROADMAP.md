@@ -33,8 +33,24 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent verified checkpoint: PR303 merge `6c285b6b6`, exact `9a44d9fca`,
-all45 final-head checks PASS; remote merged state/local ancestry verified.
+Most recent verified checkpoint: PR304 merge `d0ccdc531`, exact `49aa07469`,
+all49 final-head checks PASS; remote merged state/local ancestry verified.
+
+Active `feat/python-reference-raster-labels`, noPR/sourceuncommitted.304alljobsfinished,
+strictACK5204SDK521sim116worker23HTTP/reference-governancePASS,70-36-6parity/15olderCI/
+ordered/17linkedPASSvs17nativeNOT_RUN. Superseded first5200candidate andBooleanACK/
+oldinstalledplansCI failures remain; no native/time/science/finalrow promotion.
+Queue42originalIDs/history/18runnable/zero dispositions,RC-P2.5/CAP15active.
+New SDK `reference_raster_labels.py` and independent fixture samebasename implement
+opt-in exact advertised serverdeclared finite dictionaries/worldviewrevision/bandUTC
+metadata pinned to rawexport and value-mask identity, plus offline raster adapter.
+28SDKwirecontrols/4publicsyncasyncHTTP/bodymypyPASS. Initial EPSG/WKT representation
+failure corrected using restricted EPSG declaration/local canonical CRS comparison,
+not reprojection/science. Need offline adversarial/content/budget/socket/optionaldeps,
+100%newmodule/changedSDK+fixture policies, installednotebook/array/raster acceptance,
+exports/docs/governance/CI/freshartifacts/ordinarydelivery then RC-P0attribution.
+Current child sourcefiles uncommitted; preserve preexisting .coverage/__pycache__.
+Historical304 entries below are superseded by this entry.
 
 Latest steering: PR304 stays draft pending strict wire ACK fix. Two firstinstalled
 probes admitted Boolean observationId/windowoffset due Python dict equality; retained

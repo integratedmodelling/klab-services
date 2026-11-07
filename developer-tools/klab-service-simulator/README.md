@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+The `category-code-export` and `declared-band-export` scenarios additionally advertise
+explicit reference-raster-metadata/1 declarations: exact raw export/array-mask hashes,
+finite dictionary/worldview attribution or band labels/UTC instants. Old caller-label
+APIs remain unchanged; the fixture adopts these labels only through this new proposal,
+not native TIFF semantics or scientific classification. Public SDK-only notebook,
+sync/async export+metadata and detached-array tests exercise the association.
+
 `--scenario selected-read-plans` advertises finite server-listed baseline/alternate
 states and exact half-open row/column windows. The selection envelope explicitly wraps
 old read-plans/1 shard/release grants; full baseline opens remain unchanged. Fixture

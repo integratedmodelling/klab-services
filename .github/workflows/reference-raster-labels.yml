@@ -1,0 +1,50 @@
+name: Reference raster dictionaries and time labels (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/reference-raster-labels.yml']
+  pull_request:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/reference-raster-labels.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-reference-raster-labels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev,analysis,notebook,local]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: Require optional dependencies rather than skip acceptance
+        run: python -c "import numpy,rasterio,xarray,nbformat,nbclient,ipykernel,psutil"
+      - name: SDK wire and detached content-label controls
+        run: python -m pytest -q python-client/tests/unit/test_reference_raster_labels.py python-client/tests/unit/test_reference_raster_analysis.py --cov=klab_client --cov-branch --cov-report=json:raster-labels-sdk.json
+      - name: Entire new module and changed SDK decisions unexcluded
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py raster-labels-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/reference_raster_labels.py
+      - name: Public exact raw exports plus declared dictionary-worldview and band-time workflows
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_reference_raster_labels.py developer-tools/klab-service-simulator/tests/test_reference_raster_notebook.py --junitxml=raster-labels-http-notebook.xml
+      - name: Independent fixture policy controls
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_reference_raster_fixture.py --cov=klab_simulator.reference_raster_labels --cov-branch --cov-fail-under=100 --cov-report=json:raster-labels-fixture.json
+      - name: Preserve caller-only category and band-axis contracts
+        run: python -m pytest -q python-client/tests/unit/test_raster_categories.py python-client/tests/unit/test_multiband_analysis.py
+      - name: Types and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/reference_raster_labels.py developer-tools/klab-service-simulator/src/klab_simulator/reference_raster_labels.py
+          python -m ruff check python-client/src developer-tools/klab-service-simulator/src developer-tools/klab-service-simulator/tests --select E9,F63,F7,F82
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: finite-reference-raster-labels-not-native-semantics
+          path: |
+            raster-labels-sdk.json
+            raster-labels-http-notebook.xml
+            raster-labels-fixture.json

@@ -3,22 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-selected-reference-windows",
-    "pr": 304,
-    "requirement": "RC-P2.2",
+    "branch": "feat/python-reference-raster-labels",
+    "pr": null,
+    "requirement": "RC-P2.5",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 303,
-    "merge": "6c285b6b6e96d48d5d4d87220722c6f7ffabed7e",
-    "head": "9a44d9fca7a11d6397f88ce1687fc954e12e0c0d",
-    "utc": "2026-11-07T20:46:29Z",
+    "pr": 304,
+    "merge": "d0ccdc531acf6784990e4e4d0be197518dceb462",
+    "head": "49aa07469140d0de2ee888f8c0ffd57308ba1166",
+    "utc": "2026-11-07T21:21:12Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P2.2",
+  "next_actionable_requirement": "RC-P2.5",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "selected-reference-windows",
     "categorical-reference-data",
     "operation-workflow-attribution",
     "onboarding-and-routing-acceptance",
@@ -2872,8 +2871,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: selected-reference-windows"
       },
       "simulator_support_needed": "Extend public reference read plans to explicit bounded spatial windows and selected synthetic temporal states with per-selection layout/masks/units/pins, immutable assembled data and cancellation/expiry controls.",
-      "implementation_status": "SELECTED_FINITE_STATE_WINDOW_READ_GRANTS_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "SELECTED_FINITE_STATE_WINDOW_READ_GRANTS_DELIVERED_PR304",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_SELECTED_STATE_WINDOW_AND_DETACHED_PROVENANCE_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -2925,12 +2924,21 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "selected_reference_windows_delivery": {
+          "pr": 304,
+          "head": "49aa07469140d0de2ee888f8c0ffd57308ba1166",
+          "merge": "d0ccdc531acf6784990e4e4d0be197518dceb462",
+          "merged_at": "2026-11-07T21:21:12Z",
+          "final_head_checks": 49,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-selected-reference-windows-20261107.json"
+        }
       },
       "work_group": "selected-reference-windows",
       "priority": 12,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish public sync/async explicit server-listed temporal states and bounded spatial windows, per-selection source/layout/mask/unit/time pins, immutable assembly/adapter provenance/cancellation/expiry/ownership controls and installed delivery; no native time/provider mediation inferred.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native time/window/read-plan/provider mediation and durable history remain separate JAVA-GAP-0006/0014 contract/evidence obligations.",
       "disposition": null
     },
     {
@@ -3042,8 +3050,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: selected-reference-windows"
       },
       "simulator_support_needed": "Extend public reference read plans to explicit bounded spatial windows and selected synthetic temporal states with per-selection layout/masks/units/pins, immutable assembled data and cancellation/expiry controls.",
-      "implementation_status": "SELECTED_FINITE_STATE_WINDOW_READ_GRANTS_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "SELECTED_FINITE_STATE_WINDOW_READ_GRANTS_DELIVERED_PR304",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_SELECTED_STATE_WINDOW_AND_DETACHED_PROVENANCE_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -3093,12 +3101,21 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "selected_reference_windows_delivery": {
+          "pr": 304,
+          "head": "49aa07469140d0de2ee888f8c0ffd57308ba1166",
+          "merge": "d0ccdc531acf6784990e4e4d0be197518dceb462",
+          "merged_at": "2026-11-07T21:21:12Z",
+          "final_head_checks": 49,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-selected-reference-windows-20261107.json"
+        }
       },
       "work_group": "selected-reference-windows",
       "priority": 12,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish public sync/async explicit server-listed temporal states and bounded spatial windows, per-selection source/layout/mask/unit/time pins, immutable assembly/adapter provenance/cancellation/expiry/ownership controls and installed delivery; no native time/provider mediation inferred.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native time/window/read-plan/provider mediation and durable history remain separate JAVA-GAP-0006/0014 contract/evidence obligations.",
       "disposition": null
     },
     {
@@ -3192,7 +3209,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: categorical-reference-data"
       },
       "simulator_support_needed": "Expose reference categorical dictionaries/worldview and explicit temporal labels through public data adapters, not only caller labels; verify raw integer codes, masks and metadata across installed notebook/array/raster paths.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "REFERENCE_RASTER_DICTIONARY_WORLDVIEW_AND_BAND_LABELS_SOURCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -3223,8 +3240,8 @@
       },
       "work_group": "categorical-reference-data",
       "priority": 13,
-      "task_state": "pending",
-      "next_executable_action": "Expose reference categorical dictionaries/worldview and explicit temporal labels through public data adapters, not only caller labels; verify raw integer codes, masks and metadata across installed notebook/array/raster paths.",
+      "task_state": "in_progress",
+      "next_executable_action": "Complete public sync/async server-declared finite categorical dictionaries/worldview and band time labels pinned to exact export/rawarray identity; installed notebook/array/raster controls and delivery. Old caller-labelled adapters stay distinct; no native semantic/time authority inferred.",
       "disposition": null
     },
     {
@@ -3317,7 +3334,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: categorical-reference-data"
       },
       "simulator_support_needed": "Expose reference categorical dictionaries/worldview and explicit temporal labels through public data adapters, not only caller labels; verify raw integer codes, masks and metadata across installed notebook/array/raster paths.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "REFERENCE_RASTER_DICTIONARY_WORLDVIEW_AND_BAND_LABELS_SOURCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -3347,8 +3364,8 @@
       },
       "work_group": "categorical-reference-data",
       "priority": 13,
-      "task_state": "pending",
-      "next_executable_action": "Expose reference categorical dictionaries/worldview and explicit temporal labels through public data adapters, not only caller labels; verify raw integer codes, masks and metadata across installed notebook/array/raster paths.",
+      "task_state": "in_progress",
+      "next_executable_action": "Complete public sync/async server-declared finite categorical dictionaries/worldview and band time labels pinned to exact export/rawarray identity; installed notebook/array/raster controls and delivery. Old caller-labelled adapters stay distinct; no native semantic/time authority inferred.",
       "disposition": null
     },
     {

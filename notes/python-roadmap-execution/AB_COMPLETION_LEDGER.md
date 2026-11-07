@@ -1,5 +1,37 @@
 # A+B completion ledger — ongoing campaign
 
+## PR304 verified merged; reference raster dictionaries/time labels active
+
+Categorical source49SDK+offline100%newmodule/allchangedSDK/4publicHTTP/1ownedexactSDK
+notebook/10fixture100%/types-lint/93governancequeueordering-oldcalleradaptercontrols
+PASS. DuplicateJSON/invalidEPSG/content/budget/offlinesocket/optionaldependency/secret
+and currentcredential guards verified. Notebookinitialsynthetic-token-source and
+threecellorder failures corrected without weakeningguards; initialEPSG/WKTidentity
+failure corrected with local canonicalcomparison only. Exports/docs/gaps/CI integrated;
+sourcefrozen/no categoricalPR yet, fresh installed/artifact acceptance still owed.
+
+PR304 MERGED `d0ccdc531acf6784990e4e4d0be197518dceb462` at
+2026-11-07T21:21:12Z; exact `49aa07469140d0de2ee888f8c0ffd57308ba1166`,
+all49finalheadchecksPASS/remote+local ancestry checkpointverified.
+Fresh strictACK5204SDK/521sim/116worker/23HTTP/reference39governancePASS;
+70SDK36sim6workerparity;52SDK100%18fixture100%2HTTP15olderCI+orderedselection/
+17linkedPASS(1270SDK398sim116worker)vs17nativeNOT_RUN. First5200candidate and
+BooleanACK/oldinstalledplansCI failures retained; exacttypevalidation/unchangedgate
+fix delivered. Supplemental49job-localmultilineordering/governancequeuePASS. No304
+watcher or verifier remains; no native time/provider/science/finalrow promotion.
+42originalIDs/history/18runnable/zero finaldispositions preserved.
+
+Active `feat/python-reference-raster-labels`, no newPR/sourceuncommitted. Public
+sync/nativeasync metadata facade and offline exactrawexport+arrayidentity association
+prototype implemented; finite server-declared dictionaries/worldviewrevision/bandUTC
+labels not native semantic/timeauthority.28independentSDKwirecontrols/4actualpublic
+HTTP sync/async category/band export-metadata-offline workflows/bodymypy PASS.
+Initialpublic adapter refused identical EPSG vs WKT CRS representation; corrected to
+bounded EPSG-only declaration and local canonical CRS identity comparison, no coordinate
+transform/resampling. Rawinteger0/negative/nodata/masks and float32bands unchanged.
+Need offline hostile/content/budget/optionaldependency controls,100%SDK+fixturecoverage,
+installed notebook path, docs/governance/CI/artifacts and ordinary delivery.
+
 ## PR303 verified merged; selected finite reference windows active
 
 PR304strictACK finalcandidate5204installedSDK/521simulator/116worker/23workerHTTP/
