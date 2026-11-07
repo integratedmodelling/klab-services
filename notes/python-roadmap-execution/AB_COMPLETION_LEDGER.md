@@ -2,6 +2,13 @@
 
 ## PR303 verified merged; selected finite reference windows active
 
+StrictACK52installedcontrols100%/70SDK36sim6worker rawparity/15olderCI/18fixture100%/
+orderedselection/17linkedPASSvs17nativeNOT_RUN verified. Retained initial installed-plans
+CI failure42414346536/job128529080044: oldisolatedworkflow lacked newselectedcontrols
+before allchangedSDKgate. Appended52controls before unchangedgate; actualinstalled
+64SDK/37HTTP/52selected+originalgatePASS. No threshold relaxation. NewheadCI/freshfull
+strictACKsuite pending; PR304 remainsdraft, no native/science/finalrow promotion.
+
 PR304premerge review found Boolean ACK aliasing integers via dict equality. Two
 independent first-installed-artifact probes FAILED/DID_NOT_RAISE (retainedXML), so
 green first48controls/14CI/17linked do not clear delivery. Exact incoming state/offset

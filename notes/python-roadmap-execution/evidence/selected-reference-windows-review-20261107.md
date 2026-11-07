@@ -68,3 +68,12 @@ offsets before grant acceptance. Four sync/nativeasync controls added:52SDK+anal
 PASS/entirenewmodule+changedSDK100%unexcluded/bodymypyPASS. Fresh uniquely named
 selected-reference-windows-strict-ack fullartifact verifier running; no first-artifact
 evidence rewritten or reused as final fixed-source acceptance. PR304 remains draft.
+
+Strict-ACK installed52controls/wholemodule+changedSDK100%,raw70SDK36sim6worker parity,
+14olderfocusedCI+18fixture100%,actualordered693/214/92/115/40/52/6/21/9queue+original
+100%gate and17linkedPASS vs17nativeNOT_RUN now verified. First hosted installed-plans
+run42414346536/job128529080044 failed because its isolated oldSDK tests did not append
+newselectedcontrols before checking allchangedSDK. Retained failedlog, appended selected
+controls before unchanged originalreadplan gate. Exactinstalled64SDK/37HTTP-recovery/
+52selected then originalgatePASS; this is fifteenth older CI batch, not a gate waiver.
+Fresh strict-ACK fullsuite and newexacthead hostedCI remain outstanding.
