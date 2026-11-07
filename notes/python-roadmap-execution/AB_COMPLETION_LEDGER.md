@@ -2,6 +2,25 @@
 
 ## PR292 verified merge; revision-aware namespace validation underway
 
+Corrected source-validation-location-fixed full installed4625SDK/340simulator and
+allreference-worker/39governance suitesPASS, zero skips/errors/failures.60SDK/
+27simulator/5worker rawsource-wheel-sdist-installed module parity rechecked;
+SDK/worker contain no simulator. InstalledSDK-only newmodule/allchangedcode100%
+unexcludedPASS; focused722/630/508/132/50controls and12fixture100%PASS. Corrected
+17linkedcasesPASS(694SDK/217simulator/57worker) vs17nativeNOT_RUN/expectedexit3.
+Final receipt evidence/full-roadmap-source-validation-20261107.json retains initial
+337simulatorPASS/3FAIL superseded diagnosticspan run; no failed reports overwritten.
+PR293 currentheadbd1364c72checksPASS; finalreceiptcommit/exactheadCI/ordinarymerge
+remain delivery gates. No artifact/matrix job remains; no native/fullroadmap promotion.
+
+Superseded source-validation-first verifier completed:4625SDK/allreference-worker
+suitesPASS; fullsimulator337PASS/3FAIL. All three failures are the new exactsource-
+span assertions correctly rejecting old offset37 (two public HTTP clients plus
+supplementary fixture). Preserve original simulator.xml/last-command.log/artifacts.
+Corrected source-validation-location-fixed verifier/matrix and PR293CI watcher
+remain running; five corrected installedfocusedCI batches alreadyPASS. No failed
+report overwritten, SDK guard or expected token weakened, native acceptance unchanged.
+
 DraftPR293 publishedd1e8cd511. Source review found the declared fixture's Error
 offset37was one character before actual token38. Corrected to38 and added independent
 public sync/nativeasync source-span slicing assertions plus supplementary regression;

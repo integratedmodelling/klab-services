@@ -1,5 +1,12 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR293 namespace diagnostics candidate corrected installed4625SDK/340simulator/
+allreference-worker-governance suitesPASS;60SDK/27simulator/5worker rawmoduleparity.
+50SDK/2publicHTTP/12fixturecontrolsPASS;newmodule/changedcode100%unexcluded.
+17linkedcasesPASS vs17nativeNOT_RUN. Initial3synthetic offset failures retained,
+corrected to exact source-token span without weakening assertions; finalreceiptCI/
+ordinarymerge still pending, no semantic publication/ontology repair/science inferred.
+
 PR292 verified MERGED63e4f33c8 at2026-11-07T15:39:22Z, exact32852ca9c/
 all23reported finalheadchecksPASS. Shared reference delivery is separate from native
 granular ACL/issuer/science acceptance. Active revision-aware namespace diagnostics

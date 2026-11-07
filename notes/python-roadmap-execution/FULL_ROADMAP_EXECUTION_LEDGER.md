@@ -2,6 +2,21 @@
 
 ## Sharing merge checkpoint and immediate source-validation implementation
 
+Corrected installed4625SDK/340simulator/allreference-worker/39governance suites
+PASS, zero skips/errors/failures;60SDK/27simulator/5worker rawmoduleparity rechecked.
+Installednewmodule/allchangedSDK100%unexcluded;focused722/630/508/132/50controls
+and12fixture100%PASS.17linkedcasesPASS(694SDK/217simulator/57worker) versus
+17nativeREAL_NOT_RUN/expectedexit3. Complete receipt
+evidence/full-roadmap-source-validation-20261107.json preserves superseded337PASS/
+3FAILsource-span run separately. PR293 bd1364c72checksPASS; finalreceipt/exactheadCI/
+ordinarymerge pending. No installedverifier or matrix runner remains running.
+
+Initial source-validation-first completed4625SDK/allreference-workerPASS but
+337simulatorPASS/3FAIL: both publicHTTP clientspan checks and supplementary fixture
+correctly reject superseded offset37. FailedXML/logs/oldartifacts retained. Corrected
+location-fixed verifier and17linkedmatrix plus PR293CI watcher remain running;
+corrected fivefocusedCI batchesPASS. No overwritten reports or weakened token oracle.
+
 DraftPR293 d1e8cd511. Review caught synthetic diagnostic offset37instead of38;
 corrected fixture, publicHTTP independent exact token/span oracle and supplemental
 regression14controlsPASS. Initial source-validation-first artifacts/matrix marked

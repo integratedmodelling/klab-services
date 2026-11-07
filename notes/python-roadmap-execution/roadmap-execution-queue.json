@@ -793,7 +793,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: revision-aware-validation"
       },
       "simulator_support_needed": "Expose typed validation evidence pinned to source hash and knowledge service/worldview/revision; explicit revalidation after revision change, parser success distinct from semantic admission; independent finite validator fixture.",
-      "implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_IMPLEMENTED_SOURCE_ACCEPTANCE_IN_PROGRESS",
+      "implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_INSTALLED_VERIFIED_PR293_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -922,7 +922,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: revision-aware-validation"
       },
       "simulator_support_needed": "Expose typed validation evidence pinned to source hash and knowledge service/worldview/revision; explicit revalidation after revision change, parser success distinct from semantic admission; independent finite validator fixture.",
-      "implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_IMPLEMENTED_SOURCE_ACCEPTANCE_IN_PROGRESS",
+      "implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_INSTALLED_VERIFIED_PR293_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
