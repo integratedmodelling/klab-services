@@ -57,6 +57,7 @@ from klab_client.accepted_documents import AcceptedDocuments, AsyncAcceptedDocum
 from klab_client.dependencies import DependencyInspector, AsyncDependencyInspector, DependencyMember, DependencySnapshot
 from klab_client.dependency_graphs import DependencyGraphs, AsyncDependencyGraphs, DependencyNode, DependencyEdge, DependencyGraphSnapshot
 from klab_client.input_provenance import InputProvenance, AsyncInputProvenance, InputProvenanceReceipt
+from klab_client.commits import CommitInspector, AsyncCommitInspector, CommitInspection, CommitLink
 from klab_client.read_plan_analysis import ReadPlanAnalysis, analyze_read_plan
 from klab_client.managed_agents import (ManagedAgentReference, ManagedAgentStatus, create_managed_reference,
     read_managed_reference, command_managed_reference, async_create_managed_reference,
@@ -85,6 +86,7 @@ from klab_client.scan_slices import ScanSlice
 from klab_client.imports import ResourceImporter, AsyncResourceImporter, ImportFormat, ImportSubmission
 
 __all__ = [
+    "CommitInspector", "AsyncCommitInspector", "CommitInspection", "CommitLink",
     "InputProvenance", "AsyncInputProvenance", "InputProvenanceReceipt",
     "DependencyGraphs", "AsyncDependencyGraphs", "DependencyNode", "DependencyEdge", "DependencyGraphSnapshot",
     "DependencyInspector", "AsyncDependencyInspector", "DependencyMember", "DependencySnapshot",

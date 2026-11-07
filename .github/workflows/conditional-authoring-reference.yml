@@ -25,7 +25,7 @@ jobs:
       - name: Public SDK-only conditions, immutable receipts, privacy and binding guards
         run: python -m pytest -q python-client/tests/unit/test_accepted_documents.py --cov=klab_client --cov-branch --cov-report=json:conditional-source-sdk.json
       - name: Whole new module and all changed SDK decisions unexcluded
-        run: python -m pytest -q python-client/tests/unit/test_input_provenance.py python-client/tests/unit/test_dependency_graphs.py python-client/tests/unit/test_dependencies.py --cov=klab_client --cov-branch --cov-append --cov-report=json:conditional-source-sdk.json
+        run: python -m pytest -q python-client/tests/unit/test_commits.py python-client/tests/unit/test_input_provenance.py python-client/tests/unit/test_dependency_graphs.py python-client/tests/unit/test_dependencies.py --cov=klab_client --cov-branch --cov-append --cov-report=json:conditional-source-sdk.json
       - name: Enforce unchanged conditional source coverage gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"

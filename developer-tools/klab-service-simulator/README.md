@@ -8,6 +8,12 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario commit-inspection` supplies the native-shaped transient commit-cache
+read after a finite synthetic observation completes. Explicit `im:commit-id` metadata,
+current-owner denial, test-only expiry/null and bounded ephemeral cleanup do not
+imply scientific commits, contiguous revisions or full graph convergence. Native
+source route exists; see [cache inspection](../../python-client/docs/commit-inspection.md).
+
 `--scenario annotated-input` composes the pinned crop import and explicit literal
 namespace/model ADD with selected-plan/recorded-input/source-bound-graph receipts.
 Binary versus manifest/source hashes stay distinct; public sync/nativeasync workflows

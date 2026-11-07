@@ -1,0 +1,25 @@
+{
+  "evidence": "READ_ONLY_SOURCE_NOT_NATIVE_EXECUTION",
+  "baseline": "53ee5bed9fd433ec877187ce1d4ed09a0fbd84f2",
+  "stable_gap": "JAVA-GAP-0016",
+  "native_route": "GET /api/v1/commit?id=<positive long>",
+  "source_raw_sha256": {
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/RuntimeService.java": "5c8756f7e6f4c6463a9bab73beb231855917a9bc181538d50e191f98e3fe8e29",
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/data/KnowledgeGraph.java": "ec6134cd46ef6ddba269abace8d382d47f979282f844f26271344a1024abed20",
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/digitaltwin/impl/CommitImpl.java": "4a4f9999a5e2bf7e4b88aabcda592a61bc738f65f2d90da51453fb26c7c805f7",
+    "klab.services.runtime.server/src/main/java/org/integratedmodelling/klab/services/runtime/server/controllers/RuntimeServerController.java": "4014d544069a1b09062397d1705d473631352553805afe9ebd50a68cf709c227",
+    "klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/DigitalTwinImpl.java": "685c9028d75d0e1b875e092fc04fca392efc487924709938e49e417baebc0482"
+  },
+  "observations": [
+    "ServicesAPI.RUNTIME.GET_COMMIT_INFO and RuntimeServerController1115 map GETcommit?id to ContextScope/DigitalTwinImpl.getCommit; native commit reads exist, do not label absent.",
+    "DigitalTwinImpl4641 returns commitCache.getIfPresent. Inspected source maximum200/expireAfterAccess10minutes is temporary cache configuration, not promised deployed retention or durable-history contract.",
+    "KnowledgeGraph.Commit explicitly documents temporarycache and reports addedassets/observations/cohorts/modified/deleted groups plus added/deletedlink triples; links may name previouslyseen assets not added in same transaction.",
+    "CommitImpl bean uses id/timestamp/owner and change groups; cessation/membership/consequence records remain immutable raw reports, not grant or scientific authority.",
+    "Metadata.IM_COMMIT_ID is im:commit-id. Explicitly reported metadata can identify a commit for read; Job FINISHED/numericcommitID/timestamp order does not establish predecessor/contiguous revision or fullgraph.",
+    "New CommitInspector/nativeAsync primitive preserves missinggroupsNone, returns nullentry as explicitMissingAssetError, rechecks current Runtime/root/client/transport/credential fencing and never synthesizes or writes commits.",
+    "Finite independent cache fixture materializes only completed synthetic observation reports, explicit expiry/128entry cap/ownedcleanup. Its retention is not native200/10minute science proof. Full proposed checkpoint/delta/gap-resync reference remains unfinished Python work."
+  ],
+  "native_result": "NOT_RUN",
+  "prepared_native_test": "python-client/tests/functional/test_commits.py",
+  "remaining_obligation": "Maintained native complete graph/contiguous revision/incarnation/retention/notification reconciliation and scientific lineage with approved real two-client proof; read primitive is not full roadmap completion"
+}

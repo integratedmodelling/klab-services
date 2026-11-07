@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 374,
+    "IMPLEMENTED_SOURCE_ONLY": 376,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -1743,6 +1743,20 @@
       "owner": "Client",
       "operation": "close",
       "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "commits.py",
+      "owner": "CommitInspector",
+      "operation": "inspect",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "commits.py",
+      "owner": "AsyncCommitInspector",
+      "operation": "inspect",
+      "async": true,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
     {

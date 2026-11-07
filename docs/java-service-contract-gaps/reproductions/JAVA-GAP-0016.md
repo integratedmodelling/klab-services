@@ -21,14 +21,14 @@ Generated from `gaps.yaml`; simulator evidence is not native acceptance.
 
 ## Actual observed Java behavior
 
-NOT_TESTED complete remote lineage/revision snapshot and committed race contract. Native harness source explicitly inspects committed local input receipts; bounded real provenance reads already exist.
+NOT_TESTED complete remote lineage/revision snapshot and committed race contract. Native harness source explicitly inspects committed local input receipts; bounded real provenance reads already exist. Read-only source review confirms existing GET/api/v1/commit?id and ContextScope authorization; DigitalTwinImpl uses temporary commitCache.getIfPresent (source200entries/10minuteafteraccess, not deployed retention promise). Native commit reports exist but do not establish contiguous numeric revisions/durable/fullgraph reconciliation.
 
 ## Independent simulator implementation and fixtures
 
 Partial plans/recorded effects with unknown durable consistency. Explicit provenance-dependencies fixture declares MEASURED/CONTRIBUTED_TO/planned RESOLVED edges in one owner root. Separate revision-convergence fixture captures completed synthetic observation IDs with expected-head CAS, bounded exact history, two independent clients and explicit refresh; ephemeral only, durable mode refuses. Neither establishes native committed science, full lineage, notification convergence, computed dependency or cross-service snapshot coherence.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-PROVENANCE-001, SIM-REFRESH-001, SIM-PROVENANCE-DEPENDENCIES-001, SIM-REVISION-CONVERGENCE-001
+Scenarios: SIM-PROVENANCE-001, SIM-REFRESH-001, SIM-PROVENANCE-DEPENDENCIES-001, SIM-REVISION-CONVERGENCE-001, SIM-COMMIT-CACHE-001
 
 Exact executable controls:
 
@@ -36,6 +36,9 @@ Exact executable controls:
 - `python-client/tests/unit/test_async_provenance.py`
 - `developer-tools/klab-service-simulator/tests/test_provenance_dependencies.py`
 - `developer-tools/klab-service-simulator/tests/test_revision_convergence.py`
+- `python-client/tests/unit/test_commits.py`
+- `developer-tools/klab-service-simulator/tests/test_commits.py`
+- `developer-tools/klab-service-simulator/tests/test_commit_fixture.py`
 
 ## Reproduction commands
 
@@ -58,14 +61,16 @@ It is an executable missing-adapter disposition, **not** an actual native test o
 5. Capture request/response/error, positive/negative authorization, independent scientific checks where relevant and owned cleanup; compare with the acceptance criteria above.
 6. If no reviewed adapter/build/permission exists, retain NOT_RUN. Do not invent native endpoints or turn simulator success into a Java fix.
 
-Existing native test references: none reviewed for this complete gap
+Existing native test references: python-client/tests/functional/test_commits.py
 
 ## Custody, related trackers and remaining questions
 
 Original reproducer/evidence: notes/python-roadmap-execution/evidence/ab-staging-vxii-source-reference-20261106.json
 
-Separate from durable notification cursor gap0005: committed graph/lineage semantics need matching remote DTOs and real two-client proof, not inferred AMQP ordering. Synthetic two-client fixture links do not supply native commits or scientific provenance authority.
+Separate from durable notification cursor gap0005: committed graph/lineage semantics need matching remote DTOs and real two-client proof, not inferred AMQP ordering. Synthetic two-client fixture links do not supply native commits or scientific provenance authority. Public native-shaped commit-cache read primitive preserves exact IDs/changegroups/linktriples/unknown missinggroups and currentroot identity; null is explicitunavailable. It is not complete graph/durable/contiguous revision authority and does not waive independently runnable full finite checkpoint/delta/gap-resync reference work.
 
 - https://github.com/integratedmodelling/klab-services/issues/126
 - python-client/docs/provenance-dependency-reference.md
 - notes/python-roadmap-execution/evidence/full-roadmap-provenance-dependencies-20261107.json
+- python-client/docs/commit-inspection.md
+- notes/python-roadmap-execution/evidence/commit-inspection-source-authority-20261107.json

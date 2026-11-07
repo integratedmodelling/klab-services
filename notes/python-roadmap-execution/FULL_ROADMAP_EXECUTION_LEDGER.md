@@ -1,5 +1,26 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Annotated-input reference delivered; commit/convergence continues
+
+Commitcacheprimitive teninstalledfocusedCIgatesPASS,olderappend214/membershipappend
+180/graphappend96/inputappend41/commit41dedicated;13fixture100%. Actualordered
+selection693/214/6/21+unchanged100%gatePASS. Freshfullartifactverifier/17linkedmatrix
+running,no commitPRyet. Entirebatchrunner480s/diagnosticstdout/faulthandler90 avoids
+known240stotalbudget issue, productAPI/testwaits unchanged. Full finiteconvergence
+stillunfinished independentlyrunnablework; nativecacheprimitive cannot complete rows.
+
+PR297MERGED53ee5bed9fd433ec877187ce1d4ed09a0fbd84f2/2026-11-07T18:09:20Z,
+exacta2c54ca9a5fb97f09dc7cd3ce3ba07aa4b87dc2e/all29checksPASS. Actualremote/local
+ancestrycheckpointverified;42rows/history/29runnable/zero dispositions. Original240s
+runner timeout/unknownstoppingtest and ownedconsolecleanup retained, not productionfix.
+Nativecommitcache readsourceimplemented:41SDK100%newmodule/changedcode,2publicHTTP,
+13fixture100%,types-lint-49governancequeueorderingPASS. Existing nativeGETcommit?id
+returns temporarycache reports, not absentnativeAPI, numericcontiguousrevision/fullgraph
+or scientificauthority. Exactcurrentbindings/missingness/refusal preserved; original
+Runtimeidentityerrorclass/98.53%coveragedevelopmentfailures correctedwithout exclusions.
+Fresh native-commit-inspection-first verifier running/no newPRyet. Full finite
+referencecheckpoint/delta/gap-resync convergence stillPythonwork; primitive notdone-row.
+
 ## Graph delivery checkpoint and immediate annotated-input work
 
 Finalsameartifact390simulatorPASS233.376s,39governance/fatallint/workercov/custody

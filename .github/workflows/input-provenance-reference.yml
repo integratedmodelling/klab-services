@@ -25,6 +25,8 @@ jobs:
       - name: SDK-only explicit source and import-plan-current-input join controls
         run: python -m pytest -q python-client/tests/unit/test_input_provenance.py --cov=klab_client --cov-branch --cov-report=json:input-sdk.json
       - name: Entire new SDK module and changed SDK decisions unexcluded
+        run: python -m pytest -q python-client/tests/unit/test_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:input-sdk.json
+      - name: Enforce unchanged input association coverage gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py input-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/input_provenance.py
