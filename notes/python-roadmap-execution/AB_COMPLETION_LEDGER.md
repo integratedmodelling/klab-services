@@ -2,6 +2,21 @@
 
 ## PR301 verified merged; managed source/outcome/disposal active
 
+PR302 final installed candidate5150SDK/499simulator/72worker/allreference/39governance
+PASS zero skips/errors/failures;69SDK35sim5worker rawsource-wheel-sdist-installed parity
+verified/no simulatorinproduction.17linkedPASS(1218SDK/376sim/72worker)vs17nativeNOT_RUN.
+Fullinstalled newmodule/changedSDK100%PASS;14focusedCI+actualorderedselectionPASS.
+No simulator services remain. Finalreceipt/exactnewheadCI/ordinarymerge pending;
+native actor/private-session/scientific/finalrow acceptance remains separate. Borrowed
+dependencies, no fresh dependency isolation. Next worker probes retain two controls:
+current stdout/stderr budget is per-stream, and protocol-only ACK is accepted; neither
+is claimed to satisfy the next aggregate-output/strict-ACK acceptance requirement.
+
+DraftPR302 published4db8186bd; sourcefrozen/fullartifactverifier+17linkedmatrix+
+CIwatcher running.40SDK100%/6publicHTTP26fixture100%/14focusedCI+actualorderedselection
+PASS. No finalinstalled/exactheadCI/mergeclearance yet. Worker output/deployment custody
+next-review continues independently; OS/container hostilecode/harddisk approval distinct.
+
 Managed source final40SDK100%newmodule/allchangedSDK/6publicHTTP26fixture100%/types-
 lint49governancePASS;14installedfocusedCI+actualordered693/214/92/115/40/6/21+original
 100%gatePASS. First local focused-harness240s ceiling after12batches retained; remaining
