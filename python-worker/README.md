@@ -55,12 +55,15 @@ not signatures or verification that the scientific computation is correct.
 `execute(trusted_script, field, limits=Limits(...), cancel=Event())` starts a hidden
 `python -I` subprocess in a private temporary working directory with minimal
 environment, no parent credentials/PYTHONPATH. It enforces wall time, cell budget,
-bounded input and checked stdout/stderr file sizes, validates output before return,
+bounded input and a checked **aggregate stdout+stderr** byte acceptance budget,
+validates output before return,
 and reaps the direct child in finally. A trusted bootstrap waits for parent input
 before executing the exact script snapshot: Windows containment is a non-breakaway
 Job Object with kill-on-close, POSIX containment a new session/process group. If
 containment cannot be established, operator code never runs. Cleanup terminates
-owned descendants even after successful direct-child exit. `run_once` checks the
+owned descendants even after successful direct-child exit, before the final output
+size/read/validation step. The monitor can overshoot between checks: this is not a
+kernel hard disk quota or a bound on arbitrary working-directory files. `run_once` checks the
 retained task state about every200ms, stops local computation when cancellation or
 another terminal state is observed, and fails closed if status cannot be fetched.
 Monitoring requests use a200ms per-network-operation timeout (rather than the
@@ -95,6 +98,15 @@ not secretly marked complete by the vertical. Issue127 remains open for its full
 native/deployment/ABI and acceptance obligations. No public release is authorized.
 
 ## Install and coherent starter
+
+All public transport operations validate their exact provisional acknowledgement
+shape/state/identity, not merely a protocol string. Claims validate input/lease before
+operator code can run; PUBLISHED status requires finite output and exact scoped
+provenance/output digest. Publication acknowledgement must confirm the submitted
+output digest. A malformed successful mutation response is outcome-unknown, never
+permission to replay or an assertion of rollback. Digests remain server claims, not
+scientific accuracy or cryptographic provenance. See the [operator deployment handoff](docs/deployment-handoff.md)
+for outstanding native, OS/container and approval obligations.
 
 ```console
 python -m pip install ./python-client ./python-worker ./developer-tools/klab-service-simulator

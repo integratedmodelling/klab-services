@@ -7,10 +7,11 @@ from urllib.parse import urlsplit
 import httpx
 
 from .protocol import Field, PROTOCOL, WorkerError, decoded, encoded, MAX_BYTES
+from . import _responses
 
 
 def identity(value):
-    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", value):
+    if not isinstance(value, str) or value in (".", "..") or not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", value):
         raise WorkerError("Invalid worker/task identity")
     return value
 
@@ -29,6 +30,7 @@ class WorkerClient:
             raise WorkerError("Invalid worker timeout")
         self._http = httpx.Client(base_url=endpoint.rstrip("/") + "/", timeout=timeout, follow_redirects=False, trust_env=False,
             headers={"Authorization": credential, "klab-scope": scope, "X-Klab-Worker-Protocol": PROTOCOL})
+        self._scope = scope
 
     def close(self):
         self._http.close()
@@ -60,34 +62,37 @@ class WorkerClient:
             raise WorkerError("Worker transport outcome unknown; no automatic replay") from None
 
     def register(self, worker_id, *, operation):
-        return self._request("POST", "register", {"worker_id": identity(worker_id), "operation": identity(operation)})
+        worker_id = identity(worker_id)
+        return _responses.ack(self._request("POST", "register", {"worker_id": worker_id, "operation": identity(operation)}),
+            "REGISTERED", worker_id=worker_id)
 
     def submit(self, field, *, operation):
         if not isinstance(field, Field):
             raise WorkerError("Submit requires a validated Field")
-        return self._request("POST", "tasks", {"operation": identity(operation), "input": field.to_dict()})
+        return _responses.assigned(self._request("POST", "tasks", {"operation": identity(operation), "input": field.to_dict()}))
 
     def claim(self, worker_id):
-        return self._request("POST", "claim", {"worker_id": identity(worker_id)})
+        return _responses.claimed(self._request("POST", "claim", {"worker_id": identity(worker_id)}))
 
     def status(self, task_id):
-        return self._request("GET", "tasks/" + identity(task_id))
+        task_id = identity(task_id)
+        return _responses.status(self._request("GET", "tasks/" + task_id), task_id, self._scope)
 
     def cancel(self, task_id):
-        return self._request("POST", "tasks/" + identity(task_id) + "/cancel", {})
+        return _responses.ack(self._request("POST", "tasks/" + identity(task_id) + "/cancel", {}), "CANCELLED")
 
     def recover_task(self, task_id, *, allow_recompute=False):
         if allow_recompute is not True:
             raise WorkerError("Lost worker outcome requires explicit recomputation consent; no automatic replay")
-        return self._request("POST", "tasks/" + identity(task_id) + "/recover", {"confirm_recompute": True})
+        task_id = identity(task_id)
+        return _responses.assigned(self._request("POST", "tasks/" + task_id + "/recover", {"confirm_recompute": True}), task_id)
 
     def release(self, worker_id):
-        return self._request("POST", "release", {"worker_id": identity(worker_id)})
+        return _responses.ack(self._request("POST", "release", {"worker_id": identity(worker_id)}), "RELEASED")
 
     def fail(self, task):
-        if not isinstance(task, dict):
-            raise WorkerError("Failure acknowledgement requires a claimed task")
-        return self._request("POST", "tasks/" + identity(task.get("task_id")) + "/fail", {"lease": task.get("lease")})
+        _responses.task_input(task)
+        return _responses.ack(self._request("POST", "tasks/" + identity(task.get("task_id")) + "/fail", {"lease": task.get("lease")}), "FAILED")
 
     def run_once(self, worker_id, script, *, limits=None, cancel=None):
         from .execution import execute
@@ -105,7 +110,8 @@ class WorkerClient:
                 now = time.monotonic()
                 if now >= self.next_check:
                     self.next_check = now + .2
-                    if client._request("GET", "tasks/" + identity(task["task_id"]), poll=True).get("state") != "LEASED":
+                    response = client._request("GET", "tasks/" + identity(task["task_id"]), poll=True)
+                    if _responses.status(response, task["task_id"], client._scope)["state"] != "LEASED":
                         return True
                 return False
         try:
@@ -122,9 +128,10 @@ class WorkerClient:
         if (not isinstance(task, dict) or not isinstance(field, Field) or not isinstance(implementation_sha256, str)
                 or not re.fullmatch(r"[0-9a-f]{64}", implementation_sha256)):
             raise WorkerError("Publication requires validated result and implementation digest")
-        source = Field.from_dict(task.get("input"))
+        source = _responses.task_input(task)
         if not field.same_layout(source):
             raise WorkerError("Worker result cannot silently alter geometry, units or validity")
-        return self._request("POST", "tasks/" + identity(task.get("task_id")) + "/publish", {
+        output_sha256 = hashlib.sha256(encoded(field.to_dict())).hexdigest()
+        return _responses.ack(self._request("POST", "tasks/" + identity(task.get("task_id")) + "/publish", {
             "lease": task.get("lease"), "output": field.to_dict(), "input_sha256": hashlib.sha256(encoded(source.to_dict())).hexdigest(),
-            "implementation_sha256": implementation_sha256})
+            "implementation_sha256": implementation_sha256}), "PUBLISHED", output_sha256=output_sha256)

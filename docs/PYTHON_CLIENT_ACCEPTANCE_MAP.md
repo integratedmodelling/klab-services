@@ -1,5 +1,12 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR303workercustodycandidate5152installedSDK501sim115worker/23workerHTTP/reference-
+governancePASS;69SDK35sim6worker rawparity/17linkedPASSvs17nativeNOT_RUN. Whole new
+workerreceiptmodule/changedworker100%,originalaggregate80%gate93.07%/common90%gate96.85%
+and14SDKfocusedCI+orderedselectionPASS. Aggregatecapturedoutput/exactACK custody is not
+hardtotaldisk/hostilecode/OSapproval/nativeABI/science. Finalreceipt/exactheadCI/ordinary
+mergepending; parent302verifiedmerged4fe5d45ad/all34checksPASS;42rows/22runnable.
+
 PR302managedbehaviorcandidate5150installedSDK499sim72worker/reference-governancePASS;
 69SDK35sim5worker rawparity,17linkedPASSvs17nativeNOT_RUN.40SDK100%/6publicHTTP26fixture
 100%/14focusedCI+orderedselectionPASS. Literal source admission/declared synthetic outcome/

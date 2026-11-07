@@ -33,8 +33,21 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent verified checkpoint: PR301 merge `a662bf884`, exact `001ca0e2b`,
-all33reported final-head checks PASS. PR300 explanation/PR299 convergence also verified.
+Most recent verified checkpoint: PR302 merge `4fe5d45ad`, exact `4ed4352bf`,
+all34reported final-head checks PASS. PR301 copied/PR300 explanation also verified.
+
+Current active `feat/python-worker-output-custody`, draftPR303 `3a7b125a9`:
+115source+focusedinstalled workerunit/23publicHTTP-recoveryPASS; new _responses module/
+changedworker100%, originalaggregate80%gate93.07%/common90%gate96.85%,6moduletypes/
+lint56governance-toolcontrolsPASS. ActualinstalledSDKordered693/214/92/115/40/6/21+
+original100%gatePASS. Fresh worker-output-custody-first fullverifier/14olderSDKfocusedCI/
+17linkedmatrix/PR303watcher running; sourcefrozen/no finalfullartifact/exactheadCI/
+mergeacceptance yet. Record-worker-output-custody.py prepared under approvedtemp.
+42originalrows/history/22runnable/zero dispositions; no native workerABI/scientific/
+OS-container-harddisk-hostilecode approval. Earlyaggregatebudget/protocolACK probes
+and wrongsurrogateJSON testfailure retained/corrected, no productrelaxation. Next
+selectedreference spatial/temporal windows reviewed in privateplan only, not implemented.
+Historical entries below superseded by this entry.
 
 Current active `feat/python-managed-behavior-workflow`, draftPR302 `4db8186bd`:
 40SDK100%newmodule/changedSDK,6publicsync/async source-admission/reconnect/finish-fail-

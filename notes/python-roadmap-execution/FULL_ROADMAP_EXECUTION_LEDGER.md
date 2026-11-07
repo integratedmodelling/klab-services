@@ -1,5 +1,41 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Managed behavior delivered; worker output custody active
+
+PR303initialWindows3.11 changedcoverage arc98->99 timing failure reviewed beforemerge;
+green0208dochead not assumedfix. Added deterministic final-budget refusal control,
+sameproductionbytes116unit/23HTTP supplementalPASS/changedworker100%/originalgates.
+Initiallogs/original115freshsuite preserved; exactnewheadCI/merge pending.
+
+PR303final5152installedSDK501sim115worker/23workerHTTP/reference39governancePASS;
+69SDK35sim6worker rawparity/no simulatorinproduction;17linkedPASS(1218SDK378sim115worker)
+vs17nativeNOT_RUN. Fullnewmodule/changedworker100%/93.07%aggregate96.85%common/original
+gates and14SDKfocusedCI+orderedselectionPASS. No simulatorservices remain; finalreceipt/
+exactheadCI/ordinarymergepending, no nativeABI/OS/science/finalrow promotion.
+
+14olderSDKinstalledfocusedCI regressions allPASS, defaultSDKgate unchanged; actual
+orderedselection and focusedinstalledworker115/23HTTP/gatesPASS. Finalfullartifact/
+17linkedmatrix/hostedCI remain outstanding; no acceptance promotion.
+
+DraftPR3033a7b125a9published. Focusedfreshinstalled115worker/23HTTP-recovery/newmodule+
+changedworker100%/originalaggregate93.07%common96.85%PASS;actualSDKorderedselection
+PASS. Fullverifier/14SDKfocusedregression/17linkedmatrix/CIwatcher running; sourcefrozen,
+no fullinstalled/exactheadCI/mergeclearance yet. Nextselectedwindows review independent.
+
+Finalworkersource115unit/23publicHTTP-recoveryPASS;newmodule/changedworker100%,
+originalaggregate80%gate93.07%/common90%gate96.85%,full6moduletypes/lint/56governance-
+toolcontrolsPASS. DotsegmentIDs failbefore routeescape. Sourcefrozen/installeddelivery
+pending; no OSsandbox/diskquota/nativeABI/science claims.
+
+PR302verifiedMERGED4fe5d45adb9da57fc9fc7573c840ec36403aa535 at20:19:37Z,
+exact4ed4352bfaaf387cbdd9219ade942941c5188e98/all34checksPASS/remote-localcheckpoint.
+42originalrows/history/22runnable/zero dispositions. Native actor/science/finalrow not
+promoted. Worker nextsource implements aggregateoutput/treestop-beforeacceptance/strict
+ACK/task/lease/provenance/digest;113unit/23publicHTTP-recoveryPASS/newmodule+changedworker
+100%,unchangedcommon90%gate95.95%/types-lintPASS.7coverage-tool controlsPASS.
+No workerPR/installed acceptance yet. Deployment handoff is not OS/native approval;
+harddisk/hostile-code/scientific/native ABI remain genuine external obligations.
+
 ## Public copied composition delivered; managed behavior active
 
 PR302candidate5150installedSDK499sim72worker/reference-39governancePASS;69SDK35sim5worker

@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-WORKER-OUTPUT-CUSTODY-001",
+      "rows": ["RC-P5", "CAP-17"],
+      "routes": ["/runtime/experimental/worker/v1/register", "/runtime/experimental/worker/v1/claim", "/runtime/experimental/worker/v1/tasks/"],
+      "source": "Public WorkerClient/execute aggregate stdout-plus-stderr acceptance budget, owned descendant stop before final output validation, exact protocol operation ACK/task/lease/input/status/published-output scoped provenance and digest checks. Actual independent HTTP failures for aggregate-output/layout alteration publish neither output nor provenance; explicit new task can succeed while old FAILED row remains. No automatic retry/recompute or scientific accuracy inferred. Local monitors may overshoot; arbitrary working-directory disk, hostile-code isolation, aggregate RSS and native worker ABI/deployment require reviewed operator OS-container/native evidence. Deployment handoff is not approval.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; maintained native ABI/lease/publication and reviewed OS-container total-disk/hostile-code deployment evidence remain external",
+      "simulator_test": "test_worker_output_custody.py::test_failed_trusted_output_never_publishes_then_explicit_new_task_can_succeed",
+      "java_gap_ids": ["JAVA-GAP-0017"]
+    },
+    {
       "id": "SIM-MANAGED-BEHAVIOR-001",
       "rows": ["RC-P4.5"],
       "routes": ["/runtime/experimental/managed-behaviors/v1/validate", "/runtime/experimental/managed-behaviors/v1/create", "/runtime/experimental/managed-behaviors/v1/"],

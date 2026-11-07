@@ -82,7 +82,7 @@ def execute(script, field, *, limits=Limits(), cancel=None):
                         raise WorkerError("Worker execution cancelled")
                     if time.monotonic() - start >= limits.seconds:
                         raise WorkerError("Worker execution exceeded deadline")
-                    if max(os.fstat(stdout.fileno()).st_size, os.fstat(stderr.fileno()).st_size) > limits.output_bytes:
+                    if os.fstat(stdout.fileno()).st_size + os.fstat(stderr.fileno()).st_size > limits.output_bytes:
                         raise WorkerError("Worker output exceeded byte budget")
                     try:
                         status = process.wait(timeout=min(0.05, limits.seconds))
@@ -91,7 +91,11 @@ def execute(script, field, *, limits=Limits(), cancel=None):
                         continue
                 if status != 0:
                     raise WorkerError("Worker process failed; output is not publishable")
-                if os.fstat(stdout.fileno()).st_size > limits.output_bytes or os.fstat(stderr.fileno()).st_size > limits.output_bytes:
+                # Freeze output custody before reading: descendants cannot keep writing
+                # after their successful direct parent exited. Finally handles failures.
+                tree.close()
+                tree = None
+                if os.fstat(stdout.fileno()).st_size + os.fstat(stderr.fileno()).st_size > limits.output_bytes:
                     raise WorkerError("Worker output exceeded byte budget")
                 stdout.seek(0)
                 result = Field.from_dict(decoded(stdout.read(limits.output_bytes + 1)))

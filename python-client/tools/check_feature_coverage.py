@@ -6,11 +6,11 @@ import re
 import subprocess
 
 
-def changed_lines(diff):
+def changed_lines(diff, package="python-client"):
     changed, path, line = {}, None, 0
     for text in diff.splitlines():
-        if text.startswith("+++ b/python-client/src/"):
-            path = text[len("+++ b/python-client/"):]
+        if text.startswith(f"+++ b/{package}/src/"):
+            path = text[len(f"+++ b/{package}/"):]
             changed.setdefault(path, set())
         elif text.startswith("+++ "):
             path = None
@@ -24,12 +24,13 @@ def changed_lines(diff):
     return changed
 
 
-def evaluate(report, diff, new_modules):
+def evaluate(report, diff, new_modules, package="python-client"):
     files = {}
+    library = {"python-client": "klab_client", "python-worker": "klab_worker"}[package]
     for path, data in report["files"].items():
         path = path.replace("\\", "/")
-        if "klab_client/" in path:
-            path = "src/klab_client/" + path.rsplit("klab_client/", 1)[1]
+        if library + "/" in path:
+            path = "src/" + library + "/" + path.rsplit(library + "/", 1)[1]
         files[path] = data
     errors = []
     for path in new_modules:
@@ -38,7 +39,7 @@ def evaluate(report, diff, new_modules):
             errors.append(f"{path}: not measured")
         elif data["missing_lines"] or data["missing_branches"] or data["excluded_lines"]:
             errors.append(f"{path}: new modules require unexcluded 100% lines and branches")
-    for path, lines in changed_lines(diff).items():
+    for path, lines in changed_lines(diff, package).items():
         data = files.get(path)
         if data is None:
             errors.append(f"{path}: changed production module not measured")
@@ -55,11 +56,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("report", type=Path)
     parser.add_argument("--base", required=True)
+    parser.add_argument("--package", choices=("python-client", "python-worker"), default="python-client")
     parser.add_argument("--new-module", action="append", required=True)
     args = parser.parse_args()
-    diff = subprocess.run(["git", "diff", "--no-ext-diff", "--unified=0", args.base, "--", "python-client/src"],
+    diff = subprocess.run(["git", "diff", "--no-ext-diff", "--unified=0", args.base, "--", args.package + "/src"],
         cwd=Path(__file__).resolve().parents[2], capture_output=True, text=True, check=True).stdout
-    errors = evaluate(json.loads(args.report.read_text()), diff, args.new_module)
+    errors = evaluate(json.loads(args.report.read_text()), diff, args.new_module, args.package)
     if errors:
         print("\n".join(errors))
         return 1
