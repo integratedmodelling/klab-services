@@ -1,0 +1,24 @@
+{
+  "verified_utc": "2026-11-07T05:18:56.764416+00:00",
+  "baseline_head": "00eba666fd1b4a17da643e6e83c033912ec0b1bb",
+  "scope": "Explicit ephemeral reference checkpoint CAS/history over completed synthetic observation IDs, not native scientific commits/lineage/notification convergence",
+  "attribution": "Uncommitted simulator feature identified by raw source/wheel/sdist/installed parity and artifact hashes; production SDK/worker unchanged",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "c61a85589b46ac77f5c349f09929f78de8d8ad737e85b48453df34b8d6fb0654", "sdist_sha256": "2e82dc170dd17b15790646d214a0c90b4f9c45dee6c0de95ef1793b0aa8385aa", "parity_modules": 57},
+    "simulator": {"wheel_sha256": "a67403acedab39a6787d3f62cae5037072ec4412754ddf047c6c36a9b0b486d2", "sdist_sha256": "382320412a032dae62242c780223c1397172cda63315ab3e1f086968226a5ed6", "parity_modules": 22},
+    "worker": {"wheel_sha256": "c55f5a0b2dbda8b64144e89c71136cadd67b10617cc426b3fd0c07e2c429e55d", "sdist_sha256": "2f9b562d712d35766c8999700161bcca0a3f99c35b985539f6642fbabbed0e43", "parity_modules": 5}
+  },
+  "installed_suites": {"SDK": 4384, "simulator": 245, "revision_reference": 4, "provider_reference": 18, "provenance_reference": 18, "operation_inventory": 11, "other_reference": 98, "worker": 57, "worker_HTTP": 21, "governance": 37, "skips_failures_errors": 0},
+  "overlapping_counts_not_unique_total": true,
+  "simulator_only_new_module": {"covered_lines": 47, "statements": 47, "covered_branches": 24, "branches": 24, "excluded_lines": 0, "not_SDK_coverage": true},
+  "SDK_new_module_gate": "NOT_APPLICABLE; production SDK unchanged",
+  "body_mypy": "PASS simulator implementation",
+  "fatal_lint": "PASS",
+  "controls": ["Independent clients retain old reference DTOs and inspect exact historical/latest snapshots", "Independent concurrent writers: one expected-head CAS winner and one409, nativeasync reader confirms exact winner", "Waiting Job does not contribute a completed observation or auto-checkpoint; explicit capture contains only completed IDs", "Foreign and focused scopes refuse, owned cleanup discards checkpoint state", "Bounded8revisions/root,256IDs,4096byteintake, strict types/duplicate keys, absent or evicted410", "Durable storage mode explicitly refuses; no restart retention or cross-service atomicity claim"],
+  "coverage_progression": "Initial focused90percent then97percent; direct scenario/history/conflict guards added to reach100percent with no exclusions or relaxed assertions; no failing functional test run",
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 485, "simulator_tests": 174, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "dependency_custody": "Fresh wheel/sdist/pip-targets borrow prior test dependencies; no fresh dependency-isolation certification",
+  "issue_review": "2026-11-07T05:20:04.517173+00:00: all11open bodies/35comments retrieved; original body/comment hashes unchanged,12known campaign comments fully reinspected and match prior pinned provider-live-issue-review receipt; no unclassified URLs, safe closure candidates or issue mutations",
+  "native_java": "REAL_NOT_RUN; JAVA-GAP-0016/0013 native statuses unchanged. Reference counters are not scientific commits/hashes/signatures/grants; lineage and notification convergence remain unknown",
+  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; remaining42row federation/workflow and native acceptance gates. RC-P3.1/CAP-10/fullABC remain PARTIAL; sleep pending."
+}

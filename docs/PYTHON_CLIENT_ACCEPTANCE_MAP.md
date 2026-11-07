@@ -1,5 +1,11 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR285 provider restoration verified merged00eba666f/all34finalheadchecksPASS.
+New explicit revision-convergence simulator fixture4focusedtestsPASS,47lines/
+24branches100%unexcluded/bodymypyPASS. IDs-only ephemeral referenceCAS/history and
+two-client fresh inspection, NOT native scientific commits/full-lineage/notification
+convergence. Fresh installed verification running; RC-P3.1/CAP-10 stay PARTIAL.
+
 ProviderJob restoration follow-up: fresh4384SDK/241simulator/18provider and all
 reference/worker/governance suitesPASS, zero skips/errors/failures; rawpackageparity.
 Independent clients restore waiting/finished binaryJobs without recomputation or

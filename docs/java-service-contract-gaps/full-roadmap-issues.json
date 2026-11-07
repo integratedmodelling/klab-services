@@ -9,7 +9,8 @@
     {"utc": "2026-11-07T02:04:41.345451+00:00", "open_services": 10, "open_geospatial": 1, "all_original_bodies_unchanged": true, "comment_bodies_retrieved": true, "new_unclassified_comment_urls": 0, "classification_change": false, "closures": 0},
     {"utc": "2026-11-07T02:54:38.268878+00:00", "open_services": 10, "open_geospatial": 1, "all_original_bodies_unchanged": true, "comment_bodies_retrieved": true, "new_unclassified_comment_urls": 0, "classification_change": false, "closures": 0},
     {"utc": "2026-11-07T03:41:40.729057+00:00", "open_services": 10, "open_geospatial": 1, "all_original_bodies_unchanged": true, "comment_bodies_retrieved": true, "new_unclassified_comment_urls": 0, "classification_change": false, "closures": 0},
-    {"utc": "2026-11-07T04:37:52.140810+00:00", "open_services": 10, "open_geospatial": 1, "all_original_bodies_unchanged": true, "comment_bodies_retrieved": true, "original_comment_hash_changes": 0, "known_campaign_comment_bodies_reinspected": 12, "new_unclassified_comment_urls": 0, "classification_change": false, "closures": 0}
+    {"utc": "2026-11-07T04:37:52.140810+00:00", "open_services": 10, "open_geospatial": 1, "all_original_bodies_unchanged": true, "comment_bodies_retrieved": true, "original_comment_hash_changes": 0, "known_campaign_comment_bodies_reinspected": 12, "new_unclassified_comment_urls": 0, "classification_change": false, "closures": 0},
+    {"utc": "2026-11-07T05:20:04.517173+00:00", "open_services": 10, "open_geospatial": 1, "all_original_bodies_unchanged": true, "comment_bodies_retrieved": 35, "original_comment_hash_changes": 0, "known_campaign_comment_bodies_reinspected": 12, "new_unclassified_comment_urls": 0, "classification_change": false, "closures": 0}
   ],
   "original_bodies_and_conditions_ref": "docs/java-service-contract-gaps/issues.json",
   "migration_candidates": 0,

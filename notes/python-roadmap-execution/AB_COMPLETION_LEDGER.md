@@ -1,5 +1,37 @@
 # A+B completion ledger — ongoing campaign
 
+Final revision17linkedcasesPASS(485SDK/174simulator/57worker) versus17realNOT_RUN/
+exit3, zero skips/errors/failures. Ordinary revisionPR/finalheadCI next; no native
+commits, full lineage or wholeRC-P3.1/CAP-10/fullABC completion claimed.
+
+Latest live review05:20:04UTC retrieved11open bodies/35comments; originalbody and
+commenthashes unchanged,12campaigncomments fully reinspected/match pinned hashes.
+No newunclassifiedURLs/closurecandidate/mutation;8Java/3other remainopen.
+
+Fresh revision reference4384SDK/245simulator/4revision/18provider/18provenance/
+11inventory/98reference/57worker/21HTTP/37governancePASS zero skips/errors/failures.
+57SDK+22simulator+5worker rawpackageparity verified; installed simulator-only47lines/
+24branches100%unexcluded. SDK unchanged/newmodulegateN/A.17linkedmatrix running
+vs17realNOT_RUN/exit3. OrdinaryPR/finalCI pending; native/fullABC unchanged.
+
+Revision-convergence reference fixture4focusedtestsPASS, simulator-only47lines/
+24branches100%unexcluded/bodymypyPASS. Explicit ephemeral IDs-only CAS/checkpoint
+protocol, exact bounded history and two independent clients; no native commit/
+notification convergence/full-lineage or productionSDK facade. Same0016/0013
+registry/handoff/scenario/docs/CI aligned. Fresh installed verification next;
+native statuses unchanged and RC-P3.1/CAP-10 remain PARTIAL.
+
+PR285 verified MERGED00eba666fd1b4a17da643e6e83c033912ec0b1bb at05:07:03Z,
+exact1b65f37213cea75162abd2a141233b9025914a0a/all34checksPASS/no failedrerun.
+Revision branch integrated actual merge preserving ledger work; no watcher remains.
+Continue explicit provisional revision/convergence workflow; native/fullABC gates open.
+
+Restoration published PR285 head1b65f3721; final-head watcher
+sh_1b45ffaf600137iNC1BH7MLArM running. No merge claimed; source/installed and17linked
+gates PASS. Next RC-P3.1/CAP-10 two-client provisional revision/convergence workflow
+must distinguish reference snapshots from native committed scientific revisions;
+existing draftCAS and read-plan hashes do not supply native commit authority.
+
 Final restoration installed changed-code gate and17linkedcasesPASS(485SDK/
 170simulator/57worker), zero skips/errors/failures versus17realNOT_RUN/exit3.
 Ordinary restoration PR/finalheadCI next; no native/fullABC acceptance promoted.
