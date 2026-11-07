@@ -6,7 +6,7 @@ Generated from `gaps.yaml`; simulator evidence is not native acceptance.
 
 - Java: **CONTRACT_PROVISIONAL**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: simulator-contract; component: Native Job/scope/Resources/Reasoner compatibility, not a missing Java scheduler/compiler.
-- Original roadmap: RC-P1.1, RC-P3.3, RC-P4.1, RC-P4.3, CAP-07, CAP-13, CAP-14.
+- Original roadmap: RC-P1.1, RC-P1.5, RC-P3.3, RC-P4.1, RC-P4.3, CAP-04, CAP-07, CAP-13, CAP-14.
 - API: UNKNOWN_PENDING_REFERENCE UNKNOWN_PENDING_REFERENCE.
 - Request/schema: developer-tools/klab-service-simulator/contract-cases.json.
 - Tested Java build/environment: NOT_RUN / exact native build and environment not established.
@@ -25,10 +25,10 @@ NOT_TESTED whole proposed finite scheduling/admission/semantic substitute. Narro
 
 ## Independent simulator implementation and fixtures
 
-Clockless controlled polls, exact-source literals, fixed SIM vocabulary, bounded private synthetic state; never local reasoning or Java execution. observation-selections admits only synthetic:Entity and synthetic:Connection, independently checks persisted endpoint ownership/existence, supplies declared plan/result selection receipts and direct HAS_CHILD pages. Public sync/nativeasync SDK and v2 saved Context/Observation/Job restoration are exercised; no scientific numeric storage, general ontology inference or unresolved transaction snapshots.
+Clockless controlled polls, exact-source literals, fixed SIM vocabulary, bounded private synthetic state; never local reasoning or Java execution. observation-selections admits only synthetic:Entity and synthetic:Connection, independently checks persisted endpoint ownership/existence, supplies declared plan/result selection receipts and direct HAS_CHILD pages. Public sync/nativeasync SDK and v2 saved Context/Observation/Job restoration are exercised; no scientific numeric storage, general ontology inference or unresolved transaction snapshots. Separate material-selections admits three declared numeric candidates with source-shaped lexical preference scores, two synthetic observer biases and1m/2m lattices; typed public resolve/observe/fetch_data independently verify60numerical option combinations. Finite arithmetic and tie policy are provisional, not native model admission or general scientific ranking.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-DISCOVERY-001, SIM-LIFECYCLE-001, SIM-FAULTS-001, SIM-SELECTION-001, SIM-INSPECTION-001, SIM-IMPORT-001, SIM-INPUT-BINDING-001, SIM-SEMANTICS-001, SIM-BEHAVIOR-DRAFT-001, SIM-NOTEBOOK-001, REPLAY-001, SIM-PROVENANCE-DEPENDENCIES-001, SIM-PROVIDER-AVRO-001, SIM-REVISION-CONVERGENCE-001, SIM-COPIED-COMPOSITION-001, SIM-OBSERVATION-SELECTIONS-001
+Scenarios: SIM-DISCOVERY-001, SIM-LIFECYCLE-001, SIM-FAULTS-001, SIM-SELECTION-001, SIM-INSPECTION-001, SIM-IMPORT-001, SIM-INPUT-BINDING-001, SIM-SEMANTICS-001, SIM-BEHAVIOR-DRAFT-001, SIM-NOTEBOOK-001, REPLAY-001, SIM-PROVENANCE-DEPENDENCIES-001, SIM-PROVIDER-AVRO-001, SIM-REVISION-CONVERGENCE-001, SIM-COPIED-COMPOSITION-001, SIM-OBSERVATION-SELECTIONS-001, SIM-MATERIAL-SELECTIONS-001
 
 Exact executable controls:
 
@@ -36,6 +36,8 @@ Exact executable controls:
 - `developer-tools/klab-service-simulator/tests/test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt`
 - `python-client/tests/unit/test_selections.py`
 - `developer-tools/klab-service-simulator/tests/test_observation_selections.py`
+- `python-client/tests/unit/test_material_selections.py`
+- `developer-tools/klab-service-simulator/tests/test_material_selections.py`
 
 ## Reproduction commands
 
@@ -58,7 +60,7 @@ It is an executable missing-adapter disposition, **not** an actual native test o
 5. Capture request/response/error, positive/negative authorization, independent scientific checks where relevant and owned cleanup; compare with the acceptance criteria above.
 6. If no reviewed adapter/build/permission exists, retain NOT_RUN. Do not invent native endpoints or turn simulator success into a Java fix.
 
-Existing native test references: python-client/tests/functional/test_observation_selections.py
+Existing native test references: python-client/tests/functional/test_observation_selections.py, python-client/tests/functional/test_material_selection_plans.py
 
 ## Custody, related trackers and remaining questions
 

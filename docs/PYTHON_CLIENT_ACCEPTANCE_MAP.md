@@ -1,12 +1,23 @@
 # Python roadmap acceptance map — 3 November 2026
 
-Current selection delivery candidate PR290: public persisted `Context.between`,
+Material candidate PR291 adds public typed sync/nativeasync Context.resolve with
+the same observe options. Corrected installed4492SDK/310simulator/allreference-
+worker suitesPASS;58SDK/25simulator/5worker rawpackageparity;17linkedcasesPASS
+vs17nativeNOT_RUN. Four public HTTP workflows verify60actual numerical preference/
+observer/lattice combinations;31supplementary fixturecontrols100%. Focused590/
+498/376SDKcontrols and whole requests/handles/async plus changed-code gatesPASS.
+First focus-regression and later3governance-drift failures retained and corrected
+without weakened assertions; exact final-headCI/ordinary merge pending. Declared
+finite arithmetic is not native model admission, ranking or scientific acceptance.
+
+Selection delivery PR290 verified MERGED6307e93f4, exactf38a332e8/all26reported
+finalheadchecksPASS. Public persisted `Context.between`,
 bounded direct-child observation pages and v2 relationship-selected saved references
 are implemented and verified through fresh installed sync/nativeasync SDK workflows.
 4464SDK/275simulator plus all reference/worker/governance suitesPASS;58SDK/
 24simulator/5worker rawpackageparity. New selection SDK90lines/28branches and
 supplementary independent fixture65lines/40branches100%unexcluded.17linked cases
-PASS versus17nativeNOT_RUN. Exact final-headCI/ordinary merge remain pending;
+PASS versus17nativeNOT_RUN. Material effects now in development on the next child;
 no whole-roadmap or native scientific acceptance is inferred. The authoritative
 42row continuation queue is `notes/python-roadmap-execution/roadmap-execution-queue.json`;
 historical statuses below remain history, not new acceptance or stopping authority.

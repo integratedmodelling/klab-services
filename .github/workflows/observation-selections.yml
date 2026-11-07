@@ -24,7 +24,7 @@ jobs:
       - name: Install production SDK and separate development fixture
         run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
       - name: Public SDK selection, restoration and changed transport controls
-        run: python -m pytest -q python-client/tests/unit/test_selections.py python-client/tests/unit/test_geometry_size.py python-client/tests/unit/test_provider_handles.py python-client/tests/unit/test_saved_handles.py python-client/tests/unit/test_async_saved_handles.py python-client/tests/unit/test_client.py python-client/tests/unit/test_async_client.py python-client/tests/unit/test_async_transport.py --cov=klab_client --cov-branch --cov-report=json:selections-coverage.json --junitxml=selections-unit.xml
+        run: python -m pytest -q python-client/tests/unit/test_material_selections.py python-client/tests/unit/test_selections.py python-client/tests/unit/test_geometry_size.py python-client/tests/unit/test_provider_handles.py python-client/tests/unit/test_saved_handles.py python-client/tests/unit/test_async_saved_handles.py python-client/tests/unit/test_client.py python-client/tests/unit/test_async_client.py python-client/tests/unit/test_async_transport.py --cov=klab_client --cov-branch --cov-report=json:selections-coverage.json --junitxml=selections-unit.xml
       - name: Public sync and native async HTTP acceptance (not native Java)
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_observation_selections.py --junitxml=selections-http.xml
       - name: Supplementary fixture refusals (not a substitute for public SDK acceptance)

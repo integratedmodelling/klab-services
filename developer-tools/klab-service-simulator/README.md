@@ -8,6 +8,12 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario material-selections` independently exercises typed plan versus actual
+numerical execution effects from lexical preferences, two declared observer biases
+and two anchored lattices. It is a finite three-candidate x+2*y arithmetic fixture,
+not Java model admission or a scientific engine. See
+[typed planning and material effects](../../python-client/docs/material-selection-effects.md).
+
 `--scenario observation-selections` admits two declared synthetic entity/connection
 observables over source-shaped endpoint headers, submit/resolve and direct-child
 query routes. Public sync/nativeasync SDK tests include bounded collections and

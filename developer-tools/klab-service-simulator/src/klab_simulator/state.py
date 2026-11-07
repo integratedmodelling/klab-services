@@ -25,6 +25,7 @@ SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semant
 SCENARIOS += ("revision-convergence",)
 SCENARIOS += ("copied-composition",)
 SCENARIOS += ("observation-selections",)
+SCENARIOS += ("material-selections",)
 
 
 class ContractError(Exception):
@@ -375,6 +376,10 @@ class State:
             raise ContractError(400, "A JSON object is required")
         if self.scenario == "observation-selections":
             from .observation_selections import respond
+            selected = respond(self, service, method, route, principal, scope, headers, data, body)
+            if selected is not None: return selected
+        if self.scenario == "material-selections":
+            from .material_selections import respond
             selected = respond(self, service, method, route, principal, scope, headers, data, body)
             if selected is not None: return selected
         if method == "POST" and route == "/notifyUserScope":

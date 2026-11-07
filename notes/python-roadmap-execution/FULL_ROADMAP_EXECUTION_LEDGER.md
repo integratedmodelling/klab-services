@@ -1,5 +1,60 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Selection merge checkpoint and immediate material-selection work
+
+DraftPR291 publishedb27748f78. Corrected unique installed artifact candidate:
+4492SDK/310simulator and all reference/worker suitesPASS; zero skips/errors/failures;
+58SDK/25simulator/5worker rawmodule parity. All changed SDK decisions and whole
+requests/handles/async modules100%SDK-onlygatePASS. Focused installedCI590/498/376
+controls and31supplementaryfixture100%PASS.17linkedcasesPASS(562SDK/187simulator/
+57worker) vs17realNOT_RUN/expectedexit3. Gap0013 additive RC-P1.5/CAP-04 links
+corrected without historical audit/status edits.
+
+First artifacts retained4492SDKPASS/309simulatorPASS/1FAIL newfocusregression,
+explicitly superseded. Corrected artifacts runtime suitesPASS;3governance generated
+report drifts after requirement-link correction preserved separately. Regeneration
+and identical39control rerunPASS to `governance-corrected.xml`; no production code,
+artifact overwrite, gate weakening or failed-report rewrite. Finalized receipt
+`evidence/full-roadmap-material-selections-20261107.json` rechecks rawpackagebytes,
+all passing XMLs, full SDK coverage and17linkedcase results. Exact finalheadCI and
+ordinary PR291 merge remain pending; continue collaborator rights afterward.
+
+Material pass376focusedSDKPASS with changed-code and whole existingrequests
+100%unexcluded;31supplementaryfixture100%PASS; bodymypy/fatal lintPASS.28new
+public typed planning controls test all inputforms/options/relationship retention,
+no Runtime mutation/fallback and malformedrootrefusal. Initial24mockfailures due
+missing@class, then12overbroad GETJob-header expectations corrected without SDK
+guard changes; Job.scope pair explicitly asserted. Initial requestsfullcoverage
+missed existing ducktypedroot-guardcontrols; included38test_scope_selection_guards
+controls to reach376 and pass unchanged100%gate. First installed focused CI590/
+498/376controlsPASS. Subsequent review added explicit422 for unsupported focused
+scopes rather than ignoring them in root-lattice arithmetic;31fixturecontrolsPASS.
+First material artifacts SUPERSEDED; fresh `material-selections-root-scope-fixed`
+verifier running. Native authorized bounded Resolver-plan compatibility test prepared
+but NOT_RUN; existinggap0013/handoff/scenario/reproduction synchronized. No new PR
+yet; next independent collaborator-rights work follows this delivery checkpoint.
+
+PR290 verified remotely MERGED6307e93f4bbae747b2908a40e1d55f2b016ad34b,
+2026-11-07T13:52:56Z; exactf38a332e8d3f2b98ddd3d51abfc8c8c2ac15d3ce/
+all26reported finalheadchecksPASS, no outstanding reviews. Child
+`feat/python-material-selection-effects` integrated actual merge; queue checkpoint
+verified GitHub merge and local ancestry without acceptance promotion.42rows/
+38runnable/zero finaldispositions; CAP-04 boundeddelivery recorded, not fullnative
+scientific row acceptance. Selection artifact receipt now includes actual remote
+merge/checks. No remote watcher or installed verifier remains running.
+
+Immediately began RC-P1.5: public sync/nativeasync typed Context.resolve preserves
+observe options for planning; independent finite three-model lexical preferences
+use inspected source scores (scenario100,namespace75,project50), declared ties,
+two observer biases and1m/2m lattices over explicit4x4m rectangle.4publicHTTPcases
+cover60combinations: no-observation planning, actual submitted values via public
+fetch_data, exact independent arithmetic/units/shape checks and owned cleanupPASS.
+Initial4keyword-only API mistakes then4missing artifactType and4missing unit
+metadata failures corrected in fixture/tests, not hidden by SDK fallback or weakened
+assertions. SDK-only coverage, invalid-intake tests, authority/governance/native
+plan/docs/installed acceptance and next ordinary PR remain pending. Native Java
+NOT_RUN; finite arithmetic is not a second scientific engine. FullABC incomplete.
+
 ## Renewed full-roadmap queue and persisted-selection implementation
 
 PR290 draft publishedacb5e60d7. Fresh `observation-selections-first` artifacts:

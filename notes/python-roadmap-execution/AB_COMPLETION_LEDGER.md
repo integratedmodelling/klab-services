@@ -1,5 +1,69 @@
 # A+B completion ledger — ongoing campaign
 
+## PR290 verified merge; material-selection execution begun
+
+DraftPR291 publishedb27748f78. Corrected fresh `material-selections-root-scope-fixed`
+4492installedSDK/310simulator and all reference/worker suitesPASS, zero skips/errors/
+failures;58SDK/25simulator/5worker source-wheel-sdist-installed rawmodule parity
+rechecked. Final whole requests/handles/async modules plus changed-code100%SDK-only
+gatePASS. Corrected installed focusedCI590provider/498selection/376material controls
+PASS,31supplementaryfixture100%PASS.17linkedcasesPASS(562SDK/187simulator/57worker)
+vs17realNOT_RUN/expectedexit3. Existinggap0013 additively maps RC-P1.5/CAP-04;
+historical original audit bytes/statuses untouched.
+
+Retain both initial verification failures: first material artifacts4492SDKPASS but
+309simulatorPASS/1FAIL on newly added focus regression (superseded old fixture);
+corrected artifacts all runtime testsPASS but3governance drift failures after
+requirement-link correction. Regenerated companions and reran same39governance
+controls to a separate corrected XML, allPASS. No failed reports overwritten,
+production changes, package overwrites or weakened gates for governance correction.
+Finalization rechecked all rawpackagebytes and passing XMLs; receipt
+`evidence/full-roadmap-material-selections-20261107.json` records complete custody.
+Exact final-headCI/ordinary PR291 merge still pending, no native/fullABC promotion.
+
+Material development now376SDKfocusedPASS, all changed SDK decisions and whole
+existing requests module100%unexcluded;31supplementary fixturecontrols100%,
+requests/fixture bodymypy and fatal lintPASS.28new typed-plan tests cover text/
+resolved/request forms, absent/selected observer, relationship preservation,
+no Runtime submission, no denied-Reasoner fallback and offline foreign-root refusal.
+Initial mock24failures lacked observable @CLASS; subsequent12expected relationship
+headers on identity-addressed GET Job reads rather than POST selection. Corrected
+mock shape/header scope and explicitly assert retained Job.scope selection; no SDK
+guard weakening. Focused requests coverage initially omitted existing ducktyped
+scope-guard tests; adding those38controls reaches376 and unchanged100%gatePASS.
+
+First installed material focusedCI590provider/498selection/376material controls
+PASS,31simulatorfixture100%PASS. Review then found unsupported focused scopes
+would be ignored by finite root-lattice sampling. Added explicit422 and regression;
+first material artifacts are SUPERSEDED, not final acceptance. New unique
+`material-selections-root-scope-fixed` full verifier running. Native plan test
+prepared/NOT_RUN; source/runtime ranking+grid authority pinned separately. Existing
+JAVA-GAP-0013/scenario/handoff/reproductions regenerated; ordinary material PR not
+yet open, all source local on child of verified PR290 merge.
+
+PR290 remotely MERGED6307e93f4bbae747b2908a40e1d55f2b016ad34b at
+2026-11-07T13:52:56Z, exactheadf38a332e8d3f2b98ddd3d51abfc8c8c2ac15d3ce,
+all26reported finalhead checksPASS; no outstanding review requests. Local
+`feat/python-material-selection-effects` integrated actual merge and ran queue
+checkpoint with remote-state/local-ancestry verification. Receipt updated with
+actual remote checks/merge, not inferred from a push. CAP-04 bounded selection
+delivery recorded separately from final whole-row/native acceptance; queue42rows/
+38runnable/zero finaldispositions. No verifier/CI watcher remains running.
+
+Next independent RC-P1.5 implementation underway: public sync/nativeasync
+Context.resolve typed planning with the same options as observe; independent
+material-selections fixture matches lexical preference scores from inspected
+PrioritizerImpl (scenario100/namespace75/project50) with declared tie order and
+two synthetic persisted observer biases. Two explicit origin-anchored lattices
+produce16vs4points and change actual values under declared x+2*y arithmetic.
+4public HTTP cases nowPASS across60option/lattice/client/observer combinations,
+plans create no observations, outputs independently checked through fetch_data.
+Initial4test API positional errors,4missing artifactType errors and4missing unit
+metadata assertions retained as development failures; corrected fixture/tests,
+not weakened SDK decoders or numerical/unit assertions. Source authority receipt,
+SDK-only tests/coverage, native plan, governance/docs and installed delivery pending.
+No native model admission/science or general model-selection engine claimed.
+
 ## Persisted selections / full42row continuation — development pass 2026-11-07
 
 DraftPR290 published `acb5e60d7d107fe6477b0348ffdd07037c8561bf`. Fresh unique
