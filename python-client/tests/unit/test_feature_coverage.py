@@ -31,3 +31,19 @@ def test_gate_maps_installed_wheel_source_paths():
     data = {"summary": {"num_statements": 1}, "missing_lines": [], "missing_branches": [], "excluded_lines": []}
     report = {"files": {"/env/site-packages/klab_client/new.py": data}}
     assert not tool().evaluate(report, "", ["src/klab_client/new.py"])
+
+
+def test_worker_gate_maps_installed_module_and_does_not_ignore_changed_worker_decisions():
+    diff = "+++ b/python-worker/src/klab_worker/client.py\n@@ -1 +1,2 @@\n+new\n+decision\n"
+    data = {"summary": {"num_statements": 3}, "missing_lines": [], "missing_branches": [], "excluded_lines": []}
+    report = {"files": {"C:\\installed\\klab_worker\\client.py": data}}
+    assert not tool().evaluate(report, diff, ["src/klab_worker/client.py"], "python-worker")
+    data["missing_branches"] = [[2, 3]]
+    assert tool().evaluate(report, diff, [], "python-worker")
+    assert tool().evaluate(report, diff, ["src/klab_worker/client.py"], "python-worker")
+
+
+def test_default_sdk_gate_does_not_treat_worker_paths_as_sdk_changes():
+    diff = "+++ b/python-worker/src/klab_worker/client.py\n@@ -1 +1 @@\n+new\n"
+    assert tool().changed_lines(diff) == {}
+    assert tool().changed_lines(diff, "python-worker") == {"src/klab_worker/client.py": {1}}

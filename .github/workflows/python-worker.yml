@@ -21,6 +21,8 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '${{ matrix.python }}'
@@ -37,9 +39,14 @@ jobs:
       - name: Worker envelope and trusted-process failure controls
         run: python -m pytest -q python-worker/tests --cov=klab_worker --cov-branch --cov-report=json:worker-coverage.json --junitxml=worker-tests.xml
       - name: Coherent SDK scope and real HTTP worker simulator lifecycle
-        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_worker_vertical.py developer-tools/klab-service-simulator/tests/test_durable_recovery.py --cov=klab_worker --cov-branch --cov-append --cov-fail-under=80 --cov-report=json:worker-coverage.json --junitxml=worker-http-tests.xml
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_worker_vertical.py developer-tools/klab-service-simulator/tests/test_durable_recovery.py developer-tools/klab-service-simulator/tests/test_worker_output_custody.py --cov=klab_worker --cov-branch --cov-append --cov-fail-under=80 --cov-report=json:worker-coverage.json --junitxml=worker-http-tests.xml
       - name: Require 90 percent common-code coverage (platform code reported separately)
         run: python python-worker/tests/check_coverage.py worker-coverage.json
+      - name: Require unexcluded 100 percent new receipt module and changed worker decisions
+        shell: bash
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py worker-coverage.json --package python-worker --base "$COVERAGE_BASE" --new-module src/klab_worker/_responses.py
       - name: Fatal-error lint
         run: python -m ruff check python-worker/src python-worker/tests python-worker/examples --select E9,F63,F7,F82
       - name: Check typed envelopes and untyped implementation bodies

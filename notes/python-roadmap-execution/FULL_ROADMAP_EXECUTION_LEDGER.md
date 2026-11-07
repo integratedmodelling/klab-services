@@ -1,5 +1,21 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Managed behavior delivered; worker output custody active
+
+Finalworkersource115unit/23publicHTTP-recoveryPASS;newmodule/changedworker100%,
+originalaggregate80%gate93.07%/common90%gate96.85%,full6moduletypes/lint/56governance-
+toolcontrolsPASS. DotsegmentIDs failbefore routeescape. Sourcefrozen/installeddelivery
+pending; no OSsandbox/diskquota/nativeABI/science claims.
+
+PR302verifiedMERGED4fe5d45adb9da57fc9fc7573c840ec36403aa535 at20:19:37Z,
+exact4ed4352bfaaf387cbdd9219ade942941c5188e98/all34checksPASS/remote-localcheckpoint.
+42originalrows/history/22runnable/zero dispositions. Native actor/science/finalrow not
+promoted. Worker nextsource implements aggregateoutput/treestop-beforeacceptance/strict
+ACK/task/lease/provenance/digest;113unit/23publicHTTP-recoveryPASS/newmodule+changedworker
+100%,unchangedcommon90%gate95.95%/types-lintPASS.7coverage-tool controlsPASS.
+No workerPR/installed acceptance yet. Deployment handoff is not OS/native approval;
+harddisk/hostile-code/scientific/native ABI remain genuine external obligations.
+
 ## Public copied composition delivered; managed behavior active
 
 PR302candidate5150installedSDK499sim72worker/reference-39governancePASS;69SDK35sim5worker

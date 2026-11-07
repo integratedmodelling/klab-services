@@ -1,5 +1,29 @@
 # A+B completion ledger — ongoing campaign
 
+## PR302 verified merged; worker output/deployment custody active
+
+Worker finalsource115unit/23actualpublicHTTP-recoveryPASS, whole_newmodule/changedworker
+100%unexcluded; unchangedaggregate80%gate93.07%/common90%gate96.85%PASS.6modulebodymypy/
+fatallint/56governancequeueordering-featuretoolcontrolsPASS. Dot-only taskIDs refused
+before route normalization;43focused output/protocol controls. Sourcefrozen/fullartifact/
+installedmatrix/ordinaryPR deliverypending; no native ABI/OS approval/scientific promotion.
+
+PR302MERGED4fe5d45adb9da57fc9fc7573c840ec36403aa535 at2026-11-07T20:19:37Z,
+exact4ed4352bfaaf387cbdd9219ade942941c5188e98/all34checksPASS; actual remote/local
+ancestry checkpointverified.5150installedSDK499sim72worker/reference-governancePASS,
+69SDK35sim5workerparity/40SDK100%/6HTTP26fixture100%/14focusedCI+orderedselection/
+17linkedPASSvs17nativeNOT_RUN.42originalIDs/history/22runnable/zero dispositions.
+All302jobs finished; native actor/science/finalrow acceptance not promoted.
+
+Active feat/python-worker-output-custody: aggregate stdout-stderr budget/owned-tree
+stop before finaloutputvalidation/exact public ACK/task/lease/provenance/digest guards.
+113unit/23publicHTTP-recoveryPASS,100%new _responses module/changed-worker decisions,
+unchangedcommon90%gate95.95%,types/fatallintPASS;7feature-gate-toolcontrolsPASS.
+Deployment handoff distinguishes monitor overshoot/arbitrarycwd files/OS policy/native
+ABI/scientific evidence. Early2nextsliceprobesfailed as retained design evidence; wrong
+surrogate-serialization test corrected to realnonfiniteJSON refusal, no productrelaxation.
+No workerPR/fullinstalled delivery yet; sourceuncommitted. Nextselectedwindows independent.
+
 ## PR301 verified merged; managed source/outcome/disposal active
 
 PR302 final installed candidate5150SDK/499simulator/72worker/allreference/39governance

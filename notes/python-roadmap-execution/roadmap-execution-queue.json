@@ -3,22 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-managed-behavior-workflow",
-    "pr": 302,
-    "requirement": "RC-P4.5",
+    "branch": "feat/python-worker-output-custody",
+    "pr": null,
+    "requirement": "RC-P5",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 301,
-    "merge": "a662bf884f8c56c2db7ad4b05e1f71f363768991",
-    "head": "001ca0e2bfffb7aa298fe615c5e92e1314927601",
-    "utc": "2026-11-07T19:55:28Z",
+    "pr": 302,
+    "merge": "4fe5d45adb9da57fc9fc7573c840ec36403aa535",
+    "head": "4ed4352bfaaf387cbdd9219ade942941c5188e98",
+    "utc": "2026-11-07T20:19:37Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P4.5",
+  "next_actionable_requirement": "RC-P5",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "managed-behavior-workflow",
     "worker-output-and-budget-custody",
     "selected-reference-windows",
     "categorical-reference-data",
@@ -2585,8 +2584,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: managed-behavior-workflow"
       },
       "simulator_support_needed": "Complete public reconnectable synthetic managed behavior/agent source validation and outcome workflow including private-session disposal evidence in simulator; distinguish declared fixture execution from native k.Actors/compiler.",
-      "implementation_status": "FINITE_SOURCE_MANAGED_BEHAVIOR_WORKFLOW_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "FINITE_SOURCE_MANAGED_BEHAVIOR_WORKFLOW_DELIVERED_PR302",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_SOURCE_RECONNECT_OUTCOME_PRIVATE_SESSION_DISPOSAL_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -2611,12 +2610,21 @@
           "c5d138b242acb54242366601693259c1d2de22aa",
           "2daa614623a32cc9fa8ffeaa6680dcbbeae6d51d"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "managed_behavior_delivery": {
+          "pr": 302,
+          "head": "4ed4352bfaaf387cbdd9219ade942941c5188e98",
+          "merge": "4fe5d45adb9da57fc9fc7573c840ec36403aa535",
+          "merged_at": "2026-11-07T20:19:37Z",
+          "final_head_checks": 34,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-managed-behaviors-20261107.json"
+        }
       },
       "work_group": "managed-behavior-workflow",
       "priority": 10,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish public finite source admission/reconnect/outcome/private-session disposal controls and independent fixture/coverage/installed delivery; no native parser/compiler/scientific execution or private-session acceptance inferred.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native kActors/parser/compiler/actor execution and actual script-app-testcase private-session disposal remain distinct JAVA-GAP-0008 evidence obligations.",
       "disposition": null
     },
     {
@@ -2656,7 +2664,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: worker-output-and-budget-custody"
       },
       "simulator_support_needed": "Complete worker output budget/deployment handoff and public protocol failure/recovery tests; hard total disk/hostile-code isolation requires reviewed OS/container policy, not a claimed Python sandbox.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "WORKER_OUTPUT_ACK_CUSTODY_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2670,8 +2678,8 @@
       },
       "work_group": "worker-output-and-budget-custody",
       "priority": 11,
-      "task_state": "pending",
-      "next_executable_action": "Complete worker output budget/deployment handoff and public protocol failure/recovery tests; hard total disk/hostile-code isolation requires reviewed OS/container policy, not a claimed Python sandbox.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish aggregate stdout-stderr acceptance budget and output-before-return custody, exact public ACK/task/provenance/digest guards, deployment handoff and installed failure/recovery tests; reviewed OS-container hostile-code/hard-total-disk and nativeABI evidence remain external, not a Python sandbox.",
       "disposition": null
     },
     {
@@ -2711,7 +2719,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: worker-output-and-budget-custody"
       },
       "simulator_support_needed": "Complete worker output budget/deployment handoff and public protocol failure/recovery tests; hard total disk/hostile-code isolation requires reviewed OS/container policy, not a claimed Python sandbox.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "WORKER_OUTPUT_ACK_CUSTODY_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2725,8 +2733,8 @@
       },
       "work_group": "worker-output-and-budget-custody",
       "priority": 11,
-      "task_state": "pending",
-      "next_executable_action": "Complete worker output budget/deployment handoff and public protocol failure/recovery tests; hard total disk/hostile-code isolation requires reviewed OS/container policy, not a claimed Python sandbox.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish aggregate stdout-stderr acceptance budget and output-before-return custody, exact public ACK/task/provenance/digest guards, deployment handoff and installed failure/recovery tests; reviewed OS-container hostile-code/hard-total-disk and nativeABI evidence remain external, not a Python sandbox.",
       "disposition": null
     },
     {

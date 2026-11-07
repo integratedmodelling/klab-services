@@ -28,15 +28,17 @@ NOT_TESTED. ServicesAPI source exposes Resources contextualize endpoints, not pr
 Explicit opt-in klab.experimental.worker/1 HTTP proposal under /experimental/worker/v1: context-owner/worker-role registration, bounded nonuniform inputs, single claim lease, trusted isolated Python script, atomic validated output with hashes, cancellation/failure/release and no automatic redelivery. Opt-in durable synthetic checkpoint fences lost leases into RECOVERY_REQUIRED after process restart, retains published/cancelled results, and requires explicit owner recomputation consent; no automatic continuation or scientific reasoning/Java execution.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-WORKER-001, SIM-DURABLE-RESTORE-001
+Scenarios: SIM-WORKER-001, SIM-DURABLE-RESTORE-001, SIM-WORKER-OUTPUT-CUSTODY-001
 
 Exact executable controls:
 
 - `python-worker/tests/test_worker.py`
 - `python-worker/tests/test_client_failures.py`
 - `python-worker/tests/test_containment.py`
+- `python-worker/tests/test_output_custody.py`
 - `developer-tools/klab-service-simulator/tests/test_worker_vertical.py`
 - `developer-tools/klab-service-simulator/tests/test_durable_recovery.py`
+- `developer-tools/klab-service-simulator/tests/test_worker_output_custody.py`
 
 ## Reproduction commands
 
