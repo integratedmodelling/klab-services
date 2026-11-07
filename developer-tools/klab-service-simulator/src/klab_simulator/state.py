@@ -32,6 +32,7 @@ SCENARIOS += ("accepted-documents",)
 SCENARIOS += ("dependency-inspection",)
 SCENARIOS += ("dependency-graphs",)
 SCENARIOS += ("annotated-input",)
+SCENARIOS += ("commit-inspection",)
 
 
 class ContractError(Exception):
@@ -93,6 +94,8 @@ class State:
         self.accepted_sources = AcceptedSources(self) if scenario == "accepted-documents" else None
         from .dependency_graphs import DependencyGraphs
         self.dependency_graphs = DependencyGraphs(self) if scenario in ("dependency-graphs", "annotated-input") else None
+        from .commits import CommitReports
+        self.commit_reports = CommitReports(self) if scenario == "commit-inspection" else None
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -134,7 +137,8 @@ class State:
                 **({"read_grants": len(self.shared_reads.rows)} if self.shared_reads is not None else {}),
                 **({"source_documents":len(self.accepted_sources.rows),"source_publications":len(self.accepted_sources.publications)}
                     if self.accepted_sources is not None else {}),
-                **({"dependency_snapshots":len(self.dependency_graphs.snapshots)} if self.dependency_graphs is not None else {})}
+                **({"dependency_snapshots":len(self.dependency_graphs.snapshots)} if self.dependency_graphs is not None else {}),
+                **({"commit_reports":len(self.commit_reports.rows)} if self.commit_reports is not None else {})}
 
     def _owner(self, mapping, key, principal):
         if key not in mapping:
@@ -286,6 +290,7 @@ class State:
                 if self.accepted_sources is not None:
                     self.accepted_sources.rows.clear(); self.accepted_sources.publications.clear()
                 if self.dependency_graphs is not None:self.dependency_graphs.snapshots.clear()
+                if self.commit_reports is not None:self.commit_reports.rows.clear()
                 self.authoring.reset()
                 from .workers import WorkerState
                 self.workers = WorkerState(self)
@@ -313,6 +318,9 @@ class State:
                 return True, "application/json"
             if method == "POST" and path == "/__sim__/advanceDependencies" and self.scenario == "dependency-inspection":
                 self.dependency_revision += 1
+                return True, "application/json"
+            if method == "POST" and path == "/__sim__/expireCommits" and self.commit_reports is not None:
+                self.commit_reports.rows.clear()
                 return True, "application/json"
             if method == "POST" and self.dependency_graphs is not None and path in (
                     "/__sim__/advanceDependencyGraph", "/__sim__/dependencyGraphCycle", "/__sim__/dependencyGraphGap", "/__sim__/dependencyGraphComplete"):
@@ -446,6 +454,8 @@ class State:
             if selected is not None: return selected
         if service == "resources" and route.startswith("/experimental/dependencies/v1/graphs/") and self.dependency_graphs is not None:
             return self.dependency_graphs.request(method,original_path.split("/resources",1)[1],principal,scope,headers)
+        if service == "runtime" and route == "/api/v1/commit" and self.commit_reports is not None:
+            return self.commit_reports.request(method,original_path.split("/runtime",1)[1],principal,scope,headers)
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
                 raise ContractError(400, "Scope advertisement requires service descriptors")
@@ -576,6 +586,7 @@ class State:
                 if self.shared_reads is not None: self.shared_reads.release(root)
                 if self.accepted_sources is not None: self.accepted_sources.release(root)
                 if self.dependency_graphs is not None:self.dependency_graphs.release(root)
+                if self.commit_reports is not None:self.commit_reports.release(root)
                 del self.contexts[root]
                 self.query_faults.pop(root, None)
                 self.jobs = {key: row for key, row in self.jobs.items() if row["scope"] != root}
@@ -616,6 +627,7 @@ class State:
                             and self.scenario not in ("empty-result", "malformed-empty")):
                         result = job["result"]
                         self.observations[(root, result["id"])] = result
+                        if self.commit_reports is not None:self.commit_reports.record(root,result)
                     if job["status"] == "FINISHED" and service == "resources" and "import_urn" in job:
                         urn = job["import_urn"]
                         self.imported_resources[urn] = {"owner": principal, "scope": root,

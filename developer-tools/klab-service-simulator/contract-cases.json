@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-COMMIT-CACHE-001",
+      "rows": ["RC-P3.1", "CAP-10", "CAP-11"],
+      "routes": ["/runtime/api/v1/commit", "/runtime/public/capabilities"],
+      "source": "Existing source-defined native GETcommit?id shape: exact Runtime/root/numericcommit identity, reported added-observation/asset/link and modified/deleted groups with missingness and transientcache semantics. Independent finite cache materializes only after synthetic observation completion and reports im:commit-id, not guessed JobID. Public sync/nativeasync explicit read, pending versus completed, cacheexpiry unavailable/currentprincipal denial and ownedcleanup. No complete graph, contiguous revision, native scientific commit or durable reconciliation authority; full finite convergence remains Python work.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native commit cache endpoint inspected, full lineage/revision/retention acceptance separate",
+      "simulator_test": "test_commits.py::test_public_completed_observation_named_commit_cache_and_expiry_denial_cleanup",
+      "java_gap_ids": ["JAVA-GAP-0016"]
+    },
+    {
       "id": "SIM-ANNOTATED-INPUT-PROVENANCE-001",
       "rows": ["RC-P4.3", "CAP-14"],
       "routes": ["/resources/import/raster.geotiff.import/simulator:alice:uploaded", "/resources/experimental/dependencies/v1/graphs/MODEL/simulator.uploaded.elevation-quantifier", "/runtime/api/v1/query"],

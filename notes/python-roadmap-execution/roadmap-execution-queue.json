@@ -3,24 +3,23 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-annotated-input-provenance",
-    "pr": 297,
-    "requirement": "RC-P4.3",
+    "branch": "feat/python-native-commit-inspection",
+    "pr": 298,
+    "requirement": "RC-P3.1",
     "ci_review_dependencies": [
-      "PR297 final installed artifacts/matrix/exact-head CI and ordinary merge; native annotation-lineage-science/RESOURCE deletion remain distinct"
+      "PR298 native commit-cache read primitive only; full finite checkpoint/delta/gap-resync convergence remains Python work after delivery"
     ]
   },
   "last_verified_checkpoint": {
-    "pr": 296,
-    "merge": "a17f8c3fe2479441625a62db0e530f3dfb1788d1",
-    "head": "ffd3fb185d26b10fd243b85cef86f5e11c7b8c55",
-    "utc": "2026-11-07T17:37:30Z",
+    "pr": 297,
+    "merge": "53ee5bed9fd433ec877187ce1d4ed09a0fbd84f2",
+    "head": "a2c54ca9a5fb97f09dc7cd3ce3ba07aa4b87dc2e",
+    "utc": "2026-11-07T18:09:20Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P4.3",
+  "next_actionable_requirement": "RC-P3.1",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "annotated-input-provenance",
     "reference-commit-convergence",
     "execution-dependency-explanation",
     "public-copied-composition",
@@ -1662,8 +1661,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: annotated-input-provenance"
       },
       "simulator_support_needed": "Compose public import/annotation/observation and dependency inspection into one owned flow with explicit selected-input provenance, denial/failed-import cleanup and no fabricated native resource deletion.",
-      "implementation_status": "EXPLICIT_SOURCE_INPUT_PROVENANCE_JOIN_INSTALLED_VERIFIED_PR297_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "EXPLICIT_SOURCE_INPUT_PROVENANCE_JOIN_DELIVERED_PR297",
+      "simulator_acceptance_status": "INSTALLED_UPLOAD_SOURCE_PLAN_RECORDED_INPUT_GRAPH_JOIN_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -1694,12 +1693,20 @@
           "pr": 297,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-annotated-input-provenance-20261107.json",
           "native_or_full_row_acceptance": false
+        },
+        "annotated_input_delivery": {
+          "pr": 297,
+          "head": "a2c54ca9a5fb97f09dc7cd3ce3ba07aa4b87dc2e",
+          "merge": "53ee5bed9fd433ec877187ce1d4ed09a0fbd84f2",
+          "merged_at": "2026-11-07T18:09:20Z",
+          "final_head_checks": 29,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-annotated-input-provenance-20261107.json"
         }
       },
       "work_group": "annotated-input-provenance",
       "priority": 6,
-      "task_state": "in_progress",
-      "next_executable_action": "Require PR297 exact final-head CI and ordinary permitted merge; checkpoint remote/local ancestry then begin reference-commit convergence. Keep native annotation/lineage/science and RESOURCE cleanup separate.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native annotation/lineage/scientific acceptance and owned RESOURCE cleanup remain distinct external gates.",
       "disposition": null
     },
     {
@@ -1782,7 +1789,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "NATIVE_COMMIT_CACHE_READ_INSTALLED_VERIFIED_PR298_PENDING_FULL_REFERENCE_CONVERGENCE_STILL_ACTIVE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1806,12 +1813,17 @@
           "564d27f166b5a908240b0533bfa7c4b4b55dbd4d",
           "052c729cba3cae5bfe5057e68c40501ea1e96718"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "native_commit_cache_candidate": {
+          "pr": 298,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
+          "full_requirement_complete": false
+        }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
-      "task_state": "pending",
-      "next_executable_action": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
+      "task_state": "in_progress",
+      "next_executable_action": "Require PR298 exact final-head CI/ordinary primitive merge/checkpoint, then finish separately advertised complete finite checkpoint/delta/gap-resync reconciliation. Native cache read primitive must not mark whole original requirement delivered.",
       "disposition": null
     },
     {
@@ -1875,7 +1887,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "NATIVE_COMMIT_CACHE_READ_INSTALLED_VERIFIED_PR298_PENDING_FULL_REFERENCE_CONVERGENCE_STILL_ACTIVE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1895,12 +1907,17 @@
           "564d27f166b5a908240b0533bfa7c4b4b55dbd4d",
           "052c729cba3cae5bfe5057e68c40501ea1e96718"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "native_commit_cache_candidate": {
+          "pr": 298,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
+          "full_requirement_complete": false
+        }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
-      "task_state": "pending",
-      "next_executable_action": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
+      "task_state": "in_progress",
+      "next_executable_action": "Require PR298 exact final-head CI/ordinary primitive merge/checkpoint, then finish separately advertised complete finite checkpoint/delta/gap-resync reconciliation. Native cache read primitive must not mark whole original requirement delivered.",
       "disposition": null
     },
     {
@@ -1980,7 +1997,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "NATIVE_COMMIT_CACHE_READ_INSTALLED_VERIFIED_PR298_PENDING_FULL_REFERENCE_CONVERGENCE_STILL_ACTIVE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2003,12 +2020,17 @@
           "564d27f166b5a908240b0533bfa7c4b4b55dbd4d",
           "052c729cba3cae5bfe5057e68c40501ea1e96718"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "native_commit_cache_candidate": {
+          "pr": 298,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
+          "full_requirement_complete": false
+        }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
-      "task_state": "pending",
-      "next_executable_action": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
+      "task_state": "in_progress",
+      "next_executable_action": "Require PR298 exact final-head CI/ordinary primitive merge/checkpoint, then finish separately advertised complete finite checkpoint/delta/gap-resync reconciliation. Native cache read primitive must not mark whole original requirement delivered.",
       "disposition": null
     },
     {

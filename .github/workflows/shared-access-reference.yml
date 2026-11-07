@@ -25,7 +25,7 @@ jobs:
       - name: Public SDK-only receipts, privacy, binding and opt-in guards
         run: python -m pytest -q python-client/tests/unit/test_accepted_documents.py python-client/tests/unit/test_source_validation.py python-client/tests/unit/test_shared_access.py --cov=klab_client --cov-branch --cov-report=json:shared-read-sdk-coverage.json
       - name: Entire new SDK module and all changed SDK decisions unexcluded
-        run: python -m pytest -q python-client/tests/unit/test_input_provenance.py python-client/tests/unit/test_dependency_graphs.py python-client/tests/unit/test_dependencies.py --cov=klab_client --cov-branch --cov-append --cov-report=json:shared-read-sdk-coverage.json
+        run: python -m pytest -q python-client/tests/unit/test_commits.py python-client/tests/unit/test_input_provenance.py python-client/tests/unit/test_dependency_graphs.py python-client/tests/unit/test_dependencies.py --cov=klab_client --cov-branch --cov-append --cov-report=json:shared-read-sdk-coverage.json
       - name: Enforce unchanged shared-read coverage gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"

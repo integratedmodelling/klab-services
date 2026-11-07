@@ -1,5 +1,39 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Annotated-input reference delivered; commit/convergence continues
+
+Finalnativecacheprimitive installed4903SDK/405sim/72worker/reference-39governance
+PASS,zero skipsfailureserrors;65SDK32sim5worker rawmoduleparity/no simulatorinproduction.
+17linkedPASS(971SDK282sim72worker)vs17nativeNOT_RUN; fullinstallednewmodule/changedcode
+100%PASS.10focusedCI+actualorderedselection/finalexplicitcachecleanup2HTTPPASS.
+EarliercleanupcounterKeyErrors retained/testonlyfix unchangedproduction. PR298receipt/
+exactheadCI/ordinarymergepending; fullverifier/matrixdone/CIwatcheronly. Fullreference
+prototype7private designprobesPASSnot shipped/convergenceacceptance; rowsremainactive.
+
+DraftPR29883c3ec88a published as nativecachereadprimitiveonly; fullartifact/matrix/
+CIwatcher running. Explicitcleanupcounter test initiallywrongshape2KeyError, corrected
+testonly tocounts.commit_reports/final2HTTPPASS; productionbytes unchanged. Fullfinite
+checkpoint/delta/gap-resync remainsPythonwork, not waived or completed byprimitivePR.
+
+Commitcacheprimitive teninstalledfocusedCIgatesPASS,olderappend214/membershipappend
+180/graphappend96/inputappend41/commit41dedicated;13fixture100%. Actualordered
+selection693/214/6/21+unchanged100%gatePASS. Freshfullartifactverifier/17linkedmatrix
+running,no commitPRyet. Entirebatchrunner480s/diagnosticstdout/faulthandler90 avoids
+known240stotalbudget issue, productAPI/testwaits unchanged. Full finiteconvergence
+stillunfinished independentlyrunnablework; nativecacheprimitive cannot complete rows.
+
+PR297MERGED53ee5bed9fd433ec877187ce1d4ed09a0fbd84f2/2026-11-07T18:09:20Z,
+exacta2c54ca9a5fb97f09dc7cd3ce3ba07aa4b87dc2e/all29checksPASS. Actualremote/local
+ancestrycheckpointverified;42rows/history/29runnable/zero dispositions. Original240s
+runner timeout/unknownstoppingtest and ownedconsolecleanup retained, not productionfix.
+Nativecommitcache readsourceimplemented:41SDK100%newmodule/changedcode,2publicHTTP,
+13fixture100%,types-lint-49governancequeueorderingPASS. Existing nativeGETcommit?id
+returns temporarycache reports, not absentnativeAPI, numericcontiguousrevision/fullgraph
+or scientificauthority. Exactcurrentbindings/missingness/refusal preserved; original
+Runtimeidentityerrorclass/98.53%coveragedevelopmentfailures correctedwithout exclusions.
+Fresh native-commit-inspection-first verifier running/no newPRyet. Full finite
+referencecheckpoint/delta/gap-resync convergence stillPythonwork; primitive notdone-row.
+
 ## Graph delivery checkpoint and immediate annotated-input work
 
 Finalsameartifact390simulatorPASS233.376s,39governance/fatallint/workercov/custody

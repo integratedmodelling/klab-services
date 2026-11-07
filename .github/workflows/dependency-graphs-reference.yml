@@ -25,7 +25,7 @@ jobs:
       - name: Public SDK-only complete graph identity/source/access/pagination refusal controls
         run: python -m pytest -q python-client/tests/unit/test_dependency_graphs.py --cov=klab_client --cov-branch --cov-report=json:dependency-graphs-sdk.json
       - name: Whole new SDK module and all changed SDK decisions unexcluded
-        run: python -m pytest -q python-client/tests/unit/test_input_provenance.py --cov=klab_client --cov-branch --cov-append --cov-report=json:dependency-graphs-sdk.json
+        run: python -m pytest -q python-client/tests/unit/test_commits.py python-client/tests/unit/test_input_provenance.py --cov=klab_client --cov-branch --cov-append --cov-report=json:dependency-graphs-sdk.json
       - name: Enforce unchanged graph coverage gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"

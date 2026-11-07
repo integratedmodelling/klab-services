@@ -33,21 +33,23 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent verified checkpoint: PR296 merge `a17f8c3fe`, exact `ffd3fb185`,
-all28reported final-head checks PASS. PR295 membership/PR294 conditional also verified.
+Most recent verified checkpoint: PR297 merge `53ee5bed9`, exact `a2c54ca9a`,
+all29reported final-head checks PASS. PR296 graph/PR295 membership also verified.
 Linux cleanup-oracle omission ofSTATUS_DEAD fixed with300owned probes/8Z->Xpairs;
 separate Windows cancellationGETpoll failure retained, exactheadattempt2PASS, original
 HTTP exception class remainsunknown. No timeout relaxation or mutation replay.
-Active child `feat/python-annotated-input-provenance`, RC-P4.3. Graph296 delivered
-4807installedSDK/387simulator/72worker/reference-governancePASS,63SDK30sim5worker
-rawmoduleparity,17linkedPASS vs17nativeNOT_RUN. Original42rows/history preserved,
-30runnable/zero finaldispositions. Annotatedinputsource55SDK100%/2actualpublicHTTP/
-18fixture100%,bodytypes/lint/49governance+queue+CIorderingPASS. Nineinstalledfocused
-gates+actualorderedselection693/173/6/21+100%gatePASS. Combinedshell120s harness
-timeout retained; uniqueattempt2 completed, producttimeouts unchanged. Freshannotated-
-input-provenance-first fullverifier/17linkedmatrix running; no annotatedPR yet.
-After delivery immediately continue reference-commit-convergence; originalfullrow/
-nativeacceptance separate, no automaticrestart guarantee.
+Active child `feat/python-native-commit-inspection`, RC-P3.1/CAP-10/CAP-11.
+Input297delivered4862installedSDK/390simulator/72worker/reference-governancePASS,
+64SDK31sim5workerrawparity/17linkedPASSvs17nativeNOT_RUN. Originalfullsim240srunner
+timeout/missingstdout/unknownexactroot retained; sameartifact390PASS233.376s. Exact
+owned16632/50032/conhost47016cleanupverified, unrelatedservices untouched. Original
+42rows/history preserved/29runnable/zero finaldispositions. Nativecacheprimitive
+41SDK100%/2publicHTTP/13fixture100%/bodytypes-lint-49governancequeueorderingPASS;
+10installedfocusedCIgates+actualorderedselection693/214/6/21+100%gatePASS. Fresh
+native-commit-inspection-first verifier/17linkedmatrix running/no commitPRyet. Full
+finite referencecheckpoint/delta/gap-resync stillPythonwork afterprimitive; existing
+nativeGETcommit?id not durable/contiguous/fullgraph authority. No automaticrestart
+guarantee; follow actualqueue/ledger/remote state rather than saved resume text.
 Ledgers/queue/actual jobs override this saved text; no automatic restart guarantee.
 CAP-01 remains the existing certificate/token/profile seam, not shared-grant code.
 Inspect actual queue and running jobs rather than assuming this checkpoint stays

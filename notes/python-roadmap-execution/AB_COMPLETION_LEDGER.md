@@ -1,5 +1,51 @@
 # A+B completion ledger — ongoing campaign
 
+## PR297 verified delivery, native commit read slice underway
+
+Finalcommitcache installed4903SDK/405simulator/72worker/allreference/39governance
+PASSzero skips/errors/failures.65SDK/32simulator/5worker rawsource-wheel-sdist-installed
+parityverified, no simulatorinSDKworker.17linkedPASS(971SDK/282simulator/72worker)
+vs17nativeREAL_NOT_RUN/expectedexit3. FullinstalledSDKnewmodule+changedcode100%
+unexcludedPASS.10focusedCIgates/actualorderedselection andfinal2publicHTTPexplicit
+counts.commit_reportscleanup assertionPASS; old2KeyErrors/testonlyfix retained.
+Receipt evidence/full-roadmap-native-commit-inspection-20261107.json records custody/
+limitations. PR298finalreceipt/exactheadCI/ordinarymergepending; fullverifier/matrix
+finished, onlyCIwatcher. Separate privatefullreferenceprototype7designprobesPASS,
+not shipped/installed/nativeconvergenceacceptance. Requirement remainsactiveafterprimitive.
+
+DraftPR298published83c3ec88a, nativecacheprimitiveonly. Freshfullartifactverifier/
+17linkedmatrix/CIwatcher running, no fullinstalled/exactheadclearanceyet. Afterfreeze
+explicitcleanupcounter test wrongtop-levelshape raised2KeyErrors; corrected toactual
+counts.commit_reports, final2publicHTTPPASS, productionmodulebytes unchanged. Counter
+already covered by previousallcounts-zero check. Fullfiniteconvergenceremainsactive.
+
+Nativecommit sourcefrozen. TeninstalledfocusedCIgatesPASS:older785/693/571/195/
+113/63append214controls, membership34append180, graph84append96, input55append41,
+commit41dedicated;13fixture100%. Actualorderedselection693SDK/214append/6HTTP/
+21fixture+unchanged100%gatePASS. Freshfullartifactverifier+17linkedmatrix running,
+no commitreadPRyet. Runner now480sceiling+timeoutstdoutcapture/faulthandler90 for
+entirebatch only (prior297240sbudgetevidence), no productAPI/testwait modification.
+Full sourcebound checkpoint/delta/gap-resync reference remainsPythonwork afterprimitive.
+
+PR297 remotelyMERGED53ee5bed9fd433ec877187ce1d4ed09a0fbd84f2 at
+2026-11-07T18:09:20Z/exacta2c54ca9a5fb97f09dc7cd3ce3ba07aa4b87dc2e,
+all29reportedfinalheadchecksPASS. Actualmerge integrated/remote+ancestry checkpoint
+verified; originaltimeout/missingstdout/diagnostic/ownedconsolecleanup evidence remains.
+Queue42originalrecords/history/29runnable/zero finaldispositions; RC-P3.1/CAP-10/11
+active, not a milestone stoppinggate. Inputassociation delivery isn't nativeannotation/
+science/RESOURCEdeletion/fullrow acceptance. No297verifier/matrix/watcher remains.
+
+Native source confirms existing GET/api/v1/commit?id with ContextScope/cachegetIfPresent,
+not absent support. CommitInspector/nativeAsync sourceimplemented41SDK100%unexcluded/
+2publicHTTP/13fixture100%/bodymypy-lint-49governancequeueorderingPASS. Currentroot/
+Runtime/credential fencing, missinggroupsNone/nullunavailable, nativechangegroups/
+linktriples preserve claimedlimits. No numericID/timestamp-contiguousrevision/fullgraph/
+scientificcommit inference; oldassetlink endpoints allowed. InitialRuntimeidentity
+errorclassification/98.53%coverage correctedwithout guard/exclusionweakening; review
+retains failures. Fresh native-commit-inspection-first fullartifactverifier running;
+no newPRyet. Full separatelyadvertised finitecheckpoint/delta/gap-resync convergence
+remains activePythonwork, never waived by nativecacheprimitive. No native mutation.
+
 ## PR296 verified merged; annotated-input provenance source pass
 
 Finalsameartifact diagnostic390simulatorPASSin233.376s (zero skips/errors/failures),
