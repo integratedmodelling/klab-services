@@ -195,6 +195,55 @@ That final refusal rebuild is now verified: simulator wheel3b2981b4…/sdista702
 14module source/wheel/sdist/installed byte parity, full129testsPASS84.08s and17linked
 casesPASS. SDK/worker bytes unchanged. No background verification remains. Finish
 staging refreshed receipt/ledger/handoff, commit and publish normal featurePR now.
+
+### Next active A/B slice — explicit retained-notification reference
+
+Multiband PR272 verified MERGED`d65d940f979d0c03e481c37c9786c9ebc165da66`,
+2026-11-07T00:41:13Z, all applicable final-head SDK3.11/3.12/3.13/core/scientific/
+workerWindows+Ubuntu/schema/simulator/build/Jenkins checksPASS. No independent
+maintainer review, native science or complete-roadmap acceptance claimed.
+
+Current branch `feat/python-durable-notification-reference`, parentd65d940f9;
+uncommitted new durable_notifications.py and separate simulator notifications.py,
+SQLite log custody/old-checkpoint migration, tests/docs/CI and gap0005/handoff.
+Explicit proposed protocol, not a native Java API: root-owner Job hints,
+origin/epoch/sequence checkpoints, immutable bounded batches, duplicate replay,
+retention/epoch RESYNC_REQUIRED, no implicit checkpoint advancement or earlier
+history. Existing AMQP unchanged; native async/sync share schema.
+Initial focused29unit+3HTTP/15recovery source testsPASS; new module100%unexcluded
+lines/branches. Additional bad-query/corrupt-storage/migration tests now added;
+rerun expanded suite before installed acceptance. Full packaging/SDK+simulator/
+coverage/type/lint/schema/generated handoff and normal feature delivery pending.
+Next: run expanded source tests and types, build/install fresh packages, full
+verification/17case matrix, commit+publish normalPR, then continue independent work.
+Expanded source suite35unit+9notificationHTTP/15recovery testsPASS. New module
+100%unexcluded lines/branches and ALL changed SDK decisions covered; mypy body
+checkPASS. Strict byte/UTF-8/duplicate-key/nonfinite decoding now uses an explicit
+raw-bytes transport response mode; existing JSON/text semantics unchanged. An
+initial installed verifier started before this last wire-hardening change; its
+results must not be attributed to final SDK bytes. Final fresh package rebuild
+and full suites/coverage remain required; simulator source is unchanged by this
+SDK-only hardening.
+Initial pre-wire installed receipt completed4041SDK/24SDK-reference/57worker/
+21HTTP+recovery/138simulator/33governancePASS, zero skips. It is retained as an
+earlier pass, NOT final strict-decoder acceptance. Final strict-byte SDK adds six
+bad-wire unit cases; expected final counts must be read from the separate completed
+receipt, not inferred. Final verifier runs in `durable-notifications-final`;
+initial targets remain unchanged. Coverage attribution must select only the final
+installed module paths (and use a unique data file for any focused rerun) before
+claiming newmodule100% and changed-code acceptance.
+Final installed strict-wire pass completed4047SDK/24SDKreference+recovery/57worker/
+21workerHTTP+recovery/138fullsimulator/33governancePASS, zero skips/errors/failures.
+New module97/97lines and40/40branches, zero exclusions; all changed SDK decisions
+covered. FullSDK98.37% retains165historical exclusions; every measured SDK path
+verified uniquely in the final installed target. Artifacts49SDK+15simulator+5worker
+module parity, exact hashes in `evidence/full-roadmap-durable-notifications-20261107.json`.
+Initial pre-wire artifacts remain separately attributed. Final test assertions now
+also verify no bad-query activation and a real bounded server read (not cached
+configuration or complete graph resync); focused9HTTP+17case rerun completedPASS.
+Current real matrix17NOT_RUN/exit3, no fallback. Next: finish final case receipts,
+generate/check all outputs, stage same-feature code/tests/0005/handoff/ledgers/receipt
+and publish normalPR; then continue next independent vertical.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan

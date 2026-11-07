@@ -8,6 +8,16 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-DURABLE-NOTIFICATIONS-001/JAVA-GAP-0005 offers an explicitly experimental
+retained Job-hint reference, NOT native AMQP replay. First activation establishes
+a tail cursor; only subsequent finite Job transitions are recorded. Sync/async SDK
+reads return immutable batches and checkpoints, but callers decide when processing
+is complete before persisting a returned cursor.128event retention and exact epoch/
+sequence checks produce explicit RESYNC_REQUIRED on a gap—never partial or guessed
+history. Opt-in SQLite retains reference logs; old checkpoints keep prior state but
+do not fabricate pre-activation events. Released contexts remove logs. See
+[protocol and limitations](../../python-client/docs/durable-notification-reference.md).
+
 SIM-DECLARED-BANDS-001/JAVA-GAP-0014 adds a separately pinned synthetic3band2x3
 GeoTIFF over existing export transport. `declared-band-export` serves the immutable
 fixture; all18values, per-band missingness and metre units are preserved. The SDK's

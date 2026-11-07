@@ -57,6 +57,8 @@ class State:
         self.authoring = AuthoringState(self)
         from .workers import WorkerState
         self.workers = WorkerState(self)
+        from .notifications import Notifications
+        self.notifications = Notifications(self)
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -148,6 +150,7 @@ class State:
             if self.closing:
                 return 503, {"error": "Owned simulator is closing"}, "application/json"
             status, result, content_type = 200, None, "application/json"
+            before_jobs = {key: row["status"] for key, row in self.jobs.items()}
             if self.store is not None:
                 from .persistence import snapshot
                 before = snapshot(self)
@@ -155,6 +158,8 @@ class State:
                 result, content_type = self._request(method, path, headers, body)
             except ContractError as error:
                 status, result = error.status, {"error": error.message}
+            if status == 200:
+                self.notifications.changed_jobs(before_jobs)
             if self.store is not None:
                 try:
                     self.store.save(self)
@@ -183,6 +188,7 @@ class State:
             if method == "GET" and path == "/__sim__/state":
                 return {"counts": self.counts(), "resources": len(self.imported_resources),
                         "workers": len(self.workers.workers), "worker_tasks": len(self.workers.tasks),
+                        "notification_streams": len(self.notifications.logs),
                         "authoring_assets": len(self.authoring.assets),
                         "project_locks": len(self.authoring.project_locks), "trace": list(self.trace)}, "application/json"
             if method == "POST" and path == "/__sim__/expireJobs":
@@ -219,6 +225,8 @@ class State:
                 self.authoring.reset()
                 from .workers import WorkerState
                 self.workers = WorkerState(self)
+                from .notifications import Notifications
+                self.notifications = Notifications(self)
                 self.worldview_id = "synthetic"
                 self.next_context = self.next_job = self.next_observation = 1
                 return True, "application/json"
@@ -247,6 +255,8 @@ class State:
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
         scope = headers.get("klab-scope", "")
+        if service == "runtime" and method == "GET" and route == "/experimental/notifications/v1/events":
+            return self.notifications.request(original_path, scope, principal, headers)
         if self.scenario == "http500" and service == "resources" and route.startswith("/api/v1/retrieve/"):
             raise ContractError(500, "Explicitly injected Resources failure; no fallback")
         if len(body) > 1024 * 1024:

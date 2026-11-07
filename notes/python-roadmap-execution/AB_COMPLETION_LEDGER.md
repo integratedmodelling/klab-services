@@ -51,6 +51,18 @@ SDK lines/arcs covered/unexcluded; fullSDK98.35% retains165historical exclusions
 history in `evidence/full-roadmap-declared-bands-20261107.json`. Delivery pending;
 continue remaining independent A/B/C deficits after normalPR/CI/permittedmerge.
 
+Multiband delivery subsequently verified mergedPR272/d65d940f9 at00:41:13UTC,
+7November, all applicable final-head checksPASS. Next A/B retained-Job-notification
+reference remains explicitly proposed under0005: source35unit/9HTTP+15recovery
+controls and100%new-module coverage pass; final installed/hosted delivery pending.
+No native AMQP durability, scientific acceptance, issue126 closure or complete
+convergence is claimed. Full-campaign next commands remain in the full ledger.
+Final installed strict-reference resultPASS4047SDK/24referenceHTTP+recovery/
+138simulator/57worker/21workerHTTP+recovery/33governance; newmodule100%unexcluded
+lines/branches and changedSDKdecisions covered;17simulatedPASS/17realNOT_RUN.
+Exact final/earlier artifacts separated in
+`evidence/full-roadmap-durable-notifications-20261107.json`; normal delivery pending.
+
 ### Sequential execution queue — user directive 2026-11-06
 
 Previous phase: **A+B Service Simulator development — COMPLETED_BOUNDED**.

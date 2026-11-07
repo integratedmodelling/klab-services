@@ -1,0 +1,21 @@
+{
+  "verified_utc": "2026-11-07T00:49:52.021107+00:00",
+  "baseline_head": "d65d940f979d0c03e481c37c9786c9ebc165da66",
+  "attribution": "Uncommitted retained-notification reference; exact49SDK/15simulator/5worker source/wheel/sdist/installed module bytes identify tested code. No native Java execution implied.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "618ad79b887817e098ce9c74f88df83526ea53aaae775345d5f2107c19bfd52c", "sdist_sha256": "5c723d18a9692b99e08a907bd92a356dae432dc111b3ec9037e69b2184d5c89b", "parity_modules": 49},
+    "simulator": {"wheel_sha256": "a9f52fd26b1b648b07b55b799ddc37f779c3c6c33e6b9fc33f57fe5de02963d7", "sdist_sha256": "08291b933885ca8fad6edfdfe4fb57d4ac90d835ac2cba48c3021a1864797984", "parity_modules": 15},
+    "worker": {"wheel_sha256": "6f672c4a90fb3ceb79a9f06c4991038adffc9352f6e0e733796c088ddfb8745d", "sdist_sha256": "f5910a82718818270ef4bf63cd5356084eadcc6a110878fe8eff0a53d94d1244", "parity_modules": 5}
+  },
+  "installed_tests": {"sdk_unit_integration": 4047, "sdk_reference_http_and_recovery": 24, "worker_unit": 57, "worker_http_and_recovery": 21, "full_simulator": 138, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "new_reference_module": {"lines": 97, "covered_lines": 97, "branches": 40, "covered_branches": 40, "excluded_lines": 0, "changed_SDK_lines_arcs": "PASS including bytes response mode and package exports"},
+  "sdk_coverage": {"combined_percent": 98.3740701381509, "covered_lines": 7067, "statements": 7166, "covered_branches": 2190, "branches": 2244, "historical_excluded_lines": 165, "attribution": "All measured SDK paths checked to be uniquely in final installed target; no earlier-target coverage silently merged"},
+  "worker_coverage": {"combined_percent": 90.42553191489361, "excluded_lines": 0, "scope": "Unchanged merged worker rerun; not a new sandbox certification"},
+  "typing_lint_schema_generated_handoff": "PASS: new module body typecheck with silent imports/ignored external stubs, fatal-error lint,17stable IDs/42historical rows/scenario references/generated companion",
+  "bounded_reference_assertions": ["Explicit opt-in only; exact origin/root scope binding and current owner denial", "First activation establishes tail, coverage only subsequent finite Job hints", "Immutable caller-controlled checkpoints, contiguous bounded pages, deliberate duplicate replay", "Native async and sync transport, strict64KiB UTF8/duplicate-key/nonfinite/unknown/incomplete response refusal", "128event overflow and epoch drift require explicit resync with no partial history or cursor advancement", "Explicit bounded authoritative value read before choosing new tail does not claim whole graph convergence", "SQLite retained epochs/logs survive owned process restart; old checkpoints gain no invented history", "Malformed queries do not activate logs; corrupt retained state fails before partial restore; released scope cleans logs"],
+  "contract_matrix": {"simulated_pass": 17, "sdk_protocol_tests": 159, "worker_tests": 57, "simulator_capture_reference_tests": 67, "real_not_run": 17, "real_mode_exit": 3},
+  "retained_earlier_pass": "Initial pre-wire-hardening fresh4041SDK/24reference/57worker/21HTTP+recovery/138simulator/33governance passed separately. Final strict-byte mode and6additional bad-wire cases rebuilt into artifacts above, not relabeled initial results. Final module-path checks exclude mixed earlier coverage targets.",
+  "verification_dependency_custody": "Fresh wheel/sdist/pip-target installations borrow existing test dependencies; no modification or new dependency-isolation certification of prior environments",
+  "java_source_or_scientific_acceptance": "REAL_NOT_RUN; proposed HTTP reference is separate from native transient AMQP and does not establish native endpoint, retention, incarnation, revocation or scientific results",
+  "remaining": "NormalPR/final-headCI/permittedmerge; complete convergence and maintained native replay acceptance remain unverified. Continue revision-safe authoring/agents/categories/multishard/federation and other independent roadmap scope; issue126 staysOPEN."
+}

@@ -102,6 +102,8 @@ class _TransportPolicy:
             raise failure
         if response == "text":
             return result.text
+        if response == "bytes":
+            return result.content
         if (response == "json" and service == "resources" and method == "GET"
                 and result.status_code == 200 and result.content == b""
                 and route.startswith("/api/v1/retrieve/")):
