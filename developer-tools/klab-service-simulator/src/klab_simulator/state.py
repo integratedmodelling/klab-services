@@ -29,6 +29,7 @@ SCENARIOS += ("material-selections",)
 SCENARIOS += ("shared-read",)
 SCENARIOS += ("source-validation",)
 SCENARIOS += ("accepted-documents",)
+SCENARIOS += ("dependency-inspection",)
 
 
 class ContractError(Exception):
@@ -85,6 +86,7 @@ class State:
         from .shared_access import SharedReads
         self.shared_reads = SharedReads(self) if scenario == "shared-read" else None
         self.validation_revision = 1
+        self.dependency_revision = 1
         from .accepted_documents import AcceptedSources
         self.accepted_sources = AcceptedSources(self) if scenario == "accepted-documents" else None
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
@@ -300,6 +302,9 @@ class State:
             if method == "POST" and path == "/__sim__/advanceValidation" and self.scenario in ("source-validation", "accepted-documents"):
                 self.validation_revision += 1
                 return True, "application/json"
+            if method == "POST" and path == "/__sim__/advanceDependencies" and self.scenario == "dependency-inspection":
+                self.dependency_revision += 1
+                return True, "application/json"
             raise ContractError(404, "Unknown test control")
         pieces = path.strip("/").split("/", 1)
         if len(pieces) != 2 or pieces[0] not in SERVICES:
@@ -418,6 +423,10 @@ class State:
             if selected is not None: return selected
         if service == "resources" and route.startswith("/experimental/accepted-documents/v1/") and self.accepted_sources is not None:
             return self.accepted_sources.request(method, original_path.split("/resources",1)[1], principal, scope, headers, data)
+        if service == "resources" and self.scenario == "dependency-inspection":
+            from .dependencies import respond as dependency_response
+            selected = dependency_response(self, method, route, principal, scope)
+            if selected is not None: return selected
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
                 raise ContractError(400, "Scope advertisement requires service descriptors")

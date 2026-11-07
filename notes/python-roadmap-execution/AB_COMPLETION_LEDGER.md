@@ -1,5 +1,47 @@
 # A+B completion ledger — ongoing campaign
 
+## PR294 verified merge; native membership slice underway, deeper graph still owed
+
+Membership sourcefrozen: fresh dependency-membership-first fullverifier and17linked
+matrix running. Seven installedfocusedCIbatch gatesPASS: existing785provider/
+693selection/571material/195sharing/113validation/63conditional controls plus34new
+membership controls appended separately in each coverageprocess, and dedicated34
+membershipbatch. Supplementaryfixture1case100%PASS (finitepolicy multiple route/
+principal/version/durable assertions). No deepergraph or whole-row promotion.
+
+PR294 remotelyMERGEDcc71b09919566bea85c6aa39c8dab38d4936b9e1 at
+2026-11-07T16:38:25Z/exact2ff29e210b4c1941a7b940ee24be173de034b1a9,
+all37reportedchecksPASS. Actualmerge integrated/queuecheckpoint remote+ancestry
+verified;42originalrows/32runnable/zero finaldispositions. Windows failure preserved,
+exacthead diagnostic attempt2passes all4worker matrix combinations; originalHTTP
+error root remainsUNKNOWN, no timeout change/replay/nativepromotion. No job remains.
+
+DependencyInspector/nativeAsync membership slice implemented:34SDKcontrols with
+100%unexcluded wholemodule+changedSDKcoverage;2publicHTTP workflows;finite fixture
+coverage100%prior to durable refusal addition (final rerun pending). Native ordered
+ResourceSet group membership/version/provider claims kept; no followed URLs/accessKey
+exposure or sourcehash/edge/completeclosure guarantees invented. Native source root
+versus namespacegroup timestamps can differ; corrected overstrict auxiliarymetadata
+comparison to reject only conflicting knownversions. Source receipt/handoff/docs
+explain unfinished native category/remote dependencies and missingedges. Deeper
+sourcebound graph/pagination/cycle/access reference remainsPython work and active
+requirement is NOT marked delivered. Native prepared readonlytestNOT_RUN; no newPR.
+
+## PR294 new Windows transport failure; dependency work continues
+
+PR294 head2ff29e210remainsOPEN/mergeheld. Linux cleanuporacle corrected and
+72workercontrolsPASS hosted, but Windows3.13run42391773217/job128460655159
+failed durable-recovery read-only cancellationpoll with unknowntransport outcome
+(20HTTPPASS/1FAIL). OriginalHTTP exception class is not logged; timeout plausible,
+not proven. Failure/log preserved in pr294-windows-worker-transport-investigation.json;
+one failed-job diagnostic rerun requested, no timeout weakening or replay. Independent
+feat/python-dependency-inspection now implements bounded nativeResourceSet grouped
+membership (19SDK+2publicHTTPPASS), explicit unknownclosure/unavailableedges,
+source/version/provider descriptors and currentcredential fencing. Native source
+addDependencies leaves asset categories incomplete and transmits no edges; cannot
+claim fullgraph acceptance. New dependency work still needs coverage/review/governance/
+installeddelivery; no dependency PR or native execution.
+
 ## PR294 hosted containment failure investigation
 
 Owned Linux300crash probe reproduced8Z->X consecutive state pairs. psutil maps

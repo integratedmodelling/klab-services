@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 368,
+    "IMPLEMENTED_SOURCE_ONLY": 370,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -1953,6 +1953,20 @@
       "owner": "HubCertificateProvider",
       "operation": "acquire",
       "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dependencies.py",
+      "owner": "DependencyInspector",
+      "operation": "inspect",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "dependencies.py",
+      "owner": "AsyncDependencyInspector",
+      "operation": "inspect",
+      "async": true,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
     {

@@ -1,0 +1,28 @@
+{
+  "pr": 294,
+  "head": "2ff29e210",
+  "state": "FAILURE_RETAINED_EXACT_HEAD_DIAGNOSTIC_RERUN_PASS_MERGED",
+  "failed_run": 42391773217,
+  "failed_job": 128460655159,
+  "platform": "windows-latest Python3.13.17",
+  "step": "Coherent SDK scope and real HTTP worker simulator lifecycle",
+  "test": "test_owned_process_restart_restores_sdk_results_and_fences_uncertain_worker_output",
+  "result": "20PASS/1FAIL;72worker containment/protocol tests in earlier step passed",
+  "log_custody": "C:/Users/lumsd/AppData/Local/Temp/opencode/pr294-windows-worker-failure.log",
+  "findings": [
+    "Failure is a WorkerError transport-outcome-unknown from the read-only cancellation poll before recomputation begins after explicit task recovery.",
+    "WorkerClient sets0.2s poll timeout and preserves fail-closed behavior; it catches httpx.HTTPError without retaining error class. Log does not establish timeout versus another HTTP exception.",
+    "This is distinct from Linux Z->X test oracle defect. No recurrence of Linux cleanup failure is reported on this head.",
+    "Parallel same-head Windows3.13 matrix job passed; this does not clear the failed job."
+  ],
+  "root_cause": "UNKNOWN; scheduling/transport deadline plausible, not proven",
+  "diagnostic_action": "One exact-run failed-job rerun requested; no production timeout change, ignored error, automatic mutation replay, assertion weakening or package fallback",
+  "next": "Exact original exception remains unknown. No production fix inferred; retain failure while merge delivery is separately verified.",
+  "rerun": {
+    "run": 42391773217,
+    "attempt": 2,
+    "conclusion": "success",
+    "windows313_job": 128461626996,
+    "head": "2ff29e210b4c1941a7b940ee24be173de034b1a9"
+  }
+}

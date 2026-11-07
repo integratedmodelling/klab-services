@@ -1,5 +1,37 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Conditional reference verified delivered; dependency requirement remains active
+
+Membership sourcefrozen/fullartifactverifier+17linkedmatrix running. Seven installed
+focusedCIgatesPASS, olderbatches785/693/571/195/113/63 plus34membershipcontrols
+each via coverageappend; dedicated34membershipcontrols and1fixturecase100%PASS.
+No Python sourcebound graph requirement waived; remainactive after membershipPR.
+
+PR294MERGEDcc71b09919566bea85c6aa39c8dab38d4936b9e1/2026-11-07T16:38:25Z,
+exact2ff29e210b4c1941a7b940ee24be173de034b1a9/all37checksPASS. Actualmerge
+integrated and remote/local checkpointverified;42rows/32runnable/zero dispositions.
+Both workerfailures preserved. Windows exactheadattempt2all4matrixPASS doesn't
+retroactively identify originalHTTPError. No production timeout/replay modification.
+
+Dependency native-shaped groupslice34SDK100%newmodule/changedcode and2publicHTTP
+PASS. Grouporder/provider/version/currentcredential fencing, missinggroupsNone,
+closureUNKNOWN/edgesUNAVAILABLE; never follows providerURLs or exportsaccessKey.
+Native root/group auxiliarymetadata/timestampdifference is legitimate; knownversion
+conflicts stillrefuse. PreparedreadonlynativeNOT_RUN. Deeper graph/pagination/cycle/
+source/access reference remainsunfinished Pythonwork, not waived or marked delivered.
+No dependencyPR yet; fixture/governance/bodychecks and installed verification next.
+
+## Continued dependency work while PR294 transport gate is unresolved
+
+PR2942ff29e210OPEN/mergeheld for Windows3.13 durable-recovery GETpoll HTTPError,
+not Linux containment.72workerPASS,20HTTPPASS/1FAIL; exactlog/investigation preserved.
+One failedjob rerun requested; no classification asflake or unsafe timeout/replay fix.
+NativeGrouped dependencyinspector sourceimplemented on separate childbranch:
+19SDK/2publicHTTPPASS, honestunknownclosure/unavailableedges/inertproviderURLs,
+versionclaims/currentcredential fencing. Native sourceaddDependencies incomplete
+categories/no wireedges prohibit invented fullclosure. Acceptance/coverage/installed/
+governance/newPR pending; no milestone stop or native service dependency introduced.
+
 ## PR294 hosted worker failure retained, merge held
 
 Linux owned300crash stateprobe reproduces8Z->X transitions: zombie becomes dead

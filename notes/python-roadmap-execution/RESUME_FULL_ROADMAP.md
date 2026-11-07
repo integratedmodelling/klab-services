@@ -33,16 +33,21 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent verified checkpoint: PR292 merge `63e4f33c8`, exact `32852ca9c`,
-all23reported final-head checks PASS. PR291 material/PR290 selections also verified.
-Active child `feat/python-revision-aware-validation`, RC-P4.2/CAP-05; existing
-native-shaped namespace diagnostics API/sourcefreeze50SDK100%/2publicHTTP/
-12fixture100% controlsPASS. Fresh unique source-validation-first full verifier and
-17linkedmatrix running; all five installed focusedCI batchesPASS. No validation PR
-yet; ledger and actual running jobs/receipts are authoritative, not this saved text.
+Most recent verified checkpoint: PR294 merge `cc71b0991`, exact `2ff29e210`,
+all37reported final-head checks PASS. PR293 validation/PR292 sharing also verified.
+Linux cleanup-oracle omission ofSTATUS_DEAD fixed with300owned probes/8Z->Xpairs;
+separate Windows cancellationGETpoll failure retained, exactheadattempt2PASS, original
+HTTP exception class remainsunknown. No timeout relaxation or mutation replay.
+Active child `feat/python-dependency-inspection`, RC-P4.1/CAP-13. Native-shaped
+membership slice34SDK100%/2publicHTTP/fixture100% and seven installedfocusedCI
+batchesPASS. Fresh dependency-membership-first full verifier/17linkedmatrix running;
+no membershipPR yet. Deeper sourcebound finite graph/pagination/cycle/access reference
+remains Pythonwork; membershipprimitive must not mark whole requirement delivered.
+Ledgers/queue/actual jobs override this saved text; no automatic restart guarantee.
 CAP-01 remains the existing certificate/token/profile seam, not shared-grant code.
 Inspect actual queue and running jobs rather than assuming this checkpoint stays
-current. After this delivery, immediately begin conditional authoring and remaining
-independently runnable work; never stop at the next merge. Ontology validation is
+current. After membership delivery, immediately implement remaining sourcebound
+finite dependency graph/pagination/cycle/access workflow and remaining independently
+runnable work; never stop at the next merge. Ontology validation is
 explicitly unsupported because native code can synchronize/load worldview knowledge;
 namespace-only work must not authorize repair or native scientific acceptance.

@@ -30,6 +30,8 @@ jobs:
       - name: Supplementary fixture refusals (not a substitute for public SDK acceptance)
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_observation_selection_fixture.py --cov=klab_simulator.observation_selections --cov-branch --cov-fail-under=100 --cov-report=json:selection-fixture-coverage.json
       - name: Unexcluded full new SDK module and all changed SDK decisions
+        run: python -m pytest -q python-client/tests/unit/test_dependencies.py --cov=klab_client --cov-branch --cov-append --cov-report=json:selections-coverage.json
+      - name: Enforce unchanged selection coverage gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py selections-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/selections.py
