@@ -31,7 +31,9 @@ jobs:
       - name: Preserve managed behavior threshold after selected-window controls
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
-        run: python python-client/tools/check_feature_coverage.py managed-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/managed_behaviors.py
+        run: |
+          python -m pytest -q python-client/tests/unit --cov=klab_client --cov-branch --cov-append --cov-report=json:managed-sdk.json
+          python python-client/tools/check_feature_coverage.py managed-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/managed_behaviors.py
       - name: Public sync-async source/reconnect/outcome/private-session disposal/owner-survival workflows
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_managed_behavior_workflow.py --junitxml=managed-http.xml
       - name: Independent finite recipe/session policy controls

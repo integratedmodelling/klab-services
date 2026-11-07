@@ -1,5 +1,27 @@
 # Resume the full Python A+B+C campaign
 
+LATEST312 firstfinalhead6f4b22ae9 has47checks21FAIL (coverage only in inspectedlogs),
+no merge. Corrective pass adds missingdelivery branch control and extends all21feature
+SDKcoverage reports with full unit suite before unchanged globalchecker, preserving
+selection append-before-simulator-reset. Local final5272SDKPASS and40unchangedgate
+commandsPASS underb342a674a andad2bc949c bases; source stillidentical1e740c34b artifacts.
+Receipt whole-tree-ci-coverage-correction-20261107.json retains failedCI and predecessor
+5269PASS2FAIL. Need pushcorrection/newheadCI then ordinary312merge/checkpoint.
+
+Fresh operationtrace jobfinished:5270SDK/538referencePASS/455observed51abstractuncalled,
+219reviewedmapped287missing across506. Combined51workflow mapping exists privately at
+full-roadmap-20261106/whole-tree-operation-traces-first/reviewed-mappings.json (SHA256
+d78c73745446690bdc7aa880c1d9c0a29e59106f5d03ab62c3fd9f721de10f01), attribution SHA256
+8682ff7d27459f9b2003ee6fe46bcc26c9c9f45af897178b9430a8e52379edec. Not yet committed as
+mappingdelivery; retain distinct scopes/no thread/process/kernel attribution. Local
+branchfeat/python-reviewed-operation-assertions based6f4b22ae9 exists for nextwork.
+
+Additional owned worktree Temp/opencode/python-boundary-coverage-controls on branch
+feat/python-boundary-coverage-controls has committedec98ed989 (new33test boundaryfile,
+installed33PASS/no productionchanges), notpushed/noPR. It covers malformedDTO/service/
+transport/scientific invariants, not real provideraccuracy; retain until integration.
+Currentworktree remains whole-tree-type-contracts with312correctionpendingpush.
+
 Newest work is ownedsecondary `feat/python-whole-tree-type-contracts`, DraftPR312
 source4a217c1d2/code1e740c34b, includes primary57c9b3dd7 and verified309–311mergehistory.
 All source changes safelycommitted/pushed. Fresh installed5270SDK/38tools/116worker/

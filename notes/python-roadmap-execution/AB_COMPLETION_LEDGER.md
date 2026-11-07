@@ -1,5 +1,62 @@
 # A+B completion ledger — ongoing campaign
 
+PR313 published9f85e775f:51explicit reviewedworkflows/219linked287missing across506,
+fresh5270SDK538reference traces/24controlsPASS. Parent312corrected01395fa76 CIrunning,
+not yetmerged. Both finalheadCI/ordinarydelivery/checkpoint owed; no functional/native/
+finalrow promotion. Next independent33boundarycontrols savedec98ed989 in additional
+ownedworktree; broader287review and finalcandidate reconciliation remain implementable.
+
+## Reviewed operation assertions advance while corrected312 CI runs
+
+312corrected01395fa76 pushed; exactheadCIwatcher active, no merge. First47checks21FAIL
+retained. Correction5272SDK/all40unchangedcoveragegatecommands under2basesPASS; no
+production bytes changed or thresholds relaxed. Next branch
+feat/python-reviewed-operation-assertions/noPR expands explicit registry22to51workflows.
+Fresh installed5270SDK/538reference owning-thread tracesPASS; exact source/test-byte
+reconciliation preserves506classifications/455observed51abstractuncalled and now links
+219reviewedmapped287missing. Registry descriptions shortened from private reviewed
+notes and revalidated against identical traces, not blindly copied counts. Added
+delivery/CI-input tests have separate5272evidence; no invented presence for them.
+
+Mappings cover core sync/async/scalar codecs, local modeler/geometry, semantic/catalog
+inspection, imports, conditional documents, locks, dependency/commit/explanation,
+sharing/retained-notification and finite managed-behavior workflows. Authority remains
+localDTO/mockHTTP/referenceHTTP/orchestration doubles as declared; no native science,
+issuer/rights/durability/actor execution/OSsecurity/final-row/release promotion.
+All42originalIDs/history3runnable/zero finaldispositions retained. Continue missing287
+review and exactmergedpackage/readiness reconciliation; no milestone stopping gate.
+
+Corrected local5272installedSDKPASS/no failures/errors/skips; all40unchanged coverage
+checker commandsPASS against currentintegrationb342a674a and historicalofflinead2bc949c.
+Missing-delivery branch covered, explicit unconfirmed mockcleanup retained. Shared
+workflow full-unit inputs/order controlsPASS. No source bytes changed from1e740c34b
+artifacts; no gate relaxation. Receipt whole-tree-ci-coverage-correction-20261107.json
+retains47check/21FAIL firsthead and local5269PASS2FAIL predecessor. New exactheadCI and
+ordinary312merge/checkpoint remain owed. Fresh219reviewedmaps287missing stays separate
+RC-P0delivery work; no native/finalrow/release acceptance.
+
+## PR312 first final-head CI fails coverage; corrective pass active
+
+6f4b22ae9070ef85d6a07c277c7fee3f7824133d has47checks/21FAIL, not mergeable acceptance.
+Inspected failed candidate and offline logs show unchanged global changed-code coverage
+checker consumed narrow feature-only reports, plus one genuinely uncovered new broker
+missing-delivery branch. No test/type failure is inferred from those coverage messages;
+Windows/Linux whole-tree jobs and local full installed suites remain separately PASS.
+Failed rollup and logs retained privately with exact head/runIDs42425570607/42425570586.
+
+Added explicit mocked missing-delivery negative control, including DISCONNECTED and
+truthful unconfirmed cleanup/noack/no reconnect. Initial test helper-name/state/cleanup
+expectation mistakes retained; corrected guard/ordering controlsPASS. All21SDK feature
+workflows now extend coverage with full SDK unit suite before the unchanged global
+checker; observation-selection append moved before simulator reset. No exclusion,
+threshold reduction, changed-file filter, or checker waiver. Expanded local SDK+
+coverage/gate reproduction running; final new-head CI still owed.
+
+Fresh prior5270SDK/538reference owning-thread tracesPASS,455observed/51abstractuncalled
+preserved; privately reviewed supplement links219maps287missing. Not yet committed as
+the RC-P0 mapping delivery, and new added test has separate evidence pending. Native
+science/rights/deployment/OSsecurity and final42-row acceptance remain unpromoted.
+
 ## PR312 fresh installed/type verification passes; tracing continues
 
 Fresh source/wheel/sdist/installed parity71SDK/6worker/37reference modules and13
