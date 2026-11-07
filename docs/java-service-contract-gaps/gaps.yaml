@@ -87,15 +87,17 @@
     {
       "id": "JAVA-GAP-0005", "legacy_ids": [],
       "title": "Durable remote notification cursor and gap-aware resync contract unestablished",
+      "last_verified": "2026-11-07",
+      "last_verified_basis": "Fresh installed Python/simulator retained-reference tests; NOT fresh native Java execution or AMQP acceptance",
       "subsystem": "runtime", "java_component": "Runtime activity messaging / notification recovery",
-      "api_contract": {"method": null, "path": null, "request_schema_ref": "python-client/docs/graph-projection.md", "expected_response_schema_ref": null},
+      "api_contract": {"method": null, "path": null, "request_schema_ref": "python-client/docs/durable-notification-reference.md", "expected_response_schema_ref": "python-client/docs/durable-notification-reference.md"},
       "requirement_ids": ["RC-P3.1", "CAP-10", "CAP-11"], "original_issues": ["https://github.com/integratedmodelling/klab-services/issues/126"],
-      "python_test_refs": ["developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh", "python-client/tests/unit/test_notifications.py::test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints"],
-      "simulator_scenario_refs": ["SIM-REFRESH-001"], "reproducer_ref": "https://github.com/integratedmodelling/klab-services/issues/126",
+      "python_test_refs": ["developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh", "python-client/tests/unit/test_notifications.py::test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints", "python-client/tests/unit/test_durable_notifications.py", "developer-tools/klab-service-simulator/tests/test_durable_notifications.py"],
+      "simulator_scenario_refs": ["SIM-REFRESH-001", "SIM-DURABLE-NOTIFICATIONS-001"], "reproducer_ref": "https://github.com/integratedmodelling/klab-services/issues/126",
       "observed_java_behavior": "NOT_TESTED maintained durable cursor/order/retention protocol. Native transient messaging exists; historical run18 is not durable replay.",
-      "simulator_behavior": "Explicit fault/stale/refetch controls, never durable delivery or complete convergence",
+      "simulator_behavior": "Explicit opt-in klab.experimental.notifications/1 proposed HTTP reference: bound root owner, immutable Job lifecycle batches and origin/epoch/sequence cursors,128event retention, contiguous replay/duplicates, RESYNC_REQUIRED on gaps/epoch loss, SQLite persistence and released-scope cleanup. Explicit activation covers subsequent Job hints only; caller checkpoints advance only after caller processing, no fabricated earlier history or full convergence. Separate native async client; existing transient AMQP behavior unchanged.",
       "contract_confidence": "SIMULATED_PROVISIONAL", "java_status": "CONTRACT_PROVISIONAL", "priority": "P1", "contract_case": "GAP-CASE-0005",
-      "links": ["https://github.com/integratedmodelling/klab-services/issues/126"], "notes": "Need versioned ordering scope/incarnation/cursor expiry/overflow/revocation contract; message IDs are not cursors."
+      "links": ["https://github.com/integratedmodelling/klab-services/issues/126", "python-client/docs/durable-notification-reference.md", "notes/python-roadmap-execution/evidence/full-roadmap-durable-notifications-20261107.json"], "notes": "Native endpoint UNKNOWN_PENDING_REFERENCE; experimental GET /experimental/notifications/v1/events is an explicit proposal, not a discovered Java API. Need maintained native ordering/scope/incarnation/retention/expiry/overflow/revocation and same-fixture resync/convergence acceptance. Native AMQP message IDs are not these reference cursors; no production simulator dependency or real-error fallback."
     },
     {
       "id": "JAVA-GAP-0006", "legacy_ids": [],

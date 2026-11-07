@@ -25,11 +25,17 @@ def snapshot(state):
         "assets": [[list(key), deepcopy(value)] for key, value in state.authoring.assets.items()],
         "project_locks": deepcopy(state.authoring.project_locks),
         "workers": [[list(key), deepcopy(value)] for key, value in state.workers.workers.items()],
-        "worker_tasks": deepcopy(state.workers.tasks), "next_worker_task": state.workers.next_task}
+        "worker_tasks": deepcopy(state.workers.tasks), "next_worker_task": state.workers.next_task,
+        "notifications": deepcopy(state.notifications.logs)}
 
 
 def restore(state, saved, *, recovery=True):
-    expected = {"version", "scenario", "seed", "simple", "pairs", "counters", "worldview_id", "assets", "project_locks", "workers", "worker_tasks", "next_worker_task"}
+    # Earlier reference checkpoints contain no retained-event history. Upgrade by
+    # preserving all old state but leaving logs inactive until explicit activation.
+    # No old Job/history is replayed or fabricated, and coverage is explicitly limited.
+    if isinstance(saved, dict) and "notifications" not in saved:
+        saved = {**saved, "notifications": {}}
+    expected = {"version", "scenario", "seed", "simple", "pairs", "counters", "worldview_id", "assets", "project_locks", "workers", "worker_tasks", "next_worker_task", "notifications"}
     if (not isinstance(saved, dict) or set(saved) != expected or type(saved["version"]) is not int or saved["version"] != 1
             or type(saved["seed"]) is not int
             or saved["scenario"] != state.scenario or saved["seed"] != state.seed
@@ -60,6 +66,24 @@ def restore(state, saved, *, recovery=True):
     if not isinstance(saved["worldview_id"], str) or len(saved["worldview_id"]) > 256:
         raise ValueError("Invalid simulator worldview identity")
     assets, locks, workers, tasks = pairs(saved["assets"]), mapping(saved["project_locks"]), pairs(saved["workers"]), mapping(saved["worker_tasks"])
+    logs = mapping(saved["notifications"])
+    for root, log in logs.items():
+        if (root not in simple["contexts"] or not isinstance(log, dict) or set(log) != {"epoch", "next", "events"}
+                or not isinstance(log["epoch"], str) or len(log["epoch"]) != 32
+                or type(log["next"]) is not int or not 1 <= log["next"] < 2**53
+                or not isinstance(log["events"], list) or len(log["events"]) > 128):
+            raise ValueError("Invalid retained notification log")
+        expected_sequence = log["next"] - len(log["events"])
+        if expected_sequence < 1:
+            raise ValueError("Retained notification sequence would be reused")
+        for event in log["events"]:
+            if (not isinstance(event, dict) or set(event) != {"sequence", "kind", "job_id", "service"}
+                    or type(event["sequence"]) is not int or event["sequence"] != expected_sequence
+                    or event["kind"] not in ("JOB_WAITING", "JOB_STARTED", "JOB_FINISHED", "JOB_ABORTED", "JOB_INTERRUPTED")
+                    or type(event["job_id"]) is not int or not 1 <= event["job_id"] < 2**53
+                    or event["service"] not in ("resources", "resolver", "runtime")):
+                raise ValueError("Invalid retained notification event")
+            expected_sequence += 1
     for name, counter in (("jobs", "next_job"), ("observations", "next_observation")):
         keys = [key[1] for key in paired[name]]
         if any(type(key) is not int or key < 1 for key in keys) or counters[counter] <= max(keys, default=0):
@@ -85,6 +109,7 @@ def restore(state, saved, *, recovery=True):
     state.authoring.assets, state.authoring.project_locks = assets, locks
     state.workers.workers, state.workers.tasks = workers, tasks
     state.workers.next_task = saved["next_worker_task"]
+    state.notifications.logs = logs
 
 
 class Store:

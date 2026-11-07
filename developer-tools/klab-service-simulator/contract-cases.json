@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-DURABLE-NOTIFICATIONS-001",
+      "rows": ["RC-P3.1", "CAP-10", "CAP-11"],
+      "routes": ["/runtime/experimental/notifications/v1/events"],
+      "source": "Explicit proposed klab.experimental.notifications/1 reference under JAVA-GAP-0005, not native AMQP ordering or a maintained native endpoint. Versioned schema and limited activation-only coverage in python-client/docs/durable-notification-reference.md.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native durable notification retention/epoch/order/revocation contract UNKNOWN_PENDING_REFERENCE",
+      "simulator_test": "test_durable_notifications.py::test_retained_events_replay_with_explicit_checkpoint_and_survive_process_restart",
+      "java_gap_ids": ["JAVA-GAP-0005"]
+    },
+    {
       "id": "SIM-DECLARED-BANDS-001",
       "rows": ["RC-P2.1", "RC-P2.2", "RC-P2.5", "CAP-09", "CAP-15"],
       "routes": ["/runtime/export/OBSERVATION/{urn}"],

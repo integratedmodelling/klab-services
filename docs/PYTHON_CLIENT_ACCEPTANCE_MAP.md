@@ -31,6 +31,19 @@ This is not a uniform aggregate-RSS/disk quota or hostile-code sandbox certifica
 The active A/B follow-up adds caller-declared multiband GeoTIFF analysis under
 JAVA-GAP-0014; source tests pass, fresh installed/coverage and delivery pending.
 All original42criteria and their historical statuses below remain preserved.
+
+PR272/d65d940f9 now verified merged with final SDK/scientific/worker/governanceCI.
+Active retained-notification reference under JAVA-GAP-0005 is explicitly proposed,
+not native AMQP replay: immutable checkpoints, bounded Job hints, duplicate replay,
+retention/epoch resync, owner denial, SQLite restart and cleanup. Source35unit+
+9HTTP/15recovery controls pass with newmodule100%lines/branches; fresh installed
+and hosted delivery pending. Native ordering/revocation/complete convergence remains
+unverified and issue126 stays open; original parent rows remain PARTIAL.
+Final installed reference verification nowPASS4047SDK/24referenceHTTP+recovery/
+138simulator/57worker/21workerHTTP+recovery/33governance; newmodule97lines/40branches
+fully covered/unexcluded,49SDK+15simulator+5worker artifact/install parity.17linked
+simulated casesPASS versus17currentrealNOT_RUN/exit3. Normal publication/hosted
+acceptance still pending; no native replay or full convergence verdict inferred.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),

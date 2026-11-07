@@ -1,0 +1,44 @@
+name: Experimental retained notifications (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/src/klab_client/durable_notifications.py', 'python-client/tests/unit/test_durable_notifications.py', 'developer-tools/klab-service-simulator/src/klab_simulator/notifications.py', 'developer-tools/klab-service-simulator/tests/test_durable_notifications.py', '.github/workflows/durable-notification-reference.yml']
+  pull_request:
+    paths: ['python-client/src/klab_client/durable_notifications.py', 'python-client/tests/unit/test_durable_notifications.py', 'developer-tools/klab-service-simulator/src/klab_simulator/notifications.py', 'developer-tools/klab-service-simulator/tests/test_durable_notifications.py', '.github/workflows/durable-notification-reference.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install separate SDK, worker and development-only backend
+        run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: Unit protocol denial and immutable checkpoints
+        run: python -m pytest -q python-client/tests/unit/test_durable_notifications.py --cov=klab_client --cov-branch --cov-report=json:notifications-coverage.json --junitxml=notifications-unit.xml
+      - name: HTTP sync/async, overflow, restart and scoped cleanup
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_durable_notifications.py developer-tools/klab-service-simulator/tests/test_durable_recovery.py --cov=klab_client --cov-branch --cov-append --cov-report=json:notifications-coverage.json --junitxml=notifications-http.xml
+      - name: Require100percent unexcluded new-module lines/branches and all changed SDK decisions
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py notifications-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/durable_notifications.py
+      - name: Typed reference implementation bodies
+        run: python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/durable_notifications.py
+      - name: Retain provisional evidence, never native acceptance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-reference-native-NOT_RUN
+          path: |
+            notifications-unit.xml
+            notifications-http.xml
+            notifications-coverage.json
