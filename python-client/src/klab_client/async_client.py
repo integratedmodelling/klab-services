@@ -132,7 +132,12 @@ class AsyncContext(Context):
                     if request._observable_wire is None else None)
         selected = self if token == scope_token(self) else AsyncContext(
             self.client, self.configuration, owned=self.owned, token=token)
+        selected._relationship_selection = self._relationship_selection
         return await selected.submit(request.to_wire(resolved), resolution_constraints=[item.to_wire() for item in constraints])
+
+    async def observations(self, *, limit=64, offset=0, max_response_bytes=1024 * 1024):
+        from .selections import async_observations
+        return await async_observations(self, limit=limit, offset=offset, max_response_bytes=max_response_bytes)
 
     def job(self, id):
         return AsyncJob(self.client, id, self, decoder=lambda p: observation_from_wire(p, self), result_kind="observation")
@@ -156,9 +161,10 @@ class _AsyncService(_RemoteService):
         super().__init__(client)
 
     async def _request(self, method, route, scope=None, **kwargs):
+        from .selections import relationship_options
         token = self._bound_scope_token(scope)
         return await self.client.transport.request(self.service, method, route,
-            scope=token, service_id=self.client.runtime_service_id, **kwargs)
+            scope=token, service_id=self.client.runtime_service_id, **relationship_options(scope), **kwargs)
 
     async def capabilities(self, scope=None, *, max_response_bytes=None):
         payload = self._checked(await self._request("GET", "/public/capabilities", scope,
@@ -338,9 +344,11 @@ class AsyncClient:
             json=self._scope_request({**(configuration or {}), "id": id}), ambiguous=True))
 
     async def _submit(self, observation, scope, constraints=(), *, service="runtime", decoder=None, result_kind=None):
+        from .selections import relationship_options
         context, envelope = self._submission(observation, scope, constraints, service)
         id = await self.transport.request(service, "POST", "/api/v1/submit" if service == "runtime" else "/api/v1/resolve",
-            json=envelope, scope=scope_token(scope), service_id=self.runtime_service_id, ambiguous=True)
+            json=envelope, scope=scope_token(scope), service_id=self.runtime_service_id, ambiguous=True,
+            **relationship_options(context))
         return AsyncJob(self, id, context, service=service,
             decoder=decoder or (lambda p: observation_from_wire(p, context)),
             result_kind="observation" if decoder is None else result_kind)
@@ -388,6 +396,10 @@ class AsyncClient:
             if "AGENT" not in selected.observable.semantics.raw.get("type", []):
                 raise HandleIdentityError("Saved observer selection is not a persisted agent")
         context = AsyncContext(self, root.configuration, token=reference.scope, owned=False)
+        if reference.version == 2:
+            source = await lookup(reference.source_observation_id)
+            target = await lookup(reference.target_observation_id)
+            context = context.between(source, target)
         if reference.kind == "context":
             return context
         if reference.kind == "observation":

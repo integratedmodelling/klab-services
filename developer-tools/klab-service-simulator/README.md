@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario observation-selections` admits two declared synthetic entity/connection
+observables over source-shaped endpoint headers, submit/resolve and direct-child
+query routes. Public sync/nativeasync SDK tests include bounded collections and
+version2 relationship context/observation/Job restoration. No general semantic
+admission, unresolved transaction snapshots or native science is simulated.
+See [public selection contract](../../python-client/docs/observation-selections.md).
+
 `--scenario copied-composition` combines two copied reference snapshots into a
 C-owned declared arithmetic result. Source origins remain caller assertions, not
 remote grants; no coordinator remote fetching/live federation/revocation propagation.

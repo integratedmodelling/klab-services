@@ -1,0 +1,52 @@
+name: Persisted observation selections (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/src/**', 'python-client/tests/unit/test_selections.py', 'developer-tools/klab-service-simulator/**', 'notes/python-roadmap-execution/roadmap_queue.py', '.github/workflows/observation-selections.yml']
+  pull_request:
+    paths: ['python-client/src/**', 'python-client/tests/unit/test_selections.py', 'developer-tools/klab-service-simulator/**', 'notes/python-roadmap-execution/roadmap_queue.py', '.github/workflows/observation-selections.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-selections:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install production SDK and separate development fixture
+        run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: Public SDK selection, restoration and changed transport controls
+        run: python -m pytest -q python-client/tests/unit/test_selections.py python-client/tests/unit/test_geometry_size.py python-client/tests/unit/test_provider_handles.py python-client/tests/unit/test_saved_handles.py python-client/tests/unit/test_async_saved_handles.py python-client/tests/unit/test_client.py python-client/tests/unit/test_async_client.py python-client/tests/unit/test_async_transport.py --cov=klab_client --cov-branch --cov-report=json:selections-coverage.json --junitxml=selections-unit.xml
+      - name: Public sync and native async HTTP acceptance (not native Java)
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_observation_selections.py --junitxml=selections-http.xml
+      - name: Supplementary fixture refusals (not a substitute for public SDK acceptance)
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_observation_selection_fixture.py --cov=klab_simulator.observation_selections --cov-branch --cov-fail-under=100 --cov-report=json:selection-fixture-coverage.json
+      - name: Unexcluded full new SDK module and all changed SDK decisions
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py selections-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/selections.py
+      - name: Implementation body type checking and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/selections.py developer-tools/klab-service-simulator/src/klab_simulator/observation_selections.py
+          python -m ruff check python-client/src developer-tools/klab-service-simulator/src --select E9,F63,F7,F82
+      - name: Durable full-roadmap queue invariants
+        run: |
+          python -m pytest -q python-client/tests/unit/test_roadmap_queue.py
+          python notes/python-roadmap-execution/roadmap_queue.py check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: observation-selections-not-native-execution
+          path: |
+            selections-coverage.json
+            selections-unit.xml
+            selections-http.xml
+            selection-fixture-coverage.json

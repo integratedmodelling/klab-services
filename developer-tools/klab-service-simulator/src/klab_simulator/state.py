@@ -24,6 +24,7 @@ EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denie
 SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export", "candidate-sources", "provenance-dependencies", "provider-avro")
 SCENARIOS += ("revision-convergence",)
 SCENARIOS += ("copied-composition",)
+SCENARIOS += ("observation-selections",)
 
 
 class ContractError(Exception):
@@ -372,6 +373,10 @@ class State:
             raise ContractError(400, "Invalid JSON request") from None
         if data is not None and not isinstance(data, dict) and not (service == "reasoner" and route == "/api/v1/subsumes"):
             raise ContractError(400, "A JSON object is required")
+        if self.scenario == "observation-selections":
+            from .observation_selections import respond
+            selected = respond(self, service, method, route, principal, scope, headers, data, body)
+            if selected is not None: return selected
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
                 raise ContractError(400, "Scope advertisement requires service descriptors")

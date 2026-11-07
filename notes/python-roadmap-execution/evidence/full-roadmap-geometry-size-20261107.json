@@ -19,5 +19,6 @@
   "contract_matrix": {"simulated_pass": 17, "SDK_tests": 485, "simulator_tests": 177, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
   "dependency_custody": "Fresh wheels/sdists/pip-target installs borrow prior test dependencies; no fresh dependency-isolation certification",
   "native_java": "REAL_NOT_RUN; all17gap statuses unchanged. No Java/IDE/scanner/GeoTIFF unit repair or scientific acceptance",
-  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; continue original42row implementation/acceptance work. FullABC/native acceptance/sleep pending."
+  "delivery": {"pr": 289, "head": "43acd7618fcf5c30415274025710484f443d4db6", "merge": "48ef20741dd5a61036d58e6ed21ff3bc2c9358af", "merged_utc": "2026-11-07T06:19:52Z", "final_head_checks": "17PASS; earlier609930ec5 provider coverage failures preserved, corrected CI batch on new head", "independent_maintainer_review": false},
+  "remaining": "Continue original42row implementation/acceptance work. FullABC/native acceptance/sleep pending."
 }

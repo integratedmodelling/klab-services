@@ -153,6 +153,29 @@ def test_generated_reports_do_not_diverge():
     govern.generate(check=True)
 
 
+def test_individual_reproductions_cover_all_stable_gaps_and_native_boundaries():
+    for gap in govern.expanded()["gaps"]:
+        path = govern.DATA / "reproductions" / (gap["id"] + ".md")
+        document = path.read_text(encoding="utf-8")
+        assert document == govern.reproduction_document(gap)
+        assert gap["observed_java_behavior"] in document
+        assert gap["simulator_behavior"] in document
+        assert f"--mode simulated --gap {gap['id']}" in document
+        assert f"--mode real --gap {gap['id']}" in document
+        assert "REAL_NOT_RUN" in document and "exits3 without network calls" in document
+        assert "Required native startup prerequisites" in document
+        assert "not** an actual native test" in document
+        assert all(requirement in document for requirement in gap["requirement_ids"])
+
+
+def test_reproduction_generation_never_invents_unknown_native_build_or_endpoint():
+    gap = next(g for g in govern.expanded()["gaps"] if g["id"] == "JAVA-GAP-0007")
+    document = govern.reproduction_document(gap)
+    assert "UNKNOWN_PENDING_REFERENCE" in document
+    assert "NOT_RUN / exact native build and environment not established" in document
+    assert "no reviewed adapter/build/permission exists, retain NOT_RUN" in document
+
+
 def test_maintainer_handoff_has_each_gap_once_and_current_counts_with_seed_intact():
     registry = govern.expanded()
     path = govern.DATA / "JAVA_GAPS_FOR_FERDINANDO.md"

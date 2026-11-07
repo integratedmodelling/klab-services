@@ -54,11 +54,11 @@ class AsyncTransport(_TransportPolicy):
 
     async def _request(self, service, method, route, *, scope=None, service_id=None,
                       json=None, text=None, params=None, response="json", ambiguous=False,
-                      timeout=None, deadline=None, max_response_bytes=None, files=None, binary=None):
+                       timeout=None, deadline=None, max_response_bytes=None, files=None, binary=None, relationship=None):
         endpoint = self.endpoint(service)
         content = self._content(binary, json, text, files)
         headers = self._headers(route, response=response, scope=scope, service_id=service_id,
-                                text=text, max_response_bytes=max_response_bytes, binary=binary)
+                                text=text, max_response_bytes=max_response_bytes, binary=binary, relationship=relationship)
         if deadline is not None and time.monotonic() >= deadline:
             raise TransportError("Request waiting deadline expired")
         sent = False

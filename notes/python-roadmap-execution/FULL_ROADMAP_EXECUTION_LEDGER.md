@@ -1,5 +1,44 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Renewed full-roadmap queue and persisted-selection implementation
+
+2026-11-07: actual remote PR289 MERGED/integration48ef20741 reverified. Active
+`test/python-selection-workflow-audit` remains local/uncommitted/no new PR. The
+authoritative `roadmap-execution-queue.json` preserves42original IDs and historical
+audit records, with per-row concrete implementation/tests/simulator needs plus
+independent Python/simulator/native axes and next actions.39runnable/zero final
+dispositions; historical C exclusions remain embedded history, not current scope.
+`roadmap_queue.py check/next/checkpoint --pr N` validates history, selects work and
+verifies remote merge plus local ancestry without promoting acceptance. Explicit
+OpenCode session resume documented; no autonomous restart or permission bypass.
+
+Implemented public Context.between/AsyncContext selection, source-defined endpoint
+headers, bounded direct HAS_CHILD ObservationPage and version2 saved relationship
+context/observation/Job restore without resubmission or ownership. Bound endpoints
+must match origin/root/known Runtime; integer IDs remain server-authorized.
+between retains focus, within(nonnull) clears pair, observed Java source pinned in
+`evidence/observation-selection-source-authority-20261107.json`. Two declared
+synthetic entity/connection observables independently verify these clients;
+no general Reasoner/scientific engine, numeric storage or native execution claimed.
+
+57unit/queue and6HTTP workflows PASS.470focused SDK controls pass, new SDK
+selections90lines/28branches100%unexcluded and changed-code gatePASS.39governance
+controls pass,17individual reproductions generated with actual native limits.
+Broad source run4459PASS/5FAIL preserved:2inventory drift checks before regeneration,
+3preflight controls requiring noneditable installation. Inventory now regenerated;
+fresh unique installed full verifier running; final installed/CI/PR acceptance pending.
+Native read-only compatibility fixture test NOT_RUN. JAVA-GAP-0013/native statuses
+unchanged; selection is not complete CAP-04 scientific acceptance. After permitted
+PR/merge checkpoint immediately continue material-selection-effects then other
+independent requirements, not a milestone stop. FullABC remains incomplete.
+
+PR289 verified MERGED48ef20741dd5a61036d58e6ed21ff3bc2c9358af at2026-11-07T06:19:52Z,
+exact43acd7618fcf5c30415274025710484f443d4db6/all17reported finalheadchecksPASS.
+Initial609930ec5 two provider coverage failures retained; corrected CI includes
+geometry tests without exclusion/threshold changes. Selectionaudit child integrated
+actualmerge; no remote watcher remains. Python validation delivery does not repair
+native GeoTIFF units/scanner or complete fullABC.
+
 ## Direct geometry finite-size validation pass
 
 PublishedPR289 head609930ec5; initial two installed-provider jobs FAILED changed-code

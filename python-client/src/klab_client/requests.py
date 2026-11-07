@@ -352,4 +352,5 @@ def observe(context, request, options=None):
     resolved = context.client.reasoner.resolve_observable(request.observable) if request._observable_wire is None else None
     selected = context if token == scope_token(context) else Context(
         context.client, context.configuration, owned=context.owned, token=token)
+    selected._relationship_selection = context._relationship_selection
     return selected.submit(request.to_wire(resolved), resolution_constraints=[item.to_wire() for item in constraints])

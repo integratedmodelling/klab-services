@@ -1,5 +1,39 @@
 # A+B completion ledger — ongoing campaign
 
+## Persisted selections / full42row continuation — development pass 2026-11-07
+
+PR289 and remote campaign integration reverified at48ef20741; current branch
+`test/python-selection-workflow-audit`, no new PR yet. Public sync/nativeasync
+persisted relationship selection, typed bounded direct-child observation pages and
+version2 context/observation/Job restoration implemented locally. Existing version1
+serialization unchanged. Source headers/query/scope authority pinned in
+`evidence/observation-selection-source-authority-20261107.json`; semantic admission
+is only a two-observable independent fixture, not native science. Native compatibility
+test prepared/read-only/NOT_RUN, existing JAVA-GAP-0013 retained.
+
+Latest verified:57selection/queue controls and6public HTTP workflows PASS;
+470focused SDK controls PASS with current selections90lines/28branches100%unexcluded
+and all changed SDK decisions covered.39governance controls PASS including17new
+individual reproductions and drift checks. Source-only broad suite4459PASS/5FAIL:
+two inventory drift checks before regeneration and three reliability preflight
+controls correctly requiring noneditable SDK installation. Inventory regenerated;
+retain this failed source run, do not relabel it passing. Fresh unique wheel/sdist/
+pip-target installed verifier running separately; no fresh dependency-isolation claim.
+CI additions include selection controls in broad provider changed-code gate.
+
+Machine queue preserves all42original IDs and embedded audit unchanged, separate
+implementation/simulator/native axes;39runnable rows/zero final dispositions.
+Explicit CLI resume and remote/ancestry checkpoint tooling are durable but not an
+automatic restart guarantee. Continue to material-selection-effects after verified
+selection delivery; PR/test/merge is not full-roadmap completion. No native execution,
+Java/IDE repair, issue closure, release, develop promotion or power action performed.
+
+PR289 verified MERGED48ef20741dd5a61036d58e6ed21ff3bc2c9358af at06:19:52Z,
+exact43acd7618fcf5c30415274025710484f443d4db6/all17reported checksPASS. Earlier
+609930ec5 provider coverage failures preserved, corrected batch not weakened gates.
+Selection audit child integrated actualmerge; no remote watcher remains. Continue
+source-authorized collection/relationship workflows; native/fullABC unchanged.
+
 GeometryPR289 published609930ec5; both installed-provider hosted jobs FAILED the
 changed-code gate because focused provider batch omitted test_geometry_size.py
 (runtime.py57/59/60 and54->57/57->59/57->61 unmeasured). No merge/retry claimed.
