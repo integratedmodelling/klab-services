@@ -1,6 +1,24 @@
 # A+B completion ledger — ongoing campaign
 
+## PR305 final installed receipt verified
+
+Fresh raster-label artifacts at source79a73dbc5 passed5253installedSDK/536simulator/
+116worker/23workerHTTP/allreference39governance, zero failures/errors/skips.
+Raw71SDK37sim6worker source/wheel/sdist/installed parity and no simulator in production
+verified;49SDKcontrols100%entirenewmodule/allchangedSDK,10fixture100%,4publicHTTP/
+1ownedSDK-onlynotebook,17focusedCI and ordered693/214/92/115/40/101/6/21/9+unchanged
+gatePASS.17linkedPASS(1319SDK413sim116worker) versus17nativeREAL_NOT_RUN.
+Final receipt recorded; simulator service scan empty. Initial hosted source checks
+passed; final receipt head CI/ordinarymerge/checkpoint remain.42originalIDs/history,
+18runnable/zero final dispositions; no native semantic/time/science promotion.
+
 ## PR304 verified merged; reference raster dictionaries/time labels active
+
+DraftPR305 published79a73dbc5.49SDK+offline100%newmodule/allchangedSDK/4publicHTTP/
+1ownedSDKnotebook10fixture100%/types-lint93governance-oldadaptercontrolsPASS.
+Fresh reference-raster-labels-first fullverifier/17focusedCI/actualorderedselection/
+17linkedmatrix/hostedwatcher running. No fullinstalled/parity/exactheadCI/mergeacceptance
+yet. Sourcefrozen; nextRC-P0 operation/test/workflow attribution review independent.
 
 Categorical source49SDK+offline100%newmodule/allchangedSDK/4publicHTTP/1ownedexactSDK
 notebook/10fixture100%/types-lint/93governancequeueordering-oldcalleradaptercontrols

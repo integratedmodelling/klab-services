@@ -1,5 +1,13 @@
 # Resume the full Python A+B+C campaign
 
+Latest PR305 receipt:5253installedSDK536sim116worker23HTTP/reference39governancePASS,
+zero skips/errors/failures;71/37/6rawparity/no simulatorinproduction;49SDK100%newmodule/
+changedSDK10fixture100%4HTTP1ownednotebook17focusedCI/orderedPASS;17linkedPASS
+(1319SDK413sim116worker)vs17nativeNOT_RUN. Simulator service scan empty. Finalreceipt
+recorded; commit/push receipt and verify new exactheadCI before ordinarymerge/checkpoint.
+Then immediately continue RC-P0 operation/test/workflow attribution; private4probe
+tracer is design only.42originalIDs/history18runnable/zero finaldispositions retained.
+
 This is a resumable instruction, **not a daemon or guaranteed automatic restart**.
 The supported OpenCode CLI provides `run --session`; no documented unattended
 restart guarantee was established. Do not inject into a concurrently running
@@ -35,6 +43,17 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
 
 Most recent verified checkpoint: PR304 merge `d0ccdc531`, exact `49aa07469`,
 all49 final-head checks PASS; remote merged state/local ancestry verified.
+
+Latest active update: draftPR305 `79a73dbc5`, reference-raster-labels sourcefrozen.
+49SDK+offline100%entirenewmodule/allchangedSDK/4publicHTTP/1SDK-onlyexactkernelnotebook/
+10fixture100%/types-lint93governance-oldadaptercontrolsPASS. Fresh uniquely named
+reference-raster-labels-first verifier,17focusedCIhelper,orderedselection,17linkedmatrix
+and305watcher running. No finalfullinstalled/rawparity/exactheadCI/ordinarymerge yet.
+InitialEPSG/WKT representation,notebookcredential-source/threecellorder andruffsemicolon
+developmentfailures retained/corrected without weakeningguards. Lastverified304merge
+and18runnable/42originalIDs/history remain authoritative; earlier noPR/uncommittedlines
+below superseded. Next RC-P0 exact operation/test/workflow attribution reviewed in
+private plan/probes only; production frozen until305artifactcustody.
 
 Active `feat/python-reference-raster-labels`, noPR/sourceuncommitted.304alljobsfinished,
 strictACK5204SDK521sim116worker23HTTP/reference-governancePASS,70-36-6parity/15olderCI/

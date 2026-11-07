@@ -4,7 +4,7 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-reference-raster-labels",
-    "pr": null,
+    "pr": 305,
     "requirement": "RC-P2.5",
     "ci_review_dependencies": []
   },
