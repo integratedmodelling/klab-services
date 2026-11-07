@@ -379,6 +379,7 @@ class State:
                     **({"copiedCompositionProtocol":"klab.experimental.copied-composition/1"} if self.scenario == "copied-composition" and service == "runtime" else {}),
                     **({"managedBehaviorProtocol":"klab.experimental.managed-behaviors/1"} if self.managed_behaviors is not None and service == "runtime" else {}),
                     **({"readPlanSelectionProtocol":"klab.experimental.read-plan-selections/1"} if self.read_plan_selections is not None and service == "runtime" else {}),
+                    **({"referenceRasterMetadataProtocol":"klab.experimental.reference-raster-metadata/1"} if self.scenario in ("category-code-export", "declared-band-export") and service == "runtime" else {}),
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                      "importSchemata": schemas() if service == "resources" else {},
                      **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
@@ -508,6 +509,9 @@ class State:
         if service == "runtime" and route.startswith("/experimental/read-plan-selections/v1/") and self.read_plan_selections is not None:
             if len(body)>4096:raise ContractError(413,"Selected read-plan request budget exceeded")
             return self.read_plan_selections.request(method,original_path.split("/runtime",1)[1],principal,scope,headers,data)
+        if service == "runtime" and route.startswith("/experimental/reference-raster-metadata/v1/"):
+            from .reference_raster_labels import response
+            return response(self,method,original_path.split("/runtime",1)[1],principal,scope,headers)
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
                 raise ContractError(400, "Scope advertisement requires service descriptors")

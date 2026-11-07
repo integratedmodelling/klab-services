@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-REFERENCE-RASTER-LABELS-001",
+      "rows": ["RC-P2.5", "CAP-15"],
+      "routes": ["/runtime/experimental/reference-raster-metadata/v1/observations/", "/runtime/export/"],
+      "source": "Explicit advertised finite metadata proposal binds raw GeoTIFF hash and canonical numeric-array/mask identity to server-declared integer dictionaries/worldview ID-revision-service and band labels/UTC instants. Public sync/async export+metadata+offline arrays and exact-SDK-only owned notebook preserve int16 zero-negative-nodata codes/masks and float32 bands/coordinates. Old caller-only RasterCategories/RasterBandAxis semantics unchanged; declaration adopts literal fixture labels, not embedded native TIFF/worldview/time or ontology inference. Strict bounded identity/duplicateJSON/secret/credential/layout/content/dictionary/UTC/budget/optionaldependency guards; no resampling/cast/mediation. Bob denial, owner release, offline socket prohibition and kernel cleanup tested. Local hashes remain claims, not science/authentication/permission authority.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; maintained native category/worldview/time/provider metadata and scientific authority remain external",
+      "simulator_test": "test_reference_raster_labels.py::test_public_server_declared_dictionary_worldview_and_band_time_labels",
+      "java_gap_ids": ["JAVA-GAP-0014"]
+    },
+    {
       "id": "SIM-SELECTED-READ-PLAN-001",
       "rows": ["RC-P2.2", "CAP-09"],
       "routes": ["/runtime/experimental/read-plan-selections/v1/observations/", "/runtime/experimental/read-plan-selections/v1/open", "/runtime/experimental/read-plans/v1/"],

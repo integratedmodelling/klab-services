@@ -1,5 +1,18 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Selected reference windows delivered; categorical reference metadata active
+
+304verifiedMERGEDd0ccdc531 at2026-11-07T21:21:12Z/exact49aa07469/all49checksPASS;
+remote-local ancestry checkpointverified.5204installedSDK521sim116worker23HTTP/
+reference-governancePASS;70-36-6parity/52SDK100%18fixture100%2HTTP15CI+ordered/
+17linkedPASSvs17nativeNOT_RUN; superseded5200/BooleanACK/oldCI failure evidence retained.
+42originalrows/history/18runnable/zero finaldispositions; no science/native promotion.
+Next reference-raster-labels sourceprototype28SDK/4publicsync-asyncHTTP/bodymypyPASS;
+exactexport+arrayidentity/serverdeclared dictionary-worldview/bandlabels. EPSG/WKT
+representation mismatch corrected by local CRSidentity normalization, not mediation.
+No categoricalPR/installed/fullrowacceptance; offlinecontrols/notebooks/coverage/delivery
+continue independently, no milestone stopping gate.
+
 ## PR303 merged; selected-window implementation continues
 
 PR304strictACKcandidate5204installedSDK521sim116worker23HTTP/reference39governance

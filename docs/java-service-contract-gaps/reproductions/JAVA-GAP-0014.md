@@ -28,7 +28,7 @@ NOT_TESTED general remote temporal/multishard/category/revision mapping. Native 
 Synthetic metadata.grid/UNSPECIFIED offsets and finite event assignment over immutable TIFF; requested_slice is a request only. Pinned3x2x3float32 multiband TIFF preserves18values/masks/units with explicit caller RasterBandAxis, not native time/history. Separate pinned2x3int16 synthetic:CategoryCode export has no units; immutable caller RasterCategories assigns exact labels while preserving raw integer codes/mask and unknown-code refusal. No native category dictionary, ontology inference or committed revision is claimed. Both fixture point-offset mappings remain unestablished and explicitly422, not guessed.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-GRID-001, SIM-USGS-001, SIM-EXPORT-001, SIM-ADAPTERS-001, SIM-TEMPORAL-EXPORT-001, SIM-OFFLINE-SNAPSHOT-001, SIM-DECLARED-BANDS-001, SIM-CATEGORY-CODES-001, SIM-READ-PLAN-ANALYSIS-001, SIM-SELECTED-READ-PLAN-001
+Scenarios: SIM-GRID-001, SIM-USGS-001, SIM-EXPORT-001, SIM-ADAPTERS-001, SIM-TEMPORAL-EXPORT-001, SIM-OFFLINE-SNAPSHOT-001, SIM-DECLARED-BANDS-001, SIM-CATEGORY-CODES-001, SIM-READ-PLAN-ANALYSIS-001, SIM-SELECTED-READ-PLAN-001, SIM-REFERENCE-RASTER-LABELS-001
 
 Exact executable controls:
 
@@ -42,6 +42,11 @@ Exact executable controls:
 - `developer-tools/klab-service-simulator/tests/test_read_plan_analysis.py`
 - `python-client/tests/unit/test_reference_window_analysis.py`
 - `developer-tools/klab-service-simulator/tests/test_reference_windows.py`
+- `python-client/tests/unit/test_reference_raster_labels.py`
+- `python-client/tests/unit/test_reference_raster_analysis.py`
+- `developer-tools/klab-service-simulator/tests/test_reference_raster_labels.py`
+- `developer-tools/klab-service-simulator/tests/test_reference_raster_notebook.py`
+- `developer-tools/klab-service-simulator/tests/test_reference_raster_fixture.py`
 
 ## Reproduction commands
 

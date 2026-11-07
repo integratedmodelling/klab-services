@@ -23,7 +23,7 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install './python-client[dev,analysis]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
       - name: SDK and detached analysis controls
-        run: python -m pytest -q python-client/tests/unit/test_reference_windows.py python-client/tests/unit/test_reference_window_analysis.py --cov=klab_client --cov-branch --cov-report=json:windows-sdk.json
+        run: python -m pytest -q python-client/tests/unit/test_reference_windows.py python-client/tests/unit/test_reference_window_analysis.py python-client/tests/unit/test_reference_raster_labels.py python-client/tests/unit/test_reference_raster_analysis.py --cov=klab_client --cov-branch --cov-report=json:windows-sdk.json
       - name: Entire module and changed SDK decisions unexcluded
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"

@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 425,
+    "IMPLEMENTED_SOURCE_ONLY": 429,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -3009,6 +3009,34 @@
       "path": "reference_commits.py",
       "owner": "AsyncReferenceGraphProjection",
       "operation": "refresh",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_raster_labels.py",
+      "owner": null,
+      "operation": "open_reference_raster",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_raster_labels.py",
+      "owner": "ReferenceRasterMetadata",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_raster_labels.py",
+      "owner": "ReferenceRasterLabels",
+      "operation": "metadata",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_raster_labels.py",
+      "owner": "AsyncReferenceRasterLabels",
+      "operation": "metadata",
       "async": true,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
