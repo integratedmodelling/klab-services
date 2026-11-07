@@ -139,6 +139,18 @@ class AsyncContext(Context):
         from .selections import async_observations
         return await async_observations(self, limit=limit, offset=offset, max_response_bytes=max_response_bytes)
 
+    async def resolve(self, request, *, options=None):
+        """Plan a typed observation with its explicit options, without executing it."""
+        request, token, constraints = _prepare_observe(self, request, options)
+        resolved = (await self.client.reasoner.resolve_observable(request.observable)
+                    if request._observable_wire is None else None)
+        selected = self if token == scope_token(self) else AsyncContext(
+            self.client, self.configuration, owned=self.owned, token=token)
+        selected._relationship_selection = self._relationship_selection
+        return await self.client._submit(request.to_wire(resolved), selected,
+            [item.to_wire() for item in constraints], service="resolver",
+            decoder=lambda payload: object_payload(payload, "dataflow"), result_kind="dataflow")
+
     def job(self, id):
         return AsyncJob(self.client, id, self, decoder=lambda p: observation_from_wire(p, self), result_kind="observation")
 

@@ -3,20 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "test/python-selection-workflow-audit",
-    "pr": 290,
-    "requirement": "CAP-04",
-    "ci_review_dependencies": ["PR290 exact final-head CI and ordinary permitted merge"]
+    "branch": "feat/python-material-selection-effects",
+    "pr": null,
+    "requirement": "RC-P1.5",
+    "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 289,
-    "merge": "48ef20741dd5a61036d58e6ed21ff3bc2c9358af",
-    "utc": "2026-11-07T06:19:52Z",
+    "pr": 290,
+    "merge": "6307e93f4bbae747b2908a40e1d55f2b016ad34b",
+    "head": "f38a332e8d3f2b98ddd3d51abfc8c8c2ac15d3ce",
+    "utc": "2026-11-07T13:52:56Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "CAP-04",
+  "next_actionable_requirement": "RC-P1.5",
+  "pending_deliveries": [],
   "remaining_runnable_work": [
-    "persisted-relationship-selection",
     "material-selection-effects",
     "explicit-collaborator-rights",
     "revision-aware-validation",
@@ -171,7 +172,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: persisted-relationship-selection"
       },
       "simulator_support_needed": "observation-selections independent finite entity/connection admission, plan/result endpoint receipts, direct-child pages and owner checks implemented; six public SDK HTTP workflows pass, installed verification pending.",
-      "implementation_status": "PUBLIC_SELECTION_IMPLEMENTED_INSTALLED_VERIFIED_PR290_PENDING",
+      "implementation_status": "PERSISTED_SELECTION_DELIVERED_PR290",
       "simulator_acceptance_status": "INSTALLED_PUBLIC_SYNC_ASYNC_WORKFLOWS_PASS_FULL_ROW_FINAL_DISPOSITION_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -225,18 +226,26 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "selection_delivery": {
+          "pr": 290,
+          "head": "f38a332e8d3f2b98ddd3d51abfc8c8c2ac15d3ce",
+          "merge": "6307e93f4bbae747b2908a40e1d55f2b016ad34b",
+          "merged_at": "2026-11-07T13:52:56Z",
+          "final_head_checks": 26,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-observation-selections-20261107.json"
+        }
       },
       "work_group": "persisted-relationship-selection",
       "priority": 0,
-      "task_state": "in_progress",
-      "next_executable_action": "Complete fresh uniquely named wheel/sdist/install verification and linked matrix; publish coherent selection+queue+governance PR, verify exact-head CI and permitted merge, checkpoint remote ancestry then immediately begin material-selection-effects.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile final full-roadmap row acceptance after cross-cutting integration; native semantic applicability remains separate NOT_RUN, not missing Python endpoint selection.",
       "disposition": null
     },
     {
       "id": "RC-P1.5",
       "original_requirement": "A requested options visible in actual plan",
-      "required_public_python_functionality": "ObservationRequest/ObservationOptions/ContextOptions/GridOptions/ResolutionConstraint; Context.within/observe and query facades",
+      "required_public_python_functionality": "Context/AsyncContext.resolve typed planning shares observe options, selection and configured Reasoner/Resolver; ContextOptions/GridOptions plus namespace/project/scenario/observer options materially affect independent synthetic execution, not hard model forcing",
       "historical_audit": {
         "acceptance_id": "RC-P1.5",
         "original_requirement": "A requested options visible in actual plan",
@@ -329,7 +338,7 @@
         ]
       },
       "current_ledger_baseline": "PARTIAL; SIM-SELECTION-001",
-      "remaining_implementation": "Verify project/namespace/scenario/observer/grid options change declared synthetic plan and executed input, not only echoed request metadata; reject unsupported forced models.",
+      "remaining_implementation": "Typed public resolve and finite numerical effects implemented; corrected root-scope refusal candidate requires fresh final installed/CI/ordinary PR verification. Native ranking/admission/grid numerical acceptance remains separate.",
       "required_tests": {
         "existing_unit": [
           "python-client/tests/unit/test_request_plan_acceptance.py",
@@ -347,8 +356,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: material-selection-effects"
       },
       "simulator_support_needed": "Verify project/namespace/scenario/observer/grid options change declared synthetic plan and executed input, not only echoed request metadata; reject unsupported forced models.",
-      "implementation_status": "REMAINDER_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "MATERIAL_SELECTION_IMPLEMENTATION_IN_PROGRESS",
+      "simulator_acceptance_status": "FOUR_SOURCE_PUBLIC_HTTP_CASES_60_NUMERICAL_OPTION_COMBINATIONS_PASS_INSTALLED_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [],
@@ -405,8 +414,8 @@
       },
       "work_group": "material-selection-effects",
       "priority": 1,
-      "task_state": "pending",
-      "next_executable_action": "Verify project/namespace/scenario/observer/grid options change declared synthetic plan and executed input, not only echoed request metadata; reject unsupported forced models.",
+      "task_state": "in_progress",
+      "next_executable_action": "Complete SDK-only typed resolve option tests/coverage, fixture refusal controls, native compatibility plan, source custody/governance/docs and fresh installed verification before ordinary PR delivery.",
       "disposition": null
     },
     {

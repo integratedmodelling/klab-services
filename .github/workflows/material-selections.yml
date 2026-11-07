@@ -1,0 +1,46 @@
+name: Typed planning and material selections (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/src/**', 'python-client/tests/unit/test_material_selections.py', 'developer-tools/klab-service-simulator/**', '.github/workflows/material-selections.yml']
+  pull_request:
+    paths: ['python-client/src/**', 'python-client/tests/unit/test_material_selections.py', 'developer-tools/klab-service-simulator/**', '.github/workflows/material-selections.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-material-selections:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: SDK-only typed planning, options and scope controls
+        run: python -m pytest -q python-client/tests/unit/test_material_selections.py python-client/tests/unit/test_selections.py python-client/tests/unit/test_typed_requests.py python-client/tests/unit/test_request_plan_acceptance.py python-client/tests/unit/test_scope_selection_guards.py python-client/tests/unit/test_client.py python-client/tests/unit/test_async_client.py --cov=klab_client --cov-branch --cov-report=json:material-sdk-coverage.json
+      - name: Require all changed SDK code and whole existing request module unexcluded
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py material-sdk-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/requests.py
+      - name: Public SDK independent numerical plan and execution acceptance
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_material_selections.py --junitxml=material-public-http.xml
+      - name: Supplementary finite fixture intake controls, not SDK acceptance
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_material_selection_fixture.py --cov=klab_simulator.material_selections --cov-branch --cov-fail-under=100 --cov-report=json:material-fixture-coverage.json
+      - name: Type check implementation bodies and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/requests.py developer-tools/klab-service-simulator/src/klab_simulator/material_selections.py
+          python -m ruff check python-client/src developer-tools/klab-service-simulator/src --select E9,F63,F7,F82
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: material-selection-not-native-execution
+          path: |
+            material-sdk-coverage.json
+            material-public-http.xml
+            material-fixture-coverage.json

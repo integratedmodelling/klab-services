@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 342,
+    "IMPLEMENTED_SOURCE_ONLY": 345,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -1181,6 +1181,13 @@
     {
       "path": "async_client.py",
       "owner": "AsyncContext",
+      "operation": "resolve",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "async_client.py",
+      "owner": "AsyncContext",
       "operation": "job",
       "async": false,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
@@ -1560,6 +1567,13 @@
       "path": "client.py",
       "owner": "Context",
       "operation": "observe",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "client.py",
+      "owner": "Context",
+      "operation": "resolve",
       "async": false,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
@@ -2610,6 +2624,13 @@
       "path": "requests.py",
       "owner": null,
       "operation": "observe",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "requests.py",
+      "owner": null,
+      "operation": "resolve",
       "async": false,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },

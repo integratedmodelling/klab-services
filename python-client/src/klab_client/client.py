@@ -326,6 +326,12 @@ class Context(ContextScopeImpl):
         from .requests import observe
         return observe(self, request, options)
 
+    def resolve(self, request: ObservationRequest | ObservableImpl | str, *,
+                options: ObservationOptions | None = None) -> Job:
+        """Plan a typed observation with the same options as observe, without executing it."""
+        from .requests import resolve
+        return resolve(self, request, options)
+
     def job(self, id: int) -> Job:
         """Resume a saved job in its original context, including focus path."""
         return Job(self.client, id, self, decoder=lambda p: observation_from_wire(p, self), result_kind="observation")

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import json
 import math
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Mapping, cast
 
 from .api.knowledge import ConceptImpl, ObservableImpl
 from .api.primitives import SemanticType
@@ -320,7 +320,7 @@ def _prepare_observe(context, request, options=None):
             raise InvalidRequestError("Request already carries its options")
     else:
         request = ObservationRequest(request, options=ObservationOptions() if options is None else options)
-    token = scope_token(context)
+    token = cast(str, scope_token(context))  # Typed Context calls cannot produce None.
     base, marker, existing = token.partition("#")
     parts = base.split(".")
     if ".".join(parts[:2]) != context.id:
@@ -354,3 +354,17 @@ def observe(context, request, options=None):
         context.client, context.configuration, owned=context.owned, token=token)
     selected._relationship_selection = context._relationship_selection
     return selected.submit(request.to_wire(resolved), resolution_constraints=[item.to_wire() for item in constraints])
+
+
+def resolve(context, request, options=None):
+    """Typed Resolver planning, not scientific execution or model-forcing authority."""
+    from .client import Context, scope_token
+    from .dto import object_payload
+    request, token, constraints = _prepare_observe(context, request, options)
+    resolved = context.client.reasoner.resolve_observable(request.observable) if request._observable_wire is None else None
+    selected = context if token == scope_token(context) else Context(
+        context.client, context.configuration, owned=context.owned, token=token)
+    selected._relationship_selection = context._relationship_selection
+    return context.client._submit(request.to_wire(resolved), selected,
+        [item.to_wire() for item in constraints], service="resolver",
+        decoder=lambda payload: object_payload(payload, "dataflow"), result_kind="dataflow")

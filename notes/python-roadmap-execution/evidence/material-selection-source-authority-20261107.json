@@ -1,0 +1,21 @@
+{
+  "baseline": "6307e93f4bbae747b2908a40e1d55f2b016ad34b",
+  "evidence": "READ_ONLY_SOURCE_NOT_NATIVE_EXECUTION",
+  "source_raw_sha256": {
+    "klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/PrioritizerImpl.java": "b33d00ae6b54c73a7ce7d1646a227f374b2d00a57ea3c79fe19737847e5b1cc0",
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/digitaltwin/impl/ConfigurationImpl.java": "46de7711f33c5892dbca996709524ade17e5ccd46ae09b2d551450f7d02dc7ae",
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/digitaltwin/GridSpecification.java": "f856bbc26dcfd273c3b54d1822425c733abfa255e1fcfd602ff26b5f3ef8c001",
+    "klab.core.services/src/main/java/org/integratedmodelling/klab/runtime/scale/space/GridAlignmentSupport.java": "5640c311e56732727ae843d8e55ee012ca93dd630686c3888edaa3a5baf2ba6d",
+    "klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/neo4j/KnowledgeGraphNeo4j.java": "9365e7ffb289eee4196790dfdb36d5fc9ca1c24c1db4e75de5562bbebbcbb95a"
+  },
+  "observations": [
+    "PrioritizerImpl consumes Scenarios, ResolutionNamespace and ResolutionProject plus scope observer semantics; lexical scope scores scenarios100, matching namespace75, matching project50, otherwise0. These are preferences, not forced-model or hard-filter contracts.",
+    "Native ranking has other admission/semantic/spatial/temporal criteria, namespace policy and service-dependent behavior; finite tie order and numeric offsets/biases are explicitly independent provisional fixtures, not native ranking or inference.",
+    "ConfigurationImpl.setGridDefinition copies the instruction and derives gridUrn; inline-only gridDefinition is not incorrectly treated as absent just because KnowledgeGraphNeo4j tests getGridUrn before decode.",
+    "GridSpecification and GridAlignmentSupport support portable anchor/projection/span/strict/snap instructions; the fixture admits only two declared metre spans on one explicit extent, not general native grid/scientific behavior.",
+    "Public typed Context.resolve uses existing Reasoner resolve-observable and Resolver resolve Jobs, same options/scope checks as observe; planning is not Runtime execution or forced model selection."
+  ],
+  "native_result": "NOT_RUN",
+  "real_test": "python-client/tests/functional/test_material_selection_plans.py",
+  "fixture_limit": "Three declared candidates, two persisted synthetic observers, finite4x4metre extent and1m/2m lattices; x+2*y+declared offsets numerical oracle, not a second scientific engine"
+}
