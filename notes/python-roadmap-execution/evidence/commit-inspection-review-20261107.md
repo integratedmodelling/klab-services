@@ -34,10 +34,13 @@ management, so native reads require no misleading experimental grant semantics.
 Afterartifactfreeze explicit publiccachecleanup assertion initially looked for the
 counter at top-level rather than counts.commit_reports; both workflows raisedKeyError.
 Counter was already included in the allcounts-zero assertion. Corrected testonly to
-the actual published shape, not a production cleanup change; finalrerun pending.
+the actual published shape, not a production cleanup change; final2publicHTTPPASS.
 
 Prepared approved read-only native testNOT_RUN; whole fullreference checkpoint/delta/
 gap-resync reconciliation remains independently implementable Pythonwork and active
 RC-P3.1/CAP-10/CAP-11 after any primitive delivery. Existing GraphProjection/old
 ID-only reference checkpoints keep their separate meanings. JAVA-GAP-0016 not closed.
-Fresh installed fullverifier running; no newPR or whole-row acceptance claimed.
+Final freshinstalled4903SDK/405simulator/72worker/allreference/39governancePASS,
+zero skips/errors/failures;65SDK/32simulator/5worker rawmoduleparity, no simulatorin
+production.10focusedCIgates+actualorderedselectionPASS;17linkedPASSvs17nativeNOT_RUN.
+PR298finalreceipt/exactheadCI/ordinarymerge pending, no whole-row acceptance claimed.

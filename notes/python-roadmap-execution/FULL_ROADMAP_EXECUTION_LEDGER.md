@@ -2,6 +2,19 @@
 
 ## Annotated-input reference delivered; commit/convergence continues
 
+Finalnativecacheprimitive installed4903SDK/405sim/72worker/reference-39governance
+PASS,zero skipsfailureserrors;65SDK32sim5worker rawmoduleparity/no simulatorinproduction.
+17linkedPASS(971SDK282sim72worker)vs17nativeNOT_RUN; fullinstallednewmodule/changedcode
+100%PASS.10focusedCI+actualorderedselection/finalexplicitcachecleanup2HTTPPASS.
+EarliercleanupcounterKeyErrors retained/testonlyfix unchangedproduction. PR298receipt/
+exactheadCI/ordinarymergepending; fullverifier/matrixdone/CIwatcheronly. Fullreference
+prototype7private designprobesPASSnot shipped/convergenceacceptance; rowsremainactive.
+
+DraftPR29883c3ec88a published as nativecachereadprimitiveonly; fullartifact/matrix/
+CIwatcher running. Explicitcleanupcounter test initiallywrongshape2KeyError, corrected
+testonly tocounts.commit_reports/final2HTTPPASS; productionbytes unchanged. Fullfinite
+checkpoint/delta/gap-resync remainsPythonwork, not waived or completed byprimitivePR.
+
 Commitcacheprimitive teninstalledfocusedCIgatesPASS,olderappend214/membershipappend
 180/graphappend96/inputappend41/commit41dedicated;13fixture100%. Actualordered
 selection693/214/6/21+unchanged100%gatePASS. Freshfullartifactverifier/17linkedmatrix

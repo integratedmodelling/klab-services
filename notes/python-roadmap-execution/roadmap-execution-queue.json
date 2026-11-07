@@ -4,9 +4,11 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-native-commit-inspection",
-    "pr": null,
+    "pr": 298,
     "requirement": "RC-P3.1",
-    "ci_review_dependencies": []
+    "ci_review_dependencies": [
+      "PR298 native commit-cache read primitive only; full finite checkpoint/delta/gap-resync convergence remains Python work after delivery"
+    ]
   },
   "last_verified_checkpoint": {
     "pr": 297,
@@ -1787,7 +1789,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "NATIVE_COMMIT_CACHE_INSPECTION_SOURCE_IMPLEMENTED_FULL_REFERENCE_CONVERGENCE_PENDING",
+      "implementation_status": "NATIVE_COMMIT_CACHE_READ_INSTALLED_VERIFIED_PR298_PENDING_FULL_REFERENCE_CONVERGENCE_STILL_ACTIVE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1811,12 +1813,17 @@
           "564d27f166b5a908240b0533bfa7c4b4b55dbd4d",
           "052c729cba3cae5bfe5057e68c40501ea1e96718"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "native_commit_cache_candidate": {
+          "pr": 298,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
+          "full_requirement_complete": false
+        }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
       "task_state": "in_progress",
-      "next_executable_action": "Finish source-defined native commit-cache read primitive/public acceptance, then full separately advertised finite reference checkpoint/delta/gap-resync reconciliation. Cached commit IDs/timestamps are not contiguous/durable revision authority; primitive delivery must not waive convergence requirement.",
+      "next_executable_action": "Require PR298 exact final-head CI/ordinary primitive merge/checkpoint, then finish separately advertised complete finite checkpoint/delta/gap-resync reconciliation. Native cache read primitive must not mark whole original requirement delivered.",
       "disposition": null
     },
     {
@@ -1880,7 +1887,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "NATIVE_COMMIT_CACHE_INSPECTION_SOURCE_IMPLEMENTED_FULL_REFERENCE_CONVERGENCE_PENDING",
+      "implementation_status": "NATIVE_COMMIT_CACHE_READ_INSTALLED_VERIFIED_PR298_PENDING_FULL_REFERENCE_CONVERGENCE_STILL_ACTIVE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1900,12 +1907,17 @@
           "564d27f166b5a908240b0533bfa7c4b4b55dbd4d",
           "052c729cba3cae5bfe5057e68c40501ea1e96718"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "native_commit_cache_candidate": {
+          "pr": 298,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
+          "full_requirement_complete": false
+        }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
       "task_state": "in_progress",
-      "next_executable_action": "Finish source-defined native commit-cache read primitive/public acceptance, then full separately advertised finite reference checkpoint/delta/gap-resync reconciliation. Cached commit IDs/timestamps are not contiguous/durable revision authority; primitive delivery must not waive convergence requirement.",
+      "next_executable_action": "Require PR298 exact final-head CI/ordinary primitive merge/checkpoint, then finish separately advertised complete finite checkpoint/delta/gap-resync reconciliation. Native cache read primitive must not mark whole original requirement delivered.",
       "disposition": null
     },
     {
@@ -1985,7 +1997,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: reference-commit-convergence"
       },
       "simulator_support_needed": "Add public opt-in graph checkpoint/reconciliation API and independently simulated complete finite graph deltas with duplicate/out-of-order Job hints, explicit gap resync and stable reference revisions; no native scientific commit claim.",
-      "implementation_status": "NATIVE_COMMIT_CACHE_INSPECTION_SOURCE_IMPLEMENTED_FULL_REFERENCE_CONVERGENCE_PENDING",
+      "implementation_status": "NATIVE_COMMIT_CACHE_READ_INSTALLED_VERIFIED_PR298_PENDING_FULL_REFERENCE_CONVERGENCE_STILL_ACTIVE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2008,12 +2020,17 @@
           "564d27f166b5a908240b0533bfa7c4b4b55dbd4d",
           "052c729cba3cae5bfe5057e68c40501ea1e96718"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "native_commit_cache_candidate": {
+          "pr": 298,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
+          "full_requirement_complete": false
+        }
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
       "task_state": "in_progress",
-      "next_executable_action": "Finish source-defined native commit-cache read primitive/public acceptance, then full separately advertised finite reference checkpoint/delta/gap-resync reconciliation. Cached commit IDs/timestamps are not contiguous/durable revision authority; primitive delivery must not waive convergence requirement.",
+      "next_executable_action": "Require PR298 exact final-head CI/ordinary primitive merge/checkpoint, then finish separately advertised complete finite checkpoint/delta/gap-resync reconciliation. Native cache read primitive must not mark whole original requirement delivered.",
       "disposition": null
     },
     {
