@@ -1,5 +1,16 @@
 # Resume the full Python A+B+C campaign
 
+Latest308MERGED3fe92c7c1 at2026-11-07T22:39:36Z/exactabfc54bda/all38checksPASS,
+remote/local checkpoint verified.42originalIDs/history9runnable/zero finaldispositions.
+Active feat/python-integrated-notebook-acceptance/noPR: final expanded24guards/3local
+kernel-smokes/3actualpublicHTTPnotebooksPASS;30sharedrecipequeuecontrols/types-lintPASS.
+Final output integrated-notebook-expanded-final; receipt integrated-notebook-installed-
+20261107.json supersedes first24/3/2recipe by path/hash, no overwritten raw evidence.
+Job/graph Bobdenial now actual; separate existing principal-race notebook already had
+foreign denial and now included. Kernelcalls explicitly unmeasured;47maps459missing.
+Lastsimulatorscanempty; owned kernels/session cleanup checked. Need notebookdelivery
+then scientificsnapshot/safety/packaging/RC-P0review. Native gates remain distinct.
+
 Latest307MERGED0f50b3b52 at2026-11-07T22:23:23Z/exact4c21ec9ec/all19checksPASS,
 remote-localcheckpointverified.42originalIDs/history12runnable/zero dispositions.
 Current feat/python-integrated-restoration-acceptance/uncommittedsource/noPR.453SDK/

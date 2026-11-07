@@ -1,5 +1,30 @@
 # A+B completion ledger — ongoing campaign
 
+PR309 published507ca4ef8: final expanded24guards/3kernel-smokes/3publicHTTPnotebooks
+PASS,30controls/types-lintPASS; predecessor24/3/2 retained. Ready for exact-head CI;
+ordinarymerge/checkpoint remain.308verifiedmerged/all38checksPASS. Nine runnable,
+zero finaldispositions; next independent scientific-snapshot acceptance proceeds.
+
+## PR308 verified merged; expanded notebook matrix passes
+
+PR308 merged3fe92c7c192c6db36ed75cf506d6fb1c1a576c00 at2026-11-07T22:39:36Z,
+exactabfc54bda8978115228cdc4c6141a24858b80b3e/all38checksPASS; remote/local ancestry
+checkpoint verified. Installed453SDK/32lifecycleHTTP/30providerHTTP plus190/1/18
+onboarding regression,20controls/68governance/17linkedPASS vs17nativeNOT_RUN retained.
+All42originalIDs/history preserved;9runnable/zero finaldispositions. No native retention,
+incarnation/TTL/rights/science or final-row acceptance promoted.
+
+Active notebook branch/noPR: final expanded installed24guards/3local-kernel-smokes/
+3publicSDK-onlyHTTPnotebooksPASS, zero failures/errors/skips. Actual Job/graph Bob
+denial and owner-preservation added; existing separate principal-race notebook already
+covered foreign denial and now joins recipe alongside raster notebook. First24/3/2
+positive receipt retained by path/hash as predecessor, not final expanded acceptance.
+30shared-runner/recipe/queue/ordercontrols/types/fatallintPASS; simulator scan empty.
+Exact interpreter/SDK imports, unchanged secret/JWT/output/cell guards and owned
+kernel/session cleanup checked. Kernel calls remain unmeasured by owning-thread trace;
+47reviewedmaps459missing unchanged. Final notebook CI/ordinary delivery remain;
+scientific-snapshot/safety/packaging and broader RC-P0 assertion review continue.
+
 308 final local receipt includes17linked simulatedPASS(1319SDK414sim116worker)
 vs17nativeREAL_NOT_RUN/expectedexit3.453/32/30matrix+onboarding190/1/18regression,
 20runner-recipe-HTTPcontrols/types-lint68governancequeueorderingPASS. No simulator
