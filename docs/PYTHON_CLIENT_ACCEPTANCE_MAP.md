@@ -18,6 +18,12 @@ task cancellation and setup refusal before operator code. Installed/cross-platfo
 verification and delivery are still pending; hard memory/disk quotas and hostile
 code isolation remain deficits. This does not change original row definitions or
 promote any native/scientific acceptance status.
+
+Next explicit memory-budget slice: local installed57worker/21HTTP+recovery/128full
+simulator/33governance PASS,90.43%Windows aggregate coverage/no exclusions; same
+JAVA-GAP-0017. Operator opt-in enforces Windows Job aggregate committed memory or
+POSIX inherited per-process address space, not uniform RSS. Native/deployment/disk/
+hostile-code isolation and final-head hosted memory acceptance remain separate.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),
