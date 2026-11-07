@@ -1,5 +1,16 @@
 # Resume the full Python A+B+C campaign
 
+Active feat/python-integrated-scientific-snapshots/uncommitted/noPR. Final exact-child
+484SDK/3isolated/52HTTPmatrix and onboarding190/1/18regressionPASS,35controls/types-lint
+PASS. Receipt integrated-scientific-snapshot-installed-20261107.json. Shared runner now
+pins binary/JSON runtimeoracles and examples; installedfixtures matchcheckout except
+repository.gitattributes pinned as supportmetadata, not packaged runtime asset. Both
+isolated-Iprocess levels bootstrap/verify exactselectedinstalledSDK. Earlierpositive
+matrix retained as narrowerpredecessor; nativeprovider science NOTRUN.56maps450missing.
+Parent309ready87cc87c16 exactheadCIwatcher active;308merged3fe92c7c1/all38PASS.
+Need childdelivery/parentmerge then safety/packaging/RC-P0 assertionreview.9runnable,
+42originalIDs/history/zero dispositions. Finalsimulatorscanempty.
+
 Latest308MERGED3fe92c7c1 at2026-11-07T22:39:36Z/exactabfc54bda/all38checksPASS,
 remote/local checkpoint verified.42originalIDs/history9runnable/zero finaldispositions.
 Active feat/python-integrated-notebook-acceptance/noPR: final expanded24guards/3local

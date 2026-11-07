@@ -3,9 +3,11 @@
 Run: python -I examples/offline_scientific_read.py
 """
 from decimal import Decimal
+from pathlib import Path
 import subprocess
 import sys
 
+import klab_client
 from klab_client import ScientificData, ScientificDataOrigin
 
 
@@ -37,4 +39,10 @@ else:
     raise AssertionError('Future schema must fail')
 print('PASS: offline fresh process; exact integer/Decimal/zero/null, order, origin and units; invalid schema rejected')
 """
-subprocess.run([sys.executable, "-I", "-c", code], input=data.dumps(), text=True, check=True)
+# -I ignores PYTHONPATH. Preserve the actual selected installed SDK explicitly so
+# a pip-target acceptance run cannot silently measure another global installation.
+source = Path(klab_client.__file__).resolve()
+bootstrap = (f"import sys;sys.path.insert(0,{str(source.parents[1])!r});"
+             f"import klab_client;from pathlib import Path;assert Path(klab_client.__file__).resolve()==Path({str(source)!r});\n")
+subprocess.run([sys.executable, "-I", "-c", bootstrap + code], input=data.dumps(), text=True, check=True,
+               creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))

@@ -28,6 +28,29 @@ def test_actual_test_count_is_taken_from_junit_not_expected_constants(tmp_path):
     assert matrix.suite_counts(path) == {'tests': 7, 'failures': 0, 'errors': 0, 'skipped': 0}
 
 
+def test_changed_installed_runtime_oracle_refuses_before_test_or_output(tmp_path, monkeypatch):
+    root = tmp_path / 'repo'
+    root.mkdir()
+    test = root / 'test_explicit.py'
+    test.write_text('def test_explicit(): assert True\n')
+    oracle = root / 'developer-tools/klab-service-simulator/src/klab_simulator/fixtures/frozen.bin'
+    oracle.parent.mkdir(parents=True)
+    oracle.write_bytes(b'expected oracle')
+    installed = tmp_path / 'installed/fixtures/frozen.bin'
+    installed.parent.mkdir(parents=True)
+    installed.write_bytes(b'wrong oracle')
+    monkeypatch.setattr(matrix, 'ROOT', root)
+    monkeypatch.setattr(matrix, 'GROUPS', {'explicit': ['test_explicit.py']})
+    monkeypatch.setattr(matrix, 'verify_installed', lambda receipt: {
+        name: {'path': str(tmp_path / 'installed'), 'module_count': 1, 'source_sha256': {}}
+        for name in ('sdk', 'simulator', 'worker')})
+    receipt = tmp_path / 'artifact.json'
+    receipt.write_text('{}')
+    with pytest.raises(ValueError, match='fixture bytes differ'):
+        matrix.main(['--artifact-receipt', str(receipt), '--output-directory', str(tmp_path / 'unused')])
+    assert not (tmp_path / 'unused').exists()
+
+
 def test_foreign_or_source_imports_cannot_gain_installed_custody(tmp_path, monkeypatch):
     receipt = {'source_raw_sha256': {}}
     for name, module in [('sdk', 'klab_client'), ('simulator', 'klab_simulator'), ('worker', 'klab_worker')]:
@@ -46,7 +69,7 @@ def test_foreign_or_source_imports_cannot_gain_installed_custody(tmp_path, monke
         matrix.verify_installed(receipt)
 
 
-@pytest.mark.parametrize('failure', [None, 'subprocess', 'test-drift', 'support-drift', 'timeout'])
+@pytest.mark.parametrize('failure', [None, 'subprocess', 'test-drift', 'support-drift', 'oracle-drift', 'installed-oracle-drift', 'timeout'])
 def test_runner_preserves_failed_evidence_and_never_overwrites_prior_run(tmp_path, monkeypatch, failure):
     root = tmp_path / 'repo'
     root.mkdir()
@@ -55,6 +78,8 @@ def test_runner_preserves_failed_evidence_and_never_overwrites_prior_run(tmp_pat
     helper = root / 'python-client/tests/fixtures/owned_helper.py'
     helper.parent.mkdir(parents=True)
     helper.write_text('# original support bytes\n')
+    oracle = root / 'python-client/tests/fixtures/frozen.bin'
+    oracle.write_bytes(b'original frozen oracle')
     monkeypatch.setattr(matrix, 'ROOT', root)
     monkeypatch.setattr(matrix, 'GROUPS', {'explicit': ['test_explicit.py']})
     monkeypatch.setattr(matrix, 'verify_installed', lambda receipt: {
@@ -74,6 +99,12 @@ def test_runner_preserves_failed_evidence_and_never_overwrites_prior_run(tmp_pat
             test.write_text('def test_changed(): pass\n')
         if failure == 'support-drift':
             helper.write_text('# changed support bytes\n')
+        if failure == 'oracle-drift':
+            oracle.write_bytes(b'changed frozen oracle')
+        if failure == 'installed-oracle-drift':
+            installed = tmp_path / 'sdk/fixtures/changed.bin'
+            installed.parent.mkdir(parents=True)
+            installed.write_bytes(b'changed installed oracle')
         return SimpleNamespace(returncode=1 if failure == 'subprocess' else 0, stdout='retained diagnostics', stderr='')
     monkeypatch.setenv('KLAB_PRIVATE', 'not inherited')
     monkeypatch.setattr(matrix.subprocess, 'run', run)
