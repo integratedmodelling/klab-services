@@ -92,6 +92,16 @@ Finite synthetic fixtures do not satisfy native execution/private-session cleanu
 Managed finalSDK-only changed-code/newmodulegate and17linkedcasesPASS(304SDK/
 116simulator/57worker) vs17realNOT_RUN/exit3. Bounded local synthetic reference
 acceptance verified; normalPR/finalCI pending, no native execution/cleanup promotion.
+ManagedPR277 subsequently merged4d34940d4 on corrected683218a24after allapplicable
+checksPASS; omittedgeneratedstatus initialfailure retained. Next offline snapshot
+array association nowinstalled4205SDK/188simulator/74reference/57worker/21HTTP/
+33governancePASS, zero skips;SDK-onlynewmodule54lines14branches100%, scientific
+86unit/10HTTP+gatePASS. Exact source/layout/masks/content+localmanifesthashes remain
+reference-only, not nativecommittedhistory/signature/provenancegraph. Linkedmatrix
+attestation/normaldelivery pending; fullparent/native acceptance remains incomplete.
+Offlineanalysis final17linkedcasesPASS(317SDK/117simulator/57worker) vs17realNOT_RUN/
+exit3. Bounded localreference acceptance verified; normalPR/finalCI pending, not
+native committed revisions/layout/provenancegraph or full42criterion completion.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),

@@ -16,9 +16,9 @@ def main():
     root = Path(__file__).resolve().parents[2]
     diff = subprocess.run(["git", "diff", "--no-ext-diff", "--unified=0", base, "--",
         "python-client/src/klab_client/analysis.py", "python-client/src/klab_client/__init__.py",
-        "python-client/src/klab_client/raster_categories.py"],
+        "python-client/src/klab_client/raster_categories.py", "python-client/src/klab_client/read_plan_analysis.py"],
         cwd=root, capture_output=True, text=True, check=True).stdout
-    errors = evaluate(json.loads(args.report.read_text()), diff, ["src/klab_client/raster_categories.py"])
+    errors = evaluate(json.loads(args.report.read_text()), diff, ["src/klab_client/raster_categories.py", "src/klab_client/read_plan_analysis.py"])
     if errors:
         print("\n".join(errors))
         return 1

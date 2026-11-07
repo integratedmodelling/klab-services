@@ -8,6 +8,12 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-READ-PLAN-ANALYSIS-001/JAVA-GAP-0006/0014 materializes complete reference
+snapshots offline after grant/context/service release, preserving numerical masks,
+affine-centre layout and exact source binding. Content/manifest hashes are NOT native
+commits/signatures/provenance graphs; local mutable derivatives require separate
+attestation. See [analysis limits](../../python-client/docs/read-plan-analysis.md).
+
 SIM-MANAGED-AGENT-001/JAVA-GAP-0008 adds proposed finite synthetic managed lifecycle
 fixtures under `klab.experimental.managed-agents/1`. This executes NO k.Actors source
 and creates NO script/app/testcase private session. Stop acknowledgement, terminal

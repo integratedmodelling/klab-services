@@ -521,6 +521,65 @@ then require final-head hosted checks before merge. Earlier installed production
 code evidence remains attributable because this fix changes no tracked production
 SDK/simulator/worker code. A separate untracked read_plan_analysis.py prototype
 belongs to the next branch and is NOT part of277's artifacts or correction.
+Correction683218a24 pushed to277; local generated-checkPASS followed by clean
+`git diff --exit-code -- docs/java-service-contract-gaps` confirms generated files
+are now committed rather than merely present dirty. This corrects delivery custody,
+not native acceptance. Fresh final-head watcher running; no277merge yet.
+
+### Active offline read-plan analysis/provenance slice
+
+Current `feat/python-read-plan-analysis-provenance` includes683218a24 and an
+uncommitted local `read_plan_analysis.py` adapter. Complete ReadPlanData is revalidated
+for bounded immutable descriptor/source/layout and every shard+whole-content digest,
+then becomes detached float64arrays/exactboolmask/explicit affine centrecoordinates.
+Reference invalidNone→arrayNaN retains falsemask and originalimmutableNone; valid
+zero/negative values stayunchanged. No network/grant/livecontext needed. Exact
+Runtime/root/observation/plan/epoch/fixtureorigin/units/layout accompany contenthash
+and separate local canonicalmanifesthash, both explicitly NOT native commits,
+signatures/authenticmetadata or provenancegraphs. Mutable caller edits require
+separate derivative attestation; original attrs are not live output hashes.
+Source13SDK-only testsPASS at54lines/14branches100%unexcluded, bodytypecheck/lintPASS;
+one ownedHTTP complete400cell→releasegrant+scope+service→offlinearray flowPASS.
+Final descriptor review bounds shape/affine tuple lengths and per-shard temporary
+allocation estimate; fresh complete installed verifier running in
+`full-roadmap-20261106/read-plan-analysis-first`. SDKpublicexports/scientificCI/
+coveragegate/same0006+0014refs/scenario/handoff/docs updated. Native TIFF/provenance
+APIs remain separate; no actualscience/revisionhistory inferred. Receipt correction:
+prior readplan0006receipt incorrectly called0014NOT_TESTED; authoritative0014 has
+remainedCONTRACT_PROVISIONAL and realoutcomesNOT_RUN. Correction preserves the
+original mistaken attribution explicitly; it is not a native status promotion.
+Next await fresh package receipt, installedSDK-only/scientificcoverage and17cases,
+normal delivery after277finalheadCI/permittedmerge. Entire42roadmap/sleep pending.
+Managed-referencePR277 subsequently verified remotely MERGED
+`4d34940d4f0feb50e7f2fe135367c2f1801625ae`,2026-11-07T02:20:19Z, exact corrected
+head683218a24f376f168b47a0177b8201c8133976bb. All applicable final-head checksPASS,
+including unchanged generated-report drift gate after missingcompanion correction;
+initial failure remains recorded. No independent maintainer review/native disposal
+acceptance claimed. Offlineanalysis branch fast-forwarded actual merge preserving
+uncommitted work. Its fresh verifier remains running; no277watcher remains.
+Offlineanalysis source scientificCI-equivalent86unit+10HTTPtestsPASS, including
+newmodule100% and changedscientificline/arcgate. The one existing rasterio identity
+transform warning remains expected negative-test evidence, not a native execution.
+Repeat against fresh installed bytes once package verifier completes. No source
+production change after its build started; keep SDK-only and scientific-aggregate
+coverage receipts separate and do not append HTTPcoverage into SDK-only attestation.
+Offlineanalysis fresh installed4205SDK/74referenceHTTP+storage+recovery/188simulator/
+57worker/21workerHTTP+recovery/33governancePASS, zero skips/failures/errors.54SDK+
+18simulator+5worker source/wheel/sdist/installed rawmodule parity, rechecked against
+current source. SDK-only newmodule54lines14branches100%unexcluded/allchangedSDK
+lines+arcsPASS; fullSDK98.49%retains165historical exclusions. Installed scientific
+86unit+10HTTP and changeddecision/newmodulegatePASS, separate aggregate coverage.
+Exact custody `evidence/full-roadmap-read-plan-analysis-20261107.json`.
+Final17linked simulatedmatrix running;17realNOT_RUN/exit3alreadyverified. Await
+automatic completion then publish ordinaryPR. This time verify clean tracked
+generated-report diff AFTER commit as well as local generate--check before push,
+so dirty-but-omitted companions cannot repeat277's delivery error. No new native
+execution/statuspromotion; entire42criteria/sleep remain pending.
+Final offlineanalysis17linkedcasesPASS(317SDK/117simulator-capture-reference/
+57worker), zero skips/failures/errors;17realNOT_RUN/exit3unchanged. Bounded local
+reference acceptance verified; publish ordinary featurePR now and require finalhead
+hostedchecks before permittedmerge. Native scientific/layout/commit/provenance and
+remaining full42scope remain separate and sleep stayspending.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
