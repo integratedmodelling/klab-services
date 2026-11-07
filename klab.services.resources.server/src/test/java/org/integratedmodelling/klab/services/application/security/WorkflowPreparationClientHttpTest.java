@@ -195,10 +195,10 @@ class WorkflowPreparationClientHttpTest {
     assertNotNull(flow.getStates().get(stageId).getMetadata().get("ontologyReviewBootstrap"));
   }
 
-  private record Call(String method, String path, String body, int status) {}
+  record Call(String method, String path, String body, int status) {}
 
   /** All HTTP workflow results, including failures, come from the real controller dispatch. */
-  private static final class ControllerBridge implements AutoCloseable {
+  static final class ControllerBridge implements AutoCloseable {
     private final WorkflowPreparationRuntimeTest.Fixture fixture;
     private final HttpServer server;
     private final java.util.concurrent.ExecutorService executor = Executors.newSingleThreadExecutor();

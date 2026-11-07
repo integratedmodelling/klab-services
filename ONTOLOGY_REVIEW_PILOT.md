@@ -11,8 +11,12 @@ checks the Resources review URL and permissions. Email setup is not required.
 2. **Bootstrap** belongs exclusively to the creating editor. Edit its title/description, add
    reference material and editor notes, and either upload your proposal or use **Prepare review
    draft**. Preparation uses the current ontology, available `@review` annotations and optional
-   project `BOOTSTRAP.md`. Complete the labeled proposal/revision/domain/purpose/community fields,
-   then inspect and save the candidate before starting review. Preparation does not overwrite an
+   project `BOOTSTRAP.md`. Complete the labeled proposal/revision/domain/purpose/community fields
+   and choose a requested tier that is a whole number of 1 or greater. Proposal and revision IDs
+   must start with a letter and use only letters, digits, dots, underscores or hyphens. Invalid
+   preparation fields return a field-specific HTTP 400 without advancing the stage or publishing
+   attachments; correct the value and retry against the same revision. Then inspect and save the
+   candidate before starting review. Preparation does not overwrite an
    already supplied proposal. If preparation cannot be discovered or the ontology is unavailable,
    the page shows a diagnostic rather than silently hiding the next step. Administrators and
    other editors cannot read or edit this private bootstrap stage.

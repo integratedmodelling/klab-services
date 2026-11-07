@@ -341,6 +341,11 @@ public class WorkflowBehaviorBridge {
         throw new IllegalArgumentException("Only unresolved action parameters may be supplied");
       var parameters = new LinkedHashMap<>(binding.parameters());
       parameters.putAll(supplied);
+      // Editorial input errors must remain client-safe 400s, not become wrapped actor failures.
+      // Authorization and revision checks have already run in the manager. Validate before
+      // starting the actor, so a rejected request cannot publish a checkpoint or attachments.
+      if (ONTOLOGY_REVIEW_BEHAVIOR.equals(behavior.getUrn()) && "prepare".equals(binding.action()))
+        OntologyReviewBootstrap.actionOptions(parameters);
       var arguments = bind(action(binding.action()), parameters, context(stage, null), null);
       start(stage, null);
       runtime.invokeCheckpointAction(binding.action(), arguments);

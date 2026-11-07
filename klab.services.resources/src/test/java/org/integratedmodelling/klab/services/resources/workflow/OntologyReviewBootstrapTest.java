@@ -81,4 +81,23 @@ class OntologyReviewBootstrapTest {
     statement.setChildren(List.of(statement)); cyclic.setStatements(List.of(statement));
     assertThrows(IllegalArgumentException.class, () -> OntologyReviewBootstrap.prepare(cyclic, null, options));
   }
+  @Test void actionOptionsRejectInvalidTiersExactlyAndAcceptSupportedWholeNumbers() {
+    var parameters = new java.util.LinkedHashMap<String, Object>(java.util.Map.of(
+        "proposal_id", "p1", "revision_id", "r1", "domain", "d", "purpose", "p",
+        "target_community", "c", "requested_tier", 1));
+    for (Object value : java.util.Arrays.asList(null, 0, -1, 1.5, Long.MAX_VALUE,
+        2147483648L, Double.NaN, Double.POSITIVE_INFINITY, "1", true)) {
+      parameters.put("requested_tier", value);
+      var invalid = assertThrows(OntologyReviewBootstrap.InvalidOption.class,
+          () -> OntologyReviewBootstrap.actionOptions(parameters));
+      assertEquals("requested_tier", invalid.field());
+      assertEquals("Requested tier must be an integer of 1 or greater", invalid.getMessage());
+      assertNull(invalid.getCause());
+    }
+    for (Number value : java.util.List.of(1, 1L, 1.0, new java.math.BigDecimal("1.0"), Integer.MAX_VALUE)) {
+      parameters.put("requested_tier", value);
+      assertEquals(value.intValue(), OntologyReviewBootstrap.actionOptions(parameters).requestedTier());
+    }
+  }
+
 }
