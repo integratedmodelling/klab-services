@@ -244,6 +244,23 @@ configuration or complete graph resync); focused9HTTP+17case rerun completedPASS
 Current real matrix17NOT_RUN/exit3, no fallback. Next: finish final case receipts,
 generate/check all outputs, stage same-feature code/tests/0005/handoff/ledgers/receipt
 and publish normalPR; then continue next independent vertical.
+
+PR273 published as90a5d41420bb13071e491f61955168dc788234e6 and remains OPEN:
+hosted offline SDK-only coverage correctly failed because successful sync/async
+wire wrappers and bytes transport were covered only by the separate simulator
+suite in the combined local report. This invalidates delivery acceptance, not
+the historical combined-test coverage receipt. No gate is weakened.
+Workflow run42321214993 also failed before jobs: GitHub reports line31 col14,
+Unexpected symbol HEAD^ within doubled-single-quoted expression. YAML parsing
+alone did not validate GitHub expression syntax. Correction uses an env expression
+with one quoted HEAD^ literal and passes its value as a quoted shell argument.
+Isolated worktree `notification-ci` preserves the primary revision-safe-drafts
+branch's two untracked/unwired prototypes. Two added SDK-only MockTransport tests
+exercise real sync/async Clients, bound contexts, tail bootstrap, subsequent cursor
+query, strict raw-byte decoding and transport response handling. Focused37tests
+and newmodule100%unexcluded line/branch gate PASS without simulator tests. Full
+SDK unit/integration+historical-baseline coverage gate and24HTTP/recovery rerun
+are running; final-head hosted success remains required before PR273 can merge.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan

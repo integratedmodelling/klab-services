@@ -28,7 +28,9 @@ jobs:
       - name: HTTP sync/async, overflow, restart and scoped cleanup
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_durable_notifications.py developer-tools/klab-service-simulator/tests/test_durable_recovery.py --cov=klab_client --cov-branch --cov-append --cov-report=json:notifications-coverage.json --junitxml=notifications-http.xml
       - name: Require100percent unexcluded new-module lines/branches and all changed SDK decisions
-        run: python python-client/tools/check_feature_coverage.py notifications-coverage.json --base '${{ github.event.pull_request.base.sha || ''HEAD^'' }}' --new-module src/klab_client/durable_notifications.py
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py notifications-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/durable_notifications.py
       - name: Typed reference implementation bodies
         run: python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/durable_notifications.py
       - name: Retain provisional evidence, never native acceptance

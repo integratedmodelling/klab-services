@@ -3,6 +3,7 @@ import asyncio
 from types import SimpleNamespace
 
 import pytest
+import httpx
 
 from klab_client import (Client, Context, NotificationCursor, NotificationResyncRequired,
     async_read_notifications, read_notifications)
@@ -88,3 +89,47 @@ def test_opt_in_root_and_transport_matching_refusals_are_zero_network():
 @pytest.mark.parametrize("raw", [None, b'\xff', b'{}{}', b'{"epoch":"one","epoch":"two"}', b'NaN', b'x' * 65537])
 def test_malformed_duplicate_or_nonfinite_wire_cannot_establish_continuity(raw):
     with pytest.raises(ProtocolError): _wire(raw, REF, cursor(), 64)
+
+
+def wire_handler(request):
+    """Exercise real transports without a simulator import, process or network."""
+    assert request.method == "GET"
+    assert request.url.path == "/runtime/experimental/notifications/v1/events"
+    assert request.headers["klab-scope"] == REF.scope
+    assert request.headers["klab-service"] == REF.runtime_id
+    assert request.headers["Authorization"] == "synthetic"
+    assert request.url.params["protocol"] == PROTOCOL
+    assert request.url.params["limit"] == "1"
+    value = payload()
+    if "after" not in request.url.params:
+        assert "epoch" not in request.url.params
+        value.update(next=1, events=[])
+    else:
+        assert request.url.params["after"] == "0"
+        assert request.url.params["epoch"] == "epoch"
+    return httpx.Response(200, json=value)
+
+
+def test_sync_wire_bootstrap_and_replay_use_real_sdk_transport_only():
+    with Client(REF.runtime_url, "synthetic", agent_name="alice", runtime_service_id="runtime",
+            http_transport=httpx.MockTransport(wire_handler)) as client:
+        context = client._context({"id": REF.scope, "serviceId": REF.runtime_id})
+        initial = read_notifications(context, allow_experimental=True, limit=1)
+        assert initial.events == () and initial.cursor == cursor()
+        batch = read_notifications(context, initial.cursor, allow_experimental=True, limit=1)
+        assert batch.cursor.sequence == 1 and batch.events[0]["kind"] == "JOB_FINISHED"
+        assert initial.cursor.sequence == 0
+
+
+def test_async_wire_bootstrap_and_replay_use_real_sdk_transport_only():
+    from klab_client import AsyncClient
+    async def run():
+        async with AsyncClient(REF.runtime_url, "synthetic", agent_name="alice", runtime_service_id="runtime",
+                http_transport=httpx.MockTransport(wire_handler)) as client:
+            context = client._context({"id": REF.scope, "serviceId": REF.runtime_id})
+            initial = await async_read_notifications(context, allow_experimental=True, limit=1)
+            assert initial.events == () and initial.cursor == cursor()
+            batch = await async_read_notifications(context, initial.cursor, allow_experimental=True, limit=1)
+            assert batch.cursor.sequence == 1 and batch.events[0]["kind"] == "JOB_FINISHED"
+            assert initial.cursor.sequence == 0
+    asyncio.run(run())

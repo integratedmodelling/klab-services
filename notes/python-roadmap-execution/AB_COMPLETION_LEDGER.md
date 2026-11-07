@@ -62,6 +62,12 @@ Final installed strict-reference resultPASS4047SDK/24referenceHTTP+recovery/
 lines/branches and changedSDKdecisions covered;17simulatedPASS/17realNOT_RUN.
 Exact final/earlier artifacts separated in
 `evidence/full-roadmap-durable-notifications-20261107.json`; normal delivery pending.
+PR273/90a5d4142 subsequently failed hosted SDK-only changed-code coverage and
+workflow-expression validation. Combined local coverage is not SDK-only acceptance.
+Corrective isolated pass adds positive real SDK sync/async MockTransport wire
+tests (37focused tests/newmodule100%PASS) and fixes the confirmed line31 doubled
+HEAD^ quote error. Full local rerun and final-head hosted acceptance remain pending;
+no native or delivery status promotion is authorized by focused test success.
 
 ### Sequential execution queue — user directive 2026-11-06
 

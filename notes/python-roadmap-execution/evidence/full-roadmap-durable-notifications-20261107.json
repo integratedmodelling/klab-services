@@ -17,5 +17,17 @@
   "retained_earlier_pass": "Initial pre-wire-hardening fresh4041SDK/24reference/57worker/21HTTP+recovery/138simulator/33governance passed separately. Final strict-byte mode and6additional bad-wire cases rebuilt into artifacts above, not relabeled initial results. Final module-path checks exclude mixed earlier coverage targets.",
   "verification_dependency_custody": "Fresh wheel/sdist/pip-target installations borrow existing test dependencies; no modification or new dependency-isolation certification of prior environments",
   "java_source_or_scientific_acceptance": "REAL_NOT_RUN; proposed HTTP reference is separate from native transient AMQP and does not establish native endpoint, retention, incarnation, revocation or scientific results",
-  "remaining": "NormalPR/final-headCI/permittedmerge; complete convergence and maintained native replay acceptance remain unverified. Continue revision-safe authoring/agents/categories/multishard/federation and other independent roadmap scope; issue126 staysOPEN."
+  "hosted_failure_followup": {
+    "pr": 273,
+    "head": "90a5d41420bb13071e491f61955168dc788234e6",
+    "offline_failed_run": 42321216580,
+    "offline_failed_job": 128245959345,
+    "cause": "Successful sync/async wrappers and bytes transport covered only by simulator HTTP tests, not hosted SDK-only suite; prior combined local coverage must not be called SDK-only acceptance",
+    "workflow_failed_run": 42321214993,
+    "github_validation": "Line31 Col14 Unexpected symbol HEAD^ in expression github.event.pull_request.base.sha || doubled-single-quoted HEAD^",
+    "correction": "Two SDK-only positive wire tests use httpx.MockTransport with real Clients/contexts, bootstrap and subsequent cursor params; workflow env expression removes doubled expression quotes",
+    "focused_verification": "37unit tests PASS and newmodule100%unexcluded lines/branches without simulator tests; full local and final-head hosted reruns pending",
+    "production_modules_changed": false
+  },
+  "remaining": "PR273 remains OPEN pending corrected final-headCI/permittedmerge; complete convergence and maintained native replay acceptance remain unverified. Continue revision-safe authoring/agents/categories/multishard/federation and other independent roadmap scope; issue126 staysOPEN."
 }
