@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-ANNOTATED-INPUT-PROVENANCE-001",
+      "rows": ["RC-P4.3", "CAP-14"],
+      "routes": ["/resources/import/raster.geotiff.import/simulator:alice:uploaded", "/resources/experimental/dependencies/v1/graphs/MODEL/simulator.uploaded.elevation-quantifier", "/runtime/api/v1/query"],
+      "source": "Actual public sync/nativeasync completed upload -> explicit literal namespace ADD binding -> selected Resolver actuator/requirements -> recorded400cell observation -> fresh input/graph join. Distinct binary hash/bytes, manifest source hash and namespace source hash; exact provider/concreteversion/source stamps. Independent manifest derived from owned completed upload and source state, not caller-invented provenance. Altered source/hash, current-principal/job/root denial and cleanup; ADD assets reset only by test-only admin. No generic native annotation/update/RESOURCE deletion/scientific lineage or permission authority inferred.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native annotation/source-selection lineage and owned resource cleanup remain separate gates",
+      "simulator_test": "test_input_provenance.py::test_actual_upload_source_plan_recorded_input_and_graph_claims_are_joined",
+      "java_gap_ids": ["JAVA-GAP-0013", "JAVA-GAP-0002"]
+    },
+    {
       "id": "SIM-SOURCE-BOUND-DEPENDENCIES-001",
       "rows": ["RC-P4.1", "CAP-13"],
       "routes": ["/resources/experimental/dependencies/v1/graphs/MODEL/synthetic.model", "/resources/experimental/dependencies/v1/graphs/RESOURCE/synthetic:input", "/resources/public/capabilities"],

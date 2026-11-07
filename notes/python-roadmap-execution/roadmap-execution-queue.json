@@ -3,22 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-source-bound-dependency-graphs",
-    "pr": 296,
-    "requirement": "RC-P4.1",
-    "ci_review_dependencies": ["PR296 full installed source-bound graph artifacts, exact final-head CI and ordinary permitted merge; native graph acceptance separate"]
+    "branch": "feat/python-annotated-input-provenance",
+    "pr": null,
+    "requirement": "RC-P4.3",
+    "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 295,
-    "merge": "641eaa161a30941b0d5c875e7beb26d3eaf12772",
-    "head": "a1a781f547671406bcfea146644558ceb4d84351",
-    "utc": "2026-11-07T17:09:18Z",
+    "pr": 296,
+    "merge": "a17f8c3fe2479441625a62db0e530f3dfb1788d1",
+    "head": "ffd3fb185d26b10fd243b85cef86f5e11c7b8c55",
+    "utc": "2026-11-07T17:37:30Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P4.1",
+  "next_actionable_requirement": "RC-P4.3",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "dependency-inspection",
     "annotated-input-provenance",
     "reference-commit-convergence",
     "execution-dependency-explanation",
@@ -1359,8 +1358,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: dependency-inspection"
       },
       "simulator_support_needed": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
-      "implementation_status": "NATIVE_MEMBERSHIP_DELIVERED_PR295_SOURCE_BOUND_GRAPH_INSTALLED_VERIFIED_PR296_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "NATIVE_MEMBERSHIP_PR295_AND_OPT_IN_SOURCE_BOUND_GRAPH_PR296_DELIVERED",
+      "simulator_acceptance_status": "INSTALLED_SOURCE_BOUND_MODEL_RESOURCE_GRAPH_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -1404,12 +1403,20 @@
           "final_head_checks": 40,
           "full_requirement_complete": false,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-dependency-membership-20261107.json"
+        },
+        "graph_delivery": {
+          "pr": 296,
+          "head": "ffd3fb185d26b10fd243b85cef86f5e11c7b8c55",
+          "merge": "a17f8c3fe2479441625a62db0e530f3dfb1788d1",
+          "merged_at": "2026-11-07T17:37:30Z",
+          "final_head_checks": 28,
+          "receipt": "notes\\python-roadmap-execution\\evidence\\full-roadmap-source-bound-dependency-graphs-20261107.json"
         }
       },
       "work_group": "dependency-inspection",
       "priority": 5,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish source-bound finite graph SDK/independent fixture coverage/privacy/governance/docs/installed artifacts/ordinary PR delivery. Native membership delivery does not waive complete graph, pagination, cycle and access requirements.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native complete source/edge/access graph authority remains distinct from finite reference delivery.",
       "disposition": null
     },
     {
@@ -1510,8 +1517,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: dependency-inspection"
       },
       "simulator_support_needed": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
-      "implementation_status": "NATIVE_MEMBERSHIP_DELIVERED_PR295_SOURCE_BOUND_GRAPH_INSTALLED_VERIFIED_PR296_PENDING",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "NATIVE_MEMBERSHIP_PR295_AND_OPT_IN_SOURCE_BOUND_GRAPH_PR296_DELIVERED",
+      "simulator_acceptance_status": "INSTALLED_SOURCE_BOUND_MODEL_RESOURCE_GRAPH_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -1555,12 +1562,20 @@
           "final_head_checks": 40,
           "full_requirement_complete": false,
           "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-dependency-membership-20261107.json"
+        },
+        "graph_delivery": {
+          "pr": 296,
+          "head": "ffd3fb185d26b10fd243b85cef86f5e11c7b8c55",
+          "merge": "a17f8c3fe2479441625a62db0e530f3dfb1788d1",
+          "merged_at": "2026-11-07T17:37:30Z",
+          "final_head_checks": 28,
+          "receipt": "notes\\python-roadmap-execution\\evidence\\full-roadmap-source-bound-dependency-graphs-20261107.json"
         }
       },
       "work_group": "dependency-inspection",
       "priority": 5,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish source-bound finite graph SDK/independent fixture coverage/privacy/governance/docs/installed artifacts/ordinary PR delivery. Native membership delivery does not waive complete graph, pagination, cycle and access requirements.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native complete source/edge/access graph authority remains distinct from finite reference delivery.",
       "disposition": null
     },
     {
@@ -1645,7 +1660,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: annotated-input-provenance"
       },
       "simulator_support_needed": "Compose public import/annotation/observation and dependency inspection into one owned flow with explicit selected-input provenance, denial/failed-import cleanup and no fabricated native resource deletion.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "EXPLICIT_ANNOTATED_INPUT_PROVENANCE_JOIN_SOURCE_IMPLEMENTED_ACCEPTANCE_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1676,8 +1691,8 @@
       },
       "work_group": "annotated-input-provenance",
       "priority": 6,
-      "task_state": "pending",
-      "next_executable_action": "Compose public import/annotation/observation and dependency inspection into one owned flow with explicit selected-input provenance, denial/failed-import cleanup and no fabricated native resource deletion.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish public sync/async completed upload/source ADD/selected plan/current recorded input/sourcebound graph join; test refusal, privacy, full installed packaging and ordinary PR delivery. No invented native annotation/update or RESOURCE deletion.",
       "disposition": null
     },
     {

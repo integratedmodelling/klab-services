@@ -1,5 +1,43 @@
 # A+B completion ledger — ongoing campaign
 
+## PR296 verified merged; annotated-input provenance source pass
+
+NineinstalledfocusedCIgatesPASS:older785/693/571/195/113/63append173controls,
+membership34append139,graph84append55,input55dedicated;18fixturecases100%.
+Actualorderedselection693SDK/173append/6HTTP/21fixture+unchanged100%gatePASS.
+Combinedshell120sbudget expired afterfocusedPASS/orderedfirst2steps; partiallogs
+retained and uniqueattempt2 completed actualordering with unchanged producttimeouts.
+No orderedhelperprocess remained at check. Fullartifactverifier+17linkedmatrix running.
+
+Source gates now55SDK100%unexcluded newmodule/allchangedSDK,2actualpublicHTTP
+workflows with explicit selected actuator+requirements, fresh queryinput, distinct
+binary/manifest/annotation hashes, serverBobborrowed-job denial/rootrefusal and400cell
+recordedoracle/cleanupPASS.18supplementaryfixturecases cover derivedmanifest+entire
+graphmodule100%;bodymypy/fatallintPASS. CanonicalResolverdataflow decoder restriction
+developmentfailure corrected after actualpublic workflow exposed mapping-only mock;
+result kinds now faithful, bindings unchanged. Full freshartifactverification next;
+no annotatedPR or native/scientificacceptance. Review retains all initial failures.
+
+PR296 remotely MERGED a17f8c3fe2479441625a62db0e530f3dfb1788d1 at
+2026-11-07T17:37:30Z, exact head ffd3fb185d26b10fd243b85cef86f5e11c7b8c55,
+all28reported final-head checksPASS. Actual merge integrated; remote/local ancestry
+checkpoint verified. Graph receipt records delivery, not native/full-row acceptance.
+Queue preserves42original rows/history,30runnable/zero final dispositions; RC-P4.3
+active on feat/python-annotated-input-provenance. No CI watcher/verifier remains.
+
+Initial InputProvenance/nativeasync source implementation joins explicit completed
+upload, CREATE acknowledgment from ADD namespace, exact source, completed selected
+plan, current queried observation input and opt-in source-bound graph. Independent
+annotated-input fixture derives manifest from owned uploaded binary/source state;
+binary hash and manifest/source hash are distinct.2public sync/async workflowsPASS
+including authentic recorded400cell reads, altered binary/source refusal and cleanup.
+Development errors retained: initial exact context-object test rejected legitimate
+focused wrapper; replaced with same client/root and handle checks, not weaker owner
+authority. Import Job returns rawdict, not ResourceSet DTO; corrected public boundary.
+Initial bodymypy found base attribute/job narrowing issues; corrections under review.
+No new PR/installed verification; hostile/security/coverage/body/regression gates remain.
+Native annotation/update/deletion/scientific lineage not invented or accepted.
+
 ## PR295 verified merge; full finite graph reference implemented, acceptance pending
 
 Finalraw63SDK/30simulator/5worker source-wheel-sdist-installedmodule parity

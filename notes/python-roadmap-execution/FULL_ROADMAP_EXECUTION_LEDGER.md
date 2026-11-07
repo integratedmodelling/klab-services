@@ -1,5 +1,32 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Graph delivery checkpoint and immediate annotated-input work
+
+NineinstalledfocusedCIgatesPASS(olderbatchesappend173,membership34append139,
+graph84append55,input55);18fixture100%. Actualorderedselection693/173/6/21plus
+unchanged100%gatePASS inuniqueattempt2. Combinedshell120s harnessbudget expiration
+retained; not a product testfailure/timeout relaxation. No orderedhelper remained.
+Fullartifactverifier+17linkedmatrix running; newPR/exactheadCI/delivery stillpending.
+
+Annotatedinputsource55SDKnewmodule+changedcode100%,2publicHTTP with actualselected
+actuator/freshrecordedinput/graphassociation, binary-versusmanifest distinction,
+Bobborrowed-job denial/rootrefusal/400celloracle/cleanupPASS.18fixturecases100%
+cover manifest+graphmodule;bodymypy/fatallintPASS. CanonicalResolverdataflow decode
+issue exposed by actualpublic workflow and corrected, not masked by mapping-only
+mock. Failurehistory retained in input-provenance-review-20261107.md. Freshinstalled/
+newPR/nativeacceptance pending; no fullrowdisposition or scienceclaim.
+
+PR296 verified MERGED a17f8c3fe2479441625a62db0e530f3dfb1788d1 at17:37:30Z,
+exactffd3fb185d26b10fd243b85cef86f5e11c7b8c55/all28checksPASS. Remote/local
+ancestry verified, graph receipt updated without final acceptance promotion.
+42original rows/history/30runnable/zero dispositions; queue selectsRC-P4.3.
+InputProvenance/AsyncInputProvenance source joins completed upload/source ADD/plan/
+fresh recorded input/source-bound graph, distinct binary/manifest/annotation hashes.
+2publicHTTP workflowsPASS with recorded400cell oracle and alteredhash/source refusal.
+Focused-context wrapper and rawdict import-result development failures corrected;
+initialmypy issues retained, finaltype/security/coverage/installed/newPR pending.
+No native annotation/update/RESOURCE delete or scientific lineage authority inferred.
+
 ## Native membership delivered, complete finite source-bound graph ongoing
 
 Finalrawmoduleparity63SDK/30simulator/5worker rechecked; no simulator inproduction.

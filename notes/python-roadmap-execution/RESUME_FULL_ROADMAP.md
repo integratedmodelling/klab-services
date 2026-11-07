@@ -33,19 +33,21 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent verified checkpoint: PR295 merge `641eaa161`, exact `a1a781f54`,
-all40reported final-head checks PASS. PR294 conditional reference also verified.
+Most recent verified checkpoint: PR296 merge `a17f8c3fe`, exact `ffd3fb185`,
+all28reported final-head checks PASS. PR295 membership/PR294 conditional also verified.
 Linux cleanup-oracle omission ofSTATUS_DEAD fixed with300owned probes/8Z->Xpairs;
 separate Windows cancellationGETpoll failure retained, exactheadattempt2PASS, original
 HTTP exception class remainsunknown. No timeout relaxation or mutation replay.
-Active child `feat/python-source-bound-dependency-graphs`, RC-P4.1/CAP-13. Native
-membership delivered295 with4722installedSDK/362simulator/72workerPASS; failedselection
-CIcoverage-ordering report retained and step ordering fixed, thresholds unchanged.
-Sourcebound finitegraph reference implemented84SDK100%/8publicHTTP model+resource
-roots/17fixture100%,bodytypes/lint/49governance+queue+CIorderingPASS. Eight installed
-focusedCI batches+actualorderedselectiongatePASS. Freshsource-bound-dependency-graphs-first
-fullverifier/17linkedmatrix running; no graphPR yet. After delivery immediately continue
-annotated-input-provenance; original fullrow/native acceptance remains separate.
+Active child `feat/python-annotated-input-provenance`, RC-P4.3. Graph296 delivered
+4807installedSDK/387simulator/72worker/reference-governancePASS,63SDK30sim5worker
+rawmoduleparity,17linkedPASS vs17nativeNOT_RUN. Original42rows/history preserved,
+30runnable/zero finaldispositions. Annotatedinputsource55SDK100%/2actualpublicHTTP/
+18fixture100%,bodytypes/lint/49governance+queue+CIorderingPASS. Nineinstalledfocused
+gates+actualorderedselection693/173/6/21+100%gatePASS. Combinedshell120s harness
+timeout retained; uniqueattempt2 completed, producttimeouts unchanged. Freshannotated-
+input-provenance-first fullverifier/17linkedmatrix running; no annotatedPR yet.
+After delivery immediately continue reference-commit-convergence; originalfullrow/
+nativeacceptance separate, no automaticrestart guarantee.
 Ledgers/queue/actual jobs override this saved text; no automatic restart guarantee.
 CAP-01 remains the existing certificate/token/profile seam, not shared-grant code.
 Inspect actual queue and running jobs rather than assuming this checkpoint stays

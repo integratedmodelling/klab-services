@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario annotated-input` composes the pinned crop import and explicit literal
+namespace/model ADD with selected-plan/recorded-input/source-bound-graph receipts.
+Binary versus manifest/source hashes stay distinct; public sync/nativeasync workflows
+check actual recorded400cell reads, tamper/current-principal/root refusal and owned
+Runtime cleanup. Persistent ADD assets need separate authenticated fixture reset,
+not a native SDK RESOURCE delete. No native annotation/scientific lineage is claimed.
+
 `--scenario dependency-graphs` is a separately advertised opt-in finite graph
 reference with exact literal sources/hash/version/provider/access stamps and pinned
 opaque multipage snapshots. Test-only source advance, cycle and missing-edge modes

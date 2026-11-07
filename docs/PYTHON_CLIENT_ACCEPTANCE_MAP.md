@@ -1,5 +1,13 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR296 verifiedmergeda17f8c3fe/exactffd3fb185/all28checksPASS; remote/local ancestry
+checkpointverified. RC-P4.3active: annotatedinputjoin55SDK100%newmodule/changedcode,
+2publicHTTPactualupload/sourceADD/selectedactuator/freshinput/graph/recorded400cells/
+Bobdenial/rootrefusal,18fixture100%,bodytypes/lint/49governance-queue-orderingPASS.
+NineinstalledfocusedCIgates/actualorderedselectionPASS; fullartifact/17linkedmatrix
+running, no annotatedPR yet. Distinctbinary/manifest/annotation hashes; no native
+annotation/update/RESOURCEdeletion/scientificlineage inferred.42rows/30runnable.
+
 PR296 sourceboundfinitegraph candidate freshinstalled4807SDK/387simulator/72worker/
 allreference-governancePASS,63SDK/30simulator/5worker rawmoduleparity.84SDK100%
 unexcludednewmodule+changedcode,8publicHTTP model/resource roots/17fixture100%,

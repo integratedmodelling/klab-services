@@ -34,6 +34,9 @@ class DependencyGraphs:
         selected_root=a
         if root_class=='RESOURCE':
             nodes=[nodes[2],nodes[4]];pairs=((c,e),);selected_root=c
+        if self.state.scenario == 'annotated-input':
+            from .input_provenance import graph_nodes
+            nodes, pairs, selected_root = graph_nodes(self.state, root, principal, node)
         edges=[{'sourceId':source,'targetId':target,'kind':'DEPENDS_ON'} for source,target in pairs]
         if self.mode=='cycle':edges.append({'sourceId':nodes[-1]['nodeId'],'targetId':selected_root,'kind':'DEPENDS_ON'})
         if self.mode=='missing-endpoint':edges[-1]['targetId']='f'*32
@@ -51,6 +54,9 @@ class DependencyGraphs:
         if principal!='alice':raise ContractError(403,'Finite graph fixture restricted to Alice')
         url=urlsplit(original_path);query=parse_qs(url.query,keep_blank_values=True)
         roots={PREFIX+'MODEL/synthetic.model':('MODEL','synthetic.model'),PREFIX+'RESOURCE/synthetic:input':('RESOURCE','synthetic:input')}
+        if self.state.scenario == 'annotated-input':
+            from .authoring import MODEL
+            roots = {PREFIX+'MODEL/'+MODEL:('MODEL', MODEL)}
         if method!='GET' or url.path not in roots:
             raise ContractError(404,'Only declared read-only dependency graph root admitted')
         root_class,root_urn=roots[url.path]
