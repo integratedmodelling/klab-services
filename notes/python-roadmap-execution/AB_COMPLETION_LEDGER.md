@@ -2,6 +2,23 @@
 
 ## PR300 verified merged; public copied composition active
 
+PR301 final installed candidate:5110SDK/467simulator/72worker/allreference/39governance
+PASS, zero skips/errors/failures. Raw68SDK/34sim/5worker source-wheel-sdist-installed
+parity verified; no simulator shipped in production packages.17linkedPASS(1178SDK/
+344sim/72worker) versus17nativeREAL_NOT_RUN/expectedexit3.57SDK100%unexcluded,
+2publicHTTP/2fixture100%,13focusedCI+actualordered693/214/92/115/6/21+unchanged100%
+gate PASS. No simulator services remain. Final receipt/exactnewheadCI/ordinarymerge
+pending; native federation and original-row acceptance not promoted. Existing dependencies
+borrowed, not fresh dependency isolation. Continue RC-P4.5 source/outcome/disposal work.
+
+Draft PR301 now open at22d5546aa. Fresh installed5110SDK/467simulator/72worker and
+all reference/39governance suites PASS with zero skips/errors/failures; full installed
+newmodule/changedSDK100% gate PASS. Final rawcustody/linkedmatrix reconciliation and
+finalreceipt/exactheadCI/ordinarymerge remain. No native federation/science/finalrow
+acceptance promotion. RC-P4.5 next-work review distinguishes existing nonexecuting
+BEHAVIOR drafts, native deferred BEHAVIOR registration and fixture-only managed-agents/1;
+source-validation/private-session disposal must not silently change those contracts.
+
 13installedfocusedCIgatesPASS;olderbatches append115(explanation58+copied57),
 convergence92+115/explanation58+57/copied57dedicated. Actualorderedselection693/
 214/92/115/6HTTP/21fixture+unchanged100%gatePASS;2independentfixturepolicytests100%.

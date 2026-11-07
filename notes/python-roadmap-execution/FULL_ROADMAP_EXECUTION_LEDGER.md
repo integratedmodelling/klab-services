@@ -2,6 +2,12 @@
 
 ## Execution explanation delivered; typed copied composition continues
 
+PR301 final candidate5110installedSDK467sim72worker/reference-39governancePASS;
+68SDK34sim5worker rawparity/no simulatorinproduction;17linkedPASS(1178SDK344sim72worker)
+versus17nativeNOT_RUN.57SDK100%/2HTTP2fixture100%/13focusedCI+actualorderedselection
+and unchanged100%gatePASS. No simulator services remain. Finalreceipt/exactheadCI/
+ordinarymerge pending; native federation/science/final-row acceptance remains separate.
+
 13installedfocusedgates/actualorderedselection693/214/92/115/6/21+unchanged100%
 gatePASS;2independentfixturepolicytests100%. Fullartifactverifier/matrixrunning,
 sourcefrozen/no copiedPRyet. Next managedbehavior workflowreview continuesindependently.
