@@ -1,5 +1,46 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Direct geometry finite-size validation pass
+
+PublishedPR289 head609930ec5; initial two installed-provider jobs FAILED changed-code
+coverage, not functional tests: provider-only CI batch omitted new geometry tests,
+so runtime.py57/59/60 and54->57/57->59/57->61 remained unmeasured in that report.
+Full installed passing report never substitutes for narrower hosted gate. Retain
+both failureURLs in receipt. Added test_geometry_size.py to focused provider batch;
+513installedcontrolsPASS, codec/provider100% and changed-code gatePASS locally.
+No failed-head rerun, coverage exclusions or threshold relaxation. Corrected head
+must pass hosted checks before merge; independent selection audit has no source edits.
+
+Final geometry17linkedcasesPASS using485SDK/177simulator/57worker, zero skips/
+errors/failures versus17realNOT_RUN/exit3. Publish ordinaryPR now; finalheadCI/
+verified merge required. Native unit/scanner/scientific/fullABC gates unchanged.
+
+Fresh verifier completed2026-11-07T06:09:35.628001+00:00:4407SDK/248simulator/
+11inventory/6tool/18provenance/18provider/4revision/3composition/98reference/
+57worker/21HTTP/37governancePASS, zero skips/errors/failures.57SDK+23simulator+
+5worker rawsource/wheel/sdist/installed parity and source/installed changed-code
+coveragePASS. No new productionmodule; newmodulegateN/A, not relabelled existing
+runtime.py as a newmodule.17linkedmatrix sh_1b4a09173001N2biCMmnNImpkR running
+versus17realNOT_RUN/exit3 verified without native invocation/fallback. Receipt
+evidence/full-roadmap-geometry-size-20261107.json. OrdinaryPR/finalCI pending.
+
+PR288 subsequently verified MERGED7c7d6edb3977fd8f762522f8d58088fb5c655d66 at
+2026-11-07T06:08:20Z, exact1df52f51188ec828915873f94d5ffb127dde2fb9/all36checks
+PASS/no failedrerun. Geometry child fast-forwarded actual merge preserving uncommitted
+source/tests/ledgers. No remote watcher remains; geometry-size-first fresh verifier
+still running. No native/scientific/fullABC acceptance inferred.
+
+Operation-custody PR288 OPEN head1df52f511, watcher sh_1b4997c4f001bouJP63VWpLY8b;
+no merge claimed. Child fix/python-direct-geometry-size-validation reproduces
+unchecked direct DTO shapes yielding negative/noninteger counts: (-2,3)->-6,
+(True,3)->3, (1.5,2)->3.0. Finite size() now checks tuple/list dimensions for exact
+nonnegative integers on each call, refusing malformed direct inputs with
+InvalidRequestError. Existing wire ProtocolError and scalar/empty/universal/zero/
+unbounded exact integer arithmetic policies retained.17focused controls PASS and
+fatal lint PASS. This is Python DTO validation, not inferred units/axes/geospatial
+science, GeoTIFF defect repair or scanner acceptance. Full installed/changed-code
+coverage and ordinary delivery pending; native/fullABC statuses unchanged.
+
 ## Active operation measurement custody
 
 Final operation-custody17linkedcasesPASS(485SDK/177simulator/57worker), zero

@@ -54,6 +54,10 @@ class GeometryImpl(Geometry):
         if self.geometry_type == "universal":
             from klab_client.errors import UnsupportedOperationError
             raise UnsupportedOperationError("Universal geometry has no finite cell count")
+        if (not isinstance(self.shape, (tuple, list))
+                or any(type(n) is not int or n < 0 for n in self.shape)):
+            from klab_client.errors import InvalidRequestError
+            raise InvalidRequestError("Geometry shape must contain nonnegative integers")
         if not self.shape:
             if not self.is_scalar():
                 from klab_client.errors import UnsupportedOperationError
