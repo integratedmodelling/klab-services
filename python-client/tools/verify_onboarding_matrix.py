@@ -23,9 +23,15 @@ GROUPS = {
 
 def support_snapshot():
     paths = list((ROOT / 'python-client/tools').glob('verify_*matrix.py'))
-    for directory in ('python-client/tests', 'python-client/tools/workflows',
+    for directory in ('python-client/tests', 'python-client/examples', 'python-client/tools/workflows',
                       'developer-tools/klab-service-simulator/tests'):
         paths.extend((ROOT / directory).rglob('*.py'))
+    # Frozen numeric/GeoTIFF/Avro/JSON oracles are executable evidence inputs too.
+    # Never let a changed binary fixture inherit an earlier green module receipt.
+    for directory in ('python-client/tests/fixtures',
+                      'developer-tools/klab-service-simulator/src/klab_simulator/fixtures'):
+        paths.extend(path for path in (ROOT / directory).rglob('*')
+                     if path.is_file() and '__pycache__' not in path.parts and path.suffix != '.pyc')
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sorted(set(paths)) if path.is_file()}
 
@@ -92,6 +98,17 @@ def main(argv=None, *, groups=None, requirements=None, scope=None, matrix_name='
     test_hashes = {test: hashlib.sha256((ROOT / test).read_bytes()).hexdigest()
                    for tests in selected_groups.values() for test in tests}
     support_hashes = support_snapshot()
+    installed_fixture_hashes = {
+        name: {path.relative_to(Path(info['path'])).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+               for path in sorted((Path(info['path']) / 'fixtures').rglob('*'))
+               if path.is_file() and '__pycache__' not in path.parts and path.suffix != '.pyc'}
+        for name, info in installed.items()}
+    fixture_root = 'developer-tools/klab-service-simulator/src/klab_simulator/'
+    expected_fixtures = {path.removeprefix(fixture_root): digest for path, digest in support_hashes.items()
+                         if path.startswith(fixture_root + 'fixtures/')
+                         and Path(path).name != '.gitattributes'}
+    if installed_fixture_hashes['simulator'] != expected_fixtures:
+        raise ValueError('Installed reference fixture bytes differ from pinned checkout oracles')
     # Do not overwrite failed development evidence or reuse an earlier green run.
     args.output_directory.mkdir(parents=True, exist_ok=False)
     output = args.output_directory.resolve()
@@ -123,6 +140,12 @@ def main(argv=None, *, groups=None, requirements=None, scope=None, matrix_name='
         raise ValueError('Executable test bytes changed during verification')
     if support_snapshot() != support_hashes:
         raise ValueError('Test/support/runner source bytes changed during verification')
+    for name, info in installed.items():
+        actual = {path.relative_to(Path(info['path'])).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                  for path in sorted((Path(info['path']) / 'fixtures').rglob('*'))
+                  if path.is_file() and '__pycache__' not in path.parts and path.suffix != '.pyc'}
+        if actual != installed_fixture_hashes[name]:
+            raise ValueError('Installed fixture bytes changed during verification')
     receipt = {
         'version': 1, 'verified_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
         'matrix': matrix_name,
@@ -132,6 +155,7 @@ def main(argv=None, *, groups=None, requirements=None, scope=None, matrix_name='
         'artifact_receipt_kind': json.loads(raw_receipt).get('evidence', 'EXPLICIT_PRIOR_ARTIFACT_RECEIPT'),
         'test_sha256': test_hashes,
         'support_source_sha256': support_hashes,
+        'installed_fixture_sha256': installed_fixture_hashes,
         'python_acceptance': 'INSTALLED_PUBLIC_MATRIX_CONTROLS_PASS_NOT_NATIVE_ACCEPTANCE',
         'native_issuer_license_deployment': 'REAL_NOT_RUN_EXTERNAL_APPROVAL_REQUIRED',
         'scientific_acceptance': False, 'final_original_row_acceptance': False,

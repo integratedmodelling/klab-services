@@ -4,6 +4,24 @@
   "workflows": [
     {
       "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_read_plans.py::test_owned_multishard_snapshot_preserves400cells_zero_negative_mask_and_release",
+      "operations": [["read_plans.py", "open_read_plan"], ["read_plans.py", "read_plan_shard"], ["read_plans.py", "assemble_read_plan"], ["read_plans.py", "release_read_plan"]],
+      "assertions": "Explicit experimental opt-in yields six73-cell-budget shards for400finite cells; exact zero/negative/missing masks, shape/CRS/affine/units and final195 value preserve known answers. Reordered shards refuse, Bob denies, released grant returns410; owner cleanup empties counts. Reference content hashes are not native commits or provider accuracy."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_read_plan_analysis.py::test_complete_snapshot_offline_analysis_after_grant_scope_and_service_release",
+      "operations": [["read_plan_analysis.py", "analyze_read_plan"]],
+      "assertions": "After explicit grant/scope/service shutdown, complete assembled snapshot produces exact20x20finite values/masks and50..1950x/1950..50y coordinates. Missing values become NaN only in numeric view; source observation and local reference manifest identities remain explicit. No native revision/retention/scientific authority."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+      "operations": [["analysis.py", "export_for_analysis"], ["analysis.py", "open_raster"], ["analysis.py", "trace_analysis"], ["analysis.py", "async_export_for_analysis"]],
+      "assertions": "Frozen independent nonuniform oracle fixes4x5float64 values including16777217.125,18valid cells, real zero, exact CRS/affine/x/y coordinates and file hash. Sync/async explicit-slice exports preserve selection, unknown slice refuses, partial provenance remains unknown; eager arrays survive unlink. Reference HTTP delivery, not a new native scientific execution."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
       "test_ref": "developer-tools/klab-service-simulator/tests/test_observation_selections.py::test_public_relationship_endpoints_collections_plan_foreign_denial_and_cleanup",
       "operations": [["client.py", "Client.restore_handle"], ["async_client.py", "AsyncClient.restore_handle"], ["client.py", "Context.between"], ["client.py", "Context.within"], ["async_client.py", "AsyncContext.within"], ["client.py", "Context.observations"], ["async_client.py", "AsyncContext.observations"], ["handles.py", "Handle.loads"], ["handles.py", "Handle.dumps"], ["handles.py", "to_handle"]],
       "assertions": "Public sync/async finite relationship selection preserves exact endpoints/planned-result association, bounded collection pages and selected context/observation/Job references through version2 roundtrip. Fresh current clients retain selection but gain no ownership; foreign principal attach and missing/self endpoints refuse, owner cleanup empties counts. Not native composed-twin, durable incarnation or retention authority."

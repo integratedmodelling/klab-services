@@ -1,5 +1,28 @@
 # A+B completion ledger — ongoing campaign
 
+PR310 publishedb63d61e54 scientific-snapshot exact-child484/3/52PASS,35controls/types-
+lint/onboarding190/1/18PASS;56reviewedmaps450missing. Ready for exact-headCI; parent309
+CI/merge remains pending. No native science/finalrow promotion; safety proceeds next.
+
+Final exact-child scientific snapshot matrix484SDK/3isolated/52publicHTTP PASS,
+onboarding190/1/18regressionPASS,35controls/types-lintPASS. Binary/JSON checkout and
+installed oracle bytes plus examples pinned before/after; nested-I child imports exact
+selected installedSDK. Earlier484/3/52positive run remains narrower predecessor with
+no exact-child claim.56reviewedmaps450missing across506; native scienceNOTRUN.
+Receipt integrated-scientific-snapshot-installed-20261107.json recorded; simulator
+scanempty. Parent309ready87cc87c16 CI pending; childscientific delivery next, then safety.
+
+## Scientific-snapshot integration active while309 CI runs
+
+309ready87cc87c16 final expanded24/3/3notebook matrix/30controls/types-lintPASS;
+exact-head CI watcher active, no merge/checkpoint yet. Active child scientific-snapshot
+branch integrates multishard/recorded-export/analysis/offline groups. Added runtime
+oracle byte custody to shared runner; initialpreflight refused packaging-only
+.gitattributes source/package difference, zero changed runtime assets. Metadata remains
+support-pinned; only repo policyfile excluded from installed runtime-oracle equality.
+New output corrected matrix running; actual group counts pending.56reviewedmaps450
+missing across506; no native science or fullfunctional promotion.9runnable/42IDs/history.
+
 PR309 published507ca4ef8: final expanded24guards/3kernel-smokes/3publicHTTPnotebooks
 PASS,30controls/types-lintPASS; predecessor24/3/2 retained. Ready for exact-head CI;
 ordinarymerge/checkpoint remain.308verifiedmerged/all38checksPASS. Nine runnable,
