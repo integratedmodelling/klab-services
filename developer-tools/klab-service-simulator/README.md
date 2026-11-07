@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-BOOTSTRAP-RECOVERY-001/JAVA-GAP-0015/0007 exercises existing SDK bootstrap,
+localSDKexpiry/reacquisition through one400cellJob, denial/no-replay and actual owned
+Runtime outage/recovery/service-IDdrift. No automatic standby work or native issuer/
+composition claim. The launcher supports explicit bounded identityseeds; default7
+and no-visible-console ownership/cleanup unchanged. See
+[acceptance scope](../../python-client/docs/bootstrap-recovery-acceptance.md).
+
 SIM-READ-PLAN-ANALYSIS-001/JAVA-GAP-0006/0014 materializes complete reference
 snapshots offline after grant/context/service release, preserving numerical masks,
 affine-centre layout and exact source binding. Content/manifest hashes are NOT native

@@ -18,5 +18,6 @@
   "historical_prose_correction": "Earlier read-plan receipt accidentally labelled0014NOT_TESTED; explicit correction preserves original mistaken attribution and actual unchangedCONTRACT_PROVISIONAL. No new native probe/statuspromotion.",
   "scientific_acceptance": false,
   "dependency_custody": "Fresh wheels/sdists/separate pip-target installs borrow existing test dependencies; no existing environment modification or newly isolated dependency certification",
-  "remaining": "NormalPR/finalheadCI/permittedmerge. Native scientific/layout/revision contracts and remaining federation/full42criteria separate; entire-roadmap sleep pending."
+  "delivery": {"pr": 278, "head": "69dc80736527401aa559da1177c59f3c91644fa3", "merge": "40b05b001a048215a197521c461713dfd832f6dd", "merged_utc": "2026-11-07T02:33:54Z", "applicable_final_head_checks": "PASS SDK3.11/12/13/core/scientific/workerWindows+Ubuntu/schema/simulator/notebook/build/Jenkins; no failed-check rerun needed", "independent_maintainer_review": false},
+  "remaining": "Native scientific/layout/revision contracts and remaining federation/full42criteria separate; entire-roadmap sleep pending."
 }
