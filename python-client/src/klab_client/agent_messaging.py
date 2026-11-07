@@ -7,10 +7,11 @@ import threading
 import time
 from urllib.parse import unquote, urlsplit
 import uuid
+from typing import Any, cast
 
 from ._agent_wire import agent_exchange, decode_message, encode_command
 from .agent_control import AgentControlBinding, AgentControlJournal
-from .errors import (AuthenticationError, AuthorizationError, InvalidRequestError,
+from .errors import (AuthenticationError, AuthorizationError, InvalidRequestError, KlabError,
                      ProtocolError, TransportError, UnsupportedOperationError)
 from .notifications import NotificationBroker, _pika
 
@@ -48,7 +49,7 @@ class AgentChannel:
         self._ignore_failure = self._closing = self._closed = False
         self._queue_requested = self._queue_deleted = False
         self._local_cleanup = None
-        self._failure = None
+        self._failure: KlabError | None = None
         self._transport_phase = "connect"
         self._events = self._bytes = self._sequence = self._status_requests = 0
         self._confirmed = None
@@ -86,15 +87,25 @@ class AgentChannel:
     def _signal(self):
         if self._predicate is not None and ((self._failure is not None and not self._ignore_failure)
                                             or self._predicate()):
-            self._connection.ioloop.stop()
+            self._local_connection().ioloop.stop()
+
+    def _local_connection(self) -> Any:
+        if self._connection is None:
+            raise TransportError("Agent transport has no active local broker connection")
+        return self._connection
+
+    def _local_channel(self) -> Any:
+        if self._channel is None:
+            raise TransportError("Agent transport has no active local broker channel")
+        return self._channel
 
     def _drive(self, predicate, *, cleanup=False):
         self._predicate, self._ignore_failure = predicate, cleanup
         expired = []
         def deadline():
             expired.append(True)
-            self._connection.ioloop.stop()
-        loop = self._connection.ioloop
+            self._local_connection().ioloop.stop()
+        loop = self._local_connection().ioloop
         alarm = loop.call_later(self._timeout, deadline)
         try:
             if not predicate():
@@ -147,8 +158,8 @@ class AgentChannel:
     def _channel_closed(self, channel, reason):
         if not self._closing:
             self._failed(reason)
-        elif not self._connection.is_closed and not self._connection.is_closing:
-            self._connection.close()
+        elif not self._local_connection().is_closed and not self._local_connection().is_closing:
+            self._local_connection().close()
         self._signal()
 
     def _opened(self, connection):
@@ -169,36 +180,36 @@ class AgentChannel:
     def _exchange_ready(self, frame):
         self._transport_phase = "queue"
         self._queue_requested = True
-        self._channel.queue_declare(queue="", durable=False, exclusive=True, auto_delete=True,
+        self._local_channel().queue_declare(queue="", durable=False, exclusive=True, auto_delete=True,
             arguments={"qpid.max_count": self._max_events, "qpid.max_size": self._max_bytes,
                        "qpid.policy_type": "reject"}, callback=self._queue_ready)
 
     def _queue_ready(self, frame):
         self._transport_phase = "bind"
         self._queue = frame.method.queue
-        self._channel.queue_bind(queue=self._queue, exchange=self._exchange, routing_key="",
+        self._local_channel().queue_bind(queue=self._queue, exchange=self._exchange, routing_key="",
                                  callback=self._bound)
 
     def _bound(self, frame):
         self._transport_phase = "qos"
-        self._channel.basic_qos(prefetch_count=1, callback=self._qos_ready)
+        self._local_channel().basic_qos(prefetch_count=1, callback=self._qos_ready)
 
     def _qos_ready(self, frame):
         self._transport_phase = "confirm"
         if self._publication == "unconfirmed":
             self._confirm_ready(None)
             return
-        if not all(self._broker_features.values()):
+        if self._broker_features is None or not all(self._broker_features.values()):
             self._failure = UnsupportedOperationError("Broker does not advertise the confirm/nack capabilities required by Pika; no silent downgrade")
             self._journal.transport_lost()
             self._state = "DISCONNECTED"
             self._signal()
             return
-        self._channel.confirm_delivery(self._confirmation, callback=self._confirm_ready)
+        self._local_channel().confirm_delivery(self._confirmation, callback=self._confirm_ready)
 
     def _confirm_ready(self, frame):
         self._transport_phase = "consume"
-        self._channel.basic_consume(queue=self._queue, on_message_callback=self._message,
+        self._local_channel().basic_consume(queue=self._queue, on_message_callback=self._message,
                                     auto_ack=False, callback=self._consuming)
 
     def _consuming(self, frame):
@@ -260,7 +271,7 @@ class AgentChannel:
             pika = _pika()
             body = encode_command(action, binding.agent_urn, self._sequence, int(time.time() * 1000))
             properties = pika.BasicProperties(headers={"channelId": self._channel_id}, delivery_mode=1, content_type="text/plain")
-            self._channel.basic_publish(self._exchange, "", body, properties=properties, mandatory=True)
+            self._local_channel().basic_publish(self._exchange, "", body, properties=properties, mandatory=True)
             if self._publication == "unconfirmed":
                 # Drive a bounded local I/O turn, but NEVER call this broker ACK,
                 # successful execution, or permission to replay the publication.
@@ -268,18 +279,18 @@ class AgentChannel:
                 def turn():
                     pumped.append(True)
                     self._signal()
-                token = self._connection.ioloop.call_later(min(.01, self._timeout / 2), turn)
+                token = self._local_connection().ioloop.call_later(min(.01, self._timeout / 2), turn)
                 try:
                     self._drive(lambda: bool(pumped))
                 finally:
-                    self._connection.ioloop.remove_timeout(token)
+                    self._local_connection().ioloop.remove_timeout(token)
                 return False
             self._drive(lambda: self._confirmed is not None)
             return self._confirmed
         except Exception as error:
             self._failed(error)
             self._lost()
-            raise self._failure from None
+            raise cast(KlabError, self._failure) from None
         except BaseException:
             self._lost()
             raise
@@ -306,6 +317,8 @@ class AgentChannel:
                 raise ProtocolError("Agent delivery budget exhausted; continuity unknown")
             # A read timeout is not unchanged state. Close rather than infer continuity.
             self._drive(lambda: self._delivery is not None)
+            if self._delivery is None:
+                raise TransportError("Agent read completed without a local delivery")
             method, properties, body = self._delivery
             self._delivery = None
             if not isinstance(body, bytes) or len(body) > 65536 or self._bytes + len(body) > self._max_bytes:
@@ -326,7 +339,7 @@ class AgentChannel:
                     "startedAt": status.started_at, "lastActivityAt": status.last_activity_at}
                 self._journal.observe(json.dumps(payload, ensure_ascii=False).encode("utf-8"), binding=binding)
                 event = replace(event, status=status)
-            self._channel.basic_ack(method.delivery_tag)
+            self._local_channel().basic_ack(method.delivery_tag)
             return event if event.status is not None and not own else None
         except Exception as error:
             if isinstance(error, (ProtocolError, TransportError, AuthenticationError, AuthorizationError)):
@@ -334,14 +347,14 @@ class AgentChannel:
                 raise
             self._failed(error)
             self._lost()
-            raise self._failure from None
+            raise cast(KlabError, self._failure) from None
         except BaseException:
             self._lost()
             raise
 
     def _deleted(self, frame):
         self._queue_deleted = True
-        self._connection.close()
+        self._local_connection().close()
 
     def _cleanup(self):
         if self._connection is None:

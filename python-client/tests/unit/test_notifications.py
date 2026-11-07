@@ -108,6 +108,8 @@ def test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints(setup):
         with pytest.raises(TypeError): first.payload["new"] = 1
         with pytest.raises(ProtocolError): stream.read()
         assert stream.state == "REJECTED"
+
+
     assert stream.state == "CLOSED" and stream.cleanup_confirmed
     assert [name for name, _ in driver.calls].count("ack") == 2
     args = dict(driver.calls)
@@ -120,6 +122,19 @@ def test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints(setup):
     stream.close()
     with pytest.raises(InvalidRequestError): stream.open()
     with pytest.raises(InvalidRequestError): stream.read()
+
+
+@pytest.mark.parametrize('resource', ['_iterator', '_channel'])
+def test_open_receiver_missing_local_resource_rejects_without_ack_or_reconnect(setup, resource):
+    receiver, driver = setup([json.dumps(envelope()).encode()])
+    with receiver as stream:
+        setattr(stream, resource, None)
+        with pytest.raises(ProtocolError, match='no active local broker resources'):
+            stream.read()
+        assert stream.state == 'REJECTED'
+        assert not any(name == 'ack' for name, _ in driver.calls)
+        assert sum(name == 'connect' for name, _ in driver.calls) == 1
+        assert stream._connection is None and stream._iterator is None
 
 
 def test_tls_origin_and_virtual_host_are_explicit_without_http_credentials(setup):

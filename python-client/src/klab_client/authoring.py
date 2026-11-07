@@ -57,7 +57,7 @@ class Authoring:
         self.client = client
         self.max_source_bytes, self.max_response_bytes = max_source_bytes, max_response_bytes
         self._binding = None
-        self._created = {}
+        self._created: dict[tuple[str, str], AuthoringReceipt] = {}
 
     def _identity(self):
         capability = self.client.resources.capabilities(max_response_bytes=self.max_response_bytes)

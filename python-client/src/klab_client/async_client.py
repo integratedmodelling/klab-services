@@ -8,6 +8,7 @@ import inspect
 import math
 import time
 import uuid
+from typing import Any, Awaitable, Coroutine, cast
 from urllib.parse import quote
 
 from ._async_transport import AsyncTransport
@@ -28,7 +29,7 @@ def _require_async(client):
         raise ConfigurationError("Async scopes, jobs and services require a native async client")
 
 
-class AsyncJob(Job):
+class AsyncJob(Job[Coroutine[Any, Any, Any]]):
     def __init__(self, client, *args, **kwargs):
         _require_async(client)
         super().__init__(client, *args, **kwargs)
@@ -59,7 +60,9 @@ class AsyncJob(Job):
             scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
             timeout=timeout, deadline=deadline)
 
-    async def result(self, timeout=None):
+    async def result(self, timeout=None, *, _cancelled=None):
+        if _cancelled is not None:
+            raise InvalidRequestError("Async Job waits use native task cancellation, not synchronous wait callbacks")
         self._check_binding()
         if timeout is not None and (not math.isfinite(timeout) or timeout < 0):
             raise InvalidRequestError("Wait timeout must be finite and nonnegative")
@@ -264,10 +267,11 @@ class AsyncRuntime(_AsyncService, RuntimeServiceImpl):
         return result
 
     async def release_session(self, scope):
-        return await RuntimeServiceImpl.release_session(self, scope)
+        # Shared pure validation dispatches to this class's native async _release.
+        return await cast(Awaitable[bool], RuntimeServiceImpl.release_session(self, scope))
 
     async def release_context(self, scope):
-        return await RuntimeServiceImpl.release_context(self, scope)
+        return await cast(Awaitable[bool], RuntimeServiceImpl.release_context(self, scope))
 
     async def query_knowledge_graph(self, query, scope):
         if not isinstance(query, dict):
@@ -309,7 +313,7 @@ class AsyncClient:
 
     @classmethod
     def from_env(cls):
-        return Client.from_env.__func__(cls)
+        return getattr(Client.from_env, "__func__")(cls)
 
     def __init__(self, runtime_url, credential=None, *, reasoner=None, resources=None, resolver=None,
                  agent_name=None, runtime_service_id=None, service_ids=(), timeout=30,
@@ -376,13 +380,13 @@ class AsyncClient:
         if _url(self.transport.endpoint("runtime").url) != reference.runtime_url and not allow_relocation:
             raise HandleIdentityError("Configured Runtime origin/base path differs from the saved reference")
         if (reference.kind == "job" and not allow_relocation
-                and _url(self.transport.endpoint(reference.service).url) != reference.service_url):
+                and _url(self.transport.endpoint(cast(str, reference.service)).url) != reference.service_url):
             raise HandleIdentityError("Configured job-service origin/base path differs from the saved reference")
         runtime_id = (await self.runtime.capabilities()).service_id
         if runtime_id != reference.runtime_id or self.runtime_service_id not in (None, runtime_id):
             raise HandleIdentityError("Authenticated/configured home Runtime identity differs from the saved reference")
         if reference.kind == "job" and reference.service != "runtime":
-            if (await getattr(self, reference.service).capabilities()).service_id != reference.service_id:
+            if (await getattr(self, cast(str, reference.service)).capabilities()).service_id != reference.service_id:
                 raise HandleIdentityError("Executing peer identity differs from the saved reference")
         self.runtime_service_id = runtime_id
         root = await self.attach_context(reference.context_id)
@@ -411,7 +415,7 @@ class AsyncClient:
         if reference.version == 2:
             source = await lookup(reference.source_observation_id)
             target = await lookup(reference.target_observation_id)
-            context = context.between(source, target)
+            context = cast(AsyncContext, context.between(source, target))
         if reference.kind == "context":
             return context
         if reference.kind == "observation":

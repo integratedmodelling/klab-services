@@ -92,6 +92,7 @@ def fetch_provenance(observation, *, limit=64, offset=0, max_response_bytes=1024
     _limits(limit, offset, max_response_bytes)
     client = getattr(getattr(observation, "_context", None), "client", None)
     context = _context(client, observation)
+    client = context.client  # _context has validated the current bound client.
     reference = to_handle(observation)
     # Recheck current context membership; never treat a cached DTO as access authority.
     membership = client.transport.request("runtime", "POST", "/api/v1/query",

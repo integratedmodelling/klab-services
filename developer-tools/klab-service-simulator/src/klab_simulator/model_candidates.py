@@ -5,6 +5,7 @@ mirrors the inspected ModelCandidateRequest.visible predicates, not a native run
 """
 import hashlib
 import json
+from typing import Any
 
 from .state import ContractError
 
@@ -36,7 +37,7 @@ def candidates(state, principal, headers, body):
                 or any(not isinstance(v, str) or not v or len(v) > 256 for v in request[k])
                 for k in ("namespaces", "projects", "scenarios"))):
         raise ContractError(422, "Only bounded protocol1 candidate selectors are supported")
-    result = {"empty": True, "namespaces": [], "results": [], "services": {}, "notifications": []}
+    result: dict[str, Any] = {"empty": True, "namespaces": [], "results": [], "services": {}, "notifications": []}
     fixtures = (
         ("synthetic.public", "synthetic.shared", "PUBLIC", None, False, False),
         ("synthetic.private", "synthetic.alice", "PRIVATE", "alice", False, False),

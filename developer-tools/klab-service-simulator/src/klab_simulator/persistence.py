@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import sys
 
 MAX_BYTES = 4 * 1024 * 1024
 APPLICATION_ID = 0x4B53494D
@@ -133,7 +134,7 @@ class Store:
             if not lock_path.stat().st_size:
                 self.lock.write(b"0"); self.lock.flush()
             self.lock.seek(0)
-            if os.name == "nt":
+            if sys.platform == "win32":
                 import msvcrt
                 msvcrt.locking(self.lock.fileno(), msvcrt.LK_NBLCK, 1)
             else:
@@ -172,6 +173,8 @@ class Store:
             raise
 
     def save(self, state):
+        if self.connection is None:
+            raise ValueError("Owned simulator store is closed")
         saved = snapshot(state)
         # Active publication capabilities are deliberately not durable bearer tokens.
         for task in saved["worker_tasks"].values():

@@ -7,10 +7,11 @@ import math
 import re
 from threading import Event, Lock
 import time
+from typing import cast
 
 from ._inspection import bounds, html_summary
 from .api.runtime import ObservationImpl
-from .client import Client
+from .client import Client, Context, Session
 from .connection import Connection
 from .errors import (AuthenticationError, AuthorizationError, ConfigurationError, InvalidRequestError,
     JobCancelledError, JobFailedError, JobUnavailableError, KlabError, ProtocolError,
@@ -56,7 +57,7 @@ class ExperimentOutcome:
     state: str = "queued"
     stage: str = "setup"
     session_id: str | None = None
-    context_handle: object = None
+    context_handle: Handle | None = None
     job_handles: tuple = ()
     result_handles: tuple = ()
     cancellation_requested: bool = False
@@ -100,7 +101,7 @@ class ExperimentBatch:
 
     @property
     def counts(self):
-        counts = {}
+        counts: dict[str, int] = {}
         for outcome in self.outcomes:
             counts[outcome.state] = counts.get(outcome.state, 0) + 1
         return counts
@@ -223,7 +224,8 @@ class ExperimentRunner:
         self.factory, self.processor, self._clock = connection_factory, processor, _clock
         self._lock, self._stop = Lock(), Event()
         self._closed = self._running = False
-        self._outcomes, self._claimed = (), []
+        self._outcomes: tuple[ExperimentOutcome, ...] = ()
+        self._claimed = []
         self._started = None
 
     @property
@@ -381,7 +383,7 @@ class ExperimentRunner:
                 self._update(index, remote_release="requested")
                 for owned in (context, session):
                     try:
-                        if not owned.release():
+                        if not cast(Context | Session, owned).release():
                             errors.append("RemoteReleaseUnconfirmed")
                     except Exception as error:
                         errors.append(type(error).__name__)

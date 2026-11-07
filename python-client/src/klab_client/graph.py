@@ -1,6 +1,7 @@
 """Bounded typed pages of recorded context graph links, never snapshot lineage."""
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any
 
 from .api.runtime import ObservationImpl
 from .client import Client, Context, scope_token
@@ -107,10 +108,10 @@ class GraphBrowser:
 
     def _link_query(self, current, direction, relationships, offset):
         directions = ("source", "target") if direction == "both" else (("source",) if direction == "outgoing" else ("target",))
-        children = [{"type": "QUERY", "resultType": "LINK", side: {"type": current.kind.upper(), "id": current.id},
+        children: list[dict[str, Any]] = [{"type": "QUERY", "resultType": "LINK", side: {"type": current.kind.upper(), "id": current.id},
                      "relationship": rel, "depth": 1, "minimumDepth": 1}
                     for side in directions for rel in relationships]
-        query = children[0] if len(children) == 1 else {"type": "OR", "resultType": "LINK", "children": children}
+        query: dict[str, Any] = children[0] if len(children) == 1 else {"type": "OR", "resultType": "LINK", "children": children}
         query.update(limit=self.max_links + 1, offset=offset)
         return query
 

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
+from typing import Any, cast
 import tempfile
 from urllib.parse import unquote, urlsplit
 
@@ -77,7 +78,7 @@ def _selection(token, root):
     _text(token)
     _text(root)
     try:
-        validated = scope_token(token)
+        validated = cast(str, scope_token(token))  # _text above rejects non-text/user-only scopes.
     except InvalidRequestError:
         raise HandleFormatError("Invalid saved scope grammar") from None
     base, marker, observer = validated.partition("#")
@@ -281,7 +282,7 @@ def to_handle(source):
         raise HandleIdentityError(str(error)) from None
     runtime_id = _runtime_identity(client)
     reference = Handle(kind=kind, runtime_id=runtime_id, runtime_url=runtime_url,
-        context_id=context.id, scope=scope_token(context), **extra)
+        context_id=context.id, scope=cast(str, scope_token(context)), **extra)
     _no_credentials(reference, client)
     return reference
 
@@ -383,14 +384,14 @@ def restore_handle(client, reference, *, allow_relocation=False):
     if runtime_url != reference.runtime_url and not allow_relocation:
         raise HandleIdentityError("Configured Runtime origin/base path differs from the saved reference")
     if reference.kind == "job":
-        service_url = _url(client.transport.endpoint(reference.service).url)
+        service_url = _url(client.transport.endpoint(cast(str, reference.service)).url)
         if service_url != reference.service_url and not allow_relocation:
             raise HandleIdentityError("Configured job-service origin/base path differs from the saved reference")
     runtime_id = client.runtime.capabilities().service_id
     if runtime_id != reference.runtime_id or client.runtime_service_id not in (None, runtime_id):
         raise HandleIdentityError("Authenticated/configured home Runtime identity differs from the saved reference")
     if reference.kind == "job" and reference.service != "runtime":
-        if getattr(client, reference.service).capabilities().service_id != reference.service_id:
+        if getattr(client, cast(str, reference.service)).capabilities().service_id != reference.service_id:
             raise HandleIdentityError("Executing peer identity differs from the saved reference")
     client.runtime_service_id = runtime_id
     root = client.attach_context(reference.context_id)
@@ -425,7 +426,8 @@ def restore_handle(client, reference, *, allow_relocation=False):
     if reference.result_kind == "provider-data":
         from .provider_data import ProviderDataJob
         job_type = ProviderDataJob
-    job = job_type(client, reference.job_id, context, service=reference.service, decoder=decoder, result_kind=reference.result_kind)
+    # Frozen Handle validation requires these fields for the remaining Job kind.
+    job: Job[Any] = job_type(client, cast(int, reference.job_id), context, service=reference.service, decoder=decoder, result_kind=reference.result_kind)
     if job.status().status == "EMPTY":
         raise JobUnavailableError(job.id, "Saved job is unavailable or expired; no work was recreated")
     return job

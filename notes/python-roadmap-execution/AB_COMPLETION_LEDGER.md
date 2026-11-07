@@ -1,5 +1,37 @@
 # A+B completion ledger — ongoing campaign
 
+## Whole-tree type correction pass — verification in progress
+
+Source SDK sweep5264PASS/6FAIL retained: one new callback test asserted nonexistent
+private `_result`; corrected to public cancellation state. Three reliability preflights
+correctly require noneditable installedSDK; two notebook conversions lacked JUPYTER_PATH.
+No import guard relaxed. Corrected focused broker/notification/async/import suite243PASS.
+Fresh installed build/fullsuite with exact imports and Jupyter path is the next gate;
+the source sweep is explicitly not recorded as an all-green result. Reference source
+suite remains running. Two-platform whole-tree CI added; no delivery/acceptance yet.
+
+Owned secondary branch `feat/python-whole-tree-type-contracts` now includes primary
+checkpoint57c9b3dd7 and verified309–311 merge history; changes remain uncommitted/noPR.
+Whole-tree mypy pass6 reports no issues in114sourcefiles, without type ignores;
+Linux-target static sweep also passes114. Earlier144→105→79→44→12→1 diagnostics
+remain retained, not overwritten. Public inventory check preserves all506classifications
+(51abstract/429implemented/24guarded/2unconditionallyunsupported).
+
+Corrections describe heterogeneous validated wire data and optional local resources,
+separate reused callable bindings, parameterize Job result typing for native async
+coroutines, and retain native async release dispatch. New negative controls cover
+missing broker connection/channel, notification iterator/channel, missing import
+binding and unsupported sync callback on async waits. Existing new controls cover
+anonymous async credentials, user-only Context token and closed Store preservation.
+First focused run242PASS/1test-setupFAIL (missing required Job scope); corrected test
+now supplies explicitNone scope. Full SDK and simulator source suites run separately;
+results pending, not installed acceptance. No production simulator/instrumentation added.
+
+Fresh artifacts, installed full suites/coverage and current-byte traces remain owed.
+Existing60reviewedmaps446missing are historical until fresh installed reconciliation.
+Native science/rights/deployment/OSsecurity and release approval remain external gates;
+no IDE readiness dependency, repair, fallback or final42-row acceptance inferred.
+
 311MERGEDb342a674a at2026-11-07T23:02:11Z/exact8867bb4af/all23checksPASS,
 remote/localcheckpointverified.310merged3df3ee48d/all40PASS.42originalIDs/history
 3runnable/zero dispositions; all hostedwatchersfinished. Fresh premergepackage run

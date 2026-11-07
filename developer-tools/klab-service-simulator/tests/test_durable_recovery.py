@@ -15,6 +15,17 @@ from test_vertical import client_args, control, geometry
 from test_worker_vertical import clients, field
 
 
+def test_closed_owned_store_refuses_save_without_reopening_or_resetting(tmp_path):
+    state = State()
+    path = tmp_path / 'closed.klab-sim.sqlite'
+    store = Store(path, state)
+    store.close()
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match='store is closed'):
+        store.save(state)
+    assert path.read_bytes() == before
+
+
 def test_owned_process_restart_restores_sdk_results_and_fences_uncertain_worker_output(tmp_path):
     path = tmp_path / "owned.klab-sim.sqlite"
     script = tmp_path / "double.py"

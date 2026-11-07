@@ -9,7 +9,15 @@ from klab_client.api.modeler import ModelerImpl
 from klab_client.api.runtime import ObservationImpl
 from klab_client.api.scopes import UserScopeImpl, SessionScopeImpl, ContextScopeImpl
 from klab_client.errors import SubmissionOutcomeUnknown
+from klab_client.errors import InvalidRequestError
+from klab_client import Context
 from test_client import make_client
+
+
+def test_user_only_token_cannot_become_a_context_selection():
+    with make_client(lambda request: pytest.fail('Invalid local scope must not send HTTP')) as client:
+        with pytest.raises(InvalidRequestError):
+            Context(client, {'id': 'session.context'}, token=UserScopeImpl('alice'))
 
 
 def test_declared_concept_observable_and_observation_accessors_preserve_exact_values():

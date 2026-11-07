@@ -8,7 +8,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from itertools import islice
-from typing import Any
+from typing import Any, Generic, TypeVar, cast
 
 from .api.runtime import ObservationImpl
 from .api.knowledge import ObservableImpl
@@ -75,7 +75,7 @@ class ScientificDataOrigin:
         if not isinstance(self.runtime_url, str) or not isinstance(self.scope, str):
             raise InvalidRequestError("Scientific origin URL and scope must be explicit text")
         Endpoint(self.runtime_url)
-        token = scope_token(self.scope)
+        token = cast(str, scope_token(self.scope))  # Validated string input cannot produce a user-only token.
         if (not isinstance(self.context_id, str)
                 or len(self.context_id.split(".")) != 2
                 or ".".join(token.split("#")[0].split(".")[:2]) != self.context_id):
@@ -120,7 +120,10 @@ class ScientificData:
         return loads(text, max_bytes=max_bytes)
 
 
-class Job:
+_JobResult = TypeVar("_JobResult", covariant=True)
+
+
+class Job(Generic[_JobResult]):
     def __init__(self, client, id: int, scope, *, service="runtime", decoder=None, result_kind=None):
         if type(id) is not int or id <= 0:
             raise ProtocolError("Submission must return a positive integer job ID")
@@ -195,7 +198,7 @@ class Job:
             scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
             timeout=timeout, deadline=deadline)
 
-    def result(self, timeout: float | None = None, *, _cancelled=None) -> ObservationImpl | dict[str, Any]:
+    def result(self, timeout: float | None = None, *, _cancelled=None) -> _JobResult:
         """Await and retrieve actual result; timeout preserves this resumable handle."""
         self._check_binding()
         if timeout is not None and (not math.isfinite(timeout) or timeout < 0):
@@ -278,7 +281,7 @@ class Context(ContextScopeImpl):
         if len(id.split(".")) != 2 or "#" in id or not _scope_grammar(id):
             raise ProtocolError("Configuration ID must be session.context")
         selected = scope_token(id if token is None else token)
-        if ".".join(selected.split("#")[0].split(".")[:2]) != id:
+        if selected is None or ".".join(selected.split("#")[0].split(".")[:2]) != id:
             raise InvalidRequestError("Selected scope root differs from the context configuration")
         super().__init__(user_id=client.agent_name or "", session_id=id.split(".")[0], context_id=selected)
         self.client, self.configuration, self.owned = client, configuration, owned
@@ -296,7 +299,7 @@ class Context(ContextScopeImpl):
             if bound.id != self.id:
                 raise InvalidRequestError("Focused observation belongs to another runtime or context")
             self.client._validate_context_binding(bound, configuration=self.configuration)
-        base, marker, observer = scope_token(self).partition("#")
+        base, marker, observer = cast(str, scope_token(self)).partition("#")
         token = base + f".{id}" + (marker + observer if marker else "")
         return Context(self.client, self.configuration, owned=self.owned, token=token)
 
@@ -397,7 +400,7 @@ class Context(ContextScopeImpl):
 
     def _read_origin(self):
         origin = ScientificDataOrigin(self.client.transport.endpoint("runtime").url,
-            self.id, scope_token(self), self.client._known_runtime_identity(self.configuration))
+            self.id, cast(str, scope_token(self)), self.client._known_runtime_identity(self.configuration))
         if any(self.client.transport.redact(value) != value for value in
                (origin.runtime_url, origin.context_id, origin.scope, origin.runtime_id) if value is not None):
             raise ProtocolError("Scientific read origin must not contain configured credential material")
@@ -429,7 +432,7 @@ class Client:
                                    verify=verify, http_transport=http_transport)
         self.agent_name, self.runtime_service_id = agent_name, runtime_service_id
         self.service_ids = tuple(service_ids)
-        self._service_id_cache = {}
+        self._service_id_cache: dict[str, str] = {}
         self.runtime, self.reasoner = RuntimeServiceImpl(self), ReasonerImpl(self)
         self.resources, self.resolver = ResourcesServiceImpl(self), ResolverImpl(self)
 
@@ -455,7 +458,7 @@ class Client:
                    timeout=timeout, poll_interval=poll_interval,
                    verify=os.environ.get("KLAB_CA_BUNDLE") or True)
 
-    def _scope_request(self, configuration):
+    def _scope_request(self: Any, configuration):
         return {"configuration": configuration_to_wire(configuration), "serviceIds": list(self.service_ids)}
 
     def initialize_user_scope(self, *, email_address: str | None = None, local_federation: bool = False) -> tuple[dict[str, Any], ...]:
@@ -493,7 +496,7 @@ class Client:
             raise ProtocolError("createSession returned an invalid session ID")
         return Session(self, id)
 
-    def _context(self, payload, *, owned=False):
+    def _context(self: Any, payload, *, owned=False):
         payload = object_payload(payload, "context configuration")
         check_notifications(payload, self.transport.redact)
         if payload.get("empty"):
@@ -536,7 +539,7 @@ class Client:
                     decoder=decoder or (lambda p: observation_from_wire(p, context)),
                     result_kind="observation" if decoder is None else result_kind)
 
-    def _submission(self, observation, scope, constraints, service):
+    def _submission(self: Any, observation, scope, constraints, service):
         if service == "runtime" and not self.agent_name:
             raise ConfigurationError("Set agent_name/KLAB_AGENT_NAME to the authorized user's existing provenance agent name")
         token = scope_token(scope)
