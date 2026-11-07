@@ -33,6 +33,7 @@ SCENARIOS += ("dependency-inspection",)
 SCENARIOS += ("dependency-graphs",)
 SCENARIOS += ("annotated-input",)
 SCENARIOS += ("commit-inspection",)
+SCENARIOS += ("graph-convergence",)
 
 
 class ContractError(Exception):
@@ -96,6 +97,8 @@ class State:
         self.dependency_graphs = DependencyGraphs(self) if scenario in ("dependency-graphs", "annotated-input") else None
         from .commits import CommitReports
         self.commit_reports = CommitReports(self) if scenario == "commit-inspection" else None
+        from .graph_commits import GraphCommits
+        self.graph_commits = GraphCommits(self) if scenario == "graph-convergence" else None
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -138,7 +141,8 @@ class State:
                 **({"source_documents":len(self.accepted_sources.rows),"source_publications":len(self.accepted_sources.publications)}
                     if self.accepted_sources is not None else {}),
                 **({"dependency_snapshots":len(self.dependency_graphs.snapshots)} if self.dependency_graphs is not None else {}),
-                **({"commit_reports":len(self.commit_reports.rows)} if self.commit_reports is not None else {})}
+                **({"commit_reports":len(self.commit_reports.rows)} if self.commit_reports is not None else {}),
+                **({"graph_reference_roots":len(self.graph_commits.rows)} if self.graph_commits is not None else {})}
 
     def _owner(self, mapping, key, principal):
         if key not in mapping:
@@ -291,6 +295,7 @@ class State:
                     self.accepted_sources.rows.clear(); self.accepted_sources.publications.clear()
                 if self.dependency_graphs is not None:self.dependency_graphs.snapshots.clear()
                 if self.commit_reports is not None:self.commit_reports.rows.clear()
+                if self.graph_commits is not None:self.graph_commits.rows.clear()
                 self.authoring.reset()
                 from .workers import WorkerState
                 self.workers = WorkerState(self)
@@ -322,6 +327,10 @@ class State:
             if method == "POST" and path == "/__sim__/expireCommits" and self.commit_reports is not None:
                 self.commit_reports.rows.clear()
                 return True, "application/json"
+            if method == "POST" and self.graph_commits is not None and path in (
+                    "/__sim__/graphReferenceRename", "/__sim__/graphReferenceDrop", "/__sim__/graphReferenceEpoch"):
+                action={"/__sim__/graphReferenceRename":"rename", "/__sim__/graphReferenceDrop":"drop", "/__sim__/graphReferenceEpoch":"epoch"}[path]
+                return self.graph_commits.admin(action,body)
             if method == "POST" and self.dependency_graphs is not None and path in (
                     "/__sim__/advanceDependencyGraph", "/__sim__/dependencyGraphCycle", "/__sim__/dependencyGraphGap", "/__sim__/dependencyGraphComplete"):
                 self.dependency_graphs.revision += 1
@@ -348,6 +357,7 @@ class State:
                     **(validation_capabilities(self) if self.scenario == "source-validation" and service == "reasoner" else {}),
                     **({"acceptedDocumentProtocol":"klab.experimental.accepted-documents/1"} if self.accepted_sources is not None and service == "resources" else {}),
                     **({"dependencyGraphProtocol":"klab.experimental.dependency-graphs/1"} if self.dependency_graphs is not None and service == "resources" else {}),
+                    **({"graphCommitProtocol":"klab.experimental.graph-commits/1"} if self.graph_commits is not None and service == "runtime" else {}),
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                      "importSchemata": schemas() if service == "resources" else {},
                      **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
@@ -392,6 +402,19 @@ class State:
                 raise ContractError(422, "Invalid reference checkpoint JSON") from None
             return self.revision_snapshots.request(method, route + ("?" + urlsplit(original_path).query if urlsplit(original_path).query else ""),
                 scope, principal, headers, data)
+        if service == "runtime" and route.startswith("/experimental/graph-commits/v1/") and self.graph_commits is not None:
+            if len(body)>4096:raise ContractError(413,"Finite graph checkpoint request budget exceeded")
+            try:
+                def graph_fields(items):
+                    result={}
+                    for key,value in items:
+                        if key in result:raise ValueError("Duplicate graph checkpoint field")
+                        result[key]=value
+                    return result
+                data=json.loads(body,object_pairs_hook=graph_fields) if body and headers.get("Content-Type","").startswith("application/json") else None
+            except (ValueError,UnicodeError,RecursionError):
+                raise ContractError(422,"Invalid finite graph checkpoint JSON") from None
+            return self.graph_commits.request(method,route+("?"+urlsplit(original_path).query if urlsplit(original_path).query else ""),principal,scope,headers,data)
         if service == "resources" and route == "/contextualize" and method == "POST":
             from .provider_avro import submit
             return submit(self, principal, scope, headers, body)
@@ -587,6 +610,7 @@ class State:
                 if self.accepted_sources is not None: self.accepted_sources.release(root)
                 if self.dependency_graphs is not None:self.dependency_graphs.release(root)
                 if self.commit_reports is not None:self.commit_reports.release(root)
+                if self.graph_commits is not None:self.graph_commits.release(root)
                 del self.contexts[root]
                 self.query_faults.pop(root, None)
                 self.jobs = {key: row for key, row in self.jobs.items() if row["scope"] != root}

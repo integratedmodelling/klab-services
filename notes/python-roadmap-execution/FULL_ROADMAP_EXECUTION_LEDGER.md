@@ -1,5 +1,32 @@
 # Full Python A+B+C roadmap execution ledger
 
+## PR298 merge checkpoint / full finite convergence implementation
+
+PR299candidate final4995installedSDK/439sim/72worker/reference-39governancePASS,
+66SDK33sim5worker rawparity/no simulatorinproduction;17linkedPASS(1063SDK316sim72worker)
+vs17nativeNOT_RUN. Fullinstallednewmodule+changedcode100%,11focusedgates+actualordered
+selectionPASS. No simulatorservices remain. Finalreceipt/exactheadCI/ordinarymerge
+pending; nextexplanation privateprototype only. No originalrow/native acceptance promotion.
+
+11installedfocusedCIgates PASS; actualorderedselection693/214/92/6/21 thenunchanged
+100%gatePASS. Fixture31cases100%. Finalartifact/matrix running/no convergencePRyet.
+
+Source92SDK100%newmodule/changedcode,3publictwo-clientHTTP/31fixture100%,types-lint/
+49governancequeueorderingPASS. Canonicaldigest/pinnedhistory/CASack/refusal/cancellation/
+localclear/hint/slowforked/old-epoch guards tested. FirstexpandedmockUnicodefailure
+and initialtypeannotations retained; no exclusions/timeoutrelaxation. Freshcomplete-
+graph-convergence-first verifier running/no convergencePR. Nativecache/partialpages/
+oldIDcheckpoints retain distinct meanings; finite reference notnative scientifichistory.
+
+Verified remote merge1c0b94327a312520794b234e5145f2a8e625af54 at18:33:41Z,
+exactc3cb53d994151b22ff65da7c86f24226295cfa01/all30checksPASS; local ancestry
+checkpoint verified. Native cached read delivered, not contiguous/full graph authority.
+42originalrows/history/29runnable/zero dispositions; RC-P3.1/CAP-10/CAP-11 active.
+Separate graph-convergence source and independent fixture implemented, uncommitted;
+7initialSDK probesPASS, two bodymypy annotation issues corrected/rerun pending.
+Public two-client sync/async/hostile/race/coverage/installed/PR acceptance outstanding.
+No running prior verifier/matrix/watcher; no native mutation or IDE gate required.
+
 ## Annotated-input reference delivered; commit/convergence continues
 
 Finalnativecacheprimitive installed4903SDK/405sim/72worker/reference-39governance

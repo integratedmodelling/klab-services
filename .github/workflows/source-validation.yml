@@ -27,6 +27,8 @@ jobs:
       - name: Entire new module and changed SDK decisions unexcluded
         run: python -m pytest -q python-client/tests/unit/test_commits.py python-client/tests/unit/test_input_provenance.py python-client/tests/unit/test_dependency_graphs.py python-client/tests/unit/test_dependencies.py --cov=klab_client --cov-branch --cov-append --cov-report=json:source-validation-sdk.json
       - name: Enforce unchanged namespace validation coverage gate
+        run: python -m pytest -q python-client/tests/unit/test_reference_commits.py --cov=klab_client --cov-branch --cov-append --cov-report=json:source-validation-sdk.json
+      - name: Check unchanged namespace validation gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
         run: python python-client/tools/check_feature_coverage.py source-validation-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/source_validation.py

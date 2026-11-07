@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 376,
+    "IMPLEMENTED_SOURCE_ONLY": 389,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -2757,6 +2757,97 @@
       "path": "read_plans.py",
       "owner": null,
       "operation": "async_release_read_plan",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "ReferenceCommits",
+      "operation": "snapshot",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "ReferenceCommits",
+      "operation": "checkpoint",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "ReferenceCommits",
+      "operation": "reconcile",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "AsyncReferenceCommits",
+      "operation": "snapshot",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "AsyncReferenceCommits",
+      "operation": "checkpoint",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "AsyncReferenceCommits",
+      "operation": "reconcile",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "_Projection",
+      "operation": "view",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "_Projection",
+      "operation": "hint",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "_Projection",
+      "operation": "clear",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "ReferenceGraphProjection",
+      "operation": "resync",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "ReferenceGraphProjection",
+      "operation": "refresh",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "AsyncReferenceGraphProjection",
+      "operation": "resync",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_commits.py",
+      "owner": "AsyncReferenceGraphProjection",
+      "operation": "refresh",
       "async": true,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
