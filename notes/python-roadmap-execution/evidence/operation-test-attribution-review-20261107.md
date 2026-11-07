@@ -1,5 +1,12 @@
 # RC-P0 operation-to-test attribution development evidence
 
+Initial hosted installed-operation-presence run42418781221/job128542504869 failed
+13vectorcontrols/5230passed because the new workflow omitted the vector extra.
+Failure log retained in approvedtemp. Added the actual optional extra and explicit
+geopandas/pandas/shapely preflight, not skips/exclusions/product or timeout changes.
+Local full source-pinned5243unit/536simulator evidence remains distinct from required
+new exacthead hosted verification; no inference that the failed hosted run passed.
+
 DraftPR3066b27f5792. Final source-pinned runs5243installedunit/536simulatorPASS,
 455nonabstractobserved51abstractuncalled/506classifications preserved/no truncation.
 22reviewedassertionmappedoperations;484missingreviewedmapping including abstract

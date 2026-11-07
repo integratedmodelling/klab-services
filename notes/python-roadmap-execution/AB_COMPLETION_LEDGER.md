@@ -1,5 +1,11 @@
 # A+B completion ledger — ongoing campaign
 
+PR306 hosted installed-operation-presence failed13vectorcontrols/5230passed at
+run42418781221/job128542504869: workflow omitted vector dependency extra. Failure
+retained; add vector extra and explicit imports, no test skipping or gate waiver.
+Fresh exacthead hosted verification remains owed. Independent onboarding matrix
+190SDK/1localHTTP/18simHTTP passes, not native issuer/license/deployment approval.
+
 ## PR305 verified merged; RC-P0 attribution active
 
 DraftPR3066b27f5792 published. Fresh source-pinned installed5243unit/536simulator
