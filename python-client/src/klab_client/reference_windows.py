@@ -190,6 +190,11 @@ class _Windows(_SharedAccess):
         if (not isinstance(value,dict) or set(value)!={'protocol','kind','state','window','plan'} or value['protocol']!=PROTOCOL
                 or value['kind']!=KIND or value['state']!=state.to_wire() or value['window']!=body['window']):
             raise ProtocolError('Selected grant did not confirm exact request-time source/window/state pins')
+        # Python equality alone treats True==1 and False==0. Revalidate wire
+        # identities and exact integer offsets before accepting the association.
+        self._state(value['state'],source.observation_id)
+        if any(type(offset) is not int for offset in value['window'].values()):
+            raise ProtocolError('Selected grant window offsets must be exact integers, not booleans')
         plan=_plan(value['plan'],self.context,source,body['shardCells'],body['maxCells'])
         r0,r1,c0,c1=(body['window'][key] for key in ('rowStart','rowStop','columnStart','columnStop'))
         sx,_,west,_,sy,north=state.transform

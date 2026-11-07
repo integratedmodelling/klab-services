@@ -120,6 +120,15 @@ def test_request_time_credential_drift_is_not_success_or_replay(native_async):
     with pytest.raises(SubmissionOutcomeUnknown):invoke(native_async=native_async,drift_stage='open')
 
 
+@pytest.mark.parametrize('native_async',[False,True])
+@pytest.mark.parametrize('defect',['state-observation','window-offset'])
+def test_boolean_wire_ack_cannot_alias_integer_source_or_window(native_async,defect):
+    def alter(value):
+        if defect=='state-observation':value['state']['observationId']=True
+        else:value['window']['rowStart']=False
+    with pytest.raises(SubmissionOutcomeUnknown):invoke(native_async=native_async,change=alter,operation='open')
+
+
 def test_local_fences_catalog_and_manual_dtos_fail_before_network():
     from types import SimpleNamespace
     from klab_client import Endpoint

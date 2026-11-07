@@ -2,6 +2,18 @@
 
 ## PR303 verified merged; selected finite reference windows active
 
+PR304premerge review found Boolean ACK aliasing integers via dict equality. Two
+independent first-installed-artifact probes FAILED/DID_NOT_RAISE (retainedXML), so
+green first48controls/14CI/17linked do not clear delivery. Exact incoming state/offset
+type revalidation now52SDK+analysisPASS/newmodule+changedSDK100%/bodymypyPASS;
+fresh selected-reference-windows-strict-ack verifier running. Firstartifacts/evidence
+retained, PR304 stilldraft; new exactheadCI/fullinstalled matrix owed.
+
+DraftPR304 now published925bafb27. Sourcefrozen;48SDK+analysis100%/18fixture100%/
+2publicHTTP/types/lint PASS. Actual ordered installed693/214/92/115/40/48/6/21/9queue
+then unchanged100%gate PASS. Freshfullartifactverifier/14olderfocusedCI/17linkedmatrix/
+hostedCIwatcher running; no finalinstalled/parity/exactheadCI/merge acceptance yet.
+
 Latest selected-window source48SDK+analysis controls PASS/100%entiremodule+changedSDK,
 18independentfixture100%,2publicHTTP/types/lint PASS. Added request-time credential
 drift, open/read cancellation with established-grant-only cleanup, actual fixture

@@ -50,3 +50,21 @@ exactheadCI/ordinary merge remain. Native state/window/provider contracts stay
 JAVA-GAP-0006/0014; no native time history, scientific execution or durable grant
 acceptance inferred. No live Modeler gate needed or repaired; no public release,
 develop promotion, issue closure or final original-row acceptance authorized.
+
+DraftPR304 published925bafb27. Raw source/wheel/sdist/installed parity independently
+verified70SDK/36sim/6worker, no simulator in production. Dedicated installed48SDK+
+analysis/100%newmodule+changedSDK PASS. Actual ordered installed693/214/92/115/40/
+48/6/21/9queue then unchanged100%gatePASS. Fullverifier/14olderfocusedCI/17linkedmatrix/
+hostedwatcher remain running; parity alone not full installed suite acceptance.
+Next categorical dictionary/time-label private design probes6PASS, not public API
+acceptance; production remains frozen for304 custody.
+
+Premerge hostile wire review found that dict equality admitted Boolean observationId
+and window offset because True==1/False==0. Two independent installed first-artifact
+probes failed DID_NOT_RAISE; retained `retained-boolean-ack-probe.xml` in first artifact
+directory. First48controls/14focusedCI/ordered/17linkedPASS do not clear that defect.
+Revalidate incoming state through exact typed decoder and require integer window
+offsets before grant acceptance. Four sync/nativeasync controls added:52SDK+analysis
+PASS/entirenewmodule+changedSDK100%unexcluded/bodymypyPASS. Fresh uniquely named
+selected-reference-windows-strict-ack fullartifact verifier running; no first-artifact
+evidence rewritten or reused as final fixed-source acceptance. PR304 remains draft.
