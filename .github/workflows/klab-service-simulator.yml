@@ -24,7 +24,7 @@ jobs:
       - name: Require actual owned-kernel dependencies rather than skip acceptance
         run: python -c "import nbformat, nbclient, ipykernel, psutil"
       - name: Native awaited client notebook over existing isolated HTTP routes
-        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_notebook_client.py --junitxml=notebook-client-results.xml
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_notebook_client.py developer-tools/klab-service-simulator/tests/test_notebook_principal_races.py --junitxml=notebook-client-results.xml
       - name: Retain labeled notebook client results
         if: always()
         uses: actions/upload-artifact@v4

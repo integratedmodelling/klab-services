@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-NOTEBOOK-PRINCIPAL-RACE-001",
+      "rows": ["RC-P1.3", "RC-P3.5", "RC-P4.4", "CAP-14", "CAP-15"],
+      "routes": ["/runtime/experimental/drafts/v1/{name}", "/runtime/api/v1/query"],
+      "source": "SIMULATED_PROVISIONAL installed asynchronous SDK in exact owned notebook kernel; two independent same-principal clients race explicit private-draft CAS, foreign principal read/write/query denied, reader close preserves owner state and exact draft history. Not native sharing, accepted-source validation/publication or deployed issuer approval.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN;0009CONTRACT_PROVISIONAL/0015NOT_TESTED unchanged",
+      "simulator_test": "test_notebook_principal_races.py::test_owned_kernel_separate_clients_cas_race_foreign_denial_and_reader_close",
+      "java_gap_ids": ["JAVA-GAP-0009", "JAVA-GAP-0015"]
+    },
+    {
       "id": "SIM-BOOTSTRAP-RECOVERY-001",
       "rows": ["RC-P1.1", "RC-P1.4", "CAP-01", "CAP-02", "CAP-03"],
       "routes": ["/runtime/public/capabilities", "/runtime/public/status", "/runtime/api/v1/submit"],
