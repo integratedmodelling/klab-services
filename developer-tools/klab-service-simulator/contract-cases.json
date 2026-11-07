@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-READ-PLAN-001",
+      "rows": ["RC-P2.1", "RC-P2.2", "CAP-09"],
+      "routes": ["/runtime/experimental/read-plans/v1/open", "/runtime/experimental/read-plans/v1/{plan}/shards/{index}", "/runtime/experimental/read-plans/v1/{plan}"],
+      "source": "Explicit proposed klab.experimental.read-plans/1, not native Point READ_VALUE. Copied numerical fixture snapshot and content SHA256 NOT native committed revision; process-local owner/root/Runtime grants disappear across restart.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; maintained native block/layout/revision lease UNKNOWN_PENDING_REFERENCE",
+      "simulator_test": "test_read_plans.py::test_owned_multishard_snapshot_preserves400cells_zero_negative_mask_and_release",
+      "java_gap_ids": ["JAVA-GAP-0006", "JAVA-GAP-0014"]
+    },
+    {
       "id": "SIM-CATEGORY-CODES-001",
       "rows": ["RC-P2.1", "RC-P2.5", "CAP-09", "CAP-15"],
       "routes": ["/runtime/export/OBSERVATION/{urn}"],

@@ -66,6 +66,19 @@ Categorical local acceptance nowfreshinstalled4093SDK/153simulator/39reference/
 unexcluded, all changedSDKdecisions covered. Scientific73unit/9HTTP and17linked
 casesPASS vs17realNOT_RUN. Native classification/dictionary/block/revision mappings
 remain unestablished; normal feature delivery pending, no fullparent acceptance.
+CategoricalPR275 subsequently verified mergedc1ab4dd66 with applicable final-head
+checksPASS and no failed-check rerun. Next explicit read-plan reference under0006/
+0014 locally passes4157SDK/175simulator/61reference/57worker/21workerHTTP+recovery/
+33governance installed tests, zero skips. Newmodule180lines/62branches100%unexcluded
+in SDK-only coverage; copied snapshot shards, complete digest assembly, current
+owner/root/Runtime/epoch denial and failed-save grant/reset rollback verified.
+Grants disappear on restart and new plans require explicit caller action. Hashes
+are REFERENCE_CONTENT_SHA256_NOT_NATIVE_COMMIT, not native committed revisions or
+scientific acceptance. Linked-case attestation and normalPR/finalCI remain pending;
+native block/layout/revision lease contract stillUNKNOWN_PENDING_REFERENCE.
+Read-plan final SDK-only changed-code/newmodule gate and17linkedcases nowPASS
+(269SDK/104simulator/57worker) versus17realNOT_RUN/exit3. Local bounded reference
+acceptance complete; normalPR/finalheadCI/permittedmerge pending, not native parity.
 The42original definitions and dated statuses below remain historical evidence;
 current per-row work and delivery are in
 [FULL_ROADMAP_EXECUTION_LEDGER.md](../notes/python-roadmap-execution/FULL_ROADMAP_EXECUTION_LEDGER.md),

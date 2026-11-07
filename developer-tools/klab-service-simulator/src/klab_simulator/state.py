@@ -67,6 +67,8 @@ class State:
         self.notifications = Notifications(self)
         from .drafts import Drafts
         self.drafts = Drafts(self)
+        from .read_plans import ReadPlans
+        self.read_plans = ReadPlans(self)
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -167,6 +169,7 @@ class State:
             if self.store is not None:
                 from .persistence import snapshot
                 before = snapshot(self)
+                before_read_plans = (self.read_plans.epoch, deepcopy(self.read_plans.rows))
             try:
                 result, content_type = self._request(method, path, headers, body)
             except ContractError as error:
@@ -174,12 +177,14 @@ class State:
             if status == 200:
                 self.notifications.changed_jobs(before_jobs)
                 self.drafts.rows = {root: rows for root, rows in self.drafts.rows.items() if root in self.contexts}
+                self.read_plans.cleanup()
             if self.store is not None:
                 try:
                     self.store.save(self)
                 except (OSError, ValueError, TypeError, RecursionError, sqlite3.Error):
                     from .persistence import restore
                     restore(self, before, recovery=False)
+                    self.read_plans.epoch, self.read_plans.rows = before_read_plans
                     status, result, content_type = 507, {"error": "Simulator persistence unavailable; operation not acknowledged"}, "application/json"
             self.trace.append({"backend": self.backend, "scenario": self.scenario, "seed": self.seed,
                 "method": method, "path": urlsplit(path).path,
@@ -204,6 +209,7 @@ class State:
                         "workers": len(self.workers.workers), "worker_tasks": len(self.workers.tasks),
                         "notification_streams": len(self.notifications.logs),
                         "draft_contexts": len(self.drafts.rows),
+                        "read_plans": len(self.read_plans.rows),
                         "authoring_assets": len(self.authoring.assets),
                         "project_locks": len(self.authoring.project_locks), "trace": list(self.trace)}, "application/json"
             if method == "POST" and path == "/__sim__/expireJobs":
@@ -244,6 +250,8 @@ class State:
                 self.notifications = Notifications(self)
                 from .drafts import Drafts
                 self.drafts = Drafts(self)
+                from .read_plans import ReadPlans
+                self.read_plans = ReadPlans(self)
                 self.worldview_id = "synthetic"
                 self.next_context = self.next_job = self.next_observation = 1
                 return True, "application/json"
@@ -272,6 +280,9 @@ class State:
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
         scope = headers.get("klab-scope", "")
+        if service == "runtime" and route.startswith("/experimental/read-plans/v1/"):
+            query = urlsplit(original_path).query
+            return self.read_plans.request(method, route + ("?" + query if query else ""), scope, principal, headers, body)
         if service == "runtime" and route.startswith("/experimental/drafts/v1/"):
             if len(body) > 131072:
                 raise ContractError(413, "Private draft request byte budget exceeded")

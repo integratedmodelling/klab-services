@@ -388,6 +388,79 @@ Linked categorical final matrix now17PASS(205SDK/82simulator-capture-reference/
 57worker tests), zero skips/failures/errors; real17NOT_RUN/exit3 unchanged. All
 bounded local verification complete; publish categorical normalPR and await
 applicable final-head checks, then continue independent roadmap implementation.
+PR275 subsequently verified remotely MERGED
+`c1ab4dd669941df8ef5d3d0eedde7204726d4236`,2026-11-07T01:40:54Z, exact head
+19078f5471e7f4078315210aa6fe4e7dd0bd0e8c. All applicable final-head checksPASS,
+including scientific/newmodule gate and Windows+Ubuntu worker controls; no failed
+check rerun was needed for275. No independent maintainer review or native acceptance
+claimed. Next branch `feat/python-scoped-read-plan-reference` fast-forwarded actual
+merge without discarding its uncommitted prototype.
+
+### Active next read-plan/shard reference prototype
+
+Uncommitted `python-client/src/klab_client/read_plans.py`, simulator `read_plans.py`
+and `test_read_plans.py`, plus state.py wiring, implement explicitly proposed
+`klab.experimental.read-plans/1` under existing0006/0014. Synchronous root-owner
+open/bounded shards/explicit release, immutable manifest/cell masks/hashes and full
+assembly guards are implemented. Hash revision is explicitly
+REFERENCE_CONTENT_SHA256_NOT_NATIVE_COMMIT; sourcefixture/origin, float64dtype,
+shape/CRS/north-to-south row-major affine/unit metadata remain declared reference
+semantics, NOT existing native Point route assumptions or committed science.
+Process-local TTL grants intentionally do not persist across restart; fresh epoch
+fences old grants and no automatic replan/replay. Ephemeral rows/epoch participate
+in failed-durable-request rollback without persisting capabilities.
+Source3HTTP/server controlsPASS:400cells/sixshards incl zero/negative/missing,
+wrong-order refusal, foreign owner, release410, restart loss/new explicit plan and
+synthetic buffer pinning/expiry. Initial2HTTP tests failed501because routing strips
+trailing collection slashes; proposal now uses explicit `/open`, no native API
+authority inferred and no automatic retry introduced. Bodytypecheck/fatalLintPASS.
+Still pending: SDK-only positive/negative/newmodule100%coverage, nativeasync parity,
+expanded lease/budget/rollback controls, public exports, same0006/0014 handoff/docs/
+scenario/CI, fresh full installed artifacts,17case runner and normal delivery.
+No current background verifier/watcher remains after275; no live Java service,
+IDE repair or scientific model execution occurred. Entire-roadmap sleep pending.
+
+Read-plan follow-up: first SDK-only run6PASS/47FAIL because test observation
+omitted required observable DTO, not a native contract defect. Corrected fixture
+without simulator imports or weakened decoding; now64SDK-only testsPASS and
+180/180lines+62/62branches100%unexcluded. Real sync/nativeasync MockTransport open/
+read/release, preflight/foreignbinding/budgets/malformedJSON/incomplete or mixed
+assembly and unknown mutation outcomes/no replay tested. Exact boolean release
+confirmation rejects numeric1. Newmodule bodytypecheck/fatalLintPASS.
+Expanded22HTTP/server testsPASS: nativeasync lifecycle,16grant capacity, oversized
+manifest no-allocation, owner/root/Runtime/epoch denial, TTL/cleanup/restart loss,
+failed save open/release/reset restores durable state AND ephemeral rows/epoch,
+intake/byte/cell denials and successful reset epoch rotation. First expanded pass
+4FAIL/4PASS used insufficient synthetic manifest size and invalid manually seeded
+observation counter; corrected fixtures (1600cells/counter2), no production gate
+weakening. Read-plan proposed docs/publicexports/CI and same0006/0014registry,
+scenario/Ferdinando narrative/generated companions now updated together.
+Fresh separate wheel/sdist/installed verifier running in
+`full-roadmap-20261106/read-plans-first`, SDK-only coverage/report process separate
+from simulator HTTP. Final tests were extended during run; use receipt counts as
+observed and rerun late tests against installed artifacts before final attestation.
+No read-plan commit/push/PR yet. Next commands after automatic completion: SDK-only
+changed-code/newmodule gate; installed22HTTP/64SDK controls if receipt predates test
+additions;17linked simulated versus realNOT_RUN matrices; record exact custody and
+publish ordinary featurePR/finalheadCI. Entire42row roadmap remains incomplete;
+sleep remains pending and live Modeler gates are not needed for this Python work.
+Read-plan fresh installed verifier completed4157SDK/61referenceHTTP+storage+
+recovery/175fullsimulator/57worker/21workerHTTP+recovery/33governancePASS, zero
+skips/failures/errors. Observed totals include all64new SDK and22HTTP/server tests,
+so late test additions WERE included.52SDK+17simulator+5worker raw module bytes
+match source/wheel/sdist/installed, rechecked against current source after receipt.
+SDK-only newmodule180/180lines+62/62branches100%unexcluded; fullSDK98.45% retains
+165historical exclusions, not a wholeSDK exclusion-free claim. Exact custody:
+`evidence/full-roadmap-read-plans-20261107.json`. Final SDK changed-code gate and
+17linked simulated matrix started; wait automatic completion before attestation.
+17realNOT_RUN/exit3 verified with no native invocation/fallback. No read-planPR yet;
+normal delivery follows final matrix success; all native status distinctions held.
+Final read-plan SDK-only changed-code/newmodule gatePASS.17linkedcasesPASS using
+269SDK/104simulator-capture-reference/57worker tests, zero skips/failures/errors;
+real17NOT_RUN/exit3unchanged. All bounded local checks now verified. Publish normal
+read-plan featurePR next, merge only after applicable final-head hostedchecksPASS,
+then continue independent managed-agent/provenance/federation scope. Entire42row
+roadmap still incomplete and sleep remains pending; no native repair authorized.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
