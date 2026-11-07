@@ -4,9 +4,9 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-dependency-inspection",
-    "pr": null,
+    "pr": 295,
     "requirement": "RC-P4.1",
-    "ci_review_dependencies": []
+    "ci_review_dependencies": ["PR295 native-shaped membership artifact/CI delivery only; complete source-bound graph/pagination/cycle/access reference remains Python work"]
   },
   "last_verified_checkpoint": {
     "pr": 294,

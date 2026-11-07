@@ -2,6 +2,22 @@
 
 ## PR294 verified merge; native membership slice underway, deeper graph still owed
 
+Final dependency-membership-first installed4722SDK/362simulator/72worker/allreference/
+39governance suitesPASS, zero skips/errors/failures.62SDK/29simulator/5worker raw
+source-wheel-sdist-installedmodule parity rechecked, no simulator in SDK/worker.
+SevenfocusedCIgates and34SDKwholemodule/changedcode100%unexcludedPASS.17linked
+casesPASS(791SDK/239simulator/72worker) vs17nativeREAL_NOT_RUN/expectedexit3.
+Receipt evidence/full-roadmap-dependency-membership-20261107.json records custody/
+developmentfailures; dependenciesborrowed, no freshdependencyisolation. PR295
+finalreceiptcommit/exactheadCI/ordinarymerge pending, source frozen after packages.
+Deepergraphprototype outside shippedpackages has9designprobe controlsPASS, not
+production/installed acceptance; sourcebound graph requirement remains active.
+
+DraftPR295 opened88abe06a3, explicitly partial native-shaped membership slice,
+not full dependencyrequirement completion. Freshartifactverifier/17linkedmatrix still
+running; installedfocusedgatesPASS. Deepergraph plan remains implementationpending,
+originalRC-P4.1/CAP-13active after thisPR. No nativecompatibility/science promotion.
+
 Membership sourcefrozen: fresh dependency-membership-first fullverifier and17linked
 matrix running. Seven installedfocusedCIbatch gatesPASS: existing785provider/
 693selection/571material/195sharing/113validation/63conditional controls plus34new

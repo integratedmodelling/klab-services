@@ -2,6 +2,19 @@
 
 ## Conditional reference verified delivered; dependency requirement remains active
 
+Membership finalinstalled4722SDK/362simulator/72worker/allreference/39governance
+suitesPASS, zero skips/errors/failures;62SDK/29simulator/5worker rawmoduleparity.
+SevenfocusedCIgates/34SDKwholemodule+changedcode100%unexcludedPASS;17linkedcases
+PASS(791SDK/239simulator/72worker) vs17nativeNOT_RUN/expectedexit3. Receipt
+evidence/full-roadmap-dependency-membership-20261107.json retains sourcecustody/
+developmenthistory. PR295finalreceipt/exactheadCI/ordinarymerge pending. Separate
+unshipped graphdraft9designprobesPASS, not publicinstalled/native/fullgraph acceptance;
+RC-P4.1/CAP-13remainactive until deeper graph pagination/cycle/access delivery.
+
+DraftPR29588abe06a3 published as membershipprimitive only. Fullartifactverifier/
+17linkedmatrix running; sourceboundgraph/pagination/cycle/access still Pythonwork.
+Requirement staysactive; never infer native completeness from group-array order.
+
 Membership sourcefrozen/fullartifactverifier+17linkedmatrix running. Seven installed
 focusedCIgatesPASS, olderbatches785/693/571/195/113/63 plus34membershipcontrols
 each via coverageappend; dedicated34membershipcontrols and1fixturecase100%PASS.
