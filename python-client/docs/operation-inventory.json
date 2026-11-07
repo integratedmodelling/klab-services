@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 412,
+    "IMPLEMENTED_SOURCE_ONLY": 425,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -3009,6 +3009,97 @@
       "path": "reference_commits.py",
       "owner": "AsyncReferenceGraphProjection",
       "operation": "refresh",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": null,
+      "operation": "analyze_selected_read_plan",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "ReferenceWindow",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "ReferenceTemporalState",
+      "operation": "to_wire",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "ReadPlanSelections",
+      "operation": "states",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "ReadPlanSelections",
+      "operation": "open",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "ReadPlanSelections",
+      "operation": "read",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "ReadPlanSelections",
+      "operation": "release",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "ReadPlanSelections",
+      "operation": "capture",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "AsyncReadPlanSelections",
+      "operation": "states",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "AsyncReadPlanSelections",
+      "operation": "open",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "AsyncReadPlanSelections",
+      "operation": "read",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "AsyncReadPlanSelections",
+      "operation": "release",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "reference_windows.py",
+      "owner": "AsyncReadPlanSelections",
+      "operation": "capture",
       "async": true,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },

@@ -3,22 +3,21 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-worker-output-custody",
-    "pr": 303,
-    "requirement": "RC-P5",
+    "branch": "feat/python-selected-reference-windows",
+    "pr": null,
+    "requirement": "RC-P2.2",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 302,
-    "merge": "4fe5d45adb9da57fc9fc7573c840ec36403aa535",
-    "head": "4ed4352bfaaf387cbdd9219ade942941c5188e98",
-    "utc": "2026-11-07T20:19:37Z",
+    "pr": 303,
+    "merge": "6c285b6b6e96d48d5d4d87220722c6f7ffabed7e",
+    "head": "9a44d9fca7a11d6397f88ce1687fc954e12e0c0d",
+    "utc": "2026-11-07T20:46:29Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P5",
+  "next_actionable_requirement": "RC-P2.2",
   "pending_deliveries": [],
   "remaining_runnable_work": [
-    "worker-output-and-budget-custody",
     "selected-reference-windows",
     "categorical-reference-data",
     "operation-workflow-attribution",
@@ -2664,8 +2663,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: worker-output-and-budget-custody"
       },
       "simulator_support_needed": "Complete worker output budget/deployment handoff and public protocol failure/recovery tests; hard total disk/hostile-code isolation requires reviewed OS/container policy, not a claimed Python sandbox.",
-      "implementation_status": "WORKER_OUTPUT_ACK_CUSTODY_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "WORKER_AGGREGATE_OUTPUT_EXACT_RECEIPT_AND_DEPLOYMENT_HANDOFF_DELIVERED_PR303",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_OUTPUT_PROTOCOL_FAILURE_RECOVERY_CUSTODY_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -2674,12 +2673,21 @@
       "pr_and_merge_evidence": {
         "historical_prs": [],
         "historical_commits": [],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "worker_output_custody_delivery": {
+          "pr": 303,
+          "head": "9a44d9fca7a11d6397f88ce1687fc954e12e0c0d",
+          "merge": "6c285b6b6e96d48d5d4d87220722c6f7ffabed7e",
+          "merged_at": "2026-11-07T20:46:29Z",
+          "final_head_checks": 45,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-worker-output-custody-20261107.json"
+        }
       },
       "work_group": "worker-output-and-budget-custody",
       "priority": 11,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish aggregate stdout-stderr acceptance budget and output-before-return custody, exact public ACK/task/provenance/digest guards, deployment handoff and installed failure/recovery tests; reviewed OS-container hostile-code/hard-total-disk and nativeABI evidence remain external, not a Python sandbox.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; maintained native worker ABI/lease/scientific execution and approved OS-container hostile-code/hard-total-disk/deployment evidence remain external JAVA-GAP-0017 obligations.",
       "disposition": null
     },
     {
@@ -2719,8 +2727,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: worker-output-and-budget-custody"
       },
       "simulator_support_needed": "Complete worker output budget/deployment handoff and public protocol failure/recovery tests; hard total disk/hostile-code isolation requires reviewed OS/container policy, not a claimed Python sandbox.",
-      "implementation_status": "WORKER_OUTPUT_ACK_CUSTODY_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
-      "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "implementation_status": "WORKER_AGGREGATE_OUTPUT_EXACT_RECEIPT_AND_DEPLOYMENT_HANDOFF_DELIVERED_PR303",
+      "simulator_acceptance_status": "INSTALLED_PUBLIC_OUTPUT_PROTOCOL_FAILURE_RECOVERY_CUSTODY_PASS_FINAL_ROW_PENDING",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -2729,12 +2737,21 @@
       "pr_and_merge_evidence": {
         "historical_prs": [],
         "historical_commits": [],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "worker_output_custody_delivery": {
+          "pr": 303,
+          "head": "9a44d9fca7a11d6397f88ce1687fc954e12e0c0d",
+          "merge": "6c285b6b6e96d48d5d4d87220722c6f7ffabed7e",
+          "merged_at": "2026-11-07T20:46:29Z",
+          "final_head_checks": 45,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-worker-output-custody-20261107.json"
+        }
       },
       "work_group": "worker-output-and-budget-custody",
       "priority": 11,
-      "task_state": "in_progress",
-      "next_executable_action": "Finish aggregate stdout-stderr acceptance budget and output-before-return custody, exact public ACK/task/provenance/digest guards, deployment handoff and installed failure/recovery tests; reviewed OS-container hostile-code/hard-total-disk and nativeABI evidence remain external, not a Python sandbox.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; maintained native worker ABI/lease/scientific execution and approved OS-container hostile-code/hard-total-disk/deployment evidence remain external JAVA-GAP-0017 obligations.",
       "disposition": null
     },
     {
@@ -2855,7 +2872,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: selected-reference-windows"
       },
       "simulator_support_needed": "Extend public reference read plans to explicit bounded spatial windows and selected synthetic temporal states with per-selection layout/masks/units/pins, immutable assembled data and cancellation/expiry controls.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "SELECTED_FINITE_STATE_WINDOW_READ_GRANTS_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2912,8 +2929,8 @@
       },
       "work_group": "selected-reference-windows",
       "priority": 12,
-      "task_state": "pending",
-      "next_executable_action": "Extend public reference read plans to explicit bounded spatial windows and selected synthetic temporal states with per-selection layout/masks/units/pins, immutable assembled data and cancellation/expiry controls.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish public sync/async explicit server-listed temporal states and bounded spatial windows, per-selection source/layout/mask/unit/time pins, immutable assembly/adapter provenance/cancellation/expiry/ownership controls and installed delivery; no native time/provider mediation inferred.",
       "disposition": null
     },
     {
@@ -3025,7 +3042,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: selected-reference-windows"
       },
       "simulator_support_needed": "Extend public reference read plans to explicit bounded spatial windows and selected synthetic temporal states with per-selection layout/masks/units/pins, immutable assembled data and cancellation/expiry controls.",
-      "implementation_status": "REMAINDER_PENDING",
+      "implementation_status": "SELECTED_FINITE_STATE_WINDOW_READ_GRANTS_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -3080,8 +3097,8 @@
       },
       "work_group": "selected-reference-windows",
       "priority": 12,
-      "task_state": "pending",
-      "next_executable_action": "Extend public reference read plans to explicit bounded spatial windows and selected synthetic temporal states with per-selection layout/masks/units/pins, immutable assembled data and cancellation/expiry controls.",
+      "task_state": "in_progress",
+      "next_executable_action": "Finish public sync/async explicit server-listed temporal states and bounded spatial windows, per-selection source/layout/mask/unit/time pins, immutable assembly/adapter provenance/cancellation/expiry/ownership controls and installed delivery; no native time/provider mediation inferred.",
       "disposition": null
     },
     {

@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-SELECTED-READ-PLAN-001",
+      "rows": ["RC-P2.2", "CAP-09"],
+      "routes": ["/runtime/experimental/read-plan-selections/v1/observations/", "/runtime/experimental/read-plan-selections/v1/open", "/runtime/experimental/read-plans/v1/"],
+      "source": "Separate advertised finite reference state/window selection explicitly wraps an old read-plans/1 grant. Public sync/async server-listed baseline/alternate state labels/UTC instants/source revisions, exact half-open spatial windows and layout/mask/units/digest pins, immutable shard assembly and detached offline arrays retaining source-state/window/selection hashes. Existing full baseline opens unchanged. Capture finally attempts only established grant release; cancelled or malformed opens do not replay or infer rollback. Fixture slicing independent of production SDK; bounded manifests/capacity/sourceCAS/epoch/current-owner policy. Not native temporal history/provider mediation/science or durable grant acceptance.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; maintained native state/window/read-plan/provider contracts remain external",
+      "simulator_test": "test_reference_windows.py::test_public_exact_windows_temporal_states_masks_layout_and_owned_release",
+      "java_gap_ids": ["JAVA-GAP-0006", "JAVA-GAP-0014"]
+    },
+    {
       "id": "SIM-WORKER-OUTPUT-CUSTODY-001",
       "rows": ["RC-P5", "CAP-17"],
       "routes": ["/runtime/experimental/worker/v1/register", "/runtime/experimental/worker/v1/claim", "/runtime/experimental/worker/v1/tasks/"],

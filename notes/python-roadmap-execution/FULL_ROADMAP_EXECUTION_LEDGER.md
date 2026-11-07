@@ -1,5 +1,18 @@
 # Full Python A+B+C roadmap execution ledger
 
+## PR303 merged; selected-window implementation continues
+
+PR303 verified merged6c285b6b6 at2026-11-07T20:46:29Z, exact9a44d9fca/all45
+checks PASS and remote/local ancestry verified. Fresh5152SDK501sim115worker23HTTP
+PASS/69-35-6 parity/14SDKfocused CI+ordered+17linkedPASS versus17nativeNOT_RUN.
+Retained initial Windows coverage failures and original115/supplemental116worker
+counts remain distinct. No native/OS/science/final-row promotion.
+Selected-window branch has no PR; source uncommitted. Latest44SDK+offline-analysis
+controls and2publicHTTP workflows PASS; bodymypy passed before capture addition,
+final type/coverage rerun pending. Exact source/state/window stamps retained offline;
+capture attempts finally-release without replay/rollback claims. Independent fixture,
+hostile race/cancel controls and installed delivery remain;20runnable/42originalrows.
+
 ## Managed behavior delivered; worker output custody active
 
 PR303initialWindows3.11 changedcoverage arc98->99 timing failure reviewed beforemerge;

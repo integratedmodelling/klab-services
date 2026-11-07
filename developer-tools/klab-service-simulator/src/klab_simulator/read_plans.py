@@ -86,7 +86,7 @@ class ReadPlans:
             raise ContractError(422, "Choose explicit bounded read-plan protocol/budgets")
         if (root, data["observation_id"]) not in self.state.observations:
             raise ContractError(404, "Completed owned observation required")
-        if self.state.scenario not in ("elevation", "zero-negative-nodata", "usgs-recorded"):
+        if self.state.scenario not in ("elevation", "zero-negative-nodata", "usgs-recorded", "selected-read-plans"):
             raise ContractError(422, "This fixture has no established numerical snapshot mapping")
         if len(self.rows) >= 16:
             raise ContractError(429, "Read-plan reference grant capacity exceeded")
