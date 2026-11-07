@@ -15,9 +15,10 @@ def main():
     base = "HEAD^" if not args.base or set(args.base) == {"0"} else args.base
     root = Path(__file__).resolve().parents[2]
     diff = subprocess.run(["git", "diff", "--no-ext-diff", "--unified=0", base, "--",
-        "python-client/src/klab_client/analysis.py", "python-client/src/klab_client/__init__.py"],
+        "python-client/src/klab_client/analysis.py", "python-client/src/klab_client/__init__.py",
+        "python-client/src/klab_client/raster_categories.py"],
         cwd=root, capture_output=True, text=True, check=True).stdout
-    errors = evaluate(json.loads(args.report.read_text()), diff, [])
+    errors = evaluate(json.loads(args.report.read_text()), diff, ["src/klab_client/raster_categories.py"])
     if errors:
         print("\n".join(errors))
         return 1

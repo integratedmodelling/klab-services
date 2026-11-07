@@ -1,0 +1,22 @@
+{
+  "verified_utc": "2026-11-07T01:29:51.048470+00:00",
+  "baseline_head": "88373f7683c8acd994f27031bbd1654fc5b2b62a",
+  "attribution": "Uncommitted categorical derivative. Exact source/wheel/sdist/installed module byte parity identifies final code; separate SDK-only coverage is not appended by simulator HTTP tests.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "3a32860023ad7969c9f6ba74aa8a23b339429be6b846d0ca0f2ef50b2b4fce61", "sdist_sha256": "49376fda811528de7a466a3dc6b0d42d4138eb020009b577eec07be091124097", "parity_modules": 51},
+    "simulator": {"wheel_sha256": "3d5a4c60c9302fc14b43fc3b11b5377bb44e350daa21b9019f18f9a8213b91d7", "sdist_sha256": "ceb8ac8a0312e6ecb079e4270e8885f513aa20e56d8c0f80e36d7c3f32f0bf7d", "parity_modules": 16},
+    "worker": {"wheel_sha256": "cb138d6de275c6034048125fcda7f502568fb1aec365aa689058c26950d2a07d", "sdist_sha256": "2b8eb48ff6472d171dfc43fdae6dd59c2cac2d32044a8ef84a510db1c33af563", "parity_modules": 5}
+  },
+  "installed_tests": {"sdk_unit_integration": 4093, "reference_http_storage_recovery": 39, "worker_unit": 57, "worker_http_recovery": 21, "full_simulator": 153, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "scientific_ci_equivalent_installed": {"sdk_unit": 73, "simulator_http": 9, "separate_processes_cov_append": true, "changed_scientific_decisions_and_newmodule100percent": "PASS"},
+  "new_sdk_module": {"source_unit_tests": 20, "covered_lines": 51, "statements": 51, "covered_branches": 20, "branches": 20, "excluded_lines": 0, "SDK_only_changed_code_gate": "PASS"},
+  "sdk_coverage": {"combined_percent": 98.40989399293287, "covered_lines": 7221, "statements": 7320, "covered_branches": 2248, "branches": 2302, "historical_excluded_lines": 165, "final_raw_module_bytes_and_unique_sdk_only_paths": "PASS51modules"},
+  "typing_lint_schema_generated_reports": "PASS new module body typecheck, fatal-error lint,17stable gap IDs/42historical requirements/generated companion consistency; not native acceptance",
+  "fixture": {"origin": "SYNTHETIC_SIMULATOR", "observable": "synthetic:CategoryCode", "shape": [2, 3], "dtype": "int16", "unit": null, "tiff_sha256": "e025556feac60d80c68f3dcd7465948f7a071186a9ff5f377c99b28cbc6eaccb", "manifest_sha256": "8fa1375f77f9e7422a086a7f2004f9e66b09abcab154b7723cfed0e26a086db7", "meaning": "Raw numerical codes; labels are CALLER_DECLARED, not embedded native classification metadata, landcover/elevation model science, ontology inference or committed revisions", "authentic_or_existing_fixtures_changed": false},
+  "assertions": ["Exact immutable unique signed64code/label pairs and bounded caller attribution", "Preserve every raw code/dtype/mask/coordinate/unit; zero/negative categories remain valid", "Missing labels only for false valid mask; unknown valid codes fail, never become nodata or fallback label", "Float codes, nonboolean/misdimensioned masks, ambiguous mappings and existing category replacement refuse", "Exact signed64min/max and unsignedoutofrange nonaliasing controls", "Deep detached copy leaves source untouched; allocation estimate includes source/copies/coordinates/Unicode/comparison buffers", "SDK-owned numerical observation/export/local categorical derivative/cleanup over actual local HTTP; no network or inference in helper"],
+  "retained_earlier_pass": "Pre-mask-dimension-guard fresh4093SDK/39reference/153simulator/57worker/21HTTP/33governancePASS with SDKa93da2d8...; final rebuilt artifacts above include dimension-identity refusal and repeated full suites. Earlier artifacts not relabelled final.",
+  "contract_matrix": {"simulated_pass": 17, "sdk_protocol_tests": 205, "simulator_capture_reference_tests": 82, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_mode_exit": 3},
+  "native_scientific_acceptance": "REAL_NOT_RUN / JAVA-GAP-0014; no native dictionary/block/multishard/revision acceptance or scientific model claim",
+  "dependency_custody": "Fresh wheel/sdist/pip-target installs borrow existing test dependencies; no existing environment modification or fresh dependency-isolation certification",
+  "remaining": "Normal featurePR/finalheadCI/permittedmerge, then remaining multishard/managedagents/provenance/federation requirements. Entire-roadmap sleep remains pending."
+}
