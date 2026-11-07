@@ -4,9 +4,11 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-execution-dependency-explanation",
-    "pr": null,
+    "pr": 300,
     "requirement": "RC-P3.4",
-    "ci_review_dependencies": []
+    "ci_review_dependencies": [
+      "PR300 finalinstalled artifacts/matrix/exactheadCI/ordinarymerge; native scientific/semantic mediation and original-row acceptance remain separate"
+    ]
   },
   "last_verified_checkpoint": {
     "pr": 299,
@@ -2172,7 +2174,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: execution-dependency-explanation"
       },
       "simulator_support_needed": "Provide public dependency/execution explanation joining supplied resources, model/component versions and planned versus recorded effects; finite complete reference lineage including semantic-update effects, not only fixture graph links.",
-      "implementation_status": "EXPLICIT_FINITE_EXECUTION_EXPLANATION_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
+      "implementation_status": "FINITE_SELECTED_EXECUTION_EXPLANATIONS_INSTALLED_VERIFIED_PR300_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2190,12 +2192,17 @@
           "c16c75427e34133ba973446b18666f18c8b36ad2",
           "5849d7b78ebdd4daa6a836c7985684e522b23fd5"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "execution_explanation_candidate": {
+          "pr": 300,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json",
+          "final_original_row_acceptance": false
+        }
       },
       "work_group": "execution-dependency-explanation",
       "priority": 8,
       "task_state": "in_progress",
-      "next_executable_action": "Finish actual upload/source/selectedmodel-component/planned-versus-recorded semantic effects explanation, public sync/async ownership/oracle controls, hostile coverage and installed delivery; no native scientific lineage or semantic mediation claim.",
+      "next_executable_action": "Require PR300 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute public copiedcomposition SDK requirement. Keep native scientific/semantic mediation/source-component lineage authority and original-row integrated acceptance separate.",
       "disposition": null
     },
     {
@@ -2271,7 +2278,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: execution-dependency-explanation"
       },
       "simulator_support_needed": "Provide public dependency/execution explanation joining supplied resources, model/component versions and planned versus recorded effects; finite complete reference lineage including semantic-update effects, not only fixture graph links.",
-      "implementation_status": "EXPLICIT_FINITE_EXECUTION_EXPLANATION_SOURCE_IMPLEMENTED_ACCEPTANCE_IN_PROGRESS",
+      "implementation_status": "FINITE_SELECTED_EXECUTION_EXPLANATIONS_INSTALLED_VERIFIED_PR300_PENDING_FINAL_INTEGRATED_ACCEPTANCE",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -2289,12 +2296,17 @@
           "c16c75427e34133ba973446b18666f18c8b36ad2",
           "5849d7b78ebdd4daa6a836c7985684e522b23fd5"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "execution_explanation_candidate": {
+          "pr": 300,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json",
+          "final_original_row_acceptance": false
+        }
       },
       "work_group": "execution-dependency-explanation",
       "priority": 8,
       "task_state": "in_progress",
-      "next_executable_action": "Finish actual upload/source/selectedmodel-component/planned-versus-recorded semantic effects explanation, public sync/async ownership/oracle controls, hostile coverage and installed delivery; no native scientific lineage or semantic mediation claim.",
+      "next_executable_action": "Require PR300 exact final-head CI/ordinary permitted merge/checkpoint then immediately execute public copiedcomposition SDK requirement. Keep native scientific/semantic mediation/source-component lineage authority and original-row integrated acceptance separate.",
       "disposition": null
     },
     {
