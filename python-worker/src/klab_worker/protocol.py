@@ -56,12 +56,15 @@ class Limits:
     seconds: float = 10
     output_bytes: int = MAX_BYTES
     cells: int = 4096
+    memory_bytes: int | None = None
 
     def __post_init__(self):
         if (type(self.seconds) not in (int, float) or not math.isfinite(self.seconds) or not 0 < self.seconds <= 300
                 or type(self.output_bytes) is not int or not 1 <= self.output_bytes <= MAX_BYTES
                 or type(self.cells) is not int or not 1 <= self.cells <= 4096):
             raise WorkerError("Invalid worker limits")
+        if self.memory_bytes is not None and (type(self.memory_bytes) is not int or not 64 * 1024**2 <= self.memory_bytes <= 16 * 1024**3):
+            raise WorkerError("Explicit memory budget must be64MiB..16GiB")
 
 
 @dataclass(frozen=True)

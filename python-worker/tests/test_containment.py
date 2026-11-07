@@ -56,9 +56,32 @@ def test_containment_refusal_never_executes_operator_code(tmp_path, monkeypatch)
     marker = tmp_path / "must-not-exist"
     script = tmp_path / "trusted.py"
     script.write_text(f'open({str(marker)!r},"w").write("unsafe")\n')
-    def refuse(_):
+    def refuse(*_):
         raise WorkerError("Synthetic containment unavailable")
     monkeypatch.setattr(module, "ProcessTree", refuse)
     with pytest.raises(WorkerError, match="containment"):
         execute(script, sample())
+    assert not marker.exists()
+
+
+@pytest.mark.parametrize("budget", [True, 0, -1, 64 * 1024**2 - 1, 16 * 1024**3 + 1, "96MiB"])
+def test_invalid_memory_budget_cannot_disable_kernel_limit(budget):
+    with pytest.raises(WorkerError, match="memory"):
+        Limits(memory_bytes=budget)
+
+
+def test_explicit_memory_budget_permits_bounded_computation(tmp_path):
+    script = tmp_path / "bounded.py"
+    script.write_text('import sys\nprint(sys.stdin.read())\n')
+    result, _ = execute(script, sample(), limits=Limits(memory_bytes=128 * 1024**2))
+    assert result == sample()
+
+
+def test_actual_allocation_over_memory_budget_never_returns_output(tmp_path):
+    marker = tmp_path / "allocated"
+    script = tmp_path / "overallocate.py"
+    script.write_text('import sys\nx=bytearray(256*1024*1024)\n' +
+        f'open({str(marker)!r},"w").write("unlimited")\nprint(sys.stdin.read())\n')
+    with pytest.raises(WorkerError, match="process failed"):
+        execute(script, sample(), limits=Limits(memory_bytes=96 * 1024**2))
     assert not marker.exists()

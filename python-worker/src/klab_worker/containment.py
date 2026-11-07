@@ -11,7 +11,7 @@ from .protocol import WorkerError
 
 
 class ProcessTree:
-    def __init__(self, process):
+    def __init__(self, process, memory_bytes=None):
         self.process = process
         self.handle = None
         if os.name != "nt":
@@ -48,6 +48,9 @@ class ProcessTree:
             raise WorkerError("Cannot establish owned worker process containment")
         limits = Extended()
         limits.BasicLimitInformation.LimitFlags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        if memory_bytes is not None:
+            limits.BasicLimitInformation.LimitFlags |= 0x200  # JOB_OBJECT_LIMIT_JOB_MEMORY
+            limits.JobMemoryLimit = memory_bytes
         if (not kernel.SetInformationJobObject(handle, 9, ctypes.byref(limits), ctypes.sizeof(limits))
                 or not kernel.AssignProcessToJobObject(handle, wintypes.HANDLE(int(process._handle)))):
             kernel.CloseHandle(handle)
