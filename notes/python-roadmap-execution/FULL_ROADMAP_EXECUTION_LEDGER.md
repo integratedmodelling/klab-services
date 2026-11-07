@@ -87,6 +87,85 @@ Finalnotebook17linkedcasesPASS(322SDK/128simulator/57worker), zero skips/errors/
 failures vs17realNOT_RUN/exit3. Bounded installedreference acceptance verified;
 publish ordinaryPR/finalheadCI now, merge only applicablechecksPASS. No native
 sharing/sourceadmission/issuer or full42criterion acceptance promoted.
+Notebook acceptance committed/pushed004a93196 and ordinaryPR280OPEN against
+feature/python-experiment-runner; finalheadwatcher sh_1b3fdcbb4001urcDjf4scLul79
+running, no merge/CI success inferred yet. All earlier native distinctions retained.
+
+### Active source-defined candidate inspection
+
+Current `feat/python-candidate-source-inspection` branches from004a93196 while280CI
+runs. Source-grounded JAVA-GAP-0003 SDKquery/catalog immutableDTOs and sync/nativeasync
+inspection now implemented: explicit32selectoraxis/128response-record/1MiB caps,
+singlemonotonicdeadline over capabilities+POST, exactprotocol1advertisement/type/
+providerID, no context/Runtime/cycle/transaction delegation, no legacyfallback or
+serveradvertisedURLfollowing. Exact sourceUTF8SHA256/typednamespace/modelmembership/
+project/timestamp/inactive and namespace/model snapshots checked. Error/invalidJSON/
+duplicate/nonfinite/foreignidentity/secretbearing source refuse; unadvertised or
+404/500failure is not empty success. Source strings immutable/excludedfromrepr;
+hash not signature/semanticadmission/scientificcommittedrevision/selectedmodel.
+Separatecandidate-sources scenario advertises protocol1only there, matches inspected
+visibilitypredicates with explicitlysynthetic projectREADpolicy, denies project
+access escalation/unsupportedinputs/workflowdelegation; no Jobs/resourcescreated.
+Source50SDK-onlytestsPASS at130lines44branches100%unexcluded/bodytypecheck/fatallint;
+12HTTP/servercontrolsPASS. Same0003registry/handoff/scenario/docs/publicexports and
+dedicated installedSDKcoverage/type/HTTPworkflow updated. Source authority pinned
+in `evidence/candidate-source-authority-20261107.json`; no Javaexecution or fabricated
+API.0003nativeNOT_TESTEDunchanged, confidenceSIMULATED_PROVISIONAL for fixtures.
+Freshfullwheel/sdist/installedverifier running automatically at
+`full-roadmap-20261106/candidate-source-inspection-first`, shell
+sh_1b404880800125Jeona3Om9UdX; no artifactpolling/overwriting. Next awaitreceipt,
+SDK-onlynewmodule/changedcodegate/17linkedvsreal/ordinaryPR/finalCI after280delivery.
+Remaining original42rows/nativeissuer/provenance/federation/release stayseparate.
+NotebookPR280 subsequently verified MERGED87178be30f508bd1727ed97a4282ae7e6356cc6d
+at2026-11-07T03:19:50Z, exact004a931960741608e84a4c22169d8c98f90e884e after all
+applicable finalheadchecksPASS/no failedrerun. No independentmaintainerreview or
+nativeprincipal/sharing/sourceadmission acceptance claimed. Candidatebranch
+fastforwarded actualintegrationmerge, uncommittedwork preserved. Its freshverifier
+remainsrunning; no280watcher remains. Next candidateartifacts/gates/delivery, then
+continue original42row scope; fullroadmap/nativeacceptance/sleep incomplete.
+CandidateJSONreview added overflowcontrol1e999: ordinaryjson.loads silently yields
+infinity despite parse_constant refusal. SDK-only regression reproduced6PASS/1FAIL
+beforefix; parse_float now explicitly checksfinite values, preserves finite1.25.
+First candidate-source-inspection-first artifacts predate this parserhardening and
+must NOT attest finalsource. Preserve any automaticpass/failreceipt as pre-hardening,
+never overwrite/relabel. Finalfresh target candidate-source-inspection-final planned
+with unchanged native statuses; no JSONvalidation/coverage policy weakening.
+Final credential-custody review additionally rejects decodedsourceJSONleaves so
+escaped knowncredentials cannot evade rawstring redaction. Reuses existing bounded
+inspectionhelper without rewriting hashedsource. Earlier lexicalidentitycheck became
+redundant because member/project/namespace equality follows validated secret-free
+source; removed duplicatecheck, not the denial. Added escapedleafregression. Final
+acceptedartifact target is candidate-source-inspection-custody-final; both earlier
+candidate targets predate finalcustodyhardening and cannot attest currentcode.
+Pre-custody candidate-source-inspection-final verifier automatically stopped with
+4SDKsource-identity failures/4258PASS: installedoldermodule no longer matched
+current source after final escapedcredentialhardening. This is expected stale-build
+custody rejection, not a native defect or acceptedfinalpackage. No unchangedrerun/
+identitygateweakening; artifacts retained in their originaldirectory. Only the
+separate custody-final rebuild can attest stablecurrentmodule/tests. Its source
+must remain frozen until receipt/parity/gatesfinish.
+Prehardeningfirst verifier finished4260SDK/98reference/211simulator/57worker/21HTTP
+PASS but governance29PASS/4FAIL: existing negativecontrol hardcoded thirdrecord's
+source_build_or_commit=None.0003now legitimately has pinnedsource authority, still
+NOT_TESTED and no realtests/command. Improved negativefixture chooses stable0003ID
+and explicitly tests BOTH absent and supplied sourcebaseline against all4forbidden
+nativepromotions; validate implementation unchanged. No source-onlygreen allowed,
+no baseline/evidence removed to satisfy test. Finalcustodybuild may include37rather
+than33governancecases; attest observed counts or run final37separately if needed.
+Finalcustody verifier completed03:28:20UTC:4263SDK/211simulator/98referenceHTTP+
+notebook+storage+recovery/57worker/21workerHTTP/37governancePASS, zero skips/errors/
+failures.53SDK-onlynewtests137lines42branches100%unexcluded; current55SDK+19simulator+
+5worker rawmodulebytes matchsource/wheel/sdist/installed. FullSDK98.51%retains165
+historicalexclusions. Exact custody `evidence/full-roadmap-candidate-sources-20261107.json`.
+Earlierfailed/pre-hardening targets retained as failed/incomplete evidence, not
+substitutedforfinal. SDK-onlychangedcode/newmodulegate and17linkedmatrix running;
+17realNOT_RUN/exit3verified. No candidatePR yet; next automaticresult/ordinaryPR/
+applicablefinalheadCI/permittedmerge.0003nativeNOT_TESTEDunchanged; remaining42rows
+and finalsleep remain pending. No SDK/service source edits until gateattestation.
+Finalcandidate SDK-onlynewmodule/changeddecisiongatePASS;17linkedcasesPASS using
+375SDK/140simulator/57worker tests, zero skips/errors/failures vs17realNOT_RUN/exit3.
+Bounded localreference implementation verified; publish ordinaryfeaturePR now and
+require allapplicablefinalheadCI before permittedmerge. Native0003NOT_TESTEDunchanged.
 
 ## Current authority, scope and recovery
 
@@ -781,7 +860,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001 plus delivered269 durable restart/no-replay controls|Preserve expiry/cancel/no-replay and scoped results; native durable history/incarnation acceptance separate.|
 |RC-P3.4|PARTIAL; SIM-PROVENANCE-001|Broaden dependency/semantic-effect fixtures without calling finite simulator lineage authoritative Java.|
 |RC-P3.5|PARTIAL; notebook plus active SIM-NOTEBOOK-PRINCIPAL-RACE-001|Exact installed asyncSDK kernel/two-client CAS/foreign denial/cleanup focusedPASS; fullfreshverification/delivery pending, native sharing/currentness semantics separate.|
-|RC-P4.1|PARTIAL; SIM-SEMANTICS-001/SIM-INSPECTION-001|Capability-aware applicability/version/access and actual candidate source protocol adapter.|
+|RC-P4.1|PARTIAL; semantics/inspection plus active source-defined candidate protocol1 adapter0003|SDK-sourcehash/identity/advertisement and synthetic visibility/denial testsPASS; final installed/hosted delivery pending. Native applicability/admission/deployed candidate compatibility remain external.|
 |RC-P4.2|PARTIAL; source previews|Revision-aware validation scenario, parser and semantic admission kept distinct.|
 |RC-P4.3|PARTIAL delivered imports; SIM-IMPORT-001/SIM-INPUT-BINDING-001|Broader annotation/compute input provenance with owned cleanup; native resource custody gate separate.|
 |RC-P4.4|PARTIAL ADD/locks plus delivered274 private draftCAS/history; native acceptance separate|Private CAS is not accepted-source editing/validation/publication; maintained native conditional authoring contract remains unestablished.|
@@ -793,7 +872,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-02|PARTIAL catalog/peers plus delivered279|Mixed provider outage/recovery/selectedUUID retention and genuine drift refusal verified; no trust expansion or native deployment approval.|
 |CAP-03|PARTIAL origin-qualified routing|Explicit provisional composition/migration workflow behind contract adapter; no silent automatic failover.|
 |CAP-04|PARTIAL typed requests|Broaden supported collections/relationship/context selection scenarios.|
-|CAP-05|PARTIAL semantic explorers|Supported remote operations and revision/applicability fixtures, no local ontology inference.|
+|CAP-05|PARTIAL semantic explorers plus active candidate-source protocol1 inspector|Source-defined candidate catalogs behind capability gate, no source evaluation/local ontology inference. Native revision/applicability/admission evidence remains separate.|
 |CAP-06|COMPLETE bounded evidence DTOs|Maintain plan-versus-executed-effect distinction; full lineage belongs RC-P3.4.|
 |CAP-07|PARTIAL Jobs/native async; durable completed/in-flight restoration installed-tested|Broaden bounded fairness/lifecycle where independently needed; native retention/restart contract remains unverified.|
 |CAP-08|COMPLETE bounded scalar data|Preserve exact NUMBER/BOOLEAN/TEXT/null precision while adding separate block contract.|
@@ -801,7 +880,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-10|PARTIAL graph/projections|Two-client revision/race/partial refresh scenario through explicit protocol seam.|
 |CAP-11|PARTIAL; transient hints plus delivered273/0c9825893 retained reference|Explicit provisional durable cursor/resync/gap reference verified; maintained expiry/revocation/full convergence/native acceptance still unverified.|
 |CAP-12|COMPLETE bounded offline snapshots|Maintain socket-forbidden fresh-process inspection and no queued replay.|
-|CAP-13|PARTIAL resource inspection/import|Complete declared CRUD/visibility/dependency scenarios and supported native candidates.|
+|CAP-13|PARTIAL resource inspection/import plus active source-defined candidate catalogs|Candidate visibility/hash/member/denial fixture testsPASS; final artifact/CI delivery pending. Declared broader CRUD/dependency and native resource custody/admission gates remain separate.|
 |CAP-14|PARTIAL native facades plus private draftCAS274/synthetic managed lifecycle277|Reference CAS/history and finite lifecycle delivered; accepted-source validation/publication and actual native agent/private-session disposal contracts remain external.|
 |CAP-15|PARTIAL optional scientific/notebook plus declaredbands272/categories275/offlinearrays278|Reference categories/bands/offline400cell snapshot association verified; coherent multi-principal notebook/race and native temporal/provenance semantics still pending.|
 |CAP-16|PARTIAL compatibility/package matrix|Fresh wheel/sdk/worker installs, types/lint/coverage and reproducible starter; real deployment/support gates separate.|

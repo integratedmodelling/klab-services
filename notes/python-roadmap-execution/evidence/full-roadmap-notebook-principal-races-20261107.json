@@ -20,5 +20,6 @@
   "native_status": "0009CONTRACT_PROVISIONAL/0015NOT_TESTED unchanged; drafts UNVALIDATED_PRIVATE_DRAFT, not native sourceadmission/publication or deployedissuer approval",
   "scientific_acceptance": false,
   "dependency_custody": "Fresh wheels/sdists/separate pip-targets borrow prior dependencies, not newly isolated dependency certification",
-  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; continue remaining42rows. Nativeacceptance and fullroadmap completion separate; sleep pending."
+  "delivery": {"pr": 280, "head": "004a931960741608e84a4c22169d8c98f90e884e", "merge": "87178be30f508bd1727ed97a4282ae7e6356cc6d", "merged_utc": "2026-11-07T03:19:50Z", "applicable_final_head_checks": "PASS SDK3.11/12/13/core/notebook/scientific/workerWindows+Ubuntu/simulator/schema/build/Jenkins, no failed-check rerun needed", "independent_maintainer_review": false},
+  "remaining": "Continue remaining42rows; nativeacceptance and fullroadmap completion separate; sleep pending."
 }

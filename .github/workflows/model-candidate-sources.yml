@@ -1,0 +1,43 @@
+name: Source-defined candidate inspection (native NOT_RUN)
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['python-client/src/klab_client/model_candidates.py', 'python-client/tests/unit/test_model_candidates.py', 'developer-tools/klab-service-simulator/src/klab_simulator/model_candidates.py', 'developer-tools/klab-service-simulator/tests/test_model_candidates.py', '.github/workflows/model-candidate-sources.yml']
+  pull_request:
+    paths: ['python-client/src/klab_client/model_candidates.py', 'python-client/tests/unit/test_model_candidates.py', 'developer-tools/klab-service-simulator/src/klab_simulator/model_candidates.py', 'developer-tools/klab-service-simulator/tests/test_model_candidates.py', '.github/workflows/model-candidate-sources.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install ordinary SDK and separate simulator
+        run: python -m pip install './python-client[dev]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: SDK-only source snapshot and refusal controls
+        run: python -m pytest -q python-client/tests/unit/test_model_candidates.py --cov=klab_client --cov-branch --cov-report=json:candidate-coverage.json --junitxml=candidate-unit.xml
+      - name: Source-shaped HTTP visibility and no delegation
+        run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_model_candidates.py --junitxml=candidate-http.xml
+      - name: Full unexcluded SDK-only module and changed decisions
+        env:
+          COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
+        run: python python-client/tools/check_feature_coverage.py candidate-coverage.json --base "$COVERAGE_BASE" --new-module src/klab_client/model_candidates.py
+      - name: Check implementation bodies
+        run: python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/src/klab_client/model_candidates.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: candidate-source-inspection-native-NOT_RUN
+          path: |
+            candidate-coverage.json
+            candidate-unit.xml
+            candidate-http.xml

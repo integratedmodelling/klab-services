@@ -47,6 +47,8 @@ from klab_client.durable_notifications import (NotificationCursor, NotificationB
 from klab_client.revision_drafts import (DraftRevision, DraftConflict, read_draft, write_draft,
     async_read_draft, async_write_draft)
 from klab_client.raster_categories import RasterCategories, CategoricalRasterAnalysis, categorize_raster
+from klab_client.model_candidates import (ModelCandidateQuery, ModelCandidateSource, ModelCandidateCatalog,
+    inspect_model_candidates, async_inspect_model_candidates)
 from klab_client.read_plan_analysis import ReadPlanAnalysis, analyze_read_plan
 from klab_client.managed_agents import (ManagedAgentReference, ManagedAgentStatus, create_managed_reference,
     read_managed_reference, command_managed_reference, async_create_managed_reference,
@@ -75,6 +77,7 @@ from klab_client.scan_slices import ScanSlice
 from klab_client.imports import ResourceImporter, AsyncResourceImporter, ImportFormat, ImportSubmission
 
 __all__ = [
+    "ModelCandidateQuery", "ModelCandidateSource", "ModelCandidateCatalog", "inspect_model_candidates", "async_inspect_model_candidates",
     "ReadPlanAnalysis", "analyze_read_plan",
     "ManagedAgentReference", "ManagedAgentStatus", "create_managed_reference", "read_managed_reference",
     "command_managed_reference", "async_create_managed_reference", "async_read_managed_reference", "async_command_managed_reference",

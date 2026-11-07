@@ -21,7 +21,7 @@ MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
-SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export")
+SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export", "candidate-sources")
 
 
 class ContractError(Exception):
@@ -278,7 +278,8 @@ class State:
             from .exports import export_schemas
             return {"serviceId": self.service_ids[service], "type": service.upper(), "version": "simulator-0.1.0",
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
-                    "importSchemata": schemas() if service == "resources" else {},
+                     "importSchemata": schemas() if service == "resources" else {},
+                     **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
                     "exportSchemata": export_schemas() if service == "runtime" and (
                         self.origin == "AUTHENTIC_FIXTURE_SIMULATED_DELIVERY" or self.scenario in ("nonuniform-export", "declared-band-export", "category-code-export")) else {}}, "application/json"
         if service == "runtime" and route.startswith("/experimental/worker/v1/"):
@@ -288,6 +289,9 @@ class State:
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
         scope = headers.get("klab-scope", "")
+        if service == "resources" and method == "POST" and route == "/api/v1/models/candidates":
+            from .model_candidates import candidates
+            return candidates(self, principal, headers, body)
         if service == "runtime" and route.startswith("/experimental/managed-agents/v1/"):
             query = urlsplit(original_path).query
             return self.managed_agents.request(method, route + ("?" + query if query else ""), scope, principal, headers, body)

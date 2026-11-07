@@ -8,6 +8,12 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-CANDIDATE-SOURCES-001/JAVA-GAP-0003 uses `--scenario candidate-sources` for
+source-defined protocol1 Resources catalog snapshots. Deterministic namespaceJSON,
+source hashes and synthetic permissions are not native semantic admission or model
+selection. The SDK requires advertisement and never falls back or delegates Runtime
+scope to a supplier. See [candidate source inspection](../../python-client/docs/model-candidate-sources.md).
+
 SIM-NOTEBOOK-PRINCIPAL-RACE-001/JAVA-GAP-0009/0015 adds exact owned-kernel acceptance
 with separate SDK clients, a same-owner private CAS race, foreign-principal denial,
 reader-close preservation and explicit cleanup. No native sharing/admission or

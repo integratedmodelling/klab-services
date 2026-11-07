@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-CANDIDATE-SOURCES-001",
+      "rows": ["RC-P4.1", "CAP-05", "CAP-13"],
+      "routes": ["/resources/public/capabilities", "/resources/api/v1/models/candidates"],
+      "source": "Inspected Java ModelCandidateRequest protocol1/ModelCandidateSources/ResourcesProviderController/ResourcesClient/SemanticValidationRequest source hashes; deterministic synthetic namespaceJSON and project READ policy. SDK source inspection only, not semantic admission or selected Runtime model.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; historical installedprotocol omission distinct from newer source-defined route; deployed visibility/DTO compatibility NOT_TESTED",
+      "simulator_test": "test_model_candidates.py::test_candidate_sources_follow_declared_visibility_without_workflow_or_admission",
+      "java_gap_ids": ["JAVA-GAP-0003"]
+    },
+    {
       "id": "SIM-NOTEBOOK-PRINCIPAL-RACE-001",
       "rows": ["RC-P1.3", "RC-P3.5", "RC-P4.4", "CAP-14", "CAP-15"],
       "routes": ["/runtime/experimental/drafts/v1/{name}", "/runtime/api/v1/query"],
