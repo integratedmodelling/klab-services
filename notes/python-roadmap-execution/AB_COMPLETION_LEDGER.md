@@ -2,6 +2,26 @@
 
 ## PR295 verified merge; full finite graph reference implemented, acceptance pending
 
+Finalraw63SDK/30simulator/5worker source-wheel-sdist-installedmodule parity
+rechecked; SDK/worker no simulator.17linkedcasesPASS(875SDK/264simulator/72worker)
+vs17nativeREAL_NOT_RUN/explicitexpectedexit3. Fullreceipt
+evidence/full-roadmap-source-bound-dependency-graphs-20261107.json records source/
+artifactcustody,8publicHTTP/84SDK100%/17fixture100%,8focusedCIgates andactualordered
+selectioncoverageproof, initialcoverage/type corrections. Existingdependenciesborrowed,
+notfreshisolation. PR296 finalreceiptcommit/exactheadCI/ordinarymerge pending;
+no fullverifier/matrix remains running, CIwatcher active. No fullrow/nativepromotion.
+
+Fresh full installed4807SDK/387simulator/72worker/allreference/39governance suites
+PASS, zero skips/errors/failures. InstalledSDK-only whole newmodule/allchangedcode
+100%unexcludedPASS. Packageenumeration63SDK/30simulator/5worker; finalrawcustody
+receipt awaits17linkedmatrixcompletion. Draft296558caf47e hostedCI running;
+no newnativecompatibility/scientificexecution or whole-row acceptancepromotion.
+
+DraftPR296 published558caf47e. Graphsource unchanged afterartifactfreeze; full
+source-bound-dependency-graphs-first verifier and17linkedmatrix running. Eight
+installedfocusedCIgates+actualorderedselectiongatePASS,84SDK/8publicHTTP/17fixture
+controlsPASS. Finalfullinstalled/CI/ordinarymerge stillpending; native/scienceNOT_RUN.
+
 Graph fresh source-bound-dependency-graphs-first fullverifier+17linkedmatrix running.
 All8installedfocusedCIgatesPASS:785/693/571/195/113/63 olderbatches append118
 (84graph+34membership),native-membership34append84graph,graphdedicated84.

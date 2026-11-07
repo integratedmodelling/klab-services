@@ -4,9 +4,9 @@
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
     "branch": "feat/python-source-bound-dependency-graphs",
-    "pr": null,
+    "pr": 296,
     "requirement": "RC-P4.1",
-    "ci_review_dependencies": []
+    "ci_review_dependencies": ["PR296 full installed source-bound graph artifacts, exact final-head CI and ordinary permitted merge; native graph acceptance separate"]
   },
   "last_verified_checkpoint": {
     "pr": 295,
@@ -1359,7 +1359,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: dependency-inspection"
       },
       "simulator_support_needed": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
-      "implementation_status": "NATIVE_MEMBERSHIP_DELIVERED_PR295_SOURCE_BOUND_GRAPH_IMPLEMENTED_ACCEPTANCE_PENDING",
+      "implementation_status": "NATIVE_MEMBERSHIP_DELIVERED_PR295_SOURCE_BOUND_GRAPH_INSTALLED_VERIFIED_PR296_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1510,7 +1510,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: dependency-inspection"
       },
       "simulator_support_needed": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
-      "implementation_status": "NATIVE_MEMBERSHIP_DELIVERED_PR295_SOURCE_BOUND_GRAPH_IMPLEMENTED_ACCEPTANCE_PENDING",
+      "implementation_status": "NATIVE_MEMBERSHIP_DELIVERED_PR295_SOURCE_BOUND_GRAPH_INSTALLED_VERIFIED_PR296_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
