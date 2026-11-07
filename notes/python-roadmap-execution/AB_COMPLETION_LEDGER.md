@@ -1,5 +1,10 @@
 # A+B completion ledger — ongoing campaign
 
+PR309 published507ca4ef8: final expanded24guards/3kernel-smokes/3publicHTTPnotebooks
+PASS,30controls/types-lintPASS; predecessor24/3/2 retained. Ready for exact-head CI;
+ordinarymerge/checkpoint remain.308verifiedmerged/all38checksPASS. Nine runnable,
+zero finaldispositions; next independent scientific-snapshot acceptance proceeds.
+
 ## PR308 verified merged; expanded notebook matrix passes
 
 PR308 merged3fe92c7c192c6db36ed75cf506d6fb1c1a576c00 at2026-11-07T22:39:36Z,
