@@ -178,16 +178,19 @@ function inputLabel(name: string): string {
 function integerInput(input: Action["missing"][number]): boolean {
   return ["int", "Integer", "java.lang.Integer"].includes(input.javaType || "");
 }
-function inputError(input: Action["missing"][number]): string {
+function requestedTierInput(action: Action, input: Action["missing"][number]): boolean {
+  return action.id === "prepare-review-draft" && input.name === "requested_tier";
+}
+function inputError(action: Action, input: Action["missing"][number]): string {
   const value = values.value[input.name];
-  if (integerInput(input)) {
+  if (requestedTierInput(action, input)) {
     if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > 2147483647)
       return `${inputLabel(input.name)} must be an integer of 1 or greater (maximum 2147483647).`;
   } else if (value === undefined || String(value).trim() === "") return `${inputLabel(input.name)} is required.`;
   return "";
 }
 function actionInputError(action: Action): string {
-  return action.missing.map(inputError).find(Boolean) || "";
+  return action.missing.map(input => inputError(action, input)).find(Boolean) || "";
 }
 function keepDraft(): boolean {
   if (!editorDirty.value && !feedbackDirty.value) return false;
@@ -523,12 +526,13 @@ onMounted(async () => {
       <p>Use the current ontology, authored review annotations and optional project BOOTSTRAP.md to generate an editable proposal. Reference files you added are retained for your preparation.</p>
       <p>Complete all preparation fields below. Stage details only need saving if you changed them.</p>
       <div class="action-inputs"><label v-for="input in action.missing" :key="input.name">{{ inputLabel(input.name) }}
-        <input v-if="integerInput(input)" v-model.number="values[input.name]" type="number" min="1" max="2147483647" step="1" required
-          :aria-invalid="!!inputError(input)" :aria-describedby="inputError(input) ? `${action.id}-${input.name}-error` : undefined" />
+        <input v-if="integerInput(input)" v-model.number="values[input.name]" type="number" step="1" required
+          :min="requestedTierInput(action, input) ? 1 : undefined" :max="requestedTierInput(action, input) ? 2147483647 : undefined"
+          :aria-invalid="!!inputError(action, input)" :aria-describedby="inputError(action, input) ? `${action.id}-${input.name}-error` : undefined" />
         <input v-else v-model="values[input.name]" required />
       </label></div>
-      <p v-for="input in action.missing.filter(input => integerInput(input) && inputError(input))" :key="input.name"
-        :id="`${action.id}-${input.name}-error`" role="status">{{ inputError(input) }}</p>
+      <p v-for="input in action.missing.filter(input => requestedTierInput(action, input) && inputError(action, input))" :key="input.name"
+        :id="`${action.id}-${input.name}-error`" role="status">{{ inputError(action, input) }}</p>
       <button :disabled="!!actionInputError(action)" @click="execute(action)">{{ preparing ? 'Preparing review draft...' : action.label }}</button>
     </fieldset>
     <div v-if="flowAttempted && flowId" class="face-to-face">

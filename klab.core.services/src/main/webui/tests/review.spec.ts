@@ -55,6 +55,15 @@ test("invalid requested tiers never submit or mutate and correction prepares exa
   expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
 });
 
+test("requested-tier restrictions do not change another action's integer semantics", async ({ page }) => {
+  await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&custom-integer-action");
+  await page.getByLabel("count", { exact: true }).fill("-2");
+  await expect(page.getByRole("button", { name: "Run custom action", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Run custom action", exact: true }).click();
+  expect(await page.evaluate(() => (window as any).calls)).toMatchObject([{ command: {
+    expectedRevision: 3, parameters: { count: -2 } } }]);
+});
+
 test("slow discovery and review permissions show progress instead of an empty bootstrap", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=discovery&pause=review");
   await waitingFor(page, "discovery");
