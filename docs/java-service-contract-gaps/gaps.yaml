@@ -27,16 +27,16 @@
       "api_contract": {"method": "POST", "path": "/runtime/api/v1/submit", "request_schema_ref": "python-client/docs/contracts.md", "expected_response_schema_ref": "developer-tools/klab-service-simulator/contract-cases.json#SIM-USGS-001"},
       "requirement_ids": ["RC-P2.1", "RC-P2.3", "RC-P2.5", "CAP-09"],
       "original_issues": [],
-      "python_test_refs": ["developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java"],
-      "simulator_scenario_refs": ["SIM-USGS-001", "SIM-GRID-001", "REPLAY-001"],
+      "python_test_refs": ["developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java", "python-client/tests/unit/test_provider_avro.py", "python-client/tests/unit/test_provider_data.py", "developer-tools/klab-service-simulator/tests/test_provider_avro.py"],
+      "simulator_scenario_refs": ["SIM-USGS-001", "SIM-GRID-001", "REPLAY-001", "SIM-PROVIDER-AVRO-001"],
       "real_java_test_refs": [],
       "reproducer_ref": "notes/python-roadmap-execution/MODELER_REAL_DEM_REMEDIATION_REPORT.md#12-remaining-failures--smallest-next-action",
       "observed_java_behavior": "Historical Job9 empty:true/Error; NullPointerException: Cannot invoke Storage$DoubleScanner.add(double) because filler is null. Installed bytecode passes aconst_null at offset180 to Adapter.encode. Not a new run.",
-      "simulator_behavior": "Frozen authentic400 cells delivered over isolated HTTP; not Runtime-produced science",
+      "simulator_behavior": "Frozen authentic400 cells delivered over isolated HTTP; not Runtime-produced science. Separate provider-avro scenario serves finite independent fastavro golden raw DataRequest/Instance bytes over source-defined Resources/contextualize and Job/retrieveData routes; no SDK codec dependency or scientific reasoning. Direct synthetic provider success does not reproduce or repair the scanner defect.",
       "contract_confidence": "JAVA_INCOMPATIBLE", "java_status": "CONFIRMED_DEFECT", "priority": "P0",
       "first_observed": "2026-11-06", "source_build_or_commit": "Installed Modeler services build202610301844; pinned geospatial artifacts in remediation report",
       "historical_real_result": "REAL_FAIL", "contract_case": "GAP-CASE-0001",
-      "links": ["notes/python-roadmap-execution/MODELER_REAL_DEM_REMEDIATION_REPORT.md"],
+      "links": ["notes/python-roadmap-execution/MODELER_REAL_DEM_REMEDIATION_REPORT.md", "python-client/docs/provider-binary-contextualization.md", "notes/python-roadmap-execution/evidence/provider-binary-source-authority-20261107.json", "notes/python-roadmap-execution/evidence/full-roadmap-provider-binary-20261107.json"],
       "notes": "Require attested scanner fix and authorized original400-cell/orientation/mask/unit oracle comparison. Historical report names NullScannerReproducer.java but that path is not present in this checkout; executable real reproducer custody is an explicit evidence gap, not a fabricated test reference. Does not imply all Java runtimes fail; staging harness has distinct native working flows. No new upstream issue is fabricated."
     },
     {
@@ -200,12 +200,12 @@
       "api_contract": {"method": null, "path": null, "request_schema_ref": "developer-tools/klab-service-simulator/contract-cases.json", "expected_response_schema_ref": "developer-tools/klab-service-simulator/contract-cases.json"},
       "requirement_ids": ["RC-P1.1", "RC-P3.3", "RC-P4.1", "RC-P4.3", "CAP-07", "CAP-13", "CAP-14"], "original_issues": [],
       "python_test_refs": ["developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup", "developer-tools/klab-service-simulator/tests/test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt"],
-      "simulator_scenario_refs": ["SIM-DISCOVERY-001", "SIM-LIFECYCLE-001", "SIM-FAULTS-001", "SIM-SELECTION-001", "SIM-INSPECTION-001", "SIM-IMPORT-001", "SIM-INPUT-BINDING-001", "SIM-SEMANTICS-001", "SIM-BEHAVIOR-DRAFT-001", "SIM-NOTEBOOK-001", "REPLAY-001", "SIM-PROVENANCE-DEPENDENCIES-001"],
+      "simulator_scenario_refs": ["SIM-DISCOVERY-001", "SIM-LIFECYCLE-001", "SIM-FAULTS-001", "SIM-SELECTION-001", "SIM-INSPECTION-001", "SIM-IMPORT-001", "SIM-INPUT-BINDING-001", "SIM-SEMANTICS-001", "SIM-BEHAVIOR-DRAFT-001", "SIM-NOTEBOOK-001", "REPLAY-001", "SIM-PROVENANCE-DEPENDENCIES-001", "SIM-PROVIDER-AVRO-001"],
       "reproducer_ref": "developer-tools/klab-service-simulator/README.md",
       "observed_java_behavior": "NOT_TESTED whole proposed finite scheduling/admission/semantic substitute. Narrow captured DTO/read properties retain separate JAVA_OBSERVED attribution.",
       "simulator_behavior": "Clockless controlled polls, exact-source literals, fixed SIM vocabulary, bounded private synthetic state; never local reasoning or Java execution",
       "contract_confidence": "SIMULATED_PROVISIONAL", "java_status": "CONTRACT_PROVISIONAL", "priority": "P2", "contract_case": "GAP-CASE-0013",
-      "links": ["developer-tools/klab-service-simulator/contract-cases.json"], "notes": "One compatibility-assumption umbrella, not one alleged Java defect per route/test. State its narrower property when resolving; native timing need not match poll-driven simulation."
+      "links": ["developer-tools/klab-service-simulator/contract-cases.json", "python-client/docs/provider-binary-contextualization.md"], "notes": "One compatibility-assumption umbrella, not one alleged Java defect per route/test. State its narrower property when resolving; native timing need not match poll-driven simulation. Binary provider golden fixtures are independently generated finite matches, not a generic Avro service or native computation. Source Data Job controller lacks explicit media and falls through after streaming; deployed HTTP behavior NOT_TESTED, no observed defect or cleanup proof inferred."
     },
     {
       "id": "JAVA-GAP-0014", "legacy_ids": ["SIM-METADATA-001", "SIM-EXPORT-001", "SIM-ADAPTERS-001"],

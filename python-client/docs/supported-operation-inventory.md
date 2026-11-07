@@ -4,9 +4,9 @@
 production SDK's Python AST without importing it or contacting services. Run the
 tool with `--check` in CI; regenerate after source-callable changes.
 
-The current inventory contains410source-defined public-named callables:
-51abstract declarations,331implemented source bodies,24bodies with unsupported
-guards and4unconditionally unsupported wrappers. **These classifications are not
+The current inventory contains411source-defined public-named callables:
+51abstract declarations,334implemented source bodies,24bodies with unsupported
+guards and2unconditionally unsupported wrappers. **These classifications are not
 test coverage, native compatibility or whole-roadmap completion.** The inventory
 does not expand inheritance, generated dataclass methods, aliases, nested closures
 or routes. Private-named facade classes are included because their public methods
@@ -15,11 +15,11 @@ transport/permission/scientific obligations still require their own tests/eviden
 The [pinned Java source receipt](../../notes/python-roadmap-execution/evidence/supported-operation-source-authority-20261107.json)
 records the read-only authority used below. It is not a deployed Java test.
 
-## Four wrappers, two remaining operations
+## Binary provider implementation and remaining encoder wrappers
 
 | Operation | Python status | Inspected Java source | Next requirement |
 | --- | --- | --- | --- |
-| Resources `contextualize` (sync/nativeasync) | Explicit local UnsupportedOperationError | ResourcesClient constructs DataRequest and Utils.Http.Client.postData writes raw Avro binary under application/octet-stream, receives a Job id and retrieves binary Data via the data-specific Job route | Implement exact bounded binary request/result DTO support and failure/denial/cancel/cleanup workflows. Do not substitute JSON or conflate it with the experimental worker lease protocol. |
+| Resources `contextualize` (sync/nativeasync) | Source implementation and synthetic controls now present; installed/hosted delivery pending | ResourcesClient constructs DataRequest and Utils.Http.Client.postData writes raw Avro binary under application/octet-stream, receives a Job id and retrieves binary Data via the data-specific Job route | Verify the bounded binary workflow's installed artifacts and hosted gates, then retained native adapter/scientific acceptance separately. Not the experimental worker lease protocol. |
 | Resolver `encode_dataflow` (sync/nativeasync) | Explicit local UnsupportedOperationError | ResolverClient.encodeDataflow is a source stub returning null | No native encoder endpoint inferred. Maintain explicit refusal pending authoritative intended serialization/contract; source stub is not proof every deployment lacks an encoder. |
 
 `decode_cell` supports explicit NUMBER/BOOLEAN/TEXT/CONCEPT/null forms and refuses
@@ -36,4 +36,6 @@ This is the bounded RC-P0 source inventory component, **not completed RC-P0**:
 route/schema/source-baseline and executable coverage mappings across all documented
 user workflows remain to be reconciled. Existing installed/hosted suites and the
 17-gap register retain their own evidence and native acceptance states. Do not
-turn the331implemented-source count into331verified operations.
+turn the334implemented-source count into334verified operations. The preceding
+inventory PR's four refusal wrappers remain historical; this feature replaces the
+two Resources wrappers with source-shaped binary implementations, not native proof.

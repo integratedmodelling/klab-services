@@ -4,9 +4,9 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 331,
+    "IMPLEMENTED_SOURCE_ONLY": 334,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
-    "UNCONDITIONALLY_UNSUPPORTED": 4
+    "UNCONDITIONALLY_UNSUPPORTED": 2
   },
   "operations": [
     {
@@ -1043,7 +1043,7 @@
       "owner": "ResourcesServiceImpl",
       "operation": "contextualize",
       "async": false,
-      "classification": "UNCONDITIONALLY_UNSUPPORTED"
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
     {
       "path": "api/services.py",
@@ -1239,7 +1239,7 @@
       "owner": "AsyncResources",
       "operation": "contextualize",
       "async": true,
-      "classification": "UNCONDITIONALLY_UNSUPPORTED"
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
     {
       "path": "async_client.py",
@@ -2505,6 +2505,13 @@
       "path": "provenance.py",
       "owner": "ProvenanceLink",
       "operation": "evidence",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "provider_data.py",
+      "owner": "ProviderData",
+      "operation": "from_fields",
       "async": false,
       "classification": "IMPLEMENTED_SOURCE_ONLY"
     },

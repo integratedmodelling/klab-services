@@ -190,6 +190,11 @@ class Job:
         self.cancellation_requested = self.cancellation_requested or accepted
         return accepted
 
+    def _retrieve_result(self, timeout, deadline):
+        return self.client.transport.request(self.service, "GET", f"/jobs/retrieve/{self.id}",
+            scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
+            timeout=timeout, deadline=deadline)
+
     def result(self, timeout: float | None = None, *, _cancelled=None) -> ObservationImpl | dict[str, Any]:
         """Await and retrieve actual result; timeout preserves this resumable handle."""
         self._check_binding()
@@ -214,10 +219,7 @@ class Job:
                 status = self.status(timeout=remaining(), _deadline=deadline)
                 if self._finished(status):
                     self._check_binding()
-                    payload = self.client.transport.request(
-                        self.service, "GET", f"/jobs/retrieve/{self.id}",
-                        scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
-                        timeout=remaining(), deadline=deadline)
+                    payload = self._retrieve_result(remaining(), deadline)
                     self._check_binding()
                     result = self._decode_result(payload)
                     self._check_binding()

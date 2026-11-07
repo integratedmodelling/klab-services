@@ -54,6 +54,11 @@ class AsyncJob(Job):
         self.cancellation_requested = self.cancellation_requested or accepted
         return accepted
 
+    async def _retrieve_result(self, timeout, deadline):
+        return await self.client.transport.request(self.service, "GET", f"/jobs/retrieve/{self.id}",
+            scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
+            timeout=timeout, deadline=deadline)
+
     async def result(self, timeout=None):
         self._check_binding()
         if timeout is not None and (not math.isfinite(timeout) or timeout < 0):
@@ -74,9 +79,7 @@ class AsyncJob(Job):
                     status = await self.status(timeout=remaining(), _deadline=deadline)
                     if self._finished(status):
                         self._check_binding()
-                        payload = await self.client.transport.request(self.service, "GET", f"/jobs/retrieve/{self.id}",
-                            scope=scope_token(self.scope), service_id=self.client.runtime_service_id,
-                            timeout=remaining(), deadline=deadline)
+                        payload = await self._retrieve_result(remaining(), deadline)
                         self._check_binding()
                         result = self._decode_result(payload)
                         self._check_binding()
@@ -209,8 +212,10 @@ class AsyncResources(_AsyncService):
             raise ProtocolError("ResourceSet results must be a list")
         return ResourceSet([required_text(object_payload(p, "resource descriptor"), "resourceUrn") for p in results], payload)
 
-    async def contextualize(self, *args, **kwargs):
-        raise UnsupportedOperationError("Resource contextualization requires binary Avro worker input; use Runtime.submit")
+    async def contextualize(self, resource, observation, geometry, scope, *, start_time=0, end_time=0, input_data=None):
+        from .provider_data import _async_contextualize
+        return await _async_contextualize(self, resource, observation, geometry, scope,
+            start_time=start_time, end_time=end_time, input_data=input_data)
 
 
 class AsyncRuntime(_AsyncService, RuntimeServiceImpl):

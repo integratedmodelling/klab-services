@@ -204,9 +204,10 @@ class ResourcesServiceImpl(_RemoteService, ResourcesService):
             raise ProtocolError("ResourceSet results must be a list")
         return ResourceSet([required_text(object_payload(p, "resource descriptor"), "resourceUrn") for p in results], payload)
 
-    def contextualize(self, resource, observation, geometry, scope):
-        from klab_client.errors import UnsupportedOperationError
-        raise UnsupportedOperationError("Resource contextualization requires binary Avro worker input; use Runtime.submit")
+    def contextualize(self, resource, observation, geometry, scope, *, start_time=0, end_time=0, input_data=None):
+        from klab_client.provider_data import _contextualize
+        return _contextualize(self, resource, observation, geometry, scope,
+            start_time=start_time, end_time=end_time, input_data=input_data)
 
 
 class RuntimeServiceImpl(_RemoteService, RuntimeService):

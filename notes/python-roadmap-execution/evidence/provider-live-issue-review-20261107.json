@@ -1,0 +1,32 @@
+{
+  "verified_utc": "2026-11-07T04:37:52.140810+00:00",
+  "read_only": true,
+  "scope": "All open issues in klab-services and klab.component.geospatial, limit1000each/no truncation",
+  "open_services": 10,
+  "open_geospatial": 1,
+  "comment_bodies_retrieved": 35,
+  "original_issue_bodies_match_baseline_hashes": true,
+  "original_comment_hash_changes": 0,
+  "known_campaign_comments_fully_reinspected": 12,
+  "new_unclassified_comment_urls": 0,
+  "classification_changes": 0,
+  "issue_mutations_or_closures": 0,
+  "safe_closure_candidates": 0,
+  "original_baseline": "docs/java-service-contract-gaps/issues.json",
+  "known_campaign_actions": "docs/java-service-contract-gaps/issue-actions.json",
+  "campaign_comment_body_sha256": {
+    "https://github.com/integratedmodelling/klab-services/issues/193#issuecomment-6696050039": "471ce300bbebf2f8960489a5008735d9b353cb11b725a6aea6668f2483f6c485",
+    "https://github.com/integratedmodelling/klab-services/issues/144#issuecomment-6696050429": "68ecd72651142d5ad40f006fba8babf5681cbb2218b63b07d04e7568be8ed1d4",
+    "https://github.com/integratedmodelling/klab-services/issues/130#issuecomment-6696050809": "398981dfb354c8c68d6e25b9a089256c6d681e12059599f53f48ae653b069b64",
+    "https://github.com/integratedmodelling/klab-services/issues/129#issuecomment-6696051223": "c812639e56595bc3d0ac3e6586be8e775a4d187e59f617587abe5f706379b4dd",
+    "https://github.com/integratedmodelling/klab-services/issues/127#issuecomment-6696051636": "04055ebd0ccd0a297ab0ab195a533300004b1e4618966776c80dc54e02a089f1",
+    "https://github.com/integratedmodelling/klab-services/issues/127#issuecomment-6698860944": "733c008465463f00f108daf31d8157d21e1076a6c7c7cc8cd8406add010382c2",
+    "https://github.com/integratedmodelling/klab-services/issues/126#issuecomment-6696052073": "5499730561110b30c545f068cd263c8b1dd5da045baffe383d47db0840f932ba",
+    "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6696052496": "fb5c5092c223fc383692d49e6f44f69ca6e83d75aa70f6f65b72faf0e813ff87",
+    "https://github.com/integratedmodelling/klab-services/issues/124#issuecomment-6696052897": "6e155b7d633ee6588cab80b290eaf4db4879c06e0fadb65fd8be6c2836f1268d",
+    "https://github.com/integratedmodelling/klab-services/issues/123#issuecomment-6696053325": "d3b6143442c9c4ff513869bf78dce55570f51db55c2ef70c03c12873ddf18c16",
+    "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6696053864": "cc30470117c8c56ddfb9ae91c0d66545894a27599df8c8cb025c406f65bb320b",
+    "https://github.com/integratedmodelling/klab.component.geospatial/issues/10#issuecomment-6696054302": "db03411df3369dbd3f5e25db2bebd82c2be5d1f7eeec2b8f803f43fea08a5413"
+  },
+  "disposition": "8OPEN_JAVA_REQUIRED/3OPEN_OTHER retained. Prior C-exclusion comment is historical and is explicitly superseded by the existing worker scope correction. Synthetic provider success does not satisfy native/scientific/deployment/release obligations."
+}

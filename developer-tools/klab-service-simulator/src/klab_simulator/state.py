@@ -21,7 +21,7 @@ MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
 SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
-SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export", "candidate-sources", "provenance-dependencies")
+SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export", "candidate-sources", "provenance-dependencies", "provider-avro")
 
 
 class ContractError(Exception):
@@ -289,6 +289,9 @@ class State:
         if principal is None:
             raise ContractError(401, "A synthetic test credential is required")
         scope = headers.get("klab-scope", "")
+        if service == "resources" and route == "/contextualize" and method == "POST":
+            from .provider_avro import submit
+            return submit(self, principal, scope, headers, body)
         if service == "resources" and method == "POST" and route == "/api/v1/models/candidates":
             from .model_candidates import candidates
             return candidates(self, principal, headers, body)
@@ -497,7 +500,12 @@ class State:
                         self.imported_resources[urn] = {"owner": principal, "scope": root,
                             "asset": {"urn": urn, "adapterType": "raster", "metadata": {"delegate": job["import_source"]}}}
                 return {"status": job["status"]}, "application/json"
+            if "/retrieveData/" in route and "provider_case" in job["result"]:
+                from .provider_avro import retrieve
+                return retrieve(job)
             if "/retrieve/" in route:
+                if "provider_case" in job["result"]:
+                    raise ContractError(422, "Provider data requires the binary retrieval route, not JSON fallback")
                 if job["status"] != "FINISHED":
                     raise ContractError(409, "Job has not finished")
                 if self.scenario == "empty-result":

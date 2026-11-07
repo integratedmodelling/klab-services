@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-PROVIDER-AVRO-001",
+      "rows": ["RC-P0", "RC-P4.3", "CAP-13"],
+      "routes": ["/resources/contextualize", "/resources/jobs/retrieveData/{id}", "/resources/jobs/status/{id}", "/resources/jobs/cancel/{id}"],
+      "source": "Read-only generated Java DataRequest/Instance schema plus ResourcesClient/postData/controller source. Independent fastavro1.13.1 golden bytes, finite exact synthetic requests only; no SDK codec import or science. Not a native scanner repair, worker lease ABI or real scientific execution.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; historical null-scanner failure remains CONFIRMED_DEFECT and native direct provider schema/roles/cleanup unverified",
+      "simulator_test": "test_provider_avro.py::test_independent_binary_provider_job_request_input_event_empty_and_owned_cleanup",
+      "java_gap_ids": ["JAVA-GAP-0001", "JAVA-GAP-0013"]
+    },
+    {
       "id": "SIM-PROVENANCE-DEPENDENCIES-001",
       "rows": ["CAP-14", "RC-P4.4"],
       "routes": ["/runtime/api/v1/query"],

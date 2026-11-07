@@ -1,5 +1,23 @@
 # A+B completion ledger — ongoing campaign
 
+PR283 verified merged18b532c31 at04:10:35Z exact68f7f0941/allchecksPASS/no rerun.
+Next binaryproviderworkflow sourceunderdevelopment:47codeccontrols140lines98branches
+100%,19Jobcontrols84lines18branches100%/typesPASS; independenttemporaryfastavro
+oracle13variants. FirstJobrun17PASS/1FAILredactedERRORsemantics retained/corrected.
+No simulator/installed/nativeacceptance yet; no Javafix or nativeworkerABI inference.
+Subsequent finalprovider source275SDKcontrols/14simcontrolsPASS/types/lint/gatePASS.
+Freshinstalled4366SDK/237simulator/14provider/18provenance/98reference/11inventory/
+57worker/21HTTP/37governancePASS, zero skips/errors/failures.57SDK+21simulator+
+5worker/goldenfixture rawbyteparity. NewSDK235lines118branches100%unexcluded; separate
+simfixture24lines12branches100%. Finalgate/17linkedmatrixrunningvs17realNOT_RUN/exit3.
+Retained initialJob and415intake failures; no native/sourcecontroller or scannerfix
+claimed. Latest11issues/35comments04:37:52UTC body+originalcomment hashesunchanged,
+12campaigncomments reinspected/pinned, no safeclosure/mutation. ProviderPR pending;
+next binaryJobrestore and remaining42scope, not fullABC/nativeacceptance completion.
+FinalproviderSDK-onlynewmodule/changedcodegate and17linkedcasesPASS(467SDK/
+166simulator/57worker), zero skips/errors/failures vs17realNOT_RUN/exit3. NormalPR/
+finalCI pending; native/scientific/fullABC acceptance unchanged.
+
 ProvenancePR282OPENca32b1f2f/finalCIrunning. Next independent operationinventory
 tool11testsPASS/50lines26branches100%unexcluded, source410callables classified without
 nativeexecution/support claims;4unsupported wrappers=2sync/nativeasync operations,

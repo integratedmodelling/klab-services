@@ -1,5 +1,16 @@
 # Python roadmap acceptance map — 3 November 2026
 
+Latest binary Resources feature: source-defined rawAvro context/dataJob workflow
+freshinstalled4366SDK/237simulator/14provider/37governance and other reference/worker
+suitesPASS, zero skips/errors/failures. Both newSDKmodules235lines118branches100%
+unexcluded and rawpackage/goldenfixtureparity verified. Source411callable inventory
+now leaves two Resolver encoder refusal wrappers; these counts are not executed
+support certificates. Final linkedgates/ordinaryPR/CI pending. Native scanner/schema/
+role/cleanup/workerABI/scientific acceptance unchanged; ProviderJob savedhandle
+restoration remains a concrete next Python deficit, not JSONfallback or wholeABC green.
+FinalproviderSDK-onlynewmodule/changedcode and17linkedcasesPASS(467SDK/166simulator/
+57worker) vs17realNOT_RUN/exit3. NormalPR/finalCI next; no native promotion.
+
 ProvenancePR282OPENca32b1f2f/finalCIrunning. RC-P0 reproducible source inventory
 now410public-named callables:51abstract/331source-only/24guarded/4unsupported wrappers.
 This is source classification, NOT410tested/supported operations.11tooltestsPASS;

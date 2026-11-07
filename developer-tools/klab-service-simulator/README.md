@@ -8,6 +8,11 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario provider-avro` serves independently generated finite raw Avro request/
+Data Job fixtures, not a codec imported from the SDK. Unknown valid requests refuse
+as outside this fixture. No runtime fastavro dependency, worker ABI or scientific
+scanner repair is implied. See [binary provider scope](../../python-client/docs/provider-binary-contextualization.md).
+
 `--scenario provenance-dependencies` provides finite declared dependency and plan
 edges for existing provenance readers (SIM-PROVENANCE-DEPENDENCIES-001/JAVA-GAP-0016).
 No computed dependency, complete lineage or native committed revision is claimed.
