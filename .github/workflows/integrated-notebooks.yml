@@ -1,0 +1,39 @@
+name: Installed notebook workflows (native science NOT_RUN)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/integrated-notebooks.yml']
+  push:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/integrated-notebooks.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-notebook-workflows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: ${{ github.workspace }}/python-client/tools
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev,analysis,notebook,local]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: Require kernel and analysis dependencies rather than skipped acceptance
+        run: python -c "import nbformat,nbclient,nbconvert,ipykernel,matplotlib,psutil,numpy,rasterio,xarray"
+      - name: Shared evidence runner and distinct notebook recipe controls
+        run: python -m pytest -q python-client/tests/tools/test_verify_onboarding_matrix.py python-client/tests/tools/test_verify_restoration_matrix.py python-client/tests/tools/test_verify_notebook_matrix.py
+      - name: Exact installed guards, local kernel smoke and actual public notebook workflows
+        run: python python-client/tools/verify_notebook_matrix.py --capture-current-source --output-directory notebook-evidence
+      - name: Types and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/tools/verify_notebook_matrix.py
+          python -m ruff check python-client/tools/verify_notebook_matrix.py developer-tools/klab-service-simulator/tests/test_notebook_client.py --select E9,F63,F7,F82
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installed-notebooks-not-native-scientific-acceptance
+          path: notebook-evidence

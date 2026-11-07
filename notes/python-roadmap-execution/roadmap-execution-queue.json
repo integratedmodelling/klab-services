@@ -3,23 +3,22 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-integrated-restoration-acceptance",
-    "pr": 308,
-    "requirement": "RC-P1.2",
+    "branch": "feat/python-integrated-notebook-acceptance",
+    "pr": null,
+    "requirement": "RC-P3.5",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 307,
-    "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
-    "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
-    "utc": "2026-11-07T22:23:23Z",
+    "pr": 308,
+    "merge": "3fe92c7c192c6db36ed75cf506d6fb1c1a576c00",
+    "head": "abfc54bda8978115228cdc4c6141a24858b80b3e",
+    "utc": "2026-11-07T22:39:36Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P1.2",
+  "next_actionable_requirement": "RC-P3.5",
   "pending_deliveries": [],
   "remaining_runnable_work": [
     "operation-workflow-attribution",
-    "restoration-lifecycle-acceptance",
     "notebook-integrated-acceptance",
     "multishard-scientific-acceptance",
     "safety-regression-acceptance",
@@ -3916,8 +3915,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: restoration-lifecycle-acceptance"
       },
       "simulator_support_needed": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
-      "implementation_status": "INTEGRATED_RESTORATION_MATRIX453SDK32LIFECYCLEHTTP30PROVIDERHTTP_SOURCE_VERIFIED_DELIVERY_PENDING",
-      "simulator_acceptance_status": "INSTALLED_PUBLIC_RESTART_EXPIRY_CANCEL_IDENTITY_FENCING_PASS_NATIVE_RETENTION_DISTINCT",
+      "implementation_status": "INSTALLED_RESTORATION_LIFECYCLE_MATRIX_DELIVERED_PR308",
+      "simulator_acceptance_status": "453SDK_32LIFECYCLEHTTP_30PROVIDERHTTP_PASS_NATIVE_RETENTION_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -3969,12 +3968,21 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_restoration_delivery": {
+          "pr": 308,
+          "head": "abfc54bda8978115228cdc4c6141a24858b80b3e",
+          "merge": "3fe92c7c192c6db36ed75cf506d6fb1c1a576c00",
+          "merged_at": "2026-11-07T22:39:36Z",
+          "final_head_checks": 38,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-restoration-installed-20261107.json"
+        }
       },
       "work_group": "restoration-lifecycle-acceptance",
       "priority": 16,
-      "task_state": "in_progress",
-      "next_executable_action": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native incarnation/retention/history/TTL-rights and worker deployment evidence remain separate external obligations.",
       "disposition": null
     },
     {
@@ -4086,8 +4094,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: restoration-lifecycle-acceptance"
       },
       "simulator_support_needed": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
-      "implementation_status": "INTEGRATED_RESTORATION_MATRIX453SDK32LIFECYCLEHTTP30PROVIDERHTTP_SOURCE_VERIFIED_DELIVERY_PENDING",
-      "simulator_acceptance_status": "INSTALLED_PUBLIC_RESTART_EXPIRY_CANCEL_IDENTITY_FENCING_PASS_NATIVE_RETENTION_DISTINCT",
+      "implementation_status": "INSTALLED_RESTORATION_LIFECYCLE_MATRIX_DELIVERED_PR308",
+      "simulator_acceptance_status": "453SDK_32LIFECYCLEHTTP_30PROVIDERHTTP_PASS_NATIVE_RETENTION_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -4136,12 +4144,21 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_restoration_delivery": {
+          "pr": 308,
+          "head": "abfc54bda8978115228cdc4c6141a24858b80b3e",
+          "merge": "3fe92c7c192c6db36ed75cf506d6fb1c1a576c00",
+          "merged_at": "2026-11-07T22:39:36Z",
+          "final_head_checks": 38,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-restoration-installed-20261107.json"
+        }
       },
       "work_group": "restoration-lifecycle-acceptance",
       "priority": 16,
-      "task_state": "in_progress",
-      "next_executable_action": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native incarnation/retention/history/TTL-rights and worker deployment evidence remain separate external obligations.",
       "disposition": null
     },
     {
@@ -4261,8 +4278,8 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: restoration-lifecycle-acceptance"
       },
       "simulator_support_needed": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
-      "implementation_status": "INTEGRATED_RESTORATION_MATRIX453SDK32LIFECYCLEHTTP30PROVIDERHTTP_SOURCE_VERIFIED_DELIVERY_PENDING",
-      "simulator_acceptance_status": "INSTALLED_PUBLIC_RESTART_EXPIRY_CANCEL_IDENTITY_FENCING_PASS_NATIVE_RETENTION_DISTINCT",
+      "implementation_status": "INSTALLED_RESTORATION_LIFECYCLE_MATRIX_DELIVERED_PR308",
+      "simulator_acceptance_status": "453SDK_32LIFECYCLEHTTP_30PROVIDERHTTP_PASS_NATIVE_RETENTION_DISTINCT",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
       "java_gap_ids": [
@@ -4314,12 +4331,21 @@
           "b532cd779f3f5919144fec770e3fd3e35894b2d8",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "integrated_restoration_delivery": {
+          "pr": 308,
+          "head": "abfc54bda8978115228cdc4c6141a24858b80b3e",
+          "merge": "3fe92c7c192c6db36ed75cf506d6fb1c1a576c00",
+          "merged_at": "2026-11-07T22:39:36Z",
+          "final_head_checks": 38,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-restoration-installed-20261107.json"
+        }
       },
       "work_group": "restoration-lifecycle-acceptance",
       "priority": 16,
-      "task_state": "in_progress",
-      "next_executable_action": "Run integrated installed sync/async context/observation/provider/runtime Job restart/expiry/cancel/identity-fencing matrix with explicit no-replay; distinguish simulator retention from native incarnations.",
+      "task_state": "delivered_pending_final_row_acceptance",
+      "next_executable_action": "Reconcile original-row integrated acceptance; native incarnation/retention/history/TTL-rights and worker deployment evidence remain separate external obligations.",
       "disposition": null
     },
     {

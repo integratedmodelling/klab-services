@@ -28,11 +28,12 @@ def test_owned_exact_sdk_kernel_await_shared_job_local_cancellation_reader_close
         import asyncio, json, os
         from klab_client import (AsyncClient, AsyncGraphBrowser, AsyncGraphProjection,
                                  Endpoint, ObservationRequest, RectangularGeometry)
+        from klab_client.errors import AuthorizationError
         ready = json.loads(os.environ["KLAB_SIM_NOTEBOOK"])
         urls = ready["endpoints"]
-        def options():
-            token = ready["credential"]
-            return dict(credential=token, agent_name="alice",
+        def options(other=False):
+            token = ready["other_credential"] if other else ready["credential"]
+            return dict(credential=token, agent_name="bob" if other else "alice",
                         runtime_service_id=ready["service_ids"]["runtime"],
                         reasoner=Endpoint(urls["reasoner"], token),
                         resources=Endpoint(urls["resources"], token),
@@ -73,6 +74,14 @@ def test_owned_exact_sdk_kernel_await_shared_job_local_cancellation_reader_close
                         restored = await reader.restore_handle(saved)
                         assert (await restored.fetch_data((0,))).values == (100,)
                     assert (await observations[0].fetch_data((399,))).values == (195,)
+                    async with AsyncClient(urls["runtime"], **options(other=True)) as foreign:
+                        try:
+                            await foreign.attach_context(contexts[0].id)
+                        except AuthorizationError:
+                            denied = True
+                        else:
+                            raise AssertionError("Foreign notebook reader unexpectedly gained access")
+                    assert (await observations[0].fetch_data((0,))).values == (100,)
                     projection = AsyncGraphProjection(AsyncGraphBrowser(contexts[0]))
                     page = await projection.load(observations[0], relationships=("MEASURED",))
                     assert len(page.page.links) == 1 and page.page.partial
@@ -82,7 +91,8 @@ def test_owned_exact_sdk_kernel_await_shared_job_local_cancellation_reader_close
                     assert not refreshed.invalidated and "UNKNOWN" in projection.view.consistency
                     return dict(own_wait_cancelled=cancelled, jobs_resumed_without_recreate=True,
                                 other_wait_completed=True, same_principal_reader_only=True,
-                                reader_close_preserved_work=True, independent_contexts=2,
+                                 reader_close_preserved_work=True, independent_contexts=2,
+                                 collaboration_denied=denied,
                                 verified_endpoint_cells=4, graph_partial=True,
                                 backend="SIMULATED", java_science="NOT_RUN")
                 finally:
@@ -101,11 +111,12 @@ def test_owned_exact_sdk_kernel_await_shared_job_local_cancellation_reader_close
         nbformat.v4.new_code_cell(
             "assert report['own_wait_cancelled'] and report['other_wait_completed'] and report['reader_close_preserved_work']\n"
             "assert report['graph_partial'] and report['backend']=='SIMULATED'\n"
+            "assert report['collaboration_denied']\n"
             "print('SIMULATED notebook acceptance only; no Java scientific execution')")])
     notebook.metadata.kernelspec = {"name": "klab-owned-async", "display_name": "owned", "language": "python"}
     env = {key: value for key, value in os.environ.items() if not key.startswith("KLAB_") and key != "PYTHONPATH"}
     env["PYTHONPATH"] = str(Path(klab_client.__file__).resolve().parents[1])
-    env["KLAB_SIM_NOTEBOOK"] = json.dumps(simulator | {"credential": "sim-token-alice"})
+    env["KLAB_SIM_NOTEBOOK"] = json.dumps(simulator | {"credential": "sim-token-alice", "other_credential": "sim-token-bob"})
     execute_private_kernel(notebook, tmp_path, env)
     check_outputs(notebook, ["sim-token-alice", "sim-token-bob", "sim-admin-control"])
     identity = json.loads(notebook.cells[0].outputs[0].text)
@@ -119,6 +130,7 @@ def test_owned_exact_sdk_kernel_await_shared_job_local_cancellation_reader_close
     assert not list(tmp_path.glob("private-kernel-*"))
     report = json.loads(notebook.cells[1].outputs[0].text)
     assert report["independent_contexts"] == 2 and report["verified_endpoint_cells"] == 4
+    assert report["collaboration_denied"] and report["reader_close_preserved_work"]
     state = control(simulator)
     assert not any(state["counts"].values())
     assert sum(row["path"].endswith("/submit") for row in state["trace"]) == 2
