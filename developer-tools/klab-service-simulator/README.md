@@ -8,6 +8,13 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+SIM-MANAGED-AGENT-001/JAVA-GAP-0008 adds proposed finite synthetic managed lifecycle
+fixtures under `klab.experimental.managed-agents/1`. This executes NO k.Actors source
+and creates NO script/app/testcase private session. Stop acknowledgement, terminal
+fixture state and later synthetic cleanup confirmation are distinct; native Java
+resource disposal remains unverified. See
+[reference scope and limits](../../python-client/docs/managed-agent-reference.md).
+
 SIM-READ-PLAN-001/JAVA-GAP-0006/0014 adds explicit proposed snapshot shards under
 `klab.experimental.read-plans/1`. Bounded pinned numerical buffers and digests are
 not native committed revisions. Current-owner/root/Runtime grants are process-local,

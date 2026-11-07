@@ -461,6 +461,55 @@ real17NOT_RUN/exit3unchanged. All bounded local checks now verified. Publish nor
 read-plan featurePR next, merge only after applicable final-head hostedchecksPASS,
 then continue independent managed-agent/provenance/federation scope. Entire42row
 roadmap still incomplete and sleep remains pending; no native repair authorized.
+Read-plan committed/pusheddd8ee781d and normalPR276 published against integration;
+final-head watcher running, no merge or hosted success inferred yet. Local evidence
+remains distinct from native acceptance. No read-plan artifact overwrite.
+
+### Active managed synthetic lifecycle reference
+
+Current `feat/python-managed-agent-reference` branches fromdd8ee781d while276CI
+runs. New SDK/simulator `managed_agents.py` explicitly proposes
+klab.experimental.managed-agents/1; it parses/compiles/executes NO k.Actors source.
+Named idle/finish/fail finite fixtures reference only caller-root BEHAVIOR-like
+ownership. No SCRIPT/APP/TESTCASE private sessions, task restrictions, user singletons,
+observation binding or custommessaging/askreply semantics are fabricated. Native
+AgentExecutions/DeferredAgent/AgentChannel remain separate and no real-error fallback.
+Immutable Runtime/root/epoch references, single-use start, CASrevision stop, terminal
+read and later synthetic cleanup confirmation/purge implemented. SDK close never
+auto-stops/purges. Current owner/root/Runtime denials, explicit SDK rebind/no automatic
+command replay and restart-loss410with new process epoch tested. Failed durable
+create/start/stop/status tick/purge/reset rolls back rows/epoch+durable state.
+Source35SDK-only testsPASS at133lines/48branches100%unexcluded;12HTTP/server tests
+PASS incl finite16retainedrow cap and request/identity/intake denials. Newmodule
+bodytypecheck/fatalLintPASS. Same0008/handoff/scenario/docs/CI/publicexports updated,
+but fresh installed regressions/SDKcoveragegate/17case evidence and normal delivery
+remain pending. No actual native execution/disposal acceptance inferred;0008stays
+NOT_TESTED and issue125open. Read-planPR276must pass final-head checks before merge.
+Entire42criterion roadmap and final sleep remain pending.
+Read-planPR276 subsequently verified remotely MERGED
+`8d4068b3bb6a3683526b805d5f269ef09ecd004e`,2026-11-07T02:04:58Z, exact head
+dd8ee781d452914a18517ee67a9b4fd082b8d75b. All applicable final-head checksPASS,
+no failed-check rerun needed. Current managed-reference branch fast-forwarded actual
+integration merge without discarding uncommitted work; no independent maintainer
+review/native acceptance claimed. Fresh managed installed verifier is running in
+`full-roadmap-20261106/managed-agents-first`; do not poll/overwrite its artifacts.
+Fresh02:04:41UTC read-only issue inventory fetched all11open bodies/comments;
+original bodyhashes unchanged, no newly unclassified commentURLs or safe closure
+candidate. All8Java/3other obligations stayopen; no remote issue mutation.
+Fresh managed-reference installed4192SDK/73referenceHTTP+storage+recovery/
+187fullsimulator/57worker/21workerHTTP+recovery/33governancePASS, zero skips/errors/
+failures.53SDK+18simulator+5worker source/wheel/sdist/installed rawmodule parity;
+current source rechecked after receipt. SDK-only newmodule133/133lines+48/48branches
+100%unexcluded; fullSDK98.48% retains165historical exclusions. Exact custody:
+`evidence/full-roadmap-managed-agents-20261107.json`. SDK-only changed-code gate/
+17linked simulated matrix running;17realNOT_RUN/exit3alreadyverified without native
+invocation/fallback. All source/execution limitations preserved; no managedPR yet.
+Next wait automatic matrix receipt, record result then publish ordinaryPR/finalCI.
+Final managed-reference SDK-only changed-code/newmodule gatePASS;17linkedcases
+PASS(304SDK/116simulator-capture-reference/57worker), zero skips/errors/failures.
+17realNOT_RUN/exit3unchanged. Publish ordinary managed-referencePR next and await
+applicable final-head checks before permitted merge. Synthetic lifecycle success
+does NOT satisfy native execution/private-session/resource-disposal acceptance.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan

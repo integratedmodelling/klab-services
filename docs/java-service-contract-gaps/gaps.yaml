@@ -131,12 +131,12 @@
       "subsystem": "agents", "java_component": "RuntimeService.compileAndRunAgent / AgentRegistry / native AMQP",
       "api_contract": {"method": "POST", "path": "/api/v1/instantiate/agent", "request_schema_ref": "python-client/docs/agent-execution.md", "expected_response_schema_ref": "python-client/docs/agent-execution.md"},
       "requirement_ids": ["RC-P4.5", "CAP-14"], "original_issues": ["https://github.com/integratedmodelling/klab-services/issues/125"],
-      "python_test_refs": ["python-client/tests/unit/test_agent_execution.py"], "simulator_scenario_refs": [],
+      "python_test_refs": ["python-client/tests/unit/test_agent_execution.py", "python-client/tests/unit/test_managed_agents.py", "developer-tools/klab-service-simulator/tests/test_managed_agents.py"], "simulator_scenario_refs": ["SIM-MANAGED-AGENT-001"],
       "reproducer_ref": "python-client/docs/agent-execution.md",
       "observed_java_behavior": "NOT_TESTED complete managed Runtime execution/terminal cleanup. Native Java/Qpid wire interop exists and passed bounded CI; it is not managed registration/execution.",
-      "simulator_behavior": "No agent execution simulator. Linked client MockTransport/transport-policy tests protect deferred registration boundaries only.",
-      "contract_confidence": "NOT_EVALUATED", "java_status": "NOT_TESTED", "priority": "P1", "python_status": "PROTOCOL_VERIFIED", "contract_case": "GAP-CASE-0008",
-      "links": ["https://github.com/integratedmodelling/klab-services/issues/125"], "notes": "Java lifecycle already exists; do not label it absent. Broker credentials are distinct from HTTP credentials; boolean publication is not terminal cleanup."
+      "simulator_behavior": "Explicit klab.experimental.managed-agents/1 finite synthetic lifecycle, NOT k.Actors parsing/compilation/registration/execution. Named idle/finish/fail fixtures, root-owner/Runtime/epoch binding, single-use start, stop acknowledgement distinct from terminal and later synthetic cleanup confirmation; CASrevision/purge/capacity/SDKrebind/restart loss/save rollback controls. No actual native/private-session cleanup proof.",
+      "contract_confidence": "SIMULATED_PROVISIONAL", "java_status": "NOT_TESTED", "priority": "P1", "python_status": "PROTOCOL_VERIFIED", "contract_case": "GAP-CASE-0008",
+      "links": ["https://github.com/integratedmodelling/klab-services/issues/125", "python-client/docs/managed-agent-reference.md", "notes/python-roadmap-execution/evidence/full-roadmap-managed-agents-20261107.json"], "notes": "Java lifecycle already exists; do not label it absent. Proposed experimental routes are NOT native Runtime/AMQP authority; finite synthetic cleanup is not independent Java disposal evidence. Broker credentials are distinct from HTTP credentials; publication/stop acknowledgement is not terminal cleanup. SCRIPT/APP/TESTCASE private sessions/task restrictions/user singletons/sourcevalidation/custommessaging remain outside this reference."
     },
     {
       "id": "JAVA-GAP-0009", "legacy_ids": [],

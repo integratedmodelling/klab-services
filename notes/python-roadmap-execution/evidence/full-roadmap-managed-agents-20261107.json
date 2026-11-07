@@ -1,0 +1,25 @@
+{
+  "verified_utc": "2026-11-07T02:08:42.877268+00:00",
+  "baseline_head": "8d4068b3bb6a3683526b805d5f269ef09ecd004e",
+  "attribution": "Uncommitted finite synthetic lifecycle reference; exact source/wheel/sdist/installed raw module parity identifies tested code. SDK-only coverage does not append simulator tests.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "33a63bda5dfab133a737a5b267bd51c9545fb316924281261f4ec127a0a78ae2", "sdist_sha256": "974cb97cfd03207cfd2ce25560caf79b55536677a2fd2659e3792da52fe14989", "parity_modules": 53},
+    "simulator": {"wheel_sha256": "b33f584428eb854d68ce2d43c24137ca6cfaf2af85775c64fc2a481d7b752bfa", "sdist_sha256": "4508f8fe95dcb81bc141bc43add052c1c4f44221ae8ce3a52ce65b83771961f8", "parity_modules": 18},
+    "worker": {"wheel_sha256": "69dcfc92c2c24a6c2524f0887896439342efcd3ec7e798349d1372b4d5c91824", "sdist_sha256": "81cdba0f2042cd7004eabf76f0099909b006d42070ef8c6ff95ef697f05e78c7", "parity_modules": 5}
+  },
+  "installed_tests": {"sdk_unit_integration": 4192, "reference_http_storage_recovery": 73, "worker_unit": 57, "worker_http_recovery": 21, "full_simulator": 187, "governance": 33, "skips": 0, "failures": 0, "errors": 0},
+  "new_sdk_module": {"SDK_only_tests": 35, "source_HTTP_server_controls": 12, "covered_lines": 133, "statements": 133, "covered_branches": 48, "branches": 48, "excluded_lines": 0},
+  "sdk_coverage": {"combined_percent": 98.4771573604061, "covered_lines": 7536, "statements": 7635, "covered_branches": 2358, "branches": 2412, "historical_excluded_lines": 165, "current_raw_module_bytes_and_unique_SDK_only_paths": "PASS53SDK/18simulator/5worker modules"},
+  "type_lint_governance": "PASS newmodule implementation-body mypy/fatal lint/17stable gaps/42historic rows/generated companion consistency, not native acceptance",
+  "protocol": "klab.experimental.managed-agents/1",
+  "execution": "SYNTHETIC_STATE_MACHINE_NO_KACTORS_EXECUTION",
+  "assertions": ["Explicit root/Runtime/current-owner/epoch/fixture-bound immutable reference and opt-in", "Finite idle/finish/fail fixtures; no arbitrary source/parser/compiler/registration/execution", "Single-use start; CASrevision stop acknowledgement distinct from terminal read and later synthetic cleanup before purge", "Stale/repeated/invalid commands409; unknown mutation outcomes never replayed; no automatic stop on SDKclose", "Explicit SDK connection rebind inspects same process reference without starting/stopping; restart loss410/new epoch/no recreation", "16retainedrow capacity/4KiBrequest/64KiBresponse/strict duplicate-free finiteUTF8JSON; owner/root/Runtime/epoch/intake denial", "Scope release removes only owned rows; failed create/start/stop/status-tick/purge/reset restores ephemeral rows+epoch and durable state"],
+  "excluded_native_scope": "No SCRIPT/APP/TESTCASE private sessions, task restrictions, user singletons, observation binding, custommessages/askreply, native AMQP execution or independent Java resource disposal; docs/AGENTS.md/native grammar/API/tests remain authority",
+  "contract_matrix": {"simulated_pass": 17, "sdk_protocol_tests": 304, "simulator_capture_reference_tests": 116, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_mode_exit": 3},
+  "SDK_only_changed_decisions": "PASS all changed SDK lines/arcs and unexcluded newmodule100percent against installed4192test report",
+  "native_contract": "JAVA-GAP-0008 remains NOT_TESTED; native Java lifecycle exists and is not absent/fixed. Proposed experimental routes do not establish native endpoint authority. Synthetic cleanup bool is not independent Java disposal evidence.",
+  "scientific_acceptance": false,
+  "issue_review": "2026-11-07T02:04:41.345451+00:00 all11open bodies unchanged/comments retrieved/no newunclassifiedURLs/no safe closure candidate; issue125 remainsopen/no mutation",
+  "dependency_custody": "Fresh wheels/sdists/separate pip-target installs borrow existing test dependencies; no existing environment modification or fresh dependency-isolation certification",
+  "remaining": "NormalPR/finalheadCI/permittedmerge. Native execution/cleanup, provenance/committed revisions/federation/full42criteria remain separate; entire-roadmap sleep pending."
+}
