@@ -1,0 +1,17 @@
+{
+  "native_source_authority": "notes/python-roadmap-execution/evidence/dependency-source-authority-20261107.json",
+  "native_membership_delivery": "PR295 merge641eaa161a30941b0d5c875e7beb26d3eaf12772",
+  "protocol": "klab.experimental.dependency-graphs/1",
+  "contract_confidence": "SIMULATED_PROVISIONAL",
+  "stable_gap": "JAVA-GAP-0013",
+  "native_result": "NOT_RUN",
+  "boundary": [
+    "Native Resources.resolve ResourceSet groups do not transmit edges/source/access/snapshot witnesses and inspected dependency categories are incomplete. Existing DependencyInspector remains closureUNKNOWN/edgesUNAVAILABLE.",
+    "DependencyGraphs/AsyncDependencyGraphs is an explicitly proposed advertised opt-in reference, not a discovered native route or silent service fallback.",
+    "Independent finite model/namespace/resource source literals and typed DEPENDS_ON edges supply a closed acyclic reference graph with exact source hashes, provider/version/source revision/access stamps, pinned snapshot paging and explicit source-generation conflict.",
+    "Reference node versions use exact three-component bounded integer strings by this proposal, not guessed mappings of arbitrary native Version objects. READ access stamps and source bytes remain server claims, not authority or cryptographic/native acceptance.",
+    "No provider URL following, current credential forwarding, parser/compiler, semantic selection, ontology loading, native graphdb mutation or scientific-engine reimplementation.",
+    "Maintainer-owned native closure/edge/source/access/snapshot/retention contracts and approved compatibility evidence remain external. Independently implementable finite reference work is not waived by missing native services."
+  ],
+  "native_management_test": "No fabricated adapter for unestablished experimental graph API; native read-only membership test remains separately prepared NOT_RUN"
+}

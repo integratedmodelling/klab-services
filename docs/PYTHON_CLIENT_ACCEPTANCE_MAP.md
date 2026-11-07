@@ -1,5 +1,14 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR294 conditionalreference verifiedmergedcc71b0991/all37checksPASS;PR295 native
+dependency membership verifiedmerged641eaa161/all40checksPASS. Actualremote/local
+ancestry checkpointsverified; prior Linuxoracle/WindowsHTTP/selectioncoverage-order
+failures retained with distinct corrections/unknowns. Active sourcebound finitegraph
+reference83SDK100%,8publicHTTP model/resource roots and17fixture100%PASS; fresh
+installed/governance/ordinary graphPR pending. Native membership staysclosureUNKNOWN/
+edgesUNAVAILABLE; proposed reference completeness isn't native/scientific/access
+authority or fullrowdisposition.42originalrecords/history preserved,32runnable.
+
 Conditional candidate PR294 fresh installed4688SDK/359simulator/allreference-worker-
 governance suitesPASS,61SDK/28simulator/5worker rawpackageparity.63SDK/newmodule/
 changedcode100%,6publicHTTP and13fixture100%PASS;17linkedcasesPASS vs17nativeNOT_RUN.

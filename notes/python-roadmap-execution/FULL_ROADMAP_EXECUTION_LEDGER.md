@@ -1,5 +1,32 @@
 # Full Python A+B+C roadmap execution ledger
 
+## Native membership delivered, complete finite source-bound graph ongoing
+
+Freshgraph fullverifier+17linkedmatrix running. EightinstalledfocusedCIgatesPASS,
+older785/693/571/195/113/63append118, membership34append84, graph84dedicated;
+17fixture100%. Actualorderedselection693/118/6/21plusunchanged100%gatePASS;
+earliercoverageorderfailure not repeated or concealed. No graphPR yet; nextannotated
+inputintegration onlysource-reviewed/planned, not implemented/nativeauthority.
+
+Graph sourcefreeze84SDKwholemodule/changedcode100%unexcluded,8publicHTTP
+MODEL+transitiveRESOURCEroots,17fixture100%,bodymypy/fatallint/49governance+queue+
+CIorderingPASS. Consistent model5nodes/4edges/resource2nodes/1edge declaredsources;
+versiontriples/unknownclassguards explicit, not guessednativeVersion mapping.
+No graphPR yet/freshinstallednext; native/science/fullrow dispositions unchanged.
+
+PR295MERGED641eaa161a30941b0d5c875e7beb26d3eaf12772/2026-11-07T17:09:18Z,
+exacta1a781f547671406bcfea146644558ceb4d84351/all40checksPASS. Actualmerge/
+remote+ancestrycheckpointverified, original42rows/32runnable/zero dispositions.
+Failedselectioncoverageorderingreport retained, correctedwithout gate relaxation.
+Sourceboundgraph child alreadyimplemented:83SDK100%newmodule+changedcode,
+8publicHTTP across model/resource roots,17fixturecases100%PASS. Pinnedmultipage
+source/provider/version/access receipts, sourcechange409nopartial/noautoretry,
+explicitfreshinspection, DAG/cycle/gap/budget/refusal/currentprincipal/cleanup.
+Currentclient/transport/credential fences prevent implicit rebind; providerURLs inert.
+Native closure/edges/source/access authority not promoted. Initial73SDK98.81%
+expandedto83/100%noexemptions; tuple/map annotation fixes need finalbodyrerun.
+Freshinstalled/governance/ordinaryPR/complete rowacceptance stillpending; no stop.
+
 ## PR295 failed selection coverage report retained and actual workflow fixed
 
 Hostedselectioncoveragegatefailed at2343a220c: SDKappend ran afterfixture reset of

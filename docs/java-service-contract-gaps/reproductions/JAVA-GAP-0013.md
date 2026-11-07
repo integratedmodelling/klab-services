@@ -28,7 +28,7 @@ NOT_TESTED whole proposed finite scheduling/admission/semantic substitute. Narro
 Clockless controlled polls, exact-source literals, fixed SIM vocabulary, bounded private synthetic state; never local reasoning or Java execution. observation-selections admits only synthetic:Entity and synthetic:Connection, independently checks persisted endpoint ownership/existence, supplies declared plan/result selection receipts and direct HAS_CHILD pages. Public sync/nativeasync SDK and v2 saved Context/Observation/Job restoration are exercised; no scientific numeric storage, general ontology inference or unresolved transaction snapshots. Separate material-selections admits three declared numeric candidates with source-shaped lexical preference scores, two synthetic observer biases and1m/2m lattices; typed public resolve/observe/fetch_data independently verify60numerical option combinations. Finite arithmetic and tie policy are provisional, not native model admission or general scientific ranking.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-DISCOVERY-001, SIM-LIFECYCLE-001, SIM-FAULTS-001, SIM-SELECTION-001, SIM-INSPECTION-001, SIM-IMPORT-001, SIM-INPUT-BINDING-001, SIM-SEMANTICS-001, SIM-BEHAVIOR-DRAFT-001, SIM-NOTEBOOK-001, REPLAY-001, SIM-PROVENANCE-DEPENDENCIES-001, SIM-PROVIDER-AVRO-001, SIM-REVISION-CONVERGENCE-001, SIM-COPIED-COMPOSITION-001, SIM-OBSERVATION-SELECTIONS-001, SIM-MATERIAL-SELECTIONS-001, SIM-DEPENDENCY-MEMBERSHIP-001
+Scenarios: SIM-DISCOVERY-001, SIM-LIFECYCLE-001, SIM-FAULTS-001, SIM-SELECTION-001, SIM-INSPECTION-001, SIM-IMPORT-001, SIM-INPUT-BINDING-001, SIM-SEMANTICS-001, SIM-BEHAVIOR-DRAFT-001, SIM-NOTEBOOK-001, REPLAY-001, SIM-PROVENANCE-DEPENDENCIES-001, SIM-PROVIDER-AVRO-001, SIM-REVISION-CONVERGENCE-001, SIM-COPIED-COMPOSITION-001, SIM-OBSERVATION-SELECTIONS-001, SIM-MATERIAL-SELECTIONS-001, SIM-DEPENDENCY-MEMBERSHIP-001, SIM-SOURCE-BOUND-DEPENDENCIES-001
 
 Exact executable controls:
 
@@ -41,6 +41,9 @@ Exact executable controls:
 - `python-client/tests/unit/test_dependencies.py`
 - `developer-tools/klab-service-simulator/tests/test_dependencies.py`
 - `developer-tools/klab-service-simulator/tests/test_dependency_fixture.py`
+- `python-client/tests/unit/test_dependency_graphs.py`
+- `developer-tools/klab-service-simulator/tests/test_dependency_graphs.py`
+- `developer-tools/klab-service-simulator/tests/test_dependency_graph_fixture.py`
 
 ## Reproduction commands
 
@@ -69,7 +72,10 @@ Existing native test references: python-client/tests/functional/test_observation
 
 Original reproducer/evidence: developer-tools/klab-service-simulator/README.md
 
-One compatibility-assumption umbrella, not one alleged Java defect per route/test. State its narrower property when resolving; native timing need not match poll-driven simulation. Binary provider golden fixtures are independently generated finite matches, not a generic Avro service or native computation. Source Data Job controller lacks explicit media and falls through after streaming; deployed HTTP behavior NOT_TESTED, no observed defect or cleanup proof inferred.
+One compatibility-assumption umbrella, not one alleged Java defect per route/test. State its narrower property when resolving; native timing need not match poll-driven simulation. Binary provider golden fixtures are independently generated finite matches, not a generic Avro service or native computation. Source Data Job controller lacks explicit media and falls through after streaming; deployed HTTP behavior NOT_TESTED, no observed defect or cleanup proof inferred. Native-shaped dependency membership keeps closureUNKNOWN/edgesUNAVAILABLE. Separate advertised opt-in source-bound graph reference declares exact finite sources/hashes/providers/versions/access and explicit pinned pagination/cycle/gap checks; reference completeness is not native closure, cryptographic authority or scientific lineage. Native category/remote/edge/source/access/snapshot obligations remain external.
 
 - developer-tools/klab-service-simulator/contract-cases.json
 - python-client/docs/provider-binary-contextualization.md
+- python-client/docs/dependency-inspection.md
+- python-client/docs/dependency-graphs-reference.md
+- notes/python-roadmap-execution/evidence/dependency-graphs-source-boundary-20261107.json

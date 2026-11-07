@@ -31,7 +31,7 @@ jobs:
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_provider_avro.py --junitxml=provider-http.xml
       - name: Entire new SDK modules and changed code coverage
         # Dependency view is also imported by the public SDK export surface.
-        run: python -m pytest -q python-client/tests/unit/test_dependencies.py --cov=klab_client --cov-branch --cov-append --cov-report=json:provider-coverage.json
+        run: python -m pytest -q python-client/tests/unit/test_dependency_graphs.py python-client/tests/unit/test_dependencies.py --cov=klab_client --cov-branch --cov-append --cov-report=json:provider-coverage.json
       - name: Enforce unchanged provider coverage gate
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"

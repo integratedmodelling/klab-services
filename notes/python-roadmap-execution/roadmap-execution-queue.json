@@ -3,16 +3,16 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-dependency-inspection",
-    "pr": 295,
+    "branch": "feat/python-source-bound-dependency-graphs",
+    "pr": null,
     "requirement": "RC-P4.1",
-    "ci_review_dependencies": ["PR295 native-shaped membership artifact/CI delivery only; complete source-bound graph/pagination/cycle/access reference remains Python work"]
+    "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 294,
-    "merge": "cc71b09919566bea85c6aa39c8dab38d4936b9e1",
-    "head": "2ff29e210b4c1941a7b940ee24be173de034b1a9",
-    "utc": "2026-11-07T16:38:25Z",
+    "pr": 295,
+    "merge": "641eaa161a30941b0d5c875e7beb26d3eaf12772",
+    "head": "a1a781f547671406bcfea146644558ceb4d84351",
+    "utc": "2026-11-07T17:09:18Z",
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P4.1",
@@ -1338,7 +1338,7 @@
         ]
       },
       "current_ledger_baseline": "PARTIAL resource inspection/import plus candidate catalogs delivered281",
-      "remaining_implementation": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
+      "remaining_implementation": "Native membership delivered PR295; separately advertised opt-in complete finite model/resource source-bound graph implemented with exact provider/version/source/hash/access, pinned snapshot pagination and cycle/gap/budget controls. Finish fresh installed/regression/governance/ordinary graph PR delivery; no native closure/edge/access/scientific promotion.",
       "required_tests": {
         "existing_unit": [
           "python-client/tests/unit/test_async_resource_inspector.py",
@@ -1359,7 +1359,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: dependency-inspection"
       },
       "simulator_support_needed": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
-      "implementation_status": "NATIVE_GROUPED_DEPENDENCY_INSPECTION_IMPLEMENTED_SOURCE_VERIFICATION_IN_PROGRESS",
+      "implementation_status": "NATIVE_MEMBERSHIP_DELIVERED_PR295_SOURCE_BOUND_GRAPH_IMPLEMENTED_ACCEPTANCE_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1395,12 +1395,21 @@
           "937c758b62743a0ab68e48792870a9261cf7cc87",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "membership_delivery": {
+          "pr": 295,
+          "head": "a1a781f547671406bcfea146644558ceb4d84351",
+          "merge": "641eaa161a30941b0d5c875e7beb26d3eaf12772",
+          "merged_at": "2026-11-07T17:09:18Z",
+          "final_head_checks": 40,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-dependency-membership-20261107.json"
+        }
       },
       "work_group": "dependency-inspection",
       "priority": 5,
       "task_state": "in_progress",
-      "next_executable_action": "Finish bounded source-defined grouped ResourceSet dependency inspection and honest source/version/access/completeness receipts; public sync/async acceptance, coverage/security, governance, installed packages and ordinary PR. No invented native edge-complete graph.",
+      "next_executable_action": "Finish source-bound finite graph SDK/independent fixture coverage/privacy/governance/docs/installed artifacts/ordinary PR delivery. Native membership delivery does not waive complete graph, pagination, cycle and access requirements.",
       "disposition": null
     },
     {
@@ -1480,7 +1489,7 @@
         ]
       },
       "current_ledger_baseline": "PARTIAL; source-defined candidate protocol1 delivered281/4806cbc69",
-      "remaining_implementation": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
+      "remaining_implementation": "Native membership delivered PR295; separately advertised opt-in complete finite model/resource source-bound graph implemented with exact provider/version/source/hash/access, pinned snapshot pagination and cycle/gap/budget controls. Finish fresh installed/regression/governance/ordinary graph PR delivery; no native closure/edge/access/scientific promotion.",
       "required_tests": {
         "existing_unit": [
           "python-client/tests/unit/test_async_semantic_explorer.py",
@@ -1501,7 +1510,7 @@
         "new_acceptance": "Public installed sync/async API, positive/negative authorization, data/state/lifecycle and owned cleanup for: dependency-inspection"
       },
       "simulator_support_needed": "Add public immutable resource/model dependency closure inspection with exact source/provider/version/access identity, pagination/cycle/budget controls and independent simulator fixtures; no implicit model selection.",
-      "implementation_status": "NATIVE_GROUPED_DEPENDENCY_INSPECTION_IMPLEMENTED_SOURCE_VERIFICATION_IN_PROGRESS",
+      "implementation_status": "NATIVE_MEMBERSHIP_DELIVERED_PR295_SOURCE_BOUND_GRAPH_IMPLEMENTED_ACCEPTANCE_PENDING",
       "simulator_acceptance_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
       "real_java_acceptance_status": "NOT_RUN",
       "historical_status_unchanged": true,
@@ -1537,12 +1546,21 @@
           "937c758b62743a0ab68e48792870a9261cf7cc87",
           "4a0753e48389543146bb8fb0f508c121ea71e720"
         ],
-        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json"
+        "current_campaign_receipts": "notes/python-roadmap-execution/evidence/full-roadmap-*.json",
+        "membership_delivery": {
+          "pr": 295,
+          "head": "a1a781f547671406bcfea146644558ceb4d84351",
+          "merge": "641eaa161a30941b0d5c875e7beb26d3eaf12772",
+          "merged_at": "2026-11-07T17:09:18Z",
+          "final_head_checks": 40,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-dependency-membership-20261107.json"
+        }
       },
       "work_group": "dependency-inspection",
       "priority": 5,
       "task_state": "in_progress",
-      "next_executable_action": "Finish bounded source-defined grouped ResourceSet dependency inspection and honest source/version/access/completeness receipts; public sync/async acceptance, coverage/security, governance, installed packages and ordinary PR. No invented native edge-complete graph.",
+      "next_executable_action": "Finish source-bound finite graph SDK/independent fixture coverage/privacy/governance/docs/installed artifacts/ordinary PR delivery. Native membership delivery does not waive complete graph, pagination, cycle and access requirements.",
       "disposition": null
     },
     {
