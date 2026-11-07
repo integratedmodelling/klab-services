@@ -8,6 +8,12 @@ a new web framework or runtime dependency for this finite vertical slice.
 
 ## Start and test
 
+`--scenario selected-read-plans` advertises finite server-listed baseline/alternate
+states and exact half-open row/column windows. The selection envelope explicitly wraps
+old read-plans/1 shard/release grants; full baseline opens remain unchanged. Fixture
+slicing is not native temporal/provider mediation or scientific execution. Public SDK
+and detached-array controls preserve source-state/window/time provenance separately.
+
 `--scenario managed-behavior` advertises a separate finite literal source-managed
 workflow: admission/hash, deferred create, explicit reconnect/start/stop, declared
 finish/failure outcomes and independent synthetic private-session disposal/purge.

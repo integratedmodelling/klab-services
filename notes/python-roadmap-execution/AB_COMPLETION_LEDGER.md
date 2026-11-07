@@ -1,5 +1,72 @@
 # A+B completion ledger — ongoing campaign
 
+## PR303 verified merged; selected finite reference windows active
+
+PR304strictACK finalcandidate5204installedSDK/521simulator/116worker/23workerHTTP/
+allreference39governancePASS,zero skips/errors/failures. Raw70SDK36sim6worker parity/
+no simulatorinproduction verified.52SDK100%newmodule/allchangedSDK/18fixture100%/
+2publicHTTP/15olderCI+actualorderedselectionPASS.17linkedPASS(1270SDK398sim116worker)
+vs17nativeNOT_RUN. Supplemental49governance/queue/job-localmultilineorderingPASS.
+No simulator services remain. First5200candidate/Booleanprobe failures/initial
+installed-plansCI failure retained, not rewritten. Finalreceipt/exactnewheadCI/
+ordinarymerge pending; native time/provider/science/finalrow acceptance separate.
+
+Coverage-order test expanded to multiline commands/job-local databases; first broad
+scan falsely mixed separate CI jobs, corrected with embedded samejob hostile/positive
+controls. Supplemental49governance/queue/orderingPASS. StrictACK source frozen;
+new current CI head082782ea8 includes oldreadplan append fix. FreshfullstrictACKsuite
+pending; all15installedolderCI+17linkedPASSvs17nativeNOT_RUN already verified.
+
+StrictACK52installedcontrols100%/70SDK36sim6worker rawparity/15olderCI/18fixture100%/
+orderedselection/17linkedPASSvs17nativeNOT_RUN verified. Retained initial installed-plans
+CI failure42414346536/job128529080044: oldisolatedworkflow lacked newselectedcontrols
+before allchangedSDKgate. Appended52controls before unchangedgate; actualinstalled
+64SDK/37HTTP/52selected+originalgatePASS. No threshold relaxation. NewheadCI/freshfull
+strictACKsuite pending; PR304 remainsdraft, no native/science/finalrow promotion.
+
+PR304premerge review found Boolean ACK aliasing integers via dict equality. Two
+independent first-installed-artifact probes FAILED/DID_NOT_RAISE (retainedXML), so
+green first48controls/14CI/17linked do not clear delivery. Exact incoming state/offset
+type revalidation now52SDK+analysisPASS/newmodule+changedSDK100%/bodymypyPASS;
+fresh selected-reference-windows-strict-ack verifier running. Firstartifacts/evidence
+retained, PR304 stilldraft; new exactheadCI/fullinstalled matrix owed.
+
+DraftPR304 now published925bafb27. Sourcefrozen;48SDK+analysis100%/18fixture100%/
+2publicHTTP/types/lint PASS. Actual ordered installed693/214/92/115/40/48/6/21/9queue
+then unchanged100%gate PASS. Freshfullartifactverifier/14olderfocusedCI/17linkedmatrix/
+hostedCIwatcher running; no finalinstalled/parity/exactheadCI/merge acceptance yet.
+
+Latest selected-window source48SDK+analysis controls PASS/100%entiremodule+changedSDK,
+18independentfixture100%,2publicHTTP/types/lint PASS. Added request-time credential
+drift, open/read cancellation with established-grant-only cleanup, actual fixture
+expiry/old epoch refusal; no replay/replan. Exports/docs/governance/CI integrated;
+14olderCI workflows append selected controls before original unchanged gates.
+Fresh selected-reference-windows-first fullartifactverifier running; sourcefrozen,
+no selected-windowPR yet. Installed fullsuite/parity/focusedCI/linkedmatrix/delivery
+remain. Retained initial3mypy and test-only indentation collection errors corrected.
+
+PR303 MERGED `6c285b6b6e96d48d5d4d87220722c6f7ffabed7e` at
+2026-11-07T20:46:29Z; exact `9a44d9fca7a11d6397f88ce1687fc954e12e0c0d`,
+all45 final-head checks PASS and remote/local ancestry checkpoint verified.
+Fresh installed5152SDK/501sim/115worker/23workerHTTP/reference-governance PASS;
+69SDK/35sim/6worker raw parity;14focusedSDK CI plus ordered selections and17linked
+PASS versus17native NOT_RUN. Original115worker full-run evidence remains distinct
+from same-production-artifact116worker/23HTTP supplement. Initial Windows3.11
+execution.py98->99 timing coverage failures retained; deterministic final-budget
+test—not the green documentation head—resolved that test gap. No nativeABI/OS-policy/
+scientific/final-row acceptance promoted. All303 verification/watchers finished.
+
+Active `feat/python-selected-reference-windows`, no selected-window PR; source
+uncommitted. Latest pure state decoder/offline selected analysis rerun33SDK/2public
+HTTP/bodymypy PASS. Expanded44SDK+analysis controls PASS, including detached
+socket-forbidden analysis, exact coordinates/masks/units/time/source/window pins,
+independent arrays, budgets, optional dependencies, manual DTO refusal and capture
+finally-release. Entire new-module coverage, hostile races/cancellation/expiry,
+independent fixture coverage, docs/exports/governance/CI/full installed artifacts and
+ordinary PR delivery remain.42original IDs/history/20runnable/zero final dispositions.
+No live Modeler gate needed: Python-only slice; last documented IDE evidence remains
+2026-11-06T14:20:57.464274Z, not refreshed or used as current science evidence.
+
 ## PR302 verified merged; worker output/deployment custody active
 
 PR303mergeheld for reviewed initialWindows3.11 coverage failures: execution.py98->99

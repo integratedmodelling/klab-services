@@ -1,5 +1,13 @@
 # Python roadmap acceptance map — 3 November 2026
 
+PR304selectedwindowstrictACKcandidate5204installedSDK521sim116worker/23workerHTTP/
+reference-governancePASS;70SDK36sim6worker rawparity/17linkedPASSvs17nativeNOT_RUN.
+52SDK100%newmodule/changedSDK18fixture100%2HTTP15olderCI+orderedPASS. Exact finite
+server-listed source states/windows/time/layout/masks/units and detached provenance
+are not native temporal/provider science. FirstcandidateBooleanACKalias probes and
+oldreadplanCI failure retained and fixed without exclusions/threshold changes. Final
+receipt/exactnewheadCI/ordinarymerge pending;42originalrows/history/20runnable remain.
+
 PR303workercustodycandidate5152installedSDK501sim115worker/23workerHTTP/reference-
 governancePASS;69SDK35sim6worker rawparity/17linkedPASSvs17nativeNOT_RUN. Whole new
 workerreceiptmodule/changedworker100%,originalaggregate80%gate93.07%/common90%gate96.85%

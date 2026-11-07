@@ -28,7 +28,7 @@ Source audit: published scalar Point transport, not maintained plan/open/read-bl
 Native point mapping remains separate. Explicit proposed klab.experimental.read-plans/1 adds root/Runtime/current-owner snapshot grants, bounded contiguous hashed shards, complete assembly and sync/nativeasync SDK. Process-local16grant cap/TTL/64KiBmanifest; release/expiry/restart loss explicit410, new epoch/no automatic replan. Failed durable request restores ephemeral rows/epoch. Content revision is REFERENCE_CONTENT_SHA256_NOT_NATIVE_COMMIT, not native committed science.
 
 Scenario index: `developer-tools/klab-service-simulator/contract-cases.json`.
-Scenarios: SIM-GRID-001, SIM-TEMPORAL-EXPORT-001, SIM-READ-PLAN-001, SIM-READ-PLAN-ANALYSIS-001
+Scenarios: SIM-GRID-001, SIM-TEMPORAL-EXPORT-001, SIM-READ-PLAN-001, SIM-READ-PLAN-ANALYSIS-001, SIM-SELECTED-READ-PLAN-001
 
 Exact executable controls:
 
@@ -37,6 +37,10 @@ Exact executable controls:
 - `developer-tools/klab-service-simulator/tests/test_read_plans.py`
 - `python-client/tests/unit/test_read_plan_analysis.py`
 - `developer-tools/klab-service-simulator/tests/test_read_plan_analysis.py`
+- `python-client/tests/unit/test_reference_windows.py`
+- `python-client/tests/unit/test_reference_window_analysis.py`
+- `developer-tools/klab-service-simulator/tests/test_reference_windows.py`
+- `developer-tools/klab-service-simulator/tests/test_reference_window_fixture.py`
 
 ## Reproduction commands
 

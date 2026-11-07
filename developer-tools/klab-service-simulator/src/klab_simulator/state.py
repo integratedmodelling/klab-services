@@ -36,6 +36,7 @@ SCENARIOS += ("commit-inspection",)
 SCENARIOS += ("graph-convergence",)
 SCENARIOS += ("execution-explanation",)
 SCENARIOS += ("managed-behavior",)
+SCENARIOS += ("selected-read-plans",)
 
 
 class ContractError(Exception):
@@ -91,6 +92,8 @@ class State:
         self.managed_agents = ManagedAgents(self)
         from .managed_behaviors import ManagedBehaviors
         self.managed_behaviors = ManagedBehaviors(self) if scenario == "managed-behavior" else None
+        from .reference_windows import ReadPlanSelections
+        self.read_plan_selections = ReadPlanSelections(self) if scenario == "selected-read-plans" else None
         from .shared_access import SharedReads
         self.shared_reads = SharedReads(self) if scenario == "shared-read" else None
         self.validation_revision = 1
@@ -375,6 +378,7 @@ class State:
                     **({"executionExplanationProtocol":"klab.experimental.execution-explanations/1"} if self.execution_explanations is not None and service == "runtime" else {}),
                     **({"copiedCompositionProtocol":"klab.experimental.copied-composition/1"} if self.scenario == "copied-composition" and service == "runtime" else {}),
                     **({"managedBehaviorProtocol":"klab.experimental.managed-behaviors/1"} if self.managed_behaviors is not None and service == "runtime" else {}),
+                    **({"readPlanSelectionProtocol":"klab.experimental.read-plan-selections/1"} if self.read_plan_selections is not None and service == "runtime" else {}),
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                      "importSchemata": schemas() if service == "resources" else {},
                      **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
@@ -501,6 +505,9 @@ class State:
         if service == "runtime" and route.startswith("/experimental/managed-behaviors/v1/") and self.managed_behaviors is not None:
             if len(body)>8192:raise ContractError(413,"Finite managed behavior request budget exceeded")
             return self.managed_behaviors.request(method,original_path.split("/runtime",1)[1],principal,scope,headers,data)
+        if service == "runtime" and route.startswith("/experimental/read-plan-selections/v1/") and self.read_plan_selections is not None:
+            if len(body)>4096:raise ContractError(413,"Selected read-plan request budget exceeded")
+            return self.read_plan_selections.request(method,original_path.split("/runtime",1)[1],principal,scope,headers,data)
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
                 raise ContractError(400, "Scope advertisement requires service descriptors")

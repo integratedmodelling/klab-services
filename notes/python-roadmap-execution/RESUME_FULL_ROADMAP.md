@@ -33,8 +33,41 @@ opencode run --session <existing-session-id> --file notes/python-roadmap-executi
    develop promotion or public release. Final sleep remains forbidden until all
    implementable42row completion criteria pass and no independent work remains.
 
-Most recent verified checkpoint: PR302 merge `4fe5d45ad`, exact `4ed4352bf`,
-all34reported final-head checks PASS. PR301 copied/PR300 explanation also verified.
+Most recent verified checkpoint: PR303 merge `6c285b6b6`, exact `9a44d9fca`,
+all45 final-head checks PASS; remote merged state/local ancestry verified.
+
+Latest steering: PR304 stays draft pending strict wire ACK fix. Two firstinstalled
+probes admitted Boolean observationId/windowoffset due Python dict equality; retained
+failureXML. Corrected by decoding incoming state and exactinteger window offsets;
+52SDK+analysis/newmodule+changedSDK100%/mypyPASS. Fresh uniquely named
+`selected-reference-windows-strict-ack` verifier running via
+`verify-selected-reference-windows-strict-ack.py`; use matching focusedCI/ordered/
+record scripts under approvedtemp. Firstcandidate14CI/17linked/orderedPASS retained
+but NOT acceptance of fixedsource. Need fixed-source newartifacts/matrix/exactheadCI.
+
+Current update: draftPR304 `925bafb27` published, sourcefrozen.48SDK+analysis100%
+newmodule/changedSDK,18fixture100%,2HTTP/types/lint PASS. Dedicated installed48SDK/
+gatePASS, actualordered693/214/92/115/40/48/6/21/9queue+unchanged100%gatePASS;raw
+70SDK36sim6worker source-wheel-sdist-installed parity verified/no simulatorinproduction.
+Fullverifier/14olderfocusedCI/17linkedmatrix/PR304watcher running. Record helper
+`C:/Users/lumsd/AppData/Local/Temp/opencode/record-selected-reference-windows.py`
+prepared; finalreceipt/exactheadCI/ordinarymerge/checkpoint still owed. Nextcategorical
+private design/6probesPASS only, no next production changes yet. Earlier lines below
+with noPR/uncommitted state are historical and superseded by this entry.
+
+Current active `feat/python-selected-reference-windows`, no PR, uncommitted source.
+Queue preserves42original IDs/history/20runnable/zero final dispositions.
+Latest44SDK+offline-analysis controls and2publicHTTP workflows PASS. Pure state
+decoder/offline adapter bodymypy PASS before capture addition; rerun types/coverage.
+Offline tests forbid sockets and verify coordinates/masks/units/server time/source
+state/window/selection hashes, separate arrays/budgets/optional dependency refusal.
+Capture sync/async finally-release added; manual DTO/fence/catalog/unknown-ACK controls
+expanded. Need full hostile cancellation/expiry/race controls,100% newmodule/changedSDK,
+independent fixture coverage, exports/docs/governance/CI and fresh installed delivery.
+PR303 original115worker full run and116worker same-artifact supplement remain distinct;
+initial Windows failures retained and deterministic final-budget test delivered.
+No303 watcher remains. No native/OS/scientific acceptance or IDE repair authorized.
+Historical entries below are superseded.
 
 Current active `feat/python-worker-output-custody`, draftPR303 `3a7b125a9`:
 115source+focusedinstalled workerunit/23publicHTTP-recoveryPASS; new _responses module/
