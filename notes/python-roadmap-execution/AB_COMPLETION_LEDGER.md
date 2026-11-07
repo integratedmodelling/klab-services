@@ -1,5 +1,29 @@
 # A+B completion ledger — ongoing campaign
 
+## PR305 verified merged; RC-P0 attribution active
+
+Latest attribution31tool/accessor/orchestration/queue-order controls/fatal lintPASS.
+Initialfullinstalledunit5235PASS/HTTP536PASS; plus8gapcontrols observes455nonabstract,
+51abstractuncalled. Initial5orchestration-double setup failures retained/corrected.
+Found pytest-root-relative test IDs ambiguous across packages; now exact repository
+testfiles+executedbytes pinned. FreshfullSDK/simulator traces running. Reviewedworkflow
+mapping is partial and authority-labelled; all other assertion/native evidence missing.
+
+PR305 MERGED971f2a98751b3f458eb4b0280a7093a4a4e716cd at2026-11-07T21:48:46Z;
+exact1863a62ae8c8816492fa1ba3654c6056ed05350f/all36finalheadchecksPASS, remote/local
+ancestry checkpoint verified.5253installedSDK536sim116worker23HTTP/reference39governance
+PASS;71/37/6parity49SDK100%10fixture100%4HTTP1ownednotebook17focusedCI/ordered/
+17linkedPASSvs17nativeNOT_RUN.42originalIDs/history16runnable/zero finaldispositions.
+No native semantic/time/scientific authority or public release promoted.
+
+Active feat/python-operation-test-attribution, noPR/uncommitted tooling only.
+Bounded owning-thread call/resume tracer, opt-in pytest adapter and exact source
+reconciler implemented outside production packages.10tool/subprocess controlsPASS:
+parameter-safe refs/no returns, source drift, bounds, profiler preservation, whole-test
+teardown outcome and import/output custody. First installed49raster controlsPASS under
+trace:506callables preserved,32observed474notobserved. These are presence only, not
+functional assertion/native acceptance; broader tests/workflow mapping remain.
+
 ## PR305 final installed receipt verified
 
 Fresh raster-label artifacts at source79a73dbc5 passed5253installedSDK/536simulator/

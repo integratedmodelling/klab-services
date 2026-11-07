@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "scope": "Explicit reviewed assertion descriptions; only linked passed trace scopes count as observed. Not native acceptance; all unlisted operations remain assertion-evidence missing.",
+  "workflows": [
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_explicit_unsupported_and_unconfigured_methods",
+      "operations": [["api/services.py", "ResolverImpl.encode_dataflow"]],
+      "assertions": "Existing unconditional resolver encoder refusal raises UnsupportedOperationError before any HTTP. This exact unsupported disposition remains pending maintained scientific encoding authority; no other operation is classified unsupported by missing evidence."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_client.py::test_invalid_scope_binding_and_unimplemented_operations_do_not_send",
+      "operations": [["async_client.py", "AsyncResolver.encode_dataflow"]],
+      "assertions": "Awaited encoder refusal raises UnsupportedOperationError with a handler that fails on HTTP. Not a native encoding implementation or native acceptance."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_public_dto_operation_contracts.py::test_declared_concept_observable_and_observation_accessors_preserve_exact_values",
+      "operations": [
+        ["api/knowledge.py", "ConceptImpl.contextualization"],
+        ["api/knowledge.py", "ConceptImpl.get_qualifier"],
+        ["api/knowledge.py", "ConceptImpl.get_notifications"],
+        ["api/knowledge.py", "ObservableImpl.get_semantics"],
+        ["api/knowledge.py", "ObservableImpl.get_observer_semantics"],
+        ["api/knowledge.py", "ObservableImpl.is_optional"],
+        ["api/knowledge.py", "ObservableImpl.get_default_value"],
+        ["api/knowledge.py", "ObservableImpl.get_resolution_directives"],
+        ["api/runtime.py", "ObservationImpl.get_urn"],
+        ["api/runtime.py", "ObservationImpl.get_name"],
+        ["api/runtime.py", "ObservationImpl.get_observable"],
+        ["api/runtime.py", "ObservationImpl.get_notifications"]
+      ],
+      "assertions": "Exact declared object identity, optional zero/default/directives, raw future contextualization and observation labels/notifications; no ontology or scientific inference."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_public_dto_operation_contracts.py::test_local_modeler_session_and_scope_metadata_do_not_grant_remote_rights",
+      "operations": [["api/modeler.py", "ModelerImpl.open_session"], ["api/scopes.py", "UserScopeImpl.get_roles"], ["api/scopes.py", "ContextScopeImpl.get_observer"]],
+      "assertions": "Exact retained session/context identity and event order, declared roles and optional observer only; not remote authorization."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_public_dto_operation_contracts.py::test_runtime_connect_bridge_uses_existing_public_scope_contract_without_replay",
+      "operations": [["api/services.py", "RuntimeServiceImpl.connect_context"]],
+      "assertions": "Single POST to existing connect route, explicit configuration/credential/current-client association; ambiguous read failure is unknown, not success."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_elevation_orchestration.py::test_experiment_success_checks_finite_values_and_releases_only_created_scopes",
+      "operations": [["experiment.py", "run_elevation"]],
+      "assertions": "Finite declared 20-cell metre/mm invariant and one read per representation; release created scopes after success, never attached scopes. Explicit doubles, not HTTP/native terrain execution."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_elevation_orchestration.py::test_interruption_and_failed_scientific_preconditions_preserve_scopes",
+      "operations": [["experiment.py", "run_elevation"]],
+      "assertions": "Wait interruption and unit mismatch preserve scopes; no cleanup success or native science inferred."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_reference_raster_labels.py::test_public_server_declared_dictionary_worldview_and_band_time_labels",
+      "operations": [["reference_raster_labels.py", "ReferenceRasterLabels.metadata"], ["reference_raster_labels.py", "AsyncReferenceRasterLabels.metadata"], ["reference_raster_labels.py", "open_reference_raster"]],
+      "assertions": "Exact pinned raw GeoTIFF hashes, int16 codes/masks, float32 bands, declared worldview/UTC labels, Bob denial and owner cleanup; not native semantic/time authority."
+    }
+  ]
+}

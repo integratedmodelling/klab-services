@@ -1,5 +1,16 @@
 # Resume the full Python A+B+C campaign
 
+Latest verified305MERGED971f2a987 at2026-11-07T21:48:46Z/exact1863a62ae/all36checksPASS,
+remote-local checkpointverified.42originalIDs/history16runnable/zero dispositions.
+Active feat/python-operation-test-attribution, uncommitted tools operation_trace.py,
+operation_trace_pytest.py,operation_attribution.py and tests/docs.10controlsPASS;
+installed49raster tracePASS reconciles506callables32observed474notobserved. Evidence
+approvedtemp operation-attribution-raster-first.json and reconciled-first.json.
+No arguments/returns/parametervalues recorded; owningthread only, parallelpytest refuses;
+teardownfailures override passedcall. Need broader tracing, hostile callback/reconciler
+validation, reviewed functionalworkflow mapping and integrated acceptance. No missing
+evidence may become invented unsupported/native acceptance.305jobs allfinished.
+
 Latest PR305 receipt:5253installedSDK536sim116worker23HTTP/reference39governancePASS,
 zero skips/errors/failures;71/37/6rawparity/no simulatorinproduction;49SDK100%newmodule/
 changedSDK10fixture100%4HTTP1ownednotebook17focusedCI/orderedPASS;17linkedPASS
