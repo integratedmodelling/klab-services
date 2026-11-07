@@ -1,5 +1,9 @@
 # A+B completion ledger — ongoing campaign
 
+PR310 publishedb63d61e54 scientific-snapshot exact-child484/3/52PASS,35controls/types-
+lint/onboarding190/1/18PASS;56reviewedmaps450missing. Ready for exact-headCI; parent309
+CI/merge remains pending. No native science/finalrow promotion; safety proceeds next.
+
 Final exact-child scientific snapshot matrix484SDK/3isolated/52publicHTTP PASS,
 onboarding190/1/18regressionPASS,35controls/types-lintPASS. Binary/JSON checkout and
 installed oracle bytes plus examples pinned before/after; nested-I child imports exact
