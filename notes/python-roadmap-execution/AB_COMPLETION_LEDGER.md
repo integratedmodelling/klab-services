@@ -1,5 +1,40 @@
 # A+B completion ledger — ongoing campaign
 
+## PR293 verified merge; conditional source workflow begun
+
+Conditional source freeze now63SDKcontrolsPASS, whole newmodule/allchangedSDK
+100%unexcluded;6publicHTTP workflowsPASS including two independent same-owner
+editor races (one success, one409, exact winning source/hash/currentrevision) and
+lostpublicationreply lookup without replay.13supplementaryfixturecases100%PASS;
+bodymypy/fatal lint/48governance+queue controlsPASS. Initial56controls96.38%coverage
+expanded with actualbinding/privacy refusals to63/100%, no exclusions; initial3mypy
+optionalindex errors fixed using post-capability casts, not policy weakening.
+Public route/body/source/receipt configured-credential reflection refuses before
+transmission; contradictory VALID/Error receipts and wrongsource update refuse.
+NativeCAS-safe publication remainsunestablished; no new native management test
+fabricated. Existinggap0009/handoff/scenario/reproduction synchronized. Fresh
+uniquely named installed acceptance and ordinary authoring PR remain pending.
+
+PR293 remotely MERGED0376f97c4819086a11c30ebafe376cdf818cd1e6 at
+2026-11-07T16:00:36Z/exact213ae23f1d9ee43469b394cef377a89772bb3f5a,
+all25reported finalheadchecksPASS/no outstanding review requests. Actualmerge
+integrated on feat/python-conditional-authoring and queue checkpoint verifies remote
+state/local ancestry. Validation receipt records actual remote merge/checks;42original
+records/history preserved,34runnable/zero finaldispositions. No verifier/matrix/CI
+watcher remains running. Latest read-only issueinventory10open mainrepo plus separate
+geospatial#10OPEN; no issue closure or transferred genuine Java responsibility.
+
+Next RC-P4.4/CAP-14 implementation begun immediately: proposed advertised opt-in
+AcceptedDocuments/AsyncAcceptedDocuments, typed source revisions/knowledge/publication
+receipts; independent server-owned sourceCAS/validate/publish/catalog readback.
+4public sync/nativeasync HTTP workflowsPASS: update/read/sourceconflict, invalid
+diagnostics cannotpublish, published snapshot stable across edits, update invalidates
+validation, staleknowledge blocks publication until explicit revalidation, owner/root
+denial, lostpublishreply reconciles by readback without replay and owned cleanup.
+Finite namespace source literals, not native compilation/admission/publication.
+SDK-only/fixture coverage, hostile/race review, source/native boundary/governance/docs
+and fresh installed/ordinary PR acceptance remain pending; no new authoring PR yet.
+
 ## PR292 verified merge; revision-aware namespace validation underway
 
 Corrected source-validation-location-fixed full installed4625SDK/340simulator and

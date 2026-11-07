@@ -4,7 +4,7 @@
   "scope": "Public-named top-level functions and direct methods of top-level classes, including private facade classes. Inherited/generated methods, nested closures and aliases are not expanded; routes/permissions/semantic correctness require separate tests and authority.",
   "counts": {
     "ABSTRACT_DECLARATION": 51,
-    "IMPLEMENTED_SOURCE_ONLY": 356,
+    "IMPLEMENTED_SOURCE_ONLY": 368,
     "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS": 24,
     "UNCONDITIONALLY_UNSUPPORTED": 2
   },
@@ -148,6 +148,90 @@
       "operation": "loads",
       "async": false,
       "classification": "IMPLEMENTED_WITH_UNSUPPORTED_GUARDS"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AcceptedDocuments",
+      "operation": "knowledge",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AcceptedDocuments",
+      "operation": "read",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AcceptedDocuments",
+      "operation": "update",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AcceptedDocuments",
+      "operation": "validate",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AcceptedDocuments",
+      "operation": "publish",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AcceptedDocuments",
+      "operation": "published",
+      "async": false,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AsyncAcceptedDocuments",
+      "operation": "knowledge",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AsyncAcceptedDocuments",
+      "operation": "read",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AsyncAcceptedDocuments",
+      "operation": "update",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AsyncAcceptedDocuments",
+      "operation": "validate",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AsyncAcceptedDocuments",
+      "operation": "publish",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "path": "accepted_documents.py",
+      "owner": "AsyncAcceptedDocuments",
+      "operation": "published",
+      "async": true,
+      "classification": "IMPLEMENTED_SOURCE_ONLY"
     },
     {
       "path": "agent_control.py",

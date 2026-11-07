@@ -28,6 +28,7 @@ SCENARIOS += ("observation-selections",)
 SCENARIOS += ("material-selections",)
 SCENARIOS += ("shared-read",)
 SCENARIOS += ("source-validation",)
+SCENARIOS += ("accepted-documents",)
 
 
 class ContractError(Exception):
@@ -84,6 +85,8 @@ class State:
         from .shared_access import SharedReads
         self.shared_reads = SharedReads(self) if scenario == "shared-read" else None
         self.validation_revision = 1
+        from .accepted_documents import AcceptedSources
+        self.accepted_sources = AcceptedSources(self) if scenario == "accepted-documents" else None
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
         self.trace = deque(maxlen=4096)
         self.lock = threading.RLock()
@@ -122,7 +125,9 @@ class State:
     def counts(self):
         return {"sessions": len(self.sessions), "contexts": len(self.contexts),
                 "jobs": len(self.jobs), "observations": len(self.observations),
-                **({"read_grants": len(self.shared_reads.rows)} if self.shared_reads is not None else {})}
+                **({"read_grants": len(self.shared_reads.rows)} if self.shared_reads is not None else {}),
+                **({"source_documents":len(self.accepted_sources.rows),"source_publications":len(self.accepted_sources.publications)}
+                    if self.accepted_sources is not None else {})}
 
     def _owner(self, mapping, key, principal):
         if key not in mapping:
@@ -268,6 +273,8 @@ class State:
                 self.imported_resources.clear()
                 self.query_faults.clear()
                 if self.shared_reads is not None: self.shared_reads.rows.clear()
+                if self.accepted_sources is not None:
+                    self.accepted_sources.rows.clear(); self.accepted_sources.publications.clear()
                 self.authoring.reset()
                 from .workers import WorkerState
                 self.workers = WorkerState(self)
@@ -290,7 +297,7 @@ class State:
                 if row is None: raise ContractError(404, "Unknown test grant")
                 row["expiresAt"] = 1
                 return True, "application/json"
-            if method == "POST" and path == "/__sim__/advanceValidation" and self.scenario == "source-validation":
+            if method == "POST" and path == "/__sim__/advanceValidation" and self.scenario in ("source-validation", "accepted-documents"):
                 self.validation_revision += 1
                 return True, "application/json"
             raise ContractError(404, "Unknown test control")
@@ -310,6 +317,7 @@ class State:
             return {"serviceId": self.service_ids[service], "type": service.upper(), "version": "simulator-0.1.0",
                     **({"sharedAccessProtocol": "klab.experimental.shared-access/1"} if self.shared_reads is not None and service == "runtime" else {}),
                     **(validation_capabilities(self) if self.scenario == "source-validation" and service == "reasoner" else {}),
+                    **({"acceptedDocumentProtocol":"klab.experimental.accepted-documents/1"} if self.accepted_sources is not None and service == "resources" else {}),
                     "worldviewUrn": self.worldview_id, "worldviewId": self.worldview_id, "consistent": True,
                      "importSchemata": schemas() if service == "resources" else {},
                      **({"modelCandidateProtocol": 1} if service == "resources" and self.scenario == "candidate-sources" else {}),
@@ -408,6 +416,8 @@ class State:
             from .source_validation import respond
             selected = respond(self, service, method, route, principal, data, body)
             if selected is not None: return selected
+        if service == "resources" and route.startswith("/experimental/accepted-documents/v1/") and self.accepted_sources is not None:
+            return self.accepted_sources.request(method, original_path.split("/resources",1)[1], principal, scope, headers, data)
         if method == "POST" and route == "/notifyUserScope":
             if not isinstance(data, dict) or not isinstance(data.get("services"), list):
                 raise ContractError(400, "Scope advertisement requires service descriptors")
@@ -536,6 +546,7 @@ class State:
                 roots = [root]
             for root in roots:
                 if self.shared_reads is not None: self.shared_reads.release(root)
+                if self.accepted_sources is not None: self.accepted_sources.release(root)
                 del self.contexts[root]
                 self.query_faults.pop(root, None)
                 self.jobs = {key: row for key, row in self.jobs.items() if row["scope"] != root}
