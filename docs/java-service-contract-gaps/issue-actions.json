@@ -17,6 +17,7 @@
     {"issue_url": "https://github.com/integratedmodelling/klab-services/issues/124", "comment_url": "https://github.com/integratedmodelling/klab-services/issues/124#issuecomment-6696052897", "state_verified": "OPEN", "closed": false},
     {"issue_url": "https://github.com/integratedmodelling/klab-services/issues/123", "comment_url": "https://github.com/integratedmodelling/klab-services/issues/123#issuecomment-6696053325", "state_verified": "OPEN", "closed": false},
     {"issue_url": "https://github.com/integratedmodelling/klab-services/issues/89", "comment_url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6696053864", "state_verified": "OPEN", "closed": false},
-    {"issue_url": "https://github.com/integratedmodelling/klab.component.geospatial/issues/10", "comment_url": "https://github.com/integratedmodelling/klab.component.geospatial/issues/10#issuecomment-6696054302", "state_verified": "OPEN", "closed": false}
+    {"issue_url": "https://github.com/integratedmodelling/klab.component.geospatial/issues/10", "comment_url": "https://github.com/integratedmodelling/klab.component.geospatial/issues/10#issuecomment-6696054302", "state_verified": "OPEN", "closed": false},
+    {"issue_url": "https://github.com/integratedmodelling/klab-services/issues/127", "comment_url": "https://github.com/integratedmodelling/klab-services/issues/127#issuecomment-6698860944", "marker": "<!-- full-roadmap-worker-v1:JAVA-GAP-0017 -->", "action": "KEEP_OPEN_C_SCOPE_IMPLEMENTATION_UPDATE", "implementation_merge": "30460119dccf3db17f1e850eadd577df3685d3da", "created_at": "2026-11-06T23:44:59Z", "author_verified": "Dobbes", "state_verified": "OPEN", "unique_marker_count": 1, "closed": false}
   ]
 }

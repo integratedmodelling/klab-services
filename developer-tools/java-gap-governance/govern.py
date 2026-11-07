@@ -222,7 +222,7 @@ def outputs(registry, audit, issues):
             "C is now in scope. Original audit dispositions/conditions below remain attributed history; current classifications override prospective exclusions.", ""]
     actions = load(DATA / "issue-actions.json")["actions"]
     for issue in issues["issues"]:
-        action = next((a["comment_url"] for a in actions if a["issue_url"] == issue["url"]), "NO_REMOTE_CHANGE")
+        action = "<br>".join(a["comment_url"] for a in actions if a["issue_url"] == issue["url"]) or "NO_REMOTE_CHANGE"
         review = current.get(issue["url"], {})
         disposition = review.get("disposition", issue["disposition"])
         gap_ids = sorted(set(issue["java_gap_ids"]) | set(review.get("java_gap_ids", [])))

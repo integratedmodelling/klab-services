@@ -22,6 +22,16 @@ claimed rerun here. Worker/simulator/gap0017 evidence and remaining independent
 work: `FULL_ROADMAP_EXECUTION_LEDGER.md` and
 `evidence/full-roadmap-worker-vertical-20261106.json`. No native/science promotion.
 
+Follow-up A+B+C recovery pass: existing SDK saved context/completed and in-flight
+Job/observation APIs now tested over owned simulator process restart on sameexplicit
+origin, retained IDs/expected synthetic values and zero submission replay. Worker
+published/cancelled outcomes persist; lost leases fenced/explicit recompute consent.
+126installed simulator tests/15focused recovery/33governance and17linkedgap cases
+PASS;17current realNOT_RUN/exit3. No production SDK/Java/scientific fixture change.
+Fresh4worker+14simulator module artifact/install parity and exact limits in
+`evidence/full-roadmap-durable-recovery-20261106.json`; normal feature delivery
+pending, then continue independent full-roadmap work. Native acceptance not promoted.
+
 ### Sequential execution queue — user directive 2026-11-06
 
 Previous phase: **A+B Service Simulator development — COMPLETED_BOUNDED**.

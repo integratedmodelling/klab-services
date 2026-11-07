@@ -75,11 +75,11 @@
       "subsystem": "runtime", "java_component": "Runtime JobManager / scope and Job lifecycle",
       "api_contract": {"method": null, "path": null, "request_schema_ref": "python-client/docs/job-binding.md", "expected_response_schema_ref": null},
       "requirement_ids": ["RC-P1.2", "RC-P3.3", "CAP-07"], "original_issues": ["https://github.com/integratedmodelling/klab-services/issues/89"],
-      "python_test_refs": ["developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_expired_job_empty_status_is_not_confirmed_cancellation", "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state"],
-      "simulator_scenario_refs": ["SIM-LIFECYCLE-001", "SIM-RESTORE-001", "SIM-FAULTS-001"],
+      "python_test_refs": ["developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_expired_job_empty_status_is_not_confirmed_cancellation", "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state", "developer-tools/klab-service-simulator/tests/test_durable_recovery.py"],
+      "simulator_scenario_refs": ["SIM-LIFECYCLE-001", "SIM-RESTORE-001", "SIM-FAULTS-001", "SIM-DURABLE-RESTORE-001"],
       "reproducer_ref": "python-client/docs/job-binding.md",
       "observed_java_behavior": "NOT_TESTED full in-flight/history/restart chain. Historical completed-Job restoration and controlled single-Runtime scope restart are narrower evidence.",
-      "simulator_behavior": "Finite retained IDs/expiry, explicit reattachment, zero automatic mutation replay",
+      "simulator_behavior": "Finite retained IDs/expiry plus explicitly owned opt-in SQLite synthetic checkpoints across process restart; ordinary SDK saved context/Job/observation handles reattach and retrieve exact retained synthetic values. Tuple/corruption/single-writer/persistence failure checks, durable cleanup and zero automatic mutation replay. This is not native Java retention/incarnation evidence.",
       "contract_confidence": "NOT_EVALUATED", "java_status": "NOT_TESTED", "priority": "P1", "contract_case": "GAP-CASE-0004",
       "links": ["https://github.com/integratedmodelling/klab-services/issues/89"],
       "notes": "No new durable endpoint or retention promise inferred from version1 saved references or process-local binding. Publish authoritative lifetime/incarnation and owned restart fixture first."
@@ -251,11 +251,11 @@
       "api_contract": {"method": null, "path": null, "request_schema_ref": "python-worker/README.md", "expected_response_schema_ref": "python-worker/README.md"},
       "requirement_ids": ["RC-P5", "CAP-17"],
       "original_issues": ["https://github.com/integratedmodelling/klab-services/issues/127"],
-      "python_test_refs": ["python-worker/tests/test_worker.py", "python-worker/tests/test_client_failures.py", "developer-tools/klab-service-simulator/tests/test_worker_vertical.py"],
-      "simulator_scenario_refs": ["SIM-WORKER-001"],
+      "python_test_refs": ["python-worker/tests/test_worker.py", "python-worker/tests/test_client_failures.py", "developer-tools/klab-service-simulator/tests/test_worker_vertical.py", "developer-tools/klab-service-simulator/tests/test_durable_recovery.py"],
+      "simulator_scenario_refs": ["SIM-WORKER-001", "SIM-DURABLE-RESTORE-001"],
       "reproducer_ref": "python-worker/README.md",
       "observed_java_behavior": "NOT_TESTED. ServicesAPI source exposes Resources contextualize endpoints, not proof of a maintained remote computation-worker registration/lease/result protocol. No current native worker endpoint or ABI is asserted missing globally.",
-      "simulator_behavior": "Explicit opt-in klab.experimental.worker/1 HTTP proposal under /experimental/worker/v1: context-owner/worker-role registration, bounded nonuniform inputs, single claim lease, trusted isolated Python script, atomic validated output with hashes, cancellation/failure/release and no automatic redelivery. Not scientific reasoning or Java execution.",
+      "simulator_behavior": "Explicit opt-in klab.experimental.worker/1 HTTP proposal under /experimental/worker/v1: context-owner/worker-role registration, bounded nonuniform inputs, single claim lease, trusted isolated Python script, atomic validated output with hashes, cancellation/failure/release and no automatic redelivery. Opt-in durable synthetic checkpoint fences lost leases into RECOVERY_REQUIRED after process restart, retains published/cancelled results, and requires explicit owner recomputation consent; no automatic continuation or scientific reasoning/Java execution.",
       "contract_confidence": "SIMULATED_PROVISIONAL", "java_status": "CONTRACT_PROVISIONAL", "priority": "P1",
       "source_build_or_commit": "Repository source eda8697daf827d77066a5a2a7f90da4d56faf6d1 inspected; native worker transport UNKNOWN_PENDING_REFERENCE",
       "python_status": "PROTOCOL_VERIFIED", "contract_case": "GAP-CASE-0017",
@@ -266,7 +266,7 @@
         "Reject foreign identities, unknown versions, invalid geometry/units/budgets; verify lease fencing, cancellation, duplicate/ambiguous delivery, restart and independently confirmed cleanup",
         "Provide operator-approved resource/isolation/security and package/provenance policy; trusted process isolation is not an adversarial sandbox or hard resident-memory guarantee"
       ],
-      "notes": "C now in scope under full-roadmap directive; issue127 remains open because a proposal/local process is not actual backend integration. Experimental routes are explicitly proposed, not invented authoritative Java APIs. Initial worker vertical remains partial: durable restart, deployment resource isolation and maintained native transport acceptance are not established. No server-supplied code, credentials or scientific model port; no production SDK dependency on simulator."
+      "notes": "C now in scope under full-roadmap directive; issue127 remains open because a proposal/local process is not actual backend integration. Experimental routes are explicitly proposed, not invented authoritative Java APIs. Initial worker vertical remains partial: simulator restart/recovery is implemented separately from native restart acceptance; hardened deployment resource isolation and maintained native transport/ABI acceptance remain unestablished. No server-supplied code, credentials or scientific model port; no production SDK dependency on simulator."
     }
   ]
 }

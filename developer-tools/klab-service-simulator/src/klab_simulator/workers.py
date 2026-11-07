@@ -151,6 +151,12 @@ class WorkerState:
                 raise ContractError(409, "Published output cannot be cancelled")
             task.update(state="CANCELLED", lease=None)
             return reply(state="CANCELLED")
+        if method == "POST" and len(parts) == 3 and parts[2] == "recover":
+            require_role("user")
+            if task["state"] != "RECOVERY_REQUIRED" or data.get("confirm_recompute") is not True:
+                raise ContractError(409, "Only uncertain recovered work can be explicitly requeued")
+            task.update(state="QUEUED", lease=None, worker_id=None)
+            return reply(task_id=parts[1], state="QUEUED")
         if method == "POST" and len(parts) == 3 and parts[2] == "fail":
             require_role("worker")
             if task["state"] != "LEASED" or not isinstance(data.get("lease"), str) or not secrets.compare_digest(task["lease"], data["lease"]):

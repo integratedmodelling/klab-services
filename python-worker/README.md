@@ -32,6 +32,7 @@ base URL. Current Java endpoint is **UNKNOWN_PENDING_REFERENCE**. HTTP proposal:
 |POST tasks/{id}/publish|lease, validated output, input_sha256, implementation_sha256|PUBLISHED/output_sha256; duplicate/cancelled/stale lease409|
 |POST tasks/{id}/fail|lease|FAILED, no output; no implicit redelivery|
 |POST tasks/{id}/cancel|empty|CANCELLED; published output cannot be cancelled409|
+|POST tasks/{id}/recover|confirm_recompute:true|QUEUED only from RECOVERY_REQUIRED; caller must explicitly consent, no automatic replay|
 |POST release|worker_id|RELEASED; its unfinished leased tasks ABORTED without publication/replay|
 
 All responses carry exact protocol string. Synthetic simulator owner credentials
@@ -61,9 +62,14 @@ if a local script finishes after cancellation. It does not replay ambiguous writ
 
 **Limits:** trusted scripts only. This is process isolation, not a hostile-code OS
 sandbox, hard resident-memory/disk quota or descendant-process containment. Operators
-must supply a reviewed container/job boundary for untrusted code. Initial state is
-volatile; reconnect reads retained task state only while the same simulator lives.
-Durable restart/recovery and deployment-level limits remain unfinished C work,
+must supply a reviewed container/job boundary for untrusted code. Default simulator
+state is volatile. With an explicitly owned opt-in `.klab-sim.sqlite` checkpoint,
+published/cancelled tasks and scientific context/Job references survive simulator
+restart. Active leases do **not**: RECOVERY_REQUIRED fences old publication authority,
+worker registration is cleared, and only explicit owner
+`recover_task(..., allow_recompute=True)` permits recomputation. No automatic replay;
+callers must decide whether a trusted script's potential side effects make
+recomputation appropriate. Native restart/ABI and deployment-level limits remain unfinished C work,
 not secretly marked complete by the vertical. Issue127 remains open for its full
 native/deployment/ABI and acceptance obligations. No public release is authorized.
 

@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-DURABLE-RESTORE-001",
+      "rows": ["RC-P1.2", "RC-P3.3", "CAP-07", "RC-P5", "CAP-17"],
+      "routes": ["/runtime/api/v1/connect", "/runtime/jobs/{id}", "/runtime/experimental/worker/v1/tasks/{id}", "/runtime/experimental/worker/v1/tasks/{id}/recover"],
+      "source": "SIMULATED_PROVISIONAL explicitly owned SQLite checkpoint; not a native Java storage/retention/incarnation promise. Existing SDK routes unchanged; worker recovery endpoint is an explicit proposed protocol operation, Java route UNKNOWN_PENDING_REFERENCE.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; same native tuple/retention/lease semantics still NOT_TESTED",
+      "simulator_test": "test_durable_recovery.py::test_owned_process_restart_restores_sdk_results_and_fences_uncertain_worker_output",
+      "java_gap_ids": ["JAVA-GAP-0004", "JAVA-GAP-0017"]
+    },
+    {
       "id": "SIM-WORKER-001",
       "rows": ["RC-P5", "CAP-17"],
       "routes": ["/runtime/experimental/worker/v1/register", "/runtime/experimental/worker/v1/tasks", "/runtime/experimental/worker/v1/claim", "/runtime/experimental/worker/v1/tasks/{id}/publish", "/runtime/experimental/worker/v1/tasks/{id}/fail", "/runtime/experimental/worker/v1/tasks/{id}/cancel", "/runtime/experimental/worker/v1/release"],

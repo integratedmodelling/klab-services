@@ -32,8 +32,13 @@ maintainer review claimed. All16original gap records/IDs preserved;32governance
 tests passed. An initial merge command used a mismatched head and GitHub safely
 refused; corrected using the actual queried head, no bypass/force operation.
 
-Current branch `feat/python-worker-vertical`, parent verified handoff merge7c5f90af9.
-Worker code implemented and installed-tested, not yet published/merged. Fresh
+Worker vertical PR268 subsequently verified remotely MERGED
+`30460119dccf3db17f1e850eadd577df3685d3da`,2026-11-06T23:42:58Z. All applicable
+final-head build/Jenkins/worker3.11+3.13/schema/simulator/notebook/scientific checks
+PASS; no independent maintainer review claimed. Original handoff/worker source
+delivery is feature integration, not develop/native/scientific/release promotion.
+Current branch `feat/python-simulator-durable-recovery`, parent30460119d.
+Initial worker code implemented, installed-tested and merged. Fresh
 wheel/sdist/pip-target parity:4worker modules and13simulator modules;43worker unit,
 4realHTTP worker scenarios,111full simulator and33governance tests PASS, zero skips,
 94.04%aggregate line/branch worker coverage, no exclusions. SDK source unchanged.
@@ -45,9 +50,24 @@ schema/generated-handoff/fatal-error lint PASS. Final fresh worker wheel65e04a21
 and simulator wheelef855f47… have full installed-suite evidence, with exact digests
 in `evidence/full-roadmap-worker-vertical-20261106.json`. No long-running live
 service was launched; tests own local emulators only.
-Next command: commit/push worker vertical PR with
-JAVA-GAP-0017/handoff, then continue durable worker/backend recovery and resource
-isolation or next independent A/B requirement while normal hosted gates run.
+Current pass implements opt-in owned SQLite simulator checkpoints: ordinary SDK
+scope/Job/observation reattachment across process restart; worker published/cancelled
+state retention, active lease fencing/RECOVERY_REQUIRED, explicit recompute consent,
+durable cleanup, tuple/corruption/single-writer/failed-write controls. Final installed
+126simulator tests PASS/82.11s;43worker unit,15focused recovery and33governance PASS,
+zero skips; worker coverage94.46%/no exclusions, mypy/fatal lint/schema/handoffdrift
+PASS. Fresh wheel/sdist and actual pip-target parity4worker+14simulator modules;
+17linked cases PASS(100SDK+43worker+55simulator/capture/recovery),17realNOT_RUN/exit3.
+Receipt: `evidence/full-roadmap-durable-recovery-20261106.json`. Initial
+mixed-suite run47passed/1failed because the worker package-independence assertion
+correctly saw simulator imported by the other suite; separate runs43+5PASS, no
+original assertion removed or skipped. Code/installed verification complete; normal
+PR/final-head hosted CI/permitted merge remain pending. Issue127 received verified
+idempotent keep-open scope correction after merged268 (comment6698860944), zero
+closures/owner/label/priority operations; original native obligations preserved.
+Next command: commit/push durable recovery PR with updated0004/0017handoff and
+evidence; then continue worker resource/descendant/cancellation hardening or next
+independent A/B vertical without stopping at the PR/checkpoint.
 Do not stop at its PR/CI/checkpoint. Inspect remote state before repeating operations.
 
 ## Historical acceptance baseline and current implementation plan
@@ -70,7 +90,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |---|---|---|
 |RC-P0|PARTIAL; discovery/compatibility guards|Complete operation inventory against supported source and simulator coverage; production support decision separate.|
 |RC-P1.1|PARTIAL; SIM-DISCOVERY-001 vertical|Exercise bootstrap through computation with positive/denial/expiry; actual issuer/license evidence external.|
-|RC-P1.2|PARTIAL; SIM-RESTORE-001|Add durable simulator state/restart acceptance; don't invent authoritative retained-Job contract.|
+|RC-P1.2|PARTIAL; SIM-RESTORE-001 and installed SIM-DURABLE-RESTORE-001 (0004/0017), publication pending|Completed/in-flight saved Job, context and observation reattach across owned simulator processes without replay; native retained-Job/incarnation semantics still external.|
 |RC-P1.3|PARTIAL; SIM-SCOPE-SELECTION-001|Complete collaborator/forbidden/expiry scenario, preserving server authority.|
 |RC-P1.4|PARTIAL; discovery guards|Mixed-provider outage/recovery and identity drift scenario.|
 |RC-P1.5|PARTIAL; SIM-SELECTION-001|Cover material project/observer/grid option effects, distinguishing advertised model from actual selected input.|
@@ -81,7 +101,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P2.5|PARTIAL; raster/vector/table adapters|Explicit categorical dictionary and multidimensional/time descriptors with faithful synthetic fixtures.|
 |RC-P3.1|PARTIAL; SIM-REFRESH-001|Explicit provisional committed-revision two-client simulator contract/races, native semantics remain unknown.|
 |RC-P3.2|COMPLETE bounded refresh; SIM-REFRESH-001|Retain stale/partial/outage controls while broadening linked protocols.|
-|RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001|Durable simulator Job expiry/restart/cancel without mutation replay.|
+|RC-P3.3|PARTIAL; SIM-LIFECYCLE-001/SIM-FAULTS-001 plus installed durable restart/no-replay controls, publication pending|Preserve expiry/cancel/no-replay and scoped results; native durable history/incarnation acceptance separate.|
 |RC-P3.4|PARTIAL; SIM-PROVENANCE-001|Broaden dependency/semantic-effect fixtures without calling finite simulator lineage authoritative Java.|
 |RC-P3.5|PARTIAL; SIM-NOTEBOOK-001|Multi-principal notebook/race acceptance over ordinary installed async client.|
 |RC-P4.1|PARTIAL; SIM-SEMANTICS-001/SIM-INSPECTION-001|Capability-aware applicability/version/access and actual candidate source protocol adapter.|
@@ -89,7 +109,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |RC-P4.3|PARTIAL delivered imports; SIM-IMPORT-001/SIM-INPUT-BINDING-001|Broader annotation/compute input provenance with owned cleanup; native resource custody gate separate.|
 |RC-P4.4|PARTIAL ADD/locks; SIM-PROJECT-LOCK-001/SIM-BEHAVIOR-DRAFT-001|Explicit conditional revision/edit/history/publication protocol seam; no blind overwrite.|
 |RC-P4.5|PARTIAL native agent control/registration; protocol tests|Complete isolated managed-agent simulator lifecycle, terminal cleanup, reconnect and owner/denial.|
-|RC-P5|IN_SCOPE PARTIAL; python-worker Field/WorkerClient/execute, SIM-WORKER-001, JAVA-GAP-0017; local installed43unit+4HTTP PASS, merge pending|Initial trusted computation role delivered locally; durable restart, hardened deployment limits/isolation and native backend acceptance remain.|
+|RC-P5|IN_SCOPE PARTIAL; worker vertical mergedPR268/30460119d; durable simulator recovery installed-tested, pending next delivery|Next resource/descendant/cancellation hardening; native backend/ABI/deployment acceptance remains separate.|
 |RC-R1|PARTIAL layered CI/test tooling|Install/coverage/contract/handoff CI per feature; external scheduled worker adoption is not local test success.|
 |RC-R2|PARTIAL release checker|Package development artifacts; production release/support/owner approval remains external, no upload inferred.|
 |CAP-01|PARTIAL providers/profiles|Expiry/reacquisition and simulator bootstrap matrix; actual issuer approval external.|
@@ -98,7 +118,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-04|PARTIAL typed requests|Broaden supported collections/relationship/context selection scenarios.|
 |CAP-05|PARTIAL semantic explorers|Supported remote operations and revision/applicability fixtures, no local ontology inference.|
 |CAP-06|COMPLETE bounded evidence DTOs|Maintain plan-versus-executed-effect distinction; full lineage belongs RC-P3.4.|
-|CAP-07|PARTIAL Jobs/native async|Durable simulator lifecycle/timeout/cancel/reconnect and fairness under bounded concurrency.|
+|CAP-07|PARTIAL Jobs/native async; durable completed/in-flight restoration installed-tested|Broaden bounded fairness/lifecycle where independently needed; native retention/restart contract remains unverified.|
 |CAP-08|COMPLETE bounded scalar data|Preserve exact NUMBER/BOOLEAN/TEXT/null precision while adding separate block contract.|
 |CAP-09|PARTIAL descriptors/exports|Multidimensional/category/time/multi-shard declared mappings and revision integrity.|
 |CAP-10|PARTIAL graph/projections|Two-client revision/race/partial refresh scenario through explicit protocol seam.|
@@ -108,7 +128,7 @@ for every row is NOT_RUN; existing historical native receipts are preserved.
 |CAP-14|PARTIAL authoring/agent facades|Complete revision-safe authoring and managed lifecycle simulator flows with separate native status.|
 |CAP-15|PARTIAL optional scientific/notebook adapters|Categories/time/multidimensional and coherent notebook examples.|
 |CAP-16|PARTIAL compatibility/package matrix|Fresh wheel/sdk/worker installs, types/lint/coverage and reproducible starter; real deployment/support gates separate.|
-|CAP-17|IN_SCOPE PARTIAL; same separate experimental worker package/tests as RC-P5; merge pending|Complete recovery/resource boundaries and maintained deployment/native transport; no compiler/inference/storage port or embedded engine claim.|
+|CAP-17|IN_SCOPE PARTIAL; same separate worker as RC-P5, merged268 plus installed recovery pass|Complete resource/descendant/cancellation boundaries and maintained native deployment; no compiler/inference/storage port or embedded engine claim.|
 |CAP-18|COMPLETE current safety invariants|Enforce per change: explicit origins, no mutation replay, no hidden fallback, optional extras and separate simulator.|
 
 ## Execution order and C interpretation

@@ -95,6 +95,13 @@ A distinct Java harness passing is not acceptance of the specific Python HTTP fl
 
 ## Issue policy
 
+Current full-roadmap classification lives in `full-roadmap-issues.json`, linked
+from the preserved original issue inventory. Generated reconciliation shows all
+actual action URLs, including subsequent scope corrections, rather than hiding
+new comments behind the earlier audit marker. Issue127 now has a verified keep-open
+update after workerPR268: C is in scope/partially implemented, not formerly excluded
+as a prospective instruction, and its native/deployment obligations remain open.
+
 The read-only audit found no safe immediate closure candidates. Live product bugs,
 missing native APIs and outstanding explicit deployment/research/release gates remain
 open. A tracking migration needs a persistent adequate canonical successor, no lost
