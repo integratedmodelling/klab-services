@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive, watch } from "vue";
 import CredentialsPanel from "./components/CredentialsPanel.vue";
 import CapabilitiesPanel from "./components/CapabilitiesPanel.vue";
 import ExtensionPanel from "./components/ExtensionPanel.vue";
@@ -9,7 +9,7 @@ import StatusGrid from "./components/StatusGrid.vue";
 import ActorApplication from "./components/ActorApplication.vue";
 import { authState, initializeAuthentication } from "./services/auth";
 import { serviceApi } from "./services/api";
-import type { DashboardConfiguration, DashboardContext, FullPageComponent } from "./types";
+import type { DashboardConfiguration, DashboardContext, FullPageComponent, UnsavedWorkGuard } from "./types";
 
 const config = ref<DashboardConfiguration | null>(null);
 const status = ref<Record<string, unknown> | null>(null);
@@ -21,6 +21,39 @@ let refreshTimer: number | undefined;
 let refreshGeneration = 0;
 const pageName = ref(pageNameFromLocation());
 const applicationUrn = ref(applicationFromLocation());
+const headerRef = ref<{ $el: HTMLElement }>();
+const headerHeight = ref(0);
+let headerObserver: ResizeObserver | undefined;
+const navigationGuards = shallowReactive(new Set<UnsavedWorkGuard>());
+const dirtyGuards = computed(() => [...navigationGuards].filter(guard => guard.isDirty()));
+const leaveDialog = ref(false), savingBeforeLeave = ref(false), leaveError = ref("");
+const cannotDiscard = computed(() => dirtyGuards.value.some(guard => guard.isBusy()));
+const canSaveBeforeLeave = computed(() => dirtyGuards.value.length > 0 && dirtyGuards.value.every(guard => guard.canSave()));
+let pendingNavigation: (() => void) | undefined;
+const historyKey = "klabNavigationIndex";
+let routeIndex = Number(window.history.state?.[historyKey] ?? 0);
+let restoringHistory = false, acceptingHistory = false;
+window.history.replaceState({ ...window.history.state, [historyKey]: routeIndex }, "");
+
+function requestNavigation(action: () => void) {
+  if (!dirtyGuards.value.length) { action(); return; }
+  if (leaveDialog.value || savingBeforeLeave.value) return;
+  pendingNavigation = action; leaveError.value = ""; leaveDialog.value = true;
+}
+function stayOnPage() { pendingNavigation = undefined; leaveDialog.value = false; leaveError.value = ""; }
+async function leavePage(save: boolean) {
+  if (savingBeforeLeave.value || cannotDiscard.value || (save && !canSaveBeforeLeave.value)) return;
+  savingBeforeLeave.value = true; leaveError.value = "";
+  try {
+    for (const guard of dirtyGuards.value) {
+      if (save) {
+        if (!await guard.save()) { leaveError.value = "Your work could not be saved. Stay here to review the message and try again."; return; }
+      } else guard.discard();
+    }
+    const next = pendingNavigation; pendingNavigation = undefined; leaveDialog.value = false; next?.();
+  } catch { leaveError.value = "Your work could not be saved. Stay here to keep your edits."; }
+  finally { savingBeforeLeave.value = false; }
+}
 
 function applicationFromLocation(): string | null {
   const base = new URL(document.baseURI).pathname;
@@ -35,6 +68,7 @@ const context = reactive({
   get status() { return status.value; },
   get capabilities() { return capabilities.value; },
   refresh,
+  registerNavigationGuard(guard: UnsavedWorkGuard) { navigationGuards.add(guard); return () => navigationGuards.delete(guard); },
 }) as DashboardContext;
 
 const advisories = computed(() =>
@@ -48,6 +82,10 @@ const canAdminister = computed(() => authState.authenticated && Array.isArray(ca
 const isFullPageRoute = computed(() => pageName.value !== null);
 
 onMounted(async () => {
+  if (headerRef.value?.$el) {
+    headerObserver = new ResizeObserver(([entry]) => { headerHeight.value = entry.target.getBoundingClientRect().height; });
+    headerObserver.observe(headerRef.value.$el);
+  }
   window.addEventListener("popstate", updateRoute);
   try {
     config.value = await serviceApi.get<DashboardConfiguration>("public/ui/config");
@@ -63,6 +101,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  headerObserver?.disconnect();
   window.clearInterval(refreshTimer);
   window.removeEventListener("popstate", updateRoute);
 });
@@ -76,16 +115,31 @@ function pageNameFromLocation(): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-function updateRoute(): void {
+function updateRoute(event?: PopStateEvent): void {
+  if (restoringHistory) { restoringHistory = false; return; }
+  const nextIndex = Number(event?.state?.[historyKey] ?? routeIndex);
+  if (event && dirtyGuards.value.length && !acceptingHistory && nextIndex !== routeIndex) {
+    const delta = routeIndex - nextIndex;
+    restoringHistory = true;
+    window.history.go(delta);
+    requestNavigation(() => { acceptingHistory = true; window.history.go(-delta); });
+    return;
+  }
+  acceptingHistory = false;
+  routeIndex = nextIndex;
   pageName.value = pageNameFromLocation();
   applicationUrn.value = applicationFromLocation();
 }
 
 function navigate(relativePath: string, nextPageName: string | null): void {
-  window.history.pushState({}, "", new URL(relativePath, document.baseURI));
-  pageName.value = nextPageName;
-  applicationUrn.value = applicationFromLocation();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  const destination = new URL(relativePath, document.baseURI);
+  if (destination.href === window.location.href) return;
+  requestNavigation(() => {
+    window.history.pushState({ [historyKey]: ++routeIndex }, "", destination);
+    pageName.value = nextPageName;
+    applicationUrn.value = applicationFromLocation();
+    window.scrollTo({ top: 0, behavior: "auto" });
+  });
 }
 
 async function refresh(): Promise<void> {
@@ -117,8 +171,8 @@ watch(() => authState.authenticated, () => {
 </script>
 
 <template>
-  <q-layout view="hHh lpR fFf" class="dashboard-shell">
-    <q-header class="dashboard-header">
+  <q-layout view="hHh lpR fFf" class="dashboard-shell" :style="{ '--klab-header-height': `${headerHeight}px` }">
+    <q-header ref="headerRef" class="dashboard-header">
       <q-toolbar class="header-inner">
         <a href="./" class="brand-link" aria-label="Service dashboard" @click.prevent="navigate('./', null)">
           <img v-if="config" :src="config.logoUrl" alt="k.LAB logo" class="brand-logo" />
@@ -149,7 +203,7 @@ watch(() => authState.authenticated, () => {
           class="header-menu"
           flat
           round
-          color="white"
+          color="dark"
           icon="apps"
           aria-label="Service interfaces"
         >
@@ -180,10 +234,26 @@ watch(() => authState.authenticated, () => {
           </q-list>
         </q-btn-dropdown>
         <q-btn v-if="canAdminister" flat label="Credentials" @click="navigate('ui/credentials', 'credentials')" />
-        <LoginControl :auth="authState" />
+        <LoginControl :auth="authState" :request-navigation="requestNavigation" />
       </q-toolbar>
     </q-header>
 
+    <q-dialog v-model="leaveDialog" persistent aria-labelledby="unsaved-work-title">
+      <q-card class="unsaved-work-dialog">
+        <q-card-section>
+          <h2 id="unsaved-work-title">Keep your review work?</h2>
+          <p>Your changes have not been saved. Save them before leaving, or explicitly discard them.</p>
+          <p v-if="cannotDiscard" role="status">An operation is still running. Stay here until its outcome is known.</p>
+          <p v-else-if="!canSaveBeforeLeave">Some work needs attention on this page before it can be saved. Stay here to save files, complete required fields, or check an uncertain operation.</p>
+          <p v-if="leaveError" role="alert">{{ leaveError }}</p>
+        </q-card-section>
+        <q-card-actions align="right" class="unsaved-work-actions">
+          <q-btn flat no-caps label="Stay here" :disable="savingBeforeLeave" @click="stayOnPage" />
+          <q-btn outline no-caps label="Discard and leave" :disable="savingBeforeLeave || cannotDiscard" @click="leavePage(false)" />
+          <q-btn unelevated no-caps color="primary" label="Save and leave" :disable="!canSaveBeforeLeave || cannotDiscard" :loading="savingBeforeLeave" @click="leavePage(true)" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
     <q-page-container>
       <q-page class="dashboard-page">
         <CredentialsPanel v-if="pageName === 'credentials' && canAdminister" :key="authState.username" />
@@ -248,3 +318,12 @@ watch(() => authState.authenticated, () => {
     </q-page-container>
   </q-layout>
 </template>
+
+<style scoped>
+.header-menu { display: none; }
+@media (max-width: 900px) { .header-menu { display: inline-flex; } }
+.unsaved-work-dialog { width: min(560px, calc(100vw - 32px)); padding: 8px; color: #17283b; }
+.unsaved-work-dialog h2 { font-size: 1.5rem; line-height: 1.3; font-weight: 600; text-wrap: balance; margin: 0 0 16px; }
+.unsaved-work-dialog p { font-size: 16px; line-height: 1.5; }
+.unsaved-work-actions { gap: 8px; flex-wrap: wrap; }
+</style>

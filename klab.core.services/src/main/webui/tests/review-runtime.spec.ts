@@ -1,3 +1,4 @@
+import { revealReviewTools } from "./review-tools";
 import { test, expect, type APIRequestContext } from "@playwright/test";
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -35,18 +36,27 @@ test("browser scope discovers and executes the genuine preparation action throug
   const failures: string[] = [];
   page.on("response", response => { if (response.url().startsWith(api()) && response.status() >= 500) failures.push(response.url()); });
   await page.goto("/tests/review-e2e.html?actor=editor");
+  await revealReviewTools(page);
+  await revealReviewTools(page);
   await page.getByLabel("Ontology URN", { exact: true }).fill("test.ontology");
+  await revealReviewTools(page);
   await page.getByLabel("Review title", { exact: true }).fill("Real runtime browser preparation");
+  await revealReviewTools(page);
   await page.getByLabel("Review description", { exact: true }).fill("Exercise authenticated host service lookup, production behavior parser and compiled action.");
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Create private bootstrap", exact: true }).click();
   await expect(page.getByLabel("Proposal ID", { exact: true })).toBeVisible();
+  await revealReviewTools(page);
   await page.getByLabel("Stage title", { exact: true }).fill("Saved runtime preparation details");
+  await revealReviewTools(page);
   await page.getByLabel("Stage description", { exact: true }).fill("Revision-checked details saved through the actual controller before preparing.");
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Save stage details", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Stage title and description saved" })).toBeVisible();
   for (const [name, value] of [["Proposal ID", "browser-proposal"], ["Revision ID", "browser-r1"],
       ["Domain", "Wetland terminology"], ["Purpose", "Review the current ontology"],
       ["Requested tier", "1"], ["Target community", "Ontology reviewers"]]) {
+    await revealReviewTools(page);
     await page.getByLabel(name, { exact: true }).fill(value);
   }
   let releasePreparation!: () => void, preparationRequests = 0;
@@ -56,6 +66,7 @@ test("browser scope discovers and executes the genuine preparation action throug
     await preparationGate;
     await route.continue(); // No canned response: the actual runtime still executes the action.
   });
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
   try {
     await expect(page.getByRole("status").filter({ hasText: "Preparing review draft from the ontology" })).toBeVisible();
@@ -64,16 +75,17 @@ test("browser scope discovers and executes the genuine preparation action throug
     await page.getByRole("button", { name: "Preparing review draft...", exact: true }).dispatchEvent("click");
     await expect.poll(() => preparationRequests).toBe(1);
   } finally { releasePreparation(); }
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/browser-r1/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/browser-r1/);
   await expect(page.getByText("Could not load preparation actions", { exact: false })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Start cycle from selected proposal", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Start peer review", exact: true })).toBeEnabled();
   await expect(page.getByRole("status").filter({ hasText: "Proposal prepared and saved in this stage" })).toBeVisible();
   expect(preparationRequests).toBe(1);
   const url = new URL(page.url()), id = url.searchParams.get("flow")!, stageId = url.searchParams.get("stage")!;
   const receipt = await saved(request, id, stageId, "browser-proposal");
   await page.reload();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/browser-r1/);
+  await revealReviewTools(page);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/browser-r1/);
   await expect(page.getByLabel("Stage title", { exact: true })).toHaveValue("Saved runtime preparation details");
   await expect(page.getByLabel("Stage description", { exact: true })).toHaveValue("Revision-checked details saved through the actual controller before preparing.");
   expect((await saved(request, id, stageId, "browser-proposal")).revision).toBe(receipt.revision);
@@ -87,13 +99,15 @@ test("web bootstrap opens an actual IDE-like prepared candidate without rerunnin
   expect(result.status()).toBe(200);
   const prepared = await result.json();
   await page.goto("/tests/review-e2e.html?actor=editor&flow=" + prepared.flowId + "&stage=" + prepared.stageId);
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/native-r1/);
+  await revealReviewTools(page);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/native-r1/);
   await expect(page.getByText("Could not load preparation actions", { exact: false })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toHaveCount(0);
   const receipt = await saved(request, prepared.flowId, prepared.stageId, "native-proposal");
   expect(receipt.revision).toBe(prepared.revision);
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/native-r1/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/native-r1/);
   expect((await saved(request, prepared.flowId, prepared.stageId, "native-proposal")).revision).toBe(prepared.revision);
   receipts.push({ ...receipt, path: "advertised IDE-like request -> actual controller/runtime -> web open", repeatedPreparation: false });
 });

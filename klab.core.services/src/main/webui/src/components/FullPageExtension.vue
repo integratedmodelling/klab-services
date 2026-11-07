@@ -17,7 +17,6 @@ const authenticationRequired = computed(
   <main class="full-page-main">
     <header class="full-page-heading">
       <div>
-        <div class="service-type">Service interface</div>
         <h1>{{ page.title }}</h1>
         <p>{{ page.description }}</p>
       </div>

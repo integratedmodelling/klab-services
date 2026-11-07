@@ -1,9 +1,13 @@
+import { revealReviewTools } from "./review-tools";
 import { test, expect } from "@playwright/test";
 
 async function prepare(page: import("@playwright/test").Page) {
+  await revealReviewTools(page);
   for (const name of ["Proposal ID", "Revision ID", "Domain", "Purpose", "Target community"]) await page.getByLabel(name, { exact: true }).fill(name === "Revision ID" ? "r1" : "test");
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/test-proposal/);
+  await revealReviewTools(page);
 }
 
 async function waitingFor(page: import("@playwright/test").Page, step: string) {
@@ -15,12 +19,14 @@ async function release(page: import("@playwright/test").Page, step: string) {
 }
 async function fillPreparation(page: import("@playwright/test").Page) {
   for (const name of ["Proposal ID", "Revision ID", "Domain", "Purpose", "Target community"]) {
+    await revealReviewTools(page);
     await page.getByLabel(name, { exact: true }).fill(name === "Revision ID" ? "r1" : "test");
   }
 }
 
 test("slow discovery and review permissions show progress instead of an empty bootstrap", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=discovery&pause=review");
+  await revealReviewTools(page);
   await waitingFor(page, "discovery");
   await expect(page.getByRole("status").filter({ hasText: "Loading your reviews and available preparation tools" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Refresh", exact: true })).toBeDisabled();
@@ -35,7 +41,9 @@ test("slow discovery and review permissions show progress instead of an empty bo
 
 test("preparation stays visibly pending through delayed proposal and context downloads", async ({ page }, testInfo) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=prepare&pause=proposal&pause=context");
+  await revealReviewTools(page);
   await fillPreparation(page);
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
   await waitingFor(page, "prepare");
   await expect(page.getByRole("button", { name: "Preparing review draft...", exact: true })).toBeDisabled();
@@ -61,17 +69,21 @@ test("preparation stays visibly pending through delayed proposal and context dow
   await expect(page.getByRole("status").filter({ hasText: "Proposal prepared and saved in this stage" })).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "Proposal prepared and saved in this stage" })).toBeInViewport();
   await expect(progress).toHaveCount(0);
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
-  await expect(page.getByRole("button", { name: "Start cycle from selected proposal", exact: true })).toBeEnabled();
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/test-proposal/);
+  await revealReviewTools(page);
+  await expect(page.getByRole("button", { name: "Start peer review", exact: true })).toBeEnabled();
   expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
   await page.screenshot({ path: testInfo.outputPath("preparation-ready.png"), fullPage: true });
 });
 
 test("slow stage-detail save locks edits through the review refresh and explains the next step", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=details");
+  await revealReviewTools(page);
   await page.getByLabel("Stage title", { exact: true }).fill("Prepared for review");
+  await revealReviewTools(page);
   await page.getByLabel("Stage description", { exact: true }).fill("Retain these details during saving");
   await page.evaluate(() => history.replaceState({}, "", location.href + "&pause=review"));
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Save stage details", exact: true }).click();
   await waitingFor(page, "details");
   await expect(page.getByRole("status").filter({ hasText: "Saving stage title and description" })).toBeVisible();
@@ -90,36 +102,46 @@ test("slow stage-detail save locks edits through the review refresh and explains
 
 test("a failed candidate download remains visible after context loads and is not reported as success", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&proposal-failed");
+  await revealReviewTools(page);
   await fillPreparation(page);
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("503 Proposal download failed");
+  await expect(page.getByRole("alert")).toContainText("The service could not confirm the operation");
   await expect(page.getByRole("status").filter({ hasText: "Proposal prepared and saved" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Refresh", exact: true })).toBeEnabled();
   await page.evaluate(() => history.replaceState({}, "", location.href.replace("&proposal-failed", "")));
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/test-proposal/);
+  await revealReviewTools(page);
   await expect(page.getByRole("alert")).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
 });
 
 test("an interrupted preparation response retains fields and reconciles before any retry", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&preparation-interrupted");
+  await revealReviewTools(page);
   await fillPreparation(page);
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("500 Preparation response interrupted");
+  await expect(page.getByRole("alert")).toContainText("The service could not confirm the operation");
   await expect(page.getByText("Preparation has an unknown outcome", { exact: false })).toBeVisible();
   await expect(page.getByLabel("Revision ID", { exact: true })).toHaveValue("r1");
   await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/test-proposal/);
+  await revealReviewTools(page);
   await expect(page.getByText("Preparation has an unknown outcome", { exact: false })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Start cycle from selected proposal", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Start peer review", exact: true })).toBeEnabled();
   expect(await page.evaluate(() => (window as any).calls.length)).toBe(1);
 });
 
 test("delayed preparation conflicts keep the entered parameters and require explicit retry", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&pause=prepare&conflict");
+  await revealReviewTools(page);
   await fillPreparation(page);
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
   await release(page, "prepare");
   await expect(page.getByRole("alert")).toContainText("409 Conflict");
@@ -132,8 +154,10 @@ test("delayed preparation conflicts keep the entered parameters and require expl
 for (const step of ["flow", "review", "prepare"]) {
   test(`leaving during delayed ${step} never rewrites the next page or publishes old review state`, async ({ page }) => {
     await page.goto(`/tests/review.html?flow=flow-1&stage=stage-1&pause=${step}`);
+    await revealReviewTools(page);
     if (step === "prepare") {
       await fillPreparation(page);
+      await revealReviewTools(page);
       await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
     }
     await waitingFor(page, step);
@@ -151,51 +175,66 @@ for (const step of ["flow", "review", "prepare"]) {
 
 test("stage URL exposes explicit editor action with revision and preserves authored drafts", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1");
+  await revealReviewTools(page);
   await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toBeDisabled();
   await prepare(page);
   const calls = await page.evaluate(() => (window as unknown as { calls: unknown[] }).calls);
   expect(calls[0]).toMatchObject({ path: "api/v1/flows/flow-1/states/stage-1/actions/prepare-review-draft", command: { expectedRevision: 3, parameters: { requested_tier: 1, revision_id: "r1" } } });
   expect(page.url()).toContain("stage=stage-1");
-  const candidate = page.getByLabel("Candidate proposal JSON");
+  await revealReviewTools(page);
+  const candidate = page.getByLabel("Candidate proposal source");
   await candidate.fill('{"proposal":{"id":"test-proposal","revision_id":"r2","status":"draft"}}');
   await expect(page.getByRole("button", { name: "Refresh", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toHaveCount(0);
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Save new draft attachment" }).click();
   await expect(candidate).toHaveValue(/"r2"/);
   await expect(page.getByLabel("Proposal attachment", { exact: true }).locator("option")).toHaveCount(3);
+  await revealReviewTools(page);
   await page.getByLabel("Proposal attachment", { exact: true }).selectOption("proposal-1");
   await expect(candidate).toHaveValue(/"r1"/);
 });
 test("read access alone offers no editor action and request conflicts remain visible", async ({ page }) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&reader");
+  await revealReviewTools(page);
   await expect(page.getByRole("heading", { name: "Reviewed candidate" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Prepare review draft", exact: true })).toHaveCount(0);
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveAttribute("readonly");
+  await expect(page.getByLabel("Candidate proposal source")).toHaveCount(0);
+  await expect(page.getByText("Candidate unavailable", {exact:true})).toBeVisible();
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&conflict");
+  await revealReviewTools(page);
   for (const name of ["Proposal ID", "Revision ID", "Domain", "Purpose", "Target community"]) await page.getByLabel(name, { exact: true }).fill("test");
+  await revealReviewTools(page);
   await page.getByRole("button", { name: "Prepare review draft", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("409 Conflict");
 });
 
 test("creation opens private bootstrap and coalescing makes termination explicit", async ({page}) => {
   await page.goto("/tests/review.html");
+  await revealReviewTools(page);
   await page.getByLabel("Review title", {exact:true}).fill("Test ontology review");
+  await revealReviewTools(page);
   await page.getByLabel("Ontology URN").fill("test.created");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Create private bootstrap"}).click();
   await expect(page.getByRole("heading", {name:"Creator bootstrap", exact:true})).toBeVisible();
   await prepare(page);
-  await page.getByRole("button", {name:"Start cycle from selected proposal"}).click();
+  await revealReviewTools(page);
+  await page.getByRole("button", {name:"Start peer review"}).click();
   await expect(page.getByRole("heading", {name:"Peer review", exact:true}).first()).toBeVisible();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveAttribute("readonly");
+  await expect(page.getByLabel("Candidate proposal source")).toHaveAttribute("readonly");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Coalesce feedback"}).click();
   await expect(page.getByRole("heading", {name:"Editor coalescing", exact:true})).toBeVisible();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/test-proposal/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/test-proposal/);
+  await revealReviewTools(page);
   await expect(page.getByRole("button", {name:"Return to peer review"})).toBeDisabled();
   await expect(page.getByRole("button", {name:"Save new draft attachment"})).toBeEnabled();
   await expect(page.getByRole("button", {name:"Discard unsaved proposal edits"})).toHaveCount(0);
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Terminate flow without publication"}).click();
   await expect(page.getByText("This flow is terminated.", {exact:false})).toBeVisible();
-  await expect(page.getByRole("button", {name:"Start cycle from selected proposal"})).toHaveCount(0);
+  await expect(page.getByRole("button", {name:"Start peer review"})).toHaveCount(0);
   const calls = await page.evaluate(() => (window as unknown as { calls:any[] }).calls);
   expect(calls[0].command.initialState).toMatchObject({schemaId:"bootstrap",assetUrn:"test.created",assetType:"ONTOLOGY"});
   expect(calls.filter(c=>c.command.operation).map(c=>c.command.operation)).toEqual(["OPEN_CYCLE","ENTER_COALESCING","TERMINATE"]);
@@ -203,58 +242,77 @@ test("creation opens private bootstrap and coalescing makes termination explicit
 
 test("coalescing returns to a new review stage while bootstrap remains historical", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1"); await prepare(page);
-  await page.getByRole("button", {name:"Start cycle from selected proposal"}).click();
+  await revealReviewTools(page);
+  await page.getByRole("button", {name:"Start peer review"}).click();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Coalesce feedback"}).click();
-  await page.getByLabel("Candidate proposal JSON").fill('{"proposal":{"id":"test-proposal","revision_id":"r2"}}');
+  await revealReviewTools(page);
+  await page.getByLabel("Candidate proposal source").fill('{"proposal":{"id":"test-proposal","revision_id":"r2"}}');
   await expect(page.getByRole("button", {name:"Terminate flow without publication"})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save new draft attachment"}).click();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Return to peer review"}).click();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/"r2"/);
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveAttribute("readonly");
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/"r2"/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveAttribute("readonly");
+  await revealReviewTools(page);
   await page.getByLabel("Stage", {exact:true}).selectOption("stage-1");
   await expect(page.getByText("Historical stage.", {exact:false})).toBeVisible();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/"r1"/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/"r1"/);
   await expect(page.getByRole("button", {name:"Prepare review draft",exact:true})).toHaveCount(0);
 });
 
 test("opening and closing optional community stages refreshes flow state without leaving the stage", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1"); await prepare(page);
-  await page.getByRole("button", {name:"Start cycle from selected proposal"}).click();
+  await revealReviewTools(page);
+  await page.getByRole("button", {name:"Start peer review"}).click();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Open community round",exact:true}).click();
   await expect(page.getByRole("heading",{name:"Community review",exact:true}).first()).toBeVisible();
   await expect(page.getByLabel("Stage",{exact:true})).toHaveValue("round-2");
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/"r1"/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/"r1"/);
+  await revealReviewTools(page);
   await page.getByRole("button",{name:"Close iteration",exact:true}).click();
   await expect(page.getByText("Historical stage.",{exact:false})).toBeVisible();
   await expect(page.getByLabel("Stage",{exact:true})).toHaveValue("round-2");
   expect(page.url()).toContain("stage=round-2");
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/"r1"/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/"r1"/);
 });
 
 test("candidate conflicts retain unsaved edits until explicit discard unlocks refresh", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1"); await prepare(page);
+  await revealReviewTools(page);
   await page.evaluate(() => history.replaceState({},"",location.href+"&conflict"));
-  await page.getByLabel("Candidate proposal JSON").fill('{"proposal":{"revision_id":"keep-r2"}}');
+  await revealReviewTools(page);
+  await page.getByLabel("Candidate proposal source").fill('{"proposal":{"revision_id":"keep-r2"}}');
+  await revealReviewTools(page);
   await page.getByRole("button",{name:"Save new draft attachment"}).click();
   await expect(page.getByRole("alert")).toContainText("409 Conflict");
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/keep-r2/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/keep-r2/);
   await expect(page.getByRole("button",{name:"Refresh",exact:true})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button",{name:"Discard unsaved proposal edits"}).click();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/"r1"/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/"r1"/);
   await expect(page.getByRole("button",{name:"Refresh",exact:true})).toBeEnabled();
 });
 
 test("interrupted creation prevents repeats and reconciles the persisted bootstrap", async ({page}) => {
   await page.goto("/tests/review.html?creation-interrupted");
+  await revealReviewTools(page);
   await page.getByLabel("Review title", {exact:true}).fill("Test ontology review");
+  await revealReviewTools(page);
   await page.getByLabel("Ontology URN").fill("test.ontology");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Create private bootstrap"}).click();
   await expect(page.getByRole("button", {name:"Create private bootstrap"})).toBeDisabled();
   await expect(page.getByText("has an unknown outcome",{exact:false})).toBeVisible();
   expect(await page.evaluate(()=>(window as unknown as {calls:any[]}).calls.length)).toBe(1);
   await page.reload();
+  await revealReviewTools(page);
   await expect(page.getByRole("button", {name:"Create private bootstrap"})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button",{name:"Refresh existing flows",exact:true}).click();
+  await revealReviewTools(page);
   await page.getByRole("button",{name:"Open existing bootstrap flow-new",exact:true}).click();
   await expect(page.getByRole("heading",{name:"Creator bootstrap",exact:true})).toBeVisible();
   expect(await page.evaluate(()=>(window as unknown as {calls:any[]}).calls.length)).toBe(0);
@@ -262,34 +320,45 @@ test("interrupted creation prevents repeats and reconciles the persisted bootstr
 
 test("pending creation recovery is scoped to the authenticated account", async ({page}) => {
   await page.goto("/tests/review.html?creation-interrupted");
+  await revealReviewTools(page);
   await page.getByLabel("Review title", {exact:true}).fill("Test ontology review");
+  await revealReviewTools(page);
   await page.getByLabel("Ontology URN").fill("private.creator.ontology");
+  await revealReviewTools(page);
   await page.getByRole("button",{name:"Create private bootstrap"}).click();
   await expect(page.getByText("has an unknown outcome",{exact:false})).toBeVisible();
   await page.goto("/tests/review.html?user=another-editor");
+  await revealReviewTools(page);
   await expect(page.getByText("has an unknown outcome",{exact:false})).toHaveCount(0);
   await expect(page.getByRole("button",{name:"Refresh existing flows",exact:true})).toHaveCount(0);
   await page.goto("/tests/review.html");
+  await revealReviewTools(page);
   await expect(page.getByText("has an unknown outcome",{exact:false})).toBeVisible();
   await expect(page.getByRole("button",{name:"Create private bootstrap"})).toBeDisabled();
 });
 
 test("named bootstrap saves initial proposal and references atomically and requires an explicit new review", async ({page}) => {
   await page.goto("/tests/review.html");
+  await revealReviewTools(page);
   await page.getByLabel("Ontology URN", {exact:true}).fill("test.uploaded");
   await expect(page.getByRole("button", {name:"Create private bootstrap",exact:true})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByLabel("Review title", {exact:true}).fill("Water ontology review");
+  await revealReviewTools(page);
   await page.getByLabel("Review description", {exact:true}).fill("Review the water concepts using the attached evidence.");
   const proposal = JSON.stringify({proposal:{id:"water",revision_id:"water-r1"}});
+  await revealReviewTools(page);
   await page.getByLabel("Initial proposal file (optional)", {exact:true}).setInputFiles({name:"water.json",mimeType:"application/json",buffer:Buffer.from(proposal)});
+  await revealReviewTools(page);
   await page.getByLabel("Reference files (optional)", {exact:true}).setInputFiles({name:"evidence.pdf",mimeType:"application/pdf",buffer:Buffer.from([0,128,255,10])});
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Create private bootstrap",exact:true}).click();
   await expect(page.getByRole("button", {name:"Create private bootstrap",exact:true})).toHaveCount(0);
   await expect(page.getByLabel("Stage title", {exact:true})).toHaveValue("Water ontology review");
   await expect(page.getByLabel("Stage description", {exact:true})).toHaveValue("Review the water concepts using the attached evidence.");
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/water-r1/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/water-r1/);
   await expect(page.getByRole("button", {name:"Prepare review draft",exact:true})).toHaveCount(0);
-  await expect(page.getByRole("button", {name:"Start cycle from selected proposal",exact:true})).toBeEnabled();
+  await expect(page.getByRole("button", {name:"Start peer review",exact:true})).toBeEnabled();
   await expect(page.getByRole("alert")).toHaveCount(0);
   const calls = await page.evaluate(() => (window as unknown as {calls:any[]}).calls);
   expect(calls).toHaveLength(1);
@@ -299,28 +368,38 @@ test("named bootstrap saves initial proposal and references atomically and requi
     {type:"bootstrap-proposal",fileName:"water.json",mediaType:"application/vnd.klab.proposal+yaml",content:Buffer.from(proposal).toString("base64")},
     {type:"supporting-material",fileName:"evidence.pdf",mediaType:"application/pdf",content:Buffer.from([0,128,255,10]).toString("base64")},
   ]);
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Start another ontology review",exact:true}).click();
   await expect(page.getByLabel("Review title", {exact:true})).toHaveValue("");
   await expect(page.getByRole("button", {name:"Create private bootstrap",exact:true})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Cancel new review",exact:true}).click();
   await expect(page.getByRole("button", {name:"Create private bootstrap",exact:true})).toHaveCount(0);
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/water-r1/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/water-r1/);
   expect(await page.evaluate(() => (window as unknown as {calls:any[]}).calls.length)).toBe(1);
 });
 
 test("saved preparation details, reference uploads and notes remain usable before a proposal exists", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1");
+  await revealReviewTools(page);
   await expect(page.getByLabel("Proposal attachment", {exact:true})).toHaveCount(0);
-  await expect(page.getByText("No proposal yet.", {exact:false})).toBeVisible();
+  await expect(page.getByText("No candidate yet", {exact:true})).toBeVisible();
+  await revealReviewTools(page);
   await page.getByLabel("Stage title", {exact:true}).fill("Editorial bootstrap");
+  await revealReviewTools(page);
   await page.getByLabel("Stage description", {exact:true}).fill("Scoped review questions");
   await expect(page.getByRole("button", {name:"Refresh",exact:true})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save stage details",exact:true}).click();
   await expect(page.getByRole("button", {name:"Save stage details",exact:true})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByLabel("Stage files", {exact:true}).setInputFiles({name:"reference.md",mimeType:"text/markdown",buffer:Buffer.from("Evidence from an authored reference.")});
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Upload selected files",exact:true}).click();
   await expect(page.getByLabel("Saved stage files")).toContainText("reference.md");
+  await revealReviewTools(page);
   await page.getByLabel("Preparation note", {exact:true}).fill("Editor rationale before preparing the candidate");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save preparation note",exact:true}).click();
   await expect(page.getByLabel("Preparation note", {exact:true})).toHaveValue("");
   await prepare(page);
@@ -336,21 +415,27 @@ test("saved preparation details, reference uploads and notes remain usable befor
 
 test("stage detail conflicts preserve local work until explicit discard", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&conflict");
+  await revealReviewTools(page);
   await page.getByLabel("Stage title", {exact:true}).fill("Unsaved title");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save stage details",exact:true}).click();
   await expect(page.getByRole("alert")).toContainText("409 Conflict");
   await expect(page.getByLabel("Stage title", {exact:true})).toHaveValue("Unsaved title");
   await expect(page.getByRole("button", {name:"Refresh",exact:true})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Discard stage detail edits",exact:true}).click();
   await expect(page.getByRole("button", {name:"Refresh",exact:true})).toBeEnabled();
 });
 
 test("uncertain upload blocks repeat submissions until saved files are checked", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&upload-interrupted");
+  await revealReviewTools(page);
   await page.getByLabel("Stage files", {exact:true}).setInputFiles({name:"saved-reference.md",mimeType:"text/markdown",buffer:Buffer.from("Reference saved before connection interruption")});
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Upload selected files",exact:true}).click();
-  await expect(page.getByText("The last upload has an unknown outcome.", {exact:false})).toBeVisible();
+  await expect(page.getByText("The upload has an unknown outcome.", {exact:false})).toBeVisible();
   await expect(page.getByRole("button", {name:"Upload selected files",exact:true})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Check saved files",exact:true}).click();
   await expect(page.getByLabel("Saved stage files")).toContainText("saved-reference.md");
   await expect(page.getByRole("button", {name:"Upload selected files",exact:true})).toBeDisabled();
@@ -359,22 +444,28 @@ test("uncertain upload blocks repeat submissions until saved files are checked",
 
 test("missing actor context and failed action discovery have actionable diagnostics", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&context-missing");
+  await revealReviewTools(page);
   await expect(page.getByRole("alert")).toContainText("target ontology or its project");
   await expect(page.getByRole("button", {name:"Prepare review draft",exact:true})).toHaveCount(0);
   await expect(page.getByLabel("ontology", {exact:true})).toHaveCount(0);
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&action-failed");
+  await revealReviewTools(page);
   await expect(page.getByRole("alert")).toContainText("Could not load preparation actions: 503");
   await expect(page.getByRole("button", {name:"Refresh",exact:true})).toBeEnabled();
 });
 
 test("an interrupted note upload keeps unsaved text when reconciliation finds no saved file", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&upload-dropped");
+  await revealReviewTools(page);
   await page.getByLabel("Preparation note", {exact:true}).fill("Keep my preparation note through a failed connection");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save preparation note",exact:true}).click();
   await expect(page.getByRole("button", {name:"Save preparation note",exact:true})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Check saved files",exact:true}).click();
   await expect(page.getByText("No matching saved file was found.", {exact:false})).toBeVisible();
   await expect(page.getByLabel("Preparation note", {exact:true})).toHaveValue("Keep my preparation note through a failed connection");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save preparation note",exact:true}).click();
   await expect(page.getByLabel("Preparation note", {exact:true})).toHaveValue("");
   expect(await page.evaluate(() => (window as unknown as {calls:any[]}).calls.length)).toBe(2);
@@ -382,8 +473,10 @@ test("an interrupted note upload keeps unsaved text when reconciliation finds no
 
 test("discarding an uncreated form re-enables navigation without creating a flow", async ({page}) => {
   await page.goto("/tests/review.html");
+  await revealReviewTools(page);
   await page.getByLabel("Review title", {exact:true}).fill("Not yet ready");
   await expect(page.getByLabel("Flow", {exact:true})).toBeDisabled();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Discard new review draft",exact:true}).click();
   await expect(page.getByLabel("Review title", {exact:true})).toHaveValue("");
   await expect(page.getByLabel("Flow", {exact:true})).toBeEnabled();
@@ -393,26 +486,35 @@ test("discarding an uncreated form re-enables navigation without creating a flow
 test("refreshing rounds in another tab cannot rebase stale stage details over a newer title", async ({page, context}) => {
   const other = await context.newPage();
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&shared-details");
+  await revealReviewTools(page);
   await other.goto("/tests/review.html?flow=flow-1&stage=stage-1&shared-details");
+  await revealReviewTools(other);
   await expect(page.getByLabel("Stage title", {exact:true})).toHaveValue("");
   await other.getByLabel("Stage title", {exact:true}).fill("Newer title from tab B");
   await other.getByLabel("Stage description", {exact:true}).fill("Original shared description");
   await other.getByRole("button", {name:"Save stage details",exact:true}).click();
   await expect(other.getByRole("button", {name:"Save stage details",exact:true})).toBeDisabled();
   // Tab A refreshes only review data. Its stage details still belong to its original snapshot.
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Refresh rounds",exact:true}).click();
   await expect(page.getByRole("button", {name:"Refresh rounds",exact:true})).toBeEnabled();
+  await revealReviewTools(page);
   await page.getByLabel("Stage title", {exact:true}).fill("Old title from tab A");
+  await revealReviewTools(page);
   await page.getByLabel("Stage description", {exact:true}).fill("My local unsaved description");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save stage details",exact:true}).click();
   await expect(page.getByRole("alert")).toContainText("409 Conflict");
   await expect(page.getByLabel("Stage description", {exact:true})).toHaveValue("My local unsaved description");
+  await revealReviewTools(other);
   await other.getByRole("button", {name:"Refresh",exact:true}).click();
   await expect(other.getByLabel("Stage title", {exact:true})).toHaveValue("Newer title from tab B");
   await expect(other.getByLabel("Stage description", {exact:true})).toHaveValue("Original shared description");
   const calls = await page.evaluate(() => (window as unknown as {calls:any[]}).calls);
   expect(calls[0].command.expectedRevision).toBe(3);
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Discard stage detail edits",exact:true}).click();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Refresh",exact:true}).click();
   await expect(page.getByLabel("Stage title", {exact:true})).toHaveValue("Newer title from tab B");
   await other.close();
@@ -420,11 +522,15 @@ test("refreshing rounds in another tab cannot rebase stale stage details over a 
 
 test("saving stage details refreshes review revision before immediately starting the existing candidate", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1");
+  await revealReviewTools(page);
   await prepare(page);
+  await revealReviewTools(page);
   await page.getByLabel("Stage title", {exact:true}).fill("Ready for peer review");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save stage details",exact:true}).click();
-  await expect(page.getByRole("button", {name:"Start cycle from selected proposal",exact:true})).toBeEnabled();
-  await page.getByRole("button", {name:"Start cycle from selected proposal",exact:true}).click();
+  await expect(page.getByRole("button", {name:"Start peer review",exact:true})).toBeEnabled();
+  await revealReviewTools(page);
+  await page.getByRole("button", {name:"Start peer review",exact:true}).click();
   await expect(page.getByRole("heading", {name:"Peer review",exact:true}).first()).toBeVisible();
   await expect(page.getByRole("alert")).toHaveCount(0);
   const calls = await page.evaluate(() => (window as unknown as {calls:any[]}).calls);
@@ -433,19 +539,29 @@ test("saving stage details refreshes review revision before immediately starting
 
 test("coalescing retains the frozen ontology source when the editor previews a different reference", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1&source-context");
+  await revealReviewTools(page);
   await prepare(page);
-  await page.getByRole("button", {name:"Start cycle from selected proposal",exact:true}).click();
+  await revealReviewTools(page);
+  await page.getByRole("button", {name:"Start peer review",exact:true}).click();
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Coalesce feedback",exact:true}).click();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/"r1"/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/"r1"/);
+  await revealReviewTools(page);
   await page.getByLabel("Stage files", {exact:true}).setInputFiles({name:"editor-evidence.txt",mimeType:"text/plain",buffer:Buffer.from("Reference text is not ontology source.")});
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Upload selected files",exact:true}).click();
   await expect(page.getByLabel("Saved stage files")).toContainText("editor-evidence.txt");
-  await page.getByText("Comments and source context", {exact:true}).click();
+  await revealReviewTools(page);
+  // Source context is opened by revealReviewTools.
   const evidence = await page.getByLabel("Context attachment", {exact:true}).locator("option").filter({hasText:"editor-evidence.txt"}).getAttribute("value");
+  await revealReviewTools(page);
   await page.getByLabel("Context attachment", {exact:true}).selectOption("");
+  await revealReviewTools(page);
   await page.getByLabel("Context attachment", {exact:true}).selectOption(evidence!);
   await expect(page.getByLabel("Source context and comments")).toHaveValue("Reference text is not ontology source.");
-  await page.getByLabel("Candidate proposal JSON").fill('{"proposal":{"id":"test-proposal","revision_id":"r2"}}');
+  await revealReviewTools(page);
+  await page.getByLabel("Candidate proposal source").fill('{"proposal":{"id":"test-proposal","revision_id":"r2"}}');
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save new draft attachment",exact:true}).click();
   await expect(page.getByRole("button", {name:"Return to peer review",exact:true})).toBeEnabled();
   const calls = await page.evaluate(() => (window as unknown as {calls:any[]}).calls);
@@ -455,14 +571,19 @@ test("coalescing retains the frozen ontology source when the editor previews a d
 
 test("a saved bootstrap accepts a selected proposal file and saves YAML edits without a JSON-only gate", async ({page}) => {
   await page.goto("/tests/review.html?flow=flow-1&stage=stage-1");
+  await revealReviewTools(page);
   await page.getByLabel("File purpose", {exact:true}).selectOption("bootstrap-proposal");
+  await revealReviewTools(page);
   await page.getByLabel("Stage files", {exact:true}).setInputFiles({name:"editor-proposal.yaml",mimeType:"application/yaml",buffer:Buffer.from("proposal:\n  id: example\n  revision_id: example-r1\n")});
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Upload selected files",exact:true}).click();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/example-r1/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/example-r1/);
   await expect(page.getByRole("button", {name:"Prepare review draft",exact:true})).toHaveCount(0);
-  await page.getByLabel("Candidate proposal JSON").fill("proposal:\n  id: example\n  revision_id: example-r2\n");
+  await revealReviewTools(page);
+  await page.getByLabel("Candidate proposal source").fill("proposal:\n  id: example\n  revision_id: example-r2\n");
+  await revealReviewTools(page);
   await page.getByRole("button", {name:"Save new draft attachment",exact:true}).click();
-  await expect(page.getByLabel("Candidate proposal JSON")).toHaveValue(/example-r2/);
+  await expect(page.getByLabel("Candidate proposal source")).toHaveValue(/example-r2/);
   await expect(page.getByRole("alert")).toHaveCount(0);
   await expect(page.getByLabel("Proposal attachment", {exact:true}).locator("option")).toHaveCount(3);
 });

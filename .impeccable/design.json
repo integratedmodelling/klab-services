@@ -1,0 +1,824 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-07T13:19:15.698553+00:00",
+  "title": "Design System: k.LAB interface baseline",
+  "extensions": {
+    "authority": {
+      "status": "observed-baseline-not-approved-future-identity",
+      "preferredStack": "Quasar",
+      "confirmedDirection": "Scientific publishing and editorial clarity; restrained depth with flat task panels; approachable and softly framed components.",
+      "sourceRoot": "klab.core.services/src/main/webui",
+      "reviewSources": [
+        "klab.services.resources.server/src/main/webui/extensions/ResourcesReview.vue",
+        "klab.services.resources.server/src/main/webui/extensions/ReviewCyclesPanel.vue"
+      ],
+      "verification": "Local fixture renders and computed styles: dashboard desktop/mobile, review desktop/mobile, actual application scaffold with synthetic snapshot in light desktop/dark mobile. Review fixture lacks viewport meta. Connected services and native IDE styling were not verified."
+    },
+    "colorMeta": {
+      "dashboard-primary": {
+        "role": "primary",
+        "displayName": "Dashboard primary",
+        "tonalRamp": [
+          "oklch(0.15 0.0364968 172.631)",
+          "oklch(0.26 0.0623052 172.631)",
+          "oklch(0.38 0.0904598 172.631)",
+          "oklch(0.49 0.116268 172.631)",
+          "oklch(0.61 0.116268 172.631)",
+          "oklch(0.72 0.0904598 172.631)",
+          "oklch(0.84 0.0623052 172.631)",
+          "oklch(0.95 0.0364968 172.631)"
+        ]
+      },
+      "dashboard-secondary": {
+        "role": "secondary",
+        "displayName": "Dashboard secondary",
+        "tonalRamp": [
+          "oklch(0.15 0.0347143 122.85)",
+          "oklch(0.26 0.0592623 122.85)",
+          "oklch(0.38 0.0860419 122.85)",
+          "oklch(0.49 0.11059 122.85)",
+          "oklch(0.61 0.11059 122.85)",
+          "oklch(0.72 0.0860419 122.85)",
+          "oklch(0.84 0.0592623 122.85)",
+          "oklch(0.95 0.0347143 122.85)"
+        ]
+      },
+      "dashboard-background": {
+        "role": "neutral",
+        "displayName": "Dashboard background",
+        "tonalRamp": [
+          "oklch(0.15 0.000693895 229.255)",
+          "oklch(0.26 0.00118458 229.255)",
+          "oklch(0.38 0.00171987 229.255)",
+          "oklch(0.49 0.00221055 229.255)",
+          "oklch(0.61 0.00221055 229.255)",
+          "oklch(0.72 0.00171987 229.255)",
+          "oklch(0.84 0.00118458 229.255)",
+          "oklch(0.95 0.000693895 229.255)"
+        ]
+      },
+      "application-primary": {
+        "role": "primary",
+        "displayName": "Application primary (light)",
+        "tonalRamp": [
+          "oklch(0.15 0.038912 258.578)",
+          "oklch(0.26 0.0664284 258.578)",
+          "oklch(0.38 0.0964462 258.578)",
+          "oklch(0.49 0.123963 258.578)",
+          "oklch(0.61 0.123963 258.578)",
+          "oklch(0.72 0.0964462 258.578)",
+          "oklch(0.84 0.0664284 258.578)",
+          "oklch(0.95 0.038912 258.578)"
+        ]
+      },
+      "application-dark-primary": {
+        "role": "primary",
+        "displayName": "Application primary (dark)",
+        "tonalRamp": [
+          "oklch(0.15 0.0337141 258.687)",
+          "oklch(0.26 0.0575547 258.687)",
+          "oklch(0.38 0.0835627 258.687)",
+          "oklch(0.49 0.107403 258.687)",
+          "oklch(0.61 0.107403 258.687)",
+          "oklch(0.72 0.0835627 258.687)",
+          "oklch(0.84 0.0575547 258.687)",
+          "oklch(0.95 0.0337141 258.687)"
+        ]
+      },
+      "application-accent": {
+        "role": "secondary",
+        "displayName": "Application accent (light)",
+        "tonalRamp": [
+          "oklch(0.15 0.02605 181.075)",
+          "oklch(0.26 0.0444711 181.075)",
+          "oklch(0.38 0.0645668 181.075)",
+          "oklch(0.49 0.0829878 181.075)",
+          "oklch(0.61 0.0829878 181.075)",
+          "oklch(0.72 0.0645668 181.075)",
+          "oklch(0.84 0.0444711 181.075)",
+          "oklch(0.95 0.02605 181.075)"
+        ]
+      },
+      "application-dark-accent": {
+        "role": "secondary",
+        "displayName": "Application accent (dark)",
+        "tonalRamp": [
+          "oklch(0.15 0.0282687 180.951)",
+          "oklch(0.26 0.0482587 180.951)",
+          "oklch(0.38 0.070066 180.951)",
+          "oklch(0.49 0.090056 180.951)",
+          "oklch(0.61 0.090056 180.951)",
+          "oklch(0.72 0.070066 180.951)",
+          "oklch(0.84 0.0482587 180.951)",
+          "oklch(0.95 0.0282687 180.951)"
+        ]
+      },
+      "review-editor-background": {
+        "role": "neutral",
+        "displayName": "Review editor background",
+        "tonalRamp": [
+          "oklch(0.15 0.00824064 206.547)",
+          "oklch(0.26 0.0140679 206.547)",
+          "oklch(0.38 0.020425 206.547)",
+          "oklch(0.49 0.0262523 206.547)",
+          "oklch(0.61 0.0262523 206.547)",
+          "oklch(0.72 0.020425 206.547)",
+          "oklch(0.84 0.0140679 206.547)",
+          "oklch(0.95 0.00824064 206.547)"
+        ]
+      },
+      "dashboard-dark": {
+        "displayName": "dashboard dark",
+        "tonalRamp": [
+          "oklch(0.15 0.0119833 182.655)",
+          "oklch(0.26 0.0204571 182.655)",
+          "oklch(0.38 0.0297013 182.655)",
+          "oklch(0.49 0.0381752 182.655)",
+          "oklch(0.61 0.0381752 182.655)",
+          "oklch(0.72 0.0297013 182.655)",
+          "oklch(0.84 0.0204571 182.655)",
+          "oklch(0.95 0.0119833 182.655)"
+        ]
+      },
+      "dashboard-background-end": {
+        "displayName": "dashboard background end",
+        "tonalRamp": [
+          "oklch(0.15 0.00124315 214.444)",
+          "oklch(0.26 0.00212224 214.444)",
+          "oklch(0.38 0.00308124 214.444)",
+          "oklch(0.49 0.00396033 214.444)",
+          "oklch(0.61 0.00396033 214.444)",
+          "oklch(0.72 0.00308124 214.444)",
+          "oklch(0.84 0.00212224 214.444)",
+          "oklch(0.95 0.00124315 214.444)"
+        ]
+      },
+      "dashboard-surface": {
+        "displayName": "dashboard surface",
+        "tonalRamp": [
+          "oklch(0.15 0.0000139436 23.7884 / 0.921569)",
+          "oklch(0.26 0.0000238037 23.7884 / 0.921569)",
+          "oklch(0.38 0.0000345602 23.7884 / 0.921569)",
+          "oklch(0.49 0.0000444203 23.7884 / 0.921569)",
+          "oklch(0.61 0.0000444203 23.7884 / 0.921569)",
+          "oklch(0.72 0.0000345602 23.7884 / 0.921569)",
+          "oklch(0.84 0.0000238037 23.7884 / 0.921569)",
+          "oklch(0.95 0.0000139436 23.7884 / 0.921569)"
+        ]
+      },
+      "dashboard-text": {
+        "displayName": "dashboard text",
+        "tonalRamp": [
+          "oklch(0.15 0.00899072 182.572)",
+          "oklch(0.26 0.0153484 182.572)",
+          "oklch(0.38 0.0222841 182.572)",
+          "oklch(0.49 0.0286418 182.572)",
+          "oklch(0.61 0.0286418 182.572)",
+          "oklch(0.72 0.0222841 182.572)",
+          "oklch(0.84 0.0153484 182.572)",
+          "oklch(0.95 0.00899072 182.572)"
+        ]
+      },
+      "dashboard-muted": {
+        "displayName": "dashboard muted",
+        "tonalRamp": [
+          "oklch(0.15 0.00620241 180.508)",
+          "oklch(0.26 0.0105884 180.508)",
+          "oklch(0.38 0.0153731 180.508)",
+          "oklch(0.49 0.0197591 180.508)",
+          "oklch(0.61 0.0197591 180.508)",
+          "oklch(0.72 0.0153731 180.508)",
+          "oklch(0.84 0.0105884 180.508)",
+          "oklch(0.95 0.00620241 180.508)"
+        ]
+      },
+      "dashboard-border": {
+        "displayName": "dashboard border",
+        "tonalRamp": [
+          "oklch(0.15 0.00241677 188.02)",
+          "oklch(0.26 0.00412578 188.02)",
+          "oklch(0.38 0.00599014 188.02)",
+          "oklch(0.49 0.00769915 188.02)",
+          "oklch(0.61 0.00769915 188.02)",
+          "oklch(0.72 0.00599014 188.02)",
+          "oklch(0.84 0.00412578 188.02)",
+          "oklch(0.95 0.00241677 188.02)"
+        ]
+      },
+      "dashboard-label": {
+        "displayName": "dashboard label",
+        "tonalRamp": [
+          "oklch(0.15 0.0235351 175.619)",
+          "oklch(0.26 0.0401777 175.619)",
+          "oklch(0.38 0.0583334 175.619)",
+          "oklch(0.49 0.074976 175.619)",
+          "oklch(0.61 0.074976 175.619)",
+          "oklch(0.72 0.0583334 175.619)",
+          "oklch(0.84 0.0401777 175.619)",
+          "oklch(0.95 0.0235351 175.619)"
+        ]
+      },
+      "dashboard-active-link": {
+        "displayName": "dashboard active link",
+        "tonalRamp": [
+          "oklch(0.15 0.0231111 172.689)",
+          "oklch(0.26 0.039454 172.689)",
+          "oklch(0.38 0.0572826 172.689)",
+          "oklch(0.49 0.0736254 172.689)",
+          "oklch(0.61 0.0736254 172.689)",
+          "oklch(0.72 0.0572826 172.689)",
+          "oklch(0.84 0.039454 172.689)",
+          "oklch(0.95 0.0231111 172.689)"
+        ]
+      },
+      "dashboard-status-start": {
+        "displayName": "dashboard status start",
+        "tonalRamp": [
+          "oklch(0.15 0.0242167 176.266)",
+          "oklch(0.26 0.0413413 176.266)",
+          "oklch(0.38 0.0600227 176.266)",
+          "oklch(0.49 0.0771474 176.266)",
+          "oklch(0.61 0.0771474 176.266)",
+          "oklch(0.72 0.0600227 176.266)",
+          "oklch(0.84 0.0413413 176.266)",
+          "oklch(0.95 0.0242167 176.266)"
+        ]
+      },
+      "dashboard-status-end": {
+        "displayName": "dashboard status end",
+        "tonalRamp": [
+          "oklch(0.15 0.0197862 179.098)",
+          "oklch(0.26 0.0337778 179.098)",
+          "oklch(0.38 0.0490414 179.098)",
+          "oklch(0.49 0.063033 179.098)",
+          "oklch(0.61 0.063033 179.098)",
+          "oklch(0.72 0.0490414 179.098)",
+          "oklch(0.84 0.0337778 179.098)",
+          "oklch(0.95 0.0197862 179.098)"
+        ]
+      },
+      "status-ok": {
+        "displayName": "status ok",
+        "tonalRamp": [
+          "oklch(0.15 0.0325138 163.667)",
+          "oklch(0.26 0.0555058 163.667)",
+          "oklch(0.38 0.0805879 163.667)",
+          "oklch(0.49 0.10358 163.667)",
+          "oklch(0.61 0.10358 163.667)",
+          "oklch(0.72 0.0805879 163.667)",
+          "oklch(0.84 0.0555058 163.667)",
+          "oklch(0.95 0.0325138 163.667)"
+        ]
+      },
+      "status-warning": {
+        "displayName": "status warning",
+        "tonalRamp": [
+          "oklch(0.15 0.0401876 72.8171)",
+          "oklch(0.26 0.0686059 72.8171)",
+          "oklch(0.38 0.0996078 72.8171)",
+          "oklch(0.49 0.128026 72.8171)",
+          "oklch(0.61 0.128026 72.8171)",
+          "oklch(0.72 0.0996078 72.8171)",
+          "oklch(0.84 0.0686059 72.8171)",
+          "oklch(0.95 0.0401876 72.8171)"
+        ]
+      },
+      "status-down": {
+        "displayName": "status down",
+        "tonalRamp": [
+          "oklch(0.15 0.0441965 22.675)",
+          "oklch(0.26 0.0754497 22.675)",
+          "oklch(0.38 0.109544 22.675)",
+          "oklch(0.49 0.140797 22.675)",
+          "oklch(0.61 0.140797 22.675)",
+          "oklch(0.72 0.109544 22.675)",
+          "oklch(0.84 0.0754497 22.675)",
+          "oklch(0.95 0.0441965 22.675)"
+        ]
+      },
+      "error-text": {
+        "displayName": "error text",
+        "tonalRamp": [
+          "oklch(0.15 0.0351494 23.7394)",
+          "oklch(0.26 0.060005 23.7394)",
+          "oklch(0.38 0.0871202 23.7394)",
+          "oklch(0.49 0.111976 23.7394)",
+          "oklch(0.61 0.111976 23.7394)",
+          "oklch(0.72 0.0871202 23.7394)",
+          "oklch(0.84 0.060005 23.7394)",
+          "oklch(0.95 0.0351494 23.7394)"
+        ]
+      },
+      "error-background": {
+        "displayName": "error background",
+        "tonalRamp": [
+          "oklch(0.15 0.00457528 17.4615)",
+          "oklch(0.26 0.00781065 17.4615)",
+          "oklch(0.38 0.0113402 17.4615)",
+          "oklch(0.49 0.0145755 17.4615)",
+          "oklch(0.61 0.0145755 17.4615)",
+          "oklch(0.72 0.0113402 17.4615)",
+          "oklch(0.84 0.00781065 17.4615)",
+          "oklch(0.95 0.00457528 17.4615)"
+        ]
+      },
+      "error-border": {
+        "displayName": "error border",
+        "tonalRamp": [
+          "oklch(0.15 0.0123995 18.0395)",
+          "oklch(0.26 0.0211677 18.0395)",
+          "oklch(0.38 0.030733 18.0395)",
+          "oklch(0.49 0.0395013 18.0395)",
+          "oklch(0.61 0.0395013 18.0395)",
+          "oklch(0.72 0.030733 18.0395)",
+          "oklch(0.84 0.0211677 18.0395)",
+          "oklch(0.95 0.0123995 18.0395)"
+        ]
+      },
+      "advisory-text": {
+        "displayName": "advisory text",
+        "tonalRamp": [
+          "oklch(0.15 0.0254024 77.4305)",
+          "oklch(0.26 0.0433656 77.4305)",
+          "oklch(0.38 0.0629618 77.4305)",
+          "oklch(0.49 0.0809249 77.4305)",
+          "oklch(0.61 0.0809249 77.4305)",
+          "oklch(0.72 0.0629618 77.4305)",
+          "oklch(0.84 0.0433656 77.4305)",
+          "oklch(0.95 0.0254024 77.4305)"
+        ]
+      },
+      "advisory-background": {
+        "displayName": "advisory background",
+        "tonalRamp": [
+          "oklch(0.15 0.00704629 86.7689)",
+          "oklch(0.26 0.012029 86.7689)",
+          "oklch(0.38 0.0174647 86.7689)",
+          "oklch(0.49 0.0224475 86.7689)",
+          "oklch(0.61 0.0224475 86.7689)",
+          "oklch(0.72 0.0174647 86.7689)",
+          "oklch(0.84 0.012029 86.7689)",
+          "oklch(0.95 0.00704629 86.7689)"
+        ]
+      },
+      "advisory-border": {
+        "displayName": "advisory border",
+        "tonalRamp": [
+          "oklch(0.15 0.0162327 88.5572)",
+          "oklch(0.26 0.0277115 88.5572)",
+          "oklch(0.38 0.0402338 88.5572)",
+          "oklch(0.49 0.0517127 88.5572)",
+          "oklch(0.61 0.0517127 88.5572)",
+          "oklch(0.72 0.0402338 88.5572)",
+          "oklch(0.84 0.0277115 88.5572)",
+          "oklch(0.95 0.0162327 88.5572)"
+        ]
+      },
+      "application-background": {
+        "displayName": "application background",
+        "tonalRamp": [
+          "oklch(0.15 0.00125976 258.829)",
+          "oklch(0.26 0.00215059 258.829)",
+          "oklch(0.38 0.0031224 258.829)",
+          "oklch(0.49 0.00401323 258.829)",
+          "oklch(0.61 0.00401323 258.829)",
+          "oklch(0.72 0.0031224 258.829)",
+          "oklch(0.84 0.00215059 258.829)",
+          "oklch(0.95 0.00125976 258.829)"
+        ]
+      },
+      "application-surface": {
+        "displayName": "application surface",
+        "tonalRamp": [
+          "oklch(0.15 0.0000139436 23.7884)",
+          "oklch(0.26 0.0000238037 23.7884)",
+          "oklch(0.38 0.0000345602 23.7884)",
+          "oklch(0.49 0.0000444203 23.7884)",
+          "oklch(0.61 0.0000444203 23.7884)",
+          "oklch(0.72 0.0000345602 23.7884)",
+          "oklch(0.84 0.0000238037 23.7884)",
+          "oklch(0.95 0.0000139436 23.7884)"
+        ]
+      },
+      "application-text": {
+        "displayName": "application text",
+        "tonalRamp": [
+          "oklch(0.15 0.0118301 252.141)",
+          "oklch(0.26 0.0201956 252.141)",
+          "oklch(0.38 0.0293217 252.141)",
+          "oklch(0.49 0.0376872 252.141)",
+          "oklch(0.61 0.0376872 252.141)",
+          "oklch(0.72 0.0293217 252.141)",
+          "oklch(0.84 0.0201956 252.141)",
+          "oklch(0.95 0.0118301 252.141)"
+        ]
+      },
+      "application-muted": {
+        "displayName": "application muted",
+        "tonalRamp": [
+          "oklch(0.15 0.0114101 251.215)",
+          "oklch(0.26 0.0194787 251.215)",
+          "oklch(0.38 0.0282808 251.215)",
+          "oklch(0.49 0.0363493 251.215)",
+          "oklch(0.61 0.0363493 251.215)",
+          "oklch(0.72 0.0282808 251.215)",
+          "oklch(0.84 0.0194787 251.215)",
+          "oklch(0.95 0.0114101 251.215)"
+        ]
+      },
+      "application-border": {
+        "displayName": "application border",
+        "tonalRamp": [
+          "oklch(0.15 0.00604197 252.599)",
+          "oklch(0.26 0.0103145 252.599)",
+          "oklch(0.38 0.0149754 252.599)",
+          "oklch(0.49 0.019248 252.599)",
+          "oklch(0.61 0.019248 252.599)",
+          "oklch(0.72 0.0149754 252.599)",
+          "oklch(0.84 0.0103145 252.599)",
+          "oklch(0.95 0.00604197 252.599)"
+        ]
+      },
+      "application-danger": {
+        "displayName": "application danger",
+        "tonalRamp": [
+          "oklch(0.15 0.0499342 28.7054)",
+          "oklch(0.26 0.0852449 28.7054)",
+          "oklch(0.38 0.123766 28.7054)",
+          "oklch(0.49 0.159076 28.7054)",
+          "oklch(0.61 0.159076 28.7054)",
+          "oklch(0.72 0.123766 28.7054)",
+          "oklch(0.84 0.0852449 28.7054)",
+          "oklch(0.95 0.0499342 28.7054)"
+        ]
+      },
+      "application-dark-background": {
+        "displayName": "application dark background",
+        "tonalRamp": [
+          "oklch(0.15 0.00738235 258.336)",
+          "oklch(0.26 0.0126027 258.336)",
+          "oklch(0.38 0.0182977 258.336)",
+          "oklch(0.49 0.0235181 258.336)",
+          "oklch(0.61 0.0235181 258.336)",
+          "oklch(0.72 0.0182977 258.336)",
+          "oklch(0.84 0.0126027 258.336)",
+          "oklch(0.95 0.00738235 258.336)"
+        ]
+      },
+      "application-dark-surface": {
+        "displayName": "application dark surface",
+        "tonalRamp": [
+          "oklch(0.15 0.0100611 255.399)",
+          "oklch(0.26 0.0171758 255.399)",
+          "oklch(0.38 0.0249372 255.399)",
+          "oklch(0.49 0.0320518 255.399)",
+          "oklch(0.61 0.0320518 255.399)",
+          "oklch(0.72 0.0249372 255.399)",
+          "oklch(0.84 0.0171758 255.399)",
+          "oklch(0.95 0.0100611 255.399)"
+        ]
+      },
+      "application-dark-text": {
+        "displayName": "application dark text",
+        "tonalRamp": [
+          "oklch(0.15 0.00447243 254.031)",
+          "oklch(0.26 0.00763507 254.031)",
+          "oklch(0.38 0.0110852 254.031)",
+          "oklch(0.49 0.0142479 254.031)",
+          "oklch(0.61 0.0142479 254.031)",
+          "oklch(0.72 0.0110852 254.031)",
+          "oklch(0.84 0.00763507 254.031)",
+          "oklch(0.95 0.00447243 254.031)"
+        ]
+      },
+      "application-dark-muted": {
+        "displayName": "application dark muted",
+        "tonalRamp": [
+          "oklch(0.15 0.0103341 253.535)",
+          "oklch(0.26 0.0176418 253.535)",
+          "oklch(0.38 0.0256138 253.535)",
+          "oklch(0.49 0.0329215 253.535)",
+          "oklch(0.61 0.0329215 253.535)",
+          "oklch(0.72 0.0256138 253.535)",
+          "oklch(0.84 0.0176418 253.535)",
+          "oklch(0.95 0.0103341 253.535)"
+        ]
+      },
+      "application-dark-border": {
+        "displayName": "application dark border",
+        "tonalRamp": [
+          "oklch(0.15 0.0131769 256.693)",
+          "oklch(0.26 0.0224949 256.693)",
+          "oklch(0.38 0.03266 256.693)",
+          "oklch(0.49 0.041978 256.693)",
+          "oklch(0.61 0.041978 256.693)",
+          "oklch(0.72 0.03266 256.693)",
+          "oklch(0.84 0.0224949 256.693)",
+          "oklch(0.95 0.0131769 256.693)"
+        ]
+      },
+      "application-dark-danger": {
+        "displayName": "application dark danger",
+        "tonalRamp": [
+          "oklch(0.15 0.0249551 26.757)",
+          "oklch(0.26 0.0426019 26.757)",
+          "oklch(0.38 0.061853 26.757)",
+          "oklch(0.49 0.0794998 26.757)",
+          "oklch(0.61 0.0794998 26.757)",
+          "oklch(0.72 0.061853 26.757)",
+          "oklch(0.84 0.0426019 26.757)",
+          "oklch(0.95 0.0249551 26.757)"
+        ]
+      },
+      "review-control-border": {
+        "displayName": "review control border",
+        "tonalRamp": [
+          "oklch(0.15 0.0126174 203.651)",
+          "oklch(0.26 0.0215397 203.651)",
+          "oklch(0.38 0.0312731 203.651)",
+          "oklch(0.49 0.0401954 203.651)",
+          "oklch(0.61 0.0401954 203.651)",
+          "oklch(0.72 0.0312731 203.651)",
+          "oklch(0.84 0.0215397 203.651)",
+          "oklch(0.95 0.0126174 203.651)"
+        ]
+      },
+      "review-editor-text": {
+        "displayName": "review editor text",
+        "tonalRamp": [
+          "oklch(0.15 0.00294977 196.952)",
+          "oklch(0.26 0.00503568 196.952)",
+          "oklch(0.38 0.00731122 196.952)",
+          "oklch(0.49 0.00939713 196.952)",
+          "oklch(0.61 0.00939713 196.952)",
+          "oklch(0.72 0.00731122 196.952)",
+          "oklch(0.84 0.00503568 196.952)",
+          "oklch(0.95 0.00294977 196.952)"
+        ]
+      },
+      "review-progress-background": {
+        "displayName": "review progress background",
+        "tonalRamp": [
+          "oklch(0.15 0.00329272 170.144)",
+          "oklch(0.26 0.00562115 170.144)",
+          "oklch(0.38 0.00816125 170.144)",
+          "oklch(0.49 0.0104897 170.144)",
+          "oklch(0.61 0.0104897 170.144)",
+          "oklch(0.72 0.00816125 170.144)",
+          "oklch(0.84 0.00562115 170.144)",
+          "oklch(0.95 0.00329272 170.144)"
+        ]
+      },
+      "review-progress-text": {
+        "displayName": "review progress text",
+        "tonalRamp": [
+          "oklch(0.15 0.0134065 174.003)",
+          "oklch(0.26 0.0228868 174.003)",
+          "oklch(0.38 0.033229 174.003)",
+          "oklch(0.49 0.0427093 174.003)",
+          "oklch(0.61 0.0427093 174.003)",
+          "oklch(0.72 0.033229 174.003)",
+          "oklch(0.84 0.0228868 174.003)",
+          "oklch(0.95 0.0134065 174.003)"
+        ]
+      },
+      "review-progress-border": {
+        "displayName": "review progress border",
+        "tonalRamp": [
+          "oklch(0.15 0.00864093 175.755)",
+          "oklch(0.26 0.0147513 175.755)",
+          "oklch(0.38 0.0214172 175.755)",
+          "oklch(0.49 0.0275275 175.755)",
+          "oklch(0.61 0.0275275 175.755)",
+          "oklch(0.72 0.0214172 175.755)",
+          "oklch(0.84 0.0147513 175.755)",
+          "oklch(0.95 0.00864093 175.755)"
+        ]
+      },
+      "permission-background": {
+        "displayName": "permission background",
+        "tonalRamp": [
+          "oklch(0.15 0.0236425 180.392)",
+          "oklch(0.26 0.0403612 180.392)",
+          "oklch(0.38 0.0585997 180.392)",
+          "oklch(0.49 0.0753184 180.392)",
+          "oklch(0.61 0.0753184 180.392)",
+          "oklch(0.72 0.0585997 180.392)",
+          "oklch(0.84 0.0403612 180.392)",
+          "oklch(0.95 0.0236425 180.392)"
+        ]
+      },
+      "permission-text": {
+        "displayName": "permission text",
+        "tonalRamp": [
+          "oklch(0.15 0.00531515 192.784)",
+          "oklch(0.26 0.00907372 192.784)",
+          "oklch(0.38 0.013174 192.784)",
+          "oklch(0.49 0.0169326 192.784)",
+          "oklch(0.61 0.0169326 192.784)",
+          "oklch(0.72 0.013174 192.784)",
+          "oklch(0.84 0.00907372 192.784)",
+          "oklch(0.95 0.00531515 192.784)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "dashboard-display": {
+        "displayName": "Dashboard display",
+        "purpose": "Existing overview heading; not an approved future typography choice."
+      },
+      "shell-body": {
+        "displayName": "Effective Quasar body",
+        "purpose": "Computed body stack and metrics in the shared dashboard and standalone application fixture; actual glyph face depends on installed fonts."
+      },
+      "global-root": {
+        "displayName": "Global root declaration",
+        "purpose": "OS fallback declaration; Quasar pages retain their own body cascade. No downloaded text font is implied."
+      },
+      "review-source": {
+        "displayName": "Review source",
+        "purpose": "Raw proposal/source editing; short descriptive textareas revert to inherited typography."
+      },
+      "full-page-title": {
+        "displayName": "Full-page title",
+        "purpose": "Existing Georgia role with explicit leading to override the larger Quasar heading default."
+      },
+      "review-body": {
+        "displayName": "Review Body",
+        "purpose": "Operational review prose; follows browser default text sizing."
+      },
+      "review-section": {
+        "displayName": "Review Section",
+        "purpose": "Interface section heading."
+      },
+      "review-document-title": {
+        "displayName": "Review Document Title",
+        "purpose": "Title supplied by the scientific proposal."
+      },
+      "review-task": {
+        "displayName": "Review Task",
+        "purpose": "Feedback, empty-state and other task headings."
+      },
+      "review-field-label": {
+        "displayName": "Review Field Label",
+        "purpose": "Consistent 600-weight review field metadata."
+      }
+    },
+    "shadows": [
+      {
+        "name": "dashboard-card-declared",
+        "value": "0 14px 38px rgba(30, 62, 57, .08)",
+        "purpose": "Declared on metric/surface cards; Quasar flat/no-shadow behavior can suppress the visible shadow."
+      },
+      {
+        "name": "authentication-dialog",
+        "value": "0 20px 55px rgba(30, 62, 57, .14)",
+        "purpose": "Existing sign-in dialog elevation."
+      },
+      {
+        "name": "review-progress",
+        "value": "0 2px 8px #183f3518",
+        "purpose": "Sticky pending and success feedback."
+      }
+    ],
+    "motion": [
+      {
+        "name": "review-progress-spinner",
+        "value": "review-progress 1s linear infinite",
+        "purpose": "Full rotation indicating pending work; animation removed under prefers-reduced-motion."
+      },
+      {
+        "name": "application-dialog-default",
+        "value": "scale / 300ms",
+        "purpose": "Quasar dialog defaults in ApplicationNode.vue; metadata can select none/fade/slide/scale and duration. Reduced motion selects none."
+      },
+      {
+        "name": "application-reduced-motion",
+        "value": "transition: none !important; animation: none !important",
+        "purpose": "Applied to application descendants and pseudo-elements under prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "dashboard-collapse",
+        "value": "900px"
+      },
+      {
+        "name": "review-columns-stack",
+        "value": "850px"
+      },
+      {
+        "name": "diagram-compact",
+        "value": "700px"
+      },
+      {
+        "name": "application-regions-stack",
+        "value": "600px"
+      },
+      {
+        "name": "dashboard-mobile",
+        "value": "580px"
+      }
+    ],
+    "surfaceEffects": {
+      "dashboardBackground": "radial-gradient(circle at 82% 4%, rgba(55, 151, 127, .10), transparent 28rem), linear-gradient(180deg, #ffffff 0, #f5f7f8 34rem, #eef2f3 100%)",
+      "headerBackdropFilter": "blur(18px)",
+      "operationalMetricBackground": "linear-gradient(145deg, #287f6d, #1e6357)",
+      "applicationFocus": "outline: 3px solid var(--ui-accent); outline-offset: 3px",
+      "reviewProgressPosition": "position: sticky; top: 12px; z-index: 1; top becomes 90px inside .full-page-main"
+    },
+    "tonalRampPolicy": "Synthesized OKLCH hue-preserving preview ramps. These are exploratory swatches, not implemented or approved production tokens."
+  },
+  "components": [
+    {
+      "name": "Dashboard card (flat baseline)",
+      "kind": "card",
+      "refersTo": "dashboard-card",
+      "description": "Static visual excerpt of a flat metric card; uses the effective Quasar body stack without requiring Quasar at preview time.",
+      "html": "<section class=\"ds-dashboard-card\"><span class=\"ds-metric-label\">HEALTH</span><strong class=\"ds-metric-value\">100%</strong><span class=\"ds-metric-note\">Local fixture value</span></section>",
+      "css": ".ds-dashboard-card{color:#18312d;background:rgba(255,255,255,.92);border:1px solid #dfe7e6;border-radius:16px;padding:26px;font-family:Roboto,-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;display:flex;flex-direction:column;gap:12px;max-width:260px}.ds-metric-label{color:#71847f;font-size:11px;font-weight:700;letter-spacing:.11em}.ds-metric-value{font-size:28px;font-weight:650;letter-spacing:-.03em}.ds-metric-note{color:#6c7e79;font-size:12px}"
+    },
+    {
+      "name": "Application action",
+      "kind": "button",
+      "refersTo": "application-button",
+      "description": "Visual excerpt of the default application action. Production uses q-btn; theme variables resolve from the enclosing application, with light-theme preview fallbacks.",
+      "html": "<button class=\"ds-application-button\" type=\"button\">Run observation</button>",
+      "css": ".ds-application-button{position:relative;overflow:hidden;background:var(--ui-primary,#2459a8);color:var(--ui-background,#f7f9fc);border:0;border-radius:3px;padding:4px 16px;min-height:2.572em;font:500 14px/1.715em Roboto,-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;cursor:pointer;box-shadow:0 1px 5px #0003,0 2px 2px #00000024,0 3px 1px -2px #0000001f}.ds-application-button::before{content:'';position:absolute;inset:0;background:currentColor;opacity:0;pointer-events:none}.ds-application-button:hover::before{opacity:.15}.ds-application-button:active::before{opacity:.3}.ds-application-button:focus-visible{outline:3px solid var(--ui-accent,#00796b);outline-offset:3px}.ds-application-button:disabled{opacity:.7;cursor:default}"
+    },
+    {
+      "name": "Review control",
+      "kind": "button",
+      "refersTo": "review-control",
+      "description": "Native outlined review button. Its browser focus behavior is represented with outline:auto; no custom hover color exists in the source.",
+      "html": "<button class=\"ds-review-control\" type=\"button\">Refresh rounds</button>",
+      "css": ".ds-review-control{padding:8px;color:inherit;background:transparent;border:1px solid #70999d;border-radius:4px;cursor:pointer}.ds-review-control:hover{cursor:pointer}.ds-review-control:focus-visible{outline:auto}.ds-review-control:disabled{opacity:.55;cursor:default}"
+    },
+    {
+      "name": "Review source editor",
+      "kind": "input",
+      "refersTo": "review-editor",
+      "description": "Dark native source textarea excerpt; preview height is reduced from the production 55vh/minimum 280px to keep the swatch compact.",
+      "html": "<label class=\"ds-editor-label\">Candidate proposal JSON<textarea class=\"ds-review-editor\" rows=\"6\" spellcheck=\"false\">{\n  \"revision\": \"r1\"\n}</textarea></label>",
+      "css": ".ds-editor-label{display:grid;gap:6px;color:#18312d;font:14px/1.5 system-ui,sans-serif}.ds-review-editor{max-width:100%;margin-top:12px;padding:12px;color:#edf7f7;background:#10272a;border:1px solid #70999d;font-family:monospace}.ds-review-editor:focus-visible{outline:auto}"
+    },
+    {
+      "name": "Review text field",
+      "kind": "input",
+      "refersTo": "review-input",
+      "description": "Native labeled review input; browser focus behavior, no invented hover treatment.",
+      "html": "<label class=\"ds-review-label\">Stage title<input class=\"ds-review-input\" value=\"Ontology review\" /></label>",
+      "css": ".ds-review-label{display:grid;gap:6px;min-width:160px;color:#18312d;font:14px/1.5 system-ui,sans-serif}.ds-review-input{padding:8px;color:inherit;background:transparent;border:1px solid #70999d;border-radius:4px}.ds-review-input:focus-visible{outline:auto}"
+    },
+    {
+      "name": "Service navigation",
+      "kind": "nav",
+      "description": "Existing desktop service links. Mobile switches to the Quasar header menu; this preview only demonstrates link styling.",
+      "html": "<nav class=\"ds-service-nav\" aria-label=\"Service links\"><a href=\"#review\" class=\"ds-service-active\" aria-current=\"page\">Review</a><a href=\"#workflows\">Workflows</a></nav>",
+      "css": ".ds-service-nav{display:flex;gap:22px;font:13px/1.5 Roboto,-apple-system,\"Helvetica Neue\",Helvetica,Arial,sans-serif}.ds-service-nav a{color:#5d716d;text-decoration:none}.ds-service-nav a:hover{color:#18312d}.ds-service-nav .ds-service-active{color:#24735f}.ds-service-nav a:focus-visible{outline:auto}"
+    },
+    {
+      "name": "Permission chip",
+      "kind": "chip",
+      "refersTo": "permission-chip",
+      "description": "Noninteractive dense permission badge, visually expanded from Quasar teal-9/teal-1 utilities.",
+      "html": "<span class=\"ds-permission-chip\">READ</span>",
+      "css": ".ds-permission-chip{display:inline-flex;align-items:center;max-width:100%;height:1.5em;margin:4px;padding:0 .4em;border-radius:12px;background:#00695c;color:#e0f2f1;white-space:nowrap;font:14px/1.5 Roboto,-apple-system,\"Helvetica Neue\",Helvetica,Arial,sans-serif}"
+    }
+  ],
+  "narrative": {
+    "northStar": "A semantic web infrastructural stack for integrated science",
+    "overview": "**Creative North Star: \"A semantic web infrastructural stack for integrated science\"** This is the user's description of the system, not an invented visual metaphor. The desired language emphasizes scientific publishing and editorial clarity. Component character should be approachable and softly framed, with restrained depth and flat task panels taking priority.\n\n**Authority boundary:** the user explicitly stated that the current style is not a choice they want. This document inventories the existing implementation; it does not approve its palette, serif headings, gradients, or component styling as the future identity. The frontmatter gives exact baseline values for reproducing current behavior. Future redesign work must establish a new visual direction rather than treat these recorded values as user-mandated aesthetics. Quasar is the user-confirmed preferred UI stack; framework preference is independent of visual preference.\n\nThere are three related but distinct implementations: the shared service dashboard, the themeable k.Actors application renderer, and the comparatively primitive review interfaces. Typography and colors differ between their entry points. Their differences are evidence to preserve when diagnosing the present UI, not a deliberate global design theory.",
+    "keyCharacteristics": [
+      "Dashboard: pale background, green accents, serif headings, rounded cards, compact telemetry labels.",
+      "k.Actors: scoped light/dark variables, Quasar controls, bordered application regions.",
+      "Review: native form controls, explicit fieldsets, source-oriented editors, side-by-side candidate and feedback areas.",
+      "Confirmed direction: scientific editorial clarity, functional color naming, restrained depth, approachable framing."
+    ],
+    "rules": [
+      {
+        "name": "The Scope Rule",
+        "body": "Application themes stay scoped to the renderer; dashboard brand values do not replace --ui-* variables.",
+        "section": "colors"
+      },
+      {
+        "name": "Authority boundary",
+        "body": "Quasar is preferred. Existing styling is not the user's chosen future design direction.",
+        "section": "overview"
+      }
+    ],
+    "dos": [
+      "Do treat Quasar as the preferred system UI stack.",
+      "Do distinguish observed baseline styles from confirmed preferences and future design decisions.",
+      "Do use functional color names and keep application themes scoped.",
+      "Do retain visible labels, textual states, and the existing application focus/reduced-motion behavior during maintenance.",
+      "Do prioritize flat task panels and restrained depth when interpreting the user's stated preferences."
+    ],
+    "donts": [
+      "Don't present the current colors, gradients, serif headings, or review editor styling as an approved future identity.",
+      "Don't infer a downloaded font from a fallback declaration or assume an isolated fixture shares the production cascade without checking it.",
+      "Don't claim the primitive review forms represent the finished review experience.",
+      "Don't infer full accessibility, authentication, or production-responsive verification from these isolated captures."
+    ]
+  }
+}

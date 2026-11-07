@@ -1,3 +1,5 @@
+import { Quasar } from "quasar";
+import "quasar/dist/quasar.css";
 import { createApp, h } from "vue";
 import "../src/styles.css";
 import ResourcesReview from "../../../../../klab.services.resources.server/src/main/webui/extensions/ResourcesReview.vue";
@@ -119,7 +121,7 @@ const context = { auth: { authenticated:true, username:new URL(location.href).se
   },
 } };
 const app = createApp({ render: () => h(ResourcesReview, { context: context as never }) });
-app.mount("#app");
+app.use(Quasar).mount("#app");
 Object.assign(window, { leaveReview: () => {
   app.unmount();
   history.replaceState({}, "", "/tests/review.html?dashboard=other&cycle=keep&round=keep");

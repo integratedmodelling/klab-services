@@ -74,6 +74,23 @@ Panels receive a `DashboardContext` prop with the current configuration, status,
 authentication state, shared API client, and `refresh()` callback. The TypeScript interface in
 `src/types.ts` is the generic downstream component contract.
 
+Components that own unsaved work may use the optional
+`registerNavigationGuard?: (guard: UnsavedWorkGuard) => () => void` callback. An
+`UnsavedWorkGuard` supplies live `isDirty()`, `isBusy()` and `canSave()` predicates,
+`save(): Promise<boolean>` and `discard(): void`. Register after mounting, keep these callbacks
+bound to current component state, and call the returned unregister function on unmount. Use
+optional chaining so a component can also run in a host or fixture without this shell feature.
+
+The shell consults dirty guards for its dashboard/full-page navigation, sign-out, and browser
+history entries it owns. It offers Stay here, Discard and leave, or Save and leave; busy work
+blocks leaving, and saving is available only when every dirty guard can save. `save()` must save
+privately and return true only when the component's work is clean. A false result or exception
+retains the route and shows a failure message. `discard()` explicitly abandons local edits.
+This callback does not intercept every browser action: components must retain their own
+`beforeunload` protection for reload, tab closure, and ordinary document navigation. The review
+extension registers both protections and removes both on unmount. Neither protection adds
+persistent browser storage or substitutes for server authorization.
+
 The authorization requirement on a panel or page controls its presentation only. Server endpoints
 remain the authority for access control. A component must never treat the manifest or a decoded
 browser token as authorization.

@@ -51,4 +51,13 @@ export interface DashboardContext {
   status: Record<string, unknown> | null;
   capabilities: Record<string, unknown> | null;
   refresh: () => Promise<void>;
+  registerNavigationGuard?: (guard: UnsavedWorkGuard) => () => void;
+}
+
+export interface UnsavedWorkGuard {
+  isDirty: () => boolean;
+  isBusy: () => boolean;
+  canSave: () => boolean;
+  save: () => Promise<boolean>;
+  discard: () => void;
 }

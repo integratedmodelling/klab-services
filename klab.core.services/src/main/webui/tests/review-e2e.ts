@@ -1,3 +1,5 @@
+import { Quasar } from "quasar";
+import "quasar/dist/quasar.css";
 import { createApp, h } from "vue";
 import "../src/styles.css";
 import ResourcesReview from "../../../../../klab.services.resources.server/src/main/webui/extensions/ResourcesReview.vue";
@@ -14,4 +16,4 @@ async function send(path: string, init: RequestInit = {}, plain = false) {
 }
 const context = { auth: { authenticated: true, username: actor }, api: { get: (path: string) => send(path), request: (path: string, init: RequestInit) => send(path, init),
   text: (path: string) => send(path, {}, true) } };
-createApp({ render: () => h(ResourcesReview, { context: context as never }) }).mount("#app");
+createApp({ render: () => h(ResourcesReview, { context: context as never }) }).use(Quasar).mount("#app");

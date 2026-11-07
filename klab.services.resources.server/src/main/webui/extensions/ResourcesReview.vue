@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import type { DashboardContext } from "@klab-dashboard/types";
 import ReviewCyclesPanel from "./ReviewCyclesPanel.vue";
 import type { ReviewCycle, ReviewView } from "../review-model";
+import ProposalReader from "@klab-dashboard/components/ProposalReader.vue";
+import { reviewError } from "@klab-dashboard/services/review-errors";
 
 const props = defineProps<{ context: DashboardContext }>();
 interface Attachment { id: string; type: string; fileName: string; mediaType: string; createdBy?: string }
@@ -48,6 +50,12 @@ const selectedContextAttachment = computed(() => contextAttachments.value.find(i
 const textContext = computed(() => !selectedContextAttachment.value || /^(text\/|application\/(json|.*\+json|.*yaml|.*ontology))/.test(selectedContextAttachment.value.mediaType));
 const panelKey = ref(0);
 const reviewPanel = ref<InstanceType<typeof ReviewCyclesPanel>>();
+const sourceOpen = ref(false), materialsOpen = ref(false);
+const preparationBaseline = ref("{}");
+const preparationDirty = computed(() => JSON.stringify(values.value) !== preparationBaseline.value);
+const navigationDirty = computed(() => editorDirty.value || feedbackDirty.value || creationDirty.value || preparationDirty.value);
+const writing = computed(() => pendingOperations.value.some(operation => operation.kind !== "load"));
+let unregisterNavigationGuard: (() => void) | undefined;
 const uncertainCreation = ref(""), creationReconciled = ref(false);
 const creationRecoveryKey = computed(() => props.context.auth?.authenticated && props.context.auth.username
   ? `klab-ontology-review-pending-creation:${window.location.pathname}:${encodeURIComponent(props.context.auth.username)}` : "");
@@ -117,14 +125,13 @@ const endpoint = computed(() => `api/v1/flows/${encodeURIComponent(flowId.value)
 const stageEndpoint = computed(() => `${endpoint.value}/states/${encodeURIComponent(stageId.value)}`);
 function failed(cause: unknown) {
   if (disposed) return;
-  error.value = cause instanceof Error ? cause.message : String(cause);
-  if (error.value.startsWith("409")) error.value += " The flow changed. Your text is retained; save it, or download then discard unsaved edits before refreshing and retrying.";
+  error.value = reviewError(cause);
 }
 function routeStage(id: string) {
   if (disposed) return;
   if (["bootstrap", "coalescing", "terminated"].includes(routedStage.value?.schemaId || "")) return;
   stageId.value = id;
-  const url = new URL(window.location.href); url.searchParams.set("stage", id); window.history.replaceState({}, "", url);
+  const url = new URL(window.location.href); url.searchParams.set("stage", id); window.history.replaceState(window.history.state, "", url);
 }
 async function changeFlow() {
   if (disposed) return;
@@ -132,23 +139,23 @@ async function changeFlow() {
   stageId.value = ""; reviewView.value = undefined;
   const url = new URL(window.location.href); for (const name of ["stage", "cycle", "round"]) url.searchParams.delete(name);
   if (!flowId.value) { url.searchParams.delete("flow"); flow.value = undefined; flowAttempted.value = false; }
-  window.history.replaceState({}, "", url); panelKey.value++; await loadFlow();
+  window.history.replaceState(window.history.state, "", url); panelKey.value++; await loadFlow();
 }
 async function changeStage() {
   if (disposed) return;
   const url = new URL(window.location.href); url.searchParams.delete("cycle"); url.searchParams.delete("round");
-  url.searchParams.set("stage", stageId.value); window.history.replaceState({}, "", url);
+  url.searchParams.set("stage", stageId.value); window.history.replaceState(window.history.state, "", url);
   panelKey.value++; await loadFlow();
 }
 async function flowChanged(keepStage = false) {
   if (disposed) return;
   if (!keepStage) stageId.value = reviewView.value?.editableStageId || reviewView.value?.stages?.filter(s => s.open).at(-1)?.id || reviewView.value?.stages?.at(-1)?.id || "";
-  if (!keepStage) { const url = new URL(window.location.href); url.searchParams.delete("cycle"); url.searchParams.delete("round"); window.history.replaceState({}, "", url); }
+  if (!keepStage) { const url = new URL(window.location.href); url.searchParams.delete("cycle"); url.searchParams.delete("round"); window.history.replaceState(window.history.state, "", url); }
   await loadFlow(); panelKey.value++;
 }
 async function createFlow() {
   if (!showCreation.value || uncertainCreation.value || !newAsset.value.trim() || !newTitle.value.trim() || busy.value || keepDraft()) return;
-  const finish = beginOperation("Creating your private bootstrap and loading its preparation tools...");
+  const finish = beginOperation("Creating your private bootstrap and loading its preparation tools...", "create");
   try {
     const attachments = await Promise.all([...(newProposal.value ? [uploadPayload(newProposal.value, "bootstrap-proposal")] : []),
       ...newReferences.value.map(file => uploadPayload(file, "supporting-material"))]);
@@ -162,7 +169,7 @@ async function createFlow() {
     pendingCreation("");
     flows.value.push(created); flowId.value = created.id; stageId.value = created.currentStateIds[0] || ""; resetCreation();
     reviewView.value = undefined;
-    const url = new URL(window.location.href); url.searchParams.delete("cycle"); url.searchParams.delete("round"); window.history.replaceState({}, "", url);
+    const url = new URL(window.location.href); url.searchParams.delete("cycle"); url.searchParams.delete("round"); window.history.replaceState(window.history.state, "", url);
     panelKey.value++;
     if (await loadFlow()) notice.value = "Private bootstrap created. Prepare a proposal or edit your uploaded proposal, then start peer review when it is ready.";
   } catch (cause) {
@@ -199,7 +206,7 @@ async function reviewCandidate(cycle: ReviewCycle) {
     ]);
     if (generation !== reviewCandidateGeneration) return;
     const text = new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(atob(encoded), c => c.charCodeAt(0)));
-    try { proposalText.value = JSON.stringify(JSON.parse(text), null, 2); } catch { proposalText.value = text; }
+    proposalText.value = text;
     originalText.value = proposalText.value; selectedProposal.value = cycle.candidate.proposal.attachmentId;
     contextText.value = source ? new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(atob(source), c => c.charCodeAt(0))) : "";
     reviewedOntologySource.value = contextText.value;
@@ -221,8 +228,7 @@ async function loadProposal() {
   try {
     const text = selectedProposal.value ? await attachmentText(selectedProposal.value) : "";
     if (generation !== reviewCandidateGeneration) return;
-    try { proposalText.value = JSON.stringify(JSON.parse(text), null, 2); }
-    catch { proposalText.value = text; }
+    proposalText.value = text;
     originalText.value = proposalText.value;
     return true;
   }
@@ -258,7 +264,7 @@ async function loadFlow() {
     originalDetails.value = JSON.stringify([editTitle.value, editDescription.value]);
     detailsRevision.value = flow.value.revision;
     const link = new URL(window.location.href); link.searchParams.set("flow", flowId.value); link.searchParams.set("stage", stageId.value);
-    window.history.replaceState({}, "", link);
+    window.history.replaceState(window.history.state, "", link);
     if (stage.value.status === "OPEN") {
       try {
         const discovered = await props.context.api.get<Action[]>(`${stageEndpoint.value}/actions`);
@@ -272,6 +278,7 @@ async function loadFlow() {
     for (const action of actions.value) for (const input of action.missing) {
       if (!(input.name in values.value)) values.value[input.name] = input.javaType === "Integer" || input.javaType === "java.lang.Integer" ? 1 : "";
     }
+    preparationBaseline.value = JSON.stringify(values.value);
     selectedProposal.value = proposals.value.at(-1)?.id || "";
     selectedContext.value = contextAttachments.value[0]?.id || "";
     const proposalLoaded = await loadProposal(), contextLoaded = await loadContext();
@@ -304,7 +311,7 @@ async function execute(action: Action) {
 }
 async function saveProposal() {
   if (busy.value || !canEdit.value || (!dirty.value && !pendingCandidateSave.value) || feedbackDirty.value || detailsDirty.value || uploadFiles.value.length || preparationNote.value.trim()) return;
-  const finish = beginOperation("Saving your proposal draft and reloading the candidate...");
+  const finish = beginOperation("Saving your proposal draft and reloading the candidate...", "save");
   try {
     const bytes = new TextEncoder().encode(proposalText.value);
     if (bytes.byteLength > 4 * 1024 * 1024) throw new Error("Proposal exceeds 4 MiB.");
@@ -344,7 +351,7 @@ function discardDetails() {
 }
 async function saveUploads(note = false) {
   if (busy.value || uncertainUpload.value || !canEdit.value || dirty.value || detailsDirty.value || feedbackDirty.value) return;
-  const finish = beginOperation(note ? "Saving your preparation note..." : "Uploading selected files and refreshing stage materials...");
+  const finish = beginOperation(note ? "Saving your preparation note..." : "Uploading selected files and refreshing stage materials...", "upload");
   try {
     const files = note ? [new File([preparationNote.value], `preparation-note-${Date.now()}.txt`, { type: "text/plain" })] : [...uploadFiles.value];
     for (const file of files) {
@@ -396,23 +403,62 @@ async function downloadContext() {
   } catch (cause) { failed(cause); }
 }
 function beforeUnload(event: BeforeUnloadEvent) {
-  if (editorDirty.value || feedbackDirty.value || creationDirty.value) { event.preventDefault(); event.returnValue = ""; }
+  if (navigationDirty.value || writing.value || reviewPanel.value?.isBusy()) { event.preventDefault(); event.returnValue = ""; }
 }
 onUnmounted(() => {
   disposed = true;
   reviewCandidateGeneration++;
   window.removeEventListener("beforeunload", beforeUnload);
+  unregisterNavigationGuard?.();
 });
+function canSaveBeforeLeave() {
+  if (busy.value || creationDirty.value || preparationDirty.value || uploadFiles.value.length || preparationNote.value.trim()) return false;
+  if (feedbackDirty.value) return !editorDirty.value && !!reviewPanel.value?.canSaveDraft();
+  if (detailsDirty.value) return !dirty.value && !!editTitle.value.trim();
+  return dirty.value && canEdit.value;
+}
+async function saveBeforeLeave() {
+  if (!canSaveBeforeLeave()) return false;
+  if (feedbackDirty.value) await reviewPanel.value?.saveDraft();
+  else if (detailsDirty.value) await saveDetails();
+  else if (dirty.value) await saveProposal();
+  await nextTick();
+  return !navigationDirty.value;
+}
+function discardBeforeLeave() {
+  discardProposalEdits();
+  if (stage.value) discardDetails();
+  uploadFiles.value = []; uploadInputKey.value++; preparationNote.value = "";
+  resetCreation(); values.value = JSON.parse(preparationBaseline.value);
+  reviewPanel.value?.discardDraft(); feedbackDirty.value = false;
+}
 function discardProposalEdits() {
   proposalText.value = originalText.value;
   if (!originalText.value) selectedProposal.value = "";
 }
 function downloadDraft() {
-  const url = URL.createObjectURL(new Blob([proposalText.value], { type: "application/json" }));
-  const link = document.createElement("a"); link.href = url; link.download = "proposal-draft.json"; link.click();
+  let json = false;
+  try { JSON.parse(proposalText.value); json = true; } catch { /* Preserve YAML as supplied. */ }
+  const url = URL.createObjectURL(new Blob([proposalText.value], { type: json ? "application/json" : "application/yaml" }));
+  const link = document.createElement("a"); link.href = url; link.download = json ? "proposal-draft.json" : "proposal-draft.yaml"; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+function workspaceHref(id: string) {
+  const url = new URL(window.location.href); url.hash = id; return url.href;
+}
+function jumpToWorkspace(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  window.history.replaceState(window.history.state, "", workspaceHref(id));
+  target.focus({ preventScroll: true });
+  target.scrollIntoView({ block: "start", behavior: "auto" });
+}
 onMounted(async () => {
+  unregisterNavigationGuard = props.context.registerNavigationGuard?.({
+    isDirty: () => navigationDirty.value || writing.value || !!reviewPanel.value?.isBusy(),
+    isBusy: () => busy.value || !!reviewPanel.value?.isBusy(),
+    canSave: canSaveBeforeLeave, save: saveBeforeLeave, discard: discardBeforeLeave,
+  });
   window.addEventListener("beforeunload", beforeUnload);
   restorePendingCreation();
   const params = new URL(window.location.href).searchParams;
@@ -429,143 +475,198 @@ onMounted(async () => {
 
 <template>
   <section class="ontology-review" aria-label="Ontology review stage">
-    <h1>{{ stageTitle }}</h1>
+    <header class="review-heading">
+      <h1>{{ stageTitle }}</h1>
+      <p v-if="flowId">{{ flow?.assetUrn || reviewedCycle?.candidate.proposalId }}<span v-if="reviewedCycle"> · Revision {{ reviewedCycle.candidate.revisionId }}</span></p>
+      <p v-if="routedStage && !routedStage.open" role="status">Historical stage. The candidate and submitted contributions are read-only.</p>
+      <p v-else-if="canEdit">{{ stage?.schemaId === 'coalescing' ? 'Integrate feedback into a new revision, then return to review.' : 'Prepare your candidate privately, then open it for peer review.' }}</p>
+      <p v-else-if="flowId">Read the frozen candidate and add feedback to the selected review round.</p>
+      <p v-else>Choose a review, or prepare a new candidate privately.</p>
+    </header>
     <p v-if="busy" class="progress-message" role="status" aria-live="polite" aria-atomic="true"><span class="progress-spinner" aria-hidden="true"></span>{{ progress }}</p>
-    <p v-if="routedStage?.schemaId === 'bootstrap'">Only you, the creating editor, can see this preparation stage. Add reference material and notes, then upload a proposal or prepare one from the ontology. Save your edits before starting peer review.</p>
-    <p v-else-if="routedStage?.schemaId === 'coalescing'">Integrate submitted feedback into a fresh revision. Return to review when ready, or terminate without accepting or publishing.</p>
-    <p v-else-if="flowId">Review the frozen candidate and its evidence. Peer and community feedback have separate stages and access.</p>
-    <p v-else>Create a private preparation stage below, or choose an existing flow. Reviewers receive access only after you start review.</p>
-    <p v-if="routedStage && !routedStage.open" role="status">Historical stage. The candidate and submitted contributions are read-only.</p>
-    <button v-if="creation?.canCreate && !showCreation" :disabled="busy || editorDirty || feedbackDirty" @click="startAnother">Start another ontology review</button>
-    <fieldset v-if="showCreation" :disabled="busy || editorDirty || feedbackDirty">
-      <legend>Start an ontology review</legend>
-      <p v-if="creation?.version">New reviews use workflow version {{ creation.version }}.</p>
-      <label>Ontology URN<input :disabled="!!uncertainCreation" v-model="newAsset" placeholder="project.ontology" /></label>
-      <label>Review title<input :disabled="!!uncertainCreation" v-model="newTitle" maxlength="500" placeholder="What is this review about?" required /></label>
-      <label>Review description<textarea class="short-text" :disabled="!!uncertainCreation" v-model="newDescription" maxlength="16000" placeholder="Describe the goals, scope and questions for this review." /></label>
-      <div :key="creationInputKey" class="controls">
-        <label>Initial proposal file (optional)<input type="file" accept=".json,.yaml,.yml" :disabled="!!uncertainCreation" @change="newProposal = filesFrom($event)[0]" /></label>
-        <label>Reference files (optional)<input type="file" multiple :disabled="!!uncertainCreation" @change="newReferences = filesFrom($event)" /></label>
-      </div>
-      <p>You can add a proposal now or prepare one later. Proposal files accept JSON or YAML (up to 4 MiB); reference files accept any format (up to 16 MiB each). Files and details are saved together in your private bootstrap.</p>
-      <button :disabled="!newAsset.trim() || !newTitle.trim() || !!uncertainCreation" @click="createFlow">Create private bootstrap</button>
-      <button v-if="(creatingAnother || creationDirty) && !uncertainCreation" @click="resetCreation">{{ creatingAnother ? 'Cancel new review' : 'Discard new review draft' }}</button>
-      <div v-if="uncertainCreation && !busy" role="status">
-        <p>Creation of {{ uncertainCreation }} has an unknown outcome. Do not create it again until you refresh existing flows and check for the saved bootstrap.</p>
-        <button @click="reconcileCreation">Refresh existing flows</button>
-        <button v-for="item in matchingCreations" :key="item.id" @click="openRecoveredFlow(item.id)">Open existing bootstrap {{ item.id }}</button>
-      </div>
-    </fieldset>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="notice && !busy" class="success-message" role="status">{{ notice }}</p>
     <p v-if="uncertainPreparation && !busy" role="status">Preparation has an unknown outcome. Use Refresh to check for a saved proposal before trying preparation again. Your preparation fields are retained.</p>
     <p v-if="canEdit && actionError" role="alert">{{ actionError }}</p>
     <p v-if="canEdit && unavailableContext" role="alert">The target ontology or its project could not be resolved for automatic preparation. Check that this ontology URN belongs to an accessible project, then refresh. You can still upload a prepared proposal.</p>
-    <div class="controls">
-      <label>Flow <select aria-label="Flow" v-model="flowId" :disabled="busy || editorDirty || feedbackDirty || creationDirty" @change="changeFlow">
-        <option value="">Choose a flow</option>
-        <option v-for="item in flows" :key="item.id" :value="item.id">{{ item.assetUrn }} · {{ item.id }}</option>
-      </select></label>
-      <label v-if="reviewView?.stages?.length">Stage <select aria-label="Stage" v-model="stageId" :disabled="busy || editorDirty || feedbackDirty || creationDirty" @change="changeStage">
-        <option v-for="item in reviewView?.stages" :key="item.id" :value="item.id">{{ flow?.states[item.id]?.title || item.schemaId }} · {{ item.open ? "Open" : "Historical" }}</option>
-      </select></label>
-      <button :disabled="busy || editorDirty || feedbackDirty || !flowId" @click="loadFlow">Refresh</button>
-    </div>
-    <p v-if="stage">{{ flow?.assetUrn }} · {{ stage.title || stage.schemaId }} · {{ stage.status }} · revision {{ flow?.revision }}</p>
-    <p v-if="flow?.workflowVersion">This flow uses workflow version {{ flow.workflowVersion }}.</p>
-    <p v-if="stage?.description && !canEdit">{{ stage.description }}</p>
-    <ol v-if="canEdit && stage?.schemaId === 'bootstrap'" class="preparation-steps" aria-label="Bootstrap preparation steps">
-      <li>Check the stage details and add any reference material.</li>
-      <li>Prepare or upload a proposal, then inspect the candidate draft.</li>
-      <li>Save any edits and start peer review when the candidate is ready.</li>
-    </ol>
-    <fieldset v-if="canEdit" :disabled="busy">
-      <legend>Stage details and materials</legend>
-      <label>Stage title<input v-model="editTitle" maxlength="500" /></label>
-      <label>Stage description<textarea class="short-text" v-model="editDescription" maxlength="16000" /></label>
-      <div class="controls"><button :disabled="!detailsDirty || !editTitle.trim()" @click="saveDetails">{{ savingDetails ? 'Saving stage details...' : 'Save stage details' }}</button>
-        <button v-if="detailsDirty" @click="discardDetails">Discard stage detail edits</button></div>
-      <p v-if="detailsDirty" role="status">Unsaved stage details. Save or discard these edits before preparing a review draft.</p>
+
+    <details :open="!flowId" class="review-disclosure">
+      <summary>{{ flowId ? 'Other reviews and stages' : 'Choose a review' }}</summary>
       <div class="controls">
-        <label>File purpose<select aria-label="File purpose" v-model="uploadKind" :disabled="uploadFiles.length > 0 || uncertainUpload">
-          <option value="supporting-material">Reference material</option><option value="bootstrap-proposal">Proposal JSON or YAML</option>
-          <option value="candidate-ontology" :disabled="stage?.attachments.some(a => a.type === 'candidate-ontology')">Candidate ontology source</option>
+        <label>Review<select aria-label="Flow" v-model="flowId" :disabled="busy || editorDirty || feedbackDirty || creationDirty || preparationDirty" @change="changeFlow">
+          <option value="">Choose a review</option><option v-for="item in flows" :key="item.id" :value="item.id">{{ Object.values(item.states).find(s => s.title)?.title || item.assetUrn }} · {{ item.assetUrn }}</option>
         </select></label>
-        <label>Stage files<input :key="uploadInputKey" type="file" :multiple="uploadKind === 'supporting-material'" :disabled="uncertainUpload" @change="uploadFiles = filesFrom($event)" /></label>
-        <button :disabled="!uploadFiles.length || dirty || detailsDirty || feedbackDirty || uncertainUpload || !!preparationNote.trim()" @click="saveUploads()">Upload selected files</button>
-        <button v-if="uploadFiles.length && !uncertainUpload" @click="uploadFiles = []; uploadInputKey++">Discard selected files</button>
+        <label v-if="reviewView?.stages?.length">Stage<select aria-label="Stage" v-model="stageId" :disabled="busy || editorDirty || feedbackDirty || creationDirty || preparationDirty" @change="changeStage">
+          <option v-for="(item, index) in reviewView?.stages" :key="item.id" :value="item.id">{{ flow?.states[item.id]?.title || item.schemaId }} · Stage {{ index + 1 }} · {{ item.open ? 'Open' : 'Historical' }}</option>
+        </select></label>
+        <q-btn outline no-caps :disable="busy || editorDirty || feedbackDirty || !flowId" @click="loadFlow">Refresh</q-btn>
+        <q-btn v-if="creation?.canCreate && !showCreation" flat no-caps :disable="busy || editorDirty || feedbackDirty" @click="startAnother">Start another ontology review</q-btn>
       </div>
-      <p v-if="uncertainUpload && !busy" role="status">The last upload has an unknown outcome. Check saved files before uploading anything again. <button @click="checkUploadedFiles">Check saved files</button></p>
-      <p>New files are added to this stage; earlier files are retained. Reference materials and preparation notes stay in the editorial stage. Starting review shares the frozen proposal and optional ontology source with permitted participants.</p>
-      <ul v-if="stage?.attachments.length" aria-label="Saved stage files"><li v-for="item in stage.attachments" :key="item.id">{{ item.fileName }} ({{ item.type }})</li></ul>
-      <label>Preparation note<textarea class="short-text" v-model="preparationNote" maxlength="16000" placeholder="Add a private editorial note or question about the materials." /></label>
-      <button :disabled="!preparationNote.trim() || dirty || detailsDirty || feedbackDirty || uploadFiles.length > 0 || uncertainUpload" @click="saveUploads(true)">Save preparation note</button>
-      <button v-if="preparationNote && !uncertainUpload" @click="preparationNote = ''">Discard preparation note</button>
+      <p v-if="stage">{{ stage.title || stage.schemaId }} · {{ stage.status }} · revision {{ flow?.revision }}</p>
+      <p v-if="flow?.workflowVersion">Workflow version {{ flow.workflowVersion }}.</p>
+    </details>
+
+    <fieldset v-if="showCreation" :disabled="busy || editorDirty || feedbackDirty" class="preparation-section">
+      <legend>Start an ontology review</legend>
+      <p>Your preparation is private. Reviewers gain access only after you start review.</p>
+      <div class="preparation-fields">
+        <label>Ontology URN<input :disabled="!!uncertainCreation" v-model="newAsset" placeholder="project.ontology" /></label>
+        <label>Review title<input :disabled="!!uncertainCreation" v-model="newTitle" maxlength="500" placeholder="What is this review about?" required /></label>
+      </div>
+      <label>Review description<textarea class="prose-input" v-model="newDescription" maxlength="16000" placeholder="Describe the goals, scope and questions for this review." /></label>
+      <details class="review-disclosure"><summary>Add initial files (optional)</summary>
+        <div :key="creationInputKey" class="controls">
+          <label>Initial proposal file (optional)<input type="file" accept=".json,.yaml,.yml" :disabled="!!uncertainCreation" @change="newProposal = filesFrom($event)[0]" /></label>
+          <label>Reference files (optional)<input type="file" multiple :disabled="!!uncertainCreation" @change="newReferences = filesFrom($event)" /></label>
+        </div>
+        <p>Proposal JSON or YAML: up to 4 MiB. Reference files: up to 16 MiB each. Files and details are saved together.</p>
+      </details>
+      <div class="controls">
+        <q-btn unelevated no-caps color="primary" :disable="!newAsset.trim() || !newTitle.trim() || !!uncertainCreation" @click="createFlow">Create private bootstrap</q-btn>
+        <q-btn v-if="(creatingAnother || creationDirty) && !uncertainCreation" flat no-caps @click="resetCreation">{{ creatingAnother ? 'Cancel new review' : 'Discard new review draft' }}</q-btn>
+      </div>
+      <div v-if="uncertainCreation && !busy" role="status">
+        <p>Creation of {{ uncertainCreation }} has an unknown outcome. Check existing reviews before creating it again.</p>
+        <q-btn outline no-caps @click="reconcileCreation">Refresh existing flows</q-btn>
+        <q-btn v-for="item in matchingCreations" :key="item.id" outline no-caps @click="openRecoveredFlow(item.id)">Open existing bootstrap {{ item.id }}</q-btn>
+      </div>
     </fieldset>
-    <fieldset v-for="action in (canEdit ? visibleActions : [])" :key="action.id" :disabled="busy || uncertainPreparation || editorDirty || feedbackDirty" :aria-busy="preparing">
-      <legend>{{ action.label }}</legend>
-      <p>Use the current ontology, authored review annotations and optional project BOOTSTRAP.md to generate an editable proposal. Reference files you added are retained for your preparation.</p>
-      <p>Complete all preparation fields below. Stage details only need saving if you changed them.</p>
-      <div class="action-inputs"><label v-for="input in action.missing" :key="input.name">{{ inputLabel(input.name) }}
-        <input v-if="input.javaType?.endsWith('Integer')" v-model.number="values[input.name]" type="number" min="1" />
-        <input v-else v-model="values[input.name]" required />
-      </label></div>
-      <button :disabled="action.missing.some(input => values[input.name] === '' || values[input.name] === undefined)" @click="execute(action)">{{ preparing ? 'Preparing review draft...' : action.label }}</button>
-    </fieldset>
-    <div v-if="flowAttempted && flowId" class="face-to-face">
-      <section><h2>{{ canEdit ? 'Current candidate draft' : 'Reviewed candidate' }}</h2>
-        <p v-if="canEdit && !proposals.length && !proposalText">No proposal yet. Upload an existing proposal above, or fill in the preparation fields and choose Prepare review draft.</p>
-        <p v-if="canEdit && !proposals.length && !visibleActions.length" role="status">Automatic preparation is unavailable for this stage. Upload a proposal file to continue, or ask the service administrator to check the preparation action.</p>
-        <label v-if="canEdit && proposals.length">Proposal <select v-model="selectedProposal" aria-label="Proposal attachment" :disabled="busy || editorDirty" @change="loadProposal">
-          <option value="">No proposal selected</option>
-          <option v-for="item in proposals" :key="item.id" :value="item.id">{{ item.fileName }} · {{ item.createdBy }}</option>
-        </select></label>
-        <textarea v-model="proposalText" aria-label="Candidate proposal JSON" :readonly="!canEdit" :disabled="busy || !selectedProposal" spellcheck="false" />
-        <div class="controls"><button :disabled="busy || !canEdit || (!dirty && !pendingCandidateSave) || detailsDirty || uploadFiles.length > 0 || !!preparationNote.trim() || feedbackDirty" @click="saveProposal">Save new draft attachment</button>
-          <button :disabled="!proposalText" @click="downloadDraft">Download draft</button>
-          <button v-if="dirty" :disabled="busy" @click="discardProposalEdits">Discard unsaved proposal edits</button></div>
-        <p v-if="pendingCandidateSave && !dirty" role="status">This is an unchanged seed from the previous candidate. Save it into this stage before returning to review, or terminate without saving.</p>
-        <p v-if="dirty" role="status">Unsaved edits. Saving keeps earlier attachments intact.</p>
-        <p v-if="canEdit">For an integrated proposal, use a fresh revision ID and record the revision it supersedes before starting another cycle. Proposal text may be JSON or YAML; starting review validates its document schema.</p>
+
+    <template v-if="canEdit">
+      <ol class="preparation-path" aria-label="Bootstrap preparation steps">
+        <li :aria-current="!selectedProposal ? 'step' : undefined">Prepare details and materials</li>
+        <li>Prepare or upload a candidate</li><li :aria-current="selectedProposal ? 'step' : undefined">Inspect, save and start review</li>
+      </ol>
+      <details class="review-disclosure" :open="!selectedProposal">
+        <summary>1. Review details and materials</summary>
+        <fieldset :disabled="busy" class="preparation-section">
+          <legend>Stage details</legend>
+          <label>Stage title<input v-model="editTitle" maxlength="500" /></label>
+          <label>Stage description<textarea class="prose-input" v-model="editDescription" maxlength="16000" /></label>
+          <div class="controls"><q-btn outline no-caps :disable="!detailsDirty || !editTitle.trim()" @click="saveDetails">{{ savingDetails ? 'Saving stage details...' : 'Save stage details' }}</q-btn>
+            <q-btn v-if="detailsDirty" flat no-caps @click="discardDetails">Discard stage detail edits</q-btn></div>
+          <p v-if="detailsDirty" role="status">Unsaved stage details. Save or discard these edits before preparing a review draft.</p>
+          <details class="review-disclosure" :open="materialsOpen" @toggle="materialsOpen = ($event.target as HTMLDetailsElement).open">
+            <summary>Reference files, proposal uploads and private notes</summary>
+            <div class="controls">
+              <label>File purpose<select aria-label="File purpose" v-model="uploadKind" :disabled="uploadFiles.length > 0 || uncertainUpload">
+                <option value="supporting-material">Reference material</option><option value="bootstrap-proposal">Proposal JSON or YAML</option>
+                <option value="candidate-ontology" :disabled="stage?.attachments.some(a => a.type === 'candidate-ontology')">Candidate ontology source</option>
+              </select></label>
+              <label>Stage files<input :key="uploadInputKey" type="file" :multiple="uploadKind === 'supporting-material'" :disabled="uncertainUpload" @change="uploadFiles = filesFrom($event)" /></label>
+              <q-btn outline no-caps :disable="!uploadFiles.length || dirty || detailsDirty || feedbackDirty || uncertainUpload || !!preparationNote.trim()" @click="saveUploads()">Upload selected files</q-btn>
+              <q-btn v-if="uploadFiles.length && !uncertainUpload" flat no-caps @click="uploadFiles = []; uploadInputKey++">Discard selected files</q-btn>
+            </div>
+            <p v-if="uncertainUpload && !busy" role="status">The upload has an unknown outcome. Check saved files before uploading again. <q-btn outline no-caps @click="checkUploadedFiles">Check saved files</q-btn></p>
+            <p>Files and notes remain in this editorial stage. Review shares only the frozen proposal and selected ontology source.</p>
+            <ul v-if="stage?.attachments.length" aria-label="Saved stage files"><li v-for="item in stage.attachments" :key="item.id">{{ item.fileName }} ({{ item.type }})</li></ul>
+            <label>Preparation note<textarea class="prose-input" v-model="preparationNote" maxlength="16000" placeholder="Add a private editorial note or question about the materials." /></label>
+            <div class="controls"><q-btn outline no-caps :disable="!preparationNote.trim() || dirty || detailsDirty || feedbackDirty || uploadFiles.length > 0 || uncertainUpload" @click="saveUploads(true)">Save preparation note</q-btn>
+              <q-btn v-if="preparationNote && !uncertainUpload" flat no-caps @click="preparationNote = ''">Discard preparation note</q-btn></div>
+          </details>
+        </fieldset>
+      </details>
+      <fieldset v-for="action in visibleActions" :key="action.id" :disabled="busy || uncertainPreparation || editorDirty || feedbackDirty" :aria-busy="preparing" class="preparation-section">
+        <legend>2. Prepare your candidate</legend>
+        <p>Use the current ontology, review annotations and optional project BOOTSTRAP.md to prepare an editable proposal. You can upload an existing proposal in Review details and materials instead.</p>
+        <div class="preparation-fields"><label v-for="input in action.missing" :key="input.name">{{ inputLabel(input.name) }}
+          <input v-if="input.javaType?.endsWith('Integer')" v-model.number="values[input.name]" type="number" min="1" />
+          <input v-else v-model="values[input.name]" :placeholder="input.name === 'revision_id' ? 'For example, r1' : input.name === 'proposal_id' ? 'A stable identifier for this proposal' : undefined" required />
+        </label></div>
+        <q-btn unelevated no-caps color="primary" :disable="action.missing.some(input => values[input.name] === '' || values[input.name] === undefined)" @click="execute(action)">{{ preparing ? 'Preparing review draft...' : action.label }}</q-btn>
+        <q-btn v-if="preparationDirty" flat no-caps @click="values = JSON.parse(preparationBaseline)">Discard preparation inputs</q-btn>
+      </fieldset>
+    </template>
+
+    <nav v-if="flowAttempted && flowId" class="workspace-jumps" aria-label="Review workspace"><a :href="workspaceHref('review-candidate')" @click.prevent="jumpToWorkspace('review-candidate')">Read candidate</a><a :href="workspaceHref('review-feedback')" @click.prevent="jumpToWorkspace('review-feedback')">Feedback and next steps</a></nav>
+    <div v-if="flowAttempted && flowId" class="review-workspace">
+      <section id="review-candidate" class="candidate-panel" tabindex="-1">
+        <header class="workspace-heading"><h2>{{ canEdit ? '3. Inspect your candidate' : 'Reviewed candidate' }}</h2><span v-if="dirty" role="status">Unsaved source changes</span></header>
+        <p v-if="stage?.description && !canEdit">{{ stage.description }}</p>
+        <template v-if="proposalText">
+          <ProposalReader :source="proposalText" />
+          <div class="controls"><q-btn outline no-caps @click="downloadDraft">Download draft</q-btn></div>
+          <details class="review-disclosure" :open="sourceOpen" @toggle="sourceOpen = ($event.target as HTMLDetailsElement).open">
+            <summary>{{ canEdit ? 'Edit exact proposal source' : 'Exact proposal source' }}</summary>
+            <label v-if="canEdit && proposals.length">Proposal<select v-model="selectedProposal" aria-label="Proposal attachment" :disabled="busy || editorDirty" @change="loadProposal">
+              <option value="">No proposal selected</option><option v-for="item in proposals" :key="item.id" :value="item.id">{{ item.fileName }} · {{ item.createdBy }}</option>
+            </select></label>
+            <textarea class="source-editor" v-model="proposalText" aria-label="Candidate proposal source" :readonly="!canEdit" :disabled="busy || !selectedProposal" spellcheck="false" />
+            <div v-if="canEdit" class="controls"><q-btn unelevated no-caps color="primary" :disable="busy || (!dirty && !pendingCandidateSave) || detailsDirty || uploadFiles.length > 0 || !!preparationNote.trim() || feedbackDirty" @click="saveProposal">Save new draft attachment</q-btn>
+              <q-btn v-if="dirty" flat no-caps :disable="busy" @click="discardProposalEdits">Discard unsaved proposal edits</q-btn></div>
+            <p v-if="pendingCandidateSave && !dirty" role="status">Save this seed from the previous candidate into this stage before returning to review, or terminate without saving.</p>
+            <p v-if="dirty" role="status">Unsaved edits. Saving keeps earlier attachments intact.</p>
+            <p v-if="canEdit">Changed proposals need a fresh revision ID and a record of the revision they supersede. JSON and YAML are accepted; document validation does not imply scientific approval.</p>
+          </details>
+        </template>
+        <div v-else class="candidate-empty">
+          <h3>{{ canEdit ? 'No candidate yet' : 'Candidate unavailable' }}</h3>
+          <p>{{ canEdit ? 'Prepare a review draft above, or upload an existing proposal in Review details and materials.' : 'Choose an authorized review round to load its frozen candidate.' }}</p>
+          <p v-if="canEdit && !visibleActions.length" role="status">Automatic preparation is unavailable for this stage. Upload a proposal file to continue, or ask the service administrator to check the preparation action.</p>
+        </div>
+        <details v-if="stage" class="review-disclosure"><summary>Comments and source context</summary>
+          <label>Attachment<select v-model="selectedContext" aria-label="Context attachment" :disabled="busy" @change="loadContext">
+            <option value="">No context selected</option><option v-for="item in contextAttachments" :key="item.id" :value="item.id">{{ item.fileName }} · {{ item.createdBy }}</option>
+          </select></label>
+          <q-btn v-if="selectedContext" outline no-caps :disable="busy" @click="downloadContext">Download selected material</q-btn>
+          <textarea v-if="textContext" class="source-editor" :value="contextText" aria-label="Source context and comments" readonly spellcheck="false" />
+          <p v-else>Download this file to view it in its original format.</p>
+        </details>
+        <details v-else-if="contextText" class="review-disclosure"><summary>Reviewed ontology source</summary><pre class="source-preview">{{ contextText }}</pre></details>
       </section>
-      <section>
+      <section id="review-feedback" class="feedback-panel" tabindex="-1">
         <ReviewCyclesPanel ref="reviewPanel" :context="context" :flow-id="flowId" :key="panelKey" :stage-id="stageId" :source-state-id="reviewView?.editableStageId"
           :proposal-attachment-id="canEdit && localProposal ? selectedProposal : undefined"
           :ontology-attachment-id="stage?.attachments.find(a => a.type === 'candidate-ontology')?.id"
           :candidate-dirty="editorDirty" :candidate-loading="busy" @view="reviewView = $event" @stage="routeStage" @changed="flowChanged" @candidate="reviewCandidate" @dirty="feedbackDirty = $event" @access-lost="reviewAccessLost" />
-        <details v-if="stage"><summary>Comments and source context</summary>
-        <label>Attachment <select v-model="selectedContext" aria-label="Context attachment" :disabled="busy" @change="loadContext">
-          <option value="">No context selected</option>
-          <option v-for="item in contextAttachments" :key="item.id" :value="item.id">{{ item.fileName }} · {{ item.createdBy }}</option>
-        </select></label>
-        <button v-if="selectedContext" :disabled="busy" @click="downloadContext">Download selected material</button>
-        <textarea v-if="textContext" :value="contextText" aria-label="Source context and comments" readonly spellcheck="false" />
-        <p v-else>Download this file to view it in its original format.</p>
-        </details>
-        <details v-else-if="contextText"><summary>Reviewed ontology source</summary><pre>{{ contextText }}</pre></details>
       </section>
     </div>
   </section>
 </template>
 <style scoped>
-.ontology-review { max-width: 1500px; margin: auto; }
+.ontology-review { --q-primary: #2459a8; color: #17283b; max-width: 1400px; margin-inline: auto; padding: 24px; font-size: 1rem; line-height: 1.55; }
 .ontology-review, .ontology-review * { box-sizing: border-box; }
-.controls, .action-inputs { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 14px 0; }
-label { display: grid; gap: 6px; min-width: 160px; }
-input, select, button { padding: 8px; color: inherit; background: transparent; border: 1px solid #70999d; border-radius: 4px; }
-button { cursor: pointer; } button:disabled { cursor: default; opacity: .55; }
-fieldset { border: 1px solid #70999d; margin: 20px 0; }
-.face-to-face { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.face-to-face section { min-width: 0; }
-textarea { width: 100%; height: 55vh; min-height: 280px; margin-top: 12px; padding: 12px; color: #edf7f7; background: #10272a; border: 1px solid #70999d; font-family: monospace; }
-.short-text { height: 100px; min-height: 80px; font-family: inherit; }
-[role="alert"] { color: #8c3030; background: #fbecec; border: 1px solid #f1caca; padding: 12px; border-radius: 6px; }
-.progress-message, .success-message { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid #b9d4cc; border-radius: 6px; color: #183f35; background: #edf7f3; }
-.progress-message, .success-message { position: sticky; top: 12px; z-index: 1; box-shadow: 0 2px 8px #183f3518; }
-.full-page-main .progress-message, .full-page-main .success-message { top: 90px; }
-.progress-spinner { flex: 0 0 16px; height: 16px; border: 2px solid #b9d4cc; border-top-color: #24735f; border-radius: 50%; animation: review-progress 1s linear infinite; }
-.preparation-steps { padding-left: 24px; line-height: 1.7; }
+.review-heading { margin-block-end: 32px; max-width: 72ch; }
+h1 { text-wrap: balance; font-size: clamp(1.625rem, 3vw, 2.25rem); font-weight: 600; line-height: 1.2; margin: 0 0 16px; }
+h2 { text-wrap: balance; font-size: 1.375rem; line-height: 1.3; margin: 0 0 24px; font-weight: 600; }
+h3 { text-wrap: balance; font-size: 1.125rem; line-height: 1.4; font-weight: 600; margin: 0 0 8px; }
+p { max-width: 72ch; overflow-wrap: anywhere; text-wrap: pretty; }
+.controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-block: 16px; }
+label { display: grid; gap: 8px; min-width: 0; max-width: 100%; }
+.controls label { flex: 1 1 200px; }
+input, select, textarea { width: 100%; max-width: 100%; min-width: 0; padding: 12px; color: #17283b; background: #fff; border: 1px solid #91a1b1; border-radius: 4px; font: inherit; caret-color: #2459a8; }
+select { text-overflow: ellipsis; }
+input:disabled, select:disabled, textarea:disabled { opacity: .65; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid #2459a8; outline-offset: 3px; }
+::selection { background: #dce9fa; color: #17283b; }
+textarea { resize: vertical; }
+.prose-input { min-height: 112px; }
+.source-editor { min-height: 280px; margin-block: 16px; font: .875rem/1.6 monospace; background: #f7f9fc; tab-size: 2; }
+.preparation-section { min-width: 0; border: 0; padding: 0; margin-block: 24px 32px; }
+.preparation-section legend { font-size: 1.25rem; font-weight: 600; margin-block-end: 16px; }
+.preparation-section > label { margin-block: 16px; }
+.preparation-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; margin-block: 24px; }
+.preparation-path { display: flex; flex-wrap: wrap; gap: 16px 32px; padding-inline-start: 24px; margin-block: 32px; color: #53667b; }
+.preparation-path [aria-current] { color: #17283b; font-weight: 600; }
+.review-disclosure { border-block-start: 1px solid #cad5e2; padding-block: 16px; margin-block: 16px; min-width: 0; }
+.review-disclosure > summary { cursor: pointer; font-weight: 600; padding-block: 8px; min-height: 44px; overflow-wrap: anywhere; display: list-item; list-style: disclosure-closed inside; }
+.review-disclosure[open] > summary { list-style-type: disclosure-open; }
+.review-disclosure > summary::marker { color: #53667b; }
+.review-workspace { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 48px; align-items: start; margin-block-start: 24px; }
+.review-workspace > section { min-width: 0; scroll-margin-block-start: 100px; }
+.feedback-panel { border-inline-start: 1px solid #cad5e2; padding-inline-start: 32px; }
+.workspace-jumps { display: flex; flex-wrap: wrap; gap: 24px; margin-block: 24px; }
+.workspace-jumps a { color: #2459a8; text-underline-offset: 4px; min-height: 44px; display: inline-flex; align-items: center; }
+.workspace-heading { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; }
+.candidate-empty { padding-block: 24px; }
+.source-preview { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .875rem; }
+.progress-message, .success-message, [role="alert"] { padding: 16px; border-radius: 4px; margin-block: 16px; }
+[role="alert"] { color: #8c3030; background: #fbecec; }
+.progress-message, .success-message { color: #183f35; background: #edf7f3; }
+.progress-message { display: flex; align-items: center; gap: 12px; position: sticky; top: calc(var(--klab-header-height, 0px) + 16px); z-index: 2; max-height: 30vh; overflow: auto; }
+.progress-spinner { flex: 0 0 16px; height: 16px; border: 2px solid #91a1b1; border-top-color: #2459a8; border-radius: 50%; animation: review-progress 1s linear infinite; }
 @keyframes review-progress { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .progress-spinner { animation: none; } }
-@media (max-width: 850px) { .face-to-face { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .review-workspace { grid-template-columns: minmax(0, 1fr); gap: 32px; } .feedback-panel { border-inline-start: 0; padding-inline-start: 0; border-block-start: 1px solid #cad5e2; padding-block-start: 32px; } }
+@media (max-width: 600px) { .ontology-review { padding: 16px 8px; } .preparation-fields { grid-template-columns: minmax(0, 1fr); } .ontology-review :deep(.q-btn) { min-height: 44px; } }
 </style>

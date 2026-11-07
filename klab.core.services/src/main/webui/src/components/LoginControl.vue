@@ -2,7 +2,11 @@
 import type {AuthState} from "../services/auth";
 import {login, logout} from "../services/auth";
 
-defineProps<{ auth: AuthState }>();
+const props = defineProps<{ auth: AuthState; requestNavigation?: (action: () => void) => void }>();
+function signOut() {
+  const action = () => { void logout(); };
+  if (props.requestNavigation) props.requestNavigation(action); else action();
+}
 </script>
 
 <template>
@@ -28,7 +32,7 @@ defineProps<{ auth: AuthState }>();
         :label="auth.username || 'Account'"
     >
       <q-list class="account-menu">
-        <q-item clickable v-close-popup @click="logout">
+        <q-item clickable v-close-popup @click="signOut">
           <q-item-section avatar>
             <q-icon name="logout"/>
           </q-item-section>
@@ -36,7 +40,7 @@ defineProps<{ auth: AuthState }>();
         </q-item>
       </q-list>
     </q-btn-dropdown>
-    <q-chip v-else dense outline color="grey-4" text-color="grey-4" icon="public">
+    <q-chip v-else dense outline color="grey-7" text-color="grey-7" icon="public">
       Public access
     </q-chip>
   </div>
