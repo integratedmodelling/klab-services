@@ -30,6 +30,16 @@
   },
   "cases": [
     {
+      "id": "SIM-COPIED-COMPOSITION-001",
+      "rows": ["CAP-03"],
+      "routes": ["/runtime/experimental/copied-composition/v1/create", "/runtime/experimental/copied-composition/v1/{id}"],
+      "source": "Explicit ephemeral copied-data reference, not native federation. Three owned sourceA/sourceB/coordinatorC HTTP processes; independently authorized read-plan input copies, C-owned declared pairwise sum, origin-qualified IDs/pinned reference vector and C-only release. C does not verify upstream origin/authority or propagate revocation; caller assertions explicitly labelled, no remote fetch or credentials forwarded.",
+      "confidence": "SIMULATED_PROVISIONAL",
+      "java_status": "REAL_NOT_RUN; native federation/API/security/live source validation/scientific compatibility remain unverified",
+      "simulator_test": "test_copied_composition.py::test_three_owned_services_publish_c_result_with_pinned_origins_and_preserve_a_b_on_detach",
+      "java_gap_ids": ["JAVA-GAP-0007", "JAVA-GAP-0013"]
+    },
+    {
       "id": "SIM-REVISION-CONVERGENCE-001",
       "rows": ["RC-P3.1", "CAP-10"],
       "routes": ["/runtime/experimental/revision-snapshots/v1/checkpoint"],

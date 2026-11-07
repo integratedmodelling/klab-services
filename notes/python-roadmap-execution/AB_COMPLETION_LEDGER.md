@@ -1,5 +1,35 @@
 # A+B completion ledger — ongoing campaign
 
+Final copiedcomposition17linkedcasesPASS(485SDK/177simulator/57worker) vs17real
+NOT_RUN/exit3, zero skips/errors/failures. Publish ordinaryPR/finalCI next;
+copieddata composition not live federation/sourceauthority/native/CAP03 completion.
+
+Fresh copiedcomposition4384SDK/248simulator/3composition/4revision/18provider/
+18provenance/11inventory/98reference/57worker/21HTTP/37governancePASS, zero skips/
+errors/failures.57SDK+23simulator+5worker rawpackageparity; installed simulator-only
+81lines40branches100%unexcluded, SDKnewmodulegateN/A.17linkedmatrix running vs
+17realNOT_RUN/exit3. OrdinaryPR/CI pending; copieddata not native federation/grants.
+
+Copied snapshot composition source3focusedtestsPASS; simulator-only81lines40branches
+100%unexcluded/bodymypyPASS. Actual three-owned-process A/B/C reads/sourcepins/C-owned
+sum/read/detach/source preservation; copied-data reference NOT native live federation.
+Initial1PASS/1FAIL passed list to shardassembly requiring immutable tuple; testsetup
+corrected without relaxing SDK, then3PASS. Bodytypecheck initially flagged optional
+output float; explicit nonnull guard fixes typing, no negative relaxation. Same0007/
+0013registry/handoff/scenario/docs/CI aligned; native statuses/CAP-03 PARTIAL unchanged.
+Unique fresh copied-composition-first installed verification next; noPRyet.
+
+PR286 verified MERGED99fd8712d8dd7cc4036e4ffea1e826bb65bfd422 at05:29:06Z,
+exact449fa72ffc18648b4eb9f8acbeea89693bb9cafb/all36checksPASS/no failedrerun.
+Composition branch fastforwarded actual merge; no watcher remains. Next explicit
+copied-reference snapshot composition must not claim native live federation/grants.
+
+Revision reference published PR286 head449fa72ff; final-head watcher
+sh_1b4751ab80012gKJgq6ZeXlVeQ running. No merge claimed. Child composition branch
+planning must keep source read-plan snapshots/reference vectors distinct from
+native revisions; C-owned output and source lifecycle/authorization evidence are
+required, not client union/standby or a Hub federation lookup alone.
+
 Final revision17linkedcasesPASS(485SDK/174simulator/57worker) versus17realNOT_RUN/
 exit3, zero skips/errors/failures. Ordinary revisionPR/finalheadCI next; no native
 commits, full lineage or wholeRC-P3.1/CAP-10/fullABC completion claimed.

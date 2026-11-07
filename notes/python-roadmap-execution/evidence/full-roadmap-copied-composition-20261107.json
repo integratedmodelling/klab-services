@@ -1,0 +1,24 @@
+{
+  "verified_utc": "2026-11-07T05:41:33.739489+00:00",
+  "baseline_head": "99fd8712d8dd7cc4036e4ffea1e826bb65bfd422",
+  "scope": "Explicit copied A/B reference snapshots into C-owned declared arithmetic output; NOT native live federation, upstream authority, grants, revocation propagation or scientific compatibility",
+  "attribution": "Uncommitted simulator feature identified by raw source/wheel/sdist/installed module parity and hashes; production SDK/worker unchanged",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "331c35a76ed61d9f7070dbfef5b3996f1b38dc23921ca090efba1a67df1536ba", "sdist_sha256": "e90ce068a92c53d5848cf228b3558135dc2d40dbe1c9f534439dc97e286c5f7c", "parity_modules": 57},
+    "simulator": {"wheel_sha256": "9924e89d87e51943dbf3673f5e9d19c5bc4a385d1af7f89dc609e2f6023aa7ee", "sdist_sha256": "0abd1dcc5674026f9c6639b093f8b45611ae499077e72aba365edb3b2a7dd372", "parity_modules": 23},
+    "worker": {"wheel_sha256": "424bf3bf41f216e6ae60618482db31367c7e75864de4c09f6112136dadf139f6", "sdist_sha256": "5cef090640eac671bf00fd3c223df505c0eb231ef14ab404d60cbcf1dd3ae65c", "parity_modules": 5}
+  },
+  "installed_suites": {"SDK": 4384, "simulator": 248, "composition_reference": 3, "revision_reference": 4, "provider_reference": 18, "provenance_reference": 18, "operation_inventory": 11, "other_reference": 98, "worker": 57, "worker_HTTP": 21, "governance": 37, "skips_failures_errors": 0},
+  "overlapping_counts_not_unique_total": true,
+  "simulator_only_module": {"covered_lines": 81, "statements": 81, "covered_branches": 40, "branches": 40, "excluded_lines": 0, "not_SDK_coverage": true},
+  "SDK_new_module_gate": "NOT_APPLICABLE; production SDK unchanged",
+  "body_mypy": "PASS",
+  "fatal_lint": "PASS",
+  "controls": ["Three owned HTTP sourcesA/B/coordinatorC with distinct Runtime identities and colliding numeric observation IDs", "Independent authorized A/B read-plan copies, complete shard assembly and release; foreign source denied before C creation", "C-owned result retains origin-qualified pinned source vector/descriptor/mask/values, explicit declared pairwise sum only", "Independent nativeasync C reader, foreign C denial, vector mismatch409 without additional publication", "C-only detach preserves A/B counts/revisions and exactly one original source submission each; no C Runtime observation submission", "Bounded strict intake/identity/contenthash/type/mask/descriptor/duplicatekey/overflow/capacity/unknownoperation guards; ephemeral only, durable mode refuses"],
+  "authority_limits": "C does not fetch or authenticate upstream origins, delegate credentials or propagate revocation. Source claims explicitly CALLER_ASSERTED_COPIED_REFERENCE_NOT_REMOTE_GRANT; content hashes are not native scientific commits or authority. Copied-data arithmetic is not composed-twin native acceptance or atomic multi-service snapshot.",
+  "retained_failures": ["Initial1PASS/1FAIL: test capture helper passed list to SDK shard assembly requiring immutable tuple; corrected test setup, no SDK/assertion relaxation", "Initial bodymypy diagnostic optional numeric output; explicit nonnull finite guard corrected typing, finaltypes and81line40branch coveragePASS"],
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 485, "simulator_tests": 177, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "dependency_custody": "Fresh wheels/sdists/pip-targets borrow prior test dependencies; no fresh dependency-isolation certification",
+  "native_java": "REAL_NOT_RUN; JAVA-GAP-0007 MISSING_API and0013CONTRACT_PROVISIONAL unchanged; CAP-03/fullABC remain PARTIAL",
+  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; continue remaining42row operation/workflow coverage and native acceptance obligations. Sleep pending full checklist."
+}
