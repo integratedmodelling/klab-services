@@ -1,0 +1,24 @@
+{
+  "verified_utc": "2026-11-07T03:28:20.958216+00:00",
+  "baseline_head": "87178be30f508bd1727ed97a4282ae7e6356cc6d",
+  "attribution": "Uncommitted source-defined candidate inspector; exact source/wheel/sdist/installed module parity and artifact hashes identify tested code, not baseline HEAD alone. Only candidate-source-inspection-custody-final attests final code.",
+  "artifacts": {
+    "sdk": {"wheel_sha256": "51ec898584bcbb76014c2816e3c15a0716e51137b0d42882e46e99956299fd7d", "sdist_sha256": "6e39b862dd3bb62fa678a4a5fd30ce1024a8049652d259e533d75735c07d431f", "parity_modules": 55},
+    "simulator": {"wheel_sha256": "459bfd07e8b6709253e8a36f2e632f68fbd40b4abd45798a60fc4f8ef805df22", "sdist_sha256": "6c02e825c905d2609eeac3dbdcab402430f08b02ecdc4efe1eadc7da5cf2fe00", "parity_modules": 19},
+    "worker": {"wheel_sha256": "e6012a97765764f067a90354abfe0229b937c32c02d2ee5c8f538674f89b0236", "sdist_sha256": "642c86b2e2d31e8964a1327a635b63d41a431d41e2cfc19a28b8cad38302a83a", "parity_modules": 5}
+  },
+  "installed_tests": {"SDK_unit_integration": 4263, "reference_HTTP_notebook_storage_recovery": 98, "simulator": 211, "worker": 57, "worker_HTTP": 21, "governance": 37, "skips": 0, "failures": 0, "errors": 0},
+  "new_module_SDK_only": {"unit_tests": 53, "covered_lines": 137, "statements": 137, "covered_branches": 42, "branches": 42, "excluded_lines": 0, "changed_decision_gate": "PASS"},
+  "SDK_only_aggregate": {"covered_lines": 7729, "statements": 7828, "covered_branches": 2414, "branches": 2468, "historical_excluded_lines": 165, "combined_percent": 98.51398601398601, "unique_report_paths_and_current_raw_module_parity": true},
+  "focused_source_controls": {"SDK_tests": 53, "HTTP_server_tests": 12, "body_mypy": "PASS", "fatal_lint": "PASS", "lazy_public_exports": "PASS without simulator/worker/scientific extras"},
+  "java_source_authority_ref": "notes/python-roadmap-execution/evidence/candidate-source-authority-20261107.json",
+  "authority_hashes": "All5pinned source files independently rechecked unchanged; source-only, no native execution",
+  "assertions": ["Exact advertisedprotocol1/ResourcesID/type before source-definedPOSTroute; no legacy fallback or empty success on404/500/denial", "Supplier-only credential, no context/Runtime/cycle/transaction delegation or returnedURLfollowing", "Exact UTF8SHA256/typed source namespace/modelmember/project/timestamp/inactive identity and namespace snapshot binding", "Duplicate/nonfinite/overflow1e999/invalidUnicode/partial or foreign snapshot/knownraw+decodedescapedcredential refusal without rewriting source", "Immutable bounded selectors/catalog/source strings excludedfromrepr; single totaldeadline/cell-free catalog/no Job or scientificdata", "Synthetic public/private/projectprivate/scenario visibility with separate project-ownerREADdenial; selectors never grant access"],
+  "retained_development_failures": ["Overflow1e999 regression6PASS/1FAIL before explicitfinite parse_float", "Earlier candidate-source-inspection-final stopped4sourceidentityFAIL/4258PASS after late custodyhardening changed source relative to installedoldbuild", "Earlier candidate-source-inspection-first passed4260SDK/98reference/211simulator/57worker/21HTTP but29govPASS/4FAIL on obsolete hardcodednullsourcebaseline fixture. Strengthened fixture now selects stable0003ID and rejects4nativepromotions with BOTH absent and supplied sourceauthority; validator unchanged, final37govPASS"],
+  "prior_artifact_limit": "Both earlier candidate targets are PRE-FINAL only; never relabelled/overwritten. Finalsource frozen through accepted build/current parity check.",
+  "contract_matrix": {"simulated_pass": 17, "SDK_tests": 375, "simulator_tests": 140, "worker_tests": 57, "skips_failures_errors": 0, "real_not_run": 17, "real_exit": 3},
+  "native_status": "JAVA-GAP-0003 NOT_TESTED unchanged. Source-defined route/DTO and syntheticfixtures are not deployednative compatibility, semanticadmission, selectedmodel, publication or scientificexecution.",
+  "scientific_acceptance": false,
+  "dependency_custody": "Fresh wheels/sdists/separate pip-target installs borrow existing test dependencies; not newly isolated dependency certification",
+  "remaining": "OrdinaryPR/finalheadCI/permittedmerge; continue remaining42rows/native gates separately. Entire-roadmap sleep pending."
+}

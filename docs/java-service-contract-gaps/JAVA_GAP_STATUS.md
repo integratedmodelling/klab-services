@@ -10,7 +10,7 @@ CONFIRMED_DEFECT: 2, CONTRACT_PROVISIONAL: 7, MISSING_API: 3, NOT_TESTED: 5
 |---|---|---|---|---|
 |JAVA-GAP-0001 — Resources remote numeric scanner is null on preserved USGS workflow|P0 / CONFIRMED_DEFECT|JAVA_INCOMPATIBLE|GAP-CASE-0001 / REAL_FAIL|; RC-P2.1, RC-P2.3, RC-P2.5, CAP-09|
 |JAVA-GAP-0002 — Supported owned RESOURCE cleanup contract absent in inspected delete branch|P1 / MISSING_API|SIMULATED_PROVISIONAL|GAP-CASE-0002 / REAL_NOT_RUN|; RC-P4.3, RC-P4.4, CAP-13, CAP-14|
-|JAVA-GAP-0003 — Installed Resources does not advertise source model-candidate protocol|P1 / NOT_TESTED|NOT_EVALUATED|GAP-CASE-0003 / REAL_NOT_RUN|; RC-P4.1, CAP-13|
+|JAVA-GAP-0003 — Installed Resources does not advertise source model-candidate protocol|P1 / NOT_TESTED|SIMULATED_PROVISIONAL|GAP-CASE-0003 / REAL_NOT_RUN|; RC-P4.1, CAP-13|
 |JAVA-GAP-0004 — Durable Job retention and Runtime incarnation across restart unverified|P1 / NOT_TESTED|NOT_EVALUATED|GAP-CASE-0004 / REAL_NOT_RUN|https://github.com/integratedmodelling/klab-services/issues/89; RC-P1.2, RC-P3.3, CAP-07|
 |JAVA-GAP-0005 — Durable remote notification cursor and gap-aware resync contract unestablished|P1 / CONTRACT_PROVISIONAL|SIMULATED_PROVISIONAL|GAP-CASE-0005 / REAL_NOT_RUN|https://github.com/integratedmodelling/klab-services/issues/126; RC-P3.1, CAP-10, CAP-11|
 |JAVA-GAP-0006 — Published remote block/window/revision-lease API missing from inspected controller|P1 / MISSING_API|SIMULATED_PROVISIONAL|GAP-CASE-0006 / REAL_NOT_RUN|https://github.com/integratedmodelling/klab-services/issues/123; RC-P2.2, CAP-09|

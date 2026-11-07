@@ -1,0 +1,18 @@
+{
+  "evidence_level": "READ_ONLY_JAVA_SOURCE_NOT_EXECUTION",
+  "source_baseline": "004a93196",
+  "gap_id": "JAVA-GAP-0003",
+  "files_sha256": {
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/resources/ModelCandidateRequest.java": "6a4e3798a83c6dba2eda6ec6e6c58779cdaf44c339a26691f0dd94521e3fa600",
+    "klab.core.common/src/main/java/org/integratedmodelling/common/knowledge/ModelCandidateSources.java": "63a8369e0d69601f8fb315209925b034a606ea03f15fe89ba731e0516564e891",
+    "klab.services.resources.server/src/main/java/org/integratedmodelling/resources/server/controllers/ResourcesProviderController.java": "2cd3d59bd3f7414dc52147c6dffe4206fa8f058ef51b1f479345b276548c6ca5",
+    "klab.core.common/src/main/java/org/integratedmodelling/common/services/client/ResourcesClient.java": "1035a45164358022ef42562adb15ed1df965f97deba760daff14552b643a082c",
+    "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/reasoner/objects/SemanticValidationRequest.java": "11634498561d68216c9a70946b713f0fd57a16f1feec330bc5210351ebe5d174"
+  },
+  "contract": "Version1namespaces/projects/scenarios catalog selectors; authenticated UserScope controller POST /api/v1/models/candidates; ResourceSet MODEL/NAMESPACE exactsource snapshots; exactUTF8SHA256 and member/project/timestamp binding. ResourcesClient gates modelCandidateProtocol1. Supplier request strips Runtime/workflow headers through withResourceSupplierScope.",
+  "source_semantics": "ModelCandidateRequest.visible distinguishes PRIVATE same namespace, PROJECT_PRIVATE same project, scenario namespace selection; provider must independently filter authenticated project READ access before capture. Source snapshots carry no semantic admission/publication or execution authority.",
+  "python_deliberate_boundary": "Bounded explicit inspector requires advertisedprotocol1and validates typed snapshots; no native Java legacy fallback machinery, no source evaluation, graph admission or forced model selection. Supplier metadata URLs are not followed.",
+  "native_java": "REAL_NOT_RUN",
+  "historical_installation": "Modeler202610301844 capability did not advertise modelCandidateProtocol; not proof newer source lacks it",
+  "simulation": "SIMULATED_PROVISIONAL candidate-sources namespaceJSON and project READ fixture policy; not a deployed Java DTO or semantic execution capture"
+}

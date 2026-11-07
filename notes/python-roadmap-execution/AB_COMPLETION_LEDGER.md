@@ -26,6 +26,32 @@ vs17realNOT_RUN/exit3; normalfeaturedeliverypending. Exactnotebookcustody in
 `evidence/full-roadmap-notebook-principal-races-20261107.json`.
 Notebookfinal17linkedcasesPASS(322SDK/128simulator/57worker), zero skips/errors/
 failures vs17realNOT_RUN/exit3; ordinaryPR/finalCI/permittedmerge next.
+NotebookPR280OPEN004a93196, finalheadCIrunning. Next source-defined candidateSDK
+inspection under0003:50SDK-onlytests130lines44branches100%/12HTTPcontrols/types/lint
+PASS; exactadvertisement/sourcehash/identity validation, no workflowdelegation or
+fallback/admission/selectionclaim. Same0003handoff/scenario/docs/CI/publicexports
+updated; freshinstalledverifier running candidate-source-inspection-first.
+Source authority pinned separately; native0003NOT_TESTEDunchanged.
+NotebookPR280 verified MERGED87178be30f508bd1727ed97a4282ae7e6356cc6d at03:19:50Z,
+exact004a93196/allapplicablechecksPASS/no rerun. Candidatefreshverificationcontinues;
+no native collaboration/sourceadmission promoted and fullroadmap incomplete.
+Candidatefinalreview hardened exponentoverflowJSON (1e999 redregression beforefix)
+and escapedcredentialJSONleaves using existinginspectionhelper/no hashedsource
+rewriting.53sourceSDKtestsPASS; finalcoverage/fullpackages queued in separate
+candidate-source-inspection-custody-final target. Earlier first/final candidate
+targets predate custodyhardening and are not finalacceptance. Native0003NOT_TESTED.
+Pre-custody candidate-source-inspection-final stopped4sourceidentityFAIL/4258PASS
+because latehardening changed source after build. Identitygate correctlyrejected
+staleinstalledbytes; no weakening/relabelledpass. Distinct custody-final build is
+the only finalcandidate; keep source frozen until its complete receipt/parity.
+Finalcustody4263SDK/211simulator/98reference/57worker/21HTTP/37governancePASS,
+zero skips/errors/failures.55SDK+19simulator+5worker rawmoduleparity, SDK-only137lines/
+42branches100%unexcluded; fullSDK98.51%retains165historicalexclusions. Finalchangedcode/
+17linkedgatesrunning vs17realNOT_RUN/exit3verified; candidatePR/deliverypending.
+Earlierstale/govfixturefailures retained in feature receipt, not native failures.
+CandidateSDK-onlynewmodule/changeddecisiongatePASS;17linkedcasesPASS(375SDK/
+140simulator/57worker), zero skips/errors/failures vs17realNOT_RUN/exit3. Normal
+featurePR/finalheadCI/permittedmerge next, not native admission/selection acceptance.
 
 ## Authority and current decision
 

@@ -50,11 +50,15 @@ def test_registry_rejects_traceability_and_schema_corruption(change):
 
 
 @pytest.mark.parametrize("field,value", [("java_status", "JAVA_FIXED_VERIFIED"), ("lifecycle", "REAL_VERIFIED"), ("lifecycle", "CLOSED"), ("current_real_result", "REAL_PASS")])
-def test_source_or_simulation_cannot_close_or_verify_java(field, value):
+@pytest.mark.parametrize("source_baseline", [None, "Pinned repository source only; NOT a native Java execution"])
+def test_source_or_simulation_cannot_close_or_verify_java(field, value, source_baseline):
     registry = govern.expanded()
-    gap = registry["gaps"][2]
+    gap = next(g for g in registry["gaps"] if g["id"] == "JAVA-GAP-0003")
+    # Test both missing and supplied source authority. Adding a legitimate source
+    # baseline to the live registry must never turn it into real-execution proof.
+    gap["source_build_or_commit"] = source_baseline
     gap[field] = value
-    assert not gap["real_java_test_refs"] and gap["source_build_or_commit"] is None
+    assert not gap["real_java_test_refs"] and gap["real_command"] is None
     with pytest.raises(ValueError):
         govern.validate(registry)
 
