@@ -1,0 +1,41 @@
+name: Installed restoration and lifecycle (native incarnation NOT_RUN)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/integrated-restoration.yml']
+  push:
+    paths: ['python-client/**', 'developer-tools/klab-service-simulator/**', '.github/workflows/integrated-restoration.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-restoration-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: ${{ github.workspace }}/python-client/tools
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install './python-client[dev,analysis,notebook,local]' ./python-worker './developer-tools/klab-service-simulator[test]' 'mypy>=1.14,<2'
+      - name: Shared custody and explicit nonempty restoration recipe controls
+        run: python -m pytest -q python-client/tests/tools/test_verify_onboarding_matrix.py python-client/tests/tools/test_verify_restoration_matrix.py
+      - name: Exact installed sync-async restart-expiry-cancel-identity matrix
+        run: python python-client/tools/verify_restoration_matrix.py --capture-current-source --output-directory restoration-evidence
+      - name: Preserve onboarding behavior through shared evidence runner
+        run: python python-client/tools/verify_onboarding_matrix.py --capture-current-source --output-directory onboarding-regression-evidence
+      - name: Types and fatal lint
+        run: |
+          python -m mypy --check-untyped-defs --follow-imports=silent --ignore-missing-imports python-client/tools/verify_onboarding_matrix.py python-client/tools/verify_restoration_matrix.py
+          python -m ruff check python-client/tools/verify_onboarding_matrix.py python-client/tools/verify_restoration_matrix.py developer-tools/klab-service-simulator/tests/async_restore_worker.py developer-tools/klab-service-simulator/tests/test_integrated_restore.py --select E9,F63,F7,F82
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installed-restoration-not-native-incarnation-retention
+          path: |
+            restoration-evidence
+            onboarding-regression-evidence
