@@ -1,9 +1,12 @@
 # JAVA-GAP-0009 — Generic accepted-source conditional update/history/publication contract unestablished
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0009).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONTRACT_PROVISIONAL; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONTRACT_PROVISIONAL**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: authoring; component: ResourcesProvider / WorkspaceManager authoring and project lock operations.
 - Original roadmap: RC-P4.2, RC-P4.4, CAP-14.

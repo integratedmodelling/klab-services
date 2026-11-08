@@ -44,7 +44,8 @@ def test_capability_success_is_not_gap_pass_or_raw_secret_capture():
     assert 'never-log-this' not in json.dumps(result)
 
 
-@pytest.mark.parametrize('raw', [b'{"serviceId":"other"}', b'[]', b'x' * (probe.LIMIT + 1)])
+@pytest.mark.parametrize('raw', [b'{"serviceId":"other"}', b'[]', b'x' * (probe.LIMIT + 1),
+    b'{"serviceId":"other","serviceId":"native-id"}', b'{"serviceId":"native-id","value":NaN}'])
 def test_wrong_identity_and_unbounded_body_refuse(raw):
     with pytest.raises(ValueError):
         probe.capability_capture(config(), SimpleNamespace(open=lambda *a, **k: io.BytesIO(raw)))

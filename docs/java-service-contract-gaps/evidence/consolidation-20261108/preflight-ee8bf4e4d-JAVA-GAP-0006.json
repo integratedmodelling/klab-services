@@ -1,0 +1,20 @@
+{
+  "gap_id": "JAVA-GAP-0006",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/klab-service-simulator/tests/test_state.py": "b0462059ffe6424813811b8f29dc34c4fa5351a2f8829ae4d8b0a8805466d7d3",
+    "python-client/tests/unit/test_read_plans.py": "7ae29b18504c2d6d1c0d00e992392e4849116c995c4ddba2852b9088626ed52a",
+    "developer-tools/klab-service-simulator/tests/test_read_plans.py": "1a8bb27596a6071c0dadfd19f1898ddc9612c931121f6a003fb2f9c027ce872f",
+    "python-client/tests/unit/test_read_plan_analysis.py": "170a99c396b6cca81adfc0d0e4e6527fcec9de910673ae13c48301c121524e62",
+    "developer-tools/klab-service-simulator/tests/test_read_plan_analysis.py": "3e621b5ce23339327161cf65f804badd0a6d1dd06ec15a760a0c63ae5a7b24be",
+    "python-client/tests/unit/test_reference_windows.py": "25d095fb394936028e055f4d06a4b81412b6c67adc4a1b8e55812d741e168e27",
+    "python-client/tests/unit/test_reference_window_analysis.py": "d84678c94c0a4e3bbe898f8f70a2997a5d7e3330d599b387839b4cb4510f5d47",
+    "developer-tools/klab-service-simulator/tests/test_reference_windows.py": "b42a96eced7a556572a78bf51c7c2160ca39904bcba3700c9f91a9d4e285f229",
+    "developer-tools/klab-service-simulator/tests/test_reference_window_fixture.py": "d30921b33f80fc66316224e2fc3da8650127d7415228e6a65f792315ff5c5164"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:28.624311+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

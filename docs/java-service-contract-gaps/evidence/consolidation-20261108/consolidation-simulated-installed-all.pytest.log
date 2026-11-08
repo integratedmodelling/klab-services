@@ -1,0 +1,1046 @@
+
+=================================== ERRORS ====================================
+_____________ ERROR collecting tests/test_scientific_adapters.py ______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_scientific_adapters.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_scientific_adapters.py:12: in <module>
+    pytest.importorskip("pandas", reason="scientific adapter extra required")
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+$HOME\anaconda3\Lib\site-packages\pandas\__init__.py:49: in <module>
+    from pandas.core.api import (
+$HOME\anaconda3\Lib\site-packages\pandas\core\api.py:1: in <module>
+    from pandas._libs import (
+$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py:17: in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: numpy.core.multiarray failed to import
+------------------------------- Captured stderr -------------------------------
+
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+Traceback (most recent call last):  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "$HOME\anaconda3\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 330, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 383, in _main
+    config.hook.pytest_collection(session=session)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 394, in pytest_collection
+    session.perform_collect()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 849, in perform_collect
+    rep = collect_one_node(self)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 973, in collect
+    rep, duplicate = self._collect_one_node(matchnode, handle_dupes)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 895, in _collect_one_node
+    rep = collect_one_node(node)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 564, in collect
+    self._register_setup_module_fixture()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 577, in _register_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 290, in obj
+    self._obj = obj = self._getobj()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 561, in _getobj
+    return importtestmodule(self.path, self.config)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 508, in importtestmodule
+    mod = import_path(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\pathlib.py", line 596, in import_path
+    importlib.import_module(module_name)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\assertion\rewrite.py", line 188, in exec_module
+    exec(co, module.__dict__)
+  File "$REPO\developer-tools\klab-service-simulator\tests\test_scientific_adapters.py", line 12, in <module>
+    pytest.importorskip("pandas", reason="scientific adapter extra required")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\outcomes.py", line 264, in importorskip
+    importlib.import_module(modname)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\pandas\__init__.py", line 26, in <module>
+    from pandas.compat import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\compat\__init__.py", line 27, in <module>
+    from pandas.compat.pyarrow import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\compat\pyarrow.py", line 8, in <module>
+    import pyarrow as pa
+  File "$HOME\anaconda3\Lib\site-packages\pyarrow\__init__.py", line 65, in <module>
+    import pyarrow.lib as _lib
+Traceback (most recent call last):
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\numpy\core\_multiarray_umath.py", line 46, in __getattr__
+    raise ImportError(msg)
+ImportError: 
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+
+
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+Traceback (most recent call last):  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "$HOME\anaconda3\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 330, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 383, in _main
+    config.hook.pytest_collection(session=session)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 394, in pytest_collection
+    session.perform_collect()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 849, in perform_collect
+    rep = collect_one_node(self)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 973, in collect
+    rep, duplicate = self._collect_one_node(matchnode, handle_dupes)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 895, in _collect_one_node
+    rep = collect_one_node(node)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 564, in collect
+    self._register_setup_module_fixture()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 577, in _register_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 290, in obj
+    self._obj = obj = self._getobj()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 561, in _getobj
+    return importtestmodule(self.path, self.config)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 508, in importtestmodule
+    mod = import_path(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\pathlib.py", line 596, in import_path
+    importlib.import_module(module_name)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\assertion\rewrite.py", line 188, in exec_module
+    exec(co, module.__dict__)
+  File "$REPO\developer-tools\klab-service-simulator\tests\test_scientific_adapters.py", line 12, in <module>
+    pytest.importorskip("pandas", reason="scientific adapter extra required")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\outcomes.py", line 264, in importorskip
+    importlib.import_module(modname)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\pandas\__init__.py", line 49, in <module>
+    from pandas.core.api import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\core\api.py", line 1, in <module>
+    from pandas._libs import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py", line 17, in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+Traceback (most recent call last):
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\numpy\core\_multiarray_umath.py", line 46, in __getattr__
+    raise ImportError(msg)
+ImportError: 
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+
+=========================== short test summary info ===========================
+ERROR developer-tools\klab-service-simulator\tests\test_scientific_adapters.py
+1 error in 2.26s
+ERROR: found no collectors for $REPO\developer-tools\klab-service-simulator\tests\test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace
+
+
+
+=================================== ERRORS ====================================
+___________ ERROR collecting tests/unit/test_multiband_analysis.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_multiband_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_multiband_analysis.py:6: in <module>
+    pytest.importorskip("xarray", reason="Optional analysis extra")
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py:3: in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py:6: in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py:12: in <module>
+    import pandas as pd
+$HOME\anaconda3\Lib\site-packages\pandas\__init__.py:49: in <module>
+    from pandas.core.api import (
+$HOME\anaconda3\Lib\site-packages\pandas\core\api.py:1: in <module>
+    from pandas._libs import (
+$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py:17: in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: numpy.core.multiarray failed to import
+------------------------------- Captured stderr -------------------------------
+
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+Traceback (most recent call last):  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "$HOME\anaconda3\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 330, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 383, in _main
+    config.hook.pytest_collection(session=session)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 394, in pytest_collection
+    session.perform_collect()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 869, in perform_collect
+    self.items.extend(self.genitems(node))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 1032, in genitems
+    rep, duplicate = self._collect_one_node(node, handle_dupes)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 895, in _collect_one_node
+    rep = collect_one_node(node)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 564, in collect
+    self._register_setup_module_fixture()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 577, in _register_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 290, in obj
+    self._obj = obj = self._getobj()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 561, in _getobj
+    return importtestmodule(self.path, self.config)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 508, in importtestmodule
+    mod = import_path(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\pathlib.py", line 596, in import_path
+    importlib.import_module(module_name)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\assertion\rewrite.py", line 188, in exec_module
+    exec(co, module.__dict__)
+  File "$REPO\python-client\tests\unit\test_multiband_analysis.py", line 6, in <module>
+    pytest.importorskip("xarray", reason="Optional analysis extra")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\outcomes.py", line 264, in importorskip
+    importlib.import_module(modname)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py", line 3, in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py", line 6, in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py", line 12, in <module>
+    import pandas as pd
+  File "$HOME\anaconda3\Lib\site-packages\pandas\__init__.py", line 26, in <module>
+    from pandas.compat import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\compat\__init__.py", line 27, in <module>
+    from pandas.compat.pyarrow import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\compat\pyarrow.py", line 8, in <module>
+    import pyarrow as pa
+  File "$HOME\anaconda3\Lib\site-packages\pyarrow\__init__.py", line 65, in <module>
+    import pyarrow.lib as _lib
+Traceback (most recent call last):
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\numpy\core\_multiarray_umath.py", line 46, in __getattr__
+    raise ImportError(msg)
+ImportError: 
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+
+
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+Traceback (most recent call last):  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "$HOME\anaconda3\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 330, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 383, in _main
+    config.hook.pytest_collection(session=session)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 394, in pytest_collection
+    session.perform_collect()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 869, in perform_collect
+    self.items.extend(self.genitems(node))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 1032, in genitems
+    rep, duplicate = self._collect_one_node(node, handle_dupes)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 895, in _collect_one_node
+    rep = collect_one_node(node)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 564, in collect
+    self._register_setup_module_fixture()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 577, in _register_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 290, in obj
+    self._obj = obj = self._getobj()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 561, in _getobj
+    return importtestmodule(self.path, self.config)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 508, in importtestmodule
+    mod = import_path(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\pathlib.py", line 596, in import_path
+    importlib.import_module(module_name)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\assertion\rewrite.py", line 188, in exec_module
+    exec(co, module.__dict__)
+  File "$REPO\python-client\tests\unit\test_multiband_analysis.py", line 6, in <module>
+    pytest.importorskip("xarray", reason="Optional analysis extra")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\outcomes.py", line 264, in importorskip
+    importlib.import_module(modname)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py", line 3, in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py", line 6, in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py", line 12, in <module>
+    import pandas as pd
+  File "$HOME\anaconda3\Lib\site-packages\pandas\__init__.py", line 49, in <module>
+    from pandas.core.api import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\core\api.py", line 1, in <module>
+    from pandas._libs import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py", line 17, in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+Traceback (most recent call last):
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\numpy\core\_multiarray_umath.py", line 46, in __getattr__
+    raise ImportError(msg)
+ImportError: 
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+
+____________ ERROR collecting tests/unit/test_raster_categories.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_raster_categories.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_raster_categories.py:8: in <module>
+    pytest.importorskip("xarray", reason="Optional analysis extra")
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py:3: in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py:6: in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py:12: in <module>
+    import pandas as pd
+$HOME\anaconda3\Lib\site-packages\pandas\__init__.py:49: in <module>
+    from pandas.core.api import (
+$HOME\anaconda3\Lib\site-packages\pandas\core\api.py:1: in <module>
+    from pandas._libs import (
+$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py:17: in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: numpy.core.multiarray failed to import
+------------------------------- Captured stderr -------------------------------
+
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+Traceback (most recent call last):  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "$HOME\anaconda3\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 330, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 383, in _main
+    config.hook.pytest_collection(session=session)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 394, in pytest_collection
+    session.perform_collect()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 869, in perform_collect
+    self.items.extend(self.genitems(node))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 1032, in genitems
+    rep, duplicate = self._collect_one_node(node, handle_dupes)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 895, in _collect_one_node
+    rep = collect_one_node(node)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 564, in collect
+    self._register_setup_module_fixture()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 577, in _register_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 290, in obj
+    self._obj = obj = self._getobj()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 561, in _getobj
+    return importtestmodule(self.path, self.config)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 508, in importtestmodule
+    mod = import_path(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\pathlib.py", line 596, in import_path
+    importlib.import_module(module_name)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\assertion\rewrite.py", line 188, in exec_module
+    exec(co, module.__dict__)
+  File "$REPO\python-client\tests\unit\test_raster_categories.py", line 8, in <module>
+    pytest.importorskip("xarray", reason="Optional analysis extra")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\outcomes.py", line 264, in importorskip
+    importlib.import_module(modname)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py", line 3, in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py", line 6, in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py", line 12, in <module>
+    import pandas as pd
+  File "$HOME\anaconda3\Lib\site-packages\pandas\__init__.py", line 49, in <module>
+    from pandas.core.api import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\core\api.py", line 1, in <module>
+    from pandas._libs import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py", line 17, in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+Traceback (most recent call last):
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\numpy\core\_multiarray_umath.py", line 46, in __getattr__
+    raise ImportError(msg)
+ImportError: 
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+
+___________ ERROR collecting tests/unit/test_read_plan_analysis.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_read_plan_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_read_plan_analysis.py:8: in <module>
+    pytest.importorskip("xarray", reason="Optional analysis extra")
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py:3: in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py:6: in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py:12: in <module>
+    import pandas as pd
+$HOME\anaconda3\Lib\site-packages\pandas\__init__.py:49: in <module>
+    from pandas.core.api import (
+$HOME\anaconda3\Lib\site-packages\pandas\core\api.py:1: in <module>
+    from pandas._libs import (
+$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py:17: in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: numpy.core.multiarray failed to import
+------------------------------- Captured stderr -------------------------------
+
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+Traceback (most recent call last):  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "$HOME\anaconda3\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 330, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 383, in _main
+    config.hook.pytest_collection(session=session)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 394, in pytest_collection
+    session.perform_collect()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 869, in perform_collect
+    self.items.extend(self.genitems(node))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 1032, in genitems
+    rep, duplicate = self._collect_one_node(node, handle_dupes)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 895, in _collect_one_node
+    rep = collect_one_node(node)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 564, in collect
+    self._register_setup_module_fixture()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 577, in _register_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 290, in obj
+    self._obj = obj = self._getobj()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 561, in _getobj
+    return importtestmodule(self.path, self.config)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 508, in importtestmodule
+    mod = import_path(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\pathlib.py", line 596, in import_path
+    importlib.import_module(module_name)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\assertion\rewrite.py", line 188, in exec_module
+    exec(co, module.__dict__)
+  File "$REPO\python-client\tests\unit\test_read_plan_analysis.py", line 8, in <module>
+    pytest.importorskip("xarray", reason="Optional analysis extra")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\outcomes.py", line 264, in importorskip
+    importlib.import_module(modname)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py", line 3, in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py", line 6, in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py", line 12, in <module>
+    import pandas as pd
+  File "$HOME\anaconda3\Lib\site-packages\pandas\__init__.py", line 49, in <module>
+    from pandas.core.api import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\core\api.py", line 1, in <module>
+    from pandas._libs import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py", line 17, in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+Traceback (most recent call last):
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\numpy\core\_multiarray_umath.py", line 46, in __getattr__
+    raise ImportError(msg)
+ImportError: 
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+
+________ ERROR collecting tests/unit/test_reference_raster_analysis.py ________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_reference_raster_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_reference_raster_analysis.py:10: in <module>
+    pytest.importorskip('xarray',reason='Optional analysis extra')
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py:3: in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py:6: in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py:12: in <module>
+    import pandas as pd
+$HOME\anaconda3\Lib\site-packages\pandas\__init__.py:49: in <module>
+    from pandas.core.api import (
+$HOME\anaconda3\Lib\site-packages\pandas\core\api.py:1: in <module>
+    from pandas._libs import (
+$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py:17: in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: numpy.core.multiarray failed to import
+------------------------------- Captured stderr -------------------------------
+
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+Traceback (most recent call last):  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "$HOME\anaconda3\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 330, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 383, in _main
+    config.hook.pytest_collection(session=session)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 394, in pytest_collection
+    session.perform_collect()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 869, in perform_collect
+    self.items.extend(self.genitems(node))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 1032, in genitems
+    rep, duplicate = self._collect_one_node(node, handle_dupes)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 895, in _collect_one_node
+    rep = collect_one_node(node)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 564, in collect
+    self._register_setup_module_fixture()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 577, in _register_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 290, in obj
+    self._obj = obj = self._getobj()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 561, in _getobj
+    return importtestmodule(self.path, self.config)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 508, in importtestmodule
+    mod = import_path(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\pathlib.py", line 596, in import_path
+    importlib.import_module(module_name)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\assertion\rewrite.py", line 188, in exec_module
+    exec(co, module.__dict__)
+  File "$REPO\python-client\tests\unit\test_reference_raster_analysis.py", line 10, in <module>
+    pytest.importorskip('xarray',reason='Optional analysis extra')
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\outcomes.py", line 264, in importorskip
+    importlib.import_module(modname)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py", line 3, in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py", line 6, in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py", line 12, in <module>
+    import pandas as pd
+  File "$HOME\anaconda3\Lib\site-packages\pandas\__init__.py", line 49, in <module>
+    from pandas.core.api import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\core\api.py", line 1, in <module>
+    from pandas._libs import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py", line 17, in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+Traceback (most recent call last):
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\numpy\core\_multiarray_umath.py", line 46, in __getattr__
+    raise ImportError(msg)
+ImportError: 
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+
+________ ERROR collecting tests/unit/test_reference_window_analysis.py ________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_reference_window_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_reference_window_analysis.py:9: in <module>
+    pytest.importorskip('xarray',reason='Optional analysis extra')
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py:3: in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py:6: in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+..\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py:12: in <module>
+    import pandas as pd
+$HOME\anaconda3\Lib\site-packages\pandas\__init__.py:49: in <module>
+    from pandas.core.api import (
+$HOME\anaconda3\Lib\site-packages\pandas\core\api.py:1: in <module>
+    from pandas._libs import (
+$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py:17: in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ImportError: numpy.core.multiarray failed to import
+------------------------------- Captured stderr -------------------------------
+
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+Traceback (most recent call last):  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "$HOME\anaconda3\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 330, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 383, in _main
+    config.hook.pytest_collection(session=session)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 394, in pytest_collection
+    session.perform_collect()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 869, in perform_collect
+    self.items.extend(self.genitems(node))
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 1032, in genitems
+    rep, duplicate = self._collect_one_node(node, handle_dupes)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\main.py", line 895, in _collect_one_node
+    rep = collect_one_node(node)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 589, in collect_one_node
+    rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "$HOME\anaconda3\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 408, in pytest_make_collect_report
+    call = CallInfo.from_call(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\runner.py", line 406, in collect
+    return list(collector.collect())
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 564, in collect
+    self._register_setup_module_fixture()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 577, in _register_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 290, in obj
+    self._obj = obj = self._getobj()
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 561, in _getobj
+    return importtestmodule(self.path, self.config)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\python.py", line 508, in importtestmodule
+    mod = import_path(
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\pathlib.py", line 596, in import_path
+    importlib.import_module(module_name)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\assertion\rewrite.py", line 188, in exec_module
+    exec(co, module.__dict__)
+  File "$REPO\python-client\tests\unit\test_reference_window_analysis.py", line 9, in <module>
+    pytest.importorskip('xarray',reason='Optional analysis extra')
+  File "$HOME\anaconda3\Lib\site-packages\_pytest\outcomes.py", line 264, in importorskip
+    importlib.import_module(modname)
+  File "$HOME\anaconda3\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\__init__.py", line 3, in <module>
+    from xarray import coders, groupers, indexes, testing, tutorial, ufuncs
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coders.py", line 6, in <module>
+    from xarray.coding.times import CFDatetimeCoder, CFTimedeltaCoder
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\xarray\coding\times.py", line 12, in <module>
+    import pandas as pd
+  File "$HOME\anaconda3\Lib\site-packages\pandas\__init__.py", line 49, in <module>
+    from pandas.core.api import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\core\api.py", line 1, in <module>
+    from pandas._libs import (
+  File "$HOME\anaconda3\Lib\site-packages\pandas\_libs\__init__.py", line 17, in <module>
+    import pandas._libs.pandas_datetime  # noqa: F401 # isort: skip # type: ignore[reportUnusedImport]
+Traceback (most recent call last):
+  File "$HOME\AppData\Local\Temp\opencode\java-gap-consolidation-env\Lib\site-packages\numpy\core\_multiarray_umath.py", line 46, in __getattr__
+    raise ImportError(msg)
+ImportError: 
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.5.4 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+
+=========================== short test summary info ===========================
+ERROR python-client\tests\unit\test_multiband_analysis.py
+ERROR python-client\tests\unit\test_raster_categories.py
+ERROR python-client\tests\unit\test_read_plan_analysis.py
+ERROR python-client\tests\unit\test_reference_raster_analysis.py
+ERROR python-client\tests\unit\test_reference_window_analysis.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 5 errors during collection !!!!!!!!!!!!!!!!!!!
+5 errors in 2.54s
+
+........................................................................ [ 62%]
+............................................                             [100%]
+116 passed in 2.68s

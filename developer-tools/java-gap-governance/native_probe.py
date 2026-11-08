@@ -19,6 +19,19 @@ ROOT = Path(__file__).resolve().parents[2]
 LIMIT = 65536
 
 
+def strict_json(text):
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            if key in result:
+                raise ValueError('Duplicate JSON key')
+            result[key] = value
+        return result
+    def nonfinite(value):
+        raise ValueError('Nonfinite JSON number')
+    return json.loads(text, object_pairs_hook=pairs, parse_constant=nonfinite)
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -44,6 +57,8 @@ def preflight(gap_id):
 
 
 def capability_capture(config, opener=None):
+    if not isinstance(config, dict):
+        raise ValueError('Connection configuration must be a JSON object')
     if set(config) - {'approved_read_only', 'base_url', 'expected_service_id', 'native_build', 'token_env'}:
         raise ValueError('Unknown connection configuration key')
     if config.get('approved_read_only') is not True:
@@ -59,6 +74,8 @@ def capability_capture(config, opener=None):
         raise ValueError('Non-loopback connection requires HTTPS')
     headers = {'Accept': 'application/json'}
     if config.get('token_env'):
+        if not isinstance(config['token_env'], str):
+            raise ValueError('Token environment name must be text')
         token = os.environ.get(config['token_env'])
         if not token or '\r' in token or '\n' in token:
             raise ValueError('Missing or malformed external token')
@@ -69,7 +86,7 @@ def capability_capture(config, opener=None):
         raw = response.read(LIMIT + 1)
         if len(raw) > LIMIT:
             raise ValueError('Capability response exceeds byte budget')
-        payload = json.loads(raw)
+        payload = strict_json(raw)
         if not isinstance(payload, dict) or payload.get('serviceId') != config['expected_service_id']:
             raise ValueError('Native service identity mismatch')
     # Do not serialize raw payloads, URLs, headers, token values or exception text.
@@ -95,7 +112,7 @@ def main(argv=None):
         try:
             if args.connect.stat().st_size > 16384:
                 raise ValueError('Connection configuration exceeds byte budget')
-            result.update(capability_capture(json.loads(args.connect.read_text(encoding='utf-8'))))
+            result.update(capability_capture(strict_json(args.connect.read_text(encoding='utf-8'))))
         except (ValueError, OSError, urllib.error.URLError):
             result.update(capability_capture='BLOCKED_WITH_REASON',
                           reason='Configuration, connection, response or identity gate failed; no fallback')

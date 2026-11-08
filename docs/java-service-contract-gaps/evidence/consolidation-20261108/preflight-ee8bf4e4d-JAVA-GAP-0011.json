@@ -1,0 +1,16 @@
+{
+  "gap_id": "JAVA-GAP-0011",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/klab-service-simulator/tests/test_semantics.py": "fc8b1a39c8f7549c2d7f6752be1e3bca87983cf370535fed86ef047bad3085d2",
+    "python-client/tests/unit/test_source_validation.py": "04ba991c0b353be460888a9f12a5fd286899443ece8fbd66088903ab67e0b836",
+    "developer-tools/klab-service-simulator/tests/test_source_validation.py": "3cf60ea8cb6c9c8888e4f0d70e313b9553e26d2253ffafd7aebf3176761baaab",
+    "developer-tools/klab-service-simulator/tests/test_source_validation_fixture.py": "09f7d02fdd626f963c2d800eeb2a6c8433f71dbe15ae1e499f36edfbb631666f",
+    "python-client/tests/functional/test_source_validation.py": "6952eb0c2ca394d2b7f863dec29f4091fdf857ad4989d84193208d84ed698c59"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:29.455069+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

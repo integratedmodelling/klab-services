@@ -1,12 +1,15 @@
 # JAVA-GAP-0004 — Durable Job retention and Runtime incarnation across restart unverified
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0004).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: NOT_TESTED; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **NOT_TESTED**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: runtime; component: Runtime JobManager / scope and Job lifecycle.
-- Original roadmap: RC-P1.2, RC-P3.3, CAP-07.
+- Original roadmap: RC-P1.2, RC-P3.3, CAP-07, RC-P3.5.
 - API: UNKNOWN_PENDING_REFERENCE UNKNOWN_PENDING_REFERENCE.
 - Request/schema: python-client/docs/job-binding.md.
 - Tested Java build/environment: NOT_RUN / exact native build and environment not established.

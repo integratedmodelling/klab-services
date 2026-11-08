@@ -98,11 +98,23 @@ def validate(registry=None, audit=None, issues=None):
             raise ValueError("Native execution status disagrees with retained execution history")
         if gap["simulator_status"] == "SIMULATOR_NOT_IMPLEMENTED" and not gap.get("simulator_not_implemented_reason"):
             raise ValueError("Unimplemented simulator requires an exact reason")
+        if gap["simulator_status"] == "SIMULATOR_PASS":
+            if not gap.get("simulator_receipt") or not gap.get("simulator_verified_utc"):
+                raise ValueError("Simulator pass requires a timestamped execution receipt")
+            receipt = load(local_ref(gap["simulator_receipt"]))
+            case = [row for row in receipt.get("cases", []) if row["gap_id"] == gap["id"]]
+            if (receipt.get("mode") != "simulated" or receipt.get("fallbacks") != 0 or len(case) != 1
+                    or case[0].get("tag") != "SIMULATED_PASS" or case[0].get("current_real") != "REAL_NOT_RUN"
+                    or not receipt.get("groups") or any(group.get("failed") or group.get("exit")
+                        or any(group.get(key) for key in ("skipped", "failures", "errors"))
+                        for group in receipt["groups"].values())):
+                raise ValueError("Simulator pass is not backed by a clean substitute execution receipt")
         if gap["native_status"] == "NATIVE_WORKS_VERIFIED" and gap["native_execution_status"] != "REAL_PASS":
             raise ValueError("Verified native contract requires actual native pass")
         if gap["native_execution_status"] != "REAL_NOT_RUN":
             evidence = gap.get("native_execution_evidence", {})
-            if (evidence.get("kind") != "NATIVE_EXECUTION" or not all(evidence.get(field)
+            required_kind = "NATIVE_GATE_CHECK" if gap["native_execution_status"] == "REAL_BLOCKED" else "NATIVE_EXECUTION"
+            if (evidence.get("kind") != required_kind or not all(evidence.get(field)
                     for field in ("build", "environment", "timestamp_utc", "receipt_ref"))):
                 raise ValueError("Non-NOT_RUN native result requires build/environment/time/native execution receipt")
             local_ref(evidence["receipt_ref"])
@@ -115,7 +127,7 @@ def validate(registry=None, audit=None, issues=None):
             test_ref(reference)
         for reference in gap["links"] + gap["real_java_test_refs"] + [gap["reproducer_ref"]]:
             local_ref(reference)
-        if gap["current_real_result"] != "REAL_NOT_RUN" and (
+        if gap["current_real_result"] in ("REAL_PASS", "REAL_FAIL") and (
                 not gap["real_java_test_refs"] or not gap["source_build_or_commit"]):
             raise ValueError("Current real result requires pinned actual Java evidence")
         if gap["java_status"] == "JAVA_FIXED_VERIFIED" or gap["lifecycle"] in ("REAL_VERIFIED", "CLOSED"):
@@ -174,6 +186,15 @@ def validate(registry=None, audit=None, issues=None):
                 raise ValueError("Invalid current campaign issue traceability")
             if row["closure_eligible"]:
                 raise ValueError("Current campaign closure requires reviewed complete migration evidence")
+    evidence_dir = DATA / 'evidence/consolidation-20261108'
+    evidence_index = evidence_dir / 'receipt-index.json'
+    if evidence_index.is_file():
+        for row in load(evidence_index)['receipts']:
+            path = (evidence_dir / row['path']).resolve()
+            path.relative_to(evidence_dir.resolve())
+            payload = path.read_bytes()
+            if hashlib.sha256(payload).hexdigest() != row['sanitized_sha256']:
+                raise ValueError('Sanitized evidence hash drift: ' + row['path'])
     return registry, audit, issues
 
 
@@ -196,6 +217,8 @@ def canonical_check(registry, text=None):
         section = sections[gap["id"]]
         if "**Title:** " + gap["title"] + "\n" not in section:
             raise ValueError("Canonical title drift: " + gap["id"])
+        if "**Scope:** " + gap["subsystem"] + " — " not in section:
+            raise ValueError("Canonical scope drift: " + gap["id"])
         for field, label in labels.items():
             values = re.findall(r"\*\*" + label + r":\*\* ([A-Z_]+)", section)
             if values != [gap[field]]:
@@ -206,6 +229,9 @@ def canonical_check(registry, text=None):
         for issue in gap["original_issues"]:
             if issue not in section:
                 raise ValueError("Canonical issue omitted: " + issue)
+        for scenario in gap["simulator_scenario_refs"]:
+            if scenario not in section:
+                raise ValueError("Canonical simulator scenario omitted: " + scenario)
         if "--gap " + gap["id"] not in section or "Native blocker:" not in section:
             raise ValueError("Canonical executable command/blocker omitted: " + gap["id"])
     anchors = {re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-")
@@ -320,8 +346,11 @@ def reproduction_document(gap):
     """Stable individual handoff generated only from attributed registry evidence."""
     contract = gap["api_contract"]
     lines = [f"# {gap['id']} — {gap['title']}", "",
-        "Generated from `gaps.yaml`; simulator evidence is not native acceptance.", "",
+        "Supporting runner/evidence only. The canonical contract, status and inline reproduction are in",
+        f"[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#{gap['id'].lower()}).",
+        "Generated from the synchronized index; simulator evidence is not native acceptance.", "",
         "## Classification and affected contract", "",
+        f"- Independent status triplet: {gap['native_status']}; {gap['simulator_status']}; {gap['native_execution_status']}.",
         f"- Java: **{gap['java_status']}**; current execution **{gap['current_real_result']}**; historical **{gap['historical_real_result']}**.",
         f"- Service: {gap['subsystem']}; component: {gap['java_component']}.",
         f"- Original roadmap: {', '.join(gap['requirement_ids'])}.",

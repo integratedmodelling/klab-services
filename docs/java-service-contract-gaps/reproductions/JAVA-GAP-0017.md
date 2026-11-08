@@ -1,9 +1,12 @@
 # JAVA-GAP-0017 — Computation-worker registration, lease and atomic output protocol pending native authority
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0017).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONTRACT_PROVISIONAL; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONTRACT_PROVISIONAL**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: worker; component: Native provider/worker role and transport not established; existing Resources contextualization is a distinct Avro contract.
 - Original roadmap: RC-P5, CAP-17.

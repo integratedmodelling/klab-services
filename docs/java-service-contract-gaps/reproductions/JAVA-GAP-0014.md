@@ -1,12 +1,15 @@
 # JAVA-GAP-0014 — Synthetic grid metadata, selected temporal export and descriptor mappings need real tuple evidence
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0014).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONTRACT_PROVISIONAL; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONTRACT_PROVISIONAL**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: scientific-data; component: GeometryImpl / StorageScan.Point / KlabServiceController.exportAsset / BaseService.
-- Original roadmap: RC-P2.1, RC-P2.2, RC-P2.5, CAP-09, CAP-12, CAP-15.
+- Original roadmap: RC-P2.1, RC-P2.2, RC-P2.5, CAP-09, CAP-12, CAP-15, RC-P2.4, CAP-08.
 - API: GET /runtime/export/OBSERVATION/{urn}.
 - Request/schema: python-client/docs/native-async.md.
 - Tested Java build/environment: NOT_RUN / exact native build and environment not established.

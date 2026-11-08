@@ -206,7 +206,7 @@ def test_canonical_drift_is_rejected(change):
     elif change == 'native':
         text = text.replace('**Native status:** CONFIRMED_DEFECT', '**Native status:** NATIVE_WORKS_VERIFIED', 1)
     elif change == 'simulator':
-        text = text.replace('**Simulator status:** SIMULATOR_NOT_TESTED', '**Simulator status:** SIMULATOR_PASS', 1)
+        text = text.replace('**Simulator status:** SIMULATOR_PASS', '**Simulator status:** SIMULATOR_FAIL', 1)
     elif change == 'execution':
         text = text.replace('**Native execution status:** REAL_NOT_RUN', '**Native execution status:** REAL_PASS', 1)
     elif change == 'link':
@@ -243,3 +243,26 @@ def test_current_worker_scope_does_not_rewrite_historical_c_exclusion():
     assert worker["disposition"] == "OPEN_OTHER" and worker["java_gap_ids"] == ["JAVA-GAP-0017"]
     assert "now in implementation scope" in worker["reason"]
     assert all(row["implementation_status"] == "OUT_OF_SCOPE" for row in audit["records"] if row["acceptance_id"] in ("RC-P5", "CAP-17"))
+
+
+@pytest.mark.parametrize('change', ['missing-receipt', 'wrong-receipt', 'missing-time', 'native-with-source-only'])
+def test_independent_execution_status_requires_real_receipt_authority(change):
+    registry = govern.expanded()
+    gap = registry['gaps'][0]
+    if change == 'missing-receipt':
+        del gap['simulator_receipt']
+    elif change == 'wrong-receipt':
+        gap['simulator_receipt'] = 'docs/java-service-contract-gaps/issues.json'
+    elif change == 'missing-time':
+        del gap['simulator_verified_utc']
+    else:
+        gap['native_execution_status'] = 'REAL_PASS'
+        gap['current_real_result'] = 'REAL_PASS'
+    with pytest.raises(ValueError):
+        govern.validate(registry)
+
+
+def test_canonical_summary_count_drift_is_rejected():
+    text = (govern.DATA / 'JAVA_GAPS_FOR_FERDINANDO.md').read_text(encoding='utf-8')
+    with pytest.raises(ValueError, match='summary counts'):
+        govern.canonical_check(govern.expanded(), text.replace('|CONFIRMED_DEFECT|2|', '|CONFIRMED_DEFECT|99|'))

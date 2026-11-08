@@ -28,9 +28,12 @@ defects**, **4 source-scoped missing API contracts**, **7 provisional contracts*
 and **5 untested native integrations**. No record is a verified native fix.
 Resolved setup incidents below are **not** missing Java features and are excluded
 from these counts. These are classifications, not 18 newly reproduced failures.
-All current native execution statuses are `REAL_NOT_RUN`. Fresh simulator status
-starts `SIMULATOR_NOT_TESTED` until a receipt from this consolidation is recorded;
-earlier simulator results remain attributed historical evidence in the index.
+All current native execution statuses are `REAL_NOT_RUN`. Fresh simulator results
+are **SIMULATOR_PASS for 0001–0017**; 0018 is **SIMULATOR_NOT_IMPLEMENTED**, with a
+passing source-only guard rather than an encoder substitute. On 2026-11-08 UTC,
+the installed-package suite passed 416 simulator/source guards, 1,319 SDK tests
+and 116 worker tests with no skips/failures/errors. Earlier environment failures
+remain in the receipt index; no native result was inferred from these tests.
 
 |Native status|Records|
 |---|---|
@@ -177,8 +180,14 @@ Do not run mutation/restart tests against an unrelated retained installation.
   Fixtures are synthetic unless explicitly identified as recorded native bytes.
   Mode is simulated, not a live proxy. Full stdout/stderr is `UNIQUE.pytest.log`.
 * **Actual result:** native `REAL_NOT_RUN` in this consolidation; historical
-  observations are separately labeled. Fresh simulator execution is pending until
-  a named receipt is added; old successful tests are not relabeled as fresh runs.
+  observations are separately labeled. Fresh simulator/guard results are pinned in
+  the [18-record receipt](evidence/consolidation-20261108/consolidation-ee8bf4e4d-all18.json)
+  and [full stdout/stderr](evidence/consolidation-20261108/consolidation-ee8bf4e4d-all18.pytest.log).
+  Execution: 2026-11-08T03:17:22Z–03:22:02Z, commit
+  `ee8bf4e4dde8b893de36a2601b2b86aa88e264c6`, Python 3.12.7 / Windows,
+  separately installed SDK/worker/simulator in a clean environment. This common
+  receipt contains each record's exact selected tests and assertion scope;
+  0018 records NOT_IMPLEMENTED rather than simulator parity.
 * **Cleanup:** static probes create only the chosen receipt. Simulator fixtures
   own their loopback state; remove only those owned receipts/state after retaining
   evidence. Native cleanup must be agreed before any mutation; never terminate
@@ -194,9 +203,11 @@ Do not run mutation/restart tests against an unrelated retained installation.
 
 **Title:** Resources remote numeric scanner is null on preserved USGS workflow
 
+**Scope:** resources — Resources / geospatial scanner transport
+
 **Native status:** CONFIRMED_DEFECT
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P0 / unknown. **Impact:** the real elevation workflow cannot
@@ -235,9 +246,11 @@ Runtime cells, masks, axes and unit provenance against the unchanged oracle.
 
 **Title:** Supported owned RESOURCE cleanup contract absent in inspected delete branch
 
+**Scope:** resources — Resources import and owned cleanup
+
 **Native status:** CONFIRMED_MISSING_API
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** an upload workflow cannot promise
@@ -247,6 +260,8 @@ owned-resource cleanup. RC-P4.3, RC-P4.4, CAP-13, CAP-14; alias
 **Contract:** import uses `POST /resources/import/{schema}/{urn}`; this is not a
 delete route. Inspected `ResourcesProvider.delete` lacks a supported RESOURCE
 branch. This is a source-scoped finding, not an executed denial on every build.
+Source location: [ResourcesProvider.delete](../../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java),
+lines 1434–1474, including the explicit TODO RESOURCE at line 1473.
 Request/response and asynchronous import Job semantics:
 [resource-import contract](../../python-client/docs/resource-imports.md).
 Cleanup authorization, delete DTO/errors and retention policy remain unestablished.
@@ -265,9 +280,11 @@ using a hashed disposable fixture, without deleting unrelated resources.
 
 **Title:** Installed Resources does not advertise source model-candidate protocol
 
+**Scope:** resources — Resources model-candidate inspection
+
 **Native status:** NOT_TESTED
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** inspect candidate model sources
@@ -302,13 +319,16 @@ principal, paging, DTO errors and exact advertisement before candidate requests.
 
 **Title:** Durable Job retention and Runtime incarnation across restart unverified
 
+**Scope:** runtime — Runtime Job lifecycle and restoration
+
 **Native status:** NOT_TESTED
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** resume saved Jobs without replaying
 work or acquiring cleanup ownership. RC-P1.2, RC-P3.3, CAP-07; alias
+supplemental native dependency RC-P3.5;
 `JAVA-RETENTION-001`; [#89](https://github.com/integratedmodelling/klab-services/issues/89).
 **Contract:** no new durable endpoint is established. Saved references pin selected
 Runtime and scope; expiry/unknown status must not be called confirmed cancellation.
@@ -337,9 +357,11 @@ no foreign disposal, and complete cleanup proof.
 
 **Title:** Durable remote notification cursor and gap-aware resync contract unestablished
 
+**Scope:** runtime — Runtime event retention and client refresh
+
 **Native status:** CONTRACT_PROVISIONAL
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** refresh cached observations after
@@ -373,9 +395,11 @@ native state without inferred delivery guarantees or automatic replay.
 
 **Title:** Published remote block/window/revision-lease API missing from inspected controller
 
+**Scope:** runtime — Runtime scientific bounded remote reads
+
 **Native status:** CONFIRMED_MISSING_API
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** bounded array/window reads rather
@@ -388,6 +412,8 @@ Request/shape basis: [contracts](../../python-client/docs/contracts.md). Expecte
 bounded windows, explicit geometry/masks/revision and lease release; unsupported
 fill curves/time mappings refuse. Actual deployed block API NOT_RUN, source-scoped
 absence only; local native storage views are a different capability.
+Source boundary: [Runtime controller](../../klab.services.runtime.server/src/main/java/org/integratedmodelling/klab/services/runtime/server/controllers/RuntimeServerController.java)
+and [ServicesAPI](../../klab.core.api/src/main/java/org/integratedmodelling/klab/api/ServicesAPI.java).
 
 **Run now:** shared commands with `--gap JAVA-GAP-0006`;
 `developer-tools/klab-service-simulator/tests/test_read_plans.py` and
@@ -403,9 +429,11 @@ mask/axis semantics and release on success/error/cancellation.
 
 **Title:** Composed-twin migration/failover contract absent from inspected connect stubs
 
+**Scope:** federation — cross-Runtime composition and migration
+
 **Native status:** CONFIRMED_MISSING_API
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P2 / unknown. **Impact:** attaching an existing context must
@@ -416,6 +444,9 @@ remote composition/migration endpoint is asserted. Existing trusted attachment
 works. Architecture: [distributed twins](../DISTRIBUTED_TWINS.md). Expected contract
 must specify ownership, identity, delegation/revocation and failure recovery;
 actual migration NOT_RUN. Copying references/hashes grants no native authority.
+Null source stubs: [ClientContextScope](../../klab.core.common/src/main/java/org/integratedmodelling/common/services/client/scope/ClientContextScope.java)
+at lines 233–235 and [ServiceContextScope](../../klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ServiceContextScope.java)
+at lines 850–853.
 
 **Run now:** shared commands with `--gap JAVA-GAP-0007`;
 `developer-tools/klab-service-simulator/tests/test_public_copied_composition.py`;
@@ -430,9 +461,11 @@ failure/recovery/revocation with independently verified native outputs and clean
 
 **Title:** Managed Runtime agent principal/incarnation and independent cleanup acceptance unverified
 
+**Scope:** agents — Resources parsing, Runtime registration and AMQP control
+
 **Native status:** NOT_TESTED
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** Python-managed agent execution must
@@ -468,9 +501,11 @@ this must not silently downgrade another deployment's required policy.
 
 **Title:** Generic accepted-source conditional update/history/publication contract unestablished
 
+**Scope:** authoring — Resources source admission, version and publication
+
 **Native status:** CONTRACT_PROVISIONAL
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** concurrent authoring must not lose
@@ -483,6 +518,8 @@ private drafts/CAS HTTP is not native publication authority. Reference payloads:
 [revision drafts](../../python-client/docs/revision-draft-reference.md). Expected:
 explicit version/conflict, validation, permissions, history and publication; no
 live project mutation or complete native acceptance was run.
+Inspected lock/admission source: [WorkspaceManager](../../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/storage/WorkspaceManager.java)
+and [Resources controller](../../klab.services.resources.server/src/main/java/org/integratedmodelling/resources/server/controllers/ResourcesProviderController.java).
 
 **Proposed payload/state capsule:** GET/PUT
 `/experimental/drafts/v1/{opaque_name}` under bound root context, exact protocol
@@ -507,9 +544,11 @@ revision conflict, authoritative history, admission and permission/cleanup outco
 
 **Title:** Published native continuous GeoTIFF loses measurement-unit metadata
 
+**Scope:** geospatial — Runtime export / geospatial component
+
 **Native status:** CONFIRMED_DEFECT
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** scientific export consumers lose
@@ -541,9 +580,11 @@ Local component correction and simulator exports do not close upstream #10.
 
 **Title:** Legacy frozen worldview fixture differs from current ODO/source-validation contracts
 
+**Scope:** semantics — Reasoner / Resources worldview and authority fixtures
+
 **Native status:** CONTRACT_PROVISIONAL
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** native compatibility tests cannot
@@ -571,9 +612,11 @@ migrate the original worldview.
 
 **Title:** Remote Java currentness correction lacks complete deployed acceptance
 
+**Scope:** runtime — paired Runtime currentness and remote observation reads
+
 **Native status:** NOT_TESTED
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** awaited refresh across paired
@@ -598,15 +641,18 @@ receipts and original transaction assertions; keep issue open until acceptance.
 
 **Title:** Finite simulator scheduling, admission and semantic answers remain provisional substitutes
 
+**Scope:** simulator-contract — Reasoner / Resources / Resolver / Runtime substitutes
+
 **Native status:** CONTRACT_PROVISIONAL
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P2 / unknown. **Impact:** SDK discovery, selection, input
 binding, dependency inspection and notebooks need deterministic development
 behavior without claiming native reasoning/science. RC-P1.1, RC-P1.5, RC-P3.3,
 RC-P4.1, RC-P4.3, CAP-04, CAP-07, CAP-13, CAP-14; no dedicated issue. Historical
+supplemental dependencies RC-P0, CAP-08, CAP-18;
 aliases SIM-CLOCK-001, SIM-IMPORT-001, SIM-INPUT-BINDING-001, SIM-SEMANTICS-001.
 
 **Contract:** [case index](../../developer-tools/klab-service-simulator/contract-cases.json)
@@ -630,6 +676,14 @@ not evidence of absent service encoding or a newly executed native failure.
 Covered families: discovery/lifecycle/faults/selection/inspection/import/input/
 semantics/behavior/notebook/replay/provenance/provider/revision/composition/
 observation/material/dependency/annotated-input cases in the index.
+Exact scenario IDs: SIM-DISCOVERY-001, SIM-LIFECYCLE-001, SIM-FAULTS-001,
+SIM-SELECTION-001, SIM-INSPECTION-001, SIM-IMPORT-001, SIM-INPUT-BINDING-001,
+SIM-SEMANTICS-001, SIM-BEHAVIOR-DRAFT-001, SIM-NOTEBOOK-001, REPLAY-001,
+SIM-PROVENANCE-DEPENDENCIES-001, SIM-PROVIDER-AVRO-001,
+SIM-REVISION-CONVERGENCE-001, SIM-COPIED-COMPOSITION-001,
+SIM-OBSERVATION-SELECTIONS-001, SIM-MATERIAL-SELECTIONS-001,
+SIM-DEPENDENCY-MEMBERSHIP-001, SIM-SOURCE-BOUND-DEPENDENCIES-001,
+SIM-ANNOTATED-INPUT-PROVENANCE-001.
 **Native blocker:** complete matching semantic/input/provider tuple and oracles;
 the umbrella does not claim each route is missing. **Request / close:** qualify
 properties individually with native fixtures; preserve narrower captured truths
@@ -639,13 +693,16 @@ and refuse unsupported reasoning instead of synthesizing native success.
 
 **Title:** Synthetic grid metadata, selected temporal export and descriptor mappings need real tuple evidence
 
+**Scope:** scientific-data — Runtime scientific reads, descriptors and exports
+
 **Native status:** CONTRACT_PROVISIONAL
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** correct array/raster/category/time
 interpretation. RC-P2.1, RC-P2.2, RC-P2.5, CAP-09, CAP-12, CAP-15;
+supplemental dependencies RC-P2.4, CAP-08;
 [#123](https://github.com/integratedmodelling/klab-services/issues/123); aliases
 SIM-METADATA-001, SIM-EXPORT-001, SIM-ADAPTERS-001.
 **Contract:** native-shaped `GET /runtime/export/OBSERVATION/{urn}` and selected
@@ -669,18 +726,26 @@ descriptors and native fixture rights/oracles. **Request / close:** compare exac
 native slice/block/export tuples, including unknown mappings and refusal controls;
 never rewrite authentic TIFF metadata or call local hashes native provenance.
 
+Exact scenario IDs: SIM-GRID-001, SIM-USGS-001, SIM-EXPORT-001, SIM-ADAPTERS-001,
+SIM-TEMPORAL-EXPORT-001, SIM-OFFLINE-SNAPSHOT-001, SIM-DECLARED-BANDS-001,
+SIM-CATEGORY-CODES-001, SIM-READ-PLAN-ANALYSIS-001, SIM-SELECTED-READ-PLAN-001,
+SIM-REFERENCE-RASTER-LABELS-001.
+
 ### JAVA-GAP-0015
 
 **Title:** Production issuer/license/roles and full deployed principal matrix unverified
 
+**Scope:** authentication — all selected services and operator identity policy
+
 **Native status:** NOT_TESTED
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** no credential/principal leakage or
 cross-tenant reads during selection/refresh/recovery. RC-P1.1, RC-P1.3, RC-P1.4,
 CAP-01, CAP-02; [#89](https://github.com/integratedmodelling/klab-services/issues/89),
+supplemental dependencies RC-P3.5, CAP-18, RC-R2;
 [#129](https://github.com/integratedmodelling/klab-services/issues/129).
 **Contract:** not a claim of missing Java authentication. Issuer/license/role and
 two-deployed-Runtime matrix require supported operator policy, not a fabricated
@@ -705,13 +770,16 @@ owned cleanup receipts, no timeout/retry/trust-policy relaxation.
 
 **Title:** Remote committed revision and complete historical lineage contract unestablished
 
+**Scope:** runtime — Runtime graph, commit reports and revision authority
+
 **Native status:** CONTRACT_PROVISIONAL
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** explain dependencies and converge
 two clients on authoritative committed state. RC-P3.1, RC-P3.4, CAP-06, CAP-10;
+supplemental dependency RC-P3.5;
 alias JAVA-COMMIT-001; [#126](https://github.com/integratedmodelling/klab-services/issues/126).
 **Contract:** existing `GET /api/v1/commit?id=...` with ContextScope authorization
 and `POST /runtime/api/v1/query` are not a complete durable lineage protocol.
@@ -734,14 +802,19 @@ are not Java commits or scientific authority. **Native blocker:** maintained
 revision/retention DTO contract and matching two-client fixture.
 **Request / close:** establish authoritative revisions, historical access and
 gap-resync behavior; run native race/provenance checks with independent oracles.
+Source cache boundary: [DigitalTwinImpl](../../klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/DigitalTwinImpl.java)
+and the Runtime controller linked in 0006. Cache limits are version-specific source
+settings, not observed deployed retention or durable history authority.
 
 ### JAVA-GAP-0017
 
 **Title:** Computation-worker registration, lease and atomic output protocol pending native authority
 
+**Scope:** worker — proposed Runtime worker/backend integration
+
 **Native status:** CONTRACT_PROVISIONAL
 
-**Simulator status:** SIMULATOR_NOT_TESTED
+**Simulator status:** SIMULATOR_PASS
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P1 / unknown. **Impact:** owner-scoped Python computation
@@ -785,6 +858,8 @@ change input layout/unit/validity in this reference. No native route is inferred
 ### JAVA-GAP-0018
 
 **Title:** Resolver client dataflow encoding has no transport implementation
+
+**Scope:** resolver — Resolver Java client/service encoding boundary
 
 **Native status:** CONFIRMED_MISSING_API
 
@@ -879,9 +954,20 @@ private artifacts; they are historical evidence, not portable runnable instructi
   manifest linked in 0010. Private historical scanner receipts are not silently
   promoted into repository custody. A receipt filename in an old report is not
   proof the file currently exists.
-* Fresh static/simulator receipt index is pending the verification pass. No fresh
-  simulator/native success is asserted by this migration draft. Source inventory
-  completion and any new stable-ID allocation remain review work.
+* [Full receipt index](evidence/consolidation-20261108/receipt-index.json) retains
+  27 sanitized full artifacts and original/sanitized SHA256 custody, including
+  both failed environment attempts, the intermediate clean 17-record pass, the
+  18-record pass, 65-test governance XML and all 18 static preflights. Sanitization
+  replaces user/private root paths and hostnames, never clips stdout/stderr.
+  The first attempt used an old installed SDK with no worker; the second inherited
+  an incompatible NumPy ABI through system site packages. The final environment
+  was created without system site packages. These are test-environment incidents,
+  not new Java product defects.
+* The 18 static preflights exited 3 with REAL_NOT_RUN, pinned source file hashes and
+  implementation commit. They made no native connection. The complete 18-record
+  run includes 17 simulator passes and the 0018 source-only NOT_IMPLEMENTED guard.
+  Source-union accounting is 37 modules / 33 CLI scenarios / 54 indexed cases /
+  42 current roadmap rows; original history and aliases remain intact.
 
 ### Live issue-to-gap crosswalk
 
@@ -921,7 +1007,10 @@ Java owners. No closure recommendation authorizes changing any owner or label.
 
 The [source inventory](simulator-source-inventory.json) conservatively fingerprints
 **37 simulator modules**, **33 CLI source scenarios**, and every path-like AST
-literal, independently of `contract-cases.json`. Module families map to the records
+literal, independently of `contract-cases.json`. The existing case index has
+**54 contract cases**, all covered by the
+register's scenario references; that index is not the sole source of coverage.
+Module families map to the records
 above: imports/authoring→0002/0009/0013; candidates→0003; persistence→0004/0017;
 notifications→0005; read plans/windows/raster labels→0006/0014; composition→0007;
 managed agents/behaviors→0008; drafts/accepted documents→0009; exports→0010/0014;
@@ -966,9 +1055,11 @@ not authoritative Java commits, signatures, semantic admission or scientific lin
 
 Inventory change log, 2026-11-08: moved core reproductions into this file; separated
 the status triplet; added a bounded native-only capability/static probe; preserved
-scanner/TIFF failures and setup history. Complete source-union coverage, exact live
-issue-title synchronization and same-PR maintenance enforcement still require
-verification before this consolidation can be called complete.
+scanner/TIFF failures and setup history; allocated 0018 for the distinct client
+encoder boundary; recorded fresh substitute/preflight results, exact live issue
+titles and conservative source/same-PR gates. Delivery is tracked in
+[PR #320](https://github.com/integratedmodelling/klab-services/pull/320); a draft PR
+or a green local suite is not evidence of completed review/remote merge.
 
 Standing rule: every changed Java-facing SDK/worker/simulator assumption must
 update this document, `gaps.yaml` and relevant runnable tests in the same PR.

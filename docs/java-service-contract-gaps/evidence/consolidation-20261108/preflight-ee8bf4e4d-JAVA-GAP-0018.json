@@ -1,0 +1,12 @@
+{
+  "gap_id": "JAVA-GAP-0018",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/java-gap-governance/tests/test_encoder_source.py": "119471f6b4383f780ccdecfd45bf37e01724d64c9aeb5a15696a6d1356770dcd"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:30.580959+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

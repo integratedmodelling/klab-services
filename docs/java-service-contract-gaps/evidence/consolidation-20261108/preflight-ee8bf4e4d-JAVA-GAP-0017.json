@@ -1,0 +1,18 @@
+{
+  "gap_id": "JAVA-GAP-0017",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "python-worker/tests/test_worker.py": "639aeb225fa3afe4cd6e7847cf8982ed3b89661f97a842a753c070a7a8920756",
+    "python-worker/tests/test_client_failures.py": "4c38c58ca7b9a740a28963b6979d506a282e940de9c4371c5a59d0e7d5c43dc2",
+    "python-worker/tests/test_containment.py": "168863d6f190cb6e629ea503655ed6322ec6f7678feb6f6ba3b739085647cf1d",
+    "python-worker/tests/test_output_custody.py": "59495310ed15b014f3425e12836126f4f5eec7b8b232b2fb9ff6c45dd56aa066",
+    "developer-tools/klab-service-simulator/tests/test_worker_vertical.py": "e7749cd89ba55cc75bccab1b384b7a4ca793a53bb947c5040339e7b47ad88061",
+    "developer-tools/klab-service-simulator/tests/test_durable_recovery.py": "d6c32108a40e01067674bda5f4a44d0d22815eb06eafe4b8edee6a67a99c51f0",
+    "developer-tools/klab-service-simulator/tests/test_worker_output_custody.py": "41ecfd0f293362cbb99a7ce59b6d950237a83806de180dad9ac3be81b71edded"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:30.427117+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

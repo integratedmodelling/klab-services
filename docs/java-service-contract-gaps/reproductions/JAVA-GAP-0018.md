@@ -1,9 +1,12 @@
 # JAVA-GAP-0018 — Resolver client dataflow encoding has no transport implementation
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0018).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONFIRMED_MISSING_API; SIMULATOR_NOT_IMPLEMENTED; REAL_NOT_RUN.
 - Java: **MISSING_API**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: resolver; component: ResolverClient.encodeDataflow versus ResolverService.encodeDataflow.
 - Original roadmap: RC-P0.

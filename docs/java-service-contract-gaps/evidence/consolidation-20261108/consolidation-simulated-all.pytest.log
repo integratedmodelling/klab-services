@@ -1,0 +1,675 @@
+
+=================================== ERRORS ====================================
+______________ ERROR collecting tests/test_accepted_documents.py ______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_accepted_documents.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_accepted_documents.py:9: in <module>
+    from klab_client.accepted_documents import AcceptedDocuments,AsyncAcceptedDocuments
+E   ModuleNotFoundError: No module named 'klab_client.accepted_documents'
+________________ ERROR collecting tests/test_category_codes.py ________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_category_codes.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_category_codes.py:8: in <module>
+    from klab_client import (Client, ObservationRequest, RectangularGeometry, RasterCategories,
+E   ImportError: cannot import name 'RasterCategories' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+___________________ ERROR collecting tests/test_commits.py ____________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_commits.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_commits.py:8: in <module>
+    from klab_client.commits import AsyncCommitInspector, CommitInspector
+E   ModuleNotFoundError: No module named 'klab_client.commits'
+______________ ERROR collecting tests/test_copied_composition.py ______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_copied_composition.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_copied_composition.py:10: in <module>
+    from klab_client.read_plans import open_read_plan, read_plan_shard, assemble_read_plan, release_read_plan
+E   ModuleNotFoundError: No module named 'klab_client.read_plans'
+________________ ERROR collecting tests/test_declared_bands.py ________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_declared_bands.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_declared_bands.py:11: in <module>
+    from klab_client import Client, ObservationRequest, RasterBandAxis, RectangularGeometry, export_for_analysis, open_raster
+E   ImportError: cannot import name 'RasterBandAxis' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+_________________ ERROR collecting tests/test_dependencies.py _________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_dependencies.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_dependencies.py:8: in <module>
+    from klab_client.dependencies import AsyncDependencyInspector, DependencyInspector
+E   ModuleNotFoundError: No module named 'klab_client.dependencies'
+______________ ERROR collecting tests/test_dependency_graphs.py _______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_dependency_graphs.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_dependency_graphs.py:9: in <module>
+    from klab_client.dependency_graphs import AsyncDependencyGraphs, DependencyGraphs
+E   ModuleNotFoundError: No module named 'klab_client.dependency_graphs'
+____________ ERROR collecting tests/test_durable_notifications.py _____________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_durable_notifications.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_durable_notifications.py:8: in <module>
+    from klab_client import (AsyncClient, Client, NotificationCursor, NotificationResyncRequired,
+E   ImportError: cannot import name 'NotificationCursor' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'NotificationBroker'?
+_______________ ERROR collecting tests/test_durable_recovery.py _______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_durable_recovery.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_durable_recovery.py:9: in <module>
+    from klab_worker import Field, WorkerError
+E   ModuleNotFoundError: No module named 'klab_worker'
+____________ ERROR collecting tests/test_execution_explanations.py ____________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_execution_explanations.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_execution_explanations.py:8: in <module>
+    from klab_client.execution_explanations import ExecutionExplanations,AsyncExecutionExplanations
+E   ModuleNotFoundError: No module named 'klab_client.execution_explanations'
+______________ ERROR collecting tests/test_graph_convergence.py _______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_graph_convergence.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_graph_convergence.py:10: in <module>
+    from klab_client.reference_commits import (ReferenceCommits, AsyncReferenceCommits,
+E   ModuleNotFoundError: No module named 'klab_client.reference_commits'
+_______________ ERROR collecting tests/test_input_provenance.py _______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_input_provenance.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_input_provenance.py:12: in <module>
+    from klab_client.input_provenance import AsyncInputProvenance, InputProvenance
+E   ModuleNotFoundError: No module named 'klab_client.input_provenance'
+________________ ERROR collecting tests/test_managed_agents.py ________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_managed_agents.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_managed_agents.py:11: in <module>
+    from klab_client.managed_agents import (create_managed_reference, read_managed_reference, command_managed_reference,
+E   ModuleNotFoundError: No module named 'klab_client.managed_agents'
+__________ ERROR collecting tests/test_managed_behavior_workflow.py ___________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_managed_behavior_workflow.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_managed_behavior_workflow.py:8: in <module>
+    from klab_client.managed_behaviors import ManagedBehaviors,AsyncManagedBehaviors
+E   ModuleNotFoundError: No module named 'klab_client.managed_behaviors'
+_______________ ERROR collecting tests/test_model_candidates.py _______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_model_candidates.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_model_candidates.py:9: in <module>
+    from klab_client.model_candidates import ModelCandidateQuery, inspect_model_candidates, async_inspect_model_candidates
+E   ModuleNotFoundError: No module named 'klab_client.model_candidates'
+________________ ERROR collecting tests/test_provider_avro.py _________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_provider_avro.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_provider_avro.py:8: in <module>
+    from klab_client import Client, AsyncClient, ProviderData
+E   ImportError: cannot import name 'ProviderData' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+__________ ERROR collecting tests/test_public_copied_composition.py ___________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_public_copied_composition.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_public_copied_composition.py:8: in <module>
+    from klab_client.copied_composition import (CopiedCompositions,AsyncCopiedCompositions,
+E   ModuleNotFoundError: No module named 'klab_client.copied_composition'
+______________ ERROR collecting tests/test_read_plan_analysis.py ______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_read_plan_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_read_plan_analysis.py:7: in <module>
+    from klab_client import (Client, ObservationRequest, open_read_plan, read_plan_shard,
+E   ImportError: cannot import name 'open_read_plan' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+__________________ ERROR collecting tests/test_read_plans.py __________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_read_plans.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_read_plans.py:13: in <module>
+    from klab_client.read_plans import open_read_plan, read_plan_shard, assemble_read_plan, release_read_plan
+E   ModuleNotFoundError: No module named 'klab_client.read_plans'
+___________ ERROR collecting tests/test_reference_raster_labels.py ____________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_reference_raster_labels.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_reference_raster_labels.py:12: in <module>
+    from klab_client.reference_raster_labels import ReferenceRasterLabels,AsyncReferenceRasterLabels,open_reference_raster,KIND
+E   ModuleNotFoundError: No module named 'klab_client.reference_raster_labels'
+______________ ERROR collecting tests/test_reference_windows.py _______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_reference_windows.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_reference_windows.py:9: in <module>
+    from klab_client.reference_windows import ReadPlanSelections,AsyncReadPlanSelections,ReferenceWindow
+E   ModuleNotFoundError: No module named 'klab_client.reference_windows'
+_______________ ERROR collecting tests/test_revision_drafts.py ________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_revision_drafts.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_revision_drafts.py:8: in <module>
+    from klab_client import (Client, Context, AsyncClient, DraftConflict, read_draft, write_draft,
+E   ImportError: cannot import name 'DraftConflict' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+________________ ERROR collecting tests/test_shared_access.py _________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_shared_access.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_shared_access.py:7: in <module>
+    from klab_client import (AsyncClient, AsyncSharedAccess, Client, SharedAccess, ObservationRequest,
+E   ImportError: cannot import name 'AsyncSharedAccess' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+______________ ERROR collecting tests/test_source_validation.py _______________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_source_validation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_source_validation.py:10: in <module>
+    from klab_client.source_validation import AsyncSourceValidation, SourceValidation
+E   ModuleNotFoundError: No module named 'klab_client.source_validation'
+____________ ERROR collecting tests/test_worker_output_custody.py _____________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_worker_output_custody.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_worker_output_custody.py:7: in <module>
+    from klab_worker import Field,Limits,WorkerClient,WorkerError
+E   ModuleNotFoundError: No module named 'klab_worker'
+_______________ ERROR collecting tests/test_worker_vertical.py ________________
+ImportError while importing test module '$REPO\developer-tools\klab-service-simulator\tests\test_worker_vertical.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+developer-tools\klab-service-simulator\tests\test_worker_vertical.py:12: in <module>
+    from klab_worker import Field, Limits, WorkerClient, WorkerError, execute
+E   ModuleNotFoundError: No module named 'klab_worker'
+=========================== short test summary info ===========================
+ERROR developer-tools\klab-service-simulator\tests\test_accepted_documents.py
+ERROR developer-tools\klab-service-simulator\tests\test_category_codes.py
+ERROR developer-tools\klab-service-simulator\tests\test_commits.py
+ERROR developer-tools\klab-service-simulator\tests\test_copied_composition.py
+ERROR developer-tools\klab-service-simulator\tests\test_declared_bands.py
+ERROR developer-tools\klab-service-simulator\tests\test_dependencies.py
+ERROR developer-tools\klab-service-simulator\tests\test_dependency_graphs.py
+ERROR developer-tools\klab-service-simulator\tests\test_durable_notifications.py
+ERROR developer-tools\klab-service-simulator\tests\test_durable_recovery.py
+ERROR developer-tools\klab-service-simulator\tests\test_execution_explanations.py
+ERROR developer-tools\klab-service-simulator\tests\test_graph_convergence.py
+ERROR developer-tools\klab-service-simulator\tests\test_input_provenance.py
+ERROR developer-tools\klab-service-simulator\tests\test_managed_agents.py
+ERROR developer-tools\klab-service-simulator\tests\test_managed_behavior_workflow.py
+ERROR developer-tools\klab-service-simulator\tests\test_model_candidates.py
+ERROR developer-tools\klab-service-simulator\tests\test_provider_avro.py
+ERROR developer-tools\klab-service-simulator\tests\test_public_copied_composition.py
+ERROR developer-tools\klab-service-simulator\tests\test_read_plan_analysis.py
+ERROR developer-tools\klab-service-simulator\tests\test_read_plans.py
+ERROR developer-tools\klab-service-simulator\tests\test_reference_raster_labels.py
+ERROR developer-tools\klab-service-simulator\tests\test_reference_windows.py
+ERROR developer-tools\klab-service-simulator\tests\test_revision_drafts.py
+ERROR developer-tools\klab-service-simulator\tests\test_shared_access.py
+ERROR developer-tools\klab-service-simulator\tests\test_source_validation.py
+ERROR developer-tools\klab-service-simulator\tests\test_worker_output_custody.py
+ERROR developer-tools\klab-service-simulator\tests\test_worker_vertical.py
+!!!!!!!!!!!!!!!!!! Interrupted: 26 errors during collection !!!!!!!!!!!!!!!!!!!
+26 errors in 4.31s
+
+
+=================================== ERRORS ====================================
+___________ ERROR collecting tests/unit/test_accepted_documents.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_accepted_documents.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_accepted_documents.py:11: in <module>
+    from klab_client.accepted_documents import AcceptedDocuments,AsyncAcceptedDocuments
+E   ModuleNotFoundError: No module named 'klab_client.accepted_documents'
+_________________ ERROR collecting tests/unit/test_commits.py _________________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_commits.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_commits.py:4: in <module>
+    from test_selections import client,root
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+___________ ERROR collecting tests/unit/test_copied_composition.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_copied_composition.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_copied_composition.py:5: in <module>
+    from test_selections import client,root
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+______________ ERROR collecting tests/unit/test_dependencies.py _______________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_dependencies.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_dependencies.py:8: in <module>
+    from klab_client.dependencies import AsyncDependencyInspector, DependencyInspector, GROUPS
+E   ModuleNotFoundError: No module named 'klab_client.dependencies'
+____________ ERROR collecting tests/unit/test_dependency_graphs.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_dependency_graphs.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_dependency_graphs.py:4: in <module>
+    from test_selections import client,root
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+__________ ERROR collecting tests/unit/test_durable_notifications.py __________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_durable_notifications.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_durable_notifications.py:8: in <module>
+    from klab_client import (Client, Context, NotificationCursor, NotificationResyncRequired,
+E   ImportError: cannot import name 'NotificationCursor' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'NotificationBroker'?
+_________ ERROR collecting tests/unit/test_execution_explanations.py __________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_execution_explanations.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_execution_explanations.py:10: in <module>
+    from test_selections import client,root,wire
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+____________ ERROR collecting tests/unit/test_input_provenance.py _____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_input_provenance.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_input_provenance.py:17: in <module>
+    from klab_client.input_provenance import AsyncInputProvenance, InputProvenance, MANIFEST
+E   ModuleNotFoundError: No module named 'klab_client.input_provenance'
+_____________ ERROR collecting tests/unit/test_managed_agents.py ______________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_managed_agents.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_managed_agents.py:12: in <module>
+    from klab_client.managed_agents import (PROTOCOL, EXECUTION, _json, _status, _options, _binding,
+E   ModuleNotFoundError: No module named 'klab_client.managed_agents'
+____________ ERROR collecting tests/unit/test_managed_behaviors.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_managed_behaviors.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_managed_behaviors.py:9: in <module>
+    from test_selections import client,root
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+___________ ERROR collecting tests/unit/test_material_selections.py ___________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_material_selections.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_material_selections.py:11: in <module>
+    from test_selections import client, root, wire, offline
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+____________ ERROR collecting tests/unit/test_model_candidates.py _____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_model_candidates.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_model_candidates.py:11: in <module>
+    from klab_client.model_candidates import (SOURCE, HASH, ModelCandidateQuery, _json, _catalog,
+E   ModuleNotFoundError: No module named 'klab_client.model_candidates'
+___________ ERROR collecting tests/unit/test_multiband_analysis.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_multiband_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_multiband_analysis.py:8: in <module>
+    from klab_client import RasterBandAxis, open_raster
+E   ImportError: cannot import name 'RasterBandAxis' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+______________ ERROR collecting tests/unit/test_provider_avro.py ______________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_provider_avro.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_provider_avro.py:7: in <module>
+    from klab_client import _provider_avro as codec
+E   ImportError: cannot import name '_provider_avro' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+______________ ERROR collecting tests/unit/test_provider_data.py ______________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_provider_data.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_provider_data.py:13: in <module>
+    from klab_client.provider_data import ProviderData
+E   ModuleNotFoundError: No module named 'klab_client.provider_data'
+____________ ERROR collecting tests/unit/test_provider_handles.py _____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_provider_handles.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_provider_handles.py:8: in <module>
+    from klab_client import (Client, AsyncClient, Context, Endpoint, Handle, to_handle,
+E   ImportError: cannot import name 'ProviderDataJob' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+____________ ERROR collecting tests/unit/test_raster_categories.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_raster_categories.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_raster_categories.py:10: in <module>
+    from klab_client import RasterCategories, categorize_raster, open_raster
+E   ImportError: cannot import name 'RasterCategories' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+___________ ERROR collecting tests/unit/test_read_plan_analysis.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_read_plan_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_read_plan_analysis.py:13: in <module>
+    from klab_client.read_plans import _plan, _shard, assemble_read_plan
+E   ModuleNotFoundError: No module named 'klab_client.read_plans'
+_______________ ERROR collecting tests/unit/test_read_plans.py ________________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_read_plans.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_read_plans.py:12: in <module>
+    from klab_client.read_plans import (PROTOCOL, REVISION_KIND, _cells_digest, _json, _plan, _shard, _options,
+E   ModuleNotFoundError: No module named 'klab_client.read_plans'
+____________ ERROR collecting tests/unit/test_reference_commits.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_reference_commits.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_reference_commits.py:6: in <module>
+    from test_selections import client,root
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+________ ERROR collecting tests/unit/test_reference_raster_analysis.py ________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_reference_raster_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_reference_raster_analysis.py:15: in <module>
+    from test_raster_categories import raster
+python-client\tests\unit\test_raster_categories.py:10: in <module>
+    from klab_client import RasterCategories, categorize_raster, open_raster
+E   ImportError: cannot import name 'RasterCategories' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+_________ ERROR collecting tests/unit/test_reference_raster_labels.py _________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_reference_raster_labels.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_reference_raster_labels.py:9: in <module>
+    from test_selections import client,root,wire
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+________ ERROR collecting tests/unit/test_reference_window_analysis.py ________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_reference_window_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_reference_window_analysis.py:12: in <module>
+    from klab_client.reference_windows import analyze_selected_read_plan,ReferenceWindow,KIND
+E   ModuleNotFoundError: No module named 'klab_client.reference_windows'
+____________ ERROR collecting tests/unit/test_reference_windows.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_reference_windows.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_reference_windows.py:9: in <module>
+    from test_selections import client,root,wire
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+_____________ ERROR collecting tests/unit/test_revision_drafts.py _____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_revision_drafts.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_revision_drafts.py:8: in <module>
+    from klab_client import (Client, AsyncClient, DraftConflict, read_draft, write_draft,
+E   ImportError: cannot import name 'DraftConflict' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py)
+_______________ ERROR collecting tests/unit/test_selections.py ________________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_selections.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_selections.py:10: in <module>
+    from klab_client import (Client, AsyncClient, Context, AsyncContext, Endpoint,
+E   ImportError: cannot import name 'ObservationPage' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'Observation'?
+______________ ERROR collecting tests/unit/test_shared_access.py ______________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_shared_access.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_shared_access.py:10: in <module>
+    from klab_client import (AccessInspection, AsyncSharedAccess, Endpoint, ReadGrant, SharedAccess)
+E   ImportError: cannot import name 'AccessInspection' from 'klab_client' ($HOME\AppData\Local\Temp\opencode\ab-final-installed-20261106\env\Lib\site-packages\klab_client\__init__.py). Did you mean: 'AssetInspection'?
+____________ ERROR collecting tests/unit/test_source_validation.py ____________
+ImportError while importing test module '$REPO\python-client\tests\unit\test_source_validation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-client\tests\unit\test_source_validation.py:14: in <module>
+    from klab_client.source_validation import AsyncSourceValidation, SourceValidation
+E   ModuleNotFoundError: No module named 'klab_client.source_validation'
+=========================== short test summary info ===========================
+ERROR python-client\tests\unit\test_accepted_documents.py
+ERROR python-client\tests\unit\test_commits.py
+ERROR python-client\tests\unit\test_copied_composition.py
+ERROR python-client\tests\unit\test_dependencies.py
+ERROR python-client\tests\unit\test_dependency_graphs.py
+ERROR python-client\tests\unit\test_durable_notifications.py
+ERROR python-client\tests\unit\test_execution_explanations.py
+ERROR python-client\tests\unit\test_input_provenance.py
+ERROR python-client\tests\unit\test_managed_agents.py
+ERROR python-client\tests\unit\test_managed_behaviors.py
+ERROR python-client\tests\unit\test_material_selections.py
+ERROR python-client\tests\unit\test_model_candidates.py
+ERROR python-client\tests\unit\test_multiband_analysis.py
+ERROR python-client\tests\unit\test_provider_avro.py
+ERROR python-client\tests\unit\test_provider_data.py
+ERROR python-client\tests\unit\test_provider_handles.py
+ERROR python-client\tests\unit\test_raster_categories.py
+ERROR python-client\tests\unit\test_read_plan_analysis.py
+ERROR python-client\tests\unit\test_read_plans.py
+ERROR python-client\tests\unit\test_reference_commits.py
+ERROR python-client\tests\unit\test_reference_raster_analysis.py
+ERROR python-client\tests\unit\test_reference_raster_labels.py
+ERROR python-client\tests\unit\test_reference_window_analysis.py
+ERROR python-client\tests\unit\test_reference_windows.py
+ERROR python-client\tests\unit\test_revision_drafts.py
+ERROR python-client\tests\unit\test_selections.py
+ERROR python-client\tests\unit\test_shared_access.py
+ERROR python-client\tests\unit\test_source_validation.py
+!!!!!!!!!!!!!!!!!! Interrupted: 28 errors during collection !!!!!!!!!!!!!!!!!!!
+28 errors in 3.10s
+
+
+=================================== ERRORS ====================================
+_______________ ERROR collecting tests/test_client_failures.py ________________
+ImportError while importing test module '$REPO\python-worker\tests\test_client_failures.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-worker\tests\test_client_failures.py:5: in <module>
+    from klab_worker import WorkerClient, WorkerError
+E   ModuleNotFoundError: No module named 'klab_worker'
+_________________ ERROR collecting tests/test_containment.py __________________
+ImportError while importing test module '$REPO\python-worker\tests\test_containment.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-worker\tests\test_containment.py:9: in <module>
+    from klab_worker import Limits, WorkerError, execute
+E   ModuleNotFoundError: No module named 'klab_worker'
+________________ ERROR collecting tests/test_output_custody.py ________________
+ImportError while importing test module '$REPO\python-worker\tests\test_output_custody.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-worker\tests\test_output_custody.py:8: in <module>
+    from klab_worker import WorkerError,Field,Limits,execute
+E   ModuleNotFoundError: No module named 'klab_worker'
+____________________ ERROR collecting tests/test_worker.py ____________________
+ImportError while importing test module '$REPO\python-worker\tests\test_worker.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$HOME\anaconda3\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+python-worker\tests\test_worker.py:9: in <module>
+    from klab_worker import Field, Limits, WorkerClient, WorkerError, execute
+E   ModuleNotFoundError: No module named 'klab_worker'
+=========================== short test summary info ===========================
+ERROR python-worker\tests\test_client_failures.py
+ERROR python-worker\tests\test_containment.py
+ERROR python-worker\tests\test_output_custody.py
+ERROR python-worker\tests\test_worker.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!
+4 errors in 0.25s

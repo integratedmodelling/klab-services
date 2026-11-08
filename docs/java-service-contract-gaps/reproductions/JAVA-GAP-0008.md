@@ -1,9 +1,12 @@
 # JAVA-GAP-0008 — Managed Runtime agent principal/incarnation and independent cleanup acceptance unverified
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0008).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: NOT_TESTED; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **NOT_TESTED**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: agents; component: RuntimeService.compileAndRunAgent / AgentRegistry / native AMQP.
 - Original roadmap: RC-P4.5, CAP-14.

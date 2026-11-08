@@ -1,9 +1,12 @@
 # JAVA-GAP-0006 — Published remote block/window/revision-lease API missing from inspected controller
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0006).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONFIRMED_MISSING_API; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **MISSING_API**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: runtime; component: Runtime READ_VALUE StorageScan.Point controller.
 - Original roadmap: RC-P2.2, CAP-09.

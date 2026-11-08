@@ -1,0 +1,314 @@
+{
+  "mode": "simulated",
+  "fallbacks": 0,
+  "science": "NOT_RUN",
+  "cases": [
+    {
+      "gap_id": "JAVA-GAP-0001",
+      "case_id": "GAP-CASE-0001",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Frozen authentic400 cells delivered over isolated HTTP; not Runtime-produced science. Separate provider-avro scenario serves finite independent fastavro golden raw DataRequest/Instance bytes over source-defined Resources/contextualize and Job/retrieveData routes; no SDK codec dependency or scientific reasoning. Direct synthetic provider success does not reproduce or repair the scanner defect.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java",
+        "python-client/tests/unit/test_provider_avro.py",
+        "python-client/tests/unit/test_provider_data.py",
+        "python-client/tests/unit/test_provider_handles.py",
+        "developer-tools/klab-service-simulator/tests/test_provider_avro.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0002",
+      "case_id": "GAP-CASE-0002",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Finite private imported resource with provisional test-owned cleanup",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0003",
+      "case_id": "GAP-CASE-0003",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Explicit candidate-sources fixture advertises source-defined protocol1, bounded ModelCandidateRequest selectors and ResourceSet source snapshots. Synthetic project-owner READ policy plus source-shaped public/private/project-private/scenario/inactive filtering; exact source UTF8SHA256/member/namespace/provider checks. Sync/nativeasync SDK refuses unadvertised or failed suppliers, does not delegate Runtime workflow headers or fall back. No selection/admission/publication/Job or scientific execution.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_semantics.py::test_meaning_based_catalog_inspection_remains_advertisement_not_selection",
+        "python-client/tests/unit/test_model_candidates.py",
+        "developer-tools/klab-service-simulator/tests/test_model_candidates.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0004",
+      "case_id": "GAP-CASE-0004",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Finite retained IDs/expiry plus explicitly owned opt-in SQLite synthetic checkpoints across process restart; ordinary SDK saved context/Job/observation handles reattach and retrieve exact retained synthetic values. Tuple/corruption/single-writer/persistence failure checks, durable cleanup and zero automatic mutation replay. This is not native Java retention/incarnation evidence.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_expired_job_empty_status_is_not_confirmed_cancellation",
+        "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state",
+        "developer-tools/klab-service-simulator/tests/test_durable_recovery.py",
+        "developer-tools/klab-service-simulator/tests/test_integrated_restore.py::test_fresh_async_sdk_only_process_restores_after_restart_without_replay_or_ownership"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0005",
+      "case_id": "GAP-CASE-0005",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Explicit opt-in klab.experimental.notifications/1 proposed HTTP reference: bound root owner, immutable Job lifecycle batches and origin/epoch/sequence cursors,128event retention, contiguous replay/duplicates, RESYNC_REQUIRED on gaps/epoch loss, SQLite persistence and released-scope cleanup. Explicit activation covers subsequent Job hints only; caller checkpoints advance only after caller processing, no fabricated earlier history or full convergence. Separate native async client; existing transient AMQP behavior unchanged.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+        "python-client/tests/unit/test_notifications.py::test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints",
+        "python-client/tests/unit/test_durable_notifications.py",
+        "developer-tools/klab-service-simulator/tests/test_durable_notifications.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0006",
+      "case_id": "GAP-CASE-0006",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Native point mapping remains separate. Explicit proposed klab.experimental.read-plans/1 adds root/Runtime/current-owner snapshot grants, bounded contiguous hashed shards, complete assembly and sync/nativeasync SDK. Process-local16grant cap/TTL/64KiBmanifest; release/expiry/restart loss explicit410, new epoch/no automatic replan. Failed durable request restores ephemeral rows/epoch. Content revision is REFERENCE_CONTENT_SHA256_NOT_NATIVE_COMMIT, not native committed science.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_state.py::test_unimplemented_read_mediation_time_or_fill_curve_is_not_synthetic_success",
+        "python-client/tests/unit/test_read_plans.py",
+        "developer-tools/klab-service-simulator/tests/test_read_plans.py",
+        "python-client/tests/unit/test_read_plan_analysis.py",
+        "developer-tools/klab-service-simulator/tests/test_read_plan_analysis.py",
+        "python-client/tests/unit/test_reference_windows.py",
+        "python-client/tests/unit/test_reference_window_analysis.py",
+        "developer-tools/klab-service-simulator/tests/test_reference_windows.py",
+        "developer-tools/klab-service-simulator/tests/test_reference_window_fixture.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0007",
+      "case_id": "GAP-CASE-0007",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Reject foreign binding. Separate explicit copied-composition scenario combines two independently client-read reference snapshots into a C-owned result with origin-qualified IDs and pinned source vector; C-only release preserves A/B. Coordinator does not fetch/verify upstream authority: source claims labelled caller asserted, not remote grants. No native live twin/federation, migration, failover or revocation propagation simulated.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http",
+        "developer-tools/klab-service-simulator/tests/test_bootstrap_recovery.py",
+        "developer-tools/klab-service-simulator/tests/test_copied_composition.py",
+        "python-client/tests/unit/test_copied_composition.py",
+        "developer-tools/klab-service-simulator/tests/test_public_copied_composition.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0008",
+      "case_id": "GAP-CASE-0008",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Explicit klab.experimental.managed-agents/1 finite synthetic lifecycle, NOT k.Actors parsing/compilation/registration/execution. Named idle/finish/fail fixtures, root-owner/Runtime/epoch binding, single-use start, stop acknowledgement distinct from terminal and later synthetic cleanup confirmation; CASrevision/purge/capacity/SDKrebind/restart loss/save rollback controls. No actual native/private-session cleanup proof.",
+      "pytest_refs": [
+        "python-client/tests/unit/test_agent_execution.py",
+        "python-client/tests/unit/test_managed_agents.py",
+        "developer-tools/klab-service-simulator/tests/test_managed_agents.py",
+        "python-client/tests/unit/test_managed_behaviors.py",
+        "developer-tools/klab-service-simulator/tests/test_managed_behavior_workflow.py",
+        "developer-tools/klab-service-simulator/tests/test_managed_behavior_fixture.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0009",
+      "case_id": "GAP-CASE-0009",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Existing ADD-only native source projections and principal-shared boolean locks remain separate. Explicit opt-in klab.experimental.drafts/1 private root-owner draft CAS retains8names/8versions, exact source/hash and UNVALIDATED_PRIVATE_DRAFT; stale writes409, evicted history410, capacity429. Private draft SQLite restart/corruption/rollback/cleanup remains unvalidated, not accepted publication. Separate advertised acceptedDocumentProtocol reference now implements independent ephemeral source CAS, server-owned finite diagnostics and atomic source/knowledge-conditioned reference publication/catalog readback; edits invalidate validation but preserve old publication snapshots, stale source/knowledge and invalid diagnostics block publish, owner/root denial, lost reply readback without replay and cleanup. Eight declared literal namespaces, no native compiler, scientific admission, ontology repair or real Resources publication.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_native_project_lock_principal_sharing_and_explicit_release",
+        "developer-tools/klab-service-simulator/tests/test_behavior_drafts.py::test_nonexecuting_behavior_draft_add_uses_exact_native_source_and_never_instantiates",
+        "python-client/tests/unit/test_revision_drafts.py",
+        "developer-tools/klab-service-simulator/tests/test_revision_drafts.py",
+        "developer-tools/klab-service-simulator/tests/test_notebook_principal_races.py",
+        "python-client/tests/unit/test_accepted_documents.py",
+        "developer-tools/klab-service-simulator/tests/test_accepted_documents.py",
+        "developer-tools/klab-service-simulator/tests/test_accepted_document_fixture.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0010",
+      "case_id": "GAP-CASE-0010",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Separately pinned synthetic TIFF has explicit scientific metadata; SDK never repairs native bytes",
+      "pytest_refs": [
+        "python-client/tests/unit/test_nonuniform_export_oracle.py",
+        "developer-tools/java-gap-governance/tests/test_native_export_capture.py::test_historical_native_unit_defect_is_preserved_without_rewriting_values_or_bytes"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0011",
+      "case_id": "GAP-CASE-0011",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Finite SIM vocabulary and stale-worldview refusal, not migration or original semantic acceptance. Separate source-validation fixture admits two namespace literals over existing Java-shaped Reasoner validate/document DTOs, pins exact source/version/hash and knowledge service/worldview/revision/session/content, preserves Error diagnostics and explicit stale revalidation without publication/executable admission. Namespace-only SDK refuses native ontology synchronization paths; finite diagnostics are not an ontology/compiler, native knowledge repair or replacement legacy fixture.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_semantics.py::test_changed_worldview_refuses_stored_candidate_and_requires_fresh_search",
+        "python-client/tests/unit/test_source_validation.py",
+        "developer-tools/klab-service-simulator/tests/test_source_validation.py",
+        "developer-tools/klab-service-simulator/tests/test_source_validation_fixture.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0012",
+      "case_id": "GAP-CASE-0012",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Python graph HTTP failures retain honest stale/partial data; does not execute native Java ClientKnowledgeGraph",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_native_awaited_refresh_uses_existing_routes_and_retains_honest_partial_pages"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0013",
+      "case_id": "GAP-CASE-0013",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Clockless controlled polls, exact-source literals, fixed SIM vocabulary, bounded private synthetic state; never local reasoning or Java execution. observation-selections admits only synthetic:Entity and synthetic:Connection, independently checks persisted endpoint ownership/existence, supplies declared plan/result selection receipts and direct HAS_CHILD pages. Public sync/nativeasync SDK and v2 saved Context/Observation/Job restoration are exercised; no scientific numeric storage, general ontology inference or unresolved transaction snapshots. Separate material-selections admits three declared numeric candidates with source-shaped lexical preference scores, two synthetic observer biases and1m/2m lattices; typed public resolve/observe/fetch_data independently verify60numerical option combinations. Finite arithmetic and tie policy are provisional, not native model admission or general scientific ranking.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+        "developer-tools/klab-service-simulator/tests/test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt",
+        "python-client/tests/unit/test_selections.py",
+        "developer-tools/klab-service-simulator/tests/test_observation_selections.py",
+        "python-client/tests/unit/test_material_selections.py",
+        "developer-tools/klab-service-simulator/tests/test_material_selections.py",
+        "python-client/tests/unit/test_dependencies.py",
+        "developer-tools/klab-service-simulator/tests/test_dependencies.py",
+        "developer-tools/klab-service-simulator/tests/test_dependency_fixture.py",
+        "python-client/tests/unit/test_dependency_graphs.py",
+        "developer-tools/klab-service-simulator/tests/test_dependency_graphs.py",
+        "developer-tools/klab-service-simulator/tests/test_dependency_graph_fixture.py",
+        "python-client/tests/unit/test_input_provenance.py",
+        "developer-tools/klab-service-simulator/tests/test_input_provenance.py",
+        "developer-tools/klab-service-simulator/tests/test_input_provenance_fixture.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0014",
+      "case_id": "GAP-CASE-0014",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Synthetic metadata.grid/UNSPECIFIED offsets and finite event assignment over immutable TIFF; requested_slice is a request only. Pinned3x2x3float32 multiband TIFF preserves18values/masks/units with explicit caller RasterBandAxis, not native time/history. Separate pinned2x3int16 synthetic:CategoryCode export has no units; immutable caller RasterCategories assigns exact labels while preserving raw integer codes/mask and unknown-code refusal. No native category dictionary, ontology inference or committed revision is claimed. Both fixture point-offset mappings remain unestablished and explicitly422, not guessed.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+        "developer-tools/klab-service-simulator/tests/test_offline_snapshots.py::test_fresh_sdk_only_process_inspects400_frozen_cells_offline_after_owned_release",
+        "python-client/tests/unit/test_multiband_analysis.py",
+        "developer-tools/klab-service-simulator/tests/test_declared_bands.py",
+        "python-client/tests/unit/test_raster_categories.py",
+        "developer-tools/klab-service-simulator/tests/test_category_codes.py",
+        "python-client/tests/unit/test_read_plan_analysis.py",
+        "developer-tools/klab-service-simulator/tests/test_read_plan_analysis.py",
+        "python-client/tests/unit/test_reference_window_analysis.py",
+        "developer-tools/klab-service-simulator/tests/test_reference_windows.py",
+        "python-client/tests/unit/test_reference_raster_labels.py",
+        "python-client/tests/unit/test_reference_raster_analysis.py",
+        "developer-tools/klab-service-simulator/tests/test_reference_raster_labels.py",
+        "developer-tools/klab-service-simulator/tests/test_reference_raster_notebook.py",
+        "developer-tools/klab-service-simulator/tests/test_reference_raster_fixture.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0015",
+      "case_id": "GAP-CASE-0015",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Synthetic credentials/private owners/administrator roles only. ExistingSDK connect\u2192singleJob\u2192400cells with injected local SDK expiry/reacquisition; expired intake/principal drift/provider failure refuse before scientific HTTP and no replay. Owned mixed-Runtime outage/recovery preserves explicit selection, marks incomplete readiness unknown, sends no standby work; changed endpoint serviceID requires explicit reconnect. Separate advertised shared-read reference grants ephemeral Runtime READ to current synthetic principal; public sync/nativeasync SDK owner inspection/grant/revoke, read-only Observation/Job restoration, denied mutation/disposal, expired410 versus revoked403, mid-point revocation without partial data, lost reply owner lookup without replay and owned cleanup. Owner/grantee/TTL protocol and granular rights are explicitly provisional, not native ACL translation, production issuer/license or federation acceptance.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http",
+        "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_administrator_role_remains_server_authoritative_and_unknown_project_false_is_not_a_diagnosis",
+        "developer-tools/klab-service-simulator/tests/test_bootstrap_recovery.py",
+        "python-client/tests/unit/test_connection.py::test_completed_failed_probe_preserves_identity_pin_without_readiness_or_failover",
+        "python-client/tests/unit/test_connection.py::test_failed_unselected_runtime_never_inherits_selected_runtime_identity",
+        "python-client/tests/unit/test_shared_access.py",
+        "developer-tools/klab-service-simulator/tests/test_shared_access.py",
+        "developer-tools/klab-service-simulator/tests/test_shared_access_fixture.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0016",
+      "case_id": "GAP-CASE-0016",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Partial plans/recorded effects with unknown durable consistency. Explicit provenance-dependencies fixture declares MEASURED/CONTRIBUTED_TO/planned RESOLVED edges in one owner root. Separate revision-convergence fixture captures completed synthetic observation IDs with expected-head CAS, bounded exact history, two independent clients and explicit refresh; ephemeral only, durable mode refuses. Neither establishes native committed science, full lineage, notification convergence, computed dependency or cross-service snapshot coherence.",
+      "pytest_refs": [
+        "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+        "python-client/tests/unit/test_async_provenance.py",
+        "developer-tools/klab-service-simulator/tests/test_provenance_dependencies.py",
+        "developer-tools/klab-service-simulator/tests/test_revision_convergence.py",
+        "python-client/tests/unit/test_commits.py",
+        "developer-tools/klab-service-simulator/tests/test_commits.py",
+        "developer-tools/klab-service-simulator/tests/test_commit_fixture.py",
+        "python-client/tests/unit/test_reference_commits.py",
+        "developer-tools/klab-service-simulator/tests/test_graph_convergence.py",
+        "developer-tools/klab-service-simulator/tests/test_graph_commit_fixture.py",
+        "python-client/tests/unit/test_execution_explanations.py",
+        "developer-tools/klab-service-simulator/tests/test_execution_explanations.py",
+        "developer-tools/klab-service-simulator/tests/test_execution_explanation_fixture.py"
+      ]
+    },
+    {
+      "gap_id": "JAVA-GAP-0017",
+      "case_id": "GAP-CASE-0017",
+      "tag": "SIMULATED_PASS",
+      "status": "PASS",
+      "current_real": "REAL_NOT_RUN",
+      "assertion_scope": "Explicit opt-in klab.experimental.worker/1 HTTP proposal under /experimental/worker/v1: context-owner/worker-role registration, bounded nonuniform inputs, single claim lease, trusted isolated Python script, atomic validated output with hashes, cancellation/failure/release and no automatic redelivery. Opt-in durable synthetic checkpoint fences lost leases into RECOVERY_REQUIRED after process restart, retains published/cancelled results, and requires explicit owner recomputation consent; no automatic continuation or scientific reasoning/Java execution.",
+      "pytest_refs": [
+        "python-worker/tests/test_worker.py",
+        "python-worker/tests/test_client_failures.py",
+        "python-worker/tests/test_containment.py",
+        "python-worker/tests/test_output_custody.py",
+        "developer-tools/klab-service-simulator/tests/test_worker_vertical.py",
+        "developer-tools/klab-service-simulator/tests/test_durable_recovery.py",
+        "developer-tools/klab-service-simulator/tests/test_worker_output_custody.py"
+      ]
+    }
+  ],
+  "groups": {
+    "simulator": {
+      "exit": 0,
+      "failed": false,
+      "tests": 415,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0
+    },
+    "sdk": {
+      "exit": 0,
+      "failed": false,
+      "tests": 1319,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0
+    },
+    "worker": {
+      "exit": 0,
+      "failed": false,
+      "tests": 116,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0
+    }
+  },
+  "assertion_kind": "Explicit HTTP substitutes and client protocol/refusal guards, not missing Java capability acceptance"
+}

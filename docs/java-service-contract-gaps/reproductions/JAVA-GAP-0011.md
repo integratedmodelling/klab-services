@@ -1,9 +1,12 @@
 # JAVA-GAP-0011 — Legacy frozen worldview fixture differs from current ODO/source-validation contracts
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0011).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONTRACT_PROVISIONAL; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONTRACT_PROVISIONAL**; current execution **REAL_NOT_RUN**; historical **CONTRACT_DRIFT**.
 - Service: semantics; component: RuntimeFixtureCompatibilitySourceTest / source semantic admission.
 - Original roadmap: RC-P4.1, RC-P4.2, RC-R1, CAP-05, CAP-16.

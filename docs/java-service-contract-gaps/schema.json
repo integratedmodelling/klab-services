@@ -28,9 +28,11 @@
         "simulator_status": {"enum": ["SIMULATOR_PASS", "SIMULATOR_FAIL", "SIMULATOR_NOT_IMPLEMENTED", "SIMULATOR_NOT_TESTED"]},
         "native_execution_status": {"enum": ["REAL_PASS", "REAL_FAIL", "REAL_NOT_RUN", "REAL_BLOCKED"]},
         "simulator_not_implemented_reason": {"$ref": "#/$defs/text"},
+        "simulator_receipt": {"$ref": "#/$defs/text"},
+        "simulator_verified_utc": {"type": "string", "format": "date-time"},
         "native_execution_evidence": {"type": "object", "additionalProperties": false,
           "required": ["kind", "build", "environment", "timestamp_utc", "receipt_ref"],
-          "properties": {"kind": {"const": "NATIVE_EXECUTION"}, "build": {"$ref": "#/$defs/text"},
+          "properties": {"kind": {"enum": ["NATIVE_EXECUTION", "NATIVE_GATE_CHECK"]}, "build": {"$ref": "#/$defs/text"},
             "environment": {"$ref": "#/$defs/text"}, "timestamp_utc": {"type": "string", "format": "date-time"},
             "receipt_ref": {"$ref": "#/$defs/text"}}},
         "id": {"type": "string", "pattern": "^JAVA-GAP-[0-9]{4}$"},
@@ -50,7 +52,7 @@
         "resolution_criteria": {"allOf": [{"$ref": "#/$defs/refs"}], "minItems": 1},
         "links": {"$ref": "#/$defs/refs"}, "notes": {"$ref": "#/$defs/text"},
         "lifecycle": {"enum": ["DISCOVERED", "REPRODUCED", "SPECIFIED", "JAVA_IMPLEMENTING", "REAL_VERIFIED", "CLOSED", "CONTRACT_DISPUTED", "OBSOLETE", "BLOCKED"]},
-        "historical_real_result": {"$ref": "#/$defs/result"}, "current_real_result": {"enum": ["REAL_PASS", "REAL_FAIL", "REAL_NOT_RUN", "CONTRACT_DRIFT"]},
+        "historical_real_result": {"$ref": "#/$defs/result"}, "current_real_result": {"enum": ["REAL_PASS", "REAL_FAIL", "REAL_NOT_RUN", "REAL_BLOCKED", "CONTRACT_DRIFT"]},
         "real_command": {"type": ["array", "null"], "items": {"$ref": "#/$defs/text"}},
         "contract_case": {"type": "string", "pattern": "^GAP-CASE-[0-9]{4}$"}
       }

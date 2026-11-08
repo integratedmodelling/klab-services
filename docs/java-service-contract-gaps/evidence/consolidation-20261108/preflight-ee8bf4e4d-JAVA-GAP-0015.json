@@ -1,0 +1,19 @@
+{
+  "gap_id": "JAVA-GAP-0015",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/klab-service-simulator/tests/test_scope_selection.py": "f627a15f7a6912acb52568b0cad21d201c695c0cb5fb9a53a100848515cf7ca7",
+    "developer-tools/klab-service-simulator/tests/test_project_locks.py": "cfcc1943f4f03e921f0c4d6e28174e75b9ee5c9b18ecafec1955e4ed63dde203",
+    "developer-tools/klab-service-simulator/tests/test_bootstrap_recovery.py": "74eb60dff2873d3482cf738545b16edbbc4b605b5b2205bd57fb1e78b6c3a48d",
+    "python-client/tests/unit/test_connection.py": "9e7b77e3f97e85dd37fc7012eab9b443a209fd0488f39072f3f67696f797f618",
+    "python-client/tests/unit/test_shared_access.py": "b348f1f2b883a248fee10e4bbd8fded018bb76538f0b64d247111578f2e14acd",
+    "developer-tools/klab-service-simulator/tests/test_shared_access.py": "e948c05fb21e92a3356c08eb024ffcbf569bcd224d37a79deb3febb89185cbb4",
+    "developer-tools/klab-service-simulator/tests/test_shared_access_fixture.py": "9ff11e567e2fd6f00dbcf2027b3cb1a8b940f202b177a007db26e147d6878a9c",
+    "python-client/tests/functional/test_shared_context_read.py": "a6ba67711285b32761545bc888f1a2fae54f8b10afa693657d00324b5f270fc7"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:30.107132+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

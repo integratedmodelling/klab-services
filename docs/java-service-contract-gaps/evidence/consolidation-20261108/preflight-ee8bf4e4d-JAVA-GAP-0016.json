@@ -1,0 +1,25 @@
+{
+  "gap_id": "JAVA-GAP-0016",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/klab-service-simulator/tests/test_partial_refresh.py": "00ccea18fcaf5c28e3f7a91b8753c5e767fb4f76be99ce13eb928d8aee21a414",
+    "python-client/tests/unit/test_async_provenance.py": "a191038fa3149b0713ae4e13eb71820a298dd5ad70836f1d611c5836adf56dc8",
+    "developer-tools/klab-service-simulator/tests/test_provenance_dependencies.py": "dcd0ddb5be9d4335c46f60965f630be6e73919bd6b54bc085ad4981426a8fb02",
+    "developer-tools/klab-service-simulator/tests/test_revision_convergence.py": "0ef9a0a34550217e638835ec78f22e1e700d320669377f595dca685a588cff3f",
+    "python-client/tests/unit/test_commits.py": "344a6cdb97267d91bc00ca8bae4e5777fe60fbae0c2adf9cb5bbfcb10da4b4ee",
+    "developer-tools/klab-service-simulator/tests/test_commits.py": "9d602ce6a7068c42e8c32e5e7cf667665b8b9d09175e9c76943217f5d42e9605",
+    "developer-tools/klab-service-simulator/tests/test_commit_fixture.py": "5604abffdce57f4b5d5544534687cddd815cf6e703e36a24c01e0f3fee4848e3",
+    "python-client/tests/unit/test_reference_commits.py": "c6208dcd0cccb6c1dbc67dfc6d49d2cd3a05e7ab8d1dfa993d40c08095f90209",
+    "developer-tools/klab-service-simulator/tests/test_graph_convergence.py": "45a7b9f7734fa2175f618b0c7436fd0bc577065f140fc8f88ded69f6e8c69f32",
+    "developer-tools/klab-service-simulator/tests/test_graph_commit_fixture.py": "6576c298fcefdcded7bc1622e9984f7b6326f3463fb09cfbee050a04776ce810",
+    "python-client/tests/unit/test_execution_explanations.py": "0afa3e6c35894b160f974c97dcd955f61f8fb1d5f93829b7e03bd2bfee5ea8b8",
+    "developer-tools/klab-service-simulator/tests/test_execution_explanations.py": "3bde447fbbd407e9257f048f451fc1ff5744e98562efee866a06e0c694edee80",
+    "developer-tools/klab-service-simulator/tests/test_execution_explanation_fixture.py": "0ec50121b90c50450324b05c012638b7c33afa9a1be52545e873508066c985a3",
+    "python-client/tests/functional/test_commits.py": "bba74f49f789b705a4093c010f6a18d448996913e52f15307202bc8214e67c67"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:30.268392+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

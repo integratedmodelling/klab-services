@@ -1,0 +1,14 @@
+{
+  "gap_id": "JAVA-GAP-0004",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/klab-service-simulator/tests/test_lifecycle.py": "d255aa5933f48be02035645af9ae1ce7dd064f971a93a9aef5667496b47ece48",
+    "developer-tools/klab-service-simulator/tests/test_durable_recovery.py": "d6c32108a40e01067674bda5f4a44d0d22815eb06eafe4b8edee6a67a99c51f0",
+    "developer-tools/klab-service-simulator/tests/test_integrated_restore.py": "f6c49f88f05636557a6121ca04b1d878d3f0b6f3c0014cb97f9f2b65b9f397ef"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:28.283478+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

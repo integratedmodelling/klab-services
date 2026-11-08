@@ -1,9 +1,12 @@
 # JAVA-GAP-0010 — Published native continuous GeoTIFF loses measurement-unit metadata
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0010).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONFIRMED_DEFECT; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONFIRMED_DEFECT**; current execution **REAL_NOT_RUN**; historical **REAL_FAIL**.
 - Service: geospatial; component: GeodataIO continuous GeoTIFF / Geotools.stateToCoverage.
 - Original roadmap: RC-P2.1, RC-P2.5, CAP-09, CAP-15.

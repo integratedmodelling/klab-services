@@ -1,12 +1,15 @@
 # JAVA-GAP-0013 — Finite simulator scheduling, admission and semantic answers remain provisional substitutes
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0013).
+Generated from the synchronized index; simulator evidence is not native acceptance.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONTRACT_PROVISIONAL; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONTRACT_PROVISIONAL**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: simulator-contract; component: Native Job/scope/Resources/Reasoner compatibility, not a missing Java scheduler/compiler.
-- Original roadmap: RC-P1.1, RC-P1.5, RC-P3.3, RC-P4.1, RC-P4.3, CAP-04, CAP-07, CAP-13, CAP-14.
+- Original roadmap: RC-P1.1, RC-P1.5, RC-P3.3, RC-P4.1, RC-P4.3, CAP-04, CAP-07, CAP-13, CAP-14, RC-P0, CAP-08, CAP-18.
 - API: UNKNOWN_PENDING_REFERENCE UNKNOWN_PENDING_REFERENCE.
 - Request/schema: developer-tools/klab-service-simulator/contract-cases.json.
 - Tested Java build/environment: NOT_RUN / exact native build and environment not established.

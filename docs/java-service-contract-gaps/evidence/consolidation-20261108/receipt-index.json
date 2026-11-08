@@ -1,0 +1,170 @@
+{
+  "audited_source_commit": "9db975b21146093a7962d29e28345a762519befd",
+  "tested_implementation_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6",
+  "native_behavioral_tests_executed": 0,
+  "native_pass_claimed": false,
+  "receipts": [
+    {
+      "path": "consolidation-simulated-all.json",
+      "raw_sha256": "657b33585b2720278c6fd09c1f2efac97cf952a9a7cee36390af57ae833da623",
+      "sanitized_sha256": "657b33585b2720278c6fd09c1f2efac97cf952a9a7cee36390af57ae833da623",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "consolidation-simulated-installed-all.json",
+      "raw_sha256": "3a2c025ced9759fa9c63ebd1d3cb94efaeed199810baa26c60e42e759fdb693a",
+      "sanitized_sha256": "3a2c025ced9759fa9c63ebd1d3cb94efaeed199810baa26c60e42e759fdb693a",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "consolidation-simulated-clean-all.json",
+      "raw_sha256": "23527e5bf48bb7fc3d000f90816f81cfc63e5a34aea0b2822eae3565e56cc40c",
+      "sanitized_sha256": "23527e5bf48bb7fc3d000f90816f81cfc63e5a34aea0b2822eae3565e56cc40c",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "consolidation-ee8bf4e4d-all18.json",
+      "raw_sha256": "6de44ca14f57cf31ff1e8bdb60248a49ef93be84266c6389b63d0352d6d95413",
+      "sanitized_sha256": "6de44ca14f57cf31ff1e8bdb60248a49ef93be84266c6389b63d0352d6d95413",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "governance-ee8bf4e4d.xml",
+      "raw_sha256": "64b32c00b93f4bace1d4a13c4b5574a88a8bc8e2e9c146f13d8d94bc9d6a8ac6",
+      "sanitized_sha256": "c23af7dedcf494cf569606b3580840f69f409ff8f40987d773e39fd5fb4405ad",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0001.json",
+      "raw_sha256": "988f6598d24900759fcf5e454f85023f76e98ef8cd98d2680ca7c52099144fe9",
+      "sanitized_sha256": "988f6598d24900759fcf5e454f85023f76e98ef8cd98d2680ca7c52099144fe9",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0002.json",
+      "raw_sha256": "a14bd57ea13626d6656a4e36b9ac2eb0952f7522edabf2581ad113676ce018ed",
+      "sanitized_sha256": "a14bd57ea13626d6656a4e36b9ac2eb0952f7522edabf2581ad113676ce018ed",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0003.json",
+      "raw_sha256": "f54c2c2b50dbc3561466aebcb88f6e7ee14f84b2bea642389ede3219631425cd",
+      "sanitized_sha256": "f54c2c2b50dbc3561466aebcb88f6e7ee14f84b2bea642389ede3219631425cd",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0004.json",
+      "raw_sha256": "cf3d10166e0964a6a8a67c655dfec46d129bcef01006e2e8d0f7ded70f4b3848",
+      "sanitized_sha256": "cf3d10166e0964a6a8a67c655dfec46d129bcef01006e2e8d0f7ded70f4b3848",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0005.json",
+      "raw_sha256": "c3eb6dd91ebeb92b1a1e704a9eb323bd79b2cf818869b67846bc158e3d2aa97e",
+      "sanitized_sha256": "c3eb6dd91ebeb92b1a1e704a9eb323bd79b2cf818869b67846bc158e3d2aa97e",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0006.json",
+      "raw_sha256": "6a0c075b2eeebe8f354c27bc3891babf1b4b5c0aafcc0c6b49571023397a2c1e",
+      "sanitized_sha256": "6a0c075b2eeebe8f354c27bc3891babf1b4b5c0aafcc0c6b49571023397a2c1e",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0007.json",
+      "raw_sha256": "689a7c476e282236a430089c20e8933a13f2453bfba07f730f3ccf1025021496",
+      "sanitized_sha256": "689a7c476e282236a430089c20e8933a13f2453bfba07f730f3ccf1025021496",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0008.json",
+      "raw_sha256": "6b3ef834fc30e4a6f65e44f1de95cbf2fb07e7ebbec9756d0fb93f42116122e5",
+      "sanitized_sha256": "6b3ef834fc30e4a6f65e44f1de95cbf2fb07e7ebbec9756d0fb93f42116122e5",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0009.json",
+      "raw_sha256": "515c13de8454c86f4b4b52879de92f8d9489dcac61657d99e05e675464ee8655",
+      "sanitized_sha256": "515c13de8454c86f4b4b52879de92f8d9489dcac61657d99e05e675464ee8655",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0010.json",
+      "raw_sha256": "168ea0ce8f84103c1725437bd2d074b9b3c4b823bb91efc0d0ae20bbfad8e5fe",
+      "sanitized_sha256": "168ea0ce8f84103c1725437bd2d074b9b3c4b823bb91efc0d0ae20bbfad8e5fe",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0011.json",
+      "raw_sha256": "7427b23d355b0f14a4a52e820ab8566be8c0b54cc6ee9b46f10d8a0dce3b9b30",
+      "sanitized_sha256": "7427b23d355b0f14a4a52e820ab8566be8c0b54cc6ee9b46f10d8a0dce3b9b30",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0012.json",
+      "raw_sha256": "59de868dc989e86923616b31f8920e00d439b564387ab96d4d8edd441f03a645",
+      "sanitized_sha256": "59de868dc989e86923616b31f8920e00d439b564387ab96d4d8edd441f03a645",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0013.json",
+      "raw_sha256": "a387df292e7d86999d8c74477cadd224c4e64af68b5978122a445703f472e6f1",
+      "sanitized_sha256": "a387df292e7d86999d8c74477cadd224c4e64af68b5978122a445703f472e6f1",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0014.json",
+      "raw_sha256": "3f6b7b0210b40b0202ff7d5f95a9e1841b17ed82e5a46265de0a4bdbf77451c5",
+      "sanitized_sha256": "3f6b7b0210b40b0202ff7d5f95a9e1841b17ed82e5a46265de0a4bdbf77451c5",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0015.json",
+      "raw_sha256": "251ce71d36ef49ef065bfef2bef8e0bea41415c1fd7ba77f1ea32732733c1a9a",
+      "sanitized_sha256": "251ce71d36ef49ef065bfef2bef8e0bea41415c1fd7ba77f1ea32732733c1a9a",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0016.json",
+      "raw_sha256": "f1da0174a773ba2f82c0953b8447ac62a0851a11a54ef7bbf8205a7e24fe1e16",
+      "sanitized_sha256": "f1da0174a773ba2f82c0953b8447ac62a0851a11a54ef7bbf8205a7e24fe1e16",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0017.json",
+      "raw_sha256": "d598c81b0fc0d11b471e306a7c0f785776b866d2d07eb91d4063118334e7643b",
+      "sanitized_sha256": "d598c81b0fc0d11b471e306a7c0f785776b866d2d07eb91d4063118334e7643b",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "preflight-ee8bf4e4d-JAVA-GAP-0018.json",
+      "raw_sha256": "f145a92489255a279b7c782a5821403992a696a5635e093775db0dc6dc622b38",
+      "sanitized_sha256": "f145a92489255a279b7c782a5821403992a696a5635e093775db0dc6dc622b38",
+      "full_stdout_stderr_retained": false
+    },
+    {
+      "path": "consolidation-simulated-all.pytest.log",
+      "raw_sha256": "f3ecba967c1888a6a1d8d3d2de71d4f4357d207452fa205ffa25c53933017925",
+      "sanitized_sha256": "3c4785a49c05dd1b5f9c5fcd06d7bbdc6a3e818e6fc4c12f65159eedc66b5af7",
+      "full_stdout_stderr_retained": true
+    },
+    {
+      "path": "consolidation-simulated-installed-all.pytest.log",
+      "raw_sha256": "f7cea4b90cfdf908848e7a6d76d2c219b77d49cc64a8c2a7f4934dd4e7b98229",
+      "sanitized_sha256": "fd545ff9c32ed566470c98859cda529140fe4aa06d4d94c786873b72bd111544",
+      "full_stdout_stderr_retained": true
+    },
+    {
+      "path": "consolidation-simulated-clean-all.pytest.log",
+      "raw_sha256": "6fdf958c4de42a06fc0b254aac7d36a0a906956089ca67fbb5d56895f0da92cb",
+      "sanitized_sha256": "6fdf958c4de42a06fc0b254aac7d36a0a906956089ca67fbb5d56895f0da92cb",
+      "full_stdout_stderr_retained": true
+    },
+    {
+      "path": "consolidation-ee8bf4e4d-all18.pytest.log",
+      "raw_sha256": "29de858b2696bf1f1e1cf75e407b77d709b59fdeb647201dc2ff339bab16302e",
+      "sanitized_sha256": "29de858b2696bf1f1e1cf75e407b77d709b59fdeb647201dc2ff339bab16302e",
+      "full_stdout_stderr_retained": true
+    }
+  ]
+}
