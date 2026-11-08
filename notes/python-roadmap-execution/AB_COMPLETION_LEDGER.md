@@ -1,5 +1,80 @@
 # A+B completion ledger — ongoing campaign
 
+## PR317 integration reconciliation — candidate head superseded
+
+Integrates reconciled316/315 histories after verified312–314 delivery, retaining
+all ledger entries and premerge candidate evidence. Fresh head CI required; earlier
+317head8e6d10eb3 evidence is historical, not CI for this integration commit.
+Production/test/mapping bytes unchanged. Final exact merged-candidate revalidation,
+42-row scoped dispositions/readiness and owned cleanup remain owed.
+
+## PR312–313 verified merged; combined candidate and42rowpreparationPASS
+
+Premerge readiness preparation also retains all8gates and returns expectedexit3:
+offline/core-package/owned-lifecycle/scientific-referencePASS are bounded by candidate
+receipt; coverageUNKNOWNawaits finalcandidate replay, security-failure/scale/native
+server-compatibilityBLOCKED. NOTELIGIBLE/publicationfalse; machine hashes/states are
+not independent scientific/human release attestation. Evidence
+integrated-reconciliation-readiness-preparation-20261108.json, no gate removed.
+
+312exact77d3c854ad9d1b35d71b2a375d23e04258f648a5/all91checksSUCCESS merged
+29848b050f434f6c742174e81a9f1340d17abd30 at2026-11-08T00:25:40Z.313exact
+be2a72342040c9675ec070e59bcd9845571b937f/all91checksSUCCESS merged
+0048a771f631f30fb08de525bb390fc050bcdbef at00:27:30Z. Both ordinary merges,
+remote state/local ancestry checkpoints verified; prior failures preserved. First313
+verification refused transient metadata; later CLEAN/allSUCCESS verified before merge,
+no bypass. Delivery receipts whole-tree-type-delivery-20261108.json and
+reviewed-operation-delivery-20261108.json.314–316 remain separate pending deliveries.
+
+Fresh combined premergeb35c065d5 candidate parity71SDK/6worker/37reference modules+
+13assetsPASS; installed5305SDK/38tools/116worker/538reference/39governancePASS, zero
+failures/errors/skips. All42original rows/history and17stable gap custody preserved;
+every required referenced Python/reference function/file has passed exact-byte evidence.
+Seven historical parameter refs require exact JUnit case names in addition to function-
+level trace matches: initial strict-string lookup missed these, retained firstreport;
+corrected parametercustody report matches each exact passing case without claiming
+parameter-specific operation presence. Native refs remainNOTRUN and no finaldispositions.
+
+Evidence integrated-reconciliation-candidate-20261108.json pins artifacts/full groups,
+coverage/raw42rowpreparation/17gapdocs and limitations. All455nonabstract mappings remain
+selected assertion associations, not whole-function/exhaustivefunctional/native proof.
+Next314–316exactCI/ordinarymerge/checkpoint, final mergedcandidate package/type/fullsuite/
+readiness/row review and safe ownedcleanup. No native/service/OSrepair, public release,
+develop promotion or original-row acceptance inferred from this premergepass.
+
+## Combined candidate verification and row-evidence preparation
+
+PR3161641f65c3 published all455nonabstract associations/130reviews;51abstract remain
+uncalled/unmapped. Parent312–315 remain separate ordinary deliveries. Resumed remote
+snapshot finds no current-head failures:312has88SUCCESS/3QUEUED;31378SUCCESS/13pending;
+31455SUCCESS/36pending;31515SUCCESS/57pending;316newchecks pending. These are incomplete
+CI snapshots, not merge approval; watchers remain active, prior failures retained.
+
+New owned branchfeat/python-final-roadmap-reconciliation combines314boundarycontrols
+with316review history. Ledger merge conflict resolved by retaining both histories,
+not choosing away evidence. Fresh source/wheel/sdist/installed builds and complete
+SDK/tooling/worker/reference/governance suites run as a premerge candidate preparation;
+not relabelled final merged-candidate acceptance. Both114fileplatformmypy/fatallintPASS.
+Fresh governance39PASS confirms17stable gap narratives/individual reproduction docs,
+not new native reproduction. Historical NullScannerReproducer.java custody remains
+missing; do not fabricate artifact or repair unrelated services.
+
+Private42rowpreparation checks original IDs/history and exact test/evidence identities,
+but assigns zero final dispositions until merged-candidate and row review gates. Support
+guide now distinguishes later opt-in finite reference additions from native limitations
+and gives explicit no-fallback/current-credential/precision/cancellation migration rules.
+No public release/develop promotion/support commitment. Read-only resource inventory
+finds CIwatchers and active verifier descendants, no matching notebook kernels; sampled
+watcher/verifier processes have no visible main windows. Final owned cleanup remains
+owed after jobs; no unrelated process or user terminal terminated.
+
+## Combined reconciliation candidate — parent delivery still pending
+
+Combined candidate preserves PR314 boundary tests/evidence and PR316 all455nonabstract
+reviewed associations. Both histories below retained; no parent remote merge or final
+row acceptance inferred. Prepare final package/row verification without altering
+production or previously executed test bytes. All42original IDs/history remain intact.
+
 ## PR316 integration reconciliation — fresh head CI required
 
 PR316 original1641f65c3 watcher completed, but remote mergeability is CONFLICTING.

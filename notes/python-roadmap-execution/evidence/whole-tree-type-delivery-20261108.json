@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr": 312,
+  "state": "REMOTE_MERGED_LOCAL_ANCESTRY_VERIFIED",
+  "remote": {
+    "baseRefName": "feature/python-experiment-runner",
+    "headRefOid": "77d3c854ad9d1b35d71b2a375d23e04258f648a5",
+    "mergeCommit": {
+      "oid": "29848b050f434f6c742174e81a9f1340d17abd30"
+    },
+    "mergedAt": "2026-11-08T00:25:40Z",
+    "state": "MERGED"
+  },
+  "exact_head_checks": 91,
+  "all_checks": "SUCCESS",
+  "premerge_rollup": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\pr312-verified-finalhead-ci.json",
+    "sha256": "46075d5dbf574b957610c276fe2d9627a3b0949b20699fd91da71d23421dd630"
+  },
+  "coverage_policy": "Original thresholds/checker scope preserved; complete SDK coverage inputs/dependencies provisioned in21feature workflows. Prior coverage/dependency failures retained.",
+  "native": "REAL_NOT_RUN",
+  "publication_authorized": false,
+  "final_original_row_acceptance": false
+}

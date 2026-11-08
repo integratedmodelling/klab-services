@@ -3,24 +3,35 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-remaining-operation-assertions",
+    "branch": "feat/python-final-roadmap-reconciliation",
     "pr": null,
     "requirement": "RC-P0",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 311,
-    "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
-    "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
-    "utc": "2026-11-07T23:02:11Z",
+    "pr": 313,
+    "merge": "0048a771f631f30fb08de525bb390fc050bcdbef",
+    "head": "be2a72342040c9675ec070e59bcd9845571b937f",
+    "utc": "2026-11-08T00:27:30Z",
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P3.5",
   "pending_deliveries": [
-    {"pr": 312, "head": "77d3c854a", "state": "OPEN_COMPLETE_EXTRAS_CORRECTION_CI_PENDING_PRIOR_FAILURES_RETAINED"},
-    {"pr": 313, "head": "be2a72342", "state": "OPEN_REVIEWED_219_MAPPINGS_INHERITS_DEPENDENCY_CORRECTION_CI_PENDING"},
-    {"pr": 314, "head": "9baeae38c", "state": "OPEN_33_BOUNDARY_CONTROLS_5305_INSTALLED_SDK_PASS_CI_PENDING"},
-    {"pr": 315, "head": "7b9af529b", "state": "OPEN_281_LINKED_225_MISSING_REVIEW_SUPPLEMENT_CI_PENDING"}
+    {
+      "pr": 314,
+      "head": "9baeae38c",
+      "state": "OPEN_33_BOUNDARY_CONTROLS_5305_INSTALLED_SDK_PASS_CI_PENDING"
+    },
+    {
+      "pr": 315,
+      "head": "7b9af529b",
+      "state": "OPEN_281_LINKED_225_MISSING_REVIEW_SUPPLEMENT_CI_PENDING"
+    },
+    {
+      "pr": 316,
+      "head": "1641f65c3",
+      "state": "OPEN_ALL455_NONABSTRACT_LINKED_51ABSTRACT_UNCALLED_CI_PENDING"
+    }
   ],
   "remaining_runnable_work": [
     "operation-workflow-attribution",

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr": 313,
+  "state": "REMOTE_MERGED_LOCAL_ANCESTRY_VERIFIED",
+  "remote": {
+    "baseRefName": "feature/python-experiment-runner",
+    "headRefOid": "be2a72342040c9675ec070e59bcd9845571b937f",
+    "mergeCommit": {
+      "oid": "0048a771f631f30fb08de525bb390fc050bcdbef"
+    },
+    "mergedAt": "2026-11-08T00:27:30Z",
+    "state": "MERGED"
+  },
+  "exact_head_checks": 91,
+  "all_checks": "SUCCESS",
+  "premerge_rollup": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\pr313-verified-finalhead-ci.json",
+    "sha256": "1f41ea48d54fa5414c8cc41b6a8535d4ce7692cc6fc0c7d40b9c363db273ffed"
+  },
+  "scope": "219reviewed linked operations at this delivery; subsequent315/316 mapping supplements remain distinct. No exhaustive functional/native/final-row acceptance. Initial premerge verification refused during transient metadata state before later CLEAN/allSUCCESS verification; no gate bypass.",
+  "native": "REAL_NOT_RUN",
+  "publication_authorized": false,
+  "final_original_row_acceptance": false
+}
