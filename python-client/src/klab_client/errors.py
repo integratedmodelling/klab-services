@@ -4,6 +4,13 @@
 class KlabError(Exception):
     """Base error; diagnostics are sanitized by the transport."""
 
+    # Populated only by the corresponding HTTP/broker transport failure paths.
+    # Annotations do not create attributes on unrelated local/configuration errors.
+    status_code: int
+    broker_reply_code: int | None
+    broker_error_type: str
+    broker_transport_phase: str
+
 
 class ConfigurationError(KlabError):
     pass

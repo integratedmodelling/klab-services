@@ -21,6 +21,15 @@ ARGS = {"urn": "owned:test:resource", "schema_id": "raster.geotiff.import", "med
         "allow_write": True}
 
 
+def test_import_completion_without_binding_refuses_before_job_or_network():
+    with Client('https://runtime.invalid', http_transport=httpx.MockTransport(
+            lambda request: pytest.fail('Missing binding must not send HTTP'))) as client:
+        importer = ResourceImporter(client, 'owned-user-scope')
+        with pytest.raises(ProtocolError, match='binding was not established'):
+            importer._finish(17, None, SCHEMA['schemaId'], ARGS['urn'],
+                             lambda *args, **kwargs: pytest.fail('Must not create an unbound Job'))
+
+
 class Wire:
     def __init__(self, schemas=None, acknowledgement=17):
         self.schemas = {"raster.geotiff": [dict(SCHEMA)]} if schemas is None else schemas

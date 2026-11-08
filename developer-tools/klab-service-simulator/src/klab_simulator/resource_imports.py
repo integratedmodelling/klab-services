@@ -35,6 +35,6 @@ def parse_upload(headers, body):
             or part.get_param("application") != "geotiff"):
         raise ContractError(422, "The declared file field/media type does not match the fixture importer")
     content = part.get_payload(decode=True)
-    if not content or hashlib.sha256(content).hexdigest() != CROP_SHA:
+    if not isinstance(content, bytes) or not content or hashlib.sha256(content).hexdigest() != CROP_SHA:
         raise ContractError(422, "Finite simulator importer accepts only the pinned native fixture; no arbitrary raster admission")
     return {"sourceSha256": CROP_SHA, "sourceBytes": len(content)}

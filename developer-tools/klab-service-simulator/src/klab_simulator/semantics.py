@@ -5,6 +5,7 @@ The SIM vocabulary and all answers below are SIMULATED_PROVISIONAL, not claims a
 real authority catalogues or native geography ontology parentage.
 """
 from copy import deepcopy
+from typing import Any, cast
 from urllib.parse import parse_qs, urlsplit
 
 from .state import ContractError, observable
@@ -39,7 +40,7 @@ def respond(state, method, route, original_path, data, body):
         if (not isinstance(query, str) or not 1 <= len(query) <= 256 or data.get("filter") is not None
                 or type(offset) is not int or not 0 <= offset <= 10000 or type(limit) is not int or not 1 <= limit <= 20):
             raise ContractError(422, "Finite authority fixture supports bounded unfiltered search only")
-        rows = [{"id": code, "authorityName": "SIM", "locator": "SIM:" + code,
+        rows: list[dict[str, Any]] = [{"id": code, "authorityName": "SIM", "locator": "SIM:" + code,
                  "label": "Elevation", "description": "Synthetic ambiguous-label candidate", "score": None,
                  "notifications": []} for code in CODES if query.casefold() in ("elevation", "altitude", code.casefold())]
         page = rows[offset:offset + limit]
@@ -57,12 +58,12 @@ def respond(state, method, route, original_path, data, body):
             urns = [row.get("urn") if isinstance(row, dict) else None for row in data]
             for urn in urns:
                 concept(urn)
-            return (urns[0] == urns[1] or urns[0].startswith("SIM:") and urns[1] == "geography:Elevation"), "application/json"
+            return (urns[0] == urns[1] or cast(str, urns[0]).startswith("SIM:") and urns[1] == "geography:Elevation"), "application/json"
         urn = data.get("urn") if isinstance(data, dict) else None
         concept(urn)
         if route.endswith("/satisfiable"):
             return True, "application/json"
         if route.endswith("/parents"):
-            return ([concept("geography:Elevation")] if urn.startswith("SIM:") else []), "application/json"
+            return ([concept("geography:Elevation")] if cast(str, urn).startswith("SIM:") else []), "application/json"
         return ([concept("SIM:" + code) for code in CODES] if urn == "geography:Elevation" else []), "application/json"
     return None

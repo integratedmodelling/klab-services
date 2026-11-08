@@ -9,7 +9,7 @@ from ._inspection import bounds, freeze, html_summary
 from .client import scope_token
 from .dto import notifications, object_payload, required_text
 from .errors import InvalidRequestError, ProtocolError, UnsupportedOperationError
-from .provenance import ProvenanceView, _node, fetch_provenance
+from .provenance import ProvenanceNode, ProvenanceView, _node, fetch_provenance
 
 
 def _plain(value, depth=0):
@@ -91,7 +91,10 @@ def decode_flowchart(payload, *, max_nodes=256, max_links=512, max_response_byte
     if phase not in ("unassociated plan", "resolution plan", "contextualization plan"):
         raise InvalidRequestError("FlowChart evidence must remain a plan, not an execution claim")
     payload, raw = _payload(payload, max_response_bytes, redact)
-    nodes, ports, links, ids = [], [], [], set()
+    nodes: list[ChartNode] = []
+    ports: list[ChartPort] = []
+    links: list[ChartLink] = []
+    ids: set[str] = set()
 
     def identity(row):
         value = required_text(row, "id")
@@ -127,7 +130,7 @@ def decode_flowchart(payload, *, max_nodes=256, max_links=512, max_response_byte
                 if not values or any(not isinstance(value, str) or not value.strip() for value in values):
                     raise ProtocolError("FlowChart links require nonempty endpoint identities")
                 endpoints.append(tuple(values))
-            links.append(ChartLink(identity(edge), *endpoints, freeze(edge, redact)))
+            links.append(ChartLink(identity(edge), endpoints[0], endpoints[1], freeze(edge, redact)))
         for child in _array(row.get("children", []), "children"):
             visit(child, id, depth + 1)
 
@@ -179,7 +182,7 @@ def decode_dataflow(payload, *, max_actuators=256, max_response_bytes=1024 * 102
     coverage = payload.get("resolvedCoverage")
     if coverage is not None and (type(coverage) not in (int, float) or not 0 <= coverage <= 1 or not math.isfinite(coverage)):
         raise ProtocolError("Resolved coverage must be a finite fraction or unavailable")
-    actuators = []
+    actuators: list[ActuatorEvidence] = []
 
     def visit(row, path):
         row = object_payload(row, "actuator")
@@ -262,7 +265,8 @@ def fetch_execution_evidence(observation, *, limit=64, offset=0, activity_limit=
 
 
 def _activity_candidates(view, activity_limit):
-    candidates, diagnostics = {}, []
+    candidates: dict[int, ProvenanceNode] = {}
+    diagnostics: list[str] = []
     for link in view.links:
         for node in (link.source, link.target):
             if node.kind == "activity":

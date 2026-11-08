@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, TYPE_CHECKING, TypeVar
+from typing import Any, TYPE_CHECKING, TypeVar, cast
 
 from klab_client.api.knowledge import Concept, Observable
 from klab_client.api.primitives import (
@@ -249,13 +249,13 @@ class RuntimeServiceImpl(_RemoteService, RuntimeService):
     def release_session(self, scope: SessionScope) -> bool:
         from klab_client.client import scope_token
         self._check_release_binding(scope)
-        return self._release("/releaseSession", scope_token(scope).split(".")[0])
+        return self._release("/releaseSession", cast(str, scope_token(scope)).split(".")[0])
 
     def release_context(self, scope: ContextScope) -> bool:
         from klab_client.client import scope_token
         self._check_release_binding(scope)
         # Release the root context, never dispose an arbitrary focused observation.
-        return self._release("/releaseContext", ".".join(scope_token(scope).split("#")[0].split(".")[:2]))
+        return self._release("/releaseContext", ".".join(cast(str, scope_token(scope)).split("#")[0].split(".")[:2]))
 
     def _check_release_binding(self, scope):
         """Bound handles must refer to this Runtime before destructive HTTP."""

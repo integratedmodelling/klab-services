@@ -154,6 +154,8 @@ class ResourceImporter:
     def _finish(self, identity, upload, schema_id, urn, job_type):
         if type(identity) is not int or not 1 <= identity <= 2**63 - 1:
             raise ProtocolError("Import requires a positive Java-long Job acknowledgement")
+        if self._binding is None:
+            raise ProtocolError("Import service binding was not established")
         url, service_id = self._binding
         if (upload.count != upload.size or self.client.transport.endpoint("resources").url != url
                 or self.client._service_id_cache.get("resources") != service_id):

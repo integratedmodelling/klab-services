@@ -184,6 +184,15 @@ def make(environment, **kwargs):
     return AgentChannel(ref, broker, federation_id=FIXTURE["federationId"], **kwargs)
 
 
+@pytest.mark.parametrize('resource', ['connection', 'channel'])
+def test_missing_local_broker_resource_refuses_without_connecting(environment, resource):
+    channel = make(environment)
+    with pytest.raises(TransportError, match='no active local broker ' + resource):
+        getattr(channel, '_local_' + resource)()
+    assert environment[3] == []
+    assert channel.state == 'NEW'
+
+
 def test_real_connection_parameters_and_one_shot_commands(environment):
     ref, _, _, connections = environment
     channel = make(environment)

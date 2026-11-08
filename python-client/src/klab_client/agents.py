@@ -122,7 +122,8 @@ class AgentPreviews:
         return AgentSourcePreview(urn, hashlib.sha256(source.encode("utf-8")).hexdigest(),
                                   hashlib.sha256(parser_source.encode("utf-8")).hexdigest(),
                                   parser_source != source, code,
-                                   *binding, freeze(result, self.client.transport.redact))
+                                   binding[0], binding[1], binding[2], binding[3],
+                                   freeze(result, self.client.transport.redact))
 
     def preview(self, source):
         """Translate once with fixed compileOnly (DO_NOT_COMPILE_JAVA) flags.

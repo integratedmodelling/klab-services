@@ -1,5 +1,73 @@
 # Resume the full Python A+B+C campaign
 
+NEWEST312 secondhead01395fa76 stillFAIL: offlineall3versions and whole-treeWin/Linux
+PASS, but addedfullunit steps need complete extras. Inspected run42426782552 missing
+cryptography/numpy/psutil;42426782662 vector missing. Logs and rollup retained at
+full-roadmap-20261106/pr312-second-finalhead-ci-failures.json and failed-run-*.log.
+Current312branch has uncommitted21workflow dependency-setup correction: install exact
+existing offlineextrasdev,local,analysis,tabular,vector,notebook,events before fullunit
+append. Updated dependency-order guard plus ordering/delivery3controlsPASS. Need
+commit/push then exactheadCI; no thresholds/checker/API/default-extra changes.
+313ready9e25692c1/219maps287missing/24controls inherits parent blocker;313watcher active.
+Separateboundary worktree merged313history and full installed5305SDKPASS; statement
+coverage100percent/10481 statements, branches3320of3322/99.9398percent,165existing
+exclusions retained. Full report boundary-controls-full-sdk-first; not100percent
+unexcluded/functional/native acceptance. No boundaryPR yet; ec98ed989 new33tests saved.
+
+LATEST312 firstfinalhead6f4b22ae9 has47checks21FAIL (coverage only in inspectedlogs),
+no merge. Corrective pass adds missingdelivery branch control and extends all21feature
+SDKcoverage reports with full unit suite before unchanged globalchecker, preserving
+selection append-before-simulator-reset. Local final5272SDKPASS and40unchangedgate
+commandsPASS underb342a674a andad2bc949c bases; source stillidentical1e740c34b artifacts.
+Receipt whole-tree-ci-coverage-correction-20261107.json retains failedCI and predecessor
+5269PASS2FAIL. Need pushcorrection/newheadCI then ordinary312merge/checkpoint.
+
+Fresh operationtrace jobfinished:5270SDK/538referencePASS/455observed51abstractuncalled,
+219reviewedmapped287missing across506. Combined51workflow mapping exists privately at
+full-roadmap-20261106/whole-tree-operation-traces-first/reviewed-mappings.json (SHA256
+d78c73745446690bdc7aa880c1d9c0a29e59106f5d03ab62c3fd9f721de10f01), attribution SHA256
+8682ff7d27459f9b2003ee6fe46bcc26c9c9f45af897178b9430a8e52379edec. Not yet committed as
+mappingdelivery; retain distinct scopes/no thread/process/kernel attribution. Local
+branchfeat/python-reviewed-operation-assertions based6f4b22ae9 exists for nextwork.
+
+Additional owned worktree Temp/opencode/python-boundary-coverage-controls on branch
+feat/python-boundary-coverage-controls has committedec98ed989 (new33test boundaryfile,
+installed33PASS/no productionchanges), notpushed/noPR. It covers malformedDTO/service/
+transport/scientific invariants, not real provideraccuracy; retain until integration.
+Currentworktree remains whole-tree-type-contracts with312correctionpendingpush.
+
+Newest work is ownedsecondary `feat/python-whole-tree-type-contracts`, DraftPR312
+source4a217c1d2/code1e740c34b, includes primary57c9b3dd7 and verified309–311mergehistory.
+All source changes safelycommitted/pushed. Fresh installed5270SDK/38tools/116worker/
+538reference/39governancePASS; parity71/6/37modules13assetsPASS. Windows/Linux-target
+whole-tree114mypy/fatallintPASSwithoutignores; full history144→105→79→44→12→1→PASS
+retained. Receipt whole-tree-types-installed-20261107.json. EarlierSDKsource6failures
+retained, correctedfocused243PASS/source538referencePASS, no guard weakened.
+
+Fresh operation traces run through private verify-whole-tree-operation-traces.py,
+output full-roadmap-20261106/whole-tree-operation-traces-first using exact new packages.
+Do not alter SDK/test/tool/example bytes while tracing. Private reviewed supplement
+whole-tree-reviewed-mapping-supplement.json does not yet count as current mapped
+acceptance. Need evidence/finalheadCI/ordinary312merge/remotecheckpoint, then continue
+RC-P0assertionreview, exactmergedpackage/readiness/42-rowreconciliation and owned
+cleanup. Native science/issuer/rights/history/deployment/scale/OSsecurity/release remain
+separate external gates; preserve preexisting coverage/caches and unrelated resources.
+
+Latest310MERGED3df3ee48d at2026-11-07T23:00:03Z/exact336ea7604/all40checksPASS,
+remote-localcheckpointverified.42originalIDs/history7runnable/zero dispositions.
+Primary feat/python-integrated-packaging-readiness has uncommitted evidence/checkpoint
+notes; private verify-integrated-packaging.py fullbuild/freshpiptargets/fullsuite run
+active at premerge8867bb4af candidate, output integrated-packaging-first. Do not modify
+primary SDK/test/tool/example bytes during frozen run.311ready8867bb4afCIwatcher active.
+Whole-tree mypy144errors25files/114modules retained whole-tree-types-initial.log,
+fatallintPASS. Separate ownedworktree C:/Users/lumsd/AppData/Local/Temp/opencode/
+whole-tree-type-contracts (branchfeat/python-whole-tree-type-contracts) has uncommitted
+errors.py/_async_transport.py/state.py limited typing/binding corrections.223SDK44sim
+sourcecontrolsPASS; firstcorrectiontype105errors before laterstateannotations. Need
+continue corrections without ignores, fullsuite/build/types exactcandidate; no all-tree
+pass or finalroadmapacceptance claim.60reviewedmaps446missing remain. Preserve owned
+worktree pending verified integration; no finalcleanup/delete until changes safely saved.
+
 Latest309MERGED914582221 at2026-11-07T22:49:56Z/exact87cc87c16/all39checksPASS,
 remote/localcheckpointverified.42originalIDs/history8runnable/zero dispositions.
 310ready336ea7604 source scientific-snapshot484/3/52PASS35controls56maps450missing,

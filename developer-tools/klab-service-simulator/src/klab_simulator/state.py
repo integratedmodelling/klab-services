@@ -10,6 +10,7 @@ import math
 import re
 import sqlite3
 import threading
+from typing import Any
 from urllib.parse import unquote, urlsplit
 
 from .contracts import SIMULATED_PROVISIONAL
@@ -19,7 +20,7 @@ ACT = "org.integratedmodelling.klab.api.provenance.impl.ActivityImpl"
 GEO = "org.integratedmodelling.klab.api.geometry.impl.GeometryImpl"
 MODEL = "simulator.elevation"
 SERVICES = ("reasoner", "resources", "resolver", "runtime")
-SCENARIOS = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
+SCENARIOS: tuple[str, ...] = ("elevation", "zero-negative-nodata", "empty-result", "malformed-empty", "failure", "usgs-recorded", "http500")
 EXPORT_SCENARIOS = ("export-interrupted", "export-media-mismatch", "export-denied")
 SCENARIOS += EXPORT_SCENARIOS + ("import-workflow", "nonuniform-export", "semantic-unavailable", "declared-band-export", "category-code-export", "candidate-sources", "provenance-dependencies", "provider-avro")
 SCENARIOS += ("revision-convergence",)
@@ -70,7 +71,10 @@ class State:
         self.store = None
         self.closing = False
         self.service_ids = {name: f"sim-{name}-{seed}" for name in SERVICES}
-        self.sessions, self.contexts, self.jobs, self.observations = {}, {}, {}, {}
+        self.sessions: dict[str, dict[str, Any]] = {}
+        self.contexts: dict[str, dict[str, Any]] = {}
+        self.jobs: dict[tuple[str, int], dict[str, Any]] = {}
+        self.observations: dict[tuple[str, Any], dict[str, Any]] = {}
         self.imported_resources = {}
         self.query_faults = {}
         self.worldview_id = "synthetic"
@@ -109,10 +113,10 @@ class State:
         from .execution_explanations import ExecutionExplanations
         self.execution_explanations = ExecutionExplanations(self) if scenario == "execution-explanation" else None
         self.next_context, self.next_job, self.next_observation = 1, 1, 1
-        self.trace = deque(maxlen=4096)
+        self.trace: deque[dict[str, Any]] = deque(maxlen=4096)
         self.lock = threading.RLock()
-        self.values = [100 + 2 * row + 3 * column for row in range(20) for column in range(20)]
-        self.grid = {"shape": [20, 20], "bounds": [0, 0, 2000, 2000], "crs": "EPSG:3857",
+        self.values: list[Any] = [100 + 2 * row + 3 * column for row in range(20) for column in range(20)]
+        self.grid: dict[str, Any] = {"shape": [20, 20], "bounds": [0, 0, 2000, 2000], "crs": "EPSG:3857",
                      "unit": "m", "row_orientation": "north_to_south", "axis_order": "x,y",
                      "centre_origin": [50, 1950], "cell_size": [100, -100], "precision": "float64"}
         self.origin = "SYNTHETIC_SIMULATOR"
@@ -488,8 +492,8 @@ class State:
             selected = self.shared_reads.respond(service, method, route, principal, scope, headers, data, original_path)
             if selected is not None: return selected
         if self.scenario == "source-validation":
-            from .source_validation import respond
-            selected = respond(self, service, method, route, principal, data, body)
+            from .source_validation import respond as source_validation_response
+            selected = source_validation_response(self, service, method, route, principal, data, body)
             if selected is not None: return selected
         if service == "resources" and route.startswith("/experimental/accepted-documents/v1/") and self.accepted_sources is not None:
             return self.accepted_sources.request(method, original_path.split("/resources",1)[1], principal, scope, headers, data)
@@ -521,8 +525,8 @@ class State:
                 raise ContractError(404, "Observable not in finite simulator vocabulary")
             return observable(self.scenario), "application/json"
         if service == "reasoner":
-            from .semantics import respond
-            semantic = respond(self, method, route, original_path, data, body)
+            from .semantics import respond as semantic_response
+            semantic = semantic_response(self, method, route, original_path, data, body)
             if semantic is not None:
                 return semantic
         if service == "resources":
@@ -548,12 +552,12 @@ class State:
                 if sum("import_urn" in row for row in self.jobs.values()) >= 32:
                     raise ContractError(429, "Simulator resource budget exceeded")
                 source = parse_upload(headers, body)
-                result = {"empty": False, "notifications": [], "results": [{"resourceUrn": urn,
+                result: dict[str, Any] = {"empty": False, "notifications": [], "results": [{"resourceUrn": urn,
                     "knowledgeClass": "RESOURCE", "serviceId": self.service_ids["resources"]}]}
                 identity = self._job(service, root, principal, result)
                 self.jobs[(service, identity)].update(import_urn=urn, import_source=source)
                 return identity, "application/json"
-            catalog = {"PROJECT": [{"urn": "simulator.project"}], "NAMESPACE": [{"urn": "simulator"}],
+            catalog: dict[str, list[dict[str, Any]]] = {"PROJECT": [{"urn": "simulator.project"}], "NAMESPACE": [{"urn": "simulator"}],
                 "MODEL": [{"urn": MODEL, "projectName": "simulator.project", "namespace": "simulator",
                     "observables": [{"urn": "geography:Elevation in m", "unit": "m", "optional": False}],
                     "dependencies": [], "resourceUrns": ["simulator:fixture:elevation"]}],
@@ -776,13 +780,13 @@ class State:
                 row = self.observations.get((root, data.get("id")))
                 return [row] if row else [], "application/json"
             if data.get("resultType") == "LINK":
-                from .provenance_fixture import rows as provenance_rows, matches, validate_children
+                from .provenance_fixture import rows as provenance_rows, matches as provenance_matches, validate_children
                 rows = provenance_rows(self, root)
                 offset, limit = data.get("offset", 0), data.get("limit", 64)
                 if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 129:
                     raise ContractError(422, "Graph page exceeds the bounded scenario contract")
                 children = data.get("children", [data])
                 validate_children(children)
-                rows = [row for row in rows if any(matches(row, child) for child in children)]
+                rows = [row for row in rows if any(provenance_matches(row, child) for child in children)]
                 return rows[offset:offset + limit], "application/json"
         raise ContractError(501, "Route/method not implemented by this finite simulator contract")

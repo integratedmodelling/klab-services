@@ -33,7 +33,7 @@ class NotificationBroker:
             parsed = urlsplit(self.url)
             port = parsed.port
             host = parsed.hostname
-            loopback = host == "localhost" or ipaddress.ip_address(host).is_loopback
+            loopback = host == "localhost" or host is not None and ipaddress.ip_address(host).is_loopback
         except ValueError:
             loopback = False
             # A DNS hostname is valid for TLS, but never qualifies for plaintext.
@@ -209,6 +209,8 @@ class ActivityNotifications:
             raise InvalidRequestError("Open an unused receiver before reading; no automatic reconnect")
         try:
             self._binding()
+            if self._iterator is None or self._channel is None:
+                raise ProtocolError("Open notification receiver has no active local broker resources")
             if self.received >= self.max_events:
                 self.state = "LIMIT_REACHED"
                 raise ProtocolError("Notification event budget exhausted")

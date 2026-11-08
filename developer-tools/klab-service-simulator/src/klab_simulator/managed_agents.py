@@ -6,6 +6,7 @@ Only caller-owned root BEHAVIOR-like lifecycle is referenced; no private session
 import json
 import re
 import secrets
+from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 from .state import ContractError
@@ -36,7 +37,7 @@ class ManagedAgents:
         self.cleanup()
         url = urlsplit(route)
         pieces = url.path[len(PREFIX):].split("/")
-        data = None
+        data: Any = None  # JSON shape is validated in the POST branch before use.
         if method == "POST":
             if len(body) > 4096:
                 raise ContractError(413, "Managed reference request byte budget exceeded")
@@ -76,9 +77,10 @@ class ManagedAgents:
             epoch = data["epoch"]
         else:
             raise ContractError(404, "Unsupported managed reference operation")
-        row = self.rows.get(pieces[0])
-        if row is None or epoch != self.epoch:
+        retained = self.rows.get(pieces[0])
+        if retained is None or epoch != self.epoch:
             raise ContractError(410, "Managed reference absent, purged or lost on restart; never auto-create/replay")
+        row = retained
         if row["scope"] != root:
             raise ContractError(403, "Managed reference belongs to another root")
         if method == "GET" and len(pieces) == 1:

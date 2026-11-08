@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 import tempfile
+from typing import cast
 from urllib.parse import quote
 
 from .api.runtime import ObservationImpl
@@ -63,7 +64,7 @@ def _media(value, error):
         raise error("Export requires one explicit valid media type")
     message = Message()
     message["content-type"] = value
-    parameters = message.get_params()[1:]
+    parameters = cast(list[tuple[str, str | None]], message.get_params())[1:]
     if any(not key or val is None for key, val in parameters) or len({key for key, val in parameters}) != len(parameters):
         raise error("Invalid or duplicate media-type parameters")
     return message.get_content_type(), dict(parameters)

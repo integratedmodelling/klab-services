@@ -1,5 +1,142 @@
 # A+B completion ledger — ongoing campaign
 
+## PR312 second CI pass exposes expanded-suite dependency setup gap
+
+01395fa767cd6f1d8899c86fe061be4b72bfd89c offline3.11/3.12/3.13 nowPASS and both
+whole-tree platform jobsPASS, but feature jobs fail added full-suite collection or
+optional vector tests. Inspected candidate run42426782552 lacks cryptography/numpy/
+psutil; rasterlabel run42426782662 lacks vector dependencies. Fullsuite measurement
+needs fullsuite extras, not the old narrow-feature install. Second failed rollup/logs
+retained privately; no merge or waiver. Corrective pass installs the same existing
+SDKextras as offlineCI before full-unit append in all21featurejobs; workflow guard
+now verifies dependency ordering. Dependency/input/order/delivery controls3PASS.
+No production dependency/default-extra/API changes, no skip/error relaxation; local
+5272fullSDK/40unchangedgates evidence uses the already complete borrowed environment.
+Fresh new-head CI still required. Child313ready9e25692c1 inherits parent blocker;
+its219reviewedmaps287missing/24controls remain local, not delivery acceptance.
+
+Corrected local5272installedSDKPASS/no failures/errors/skips; all40unchanged coverage
+checker commandsPASS against currentintegrationb342a674a and historicalofflinead2bc949c.
+Missing-delivery branch covered, explicit unconfirmed mockcleanup retained. Shared
+workflow full-unit inputs/order controlsPASS. No source bytes changed from1e740c34b
+artifacts; no gate relaxation. Receipt whole-tree-ci-coverage-correction-20261107.json
+retains47check/21FAIL firsthead and local5269PASS2FAIL predecessor. New exactheadCI and
+ordinary312merge/checkpoint remain owed. Fresh219reviewedmaps287missing stays separate
+RC-P0delivery work; no native/finalrow/release acceptance.
+
+## PR312 first final-head CI fails coverage; corrective pass active
+
+6f4b22ae9070ef85d6a07c277c7fee3f7824133d has47checks/21FAIL, not mergeable acceptance.
+Inspected failed candidate and offline logs show unchanged global changed-code coverage
+checker consumed narrow feature-only reports, plus one genuinely uncovered new broker
+missing-delivery branch. No test/type failure is inferred from those coverage messages;
+Windows/Linux whole-tree jobs and local full installed suites remain separately PASS.
+Failed rollup and logs retained privately with exact head/runIDs42425570607/42425570586.
+
+Added explicit mocked missing-delivery negative control, including DISCONNECTED and
+truthful unconfirmed cleanup/noack/no reconnect. Initial test helper-name/state/cleanup
+expectation mistakes retained; corrected guard/ordering controlsPASS. All21SDK feature
+workflows now extend coverage with full SDK unit suite before the unchanged global
+checker; observation-selection append moved before simulator reset. No exclusion,
+threshold reduction, changed-file filter, or checker waiver. Expanded local SDK+
+coverage/gate reproduction running; final new-head CI still owed.
+
+Fresh prior5270SDK/538reference owning-thread tracesPASS,455observed/51abstractuncalled
+preserved; privately reviewed supplement links219maps287missing. Not yet committed as
+the RC-P0 mapping delivery, and new added test has separate evidence pending. Native
+science/rights/deployment/OSsecurity and final42-row acceptance remain unpromoted.
+
+## PR312 fresh installed/type verification passes; tracing continues
+
+Fresh source/wheel/sdist/installed parity71SDK/6worker/37reference modules and13
+referenceassetsPASS at codecandidate1e740c34b. Installed5270SDK/38tooling/116worker/
+538reference/39governancePASS, zero failures/errors/skips. Windows/Linux-target
+whole-tree114filemypy and fatal lintPASS without type ignores. Earlier144→1diagnostics
+and source5264PASS/6FAIL retained separately; corrected focused243PASS, source538sim
+PASS. Receipt evidence/whole-tree-types-installed-20261107.json pins artifacts,
+source/support bytes, coverage and diagnostics, not final merged-candidate acceptance.
+
+Draft312 source4a217c1d2 to receive evidence and exact-headCI; ordinary merge/remote
+checkpoint still owed. Fresh owning-thread SDK/reference operation traces running
+against new installedbytes and current tests. Historical60maps446missing not promoted;
+private reviewed supplement awaits trace linkage. No kernel/thread/subprocess
+invocation attribution or native science/rights/deployment/OSsecurity/release inferred.
+42originalIDs/history3runnable/zero finaldispositions preserved. ContinueRC-P0review
+and exactmerged-candidate reconciliation immediately after delivery; no milestone stop.
+
+## Whole-tree type correction pass — verification in progress
+
+DraftPR312 published4a217c1d2; code1e740c34b plus inherited packaging checkpoint and
+verified309–311 merge history. Final installed artifacts/fullsuite/current-byte traces
+and exactheadCI/ordinarymerge remain pending. Windows/Linux-target whole-tree114types
+and fatal lintPASS; reference source538PASS; corrected focused SDK243PASS. No final
+roadmap/native/release promotion. Session now uses the owned secondary worktree.
+
+Complete reference source regression538PASS/no failures/errors/skips; SDK source
+failures above remain retained. Corrected focused243PASS. Commit1e740c34b saves code;
+fresh installed builds/fullsuite running in whole-tree-types-installed-first, noPR.
+Next fresh operation traces will check changed installed SDK and executed test bytes;
+reviewed semantic/catalog/source-validation/import/localDTO descriptions are prepared
+privately but do not yet count toward accepted current-candidate mappings.
+
+Source SDK sweep5264PASS/6FAIL retained: one new callback test asserted nonexistent
+private `_result`; corrected to public cancellation state. Three reliability preflights
+correctly require noneditable installedSDK; two notebook conversions lacked JUPYTER_PATH.
+No import guard relaxed. Corrected focused broker/notification/async/import suite243PASS.
+Fresh installed build/fullsuite with exact imports and Jupyter path is the next gate;
+the source sweep is explicitly not recorded as an all-green result. Reference source
+suite remains running. Two-platform whole-tree CI added; no delivery/acceptance yet.
+
+Owned secondary branch `feat/python-whole-tree-type-contracts` now includes primary
+checkpoint57c9b3dd7 and verified309–311 merge history; changes remain uncommitted/noPR.
+Whole-tree mypy pass6 reports no issues in114sourcefiles, without type ignores;
+Linux-target static sweep also passes114. Earlier144→105→79→44→12→1 diagnostics
+remain retained, not overwritten. Public inventory check preserves all506classifications
+(51abstract/429implemented/24guarded/2unconditionallyunsupported).
+
+Corrections describe heterogeneous validated wire data and optional local resources,
+separate reused callable bindings, parameterize Job result typing for native async
+coroutines, and retain native async release dispatch. New negative controls cover
+missing broker connection/channel, notification iterator/channel, missing import
+binding and unsupported sync callback on async waits. Existing new controls cover
+anonymous async credentials, user-only Context token and closed Store preservation.
+First focused run242PASS/1test-setupFAIL (missing required Job scope); corrected test
+now supplies explicitNone scope. Full SDK and simulator source suites run separately;
+results pending, not installed acceptance. No production simulator/instrumentation added.
+
+Fresh artifacts, installed full suites/coverage and current-byte traces remain owed.
+Existing60reviewedmaps446missing are historical until fresh installed reconciliation.
+Native science/rights/deployment/OSsecurity and release approval remain external gates;
+no IDE readiness dependency, repair, fallback or final42-row acceptance inferred.
+
+311MERGEDb342a674a at2026-11-07T23:02:11Z/exact8867bb4af/all23checksPASS,
+remote/localcheckpointverified.310merged3df3ee48d/all40PASS.42originalIDs/history
+3runnable/zero dispositions; all hostedwatchersfinished. Fresh premergepackage run
+5262SDK38tools116worker537sim39governancePASS/71SDK6worker37sim13assetparityPASS.
+Receipt integrated-packaging-development-20261107.json retains premergecandidate;
+exactmergedfinalrevalidation stillowed. ReadinessNOTELIGIBLE/expected3/publicationfalse.
+Whole-tree baseline144typefailures not waived; secondaryownedworktree now79errors/
+18files with223SDK99simsourcecontrols/fatallintPASS, uncommitted/noPR. Continue
+typing/assertionreview then rebuild/reverify, no finalroadmap/native/release promotion.
+
+310MERGED3df3ee48d49c7c8a2b10d21f304e10ca1a0feb4b at2026-11-07T23:00:03Z,
+exact336ea76043b65284bbed7ac268582f7f74679b62/all40checksPASS; remote/local ancestry
+checkpointverified.484/3/52reference-science matrix delivered without actual provider
+science/finalrow promotion.42originalIDs/history7runnable/zero dispositions.
+311ready8867bb4af CIwatcher active; primary package/fullsuite candidate frozen.
+Owned secondary worktree approvedtemp/whole-tree-type-contracts/branchfeat/python-
+whole-tree-type-contracts has uncommitted limited annotation/distinctbinding corrections;
+223SDK44reference sourcecontrolsPASS. Initial144typefailures retained; first correction
+sweep105remain before laterstateannotations, not finalgatepass. No ignores or native repair.
+
+Packaging/readiness expanded sweep exposes144whole-tree mypyerrors/25files across
+114sourcefiles; whole-source fatal lintPASS. Prior focused type passes are not an
+all-tree pass; production bytes unchanged, findings remain unresolved not waived.
+Fresh builds/source-wheel-sdist-installed assetparity/fullsuite run active at
+premerge311candidate8867bb4af; final exact-merged acceptance still owed.310/311CI
+watchers active;309verifiedmerged/all39PASS. Concrete next: classify declaration vs
+runtime findings, retain diagnostics, fix without ignores, rebuild/rerun exactcandidate.
+
 PR311 published832982cdd installedsafety587/2/31PASS37controls/types-lintPASS;
 60reviewedmaps446missing. Ready for exact-headCI, ordinarymerge/checkpoint owed.
 310CIpending;309verifiedmerge/all39PASS. Continue packaging/release-readiness.

@@ -37,6 +37,24 @@ def transport(handler, **kwargs):
                           http_transport=httpx.MockTransport(handler), **kwargs)
 
 
+def test_native_async_anonymous_credential_resolver_keeps_only_text_redaction_values():
+    async def scenario():
+        calls = []
+        async def handler(request):
+            calls.append(request)
+            assert 'Authorization' not in request.headers
+            return httpx.Response(200, json={'ok': True})
+        async def resolver(service, url, deadline):
+            return None
+        async with transport(handler) as client:
+            client.credential_resolver = resolver
+            assert await client.request('runtime', 'GET', '/read') == {'ok': True}
+            assert client.sensitive_values == ()
+            assert client.redact('local safe text') == 'local safe text'
+        assert len(calls) == 1
+    asyncio.run(scenario())
+
+
 @pytest.mark.parametrize("response", ["json", "text"])
 @pytest.mark.parametrize("bounded", [False, True])
 def test_origin_headers_encoding_and_response_closure(response, bounded):

@@ -37,7 +37,8 @@ class AsyncTransport(_TransportPolicy):
         if credential is not None and not isinstance(credential, str):
             raise ConfigurationError("Async credentials must be issued text or None")
         Endpoint(endpoint.url, credential)  # Same credential validation as explicit endpoints.
-        self.sensitive_values = tuple(dict.fromkeys((*self.sensitive_values, credential)))
+        if credential is not None:
+            self.sensitive_values = tuple(dict.fromkeys((*self.sensitive_values, credential)))
         return credential
 
     async def request(self, *args, **kwargs):
@@ -96,8 +97,8 @@ class AsyncTransport(_TransportPolicy):
                 error.add_note("Server outcome unknown after local request cancellation; inspect remote state before retrying")
             raise
         except (httpx.TransportError, TimeoutError):
-            error = SubmissionOutcomeUnknown if ambiguous and sent else TransportError
-            raise error(f"{service} {method} request failed"
+            error_type = SubmissionOutcomeUnknown if ambiguous and sent else TransportError
+            raise error_type(f"{service} {method} request failed"
                         + ("; server outcome unknown; inspect remote state before retrying" if ambiguous and sent else "")) from None
         except (ValueError, TypeError):
             raise InvalidRequestError("Request cannot be serialized as the checked transport DTO") from None

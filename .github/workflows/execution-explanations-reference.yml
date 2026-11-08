@@ -35,7 +35,10 @@ jobs:
       - name: Preserve explanation threshold after selected-window controls
         env:
           COVERAGE_BASE: "${{ github.event.pull_request.base.sha || 'HEAD^' }}"
-        run: python python-client/tools/check_feature_coverage.py explanations-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/execution_explanations.py
+        run: |
+          python -m pip install './python-client[dev,local,analysis,tabular,vector,notebook,events]'
+          python -m pytest -q python-client/tests/unit --cov=klab_client --cov-branch --cov-append --cov-report=json:explanations-sdk.json
+          python python-client/tools/check_feature_coverage.py explanations-sdk.json --base "$COVERAGE_BASE" --new-module src/klab_client/execution_explanations.py
       - name: Public sync-async actual import/source/plan/observation/400cell explanation and cleanup
         run: python -m pytest -q developer-tools/klab-service-simulator/tests/test_execution_explanations.py --junitxml=explanations-http.xml
       - name: Independent finite selected source/plan/effect fixture policies

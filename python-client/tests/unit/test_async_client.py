@@ -33,6 +33,16 @@ def client(handler, **kwargs):
         runtime_service_id="runtime-id", poll_interval=.001, http_transport=httpx.MockTransport(handler), **kwargs)
 
 
+def test_async_job_rejects_sync_cancellation_callback_before_http():
+    async def scenario():
+        async with client(lambda request: pytest.fail('Local rejection must not send HTTP')) as configured:
+            job = AsyncJob(configured, 1, None)
+            with pytest.raises(InvalidRequestError, match='native task cancellation'):
+                await job.result(_cancelled=lambda: False)
+            assert job.cancellation_requested is False
+    asyncio.run(scenario())
+
+
 def test_complete_typed_async_workflow_and_shared_scientific_decoding():
     async def scenario():
         calls, states = [], iter(["WAITING", "FINISHED"])

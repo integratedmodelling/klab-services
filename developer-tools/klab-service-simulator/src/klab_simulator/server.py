@@ -16,6 +16,7 @@ def make_server(port=0, *, scenario="elevation", seed=1, test_mode=False, mode="
         raise ValueError("A simulator server cannot proxy real services or perform hybrid fallback")
     if state_file is not None and mode != "simulated":
         raise ValueError("Durable simulator state cannot be used for replay or real mode")
+    state: State
     if mode == "replay":
         from .replay import ReplayState
         state = ReplayState(seed, test_mode)
@@ -57,6 +58,7 @@ def make_server(port=0, *, scenario="elevation", seed=1, test_mode=False, mode="
 
     class BoundedServer(ThreadingHTTPServer):
         daemon_threads = True
+        state: State
 
         def __init__(self, *args):
             self.slots = threading.BoundedSemaphore(16)

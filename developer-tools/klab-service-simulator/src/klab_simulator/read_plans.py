@@ -93,7 +93,8 @@ class ReadPlans:
         height, width = self.state.grid["shape"]
         if height * width != len(self.state.values) or len(self.state.values) > data["max_cells"]:
             raise ContractError(422, "Read-plan source exceeds exact requested cell budget")
-        values, valid = [], []
+        values: list[float | None] = []
+        valid: list[bool] = []
         for number in self.state.values:
             if number is None or number == "NaN":
                 values.append(None); valid.append(False)

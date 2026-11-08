@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "state": "LOCAL_COVERAGE_CORRECTION_PASS_NEW_HEAD_CI_PENDING_NOT_MERGED_ACCEPTANCE",
+  "failed_head": "6f4b22ae9070ef85d6a07c277c7fee3f7824133d",
+  "failed_ci_checks": 21,
+  "failed_rollup": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\pr312-first-finalhead-ci-failures.json",
+    "sha256": "d87095c08387098e8bbab371fb8bf3c3b7ed94f2adf704f72283d1cff9c87fb2"
+  },
+  "failed_logs": [
+    {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\pr312-failed-run-42425570607.log",
+      "sha256": "6423923bbe1ee0ef8aab8f71ec0e674e5c6a2945aa6187f4b97d34b5c9dea68e"
+    },
+    {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\pr312-failed-run-42425570586.log",
+      "sha256": "74f2bb1041e2ac738f183b59f0c60d192139e9ab2fa6f0303bba690d1df65d22"
+    }
+  ],
+  "installed_sdk": {
+    "counts": {
+      "tests": 5272,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "junit": {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\whole-tree-ci-coverage-correction-final\\junit.xml",
+      "sha256": "2c75599dd3bb309751568680829ae3c399790ea8c88514b246625066666438be"
+    },
+    "coverage": {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\whole-tree-ci-coverage-correction-final\\coverage.json",
+      "sha256": "9903d28408ae93d154c24789a283bb86104a1588c9f4e928a77c79cfb46c3cae"
+    }
+  },
+  "coverage_gates": [
+    {
+      "receipt": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\whole-tree-ci-coverage-correction-final\\all-sdk-feature-gates.json",
+        "sha256": "b6ee8f3614b60a47383f1bd3ca81d32455653a3f99f9cc8700107d02174a197e"
+      },
+      "commands": 40,
+      "new_module_line_branch_requirement": "100_PERCENT_UNEXCLUDED_UNCHANGED",
+      "changed_code_requirement": "ALL_CHANGED_SDK_LINES_AND_BRANCHES_UNCHANGED"
+    },
+    {
+      "receipt": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\whole-tree-ci-coverage-correction-final\\all-sdk-feature-gates-ad2bc949c.json",
+        "sha256": "b6ee8f3614b60a47383f1bd3ca81d32455653a3f99f9cc8700107d02174a197e"
+      },
+      "commands": 40,
+      "new_module_line_branch_requirement": "100_PERCENT_UNEXCLUDED_UNCHANGED",
+      "changed_code_requirement": "ALL_CHANGED_SDK_LINES_AND_BRANCHES_UNCHANGED"
+    }
+  ],
+  "correction": "All21 SDK feature workflows append full SDK unit measurement before unchanged global diff checker; selection append precedes simulator database reset. Added missing-delivery/noack/DISCONNECTED/unconfirmed cleanup negative control and workflow input guard.",
+  "controls": {
+    "python-client/tests/unit/test_agent_delivery_boundary.py": "5e10092ebc3ae758e9c104227f92e5818b5068fa0e53393f836671d9aff07ca2",
+    "python-client/tests/unit/test_global_feature_coverage_inputs.py": "6d2b1fa1432503f15ebc02b388a45634d613d96bb047d728ec48bba20f87ec92"
+  },
+  "workflow_sha256": {
+    ".github/workflows/commit-inspection.yml": "575cb00655b88dba6e28ff3a4ebc3fd920c8a7e52b1a386cfca9b70c8de0af1c",
+    ".github/workflows/conditional-authoring-reference.yml": "21d582addf2f5d602034319d62d5eade5e7ad62c31163e09e2d72aff878ab793",
+    ".github/workflows/copied-composition-public.yml": "cd6e145c545a0d64757e996467958afa957a9d2b50e9ff213795a6465032af68",
+    ".github/workflows/dependency-graphs-reference.yml": "05c13b3a2b06e46089b809246cd69193e57e5e79b990934e20a38408f7e91dc7",
+    ".github/workflows/dependency-inspection.yml": "00bb1e867735ee2e727f1e154f97191e715920e5d188619478a3788992f9026b",
+    ".github/workflows/durable-notification-reference.yml": "245b09fc106e4db78ad86100eeff3481daa5db0fe583e6a4a6a7acb44beba389",
+    ".github/workflows/execution-explanations-reference.yml": "20cdee6d949e91b8eb6d9bf8d1fc28599f9312242ad0d706608c9337aeb2e580",
+    ".github/workflows/graph-convergence-reference.yml": "a644bc2dddb89581026891cbebdcae73baf6d8224219071d09c4e638f69626ee",
+    ".github/workflows/input-provenance-reference.yml": "4833d4ec1302f99c7e8d735ca5f4cbe0263bed99ee75a519756977204faf72f8",
+    ".github/workflows/managed-agent-reference.yml": "0f83910c19f2d9fbab967311de9f68ece78b474cf370a1294c8fffb616e4d55f",
+    ".github/workflows/managed-behaviors-reference.yml": "ce615567c161e05b339c0cbd6b793cb300194265dee4c07174a875bc70d09789",
+    ".github/workflows/material-selections.yml": "8e71a69706aec6f8896844fc144a03195e4402657298b4ee1cc4461534aef989",
+    ".github/workflows/model-candidate-sources.yml": "ae960e9eb0b77b479a0efbc494327f39d424d2ab46ea9803115249a82daa11fa",
+    ".github/workflows/observation-selections.yml": "2cafbe1103533b67f17d507e48bc0325638c80b81fca02fcfb2a10d11c49f155",
+    ".github/workflows/provider-binary-data.yml": "8efc3965be90fbdac2d1ad9136a21036438119337e6f5fc6ff0876c3e3f14ac3",
+    ".github/workflows/read-plan-reference.yml": "70fc3be7223f92f481734c3fb7590b3c86a5d2249835f4e7a5a9ad1d80e37ae4",
+    ".github/workflows/reference-raster-labels.yml": "f0f50ac84c0acfeefea267aed6b9c402dc29001fcb1008923ab7666e913a097b",
+    ".github/workflows/reference-windows.yml": "823edf7bf3886a595f7d26cfe59d203df358d0ef9be61580754a71a43481f6bd",
+    ".github/workflows/revision-draft-reference.yml": "555459a85a887e8d4e88061b8fd4f0001c948b3aadc62d095e085d86121d1afa",
+    ".github/workflows/shared-access-reference.yml": "5b92b487aca8b3a29e97b10ace3d085b0e8da7f673fc64c3ddd4129b4d159d17",
+    ".github/workflows/source-validation.yml": "c5ba6f6fad7406723d875cbc10f2c9a402cfcc15d4ca6a1fbc8cbed08a2983ea"
+  },
+  "source_parity": "All SDK/worker/reference source remains identical to codecandidate1e740c34b fresh artifacts; no production changes for CI correction.",
+  "retained_local_failed_correction": {
+    "counts": {
+      "tests": 5271,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0
+    },
+    "junit": {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\whole-tree-ci-coverage-correction-first\\junit.xml",
+      "sha256": "395d36e2bd50994d4eb3e2b1c014ff14f3e8f44b9ce8e52179c25e70207b74cc"
+    },
+    "note": "5269PASS2FAIL before corrected cleanup expectation and append order; not relabelled as success."
+  },
+  "native": "REAL_NOT_RUN",
+  "publication_authorized": false,
+  "final_original_row_acceptance": false
+}

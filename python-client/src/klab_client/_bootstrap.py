@@ -52,7 +52,8 @@ def wire_request(url, method, *, payload=None, credential=None, timeout=30, veri
         if remaining <= 0:
             raise TransportError("Connection waiting deadline expired")
         timeout = min(timeout, remaining)
-    client = response = primary = None
+    client = response = None
+    primary: BaseException | None = None
     try:
         client = httpx.Client(verify=verify, transport=transport, timeout=timeout, trust_env=False,
                              follow_redirects=False)
