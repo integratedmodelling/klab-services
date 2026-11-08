@@ -4,6 +4,420 @@
   "workflows": [
     {
       "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_exports.py::test_schema_overloads_deduplicate_but_different_ids_are_ambiguous",
+      "operations": [["client.py", "Client.export_formats"]],
+      "assertions": "Mock duplicate schema entries deduplicate while distinct schemaIDs remain separate immutable formats; ambiguous media choice refuses. Absent advertised formats stays empty and export refuses instead of fallback. Advertisement inspection only, no native export authority."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_authoring.py::test_native_async_authoring_matches_sync_consent_source_and_receipts",
+      "operations": [["authoring.py", "Authoring.created"]],
+      "assertions": "Explicit native Python async source/workspace/project/document flow requires allow_write before any call; exact source and CREATE receipt retained, created inventory contains three confirmed assets and eight mock calls. Inventory is confirmed-response bookkeeping, not actual Java acceptance or automatic cleanup."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_graph_projection.py::test_invalidation_is_local_and_only_explicitly_refetched_pages_clear_the_marker",
+      "operations": [["graph_projection.py", "GraphProjection.invalidate"]],
+      "assertions": "Explicit local invalidation marks both retained pages without HTTP or mutating old immutable view. Reloading one page adds exactly two requests and clears only that page, preserving other invalidation and UNKNOWN consistency. No current graph revision/permission lease inferred."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_selections.py::test_selection_is_offline_immutable_origin_qualified_and_within_clears_it",
+      "operations": [["client.py", "Context.relationship_selection"], ["selections.py", "between"]],
+      "assertions": "Offline explicit endpoint pair1/2 preserves exact origin-qualified immutable selection and focused s.c.8#9, leaves original context unchanged and within clears pairing. V2 handle roundtrip retains endpoints, unpaired context staysV1 and serialized form omits secrets. Local reference only, no remote relation admission or rights."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_selections.py::test_public_page_exact_shape_binding_pagination_and_no_inferred_completeness",
+      "operations": [["selections.py", "relationship_options"], ["selections.py", "observations"], ["selections.py", "async_observations"]],
+      "assertions": "Explicit sync/async collection sends current credential, exact source/target endpoint headers and bounded depth1/limit2 query. Limit1 response remains partial/next_offset1 with items bound to selected context and root scope. Mock bounded collection, no inferred complete native graph or authorization lease."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_saved_handles.py::test_all_reference_kinds_and_decoder_variants_round_trip",
+      "operations": [["handles.py", "Handle.to_dict"]],
+      "assertions": "Context/observation/runtimeJob/resolverJob references and explicit mapping/dataflow/observation decoder variants roundtrip unchanged through bounded JSON, to_handle returns same reference and to_dict agrees. Offline reference custody only, no fresh remote validation or grant."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_resource_inspector.py::test_resource_resolution_preserves_origin_and_advertised_remote_without_following_it",
+      "operations": [["inspection.py", "ResourceResolution.summary"]],
+      "assertions": "Partial resource resolution retains explicit requestedURN, resource class/provider/version and passive untrusted serviceURL, filters accessKey from nested/raw views and contacts only configured Resources origin. HTML summary declares Partial metadata. Mock advertisement, not implicit provider routing or complete resolution."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_provenance.py::test_plans_are_not_execution_evidence",
+      "operations": [["provenance.py", "ProvenanceLink.evidence"]],
+      "assertions": "Explicit RESOLVED/CONTEXTUALIZED_BY relationships label planned resolution, never recorded execution. Mock graph relationship metadata, not scientific provenance completeness or native runtime execution proof."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_vector_analysis.py::test_preserves_holes_multiparts_ids_properties_and_no_geometry_collision",
+      "operations": [["vector.py", "open_vector"]],
+      "assertions": "Independent GeoJSON preserves multipart/hole topology, planar fixture area16, exact large integer IDs/properties, false/zero/null, nested immutable metadata and absent versus null fields. Geometry column avoids native property collision, CRS84 explicit, raw digest/count retained with UNKNOWN consistency. Local adapter only; not an API area, repair/reprojection or provider accuracy claim."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection.py::test_completed_failed_probe_preserves_identity_pin_without_readiness_or_failover",
+      "operations": [["connection.py", "Connection.profile"], ["connection.py", "Connection.identity"]],
+      "assertions": "Explicit selected-origin transport/503 outage preserves prior service identity without readiness or failover; mutation blocked before I/O, later refresh recovers sameID. Replaced runtimeID permanently refuses refresh/use instead of rebinding. Mock configured-profile/principal custody, not actual service availability or native incarnation guarantee."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection.py::test_renewal_is_atomic_identity_bound_and_never_replays_mutation",
+      "operations": [["connection_models.py", "ConnectionIdentity.binding"]],
+      "assertions": "Explicit same-principal/issuer renewal rotates outbound credential atomically;503submission is attempted once and remains unknown. Changed principal refuses renewal and subsequent refresh. Local/mock binding fence, not real issuer authority or cross-service rights proof."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_errors_redact_credentials",
+      "operations": [["transport.py", "_TransportPolicy.redact"]],
+      "assertions": "Mock401/403/400 responses preserve AuthenticationError/AuthorizationError/InvalidRequestError distinction while configured credential is absent from public error text. Error redaction only, no current native authentication/authorization acceptance."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_submit_same_runtime_rebinds_to_submitting_client",
+      "operations": [["api/services.py", "RuntimeServiceImpl.submit"]],
+      "assertions": "Explicit service-level submission of same-runtime focused context from closed old client binds result to current submitting client while preserving s.c.9 selection. Mock rebinding of same origin only, not cross-runtime permission or remote ownership transfer."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_timeout_preserves_job_and_can_resume",
+      "operations": [["client.py", "Context.job"]],
+      "assertions": "Explicit existing Job1 construction performs no submission; WAITING poll timeout retains same Job object and explicit later result resumes to observation42. Mock wait lifecycle, not remote cancellation/retention guarantee."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_client.py::test_zero_wait_timeout_preserves_known_job_without_any_http",
+      "operations": [["async_client.py", "AsyncContext.job"]],
+      "assertions": "Explicit async Job7 with zero wait budget raises WaitTimeout retaining exact Job and sends no HTTP. Native Python local timeout only, no remote submission/cancel or retention claim."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_explicit_scope_bootstrap_uses_only_configured_authorized_origins",
+      "operations": [["client.py", "Client.initialize_user_scope"]],
+      "assertions": "Explicit bootstrap contacts only four configured mock origins with origin-specific credentials, no scope header and localFederationFalse. Four advertisements retain four probed serviceIDs and homeRuntimeID; no implicit peer trust, discovery fallback or real current issuer/permission acceptance."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_elevation_orchestration.py::test_experiment_success_checks_finite_values_and_releases_only_created_scopes",
+      "operations": [["experiment.py", "rectangle_geometry"], ["experiment.py", "verify_grid"], ["experiment.py", "verify_region"], ["experiment.py", "verify_elevation"]],
+      "assertions": "Explicit structural doubles supply finite5x4 projected grid and twenty100..119 values with matching1000factor millimetres. Maintained experiment fetches each view once, returns original result tuple and releases only scopes it created, never borrowed scopes. Finite invariant/orchestration evidence, not actual terrain/provider accuracy or native unit mediation."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_resource_imports.py::test_real_multipart_encoding_job_receipt_and_result",
+      "operations": [["imports.py", "_Upload.fileno"], ["imports.py", "_Upload.seek"], ["imports.py", "_Upload.read"], ["imports.py", "AsyncResourceImporter.formats"]],
+      "assertions": "Actual HTTPX multipart encoding against mock transport preserves explicit credential/scope, advertised schema, generic upload filename with no private local name and exactly capabilities/import routes. Receipt retains exact source digest/size, ResourcesID and Job17 binding, secret omitted. No production Java import/provider execution; internal upload helpers credited only through public sync/async upload contract."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_project_locks.py::test_explicit_native_acquire_release_receipts_are_immutable_and_never_leases",
+      "operations": [["project_locks.py", "ProjectLock.project"]],
+      "assertions": "Explicit project remains owned through immutable confirmed acquire/release receipts under Resources identity. Duplicate mutation refuses before request; exact four capability/lock/unlock calls and local client close releases nothing. Receipt explicitly principal-shared/not-editor-lease; mock native-shaped route only."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_provider_data.py::test_explicit_provider_field_builder_has_no_guessed_defaults_or_extra_dependencies",
+      "operations": [["provider_data.py", "ProviderData.from_fields"]],
+      "assertions": "Explicit complete provider fields encode/decode to independent original record with exact0/-2.5 doubles; incomplete doubleData-only record refuses rather than inventing defaults. Local raw Avro DTO, not actual provider scientific output."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_reference_windows.py::test_decode_and_release_uncertainty_never_replays",
+      "operations": [["reference_windows.py", "ReadPlanSelections.capture"], ["reference_windows.py", "AsyncReadPlanSelections.capture"]],
+      "assertions": "Sync/async mock capture preserves exact0/-2.5/missing/7 values and exactly one established-plan DELETE. Malformed catalog/shard refuses, ambiguous open/release remains SubmissionOutcomeUnknown rather than replay or fabricated cleanup confirmation. Finite selected-read protocol, not native time authority."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection.py::test_profile_schema_atomic_save_and_secret_field_rejection",
+      "operations": [["connection_models.py", "DeploymentProfile.to_dict"], ["connection_models.py", "DeploymentProfile.from_dict"], ["connection_models.py", "DeploymentProfile.load"], ["connection_models.py", "DeploymentProfile.save"]],
+      "assertions": "Profile save/load preserves explicit deployment and environment credential reference, refusing implicit overwrite. Secret token fields, credential-bearing service fields and unsupported/boolean schema versions refuse. Local profile publication only, no deployment approval or credential acquisition."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection_guards.py::test_custom_selection_and_metadata_only_connection",
+      "operations": [["connection_models.py", "DeploymentProfile.from_urls"], ["connection_models.py", "CatalogEntry.ready"], ["connection_models.py", "CatalogEntry.eligible"]],
+      "assertions": "Explicit custom policy chooses probed runtime identity; invalid wait timeout refuses. Reasoner-only URL profile can be metadata-ready at timeout0 but cannot yield Runtime client. Mock catalog readiness is not native science, issuer approval or inferred service availability beyond supplied replies."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection_guards.py::test_metadata_only_renewal_and_ready_diagnostics",
+      "operations": [["connection.py", "Connection.explain_readiness"]],
+      "assertions": "Reasoner-only mock connection renews explicitly; nonoperational Runtime yields exact dependency-not-ready diagnostic, explicit peer initialization does not make selected catalog mutable. Mock readiness diagnostics only, not scientific execution readiness."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_execution_evidence.py::test_native_async_full_view_and_query_parity_keep_failure_plan_and_unknown_commit",
+      "operations": [["evidence.py", "fetch_execution_evidence"], ["evidence.py", "async_fetch_execution_evidence"], ["evidence.py", "ExecutionEvidence.summary"]],
+      "assertions": "Explicit sync/async mock queries match exactly and return equivalent immutable evidence apart from fetch timestamp. Activity FAILURE/partial provenance and contextualization-plan phase remain explicit; summary says not durable root commit. No relabelled success, scientific proof or native history guarantee."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_graph.py::test_navigate_observation_to_activity_with_explicit_pages",
+      "operations": [["graph.py", "GraphBrowser.neighbors"]],
+      "assertions": "Explicit both/incoming/outgoing graph navigation uses bounded membership/link queries, retains single link/next_offset4/partial at offset3 and Runtime identity. Activity anchor is rechecked via typed membership; four requests/limit2, immutable properties and No revision lease. Mock neighborhood only, not native complete graph/history."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_graph.py::test_awaited_graph_membership_navigation_and_explicit_bounded_pages",
+      "operations": [["graph.py", "AsyncGraphBrowser.neighbors"]],
+      "assertions": "Native Python awaited graph queries preserve bounded one-link/next_offset4/partial response, homeRuntime/no revision lease, exact activity membership and four requests/limit2. Link properties immutable. Mock parity, not native graph convergence or permission lease."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_semantic_explorer.py::test_search_explicit_selection_documentation_resolution_and_safe_summaries",
+      "operations": [["semantics.py", "SemanticResult.summary"], ["semantics.py", "AuthorityCandidate.summary"], ["semantics.py", "AuthoritySearch.summary"]],
+      "assertions": "Mock authority search retains candidate aliases/score/description and exact scope/revision, canonical selection not display label. Explicit request body/query params, passive external documentation URL, escaped HTML and immutable candidate metadata preserve no-follow semantics; label selection refuses. Local/mock semantic descriptors, not actual authority/worldview admission."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_semantic_explorer.py::test_all_native_async_operations_match_sync_immutable_views_and_routes",
+      "operations": [["semantics.py", "SemanticExplorer.resolve_concept"], ["semantics.py", "AsyncSemanticExplorer.resolve_concept"]],
+      "assertions": "Explicit sync/async mock concept/observable/hierarchy/predicate views and selected-candidate documentation agree exactly with immutable raw metadata. Exact four final concept definitions stay on configured reasoner host. Native Python transport only, not actual ontology inference or scientific authority."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_agent_previews.py::test_awaited_preview_retains_exact_source_receipt_and_nonexecution_flags",
+      "operations": [["agents.py", "AsyncAgentPreviews.preview"]],
+      "assertions": "Eight mock requests/two source POSTs retain distinct original versus parser-trimmed hashes and explicit whitespace policy, Resources/Runtime identity, immutable nested receipt and fixed compileOnly/reportJavaCode/doNotStart/doNotBind flags. Explicitly NOT_STARTED_NOT_REGISTERED_NOT_JAVA_COMPILED with no start method; native Python coroutine only."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_agent_registration.py::test_awaited_registration_preserves_exact_flags_source_identity_and_frozen_receipt",
+      "operations": [["agent_execution.py", "AsyncAgentExecutions.create"]],
+      "assertions": "Explicit awaited mock registration retains exact source/parser hash, registered agent/root binding, frozen nested receipt and absent attached view. Second create refuses with no I/O; exact deferred nonbinding flags and homeRuntime headers, no implicit scope create/release. Not real Java compilation or broker/actor execution acceptance."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_messaging.py::test_required_confirms_rejects_missing_capabilities_without_downgrade",
+      "operations": [["agent_messaging.py", "AgentChannel.broker_features"]],
+      "assertions": "Fake broker with confirmsTrue/basic_nackFalse refuses required mode without downgrade or publication; feature receipt preserves exact advertised booleans and owned local cleanup confirms. No claim of real broker capabilities/ACL or native interoperability."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_foundation_contracts.py::test_environment_configuration_is_explicit_and_does_no_network",
+      "operations": [["client.py", "Client.from_env"], ["transport.py", "_TransportPolicy.endpoint"]],
+      "assertions": "Absent runtimeURL and malformed numeric timeout refuse; explicit environment preserves scientist/home IDs, peer service list, timeout12/poll0.25 and separately configured reasoner credential. Configuration only, no service readiness or credential approval inferred."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_resource_inspector.py::test_inspect_existing_model_preserves_advertisement_not_execution",
+      "operations": [["inspection.py", "AssetInspection.summary"], ["_inspection.py", "require_sync"], ["_inspection.py", "bounds"], ["_inspection.py", "text"], ["_inspection.py", "freeze"], ["_inspection.py", "html_summary"]],
+      "assertions": "Three explicit GETs retain model namespace/project, exact advertised observables/dependencies/unit/optional flags, version/resourceURN and Resources origin. Raw fields immutable, HTML escapes Elevation label; summary explicitly not Resolver selection and dependency metadata not closure. Mock read-only bounded inspection only, not actual scientific selection."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_execution_evidence.py::test_chart_preserves_topology_parallel_reference_and_escaped_notebook_table",
+      "operations": [["evidence.py", "decode_flowchart"], ["evidence.py", "FlowChartEvidence.summary"]],
+      "assertions": "Independently authored chart preserves exact parallel/reference links, shared endpoints, parent/port association and active-node/model metadata. Escaped HTML and summary explicitly not proof of execution; raw node fields immutable. Local topology codec, no recorded native execution authority."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_execution_evidence.py::test_dataflow_is_plan_and_retains_repeated_reference_occurrences",
+      "operations": [["evidence.py", "decode_dataflow"], ["evidence.py", "DataflowEvidence.summary"]],
+      "assertions": "RESOLVED plan retains coverage1, repeated actuator42 occurrences at distinct paths, exact strategy/computation/version and geometry metadata. Rendered evidence explicitly not recorded execution; local dataflow representation never claims scientific computation occurred."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_revision_drafts.py::test_two_writers_cannot_overwrite_same_revision_and_history_is_exact",
+      "operations": [["revision_drafts.py", "read_draft"], ["revision_drafts.py", "write_draft"]],
+      "assertions": "Explicit opt-in required; absent draft refuses, first revision retained exactly. Two worker writers yield one winner/revision2 while exact revision1 history survives; Bob read/write deny, no authored assets, owner cleanup clears drafts/scopes. Worker-thread calls unmeasured by owning-thread trace; finite private UNVALIDATED draft protocol, not native source acceptance/publication."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_revision_drafts.py::test_async_owned_draft_flow_is_same_explicit_cas_contract",
+      "operations": [["revision_drafts.py", "async_read_draft"], ["revision_drafts.py", "async_write_draft"]],
+      "assertions": "Explicit Python async draft write/read retains exact unvalidated receipt; stale expected revision0 refuses with DraftConflict. Explicit owner releases remove draft contexts. Finite reference CAS, not actual Java accepted-source revision or publication."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_complete_workflow_requests_and_data",
+      "operations": [["client.py", "Context.submit"], ["api/services.py", "RuntimeServiceImpl.submit"], ["api/runtime.py", "ObservationImpl.get_value"], ["dto.py", "object_payload"], ["dto.py", "required_text"], ["dto.py", "notifications"], ["dto.py", "check_notifications"], ["dto.py", "map_values"], ["dto.py", "observation_to_wire"], ["dto.py", "observation_from_wire"], ["transport.py", "Transport.request"], ["transport.py", "Transport.close"]],
+      "assertions": "Ten mock HTTP requests preserve generated session config, ONE_OFF context, explicit reasoner/runtime credential routing, focused scope/runtimeID and submission discriminator/options. Result42/m/commit7 has absent inline value, explicit scalar read returns Decimal123.25 with exact slice/curve/source request, release headers use root scopes and local close adds no request. Mock full flow, not actual Java science or rights."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_discovery_and_resolver_contracts",
+      "operations": [["api/services.py", "_RemoteService.capabilities"], ["api/services.py", "ReasonerImpl.resolve_concept"], ["api/services.py", "ResourcesServiceImpl.resolve"], ["api/services.py", "RuntimeServiceImpl.get_context_info"], ["api/services.py", "ResolverImpl.submit_resource"], ["api/services.py", "ResolverImpl.get_submitted_resources"]],
+      "assertions": "Fifteen mock requests preserve future capability field7, concept flags, raster resource descriptors and explicit resourceURN. Context query returns observation42; resolver receives homeRuntimeID/root scope with its own credential and preserves RESOLVED/dataflow/resource receipts. Passive untrusted providerURL never becomes implicit routing. Mock existing-wire contracts, not native resolution/scientific execution."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_scientific_cell_decoding",
+      "operations": [["dto.py", "decode_cell"]],
+      "assertions": "Independent null/zero/2**53+1/false/conceptURN/1.25 literals decode to exact missing/integer/boolean/text/Decimal values, not lossy inferred floats or quantities. Local scalar codec only, not provider scientific accuracy."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_native_metadata_and_unit_mediation_request",
+      "operations": [["dto.py", "storage_semantics"]],
+      "assertions": "Explicit mm observable produces exact StorageScan semantics payload (observable/unit/range/currency/contextualDimensions/meaning), mock server returns1250 and result retains distinct source m versus requested mm metadata. No client-inferred conversion; pinned wire request only, not actual native mediator execution."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_client.py::test_explicit_unsupported_and_unconfigured_methods",
+      "operations": [["api/runtime.py", "GeometryImpl.encode"]],
+      "assertions": "Explicit unsupported geometry projection refuses before HTTP, as do detached reasoner, missing contextualization input and unsupported graph query form. No geometry hash masquerades as encoding or invented scientific projection. Local rejection evidence only."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection_guards.py::test_url_and_expiry_normalization",
+      "operations": [["connection_models.py", "checked_url"], ["connection_models.py", "loopback"], ["connection_models.py", "parse_expiry"]],
+      "assertions": "Explicit HTTPS case/defaultport/trailing slash normalize to exact runtimeURL; localhost/IPv6 loopback recognized, external host not. Offset2099 timestamp normalizes UTC and absent expiry staysNone; boolean/empty/impossible expiry refuses. Local normalization, not trust grant or issuer validity."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection_guards.py::test_env_sources_missing_credentials_and_callback_exception_redaction",
+      "operations": [["credentials.py", "IssuedTokenProvider.from_env"], ["credentials.py", "CredentialGrant.for_url"]],
+      "assertions": "Explicit env reference missing token refuses, supplied token binds only configured origin, foreignURL refuses. Callback authentication failure omits token and invalid callback/header values refuse. Mock/local credential sourcing only, no issuer approval or actual remote rights."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_client.py::test_scope_advertisement_and_all_read_only_service_facades",
+      "operations": [["async_client.py", "_AsyncService.capabilities"], ["async_client.py", "AsyncReasoner.resolve_concept"], ["async_client.py", "AsyncResources.retrieve"], ["async_client.py", "AsyncResources.list"], ["async_client.py", "AsyncResources.resolve"], ["async_client.py", "AsyncRuntime.get_context_info"], ["async_client.py", "AsyncRuntime.connect_context"], ["async_client.py", "AsyncRuntime.query_knowledge_graph"], ["async_client.py", "AsyncRuntime.submit"], ["async_client.py", "AsyncResolver.resolve"], ["async_client.py", "AsyncResolver.submit_resource"], ["async_client.py", "AsyncResolver.get_submitted_resources"], ["async_client.py", "AsyncClient.attach_context"], ["dto.py", "configuration_to_wire"]],
+      "assertions": "Four explicit peer advertisements occur; borrowed attachment stays not-owned, context lookup yields sessions, concept/resource/list/resolve facades retain mock identities. Graph returns exactid42, resolver Job labels dataflow and decodes exact dataflowURN, submitted resource list exact, runtime submit Job3. Mock route/codec parity only, no remote authorization/scientific or lifecycle acceptance."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_client.py::test_from_env_constructs_only_native_transport",
+      "operations": [["async_client.py", "AsyncClient.from_env"], ["async_client.py", "AsyncClient.aclose"]],
+      "assertions": "Explicit environment runtime URL constructs AsyncClient with httpx.AsyncClient, never synchronous Client; awaited local close closes HTTP pool. Environment configuration/local lifecycle only, no I/O acceptance or remote release."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_saved_handles.py::test_local_context_handle_preserves_selection_and_contains_no_authority",
+      "operations": [["client.py", "Context.to_handle"], ["handles.py", "save_handle"], ["handles.py", "load_handle"], ["handles.py", "Handle.inspect"]],
+      "assertions": "Socket-free context handle save/load preserves exact focused s.c.8.9#3 scope/root identity, remote_verifiedFalse and handle equality. File/repr omit configured credential and private/owner fields despite owned source context. Offline reference grants no remote rights or disposal ownership."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_saved_handles.py::test_restore_observation_queries_current_authorized_graph_and_not_cached_dto",
+      "operations": [["handles.py", "restore_handle"], ["handles.py", "Handle.restore"], ["api/runtime.py", "ObservationImpl.to_handle"], ["api/services.py", "RuntimeServiceImpl.query_knowledge_graph"]],
+      "assertions": "Explicit saved observation restore probes configured Runtime identity, reconnects root scope then queries exact observation42 with root header. Fresh mock name replaces cached DTO and restored context stays not-owned; exactly capabilities/connect/query routes, no scientific replay. Mock current-read contract, not actual current permissions/retention."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_saved_handles.py::test_atomic_save_refuses_overwrite_and_preserves_existing_file",
+      "operations": [["handles.py", "Handle.save"], ["handles.py", "Handle.load"]],
+      "assertions": "Saving second reference without consent refuses and preserves exact prior bytes; explicit overwrite roundtrips second reference and leaves only final file. Local file publication, not remote resource replacement or retention authority."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_reference_raster_labels.py::test_public_server_declared_dictionary_worldview_and_band_time_labels",
+      "operations": [["reference_raster_labels.py", "ReferenceRasterMetadata.to_wire"], ["raster_categories.py", "categorize_raster"]],
+      "assertions": "Pinned exact export hashes preserve original int16 category codes0/-2/-32768/7 and mask while adding separately declared bare/forest/water labels; float32 multiband data retain exact shape/values/mask and three declared UTC band instants. Worldview/source/hash evidence explicitly reference-declared; arrays detach on mutation, Bob denies, scopes clean. No inferred category conversion or actual native dictionary/worldview/time science."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_reference_window_analysis.py::test_closed_client_selection_analysis_is_offline_exact_and_independent",
+      "operations": [["reference_windows.py", "analyze_selected_read_plan"]],
+      "assertions": "After mock selection/client close, socket-blocked analysis yields exact0/-2.5/missing/7 values, masks and x/y centres50/150. Retains m, explicit baseline state/UTC instant/window/source revision and LOCAL_REFERENCE_SELECTION_NOT_NATIVE_TIME_OR_COMMIT label. Mutating array leaves source and fresh view unchanged; editing caller label changes local hash. Detached analysis only, not native temporal authority."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_scan_slices.py::test_initialization_factory_is_immutable_and_wire_dict_is_detached",
+      "operations": [["scan_slices.py", "ScanSlice.initialization"], ["scan_slices.py", "ScanSlice.to_wire"]],
+      "assertions": "Initialization factory exactly equals INITIALIZATION/0-0/0/0; typed value immutable while wire copies detach and explicit extra field survives dict validation without aliasing start. Local slice DTO only, no native time-axis or current revision inference."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_provider_data.py::test_uncertain_binary_submission_is_not_retried_or_replaced",
+      "operations": [["api/services.py", "ResourcesServiceImpl.contextualize"], ["async_client.py", "AsyncResources.contextualize"]],
+      "assertions": "Independent sync/async mock disconnect, HTTP500 and oversized acknowledgement after binary POST raise SubmissionOutcomeUnknown with exactly one attempted request; no replay/replacement or inferred successful provider computation. Mock ambiguity control, not actual provider scientific execution."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_material_selections.py::test_public_material_plan_observe_read_and_owned_cleanup",
+      "operations": [["requests.py", "observe"], ["requests.py", "resolve"], ["requests.py", "ResolutionConstraint.to_wire"], ["requests.py", "RectangularGeometry.to_geometry"], ["requests.py", "GridOptions.to_wire"], ["requests.py", "ContextOptions.to_wire"], ["client.py", "Context.resolve"], ["async_client.py", "AsyncContext.resolve"], ["async_client.py", "AsyncResolver.resolve"], ["client.py", "Context.id"], ["client.py", "Client.attach_context"], ["async_client.py", "AsyncClient.attach_context"]],
+      "assertions": "Explicit grid spans1/2, namespace/project/scenario choices and observer selection preserve plan/result association while planning creates no observations. Independent formula computes every synthetic cell from span/row/column/offset/bias, with exact units/count/shape and NOT_NATIVE label. Forced model choice and missing observer refuse; Bob attach denies; final scopes empty. Finite selection semantics, not real worldview/model resolver scientific acceptance."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_managed_agents.py::test_owned_managed_reference_single_use_terminal_and_separate_cleanup",
+      "operations": [["managed_agents.py", "create_managed_reference"], ["managed_agents.py", "read_managed_reference"], ["managed_agents.py", "command_managed_reference"]],
+      "assertions": "Explicit finite fixture creates READY without cleanup. Premature purge/stale start return409; start/optional stop reach separately declared STOPPED/FINISHED/FAILED then later cleanup confirmation. Bob reads deny; terminal start replay409 and explicit purge makes read410, final reference/scopes zero. JAVA-GAP-0008 synthetic lifecycle, never parses/executes actual k.Actors or native disposal."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_managed_agents.py::test_async_deferred_stop_before_start_and_cleanup_on_scope_release",
+      "operations": [["managed_agents.py", "async_create_managed_reference"], ["managed_agents.py", "async_read_managed_reference"], ["managed_agents.py", "async_command_managed_reference"]],
+      "assertions": "Explicit Python async reference stop before start yields STOPPING, then STOPPED without cleanup, then later cleanup confirmation. Owner scope release clears managed references. Finite reference only, not native actor stop/disposal or durable execution."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_model_candidates.py::test_candidate_sources_follow_declared_visibility_without_workflow_or_admission",
+      "operations": [["model_candidates.py", "inspect_model_candidates"], ["model_candidates.py", "ModelCandidateQuery.to_wire"]],
+      "assertions": "Independent expected namespace sets change only with explicit namespace/project/scenario selectors, preserving Resources providerID and source/model descriptors. Evidence explicitly NOT_SEMANTIC_ADMISSION; no scopes, authoring assets or scientific submit. Reference visibility catalog, not selected-model authority or actual Java admission."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_model_candidates.py::test_native_async_source_inspection_uses_same_explicit_supplier_contract",
+      "operations": [["model_candidates.py", "async_inspect_model_candidates"]],
+      "assertions": "Explicit async reference supplier returns exactly one synthetic.public candidate and leaves all scope counts zero. Native denotes Python coroutine only, not current Java source inspection or semantic admission."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_source_validation.py::test_async_requires_native_client_and_async_parse_produces_exact_receipt",
+      "operations": [["source_validation.py", "AsyncSourceValidation.parse"]],
+      "assertions": "Sync client cannot construct async validation facade; native async mock sends exact source bytes to parseAsset/NAMESPACE after explicit Resources identity and retains independently known source hash. Mock parser custody only, not actual Java validation/admission."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_job_binding.py::test_sync_drift_fails_before_any_request_or_handle_creation",
+      "operations": [["_job_binding.py", "JobBinding.capture"], ["_job_binding.py", "JobBinding.validate"], ["client.py", "scope_token"]],
+      "assertions": "Eighteen independent Job/scope/client/service/origin/credential/decoder binding mutations make status/result/cancel/handle operations refuse with ProtocolError before any request or cancellation flag. Process-local identity fence only, not actual native incarnation, current rights or remote retention guarantee."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_control.py::test_ready_running_terminal_reports_do_not_confirm_remote_cleanup",
+      "operations": [["agent_control.py", "AgentControlJournal.view"], ["agent_control.py", "AgentControlJournal.attempt"], ["agent_control.py", "AgentControlJournal.observe"]],
+      "assertions": "Local READY/RUNNING/STOPPED report admission counts exactly three, start/stop callbacks publish without sender-clock ordering. Terminal report latches but remote cleanup remains UNKNOWN and reports do not conflict merely because timestamps decrease. Callback doubles, not real actor execution or native cleanup."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_control.py::test_loss_and_detach_do_not_send_stop_or_claim_cleanup",
+      "operations": [["agent_control.py", "AgentControlJournal.transport_lost"], ["agent_control.py", "AgentControlJournal.detach"]],
+      "assertions": "Repeated local transport loss stays LOST, repeated detach stays DETACHED and later loss never reattaches. Stop remains NOT_ATTEMPTED and remote cleanup UNKNOWN; detached journal rejects report admission. Local state only, no stop/disposal authority."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_execution.py::test_compiled_registration_is_deferred_unbound_and_exactly_one_post",
+      "operations": [["agent_execution.py", "AgentExecutions.create"], ["agent_execution.py", "DeferredAgent.receipt"], ["agent_execution.py", "DeferredAgent.view"], ["agent_execution.py", "DeferredAgent.close"]],
+      "assertions": "Explicit allow_execute posts exactly one registration with compileOnlyFalse/doNotStartTrue and no session/observation binding or Java-code report. Immutable receipt preserves runtime/scope/agent identity and exact source/parser hashes; no attached view yet. Second create refuses before I/O and no scopes are implicitly created. Mock registration response, not actual Java compilation/actor acceptance."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_execution.py::test_explicit_attach_control_and_local_close_separation",
+      "operations": [["agent_execution.py", "DeferredAgent.attach"], ["agent_execution.py", "DeferredAgent.start"], ["agent_execution.py", "DeferredAgent.stop"], ["agent_execution.py", "DeferredAgent.request_status"], ["agent_execution.py", "DeferredAgent.read"], ["agent_execution.py", "DeferredAgent.close"], ["agent_execution.py", "DeferredAgent.view"]],
+      "assertions": "Start before explicit attachment refuses; one attachment uses doubled channel with exact open/start/stop/status/read/close order and UNKNOWN remote cleanup. Reattach and post-close start refuse, no release HTTP request sent. Local orchestration separation only, no actual AMQP command/remote cleanup guarantee."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_messaging.py::test_real_connection_parameters_and_one_shot_commands",
+      "operations": [["agent_messaging.py", "AgentChannel.open"], ["agent_messaging.py", "AgentChannel.start"], ["agent_messaging.py", "AgentChannel.stop"], ["agent_messaging.py", "AgentChannel.request_status"], ["agent_messaging.py", "AgentChannel.read"], ["agent_messaging.py", "AgentChannel.close"], ["agent_messaging.py", "AgentChannel.local_cleanup_confirmed"], ["agent_messaging.py", "AgentChannel.view"]],
+      "assertions": "Fake broker confirms one-shot start/stop; own command echoes are not status. Exactly one connection attempt uses explicit s.a virtual host and allowed loopback plaintext; repeated stop refuses. Owned queue deletion, connection/ioloop close and local cleanup confirmed, reopen refused; remote cleanup UNKNOWN. Despite historical test name, broker is doubled, not real service interoperability."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_messaging.py::test_confirm_deadline_leaves_unknown_and_closes_owned_transport",
+      "operations": [["agent_messaging.py", "AgentChannel.state"]],
+      "assertions": "Mock publication confirmation timeout raises TransportError, leaves start outcome UNKNOWN and channel DISCONNECTED, closes owned connection and refuses replay. No inference of current remote execution or successful actor stop."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_status.py::test_shared_java_fixture",
+      "operations": [["agent_status.py", "decode_agent_status"]],
+      "assertions": "Four frozen Java READY/RUNNING/STOPPED/FAILED snapshots retain exact agentURN, viability/detail, timestamp1760000000000 and sentinel observation/start/activity fields. Snapshot immutable with no stop/cleanup capability. Pinned codec evidence, not a current running actor report or cleanup authority."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_previews.py::test_source_only_preview_has_fixed_nonexecution_flags_and_frozen_evidence",
+      "operations": [["agents.py", "AgentPreviews.preview"]],
+      "assertions": "Two explicit mock POSTs preserve source bytes and fixed compileOnly/reportJavaCode/doNotStart/doNotBind flags with observationIdMinus1. Frozen receipt retains source/parser hashes, service origins/IDs and hidden Java-code repr; declares NOT_STARTED_NOT_REGISTERED_NOT_JAVA_COMPILED and exposes no start/stop. Mock translation preview, not actual native compilation or execution."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
       "test_ref": "python-client/tests/unit/test_exports.py::test_streamed_export_is_published_only_after_close_and_keeps_exact_bytes",
       "operations": [["exports.py", "export_formats"], ["exports.py", "export_to_file"], ["api/runtime.py", "ObservationImpl.export_to_file"], ["client.py", "Client.export_to_file"], ["transport.py", "Transport.stream"]],
       "assertions": "Mock advertised export uses explicit scope/RuntimeID/media and identity encoding; destination stays absent during chunks. After close exact28bytes publish, immutable receipt preserves schema/media/path/count, exactly two HTTP calls and no temporary files. Numeric context-qualified ID is used despite named observationURN. Local atomic publication contract, not actual provider export/remote durability."
