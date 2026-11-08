@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr": 316,
+  "state": "REMOTE_MERGED_LOCAL_ANCESTRY_VERIFIED",
+  "remote": {
+    "baseRefName": "feature/python-experiment-runner",
+    "headRefOid": "969bd9ace16e9fee88647e4a69c6eb3e8131a0b5",
+    "mergeCommit": {
+      "oid": "f418b0c8c364af9b4e56f8081b952ea087a34fab"
+    },
+    "mergedAt": "2026-11-08T00:49:20Z",
+    "state": "MERGED"
+  },
+  "exact_head_rollup_checks": 48,
+  "exact_commit_check_runs": 47,
+  "ci_receipt": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\pr316-verified-reconciled-head-ci.json",
+    "sha256": "8186e170b529abc7511432e9c15283df473f58a83d9422cfc30a16f57fceb189"
+  },
+  "scope": "130reviewed entries/455nonabstract linked/51abstract uncalled-unmapped; selected assertions only, not exhaustive functional/native/final42row acceptance. Initial UNKNOWN mergeability refused; later verified before normal merge.",
+  "native": "REAL_NOT_RUN",
+  "publication_authorized": false,
+  "final_original_row_acceptance": false
+}

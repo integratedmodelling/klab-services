@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr": 315,
+  "state": "REMOTE_MERGED_LOCAL_ANCESTRY_VERIFIED",
+  "remote": {
+    "baseRefName": "feature/python-experiment-runner",
+    "headRefOid": "24b46614cc7e09ae32bca145e6575f933013c6ea",
+    "mergeCommit": {
+      "oid": "4a2eb39e7eb1ee5f71014500abc298671481a004"
+    },
+    "mergedAt": "2026-11-08T00:48:19Z",
+    "state": "MERGED"
+  },
+  "exact_head_rollup_checks": 48,
+  "exact_commit_check_runs": 47,
+  "ci_receipt": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\pr315-verified-reconciled-head-ci.json",
+    "sha256": "c1c0fb98e464dbc7098b2c76cc36d8d926e38f4b1208de05df3939e7cca6e522"
+  },
+  "scope": "Reconciled ledger histories retain prior original-head CI. New exact-head checks independently verified; no old-head result substituted. Selected281operation associations at this delivery, not final455 review or exhaustive functional/native acceptance.",
+  "native": "REAL_NOT_RUN",
+  "publication_authorized": false,
+  "final_original_row_acceptance": false
+}

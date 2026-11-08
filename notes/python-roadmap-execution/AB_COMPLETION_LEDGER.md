@@ -1,5 +1,116 @@
 # A+B completion ledger — ongoing campaign
 
+## Exact merged317 verification PASS;42 bounded Python scopes reconciled
+
+Post-reconciliation queue/attribution/governance61controlsPASS; queuecheck preserves
+42originalIDs/history and42scopeddispositions, with2runnable delivery/cleanup rows.
+Read-only process inventory after finalverifier completion finds no matching Python
+service/kernel or ghCIwatcher. Owned thirdworktreepython-boundary-coverage-controls
+was clean at9baeae38c, verified ancestor ofcampaignintegration, then normally removed
+withoutforce. Other worktrees and original57c9b3dd7 coverage/caches preserved. Active
+primary retained for finaldelivery; repeat finalownedcache/window/process check afterCI.
+
+Candidate161f06f7a01f9dd4b69df130b0044051794e8db5 fresh source/wheel/sdist/
+installed parity71SDK/6worker/37reference modules13assetsPASS; installed5305SDK,
+38tooling,116worker,538reference,39governancePASS with zero failures/errors/skips.
+Both114fileWindows/Linux-targetmypy/fatallintPASS; fresh5305SDK538reference owning-
+thread traces link all455nonabstract through130reviews,51abstract uncalled/unmapped.
+Complete SDK/helper coverage5305PASS;40unchangedcheckercommands under each preserved
+basePASS. No source/test identity drift, trace exhaustion or gate/exclusion changes.
+
+Fresh42row/17gap custody preparationPASS with every required Python/reference test
+byte-matched and seven exact parameterJUnit cases independently retained. Independent
+24group scope review yields39PYTHON_COMPLETE_SIMULATOR_VERIFIED dispositions and three
+explicit native-oracle/scale/release-blocked-axis dispositions. These are bounded
+Python implementation/reference results, NOT acceptance of full original/native
+requirements. Original42IDs/embedded histories/17stable gaps/failed evidence retained.
+Queue per-row receipts identify each scope and external boundary; old preparation text
+remains history, not current implementation status. Final bookkeeping/cleanup pending.
+
+Candidate readiness now retains all8gates with boundedoffline/coverage/package/lifecycle/
+finite-recorded-referencePASS; security/scale/nativecompatibilityBLOCKED. Expectedexit3/
+NOTELIGIBLE/publicationfalse. Scientific-referencePASS does not mean actual provider
+science; hashes/operatorstates are not human/scientific attestations. Borrowed interpreter
+dependencies remain disclosed, native Resolver encoder unsupported, historical scanner
+reproducer custody missing. No native/environment repair, issue closure or release.
+
+Versioned rowtable/evidence pins: evidence/final-python-scope-reconciliation-20261108.md.
+Private exact-merged-roadmap-final-first finalreport c3e17b151b173386cc34d58f79bfc055b70cf4c1f7d88291beb5281ad0196352
+retains detailed42test/delivery/17gap receipts. All28PR290–317 remote merged/local
+candidate ancestry verified. Continue ordinary final evidenceCI/merge/checkpoint and
+ownedcleanup; no milestone stopping gate.
+
+## PR315–317 verified ordinary merges; exact merged verification begins
+
+315merge4a2eb39e7/316mergef418b0c8c each48rollup/47exactcommitcheckrunsSUCCESS;
+317head1cf10234c945e8076d08cfb2b9a065871d9eaf6e passed25rollup/24exactcommit
+checks and merged161f06f7a01f9dd4b69df130b0044051794e8db5. All remote/local
+ancestry checkpoints verified. Counts reflect currently triggered checks, not prior
+duplicate/more broadly triggered runs; no workflow/coveragegate removed or relaxed.
+316/317 initialUNKNOWNmergeability refused; laterMERGEABLE/allSUCCESS independently
+verified before normal merges. Separate delivery receipts preserve full CI custody.
+
+Preserve this followup branch before checking out exact317merge for fresh exclusive
+package/type/full-suite/operationtrace/coveragegate verification. Do not relabel prior
+premerge results as final. All42original rows/history/zero finaldispositions preserved;
+native science/rights/security/scale/release remain unapproved. Finalrowreconciliation,
+readiness and ownedcleanup continue immediately after verification.
+
+## PR315 reconciled head delivered
+
+315head24b46614cc7e09ae32bca145e6575f933013c6ea passed48rollup checks,
+including47checkruns independently matched to exact commitSHA; merged normally as
+4a2eb39e7eb1ee5f71014500abc298671481a004 at2026-11-08T00:48:19Z. Remote
+merge state/local ancestry checkpoint verified. Receipt
+reference-assertion-delivery-20261108.json retains CI identities and limited scope.
+Original-head watcher was not substituted after ledger-conflict reconciliation.
+316freshwatcher completed, but first current verification returned mergeabilityUNKNOWN
+and refused; no merge attempted until readiness established.317delivery/final exact
+merged-candidate/42-row acceptance/readiness and ownedcleanup remain owed.
+
+Final verification preparation tightened without production changes: require clean
+tracked exact merged317candidate before/after verification, no exhausted trace,
+all455nonabstract linked and51abstract uncalled, and end-of-pass raw source/installed/
+executed-test identity checks. Row preparation now binds fresh final attribution to
+the package SDK hashes and exact merged verification receipt, uses fresh governance
+JUnit, and still leaves explicit row review/dispositions pending. Syntax and retained
+premerge SDK-identity preflightPASS; no final run or final acceptance claimed. Fresh
+post-integration instrumentation/queue/workflow24controlsPASS.
+
+## Follow-up retains reconciliation history
+
+315/316 prior watchers completed on their original heads, not their replacements.
+315's immediate post-push watcher returned old checks before new checks appeared;
+that result was not accepted for delivery. Fresh remote runs for315head24b46614c
+were independently observed queued, then fresh315/316 watchers started. Current
+heads31524b46614c/316969bd9ace/3171cf10234c require new exact-head CI. Ledger-only
+conflicts retain all histories below; production/test/mapping/coverage gates unchanged.
+Final merged317 verification and42-row reconciliation/readiness/cleanup remain owed.
+
+## PR314 delivered; final merged-candidate verification prepared
+
+314exact9baeae38c0aec09885972705d85d60d96f639253/all91checksSUCCESS merged
+41896c2e7c034b8fa8c5d3a68c8da937f535999a at2026-11-08T00:33:28Z; ordinary
+remote/localancestry checkpoint verified. Initial mergeabilityUNKNOWN refused; later
+CLEAN/MERGEABLE independently verified before merge. Receipt
+independent-boundary-delivery-20261108.json preserves33cases/5305SDK/36controls and
+statement/branch/exclusion limits.313initial verification's precise assertion condition
+was not captured: corrected earlier transient-metadata wording to hypothesis only.
+
+317openexact8e6d10eb3 prepares combined packages/42rows/17gaps/migration; no final
+dispositions. Current followupbranchfeat/python-final-candidate-acceptance preserves
+verified314 ancestry without changing317head while itsCIruns.315/316/317remainOPEN,
+no resumed-snapshot failures; checksstillqueued/running, so no delivery inferred.
+
+Private verify-final-merged-roadmap.py syntaxPASS and prepared to refuse until317remote
+MERGED and localHEAD equals its full mergeSHA. It will rebuild/install allpackages,
+run fullSDK/tooling/worker/reference/governance, both114fileplatformmypy/fatallint,
+fresh SDK/reference owning-thread traces and all130review associations, then complete
+SDK/helper coverage and40unchangedgatecommands under both preservedbases. It uses
+exclusive owned outputs/coverage databases and hidden subprocesses, no nativefallback.
+Finalrowpreparation accepts explicit fresh final-attribution path; prior reports retained.
+No final acceptance, native compatibility/science/OSsecurity/release promotion yet.
+
 ## PR317 integration reconciliation — candidate head superseded
 
 Integrates reconciled316/315 histories after verified312–314 delivery, retaining
@@ -22,7 +133,8 @@ integrated-reconciliation-readiness-preparation-20261108.json, no gate removed.
 be2a72342040c9675ec070e59bcd9845571b937f/all91checksSUCCESS merged
 0048a771f631f30fb08de525bb390fc050bcdbef at00:27:30Z. Both ordinary merges,
 remote state/local ancestry checkpoints verified; prior failures preserved. First313
-verification refused transient metadata; later CLEAN/allSUCCESS verified before merge,
+verification assertion refused without capturing its exact condition (transient metadata
+was a hypothesis, not established); later CLEAN/allSUCCESS verified before merge,
 no bypass. Delivery receipts whole-tree-type-delivery-20261108.json and
 reviewed-operation-delivery-20261108.json.314–316 remain separate pending deliveries.
 
