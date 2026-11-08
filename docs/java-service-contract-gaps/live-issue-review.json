@@ -1,0 +1,659 @@
+{
+  "queried_utc": "2026-11-08T13:56:59.277705+00:00",
+  "audited_commit": "d3ee8504cc8e53e96f66a3e5a6718d5e32a029b4",
+  "github_writes": false,
+  "scope": "All issues in both repositories, state=all, limit=1000; titles/states/owners/labels preserved; no closure decision inferred",
+  "issues": [
+    {
+      "number": 193,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/193",
+      "title": "Track legacy synthetic fixture incompatibility with current ODO and source validation",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T21:26:41Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "411e44135031627ce228b2644b85497098352412d261d1d9dd1bf3adeceffe45",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/193#issuecomment-6696050039",
+          "body_sha256_utf8": "471ce300bbebf2f8960489a5008735d9b353cb11b725a6aea6668f2483f6c485"
+        }
+      ]
+    },
+    {
+      "number": 147,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/147",
+      "title": "Baseline Java acceptance inventory: semantic, temporal and lifecycle regressions block Python integration",
+      "state": "CLOSED",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-04T00:55:29Z",
+      "closedAt": "2026-11-04T00:33:54Z",
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "f42df5718c838cbabafc13a391e2ca3ad3466a09a1718b88f96e8e6a7b4e6b41",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6611804981",
+          "body_sha256_utf8": "0b0edec73da8ba31cb9ccf73c325d7e33f4b4cd2ba29838061c2f59871d8a397"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6612966556",
+          "body_sha256_utf8": "d54ec62523a1afce96640689d3e13498a8321ebea90b20bd97921c7e96e16912"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613362718",
+          "body_sha256_utf8": "87c07a34e26830fabbb19aca5ed3ab492423399852038fba4d74e83321a8a384"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613467278",
+          "body_sha256_utf8": "a1646b267ee42e3e1ef23b94d23940e16c86b235ebe941fc14035a61120fe2cc"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613597838",
+          "body_sha256_utf8": "ec6aa2fac26ca46da8ea0f1116e932f7a7b42f05b9cfb694219626f8826197bd"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613637166",
+          "body_sha256_utf8": "b185213a67d34c2600733217616cb2f9321c5d564748f64a714d7921e05d83c2"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613727444",
+          "body_sha256_utf8": "5ec2ff684fcace09c113f16d820e25fadc3b7acc96592748a8f7bf3f80844392"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613812818",
+          "body_sha256_utf8": "56c0627ce1752615d2b20af9c45a96ab7c4b1f1cd9442877243e3db076a15a9b"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6613925925",
+          "body_sha256_utf8": "1d8117f74276032586d6361083e9887fb0ae73ccfbc823574f1ce0ede700cbfa"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614102160",
+          "body_sha256_utf8": "a73ff6dd24899c1955e2d8c2e277ea20b60da572f86cdd27583ef63552af1317"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614204093",
+          "body_sha256_utf8": "0ef47a1d03ea530264a1b0e8b414fe9ee3737a146dc74fa2d8e586276553c620"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614311228",
+          "body_sha256_utf8": "98ad04afabf0944c291983730be20f814a1735d44ed9bbde61335c560ca1239c"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614427724",
+          "body_sha256_utf8": "d4327d59bd1a7c23e114c8b5e0b4320560df10f9dec17f099568770e15dba1ac"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614550923",
+          "body_sha256_utf8": "02bcb9f098357b3851f4f630ff6ab127d56e5940516785a606ee0257bd9d49ba"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6614888913",
+          "body_sha256_utf8": "42084231fc7204425a218190ee86a3c0a9e23ac92fb0d64391d00f3290c1b6b3"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615039564",
+          "body_sha256_utf8": "d9635b833af2ded4644cca920f3bc629b79d260032c83888525fc3a2ccadd0e8"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615114635",
+          "body_sha256_utf8": "c6d6039f2dace44dddafd744811f5e2418d0641a477179527aa6804f90f9d7f7"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615314353",
+          "body_sha256_utf8": "f25546edf34b50d5a88af2f3555e53bee281e8da5a3a587af418c9117a2f2b99"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615501091",
+          "body_sha256_utf8": "55be375326ed97cb6c427bb1fdbe84532bb99c8011a556ed67f482b80c7cee29"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615629921",
+          "body_sha256_utf8": "3d959232c3e60ec747189624caede697d307095d11623b05cba8ee5a6f8eef95"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615742827",
+          "body_sha256_utf8": "b9c9a6a0a0d8adba91f29ab62a9d6c9e66807799ff25180ea832dff6fecd9e02"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615805274",
+          "body_sha256_utf8": "364b152191842ae34642010ef4ad7f11938965d02ea366fbf97142a7b0cf49ec"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6615958394",
+          "body_sha256_utf8": "7505d5e8e45a853f1992348e0d42ad1dba69a2289b3402af2569bd5d0e21b5da"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616169593",
+          "body_sha256_utf8": "c2a451a9b18fd68c4563c1a06e341d884495d6a1ad4574213312a56e20e8feee"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616337726",
+          "body_sha256_utf8": "cc0867fc4220cd00bff11652e0fcab09f5bd241defc3c49001c3f73ded17a0e5"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616391022",
+          "body_sha256_utf8": "e2acb3759bfb2b46c2fb20b8ff6877f0d19ef5fc4099f461b65394a828f771bb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616566457",
+          "body_sha256_utf8": "ae20b52a5b434214c8a0d64e875fae498f62c82bdefc4af4c26edb4905d37bfc"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616615021",
+          "body_sha256_utf8": "a4eb5966f67eb46b4dd4c034ffe5845648cb63f5bc811a697e62b2823bec34d9"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616776301",
+          "body_sha256_utf8": "ddc0de05a5c3c4df8f858252a674d0782c58701252b909f4dace8b779f5625bb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616851417",
+          "body_sha256_utf8": "481b7841d4511bb1ba37d4b7afb5c2dc409dfa503f007f4da628151eb53c7a50"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616887190",
+          "body_sha256_utf8": "5a723f20c5c67c2c41816f69c0b61f72c482887072f510fc6533e24824b70995"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6616956072",
+          "body_sha256_utf8": "5d0475d3d498b3b484ae2923fc248e4566f096c4696519e273a620764e06d54b"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617055251",
+          "body_sha256_utf8": "4246d6561a909f191b19ca78db29ea8ae76a717c9e38c722170f04c0cd9f7138"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617272022",
+          "body_sha256_utf8": "51d60953fcee40668ec41d24dd272bd500325f2b4da3653ee168f35763d0579c"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617377252",
+          "body_sha256_utf8": "e12a661a4f5b552d1752ea0923d9bf0750ed257cc9d44303f55bd5ea254059db"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617870628",
+          "body_sha256_utf8": "13572e2203e2722051f0b0ac4775f0f1eaf9338e7abd0d00eaf4d2e9fa921399"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6617933831",
+          "body_sha256_utf8": "cc4b3157f4b7cb74234db44695059887a20d13633da91e2f6867d9f94bd6f8f6"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6618261395",
+          "body_sha256_utf8": "2c90dee134f5ebf936dfb8693d57e30688e72b6676ffda7368c7c9de8e5b66f5"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6618321659",
+          "body_sha256_utf8": "c95420bd3fa88ebd40ecd01f3e58003782d1ac09a9f80dfe4dfac9303a1539eb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6618800483",
+          "body_sha256_utf8": "50ad46d3ce9f3ab50c2fd7bbe6e80fd6c2dfe56af2dddab29b9ee6809bc7ea54"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619114944",
+          "body_sha256_utf8": "9c24ac2b6c327af921174e0537cec5680d55abf1247c5d6c2dd53dea5b7655e0"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619199387",
+          "body_sha256_utf8": "8e6423d59c06f28a990494840085b7be966e4a33b426c306aefcaddc3a592334"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619335395",
+          "body_sha256_utf8": "40ade52e7d03972fdcc9d5a79096b0f0804e1d74530bc06aa13f38e0d5d2d93a"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619416869",
+          "body_sha256_utf8": "8ead7ac7d05dde9026936ad8bac2d4e9ca66f90da60d751a107b438d06436fb1"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619513981",
+          "body_sha256_utf8": "00ff41b3e65883a4ce3a6e9f9731b0d1314c4a665ad8c204e0c3837103fe43d9"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/147#issuecomment-6619526360",
+          "body_sha256_utf8": "fdbdd8fa419856b8d974c17c5b74786454da1a55e0e73fb37d34f958281bffa6"
+        }
+      ]
+    },
+    {
+      "number": 145,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/145",
+      "title": "Repair baseline core-service test setup for Java-only builds and authority selection",
+      "state": "CLOSED",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-03T17:40:51Z",
+      "closedAt": "2026-11-03T17:40:51Z",
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "40acb6bac405686280bea1da505d1b05779b3881d727d6c9a0a112ed37a94c17",
+      "comments": []
+    },
+    {
+      "number": 144,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/144",
+      "title": "Remote Context observation reads reach unsupported lifecycle-currentness default",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T21:26:42Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "ce8e6f063b18036ab3a0095411c55137765a79305effc5ebff474dcbf610ac9b",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/144#issuecomment-6611413159",
+          "body_sha256_utf8": "9678e83d7a410cd480766b86410ded9bf017520742a246948597873c70d82e23"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/144#issuecomment-6696050429",
+          "body_sha256_utf8": "68ecd72651142d5ad40f006fba8babf5681cbb2218b63b07d04e7568be8ed1d4"
+        }
+      ]
+    },
+    {
+      "number": 142,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/142",
+      "title": "Baseline Java test failure: required POST error-detail expectation contradicts status-only implementation",
+      "state": "CLOSED",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-03T17:25:59Z",
+      "closedAt": "2026-11-03T17:25:59Z",
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "b624b5fe16c0087a6314d4d12c8993dd7e8e5c0474a890d50c0d0c417fb8f8be",
+      "comments": []
+    },
+    {
+      "number": 130,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/130",
+      "title": "Provide PaL operational artifacts and independent original-study reference contracts",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T21:26:43Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "2d1629be770d4c7a0f7024afb1d20a01468a820c0df95cdf3f1136300d5098dc",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/130#issuecomment-6696050809",
+          "body_sha256_utf8": "398981dfb354c8c68d6e25b9a089256c6d681e12059599f53f48ae653b069b64"
+        }
+      ]
+    },
+    {
+      "number": 129,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/129",
+      "title": "Record Python release support/version decisions and scientific/backend publication gates",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T21:26:45Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "1eb65cc9f7b8275e615f2467b1c6412e5f3426e8c6a82135e7b62b06bffc061b",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/129#issuecomment-6696051223",
+          "body_sha256_utf8": "c812639e56595bc3d0ac3e6586be8e775a4d187e59f617587abe5f706379b4dd"
+        }
+      ]
+    },
+    {
+      "number": 127,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/127",
+      "title": "Specify provider/worker SDK role, execution and backend integration contracts",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T23:44:59Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "41063f2dace0915516ff71d9368face94aa3cd94397fcd427b6ca1e95ae16644",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/127#issuecomment-6696051636",
+          "body_sha256_utf8": "04055ebd0ccd0a297ab0ab195a533300004b1e4618966776c80dc54e02a089f1"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/127#issuecomment-6698860944",
+          "body_sha256_utf8": "733c008465463f00f108daf31d8157d21e1076a6c7c7cc8cd8406add010382c2"
+        }
+      ]
+    },
+    {
+      "number": 126,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/126",
+      "title": "Define durable notification replay/resync contract beyond best-effort Python hints",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T21:26:47Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "1ba4ff4b2508d4a6a8323d8b23bddfb99346030b72202285a218fdeae11e0cb2",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/126#issuecomment-6606525095",
+          "body_sha256_utf8": "aa75267af487f56f4624ed96d3aca2c27dee944f95ddc76998cdd0df818aa32f"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/126#issuecomment-6696052073",
+          "body_sha256_utf8": "5499730561110b30c545f068cd263c8b1dd5da045baffe383d47db0840f932ba"
+        }
+      ]
+    },
+    {
+      "number": 125,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/125",
+      "title": "Complete Python agent execution/control and confirmed terminal cleanup beyond source preview",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T21:26:48Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "225871c87ef16ece028f5502374e4204ede195b6a8d14c4a1549a0955b67533d",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6605129955",
+          "body_sha256_utf8": "f05d590de261136b34984ddf968f403da44aea50cb32b71bd8738b43f647b318"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6606049141",
+          "body_sha256_utf8": "380cd594ca47a694a19eb4035642cbbcfba72bee0d3e3c7ce762c9bca42600c0"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6609122938",
+          "body_sha256_utf8": "426ec5d8f8b053ff6730709f973771c8c0eb1243e49b8c69fa8abe00ea302074"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6610098558",
+          "body_sha256_utf8": "dac0cd1ed5a2c097dbf86d21ff05d7f5aea9a51c0d9b5ad8aa5a403bb82c59e0"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6610521458",
+          "body_sha256_utf8": "fcd416bd811dda4ffb2ed83921657a7d45a181bd8a7639fe07dcd0dc17fddb7a"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/125#issuecomment-6696052496",
+          "body_sha256_utf8": "fb5c5092c223fc383692d49e6f44f69ca6e83d75aa70f6f65b72faf0e813ff87"
+        }
+      ]
+    },
+    {
+      "number": 124,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/124",
+      "title": "Specify and implement twin composition/migration contracts required by Python federation",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T21:26:49Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "53e6423e9a72ac03d5caf65cb05d7ec212d1787060068ae3daec582de1dc7788",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/124#issuecomment-6696052897",
+          "body_sha256_utf8": "6e155b7d633ee6588cab80b290eaf4db4879c06e0fadb65fd8be6c2836f1268d"
+        }
+      ]
+    },
+    {
+      "number": 123,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/123",
+      "title": "Backend prerequisite: versioned remote scan/block/slice contract for Python access",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T21:26:50Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "c35b261e905691cf936b0b88727ad0a019d3270bf4bd2caf3983165c0f65a9bb",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/123#issuecomment-6696053325",
+          "body_sha256_utf8": "d3b6143442c9c4ff513869bf78dce55570f51db55c2ef70c03c12873ddf18c16"
+        }
+      ]
+    },
+    {
+      "number": 91,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/91",
+      "title": "Python client: stream observation exports to files",
+      "state": "CLOSED",
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjM0MjI2MTA=",
+          "login": "Dobbes",
+          "name": "",
+          "databaseId": 3422610
+        }
+      ],
+      "labels": [
+        {
+          "id": "LA_kwDOJG27CM8AAAABOFZ1VQ",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        }
+      ],
+      "updatedAt": "2026-10-13T19:52:51Z",
+      "closedAt": "2026-10-13T19:52:51Z",
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "84bc61fb4a179ddbb2009cdb90d54636e709d1080e96cf9f4aac96baf3c3a047",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/91#issuecomment-6153913994",
+          "body_sha256_utf8": "05f0bd6ab59f155a4c4915eab4d05da7000262df0c97c28ffcb1562675aa44a3"
+        }
+      ]
+    },
+    {
+      "number": 89,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/89",
+      "title": "Validate Python client integration with cross-service identity and shared-session permissions",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [
+        {
+          "id": "LA_kwDOJG27CM8AAAABOFZ1VQ",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        },
+        {
+          "id": "LA_kwDOJG27CM8AAAACeTq-og",
+          "name": "java",
+          "description": "Pull requests that update java code",
+          "color": "ffa221"
+        }
+      ],
+      "updatedAt": "2026-11-06T21:26:51Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "bee88d7348741971cf767e7825da72f750c8f7b94394e42316f8b167d46f1040",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6109274331",
+          "body_sha256_utf8": "e62f7acab7d0b8d32e5f155d4acc481b0b39a9a51b99403074a14a68c8b958d4"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6593909779",
+          "body_sha256_utf8": "549dc1013ad77f89597943ba89781da5e93a9b0f01f1cb6e6b9a122ed8d7102b"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6594255196",
+          "body_sha256_utf8": "3f69823e6a8457091016b8c3036fb634aeb4ccac6f3c2fc31f8a6d7d22124fcb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6594335340",
+          "body_sha256_utf8": "5983107213a6429d38222a8a10a6479b47fec63fe716f100552dc24ccd0235a1"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6594863243",
+          "body_sha256_utf8": "0b6fe1ab5d2997401a72b86f2bad5d043bfe875bf492c3fd07d2039b3d89f962"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6595093045",
+          "body_sha256_utf8": "bfe80fa17db3d6d30dbdeb955268b296d3293e7034b38a12a31e59e6ca5995dd"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6595188788",
+          "body_sha256_utf8": "b2fca29f9aa780b3510ad60f6cc1e3329ab2788c6f6144c1fc1e801770039d58"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6595585072",
+          "body_sha256_utf8": "0a6a2fa51e64fe7c7ad3bcb893dffd4237f0ea0fd5af674bde893dad10d14d97"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6595618025",
+          "body_sha256_utf8": "927ba256a5913b1649cfc45743c2de37b094e4953260e17bd7acbd160a53a6bd"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6605209836",
+          "body_sha256_utf8": "747a6bb7756f7934d670bfe113231167cafba83459db6bad98acce5900bb1a89"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6609514875",
+          "body_sha256_utf8": "0d008529b5d9d20dee2e8f3cc9b40410ecf947cb4fd7488134e04772fd48a8b6"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6609901761",
+          "body_sha256_utf8": "244c23cf9067bd114a31d1393307a2e5a6c1fcf0d174bca12d7b16d792b7a12f"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6610518747",
+          "body_sha256_utf8": "f6c3ed85cedf2128c7c2f1be13ab0a09dd4ae461446fda9989b50f4fa6723a90"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6611031444",
+          "body_sha256_utf8": "1fbc8c0390171e1e6b20a1391bfbc8d286fbe328f99dd1131a9ac92b0cabc951"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6611044678",
+          "body_sha256_utf8": "3f0ec47591984fd8dc8095ce5caa18c303f17bb4ef2706fc71637cbec54d386e"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6611442762",
+          "body_sha256_utf8": "f10dcce1827cf49116331aff670b522b8d80de10acbfd2ecfb544ff04c6e9200"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/89#issuecomment-6696053864",
+          "body_sha256_utf8": "cc30470117c8c56ddfb9ae91c0d66545894a27599df8c8cb025c406f65bb320b"
+        }
+      ]
+    },
+    {
+      "number": 88,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/88",
+      "title": "Python client: save and restore context, observation and job handles",
+      "state": "CLOSED",
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjM0MjI2MTA=",
+          "login": "Dobbes",
+          "name": "",
+          "databaseId": 3422610
+        }
+      ],
+      "labels": [
+        {
+          "id": "LA_kwDOJG27CM8AAAABOFZ1VQ",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        }
+      ],
+      "updatedAt": "2026-10-12T01:10:42Z",
+      "closedAt": "2026-10-12T01:10:42Z",
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "587990b5a5fa72083d3d0d7027b9271660caa7dc1daf6bc2c7706650836e467a",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/88#issuecomment-6109140230",
+          "body_sha256_utf8": "d7e0c3a7a8296690ed79385fcd52f03406b2c2c62906eb08824b1fc4c11d3d59"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/88#issuecomment-6109274019",
+          "body_sha256_utf8": "389b966c49c8b27da059aaba05fa8ca0455283b4e034b9a3c0bbd5ceecbfbeb8"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/88#issuecomment-6112435461",
+          "body_sha256_utf8": "cd854916ee1b4a1aacb5940a5725fc29dad94712524790446b1f68e39011cbdb"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/88#issuecomment-6115979188",
+          "body_sha256_utf8": "c201334df7ffdbf037bb49ff266d9a7f4c77749c4b679beb28967dfe45d20b28"
+        }
+      ]
+    },
+    {
+      "number": 87,
+      "url": "https://github.com/integratedmodelling/klab-services/issues/87",
+      "title": "Python client: add typed observation requests and context options",
+      "state": "CLOSED",
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjM0MjI2MTA=",
+          "login": "Dobbes",
+          "name": "",
+          "databaseId": 3422610
+        }
+      ],
+      "labels": [
+        {
+          "id": "LA_kwDOJG27CM8AAAABOFZ1VQ",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        }
+      ],
+      "updatedAt": "2026-10-12T01:10:39Z",
+      "closedAt": "2026-10-12T01:10:39Z",
+      "repository": "integratedmodelling/klab-services",
+      "body_sha256_utf8": "e12f98054e0f7303d265880d3d2819eb16e689122d5a847e085f358fe950f3f6",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/87#issuecomment-6109140293",
+          "body_sha256_utf8": "7b897889943e8f24e0ca496b79bfbca38f226fe32143e9cb73e942e13a6b3338"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/87#issuecomment-6109273699",
+          "body_sha256_utf8": "7e75f10fabd9f6e221756ebc1ec2f11ade5ee229878c22e167ef40ffe50cd886"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/87#issuecomment-6112434717",
+          "body_sha256_utf8": "38496aab384c55a9d3700beca8415af2ae0be0e8d140da7fd90b6588efaf3025"
+        },
+        {
+          "url": "https://github.com/integratedmodelling/klab-services/issues/87#issuecomment-6115978844",
+          "body_sha256_utf8": "3cc623548313fcac53a10d36dd931eb130180fa49bc5d6412ca85ec24feb8b23"
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "url": "https://github.com/integratedmodelling/klab.component.geospatial/issues/10",
+      "title": "Native continuous GeoTIFF export omits observation measurement units",
+      "state": "OPEN",
+      "assignees": [],
+      "labels": [],
+      "updatedAt": "2026-11-06T21:26:53Z",
+      "closedAt": null,
+      "repository": "integratedmodelling/klab.component.geospatial",
+      "body_sha256_utf8": "d8b2c954272e477aa08703f532e7c2ddc9e2bc96be44b472cc261b0b37ce480f",
+      "comments": [
+        {
+          "url": "https://github.com/integratedmodelling/klab.component.geospatial/issues/10#issuecomment-6696054302",
+          "body_sha256_utf8": "db03411df3369dbd3f5e25db2bebd82c2be5d1f7eeec2b8f803f43fea08a5413"
+        }
+      ]
+    }
+  ]
+}

@@ -3,6 +3,8 @@ import copy
 import importlib.util
 import json
 from pathlib import Path
+import re
+import textwrap
 from types import SimpleNamespace
 
 import pytest
@@ -12,6 +14,12 @@ FILE = Path(__file__).resolve().parents[1] / "govern.py"
 SPEC = importlib.util.spec_from_file_location("gap_governance", FILE)
 govern = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(govern)
+
+
+@pytest.fixture(autouse=True)
+def isolate_receipt_provenance_from_mocked_test_runner(monkeypatch):
+    # Mock runner tests are not real executions or provenance receipts.
+    monkeypatch.setattr(govern, 'repository_commit', lambda: 'MOCK_TEST_ONLY')
 
 
 def test_complete_registry_and_exact_original_acceptance_crosswalk():
@@ -108,6 +116,9 @@ def test_real_mode_reports_not_run_and_never_calls_subprocess_or_simulator(tmp_p
     result = json.loads(output.read_text())
     assert len(result["cases"]) == len(govern.expanded()["gaps"]) and result["fallbacks"] == 0
     assert {c["tag"] for c in result["cases"]} == {"REAL_NOT_RUN"}
+    expected = {gap['id']: gap['native_prerequisite'] for gap in govern.expanded()['gaps']}
+    assert all(case['reason'] == expected[case['gap_id']] and 'no Python-to-Java' in case['executed']
+               and case['next_action'] for case in result['cases'])
 
 
 @pytest.mark.parametrize("returncode,skipped,expected", [(0, 0, 0), (0, 1, 1), (1, 0, 1)])
@@ -160,6 +171,10 @@ def test_individual_reproductions_cover_all_stable_gaps_and_native_boundaries():
         assert document == govern.reproduction_document(gap)
         assert gap["observed_java_behavior"] in document
         assert gap["simulator_behavior"] in document
+        assert gap['native_prerequisite'] in document
+        assert gap['native_acceptance'] in document
+        assert gap['handoff_classification'] in document
+        assert '--gap ' + gap['id'] + ' --output preflight-' in document
         assert f"--mode simulated --gap {gap['id']}" in document
         assert f"--mode real --gap {gap['id']}" in document
         assert "REAL_NOT_RUN" in document and "exits3 without network calls" in document
@@ -176,20 +191,40 @@ def test_reproduction_generation_never_invents_unknown_native_build_or_endpoint(
     assert "no reviewed adapter/build/permission exists, retain NOT_RUN" in document
 
 
-def test_maintainer_handoff_has_each_gap_once_and_current_counts_with_seed_intact():
+def test_maintainer_handoff_has_each_gap_once_and_current_status_triplet():
     registry = govern.expanded()
     path = govern.DATA / "JAVA_GAPS_FOR_FERDINANDO.md"
     document = path.read_text(encoding="utf-8")
-    block = document.split(govern.HANDOFF_BEGIN)[1].split(govern.HANDOFF_END)[0].strip()
-    assert block == govern.handoff_inventory(registry).strip()
+    assert govern.canonical_check(registry)["canonical_records"] == len(registry["gaps"])
     for gap in registry["gaps"]:
-        assert block.count("|" + gap["id"] + " — ") == 1
-        assert gap["contract_case"] in block
-        assert gap["observed_java_behavior"] in block
-        assert gap["current_real_result"] in block
-    for preserved in ("Executive summary for Ferdinando", "400/400 exact", "NAD83/EPSG:4269", "NAVD88",
-                      "LOCAL_ENVIRONMENT_REPAIRED", "NullScannerReproducer.java", "not claimed delivered"):
+        assert document.count('</a>' + gap['id'] + '|') == 1
+    for preserved in ("Executive summary", "EPSG:4269", "NAVD88", "RESOLVED_LOCALLY",
+                       "NullScannerReproducer.java", "REAL_NOT_RUN"):
         assert preserved in document
+
+
+@pytest.mark.parametrize("change", ["missing-id", "duplicate-id", "title", "native", "simulator", "execution", "link", "selector"])
+def test_canonical_drift_is_rejected(change):
+    text = (govern.DATA / 'JAVA_GAPS_FOR_FERDINANDO.md').read_text(encoding='utf-8')
+    row = next(line for line in text.splitlines() if line.startswith('|<a id="java-gap-0001"'))
+    if change == 'missing-id':
+        text = text.replace(row, '')
+    elif change == 'duplicate-id':
+        text += '\n' + row + '\n'
+    elif change == 'title':
+        text = text.replace('|Authentic elevation hits null scanner|', '|Wrong title|')
+    elif change == 'native':
+        text = text.replace('|REPRODUCED_JAVA_FAILURE|', '|JAVA_FIXED_VERIFIED|', 1)
+    elif change == 'simulator':
+        text = text.replace('SIMULATOR_PASS for 0001–0017', 'SIMULATOR_FAIL for 0001–0017', 1)
+    elif change == 'execution':
+        text = text.replace('REAL_NOT_RUN for all 18', 'REAL_PASS for all 18', 1)
+    elif change == 'link':
+        text += '\n[bad](missing-file.md)\n'
+    else:
+        text += '\n`python-client/tests/unit/test_connection.py::invented_test`\n'
+    with pytest.raises(ValueError):
+        govern.canonical_check(govern.expanded(), text)
 
 
 def test_handoff_generation_preserves_narrative_and_refuses_missing_or_duplicate_markers():
@@ -218,3 +253,68 @@ def test_current_worker_scope_does_not_rewrite_historical_c_exclusion():
     assert worker["disposition"] == "OPEN_OTHER" and worker["java_gap_ids"] == ["JAVA-GAP-0017"]
     assert "now in implementation scope" in worker["reason"]
     assert all(row["implementation_status"] == "OUT_OF_SCOPE" for row in audit["records"] if row["acceptance_id"] in ("RC-P5", "CAP-17"))
+
+
+@pytest.mark.parametrize('change', ['missing-receipt', 'wrong-receipt', 'missing-time', 'native-with-source-only'])
+def test_independent_execution_status_requires_real_receipt_authority(change):
+    registry = govern.expanded()
+    gap = registry['gaps'][0]
+    if change == 'missing-receipt':
+        del gap['simulator_receipt']
+    elif change == 'wrong-receipt':
+        gap['simulator_receipt'] = 'docs/java-service-contract-gaps/issues.json'
+    elif change == 'missing-time':
+        del gap['simulator_verified_utc']
+    else:
+        gap['native_execution_status'] = 'REAL_PASS'
+        gap['current_real_result'] = 'REAL_PASS'
+    with pytest.raises(ValueError):
+        govern.validate(registry)
+
+
+def test_canonical_summary_count_drift_is_rejected():
+    text = (govern.DATA / 'JAVA_GAPS_FOR_FERDINANDO.md').read_text(encoding='utf-8')
+    with pytest.raises(ValueError, match='summary counts'):
+        govern.canonical_check(govern.expanded(), text.replace('**2 historically', '**99 historically'))
+
+
+@pytest.mark.parametrize('change', ['missing-action', 'missing-python', 'missing-acceptance', 'missing-reproducer'])
+def test_workflow_handoff_cannot_omit_actionable_fields(change):
+    text = (govern.DATA / 'JAVA_GAPS_FOR_FERDINANDO.md').read_text(encoding='utf-8')
+    if change == 'missing-reproducer':
+        text = text.replace('(reproductions/JAVA-GAP-0001.md)', '(reproductions/JAVA-GAP-0002.md)', 1)
+    else:
+        label = {'missing-action': 'Recommended Java-side action', 'missing-python': 'Python interaction',
+                 'missing-acceptance': 'Acceptance test'}[change]
+        text = text.replace('**' + label + ':**', '**Omitted:**', 1)
+    with pytest.raises(ValueError):
+        govern.canonical_check(govern.expanded(), text)
+
+
+def test_handoff_summary_is_short_and_sdk_snippets_compile_without_running_java():
+    text = (govern.DATA / 'JAVA_GAPS_FOR_FERDINANDO.md').read_text(encoding='utf-8')
+    summary = text.split('## Executive summary\n')[1].split('## Environment assumptions')[0]
+    assert len(summary.split()) <= 300
+    snippets = re.findall(r'^ *```python\n(.*?)^ *```', text, re.S | re.M)
+    assert snippets
+    for snippet in snippets:
+        compile(textwrap.dedent(snippet), 'canonical-sdk-sequence', 'exec')
+
+
+def test_artifact_and_fixture_classification_do_not_erase_historical_native_evidence():
+    gaps = {gap['id']: gap for gap in govern.expanded()['gaps']}
+    unit = gaps['JAVA-GAP-0010']
+    assert unit['handoff_classification'] == 'REPRODUCED_JAVA_FAILURE'
+    assert unit['native_status'] == 'CONFIRMED_DEFECT' and unit['historical_real_result'] == 'REAL_FAIL'
+    assert unit['handoff_classification_basis'] and unit['native_prerequisite']
+    assert gaps['JAVA-GAP-0011']['handoff_classification'] == 'ENVIRONMENT_SETUP'
+    assert all(gap['native_execution_status'] == 'REAL_NOT_RUN' for gap in gaps.values())
+
+
+@pytest.mark.parametrize('category', ['REPRODUCED_JAVA_FAILURE', 'JAVA_FIXED_VERIFIED', 'SOURCE_CONFIRMED_CONTRACT_GAP'])
+def test_engineering_classification_never_promotes_a_reference_proposal(category):
+    registry = govern.expanded()
+    gap = next(gap for gap in registry['gaps'] if gap['id'] == 'JAVA-GAP-0013')
+    gap['handoff_classification'] = category
+    with pytest.raises(ValueError):
+        govern.validate(registry)

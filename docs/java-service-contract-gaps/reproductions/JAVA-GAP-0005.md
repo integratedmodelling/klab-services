@@ -1,9 +1,20 @@
 # JAVA-GAP-0005 — Durable remote notification cursor and gap-aware resync contract unestablished
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0005).
+Generated from the synchronized index; simulator evidence is not native acceptance.
+
+## Engineering decision and immediate next action
+
+- Classification: **CLIENT_CONTRACT_PROPOSAL**; workflow: [Durable event recovery](../JAVA_GAPS_FOR_FERDINANDO.md#inputs-and-provenance).
+- User-impact priority: P1; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Ferdinando must identify an existing replay/resync API or agree a durable cursor/epoch/retention contract and provide a reconnect fixture; transient AMQP hints are an available narrower alternative.
+- Expected after Java change or usage clarification: Under the agreed native protocol, duplicate/out-of-order hints, disconnect, epoch loss, expiry and revocation either converge to authoritative state or explicitly require resync, without silent cursor reset or fabricated history.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONTRACT_PROVISIONAL; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONTRACT_PROVISIONAL**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: runtime; component: Runtime activity messaging / notification recovery.
 - Original roadmap: RC-P3.1, CAP-10, CAP-11.
@@ -44,6 +55,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0005 --output simulated-JAVA-GAP-0005.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0005 --output real-JAVA-GAP-0005.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0005 --output preflight-JAVA-GAP-0005.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

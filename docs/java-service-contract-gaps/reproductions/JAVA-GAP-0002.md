@@ -1,9 +1,20 @@
 # JAVA-GAP-0002 — Supported owned RESOURCE cleanup contract absent in inspected delete branch
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0002).
+Generated from the synchronized index; simulator evidence is not native acceptance.
+
+## Engineering decision and immediate next action
+
+- Classification: **SOURCE_CONFIRMED_CONTRACT_GAP**; workflow: [Owned resource cleanup](../JAVA_GAPS_FOR_FERDINANDO.md#inputs-and-provenance).
+- User-impact priority: P1; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Resources maintainer must document a supported owned RESOURCE deletion or explicit retention policy and approve a disposable import fixture; no destructive probe of retained resources is authorized.
+- Expected after Java change or usage clarification: An approved disposable import is attributable to its owner and follows the documented deletion or explicitly accepted retention policy; a foreign principal cannot delete it and no unrelated resource changes.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONFIRMED_MISSING_API; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **MISSING_API**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: resources; component: ResourcesProvider.delete RESOURCE handling (source finding).
 - Original roadmap: RC-P4.3, RC-P4.4, CAP-13, CAP-14.
@@ -41,6 +52,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0002 --output simulated-JAVA-GAP-0002.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0002 --output real-JAVA-GAP-0002.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0002 --output preflight-JAVA-GAP-0002.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

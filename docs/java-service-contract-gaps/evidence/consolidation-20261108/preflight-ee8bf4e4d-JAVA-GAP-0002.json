@@ -1,0 +1,12 @@
+{
+  "gap_id": "JAVA-GAP-0002",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/klab-service-simulator/tests/test_resource_imports.py": "72899bd054b6d64792e45b6717e20b50225b1cb924e24da71f81d55d0dbc5dc4"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:27.952928+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

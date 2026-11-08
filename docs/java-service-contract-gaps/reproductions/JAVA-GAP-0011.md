@@ -1,9 +1,20 @@
 # JAVA-GAP-0011 — Legacy frozen worldview fixture differs from current ODO/source-validation contracts
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0011).
+Generated from the synchronized index; simulator evidence is not native acceptance.
+
+## Engineering decision and immediate next action
+
+- Classification: **ENVIRONMENT_SETUP**; workflow: [Legacy worldview fixture setup](../JAVA_GAPS_FOR_FERDINANDO.md#numerical-execution).
+- User-impact priority: P1; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Fixture owner and Ferdinando must select a versioned maintained worldview fixture and required TAXA/CHEM authority providers while preserving the original hash/assertions and source-validation negatives; no ontology repair is authorized.
+- Expected after Java change or usage clarification: An explicitly versioned maintained fixture with the selected authority providers passes its declared source/knowledge checks; original frozen ODO hash and source-validation negatives remain retained, not silently rewritten or weakened.
+- Original ODO hash/source-validation negatives are preserved. Versioning a legacy fixture and provisioning selected authority providers is setup/fixture work, not evidence that maintained Java lacks semantic validation or needs an ontology rewrite.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONTRACT_PROVISIONAL; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONTRACT_PROVISIONAL**; current execution **REAL_NOT_RUN**; historical **CONTRACT_DRIFT**.
 - Service: semantics; component: RuntimeFixtureCompatibilitySourceTest / source semantic admission.
 - Original roadmap: RC-P4.1, RC-P4.2, RC-R1, CAP-05, CAP-16.
@@ -44,6 +55,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0011 --output simulated-JAVA-GAP-0011.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0011 --output real-JAVA-GAP-0011.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0011 --output preflight-JAVA-GAP-0011.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

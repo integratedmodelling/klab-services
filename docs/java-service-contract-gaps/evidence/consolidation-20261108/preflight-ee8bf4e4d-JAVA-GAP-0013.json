@@ -1,0 +1,29 @@
+{
+  "gap_id": "JAVA-GAP-0013",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/klab-service-simulator/tests/test_vertical.py": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+    "developer-tools/klab-service-simulator/tests/test_input_workflow.py": "b5752797c04d9d937ea25e7c3de42a67f0ad927984ce02f1d8079b25ecd705ff",
+    "python-client/tests/unit/test_selections.py": "38205fa649c985571dd8adfd1cf38661177080ffb49c1048bb50613b675532d8",
+    "developer-tools/klab-service-simulator/tests/test_observation_selections.py": "8de06e53b828ec73e3a95be16a891f0e8d13e6374cd3b249ed33bec3b497db83",
+    "python-client/tests/unit/test_material_selections.py": "f6715811f17dd6003035e49c3e0230bd4c72c9ca3873f5633bb7595ad9988d9c",
+    "developer-tools/klab-service-simulator/tests/test_material_selections.py": "0360fbd7a6a9f824005563f6d46ba8d42cb10eec9d30cac0f3a09c5f1dc03713",
+    "python-client/tests/unit/test_dependencies.py": "513d575504dcced8f64ee1e45ee2a96765be3f58c503c99629b4283bb663d767",
+    "developer-tools/klab-service-simulator/tests/test_dependencies.py": "6cbb167ad8c430f0f8e30332fea54fb6c81687de4a82f0c5296ee553ab2e020d",
+    "developer-tools/klab-service-simulator/tests/test_dependency_fixture.py": "826807976e5cf7ae5dd8034441e57d8a7eb37da9962bb1a6384d541122bcf1fa",
+    "python-client/tests/unit/test_dependency_graphs.py": "c286cfbc71a3a366065d6fd257630fd112ff0239dbb4b23bc569c6e74337f186",
+    "developer-tools/klab-service-simulator/tests/test_dependency_graphs.py": "1561c1aa024173438d6bbed094aa7f3dd768bc633dd48fc5d0d56abf4c10f659",
+    "developer-tools/klab-service-simulator/tests/test_dependency_graph_fixture.py": "4eae9966b65e380e58daffc2ab4a9bb159a45e8c35e6a537b621674509e32d12",
+    "python-client/tests/unit/test_input_provenance.py": "5968b71ac4d611ea24fb73e8fe95fcaac978cb0cd198305bfd9e78fdd2be2b32",
+    "developer-tools/klab-service-simulator/tests/test_input_provenance.py": "0a5c7bae69c75cf30299f3cf28a1bfb57656fde68f1fbd5fed688bf4c164a8d8",
+    "developer-tools/klab-service-simulator/tests/test_input_provenance_fixture.py": "3feb34b6dc8b3681690c3178552c4193ecd196e1075daf6a3bf34a8fedc1b33a",
+    "python-client/tests/functional/test_observation_selections.py": "b63f8965c65c7f6a563ef05283a66377a476c7c61b44076c9a559190f13b4eba",
+    "python-client/tests/functional/test_material_selection_plans.py": "88533aa6456d06ec7cbfa1e35e311e8e50ec3329ca47846f448535e893a2e92d",
+    "python-client/tests/functional/test_dependencies.py": "181b8cae9d6b7325f772ffc1ca12fa6b136eec0ccdaa2140a66036b794bd637b"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:29.774607+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

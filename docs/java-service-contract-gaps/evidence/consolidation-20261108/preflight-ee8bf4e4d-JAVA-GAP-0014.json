@@ -1,0 +1,26 @@
+{
+  "gap_id": "JAVA-GAP-0014",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py": "fc193e70aba09979f9b337d982ae3c325364bb3769806ba788a9baebd1ba8b5d",
+    "developer-tools/klab-service-simulator/tests/test_offline_snapshots.py": "c041bee6fce649b0d43c235992d8e3cef7671e702a8de975f6700b351effa648",
+    "python-client/tests/unit/test_multiband_analysis.py": "88cd003d8fde1533e98c25abe2c18eab1018c592f648c0f8ec3b5000ba52b483",
+    "developer-tools/klab-service-simulator/tests/test_declared_bands.py": "fadee5703b31714ef33a4a64a8f963b159a1334ffd454b37ea4b4b16c2e34372",
+    "python-client/tests/unit/test_raster_categories.py": "8d46e3d51f779ca6d7cd954582ebd23f7c2ae262e8d0f6d6c3134e03a81080e8",
+    "developer-tools/klab-service-simulator/tests/test_category_codes.py": "e546ffa3509970d9da2c2b068ce4598cabfc98f3c8849e17a33ae72ed85e7904",
+    "python-client/tests/unit/test_read_plan_analysis.py": "170a99c396b6cca81adfc0d0e4e6527fcec9de910673ae13c48301c121524e62",
+    "developer-tools/klab-service-simulator/tests/test_read_plan_analysis.py": "3e621b5ce23339327161cf65f804badd0a6d1dd06ec15a760a0c63ae5a7b24be",
+    "python-client/tests/unit/test_reference_window_analysis.py": "d84678c94c0a4e3bbe898f8f70a2997a5d7e3330d599b387839b4cb4510f5d47",
+    "developer-tools/klab-service-simulator/tests/test_reference_windows.py": "b42a96eced7a556572a78bf51c7c2160ca39904bcba3700c9f91a9d4e285f229",
+    "python-client/tests/unit/test_reference_raster_labels.py": "d210346c2507e53f54d8fc87b69349e1197f8783bb5b13fbd1206e2afb6b7c78",
+    "python-client/tests/unit/test_reference_raster_analysis.py": "55966dbb1373bae686c64a954ea2772b7b383e0986a9910a728ef22f7b460752",
+    "developer-tools/klab-service-simulator/tests/test_reference_raster_labels.py": "7ad04f543b46fdd23855a3c4e038f6ef1517b33fdda6ca6f780d80bdd776c6d9",
+    "developer-tools/klab-service-simulator/tests/test_reference_raster_notebook.py": "0ab0278f7e129c35a497d82639f86a37494800917d0d4389e45b05f178234bb9",
+    "developer-tools/klab-service-simulator/tests/test_reference_raster_fixture.py": "eb7f428b04778462906d99f9373b61550f165e80374d5e28d136a4ef0ba0df2b"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:29.940686+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

@@ -1,0 +1,17 @@
+{
+  "gap_id": "JAVA-GAP-0008",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "python-client/tests/unit/test_agent_execution.py": "4d44e55df7c51c7d808da0472b7d937dcc82802c91efd17d53cd312ce0677b14",
+    "python-client/tests/unit/test_managed_agents.py": "479d2dd1068b98b58f5abd5db44c44b6d5d131d1a1d64f02568b08a47bd27f9b",
+    "developer-tools/klab-service-simulator/tests/test_managed_agents.py": "b5b835c3c8ed683223755af9fb9560450a024cb337feeac04cbfee22e1e26bfd",
+    "python-client/tests/unit/test_managed_behaviors.py": "5213762a7f0f9cabf896f104c1d494b12957dcb1084fef3892d1eca41da1e03b",
+    "developer-tools/klab-service-simulator/tests/test_managed_behavior_workflow.py": "9961845bc69323be59601d510fb08f0626bd1648155495e114b341026fe794ca",
+    "developer-tools/klab-service-simulator/tests/test_managed_behavior_fixture.py": "811d7f862d1f5e11eec39a0e48c20062db4b43d94aa78452a735a86456d20c38"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:28.949442+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

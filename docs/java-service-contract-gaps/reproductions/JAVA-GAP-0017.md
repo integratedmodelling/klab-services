@@ -1,9 +1,20 @@
 # JAVA-GAP-0017 — Computation-worker registration, lease and atomic output protocol pending native authority
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0017).
+Generated from the synchronized index; simulator evidence is not native acceptance.
+
+## Engineering decision and immediate next action
+
+- Classification: **CLIENT_CONTRACT_PROPOSAL**; workflow: [Computation-worker backend](../JAVA_GAPS_FOR_FERDINANDO.md#platform-contracts).
+- User-impact priority: P3; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Platform maintainer must select the native computation-worker role/backend/ABI and provide registration/lease/cancellation/atomic-output fixtures and deployment rights; Resources contextualization is a different existing contract.
+- Expected after Java change or usage clarification: An approved native backend supplies declared scoped inputs, fences stale leases/cancellation, atomically publishes validated output with attributable provenance, and never publishes partial results from a failed worker; verify owner/process cleanup independently.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONTRACT_PROVISIONAL; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONTRACT_PROVISIONAL**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: worker; component: Native provider/worker role and transport not established; existing Resources contextualization is a distinct Avro contract.
 - Original roadmap: RC-P5, CAP-17.
@@ -47,6 +58,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0017 --output simulated-JAVA-GAP-0017.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0017 --output real-JAVA-GAP-0017.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0017 --output preflight-JAVA-GAP-0017.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

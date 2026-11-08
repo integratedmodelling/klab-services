@@ -1,9 +1,20 @@
 # JAVA-GAP-0008 — Managed Runtime agent principal/incarnation and independent cleanup acceptance unverified
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0008).
+Generated from the synchronized index; simulator evidence is not native acceptance.
+
+## Engineering decision and immediate next action
+
+- Classification: **NATIVE_TEST_REQUIRED**; workflow: [Native managed agent acceptance](../JAVA_GAPS_FOR_FERDINANDO.md#ownership-and-lifecycle).
+- User-impact priority: P1; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Runtime/agent operator must provide approved BEHAVIOR source, principal/incarnation, broker profile and independent terminal disposal observation. Java lifecycle already exists; no new stop API is presumed.
+- Expected after Java change or usage clarification: Approved native BEHAVIOR registration/control retains principal and Runtime incarnation; denied/ambiguous operations are not replayed and an independent observer confirms terminal agent/private-state cleanup after stop, failure and cancellation.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
 
 ## Classification and affected contract
 
+- Independent status triplet: NOT_TESTED; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **NOT_TESTED**; current execution **REAL_NOT_RUN**; historical **REAL_NOT_RUN**.
 - Service: agents; component: RuntimeService.compileAndRunAgent / AgentRegistry / native AMQP.
 - Original roadmap: RC-P4.5, CAP-14.
@@ -46,6 +57,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0008 --output simulated-JAVA-GAP-0008.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0008 --output real-JAVA-GAP-0008.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0008 --output preflight-JAVA-GAP-0008.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

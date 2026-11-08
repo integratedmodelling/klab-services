@@ -1,0 +1,13 @@
+{
+  "gap_id": "JAVA-GAP-0010",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "python-client/tests/unit/test_nonuniform_export_oracle.py": "dafb8c3d409de95ea77f48874392a795fce74c840d0fd54cdb230952c0d210af",
+    "developer-tools/java-gap-governance/tests/test_native_export_capture.py": "3b0a4dafc13c23eb6c0a96bb0877fa7163adbed3a114454f3e4f02a96a9d53f4"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:29.287974+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

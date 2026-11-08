@@ -1,9 +1,20 @@
 # JAVA-GAP-0012 — Remote Java currentness correction lacks complete deployed acceptance
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0012).
+Generated from the synchronized index; simulator evidence is not native acceptance.
+
+## Engineering decision and immediate next action
+
+- Classification: **NATIVE_TEST_REQUIRED**; workflow: [Deployed currentness after source fix](../JAVA_GAPS_FOR_FERDINANDO.md#ownership-and-lifecycle).
+- User-impact priority: P1; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Runtime maintainer must supply a paired deployed tuple including merged PR148 and the original currentness/ceased/transaction/stale/old-runtime fixture; source fix and bounded native tests do not establish this deployed matrix.
+- Expected after Java change or usage clarification: The deployed corrected paired-Runtime tuple passes original currentness/ceased/transaction/stale and old-runtime compatibility assertions, including controlled unavailable responses, without treating source-only PR148 evidence as a deployment pass.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
 
 ## Classification and affected contract
 
+- Independent status triplet: NOT_TESTED; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **NOT_TESTED**; current execution **REAL_NOT_RUN**; historical **REAL_FAIL**.
 - Service: runtime; component: ClientKnowledgeGraph.isObservationCurrent / ServiceContextScope.getObservation.
 - Original roadmap: RC-P3.2, CAP-10.
@@ -41,6 +52,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0012 --output simulated-JAVA-GAP-0012.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0012 --output real-JAVA-GAP-0012.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0012 --output preflight-JAVA-GAP-0012.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

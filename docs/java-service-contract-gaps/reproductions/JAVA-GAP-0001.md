@@ -1,9 +1,20 @@
 # JAVA-GAP-0001 — Resources remote numeric scanner is null on preserved USGS workflow
 
-Generated from `gaps.yaml`; simulator evidence is not native acceptance.
+Supporting runner/evidence only. The canonical contract, status and inline reproduction are in
+[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0001).
+Generated from the synchronized index; simulator evidence is not native acceptance.
+
+## Engineering decision and immediate next action
+
+- Classification: **REPRODUCED_JAVA_FAILURE**; workflow: [Authentic elevation hits null scanner](../JAVA_GAPS_FOR_FERDINANDO.md#numerical-execution).
+- User-impact priority: P0; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Evidence custodian must package the original USGS 20x20 crop, oracle, exact request and NullScannerReproducer.java; Ferdinando must identify an approved maintained build and scanner adapter. Full Runtime reproduction is not currently portable.
+- Expected after Java change or usage clarification: The recovered original Runtime request selects the same USGS model/resource, returns 400 oracle cells instead of empty/Error, and preserves declared traversal, masks, precision and metre provenance; separately verify owned cleanup.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
 
 ## Classification and affected contract
 
+- Independent status triplet: CONFIRMED_DEFECT; SIMULATOR_PASS; REAL_NOT_RUN.
 - Java: **CONFIRMED_DEFECT**; current execution **REAL_NOT_RUN**; historical **REAL_FAIL**.
 - Service: resources; component: ResourcesProvider.contextualizeSynchronous / RasterEncoder.encodeFromCoverage:183.
 - Original roadmap: RC-P2.1, RC-P2.3, RC-P2.5, CAP-09.
@@ -45,6 +56,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0001 --output simulated-JAVA-GAP-0001.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0001 --output real-JAVA-GAP-0001.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0001 --output preflight-JAVA-GAP-0001.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

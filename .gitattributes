@@ -5,3 +5,5 @@ python-client/tests/fixtures/runtime_compatibility/execution-contract-v3.json te
 python-client/tests/acceptance/scenarios/s-selection-oracle.json -text
 developer-tools/klab-service-simulator/src/klab_simulator/fixtures/synthetic-declared-bands.json -text
 developer-tools/klab-service-simulator/src/klab_simulator/fixtures/synthetic-category-codes.json -text
+# Sanitized evidence is byte-hashed; preserve original committed bytes cross-platform.
+docs/java-service-contract-gaps/evidence/** -text

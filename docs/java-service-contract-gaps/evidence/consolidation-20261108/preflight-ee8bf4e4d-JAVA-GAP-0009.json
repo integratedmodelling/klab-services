@@ -1,0 +1,19 @@
+{
+  "gap_id": "JAVA-GAP-0009",
+  "native_execution_status": "REAL_NOT_RUN",
+  "preflight": "PASS",
+  "files_sha256": {
+    "developer-tools/klab-service-simulator/tests/test_project_locks.py": "cfcc1943f4f03e921f0c4d6e28174e75b9ee5c9b18ecafec1955e4ed63dde203",
+    "developer-tools/klab-service-simulator/tests/test_behavior_drafts.py": "f35669fb44c70fe1be20ea9140f7adc1526d9d55554de2c3deadf6af93a4ef20",
+    "python-client/tests/unit/test_revision_drafts.py": "72e0d7771440bdf0900d06b7f625f730c3463c275ebd3cb008e7149700200239",
+    "developer-tools/klab-service-simulator/tests/test_revision_drafts.py": "8cbb9031faffc30028d8f5a4309b6acc7b8bb6c1015dce57338115ba77a07fe3",
+    "developer-tools/klab-service-simulator/tests/test_notebook_principal_races.py": "ed01f14f8302d58f8a0b1dabd9ec352b9d9fa049d9dcfbe4fe609c1a121957da",
+    "python-client/tests/unit/test_accepted_documents.py": "eb6bc6ad88f7baef57cc4982680a97ed62dac8968afae0909b00231c418e62ce",
+    "developer-tools/klab-service-simulator/tests/test_accepted_documents.py": "1631c2caec29a42570a62eb6ea2a0437868dea6bf212aaf065304b9642691777",
+    "developer-tools/klab-service-simulator/tests/test_accepted_document_fixture.py": "54873f5803d85e48bcbf4984406bf151a56664cf65674ccc35a24de70664d595"
+  },
+  "reason": "Repository custody only; no Java request attempted",
+  "fallbacks": 0,
+  "timestamp_utc": "2026-11-08T03:17:29.122777+00:00",
+  "repository_commit": "ee8bf4e4dde8b893de36a2601b2b86aa88e264c6"
+}

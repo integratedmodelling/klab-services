@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -25,7 +27,13 @@ jobs:
         run: |
           python developer-tools/java-gap-governance/govern.py validate
           python developer-tools/java-gap-governance/govern.py generate --check
+          python developer-tools/java-gap-governance/source_coverage.py
           python -m pytest -q developer-tools/java-gap-governance/tests --junitxml=gap-governance-tests.xml
+      - name: Same-PR contract maintenance (conservative SDK, worker and simulator source gate)
+        if: github.event_name == 'pull_request'
+        env:
+          CONTRACT_BASE: ${{ github.event.pull_request.base.sha }}
+        run: python developer-tools/java-gap-governance/source_coverage.py --base "$CONTRACT_BASE"
       - name: Explicit substitute/protocol cases (not Java fixes)
         run: python developer-tools/java-gap-governance/govern.py contracts --mode simulated --output gap-simulated-results.json
       - name: Preserve real NOT_RUN and require its non-success exit
