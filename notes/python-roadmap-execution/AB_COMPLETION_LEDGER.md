@@ -1,5 +1,13 @@
 # A+B completion ledger — ongoing campaign
 
+## PR315 integration reconciliation — fresh head CI required
+
+PR315 original head7b9af529b completed its watcher, but merge verification refused
+CONFLICTING/DIRTY after312–314 merged. Reconciled the ledger by retaining both
+historical supplements below; production/test bytes and coverage gates unchanged.
+312merge29848b050/313merge0048a771f/314merge41896c2e7 are now campaign ancestry.
+Fresh updated-head CI and ordinary merge remain required; no final/native acceptance.
+
 ## Reference assertion supplement — 281 linked, 225 still missing
 
 Parent31277d3c854a/313be2a72342 remainOPEN/CIpending; corrected dependencies have passing
@@ -23,6 +31,31 @@ exact merged package/readiness/42-rowreconciliation and owned cleanup. Native se
 compatibility/science/current rights/durability/federation/OSsecurity/release remain
 external, not silently simulated. All42original IDs/history/zero final dispositions
 preserved; no milestone stopping gate.
+
+## Independent boundary supplement — installed verification, delivery pending
+
+Owned branchfeat/python-boundary-coverage-controls saves33independent malformed-wire,
+service-response, transport-deadline/serialization and scientific-invariant cases at
+ec98ed989; includes current312/313 history with dependency correction. Full installed
+5305SDKPASS/no failures/errors/skips, current boundary/workflow/delivery36controlsPASS.
+Measured10481/10481statements and3320/3322branches (99.9398percent);165existing exclusions
+retained. Remainingclient.py arcs236→238/383→387 are not waived or counted as covered.
+Neither measured statement coverage nor local scientific invariants prove native
+provider accuracy, whole-function correctness or final original-row acceptance.
+
+Evidence independent-boundary-controls-installed-20261108.json pins JUnit, coverage,
+test file and exact installed package receipt. Third worktree checkout has newline-only
+CRLF/LF differences; production git diff against1e740c34b empty and executed installed
+raw hashes match receipt. Initial strict raw checkout-parity assertion refused, then
+verification distinguished installed raw custody from normalized checkout identity;
+no package-byte substitution. Earlier boundary helper/state/cleanup mistakes retained
+privately; missing-delivery guard belongs to parent312 and is not duplicated here.
+
+Parent312head77d3c854a and313headbe2a72342 remainOPEN/CIpending; no delivery claimed.
+All42originalIDs/history preserved;219mapped287missing registry unchanged and new tests
+inherit no prior trace associations. Continue remaining assertion review, verified
+remote merges/checkpoints, exact merged-candidate package/readiness/row reconciliation
+and owned cleanup. Native science/rights/deployment/OSsecurity/release unpromoted.
 
 Current child313 integrates parent312 dependency-setup correction77d3c854a; new exact
 childhead CI will supersede inherited failed dependency jobs. Both PRs remain open,
