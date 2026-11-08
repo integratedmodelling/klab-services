@@ -2,10 +2,19 @@
   "version": 1,
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
+  "scoped_reconciliation": {
+    "candidate": "161f06f7a01f9dd4b69df130b0044051794e8db5",
+    "receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md",
+    "state": "42_BOUNDED_PYTHON_SCOPE_DISPOSITIONS_RECONCILED_DELIVERY_AND_CLEANUP_PENDING",
+    "interpretation": "Per-row final_acceptance_receipt identifies reviewed Python scope and unestablished native axis. Earlier implementation/remaining/test action text is retained campaign preparation history, not a fresh outstanding implementation claim. Original embedded audit unchanged. Scoped dispositions do not accept full original/native requirements.",
+    "scientific_acceptance": false,
+    "full_original_native_acceptance": false,
+    "publication_authorized": false
+  },
   "active": {
     "branch": "feat/python-final-candidate-acceptance",
     "pr": null,
-    "requirement": "RC-P0",
+    "requirement": "CAP-16",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
@@ -15,26 +24,9 @@
     "utc": "2026-11-08T00:50:06Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "RC-P3.5",
-  "pending_deliveries": [
-    {
-      "pr": 315,
-      "head": "24b46614cc7e09ae32bca145e6575f933013c6ea",
-      "state": "OPEN_LEDGER_CONFLICT_RECONCILED_VERIFIED312_314_ANCESTRY_FRESH_EXACT_HEAD_CI_PENDING"
-    },
-    {
-      "pr": 316,
-      "head": "969bd9ace16e9fee88647e4a69c6eb3e8131a0b5",
-      "state": "OPEN_RECONCILED315_HISTORY_ALL455_LINKED_FRESH_EXACT_HEAD_CI_PENDING"
-    },
-    {
-      "pr": 317,
-      "head": "1cf10234c945e8076d08cfb2b9a065871d9eaf6e",
-      "state": "OPEN_RECONCILED315_316_HISTORY_FRESH_EXACT_HEAD_CI_PENDING_NO_FINAL_DISPOSITIONS"
-    }
-  ],
+  "next_actionable_requirement": "CAP-16",
+  "pending_deliveries": [],
   "remaining_runnable_work": [
-    "operation-workflow-attribution",
     "integrated-packaging-compatibility"
   ],
   "external_blockers": [
@@ -238,9 +230,10 @@
       },
       "work_group": "persisted-relationship-selection",
       "priority": 0,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile final full-roadmap row acceptance after cross-cutting integration; native semantic applicability remains separate NOT_RUN, not missing Python endpoint selection.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-04"
     },
     {
       "id": "RC-P1.5",
@@ -424,9 +417,10 @@
       },
       "work_group": "material-selection-effects",
       "priority": 1,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile final full-roadmap row acceptance after cross-cutting integration; native ranking/semantic/grid scientific execution remains separate NOT_RUN.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P1.5"
     },
     {
       "id": "CAP-01",
@@ -519,9 +513,10 @@
       },
       "work_group": "onboarding-and-routing-acceptance",
       "priority": 15,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated packaging/compatibility acceptance; genuine issuer/license/rights and actual deployment/mixed-native-version approval remain external evidence, not loopback certificate or simulator acceptance.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-01"
     },
     {
       "id": "RC-P1.3",
@@ -704,9 +699,10 @@
       },
       "work_group": "explicit-collaborator-rights",
       "priority": 2,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row Python acceptance across integration; native generic ACL/granular rights/TTL protocol remains separately NOT_RUN.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P1.3"
     },
     {
       "id": "CAP-05",
@@ -850,9 +846,10 @@
       },
       "work_group": "revision-aware-validation",
       "priority": 3,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile full original-row integration acceptance; namespace source diagnostics delivered, ontology synchronization/native semantic/scientific authority remain separate gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-05"
     },
     {
       "id": "RC-P4.2",
@@ -982,9 +979,10 @@
       },
       "work_group": "revision-aware-validation",
       "priority": 3,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile full original-row integration acceptance; namespace source diagnostics delivered, ontology synchronization/native semantic/scientific authority remain separate gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P4.2"
     },
     {
       "id": "CAP-14",
@@ -1136,9 +1134,10 @@
       },
       "work_group": "conditional-authoring",
       "priority": 4,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native CAS-safe conditional source publication remains separate unestablished contract, no finite-reference promotion.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-14"
     },
     {
       "id": "RC-P4.4",
@@ -1268,9 +1267,10 @@
       },
       "work_group": "conditional-authoring",
       "priority": 4,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native CAS-safe conditional source publication remains separate unestablished contract, no finite-reference promotion.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P4.4"
     },
     {
       "id": "CAP-13",
@@ -1427,9 +1427,10 @@
       },
       "work_group": "dependency-inspection",
       "priority": 5,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native complete source/edge/access graph authority remains distinct from finite reference delivery.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-13"
     },
     {
       "id": "RC-P4.1",
@@ -1586,9 +1587,10 @@
       },
       "work_group": "dependency-inspection",
       "priority": 5,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native complete source/edge/access graph authority remains distinct from finite reference delivery.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P4.1"
     },
     {
       "id": "RC-P4.3",
@@ -1716,9 +1718,10 @@
       },
       "work_group": "annotated-input-provenance",
       "priority": 6,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native annotation/lineage/scientific acceptance and owned RESOURCE cleanup remain distinct external gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P4.3"
     },
     {
       "id": "CAP-10",
@@ -1856,9 +1859,10 @@
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native scientific complete graph/contiguous incarnation-retention-notification contracts and real two-client evidence remain distinct external gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-10"
     },
     {
       "id": "CAP-11",
@@ -1973,9 +1977,10 @@
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native scientific complete graph/contiguous incarnation-retention-notification contracts and real two-client evidence remain distinct external gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-11"
     },
     {
       "id": "RC-P3.1",
@@ -2109,9 +2114,10 @@
       },
       "work_group": "reference-commit-convergence",
       "priority": 7,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native scientific complete graph/contiguous incarnation-retention-notification contracts and real two-client evidence remain distinct external gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P3.1"
     },
     {
       "id": "CAP-06",
@@ -2222,9 +2228,10 @@
       },
       "work_group": "execution-dependency-explanation",
       "priority": 8,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native selectedsource/component/scientific semantic-effect lineage and actual numericmediation evidence remain distinct external gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-06"
     },
     {
       "id": "RC-P3.4",
@@ -2335,9 +2342,10 @@
       },
       "work_group": "execution-dependency-explanation",
       "priority": 8,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native selectedsource/component/scientific semantic-effect lineage and actual numericmediation evidence remain distinct external gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P3.4"
     },
     {
       "id": "CAP-03",
@@ -2523,9 +2531,10 @@
       },
       "work_group": "public-copied-composition",
       "priority": 9,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile integrated original-row acceptance; native live federation/delegated authority/revocation/migration/failover remains separate JAVA-GAP-0007 contract/evidence obligation.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-03"
     },
     {
       "id": "RC-P4.5",
@@ -2640,9 +2649,10 @@
       },
       "work_group": "managed-behavior-workflow",
       "priority": 10,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native kActors/parser/compiler/actor execution and actual script-app-testcase private-session disposal remain distinct JAVA-GAP-0008 evidence obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P4.5"
     },
     {
       "id": "CAP-17",
@@ -2704,9 +2714,10 @@
       },
       "work_group": "worker-output-and-budget-custody",
       "priority": 11,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; maintained native worker ABI/lease/scientific execution and approved OS-container hostile-code/hard-total-disk/deployment evidence remain external JAVA-GAP-0017 obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-17"
     },
     {
       "id": "RC-P5",
@@ -2768,9 +2779,10 @@
       },
       "work_group": "worker-output-and-budget-custody",
       "priority": 11,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; maintained native worker ABI/lease/scientific execution and approved OS-container hostile-code/hard-total-disk/deployment evidence remain external JAVA-GAP-0017 obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P5"
     },
     {
       "id": "CAP-09",
@@ -2956,9 +2968,10 @@
       },
       "work_group": "selected-reference-windows",
       "priority": 12,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native time/window/read-plan/provider mediation and durable history remain separate JAVA-GAP-0006/0014 contract/evidence obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-09"
     },
     {
       "id": "RC-P2.2",
@@ -3133,9 +3146,10 @@
       },
       "work_group": "selected-reference-windows",
       "priority": 12,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native time/window/read-plan/provider mediation and durable history remain separate JAVA-GAP-0006/0014 contract/evidence obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P2.2"
     },
     {
       "id": "CAP-15",
@@ -3268,9 +3282,10 @@
       },
       "work_group": "categorical-reference-data",
       "priority": 13,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile integrated original-row acceptance; native dictionary/worldview/time/provider authority remains separate JAVA-GAP-0014/0006 evidence obligation.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-15"
     },
     {
       "id": "RC-P2.5",
@@ -3401,9 +3416,10 @@
       },
       "work_group": "categorical-reference-data",
       "priority": 13,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile integrated original-row acceptance; native dictionary/worldview/time/provider authority remains separate JAVA-GAP-0014/0006 evidence obligation.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P2.5"
     },
     {
       "id": "RC-P0",
@@ -3498,9 +3514,10 @@
       },
       "work_group": "operation-workflow-attribution",
       "priority": 14,
-      "task_state": "in_progress",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Verify ordinary delivery of reviewed associations:130workflow entries now link all455nonabstract operations;51abstract declarations intentionally uncalled/unmapped across preserved506classifications. Exact installed5270SDK538reference traces and current executed-test hashes reconciled without new execution claims. This is association review, not exhaustive functional or original-row acceptance. Parent312-315CI/merges/local ancestry and final merged-candidate package/readiness/42-row reconciliation remain owed; genuine native obligations remain separate.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P0"
     },
     {
       "id": "CAP-02",
@@ -3599,9 +3616,10 @@
       },
       "work_group": "onboarding-and-routing-acceptance",
       "priority": 15,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated packaging/compatibility acceptance; genuine issuer/license/rights and actual deployment/mixed-native-version approval remain external evidence, not loopback certificate or simulator acceptance.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-02"
     },
     {
       "id": "RC-P1.1",
@@ -3706,9 +3724,10 @@
       },
       "work_group": "onboarding-and-routing-acceptance",
       "priority": 15,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated packaging/compatibility acceptance; genuine issuer/license/rights and actual deployment/mixed-native-version approval remain external evidence, not loopback certificate or simulator acceptance.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P1.1"
     },
     {
       "id": "RC-P1.4",
@@ -3807,9 +3826,10 @@
       },
       "work_group": "onboarding-and-routing-acceptance",
       "priority": 15,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated packaging/compatibility acceptance; genuine issuer/license/rights and actual deployment/mixed-native-version approval remain external evidence, not loopback certificate or simulator acceptance.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P1.4"
     },
     {
       "id": "CAP-07",
@@ -3994,9 +4014,10 @@
       },
       "work_group": "restoration-lifecycle-acceptance",
       "priority": 16,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native incarnation/retention/history/TTL-rights and worker deployment evidence remain separate external obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-07"
     },
     {
       "id": "RC-P1.2",
@@ -4170,9 +4191,10 @@
       },
       "work_group": "restoration-lifecycle-acceptance",
       "priority": 16,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native incarnation/retention/history/TTL-rights and worker deployment evidence remain separate external obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P1.2"
     },
     {
       "id": "RC-P3.3",
@@ -4357,9 +4379,10 @@
       },
       "work_group": "restoration-lifecycle-acceptance",
       "priority": 16,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance; native incarnation/retention/history/TTL-rights and worker deployment evidence remain separate external obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P3.3"
     },
     {
       "id": "RC-P3.5",
@@ -4499,9 +4522,10 @@
       },
       "work_group": "notebook-integrated-acceptance",
       "priority": 17,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance. Kernel/subprocess calls remain unmeasured by owning-thread trace; native scheduler/provider science/rights/deployment remain separate external gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P3.5"
     },
     {
       "id": "RC-P2.1",
@@ -4695,9 +4719,10 @@
       },
       "work_group": "multishard-scientific-acceptance",
       "priority": 18,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance. Authentic recorded data is not actual provider execution; approved model/data/datum/tolerance oracle and native scanner/provider/worldview/time evidence remain separate external gates.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P2.1"
     },
     {
       "id": "RC-P2.3",
@@ -4794,9 +4819,10 @@
       },
       "work_group": "native-provider-oracle",
       "priority": 19,
-      "task_state": "pending",
+      "task_state": "python_preparation_complete_native_acceptance_blocked",
       "next_executable_action": "Retain executable native provider comparison runner; obtain approved pinned actual-provider model/data/datum/tolerance fixture before real science. Do not replace provider accuracy or historical study with synthetic arithmetic.",
-      "disposition": null
+      "disposition": "PYTHON_PREPARATION_COMPLETE_NATIVE_ACCEPTANCE_BLOCKED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P2.3"
     },
     {
       "id": "RC-P2.4",
@@ -4963,9 +4989,10 @@
       },
       "work_group": "stream-scale-acceptance",
       "priority": 20,
-      "task_state": "pending",
+      "task_state": "python_controls_complete_native_scale_blocked",
       "next_executable_action": "Retain installed bounded-memory/interrupted-stream public API controls; representative native-provider scale/soak requires approved deployment/workload, not fabricated capacity.",
-      "disposition": null
+      "disposition": "PYTHON_BOUNDED_CONTROLS_COMPLETE_NATIVE_SCALE_BLOCKED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P2.4"
     },
     {
       "id": "CAP-08",
@@ -5129,9 +5156,10 @@
       },
       "work_group": "safety-regression-acceptance",
       "priority": 21,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance. Whole-tree type gate and reviewed operation assertions remain incomplete; native complete graph/history/rights/deployment and approved OS/container security remain separate evidence obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-08"
     },
     {
       "id": "CAP-12",
@@ -5277,9 +5305,10 @@
       },
       "work_group": "safety-regression-acceptance",
       "priority": 21,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance. Whole-tree type gate and reviewed operation assertions remain incomplete; native complete graph/history/rights/deployment and approved OS/container security remain separate evidence obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-12"
     },
     {
       "id": "CAP-18",
@@ -5460,9 +5489,10 @@
       },
       "work_group": "safety-regression-acceptance",
       "priority": 21,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance. Whole-tree type gate and reviewed operation assertions remain incomplete; native complete graph/history/rights/deployment and approved OS/container security remain separate evidence obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-18"
     },
     {
       "id": "RC-P3.2",
@@ -5573,9 +5603,10 @@
       },
       "work_group": "safety-regression-acceptance",
       "priority": 21,
-      "task_state": "delivered_pending_final_row_acceptance",
+      "task_state": "python_scope_reconciled",
       "next_executable_action": "Reconcile original-row integrated acceptance. Whole-tree type gate and reviewed operation assertions remain incomplete; native complete graph/history/rights/deployment and approved OS/container security remain separate evidence obligations.",
-      "disposition": null
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-P3.2"
     },
     {
       "id": "CAP-16",
@@ -5806,9 +5837,10 @@
       },
       "work_group": "integrated-packaging-compatibility",
       "priority": 22,
-      "task_state": "pending",
-      "next_executable_action": "Run complete installed SDK/worker/simulator matrix, builds/raw module parity, types/lint/coverage and mixed-version failures; reconcile all42rows and all gap reproductions at exact merged candidate.",
-      "disposition": null
+      "task_state": "in_progress",
+      "next_executable_action": "Exact merged317candidate verification and42scoped dispositions PASS; deliver final bookkeeping through ordinary exact-head CI/merge/checkpoint and verify owned worktree/cache/kernel/service/window cleanup. Do not promote native/scientific/security/scale/release acceptance.",
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-16"
     },
     {
       "id": "RC-R1",
@@ -6045,9 +6077,10 @@
       },
       "work_group": "integrated-packaging-compatibility",
       "priority": 22,
-      "task_state": "pending",
-      "next_executable_action": "Run complete installed SDK/worker/simulator matrix, builds/raw module parity, types/lint/coverage and mixed-version failures; reconcile all42rows and all gap reproductions at exact merged candidate.",
-      "disposition": null
+      "task_state": "in_progress",
+      "next_executable_action": "Deliver candidate-bound42row scope reconciliation/readiness through ordinary exact-head CI/merge/checkpoint, then complete owned cleanup and record no independently runnable implementation remains. Native science/rights/security/scale/release remain separately blocked.",
+      "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-R1"
     },
     {
       "id": "RC-R2",
@@ -6268,9 +6301,10 @@
       },
       "work_group": "release-readiness-not-publication",
       "priority": 23,
-      "task_state": "pending",
+      "task_state": "python_readiness_complete_release_blocked",
       "next_executable_action": "Run package/support/release-readiness checks and prepare exact tested limitations/migration guidance; publication/develop/support approval remain external and are not authorized by queue completion.",
-      "disposition": null
+      "disposition": "PYTHON_READINESS_TOOLING_COMPLETE_RELEASE_BLOCKED",
+      "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-R2"
     }
   ]
 }

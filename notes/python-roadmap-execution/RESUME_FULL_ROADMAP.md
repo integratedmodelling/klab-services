@@ -1,5 +1,28 @@
 # Resume the full Python A+B+C campaign
 
+LATEST — exact merged317candidate161f06f7a01f9dd4b69df130b0044051794e8db5
+verificationFINISHED/PASS.5305SDK38tools116worker538reference39governance,
+both114filetypes/fatallint, fresh5305SDK538referencetraces/455linked51abstractuncalled,
+40unchangedcoveragecommandsunder2basesPASS. All28campaignPR290–317remoteMERGED/
+localcandidateancestryverified. Do not repeat prior conflict/CI/premerge work.
+
+Current followupbranchfeat/python-final-candidate-acceptance records42explicit bounded
+Python-scope dispositions with originalIDs/history and17gaps preserved.39scopedPython
+PASS, native-provider-oracle/scale/release rows explicitly blocked on their native axes.
+Detailed evidence: evidence/final-python-scope-reconciliation-20261108.md and immutable
+private exact-merged-roadmap-final-first/final-42-row-scoped-reconciliation.json.
+Full original/native/scientific acceptance FALSE; release NOTELIGIBLE/expectedexit3,
+all8gates retained; boundedoffline/coverage/package/lifecycle/referencePASS but native
+compatibility/security/scaleBLOCKED. Publication/develop/issueclosure unauthorized.
+
+Remaining executable owned work: deliver this final evidence/queue bookkeeping through
+ordinary exact-headCI/merge/checkpoint, then repeat ownedcache/service/kernel/window
+inventory. Clean merged owned thirdworktreepython-boundary-coverage-controls removed
+normally after checking no changes and ancestry. Currentprimaryworktree retained for
+active delivery; unrelated worktrees and original57c9b3dd7 coverage/caches untouched.
+No matchingPythonservice/kernel/CIwatcher found after finalverifier finished. Earlier
+continuation sections below are retained history, NOT current blockers or restart work.
+
 NEWEST:312merged29848b050f434f6c742174e81a9f1340d17abd30 exact77d3c854a,
 313merged0048a771f631f30fb08de525bb390fc050bcdbef exactbe2a72342; all91checksPASS
 each, ordinaryremote/localancestry checkpoints verified. Currentbranchfinal-roadmap-

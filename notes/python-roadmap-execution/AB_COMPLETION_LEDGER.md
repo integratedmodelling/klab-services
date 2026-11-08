@@ -1,5 +1,45 @@
 # A+B completion ledger — ongoing campaign
 
+## Exact merged317 verification PASS;42 bounded Python scopes reconciled
+
+Post-reconciliation queue/attribution/governance61controlsPASS; queuecheck preserves
+42originalIDs/history and42scopeddispositions, with2runnable delivery/cleanup rows.
+Read-only process inventory after finalverifier completion finds no matching Python
+service/kernel or ghCIwatcher. Owned thirdworktreepython-boundary-coverage-controls
+was clean at9baeae38c, verified ancestor ofcampaignintegration, then normally removed
+withoutforce. Other worktrees and original57c9b3dd7 coverage/caches preserved. Active
+primary retained for finaldelivery; repeat finalownedcache/window/process check afterCI.
+
+Candidate161f06f7a01f9dd4b69df130b0044051794e8db5 fresh source/wheel/sdist/
+installed parity71SDK/6worker/37reference modules13assetsPASS; installed5305SDK,
+38tooling,116worker,538reference,39governancePASS with zero failures/errors/skips.
+Both114fileWindows/Linux-targetmypy/fatallintPASS; fresh5305SDK538reference owning-
+thread traces link all455nonabstract through130reviews,51abstract uncalled/unmapped.
+Complete SDK/helper coverage5305PASS;40unchangedcheckercommands under each preserved
+basePASS. No source/test identity drift, trace exhaustion or gate/exclusion changes.
+
+Fresh42row/17gap custody preparationPASS with every required Python/reference test
+byte-matched and seven exact parameterJUnit cases independently retained. Independent
+24group scope review yields39PYTHON_COMPLETE_SIMULATOR_VERIFIED dispositions and three
+explicit native-oracle/scale/release-blocked-axis dispositions. These are bounded
+Python implementation/reference results, NOT acceptance of full original/native
+requirements. Original42IDs/embedded histories/17stable gaps/failed evidence retained.
+Queue per-row receipts identify each scope and external boundary; old preparation text
+remains history, not current implementation status. Final bookkeeping/cleanup pending.
+
+Candidate readiness now retains all8gates with boundedoffline/coverage/package/lifecycle/
+finite-recorded-referencePASS; security/scale/nativecompatibilityBLOCKED. Expectedexit3/
+NOTELIGIBLE/publicationfalse. Scientific-referencePASS does not mean actual provider
+science; hashes/operatorstates are not human/scientific attestations. Borrowed interpreter
+dependencies remain disclosed, native Resolver encoder unsupported, historical scanner
+reproducer custody missing. No native/environment repair, issue closure or release.
+
+Versioned rowtable/evidence pins: evidence/final-python-scope-reconciliation-20261108.md.
+Private exact-merged-roadmap-final-first finalreport c3e17b151b173386cc34d58f79bfc055b70cf4c1f7d88291beb5281ad0196352
+retains detailed42test/delivery/17gap receipts. All28PR290–317 remote merged/local
+candidate ancestry verified. Continue ordinary final evidenceCI/merge/checkpoint and
+ownedcleanup; no milestone stopping gate.
+
 ## PR315–317 verified ordinary merges; exact merged verification begins
 
 315merge4a2eb39e7/316mergef418b0c8c each48rollup/47exactcommitcheckrunsSUCCESS;
