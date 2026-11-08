@@ -6,7 +6,7 @@ repository test function passed and its executed file hash matches current bytes
 a fresh trace of the exact installed SDK. Changed tests or package bytes cannot
 inherit stale measured associations.
 
-The current local review links **219 operations**, with **287 still missing** across
+The current local review links **281 operations**, with **225 still missing** across
 506 classifications. All455 nonabstract operation bodies were observed;51 abstract
 declarations remain uncalled. Neither presence nor a reviewed description proves
 whole-function correctness or every positive/negative requirement. Abstract missing
@@ -26,3 +26,11 @@ using real threads or doubled Job waits do not acquire native scheduler authorit
 
 Original-row reconciliation, actual Java compatibility/science, issuer/rights,
 deployment/scale, OS/container isolation and release approval retain separate gates.
+
+The reference supplement adds ten reviewed test functions, taking the registry to
+61 workflows. It reuses retained passing traces only after checking unchanged exact
+installed SDK and executed-test bytes; it does not claim another trace run. Selected
+windows retain independent values/masks/affine/time revisions; graph checkpoints stay
+distinct from Job completion; independent A/B captures remain copied C-owned data,
+not live federation or delegated source grants. Export, broker and credential-provider
+contracts retain mocked/pinned authority. New boundary tests receive no old attribution.
