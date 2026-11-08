@@ -3,25 +3,20 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-final-roadmap-reconciliation",
+    "branch": "feat/python-final-candidate-acceptance",
     "pr": null,
     "requirement": "RC-P0",
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 313,
-    "merge": "0048a771f631f30fb08de525bb390fc050bcdbef",
-    "head": "be2a72342040c9675ec070e59bcd9845571b937f",
-    "utc": "2026-11-08T00:27:30Z",
+    "pr": 314,
+    "merge": "41896c2e7c034b8fa8c5d3a68c8da937f535999a",
+    "head": "9baeae38c0aec09885972705d85d60d96f639253",
+    "utc": "2026-11-08T00:33:28Z",
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P3.5",
   "pending_deliveries": [
-    {
-      "pr": 314,
-      "head": "9baeae38c",
-      "state": "OPEN_33_BOUNDARY_CONTROLS_5305_INSTALLED_SDK_PASS_CI_PENDING"
-    },
     {
       "pr": 315,
       "head": "7b9af529b",
@@ -31,6 +26,11 @@
       "pr": 316,
       "head": "1641f65c3",
       "state": "OPEN_ALL455_NONABSTRACT_LINKED_51ABSTRACT_UNCALLED_CI_PENDING"
+    },
+    {
+      "pr": 317,
+      "head": "8e6d10eb3",
+      "state": "OPEN_COMBINED_CANDIDATE_42ROW_17GAP_PREPARATION_CI_PENDING_NO_FINAL_DISPOSITIONS"
     }
   ],
   "remaining_runnable_work": [
