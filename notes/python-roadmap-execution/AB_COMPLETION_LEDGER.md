@@ -1,5 +1,40 @@
 # A+B completion ledger — ongoing campaign
 
+## PR316 integration reconciliation — fresh head CI required
+
+PR316 original1641f65c3 watcher completed, but remote mergeability is CONFLICTING.
+Integrates reconciled315head24b46614c and verified312–314 ancestry, retaining all
+ledger histories below. No production/test/mapping change or acceptance promotion.
+Fresh exact-head CI and ordinary remote merge remain required.
+
+## Remaining operation association review — all455nonabstract linked
+
+Owned branchfeat/python-remaining-operation-assertions expands61to130reviewed entries;
+exact attribution now455mapped/51missing, and all51missing are original abstract
+declarations with no calls. All506classifications preserved; no abstract declaration
+relabelled unsupported and genuine unsupported Resolver encoder obligation unchanged.
+This completes missing-association review only, NOT exhaustive positive/negative
+functional coverage, whole-function correctness, original42-row/native/release acceptance.
+
+Reviewed exact source tests for Job binding/waits, service submission/bootstrap,
+DTO/transport, async agents/deferred registration/local journals, graphs/provenance,
+credential/profile renewal/publication, multipart import, draftCAS, relationship
+collections and local vector/scientific invariants. Test names containing native/real
+remain correctly labelled Python coroutine/HTTPX codec/doubles/reference services,
+not actual Java science/ACL/durability/actor or OSsecurity acceptance. Owning-thread
+presence never expands to worker threads/processes/kernels or invocation counts.
+
+Current source/installed raw package custody and all mapped executed-test hashes
+verified; retained5270SDK538reference traces reused, no new executions claimed.
+Instrumentation/queue/workflow24controlsPASS. Evidence
+remaining-operation-assertions-20261108.json preserves281/225/61 predecessor and pins
+new455/51/130report plus all51abstract dispositions. Production/test bytes unchanged;
+new boundary/CI tests inherit no old attribution. Parent31277d3c854a/313be2a72342,
+boundary3149baeae38c and supplement3157b9af529b remainOPEN/CIpending, no merge claimed.
+Next verify exact-headCI/ordinarymerges/remoteancestry, final merged package/type/full
+suites/readiness and all42original-row reconciliation, then safe owned cleanup; no
+milestone stopping gate or unauthorized native/environment repair/publication.
+
 ## PR315 integration reconciliation — fresh head CI required
 
 PR315 original head7b9af529b completed its watcher, but merge verification refused

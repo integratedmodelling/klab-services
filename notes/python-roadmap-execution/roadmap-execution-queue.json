@@ -3,7 +3,7 @@
   "source_audit_sha256": "3cc14250572a620aa9e18a8abd82211d29e4fb99b2771379ac754531774fbb79",
   "historical_evidence_policy": "Historical audit records embedded unchanged; new Python/simulator/native axes are independent. No PARTIAL/native blocker automatically waives Python work.",
   "active": {
-    "branch": "feat/python-reference-assertion-supplement",
+    "branch": "feat/python-remaining-operation-assertions",
     "pr": null,
     "requirement": "RC-P0",
     "ci_review_dependencies": []
@@ -19,7 +19,8 @@
   "pending_deliveries": [
     {"pr": 312, "head": "77d3c854a", "state": "OPEN_COMPLETE_EXTRAS_CORRECTION_CI_PENDING_PRIOR_FAILURES_RETAINED"},
     {"pr": 313, "head": "be2a72342", "state": "OPEN_REVIEWED_219_MAPPINGS_INHERITS_DEPENDENCY_CORRECTION_CI_PENDING"},
-    {"pr": 314, "head": "9baeae38c", "state": "OPEN_33_BOUNDARY_CONTROLS_5305_INSTALLED_SDK_PASS_CI_PENDING"}
+    {"pr": 314, "head": "9baeae38c", "state": "OPEN_33_BOUNDARY_CONTROLS_5305_INSTALLED_SDK_PASS_CI_PENDING"},
+    {"pr": 315, "head": "7b9af529b", "state": "OPEN_281_LINKED_225_MISSING_REVIEW_SUPPLEMENT_CI_PENDING"}
   ],
   "remaining_runnable_work": [
     "operation-workflow-attribution",
@@ -3487,7 +3488,7 @@
       "work_group": "operation-workflow-attribution",
       "priority": 14,
       "task_state": "in_progress",
-      "next_executable_action": "Continue reviewed assertion mappings and original-row reconciliation. Reference-window/graph/copy/export/broker/provider supplement links281mapped225missing across506classifications/455observed51abstractuncalled, reconciled against unchanged exact installed5270SDK538reference executed bytes. No new trace executions or new-test associations claimed. Parent312/313/314 deliveries remain CI pending; preserve failures and verify ordinary remote merges/local ancestry. Missing evidence never becomes invented unsupported or native acceptance.",
+      "next_executable_action": "Verify ordinary delivery of reviewed associations:130workflow entries now link all455nonabstract operations;51abstract declarations intentionally uncalled/unmapped across preserved506classifications. Exact installed5270SDK538reference traces and current executed-test hashes reconciled without new execution claims. This is association review, not exhaustive functional or original-row acceptance. Parent312-315CI/merges/local ancestry and final merged-candidate package/readiness/42-row reconciliation remain owed; genuine native obligations remain separate.",
       "disposition": null
     },
     {
