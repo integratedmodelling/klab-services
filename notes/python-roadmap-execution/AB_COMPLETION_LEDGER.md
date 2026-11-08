@@ -1,5 +1,13 @@
 # A+B completion ledger — ongoing campaign
 
+## PR317 integration reconciliation — candidate head superseded
+
+Integrates reconciled316/315 histories after verified312–314 delivery, retaining
+all ledger entries and premerge candidate evidence. Fresh head CI required; earlier
+317head8e6d10eb3 evidence is historical, not CI for this integration commit.
+Production/test/mapping bytes unchanged. Final exact merged-candidate revalidation,
+42-row scoped dispositions/readiness and owned cleanup remain owed.
+
 ## PR312–313 verified merged; combined candidate and42rowpreparationPASS
 
 Premerge readiness preparation also retains all8gates and returns expectedexit3:
@@ -67,6 +75,13 @@ reviewed associations. Both histories below retained; no parent remote merge or 
 row acceptance inferred. Prepare final package/row verification without altering
 production or previously executed test bytes. All42original IDs/history remain intact.
 
+## PR316 integration reconciliation — fresh head CI required
+
+PR316 original1641f65c3 watcher completed, but remote mergeability is CONFLICTING.
+Integrates reconciled315head24b46614c and verified312–314 ancestry, retaining all
+ledger histories below. No production/test/mapping change or acceptance promotion.
+Fresh exact-head CI and ordinary remote merge remain required.
+
 ## Remaining operation association review — all455nonabstract linked
 
 Owned branchfeat/python-remaining-operation-assertions expands61to130reviewed entries;
@@ -94,6 +109,14 @@ boundary3149baeae38c and supplement3157b9af529b remainOPEN/CIpending, no merge c
 Next verify exact-headCI/ordinarymerges/remoteancestry, final merged package/type/full
 suites/readiness and all42original-row reconciliation, then safe owned cleanup; no
 milestone stopping gate or unauthorized native/environment repair/publication.
+
+## PR315 integration reconciliation — fresh head CI required
+
+PR315 original head7b9af529b completed its watcher, but merge verification refused
+CONFLICTING/DIRTY after312–314 merged. Reconciled the ledger by retaining both
+historical supplements below; production/test bytes and coverage gates unchanged.
+312merge29848b050/313merge0048a771f/314merge41896c2e7 are now campaign ancestry.
+Fresh updated-head CI and ordinary merge remain required; no final/native acceptance.
 
 ## Reference assertion supplement — 281 linked, 225 still missing
 
