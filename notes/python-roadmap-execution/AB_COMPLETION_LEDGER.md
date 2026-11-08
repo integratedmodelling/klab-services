@@ -1,5 +1,35 @@
 # A+B completion ledger — ongoing campaign
 
+Current child313 integrates parent312 dependency-setup correction77d3c854a; new exact
+childhead CI will supersede inherited failed dependency jobs. Both PRs remain open,
+not merged; retain all earlier pass/failure histories below without promotion.
+
+PR313 published9f85e775f:51explicit reviewedworkflows/219linked287missing across506,
+fresh5270SDK538reference traces/24controlsPASS. Parent312corrected01395fa76 CIrunning,
+not yetmerged. Both finalheadCI/ordinarydelivery/checkpoint owed; no functional/native/
+finalrow promotion. Next independent33boundarycontrols savedec98ed989 in additional
+ownedworktree; broader287review and finalcandidate reconciliation remain implementable.
+
+## Reviewed operation assertions advance while corrected312 CI runs
+
+312corrected01395fa76 pushed; exactheadCIwatcher active, no merge. First47checks21FAIL
+retained. Correction5272SDK/all40unchangedcoveragegatecommands under2basesPASS; no
+production bytes changed or thresholds relaxed. Next branch
+feat/python-reviewed-operation-assertions/noPR expands explicit registry22to51workflows.
+Fresh installed5270SDK/538reference owning-thread tracesPASS; exact source/test-byte
+reconciliation preserves506classifications/455observed51abstractuncalled and now links
+219reviewedmapped287missing. Registry descriptions shortened from private reviewed
+notes and revalidated against identical traces, not blindly copied counts. Added
+delivery/CI-input tests have separate5272evidence; no invented presence for them.
+
+Mappings cover core sync/async/scalar codecs, local modeler/geometry, semantic/catalog
+inspection, imports, conditional documents, locks, dependency/commit/explanation,
+sharing/retained-notification and finite managed-behavior workflows. Authority remains
+localDTO/mockHTTP/referenceHTTP/orchestration doubles as declared; no native science,
+issuer/rights/durability/actor execution/OSsecurity/final-row/release promotion.
+All42originalIDs/history3runnable/zero finaldispositions retained. Continue missing287
+review and exactmergedpackage/readiness reconciliation; no milestone stopping gate.
+
 ## PR312 second CI pass exposes expanded-suite dependency setup gap
 
 01395fa767cd6f1d8899c86fe061be4b72bfd89c offline3.11/3.12/3.13 nowPASS and both
