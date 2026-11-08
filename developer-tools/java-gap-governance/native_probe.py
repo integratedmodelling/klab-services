@@ -53,7 +53,12 @@ def preflight(gap_id):
         files[path.relative_to(ROOT).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
     return {'gap_id': gap_id, 'native_execution_status': 'REAL_NOT_RUN',
             'preflight': 'PASS', 'files_sha256': files,
-            'reason': 'Repository custody only; no Java request attempted', 'fallbacks': 0}
+            'reason': row['native_prerequisite'],
+            'classification': row['handoff_classification'],
+            'executed': 'Repository test-file custody/hash checks only; no Java request attempted',
+            'not_executed': 'Public SDK-to-Java behavior, scientific oracle, mutation or cleanup',
+            'next_action': 'Supply the named build/fixture/permissions/contract; see the canonical workflow',
+            'fallbacks': 0}
 
 
 def capability_capture(config, opener=None):

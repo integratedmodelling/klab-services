@@ -4,6 +4,14 @@ Supporting runner/evidence only. The canonical contract, status and inline repro
 [JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0006).
 Generated from the synchronized index; simulator evidence is not native acceptance.
 
+## Engineering decision and immediate next action
+
+- Classification: **SOURCE_CONFIRMED_CONTRACT_GAP**; workflow: [Remote bounded blocks and leases](../JAVA_GAPS_FOR_FERDINANDO.md#scientific-data).
+- User-impact priority: P1; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Runtime/storage maintainer must show whether existing advertised exports satisfy the selected window/time workload; otherwise publish an authorized bounded read-plan/block DTO and lease fixture. Internal Java plans are not an external HTTP API.
+- Expected after Java change or usage clarification: An agreed existing export or new bounded native read returns the selected known cells with exact layout/masks/units/revision; byte budgets, foreign or expired leases, cancellation and release have observed outcomes.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
+
 ## Classification and affected contract
 
 - Independent status triplet: CONFIRMED_MISSING_API; SIMULATOR_PASS; REAL_NOT_RUN.
@@ -52,6 +60,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0006 --output simulated-JAVA-GAP-0006.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0006 --output real-JAVA-GAP-0006.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0006 --output preflight-JAVA-GAP-0006.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

@@ -4,6 +4,14 @@ Supporting runner/evidence only. The canonical contract, status and inline repro
 [JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0007).
 Generated from the synchronized index; simulator evidence is not native acceptance.
 
+## Engineering decision and immediate next action
+
+- Classification: **SOURCE_CONFIRMED_CONTRACT_GAP**; workflow: [Live twin composition](../JAVA_GAPS_FOR_FERDINANDO.md#platform-contracts).
+- User-impact priority: P3; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Ferdinando must choose live composition versus migration/failover, or document a supported equivalent, and supply a two-Runtime ownership/revocation fixture. Current attach and copied-reference workflows are not live composition.
+- Expected after Java change or usage clarification: The chosen native operation passes an approved two-twin fixture with origin-qualified identity, independent ownership and revocation; disposing the composed result never disposes either source. Attach/copy must not be called live composition.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
+
 ## Classification and affected contract
 
 - Independent status triplet: CONFIRMED_MISSING_API; SIMULATOR_PASS; REAL_NOT_RUN.
@@ -48,6 +56,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0007 --output simulated-JAVA-GAP-0007.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0007 --output real-JAVA-GAP-0007.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0007 --output preflight-JAVA-GAP-0007.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

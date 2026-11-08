@@ -4,6 +4,14 @@ Supporting runner/evidence only. The canonical contract, status and inline repro
 [JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0003).
 Generated from the synchronized index; simulator evidence is not native acceptance.
 
+## Engineering decision and immediate next action
+
+- Classification: **NATIVE_TEST_REQUIRED**; workflow: [Candidate discovery deployment](../JAVA_GAPS_FOR_FERDINANDO.md#numerical-execution).
+- User-impact priority: P1; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Ferdinando must supply a maintained Resources tuple advertising modelCandidateProtocol=1 and authorized namespace/project selectors with expected visibility. Existing source API must be tried before requesting a new endpoint.
+- Expected after Java change or usage clarification: A pinned Resources service advertises exact modelCandidateProtocol 1, returns hash-matched MODEL/NAMESPACE snapshots with expected project visibility, and denies unsupported/foreign requests without pretending to select a model.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
+
 ## Classification and affected contract
 
 - Independent status triplet: NOT_TESTED; SIMULATOR_PASS; REAL_NOT_RUN.
@@ -46,6 +54,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0003 --output simulated-JAVA-GAP-0003.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0003 --output real-JAVA-GAP-0003.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0003 --output preflight-JAVA-GAP-0003.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

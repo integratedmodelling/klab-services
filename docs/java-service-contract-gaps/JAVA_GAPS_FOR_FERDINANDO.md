@@ -1,1080 +1,489 @@
-# Java service contracts: reproducible handoff for Ferdinando
-
-## Purpose and scope
-
-The Python A+B+C client and worker use a development-only service simulator to
-exercise contracts while native compatibility remains incomplete. A simulator
-implementation is **not evidence that Java lacks a capability**. This file is the
-canonical human-facing account; `gaps.yaml` is its synchronized machine index.
-Supporting captures and tests preserve evidence, not separate authoritative gap
-inventories. No Java remediation, ontology migration, research replication or
-production acceptance is authorized by this handoff.
-
-Contents: [summary](#executive-summary), [triage](#priority-triage),
-[quick start](#quick-start), [records](#gap-records),
-[native backlog](#native-execution-backlog), [setup history](#resolved-setup-history),
-[appendix and issue crosswalk](#appendix).
+# Java engineering handoff for the Python client
 
 ## Executive summary
 
-Audited integration: **`9db975b21146093a7962d29e28345a762519befd`**, merged
-[PR #319](https://github.com/integratedmodelling/klab-services/pull/319), on
-`feature/python-experiment-runner`. This is not `develop`; their merge base is
-`1e75df4e94d72007fe1b96c3f898f3f0fbefab60`. Evidence discovery began on
-2026-11-08 UTC. No Java execution occurred during this consolidation.
+**Question:** what Java changes—or documented existing API usage—let the completed
+Python client work against a maintained k.LAB 1.0 stack?
 
-The retained register has **18 distinct stable records**: **2 confirmed historical
-defects**, **4 source-scoped missing API contracts**, **7 provisional contracts**,
-and **5 untested native integrations**. No record is a verified native fix.
-Resolved setup incidents below are **not** missing Java features and are excluded
-from these counts. These are classifications, not 18 newly reproduced failures.
-All current native execution statuses are `REAL_NOT_RUN`. Fresh simulator results
-are **SIMULATOR_PASS for 0001–0017**; 0018 is **SIMULATOR_NOT_IMPLEMENTED**, with a
-passing source-only guard rather than an encoder substitute. On 2026-11-08 UTC,
-the installed-package suite passed 416 simulator/source guards, 1,319 SDK tests
-and 116 worker tests with no skips/failures/errors. Earlier environment failures
-remain in the receipt index; no native result was inferred from these tests.
+The scientific SDK is `klab-python-client` **0.1.0**, verified at
+`161f06f7a01f9dd4b69df130b0044051794e8db5`; its source is unchanged in this handoff.
+The historical authentic-DEM investigation used local Modeler **202610301844**,
+JDK 21 and **imod generation 2**. This is not Ferdinando's staging environment.
+Python implementation/reference acceptance does not establish native acceptance.
 
-|Native status|Records|
-|---|---|
-|CONFIRMED_DEFECT|2|
-|CONFIRMED_MISSING_API|4|
-|CONTRACT_PROVISIONAL|7|
-|NOT_TESTED|5|
-|NATIVE_WORKS_VERIFIED|0|
-|RESOLVED_SETUP|0|
-|SUPERSEDED|0|
+The observed blocker is `Context.observe(...).result()` on the original DEM;
+downstream `fetch_data` receives no usable field. Unit-safe `export_to_file` needs
+native verification. `resolver.encode_dataflow` is intentionally unsupported;
+experimental block/replay/worker protocols are not maintained Java commitments.
 
-What definitely failed in the tested environments:
+**First decisions/actions, in order:**
 
-* **0001:** build `202610301844` selected the USGS elevation model but passed a null
-  numeric scanner to the geospatial encoder; Job 9 returned empty/Error, not a
-  400-cell field. This is not evidence that Ferdinando's current build fails.
-* **0010:** preserved native GeoTIFF bytes retain correct constant values and
-  spatial layout but lose the measurement-unit metadata. Reopening those bytes
-  is not a fresh Runtime execution or confirmation of an official fix.
+1. [Recover and rerun the null-scanner failure](#numerical-execution), or identify
+   the maintained build/usage sequence that already avoids it.
+2. [Provide the producing native GeoTIFF fixture](#scientific-data), verify units
+   and demonstrate supported export/slice retrieval before designing new APIs.
+3. [Specify the Engine/scope/principal recipe](#ownership-and-lifecycle), then
+   qualify reconnect, cancellation and owner-only cleanup on that exact tuple.
+4. [Choose supported source/revision/event usage](#inputs-and-provenance): distinguish
+   existing ADD/commit reads from proposed conditional publication and durable replay.
+5. [Decide optional platform contracts](#platform-contracts), not a prerequisite
+   to every scientific client workflow.
 
-Missing contracts are narrowly scoped: owned RESOURCE deletion in the inspected
-branch (0002), remote bounded block/read-plan leases (0006), and composed-twin
-migration/failover (0007), and client-boundary dataflow encoding (0018). Existing scalar reads, local storage views, trusted
-attachments and in-process functions must not be described as absent.
+The authentic elevation path has a historically traced Runtime execution failure.
+The TIFF failure has a public producing sequence and retained bytes; its current
+official tuple still needs retesting. Other records are source-scoped gaps,
+proposals, unexercised native workflows or fixture setup—not 18 Java bugs.
+Ferdinando's reported-working `klab.staging.vxii` harness is the best starting point for
+finding supported equivalents. Maintainer-reported success is important evidence;
+we have inspected its source, not executed it or established sequence equivalence.
 
-The remaining records concern deployed compatibility, authorization, lifetimes,
-scientific mappings and provisional reference protocols. In particular Java
-agent compilation/lifecycle already exists (0008); a maintained source currentness
-fix already merged (0012); native commit reads already exist (0016). What remains
-unverified is the complete matching deployed workflow, not those capabilities'
-existence. Native staging test source covers quality resolution, spatial storage
-views, unit mediation and monthly transitions; its source was inspected, not run.
+## Environment assumptions and reproducible entry point
 
-**Requests for Ferdinando:** identify the supported service/component tuple and
-staging invocation; confirm the source-scoped API findings; choose published
-contracts for read plans, durable events, revisions and workers; provide approved
-fixture/principal/cleanup manifests; and retain native request/response plus
-independent scientific oracles before closing any native obligation. Python
-implementation delivery through #319 remains separate from this acceptance.
+### Choose the actual maintained tuple first
 
-## Priority triage
+Pin the four service builds/IDs (Reasoner, Resources, Resolver, Runtime), geospatial
+component, worldview/authority versions and principal roles. Use an operator-approved
+Engine/Hub certificate profile **or** issued tokens; neither a new login nor refresh
+endpoint is presumed. `Client.from_env()` reads `KLAB_RUNTIME_URL/TOKEN` and the
+corresponding `KLAB_REASONER_*`, `KLAB_RESOURCES_*`, `KLAB_RESOLVER_*` variables.
+Set `KLAB_AGENT_NAME`, service identity pins and trusted CA configuration as needed.
+Never commit credentials. The SDK sends configured `Authorization`, scoped
+`klab-scope`, and verified originating service information where required. Do not
+forward credentials just because another URL is advertised.
 
-`P(id)` below means the executable static command in [quick start](#quick-start)
-with `--gap id`. It runs **NOW**, without services. It does not reproduce a native
-defect. `S(id)` is the simulator command there. Every complete native workflow
-requires the special environment described in its record.
+Public sequence: initialize/attach the authorized user scope → create an owned
+session/context or attach an existing one → install the correct region/focus and
+lexical namespace/project → resolve/observe → inspect Job result → read/export.
+`initialize_user_scope()` advertises configured peers; it does not grant permission.
+Local `close()` is not remote release; attached readers do not acquire disposal rights.
+The implemented initialization reads each service's `/public/capabilities` and
+`/public/status`, then POSTs `/notifyUserScope` with `services`, `emailAddress`,
+`localFederation`; Runtime `/createSession` and scoped `/createContext` follow.
+An already initialized Engine deployment may use its existing advertisement instead;
+Ferdinando should confirm which sequence is intended for external clients.
 
-|ID|Priority / simple title|Service / native evidence|Simulator scope|Consequence / reproduce|Issue / maintainer question|
-|---|---|---|---|---|---|
-|[0001](#java-gap-0001)|P0 / Null numerical scanner|Resources / historical failure|Recorded data delivery|No Runtime field; P/S(0001), native blocked|No dedicated issue; which published build fixes scanner transport?|
-|[0010](#java-gap-0010)|P1 / Lost TIFF units|Geospatial / retained native bytes|Export guards|Unit attribution lost; P/S(0010)|[geo #10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10); which official artifact preserves units?|
-|[0002](#java-gap-0002)|P1 / Owned resource cleanup|Resources / source branch|Private import custody|Cannot promise cleanup; P/S(0002)|No dedicated issue; supported delete policy?|
-|[0003](#java-gap-0003)|P1 / Candidate discovery version|Resources / installed/source mismatch|Advertised protocol 1|Inspection is not selection; P/S(0003)|No dedicated issue; deployed protocol/build?|
-|[0004](#java-gap-0004)|P1 / Durable Job lifetime|Runtime / untested full chain|Restart/restore controls|Stale handles; P/S(0004)|[#89](https://github.com/integratedmodelling/klab-services/issues/89); retention/incarnation policy?|
-|[0005](#java-gap-0005)|P1 / Durable event cursors|Runtime / provisional|Gap-aware refresh|Missed updates; P/S(0005)|[#126](https://github.com/integratedmodelling/klab-services/issues/126); cursor authority?|
-|[0006](#java-gap-0006)|P1 / Remote blocks and leases|Runtime / source-scoped missing API|Finite read plans|Bounded remote arrays; P/S(0006)|[#123](https://github.com/integratedmodelling/klab-services/issues/123); published lease contract?|
-|[0008](#java-gap-0008)|P1 / Managed agent acceptance|Runtime / untested deployed ownership|Lifecycle reference|Stop acknowledgement is not disposal; P/S(0008)|[#125](https://github.com/integratedmodelling/klab-services/issues/125); native fixture?|
-|[0009](#java-gap-0009)|P1 / Conditional source updates|Resources / provisional|CAS/history reference|Lost updates; P/S(0009)|[#129](https://github.com/integratedmodelling/klab-services/issues/129); admitted revision contract?|
-|[0011](#java-gap-0011)|P1 / Frozen worldview compatibility|Reasoner/Resources / fixture drift|Source validation|Cannot silently change oracle; P/S(0011)|[#193](https://github.com/integratedmodelling/klab-services/issues/193); versioned fixture decision?|
-|[0012](#java-gap-0012)|P1 / Paired-runtime currentness|Runtime / merged source fix|Partial refresh|Deployed acceptance missing; P/S(0012)|[#144](https://github.com/integratedmodelling/klab-services/issues/144); paired-build receipt?|
-|[0014](#java-gap-0014)|P1 / Scientific mappings|Runtime / provisional remote tuple|Arrays/raster/labels|Wrong axes/units/masks; P/S(0014)|[#123](https://github.com/integratedmodelling/klab-services/issues/123); matching native descriptors?|
-|[0015](#java-gap-0015)|P1 / Production principal matrix|All / untested deployment|Isolation/refusal controls|Wrong tenant/identity; P/S(0015)|[#89](https://github.com/integratedmodelling/klab-services/issues/89), [#129](https://github.com/integratedmodelling/klab-services/issues/129); authorized roles?|
-|[0016](#java-gap-0016)|P1 / Revisions and lineage|Runtime / provisional complete graph|Commit/convergence reference|Local hashes not authority; P/S(0016)|[#126](https://github.com/integratedmodelling/klab-services/issues/126); retention/revision authority?|
-|[0017](#java-gap-0017)|P1 / Computation worker backend|Resources/Runtime / provisional|Lease/output/process custody|No native backend acceptance; P/S(0017)|[#127](https://github.com/integratedmodelling/klab-services/issues/127); supported role/ABI?|
-|[0007](#java-gap-0007)|P2 / Composed twin migration|Runtime / connect stubs|Copied composition only|No failover guarantee; P/S(0007)|[#124](https://github.com/integratedmodelling/klab-services/issues/124); supported distributed operation?|
-|[0013](#java-gap-0013)|P2 / Finite semantic substitutes|All / provisional|Synthetic admission/selection|No native science proof; P/S(0013)|No dedicated issue; maintained fixture/oracle?|
-|[0018](#java-gap-0018)|P2 / Client encoder stub|Resolver / source-only missing client implementation|Not implemented; source guard only|Cannot encode through this client; P(0018)|No dedicated issue; supported transport or explicit unsupported contract?|
-
-## Quick start
-
-Use Python 3.11+, a repository checkout, and an isolated virtual environment.
-Install development dependencies from the repository root:
+From a clean checkout with Python 3.11+ and an isolated environment:
 
 ```sh
-python -m pip install 'jsonschema>=4.23,<5' './python-client[dev,analysis,tabular,notebook,local,events]' ./python-worker './developer-tools/klab-service-simulator[test]'
+python -m pip install 'jsonschema>=4.23,<5' './python-client[dev,analysis,tabular,local,events,notebook]' ./python-worker './developer-tools/klab-service-simulator[test]'
 python developer-tools/java-gap-governance/govern.py validate
 python developer-tools/java-gap-governance/govern.py generate --check
-python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0001 --output simulated-0001.json
+python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0001 --output sim-0001.json
 python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0001 --output preflight-0001.json
+python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0001 --output real-0001.json
 ```
 
-The last command exits **3**, even if static custody passes: native execution is
-`REAL_NOT_RUN`. Exit 0 from the simulator means its deterministic tests passed,
-not Java. Exit 1 from a failing test suite is not acceptance. The native probe
-uses exclusive output creation: choose a new receipt filename each time.
-
-To run a **native-only read-only capability scenario**, create a private JSON file
-outside the repository. Replace the example base URL, identity and build with the
-operator's verified service tuple; do not guess a service's base path:
-
-```json
-{
-  "approved_read_only": true,
-  "base_url": "https://native.example.invalid/resources",
-  "expected_service_id": "operator-supplied-service-id",
-  "native_build": "operator-supplied-build-sha",
-  "token_env": "KLAB_NATIVE_PROBE_TOKEN"
-}
-```
-
-Supply that environment variable privately, then run:
-
-```sh
-python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0003 --connect /path/to/private-native.json --output native-capability-0003.json
-```
-
-On Windows use the actual private config path instead of `/path/to/...`.
-The probe makes exactly one GET to `base_url/public/capabilities`, with a ten-second
-request timeout and a 64 KiB body limit; redirects and proxy inheritance are
-disabled. It requires HTTPS except on loopback. Credentials are never put in
-URLs or receipts. An identity-matched response still exits **3**: the selected
-  gap's behavioral test was **not** executed. Exit **4** means a configuration,
-connection, response or identity gate blocked capture, with no simulator fallback.
-It cannot distinguish an unavailable API from missing permission by guessing.
-
-Prepared native workflow tests live in `python-client/tests/functional/`.
-They require an explicitly approved `KLAB_FIXTURE_STATE_DIR` containing
-`scientist.json` and each test's exact additional manifests. Merely creating an
-empty directory or passing collection does not make them executable acceptance.
-Do not run mutation/restart tests against an unrelated retained installation.
-
-### Shared reproduction conditions (apply to every record)
-
-* **Environment:** no new native tuple is claimed. Historical build/component
-  details below qualify only that observation. Obtain exact service identities,
-  component hashes, worldview/ontology revision, resources, scopes, principal
-  rights, fixture hashes and cleanup authorization before behavioral native runs.
-* **Auth and payload:** use the maintained SDK's selected-service and scope
-  handling; do not invent scope headers or replace broker credentials with HTTP
-  credentials. The capability probe sends no scientific payload and grants no
-  mutation rights. Unknown gap endpoints/DTOs remain unknown or proposed.
-  Existing SDK HTTP transport sends the configured credential in `Authorization`
-  and the exact scope token in `klab-scope` when scoped. Do not infer that every
-  deployment uses the same credential scheme. The separate probe accepts an
-  explicitly supplied bearer token only. Native HTTP 401/403 remain authentication/
-  authorization failures; a 404 is not automatically proof of missing capability.
-* **Static reproduction:** `native_probe.py --gap JAVA-GAP-NNNN --output UNIQUE.json`
-  validates local test-file custody. This is executable **preflight**, not an
-  executable reproduction of the complete native contract. All 18 complete native
-  reproductions remain `BLOCKED_WITH_REASON` as specified below.
-* **Simulator reproduction:** `govern.py contracts --mode simulated --gap
-  JAVA-GAP-NNNN --output UNIQUE.json` runs that record's exact indexed tests in
-  isolated pytest groups. Expected: no skips/failures/errors and `SIMULATED_PASS`.
-  Fixtures are synthetic unless explicitly identified as recorded native bytes.
-  Mode is simulated, not a live proxy. Full stdout/stderr is `UNIQUE.pytest.log`.
-* **Actual result:** native `REAL_NOT_RUN` in this consolidation; historical
-  observations are separately labeled. Fresh simulator/guard results are pinned in
-  the [18-record receipt](evidence/consolidation-20261108/consolidation-ee8bf4e4d-all18.json)
-  and [full stdout/stderr](evidence/consolidation-20261108/consolidation-ee8bf4e4d-all18.pytest.log).
-  Execution: 2026-11-08T03:17:22Z–03:22:02Z, commit
-  `ee8bf4e4dde8b893de36a2601b2b86aa88e264c6`, Python 3.12.7 / Windows,
-  separately installed SDK/worker/simulator in a clean environment. This common
-  receipt contains each record's exact selected tests and assertion scope;
-  0018 records NOT_IMPLEMENTED rather than simulator parity.
-* **Cleanup:** static probes create only the chosen receipt. Simulator fixtures
-  own their loopback state; remove only those owned receipts/state after retaining
-  evidence. Native cleanup must be agreed before any mutation; never terminate
-  unrelated services, change ontologies or delete retained resources.
-* **Closure:** pin the maintained tuple and run positive/negative authorization,
-  state/error and applicable independent scientific checks without fallback.
-  Retain sanitized full receipts, timestamps, request/response and cleanup proof.
-  A capability response or local manifest SHA alone cannot close a record.
-
-## Gap records
-
-### JAVA-GAP-0001
-
-**Title:** Resources remote numeric scanner is null on preserved USGS workflow
-
-**Scope:** resources — Resources / geospatial scanner transport
-
-**Native status:** CONFIRMED_DEFECT
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P0 / unknown. **Impact:** the real elevation workflow cannot
-return a numerical field after successful model selection. Roadmap RC-P2.1,
-RC-P2.3, RC-P2.5, CAP-09; alias `JAVA-SCANNER-001`; no dedicated product issue.
-
-**Observed contract:** historical Runtime submission selected model
-`scientific.examples.usgs_virginia.elevation-quantifier` with resource
-`resources.eric.lumsden:staging:usgs:virginia20211229`. The registry's
-`POST /runtime/api/v1/submit` identifies the surrounding submission, not a
-standalone scanner endpoint. Expected: 400 native cells with correct orientation,
-mask and metres. Actual HISTORICAL: Job 9 empty/Error;
-`NullPointerException: Cannot invoke Storage$DoubleScanner.add(double) because filler is null`
-at `RasterEncoder.java:183`, through `RasterAdapter.encode:102`. Installed bytecode
-passes `aconst_null` at offset 180 and invokes the adapter at 207.
-
-**Environment/fixtures:** installed Modeler build `202610301844`.
-Historical live attempt window: **2026-11-06 02:58–03:11 UTC**, as recorded in the
-remediation report; the consolidation did not rerun it. Original DEM SHA256
-`026ec5429ddb1197b46247dd97832e2abe246be112e7133f4fce5029fea50de5`;
-20×20 EPSG:4269 crop `2c9fcd0748b9ef3d8c036a59af5c1419a826ba14262a3a80d089b1d59023fb26`;
-independent oracle `22ed905702f9e8bed9dc6a98f07ff7762877459c55cb50e581ec1a6fa7519b76`.
-The isolated Java reader matched 400 source cells; Runtime produced none. Source
-NAVD88 attribution is not proof of an embedded output vertical GeoKey.
-
-**Run now:** the shared commands with `--gap JAVA-GAP-0001`. Named simulator test:
-`developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java`.
-Scenarios SIM-USGS-001, SIM-GRID-001, REPLAY-001, SIM-PROVIDER-AVRO-001 exercise
-recorded/synthetic transport, not scanner execution. Evidence:
-[historical remediation report](../../notes/python-roadmap-execution/MODELER_REAL_DEM_REMEDIATION_REPORT.md).
-**Native blocker:** the report's `NullScannerReproducer.java`, crop and full raw
-receipt are not a maintained runnable repository fixture. Recover and review them,
-pin the corrected tuple and authorize the original resource before running.
-**Request / close:** attest scanner transport correction, then compare all 400
-Runtime cells, masks, axes and unit provenance against the unchanged oracle.
-
-### JAVA-GAP-0002
-
-**Title:** Supported owned RESOURCE cleanup contract absent in inspected delete branch
-
-**Scope:** resources — Resources import and owned cleanup
-
-**Native status:** CONFIRMED_MISSING_API
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** an upload workflow cannot promise
-owned-resource cleanup. RC-P4.3, RC-P4.4, CAP-13, CAP-14; alias
-`JAVA-RESOURCE-CLEANUP-001`; no dedicated issue.
-
-**Contract:** import uses `POST /resources/import/{schema}/{urn}`; this is not a
-delete route. Inspected `ResourcesProvider.delete` lacks a supported RESOURCE
-branch. This is a source-scoped finding, not an executed denial on every build.
-Source location: [ResourcesProvider.delete](../../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java),
-lines 1434–1474, including the explicit TODO RESOURCE at line 1473.
-Request/response and asynchronous import Job semantics:
-[resource-import contract](../../python-client/docs/resource-imports.md).
-Cleanup authorization, delete DTO/errors and retention policy remain unestablished.
-Expected: owned import receipt and agreed deletion/retention outcome; actual native
-delete NOT_RUN (no destructive probe).
-
-**Run now:** shared commands with `--gap JAVA-GAP-0002`; simulator selector
-`developer-tools/klab-service-simulator/tests/test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup`;
-SIM-IMPORT-001, SIM-INPUT-BINDING-001. Synthetic private catalog cleanup does not
-establish a native delete API. **Native blocker:** no approved disposable resource
-and maintained cleanup adapter. **Request / close:** publish supported deletion or
-explicit retained-resource policy and verify ownership/foreign denial and cleanup
-using a hashed disposable fixture, without deleting unrelated resources.
-
-### JAVA-GAP-0003
-
-**Title:** Installed Resources does not advertise source model-candidate protocol
-
-**Scope:** resources — Resources model-candidate inspection
-
-**Native status:** NOT_TESTED
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** inspect candidate model sources
-without treating an advertisement as authoritative selection. RC-P4.1, CAP-13;
-alias `JAVA-CANDIDATES-001`; no dedicated issue.
-
-**Contract:** source-defined `POST /api/v1/models/candidates` is gated by exact
-`modelCandidateProtocol` version 1. Historical build `202610301844` did not advertise
-it; newer source defines it. No claim that the maintained Java API is absent.
-Schemas/payloads: [model candidate sources](../../python-client/docs/model-candidate-sources.md).
-Expected: bounded source snapshots bound to Resources identity, visibility and
-revision; explicit unsupported-protocol refusal, no legacy fallback. Actual fresh
-endpoint NOT_RUN. A snapshot is not semantic admission or selected-model authority.
-
-**Payload capsule:** source request is `{"version":1,"namespaces":[],"projects":[],"scenarios":[]}`
-with explicit bounded selectors where needed. Response is ResourceSet MODEL
-members and matching NAMESPACE descriptors, with source under
-`klab.model.candidate.source.v1` and UTF-8 SHA256 under
-`klab.model.candidate.sourceHash.v1`. Supplier credentials only: no scope,
-originating Runtime or transaction delegation. Protocol must be exact integer 1;
-404/500/denial/transport failure are errors, not an empty successful catalog.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0003`; native-only capability
-capture is shown in quick start. Simulator: `python-client/tests/unit/test_model_candidates.py`
-and `developer-tools/klab-service-simulator/tests/test_model_candidates.py`;
-SIM-INSPECTION-001, SIM-SELECTION-001, SIM-CANDIDATE-SOURCES-001. **Native blocker:**
-matching deployed protocol/identity/visibility fixture and response oracles missing.
-**Request / close:** identify supported deployed build and verify same/foreign
-principal, paging, DTO errors and exact advertisement before candidate requests.
-
-### JAVA-GAP-0004
-
-**Title:** Durable Job retention and Runtime incarnation across restart unverified
-
-**Scope:** runtime — Runtime Job lifecycle and restoration
-
-**Native status:** NOT_TESTED
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** resume saved Jobs without replaying
-work or acquiring cleanup ownership. RC-P1.2, RC-P3.3, CAP-07; alias
-supplemental native dependency RC-P3.5;
-`JAVA-RETENTION-001`; [#89](https://github.com/integratedmodelling/klab-services/issues/89).
-**Contract:** no new durable endpoint is established. Saved references pin selected
-Runtime and scope; expiry/unknown status must not be called confirmed cancellation.
-DTO/binding: [Job binding](../../python-client/docs/job-binding.md). Historical
-completed-Job restoration and a controlled Runtime scope restart are narrower than
-the in-flight/history/restart chain. Expected: documented retention/incarnation,
-terminal state and ownership; actual complete native chain NOT_RUN.
-
-**State capsule:** bind positive Job ID, executing service, exact scope token,
-home/executing Runtime URLs and known identities. Status/result/cancel must never
-silently rebind. Empty status means unavailable/expired, not successful cancellation.
-An accepted boolean cancellation reply is not terminal interruption. Drift during
-cancel yields unknown mutation outcome, not retry or rollback. Wait timeout/task
-cancellation leaves the original Job; no automatic resubmission.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0004`;
-`developer-tools/klab-service-simulator/tests/test_durable_recovery.py`;
-SIM-LIFECYCLE-001, SIM-RESTORE-001, SIM-FAULTS-001, SIM-DURABLE-RESTORE-001.
-Synthetic checkpoint restoration proves reference behavior, not deployed retention.
-**Native blocker:** no owned restart fixture or authoritative lifetime policy.
-**Request / close:** publish retention/incarnation semantics; execute a two-process
-restore and owned Runtime restart with in-flight and expired Jobs, no resubmission,
-no foreign disposal, and complete cleanup proof.
-
-### JAVA-GAP-0005
-
-**Title:** Durable remote notification cursor and gap-aware resync contract unestablished
-
-**Scope:** runtime — Runtime event retention and client refresh
-
-**Native status:** CONTRACT_PROVISIONAL
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** refresh cached observations after
-disconnect without silently losing updates. RC-P3.1, CAP-10, CAP-11;
-[#126](https://github.com/integratedmodelling/klab-services/issues/126).
-**Contract:** native transient messaging exists. Proposed
-`GET /experimental/notifications/v1/events` is **not** a native Java endpoint.
-Reference payload/cursors/errors: [durable notification reference](../../python-client/docs/durable-notification-reference.md).
-Expected: scope/incarnation-bound ordering, retention, expiry, overflow, revocation
-and explicit gap resync. AMQP message IDs are not this cursor protocol. Historical
-transient run 18 is not durable replay; complete native result NOT_RUN.
-
-**Proposed payload capsule:** query `protocol=klab.experimental.notifications/1`,
-`limit=1..64`, optional `epoch` plus `after`; response `protocol, epoch, first,
-next, state, events, coverage`. Events carry exact contiguous `sequence`, bounded
-`job_id`, `service` and JOB_WAITING/STARTED/FINISHED/ABORTED/INTERRUPTED kind. Cursor
-binds Runtime URL/ID/root/epoch/sequence, never credentials. First read creates a
-tail, not history. Reference coverage is SINCE_EXPLICIT_REFERENCE_ACTIVATION_ONLY;
-128-event overflow, epoch loss or future cursor returns RESYNC_REQUIRED with no
-partial history. Caller checkpoints only after processing; 64 KiB strict JSON cap.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0005`;
-`developer-tools/klab-service-simulator/tests/test_durable_notifications.py`;
-SIM-REFRESH-001, SIM-DURABLE-NOTIFICATIONS-001. Deterministic duplicate/order/overflow
-fixtures prove client refusal/resync only. **Native blocker:** maintained durable
-protocol, retention fixture and adapter not published. **Request / close:** agree
-cursor authority and run same-fixture reconnect/gap/revocation convergence against
-native state without inferred delivery guarantees or automatic replay.
-
-### JAVA-GAP-0006
-
-**Title:** Published remote block/window/revision-lease API missing from inspected controller
-
-**Scope:** runtime — Runtime scientific bounded remote reads
-
-**Native status:** CONFIRMED_MISSING_API
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** bounded array/window reads rather
-than unbounded point loops. RC-P2.2, CAP-09;
-[#123](https://github.com/integratedmodelling/klab-services/issues/123).
-**Contract:** inspected native `POST /runtime/api/v1/observation/value` transports
-scalar Point values, not plan/open/read-block/close leases. Proposed
-`/experimental/read-plans/v1/open` and shard/release routes are not Java authority.
-Request/shape basis: [contracts](../../python-client/docs/contracts.md). Expected:
-bounded windows, explicit geometry/masks/revision and lease release; unsupported
-fill curves/time mappings refuse. Actual deployed block API NOT_RUN, source-scoped
-absence only; local native storage views are a different capability.
-Source boundary: [Runtime controller](../../klab.services.runtime.server/src/main/java/org/integratedmodelling/klab/services/runtime/server/controllers/RuntimeServerController.java)
-and [ServicesAPI](../../klab.core.api/src/main/java/org/integratedmodelling/klab/api/ServicesAPI.java).
-
-**Run now:** shared commands with `--gap JAVA-GAP-0006`;
-`developer-tools/klab-service-simulator/tests/test_read_plans.py` and
-`developer-tools/klab-service-simulator/tests/test_reference_windows.py`;
-SIM-GRID-001, SIM-TEMPORAL-EXPORT-001, SIM-READ-PLAN-001,
-SIM-READ-PLAN-ANALYSIS-001, SIM-SELECTED-READ-PLAN-001. Finite synthetic/reference
-shards are not native committed revisions. **Native blocker:** no maintained
-remote block DTO, lease authority or reviewed adapter. **Request / close:** publish
-contract, then verify exact hashed native cells, budget, expired/foreign leases,
-mask/axis semantics and release on success/error/cancellation.
-
-### JAVA-GAP-0007
-
-**Title:** Composed-twin migration/failover contract absent from inspected connect stubs
-
-**Scope:** federation — cross-Runtime composition and migration
-
-**Native status:** CONFIRMED_MISSING_API
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P2 / unknown. **Impact:** attaching an existing context must
-not be represented as migrating a distributed twin. CAP-03;
-[#124](https://github.com/integratedmodelling/klab-services/issues/124).
-**Contract:** inspected `connect(ContextScope)` stubs return null; no maintained
-remote composition/migration endpoint is asserted. Existing trusted attachment
-works. Architecture: [distributed twins](../DISTRIBUTED_TWINS.md). Expected contract
-must specify ownership, identity, delegation/revocation and failure recovery;
-actual migration NOT_RUN. Copying references/hashes grants no native authority.
-Null source stubs: [ClientContextScope](../../klab.core.common/src/main/java/org/integratedmodelling/common/services/client/scope/ClientContextScope.java)
-at lines 233–235 and [ServiceContextScope](../../klab.core.services/src/main/java/org/integratedmodelling/klab/services/scopes/ServiceContextScope.java)
-at lines 850–853.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0007`;
-`developer-tools/klab-service-simulator/tests/test_public_copied_composition.py`;
-SIM-SCOPE-SELECTION-001, SIM-LIFECYCLE-001, SIM-BOOTSTRAP-RECOVERY-001,
-SIM-COPIED-COMPOSITION-001, SIM-PUBLIC-COPIED-COMPOSITION-001. Synthetic copied
-arithmetic is not composed-twin acceptance. **Native blocker:** product operation,
-security/identity contract, two-backend fixture and adapter absent.
-**Request / close:** define the supported distributed operation and demonstrate
-failure/recovery/revocation with independently verified native outputs and cleanup.
-
-### JAVA-GAP-0008
-
-**Title:** Managed Runtime agent principal/incarnation and independent cleanup acceptance unverified
-
-**Scope:** agents — Resources parsing, Runtime registration and AMQP control
-
-**Native status:** NOT_TESTED
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** Python-managed agent execution must
-retain owner/incarnation and prove terminal disposal. RC-P4.5, CAP-14;
-[#125](https://github.com/integratedmodelling/klab-services/issues/125).
-**Contract:** native `POST /api/v1/instantiate/agent` and Java compilation/lifecycle
-already exist. Payload/DTOs: [agent execution](../../python-client/docs/agent-execution.md).
-Bounded native Java/Qpid wire interoperability is historical evidence, not managed
-registration/execution acceptance. HTTP and broker credentials are distinct;
-publish/stop acknowledgement is not terminal cleanup. Proposed experimental agent
-routes are not Runtime/AMQP authority. Actual complete managed native run NOT_RUN.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0008`;
-`developer-tools/klab-service-simulator/tests/test_managed_behavior_workflow.py`;
-SIM-MANAGED-AGENT-001, SIM-MANAGED-BEHAVIOR-001. Finite synthetic terminal state
-does not independently observe Java disposal. **Native blocker:** approved source,
-principal, broker, Runtime incarnation and independent disposal observer missing.
-**Request / close:** run maintained native owner/foreign/revoked lifecycle and
-cancel/failure cleanup; separately qualify SCRIPT/APP/TESTCASE private sessions,
-task restrictions, USER singletons and source validation instead of extrapolating.
-
-**Native registration/control capsule:** parse exact BEHAVIOR source through
-Resources, check identities, instantiate once with `doNotStart` and both doNotBind
-flags. Explicit principal key and Runtime incarnation are operator assertions, not
-derived from uptime. Lost/malformed post-admission response is
-SubmissionOutcomeUnknown, never automatic replay. AMQP uses native Java Message
-format and maintained agent exchange; local close detaches only. Confirmed broker
-publication is not execution. Pinned Qpid 9.2.0 wire fixture selects explicit
-unconfirmed publication because required Pika confirm/nack advertisement is absent;
-this must not silently downgrade another deployment's required policy.
-
-### JAVA-GAP-0009
-
-**Title:** Generic accepted-source conditional update/history/publication contract unestablished
-
-**Scope:** authoring — Resources source admission, version and publication
-
-**Native status:** CONTRACT_PROVISIONAL
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** concurrent authoring must not lose
-accepted source updates. RC-P4.2, RC-P4.4, CAP-14;
-[#129](https://github.com/integratedmodelling/klab-services/issues/129).
-**Contract:** native project locks are principal-shared, not revision-fenced.
-Specialized rejected-ontology selectors include `sourceVersion`; generic accepted
-documents do not thereby acquire the same admitted selector contract. Proposed
-private drafts/CAS HTTP is not native publication authority. Reference payloads:
-[revision drafts](../../python-client/docs/revision-draft-reference.md). Expected:
-explicit version/conflict, validation, permissions, history and publication; no
-live project mutation or complete native acceptance was run.
-Inspected lock/admission source: [WorkspaceManager](../../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/storage/WorkspaceManager.java)
-and [Resources controller](../../klab.services.resources.server/src/main/java/org/integratedmodelling/resources/server/controllers/ResourcesProviderController.java).
-
-**Proposed payload/state capsule:** GET/PUT
-`/experimental/drafts/v1/{opaque_name}` under bound root context, exact protocol
-`klab.experimental.drafts/1`, UTF-8 source ≤16 KiB and checked source SHA256,
-expected revision 0 for create or exact read revision for update. Response remains
-UNVALIDATED_PRIVATE_DRAFT, never accepted source. CAS conflict is HTTP 409;
-evicted history 410; failed durable persistence 507; write disconnect/5xx means
-unknown outcome and requires explicit read/reconciliation. Reference retains at
-most eight names/context and eight versions/name; no publication operation.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0009`;
-`developer-tools/klab-service-simulator/tests/test_notebook_principal_races.py` and
-`developer-tools/klab-service-simulator/tests/test_accepted_documents.py`;
-SIM-PROJECT-LOCK-001, SIM-BEHAVIOR-DRAFT-001, SIM-INPUT-BINDING-001,
-SIM-REVISION-DRAFTS-001, SIM-NOTEBOOK-PRINCIPAL-RACE-001, SIM-CONDITIONAL-AUTHORING-001.
-Same-owner CAS and foreign denial prove only the reference protocol.
-**Native blocker:** agreed generic accepted-source revision/publication contract
-and disposable project fixture. **Request / close:** verify two-client stale
-revision conflict, authoritative history, admission and permission/cleanup outcomes.
-
-### JAVA-GAP-0010
-
-**Title:** Published native continuous GeoTIFF loses measurement-unit metadata
-
-**Scope:** geospatial — Runtime export / geospatial component
-
-**Native status:** CONFIRMED_DEFECT
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** scientific export consumers lose
-measurement-unit attribution. RC-P2.1, RC-P2.5, CAP-09, CAP-15;
-[geospatial #10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10).
-**Contract:** `GET /export/OBSERVATION/{urn}`, with service prefix determined by
-selected deployment. Expected native GeoTIFF band unit `m`; HISTORICAL actual
-`dataset.units == (None,)`, band tags `{}`. Native values 123.25, 5×4 float32,
-EPSG:3857 and transform `(100,0,200000,0,-100,6000400)` are correct. Do not stamp
-units into original bytes to make the test pass.
-
-**Environment/fixture:** services `a0a013a188fb752907f2d143a61b86f4a9cb0a0b`,
-component `1.0-20261025.094856-223`, archive SHA256
-`c5192eec7fe1d47a5b4a4750c334ea3ff88520afe8d096e04c8640c3cfb289c6`.
-Retained TIFF SHA256 `940b21aee3d6eaa7e70c7baef52d29d48d577398b0352ccb0e43347ca37ba2ce`;
-[encoded artifact manifest](../../developer-tools/java-gap-governance/fixtures/native-geotiff-missing-unit.json).
-The retained artifact manifest does not contain the exact original Runtime
-execution timestamp. That is an evidence hole; issue update time and component
-build time must not be substituted for execution time.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0010`, or
-`python -m pytest -q developer-tools/java-gap-governance/tests/test_native_export_capture.py`.
-Expected: preserved defect assertions pass while authentic bytes remain unchanged;
-this is **historical artifact verification**, not new Java execution.
-SIM-ADAPTERS-001, SIM-EXPORT-001 cover client export behavior.
-**Native blocker:** official corrected component tuple and approved producing
-fixture/adapter missing. **Request / close:** capture a newly generated official
-native export with embedded units and unchanged scientific/spatial/mask precision.
-Local component correction and simulator exports do not close upstream #10.
-
-### JAVA-GAP-0011
-
-**Title:** Legacy frozen worldview fixture differs from current ODO/source-validation contracts
-
-**Scope:** semantics — Reasoner / Resources worldview and authority fixtures
-
-**Native status:** CONTRACT_PROVISIONAL
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** native compatibility tests cannot
-silently replace a frozen worldview oracle. RC-P4.1, RC-P4.2, RC-R1, CAP-05, CAP-16;
-[#193](https://github.com/integratedmodelling/klab-services/issues/193).
-**Contract/environment:** no invented endpoint. Historical original ODO SHA256
-`496bc6634392d7e2eb2a6749bca6a1570333ea607b9b8e52ffaf5b619bcf2a57`
-differs from current `5c020dac9bd9d1dcd4f9673b8075cf08f75ecc7194c74378bdb8f0498110ddba3`
-after additive `impliesPredicate`. The old 243-file fixture also reports
-`DECLARATION_CLAUSE_SOURCE_INVALID` for `life:SocialGroup` and `ecology:Community`
-EMERGES_FROM; TAXA/CHEM descriptors require installed authority providers. This is
-not proof of a numerical algorithm failure or a current missing reasoning API.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0011`;
-`developer-tools/klab-service-simulator/tests/test_source_validation.py`;
-SIM-SEMANTICS-001, SIM-SOURCE-VALIDATION-001. Expected synthetic changed-worldview
-refusal, not authoritative ontology admission. Actual fresh native fixture NOT_RUN.
-**Native blocker:** agreed versioned original/replacement fixture and provider
-identities. **Request / close:** preserve old SHA/assertions and negatives, then
-explicitly version and semantically validate any replacement. No ontology rewrite
-or repair is requested here; separate minimal native fixture success does not
-migrate the original worldview.
-
-### JAVA-GAP-0012
-
-**Title:** Remote Java currentness correction lacks complete deployed acceptance
-
-**Scope:** runtime — paired Runtime currentness and remote observation reads
-
-**Native status:** NOT_TESTED
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** awaited refresh across paired
-Runtimes must preserve currentness/semantic transaction rules. RC-P3.2, CAP-10;
-[#144](https://github.com/integratedmodelling/klab-services/issues/144),
-[merged correction #148](https://github.com/integratedmodelling/klab-services/pull/148).
-**Contract:** historical production-client path threw `UnsupportedOperationException`.
-The source correction merged with bounded 45-test and HTTP 503 controls. Do not
-call that fix absent. No new endpoint/payload is asserted; deployed currentness
-uses maintained native read/refresh routes. Expected: original semantic binding,
-transaction and old-runtime compatibility assertions, with honest partial pages;
-actual complete paired-runtime deployment NOT_RUN.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0012`;
-`developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_native_awaited_refresh_uses_existing_routes_and_retains_honest_partial_pages`;
-SIM-REFRESH-001. Synthetic partial-page tests do not verify the deployed fix.
-**Native blocker:** matching paired Runtime tuple, currentness fixture and operator
-rights. **Request / close:** retain native paired-build positive/503/old-runtime
-receipts and original transaction assertions; keep issue open until acceptance.
-
-### JAVA-GAP-0013
-
-**Title:** Finite simulator scheduling, admission and semantic answers remain provisional substitutes
-
-**Scope:** simulator-contract — Reasoner / Resources / Resolver / Runtime substitutes
-
-**Native status:** CONTRACT_PROVISIONAL
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P2 / unknown. **Impact:** SDK discovery, selection, input
-binding, dependency inspection and notebooks need deterministic development
-behavior without claiming native reasoning/science. RC-P1.1, RC-P1.5, RC-P3.3,
-RC-P4.1, RC-P4.3, CAP-04, CAP-07, CAP-13, CAP-14; no dedicated issue. Historical
-supplemental dependencies RC-P0, CAP-08, CAP-18;
-aliases SIM-CLOCK-001, SIM-IMPORT-001, SIM-INPUT-BINDING-001, SIM-SEMANTICS-001.
-
-**Contract:** [case index](../../developer-tools/klab-service-simulator/contract-cases.json)
-separates captured DTO properties from provisional scheduling/admission. There is
-no single new native endpoint. Poll-step timing, exact-source compiler substitute,
-finite vocabulary, synthetic imports, private graph pagination and provider golden
-fixtures are not native guarantees. Expected native validation requires maintained
-fixtures, source/provider identities and independent semantic/scientific oracles;
-actual whole-chain native parity NOT_RUN. Native-shaped dependency membership
-retains closure UNKNOWN and edges UNAVAILABLE; reference graph completeness is not
-authoritative scientific lineage. Data Job controller media/fall-through findings
-are source questions, not executed HTTP defects.
-
-**Deduplication:** the separately actionable source-level client encoder stub is
-tracked in [0018](#java-gap-0018), not hidden in this provisional umbrella. It is
-not evidence of absent service encoding or a newly executed native failure.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0013`;
-`developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup`;
-`developer-tools/klab-service-simulator/tests/test_dependency_graphs.py`.
-Covered families: discovery/lifecycle/faults/selection/inspection/import/input/
-semantics/behavior/notebook/replay/provenance/provider/revision/composition/
-observation/material/dependency/annotated-input cases in the index.
-Exact scenario IDs: SIM-DISCOVERY-001, SIM-LIFECYCLE-001, SIM-FAULTS-001,
-SIM-SELECTION-001, SIM-INSPECTION-001, SIM-IMPORT-001, SIM-INPUT-BINDING-001,
-SIM-SEMANTICS-001, SIM-BEHAVIOR-DRAFT-001, SIM-NOTEBOOK-001, REPLAY-001,
-SIM-PROVENANCE-DEPENDENCIES-001, SIM-PROVIDER-AVRO-001,
-SIM-REVISION-CONVERGENCE-001, SIM-COPIED-COMPOSITION-001,
-SIM-OBSERVATION-SELECTIONS-001, SIM-MATERIAL-SELECTIONS-001,
-SIM-DEPENDENCY-MEMBERSHIP-001, SIM-SOURCE-BOUND-DEPENDENCIES-001,
-SIM-ANNOTATED-INPUT-PROVENANCE-001.
-**Native blocker:** complete matching semantic/input/provider tuple and oracles;
-the umbrella does not claim each route is missing. **Request / close:** qualify
-properties individually with native fixtures; preserve narrower captured truths
-and refuse unsupported reasoning instead of synthesizing native success.
-
-### JAVA-GAP-0014
-
-**Title:** Synthetic grid metadata, selected temporal export and descriptor mappings need real tuple evidence
-
-**Scope:** scientific-data — Runtime scientific reads, descriptors and exports
-
-**Native status:** CONTRACT_PROVISIONAL
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** correct array/raster/category/time
-interpretation. RC-P2.1, RC-P2.2, RC-P2.5, CAP-09, CAP-12, CAP-15;
-supplemental dependencies RC-P2.4, CAP-08;
-[#123](https://github.com/integratedmodelling/klab-services/issues/123); aliases
-SIM-METADATA-001, SIM-EXPORT-001, SIM-ADAPTERS-001.
-**Contract:** native-shaped `GET /runtime/export/OBSERVATION/{urn}` and selected
-export DTOs do not establish every multishard/time/category mapping.
-[Native async contract](../../python-client/docs/native-async.md). Reference
-`klab.experimental.read-plans/1` supports explicit float64/2D/CRS/affine,
-north-to-south origin and complete hashed shards for finite numerical fixtures;
-unsupported mappings refuse. Caller-declared labels are not native dictionaries.
-Expected: exact values, masks, precision, CRS, axes, units and slice semantics;
-actual general remote tuple NOT_RUN. Staging storage-view and monthly-process
-source checks are real native contracts, not fresh REST tuple execution here.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0014`;
-`developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace`;
-`developer-tools/klab-service-simulator/tests/test_reference_raster_labels.py`.
-Families GRID/USGS/EXPORT/ADAPTERS/TEMPORAL/OFFLINE/DECLARED-BANDS/CATEGORY-CODES/
-READ-PLAN-ANALYSIS/SELECTED-READ-PLAN/REFERENCE-RASTER-LABELS. Recorded bytes and
-synthetic outputs retain distinct origins. Offline manifest hashes are not server
-signatures, committed revisions or lineage. **Native blocker:** published matching
-descriptors and native fixture rights/oracles. **Request / close:** compare exact
-native slice/block/export tuples, including unknown mappings and refusal controls;
-never rewrite authentic TIFF metadata or call local hashes native provenance.
-
-Exact scenario IDs: SIM-GRID-001, SIM-USGS-001, SIM-EXPORT-001, SIM-ADAPTERS-001,
-SIM-TEMPORAL-EXPORT-001, SIM-OFFLINE-SNAPSHOT-001, SIM-DECLARED-BANDS-001,
-SIM-CATEGORY-CODES-001, SIM-READ-PLAN-ANALYSIS-001, SIM-SELECTED-READ-PLAN-001,
-SIM-REFERENCE-RASTER-LABELS-001.
-
-### JAVA-GAP-0015
-
-**Title:** Production issuer/license/roles and full deployed principal matrix unverified
-
-**Scope:** authentication — all selected services and operator identity policy
-
-**Native status:** NOT_TESTED
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** no credential/principal leakage or
-cross-tenant reads during selection/refresh/recovery. RC-P1.1, RC-P1.3, RC-P1.4,
-CAP-01, CAP-02; [#89](https://github.com/integratedmodelling/klab-services/issues/89),
-supplemental dependencies RC-P3.5, CAP-18, RC-R2;
-[#129](https://github.com/integratedmodelling/klab-services/issues/129).
-**Contract:** not a claim of missing Java authentication. Issuer/license/role and
-two-deployed-Runtime matrix require supported operator policy, not a fabricated
-auth endpoint. [Support/release contract](../../python-client/docs/support-and-release.md).
-Expected: per-client credentials, selected identity, failed refresh refusal,
-bounded access, correct expiry/revocation and zero foreign ownership. Historical
-controlled privacy slices are narrower; complete deployed native matrix NOT_RUN.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0015`;
-`python-client/tests/unit/test_connection.py::test_completed_failed_probe_preserves_identity_pin_without_readiness_or_failover`;
-`developer-tools/klab-service-simulator/tests/test_shared_access.py`.
-SIM-DISCOVERY-001, SIM-SCOPE-SELECTION-001, SIM-PROJECT-LOCK-001,
-SIM-BOOTSTRAP-RECOVERY-001, SIM-NOTEBOOK-PRINCIPAL-RACE-001, SIM-SHARED-READ-001.
-Hosted controls found a Python identity-pin loss bug; correction preserves only
-last verified same-selected-URL identity while readiness stays failed/unknown.
-Synthetic expiry is not production issuer approval. **Native blocker:** authorized
-positive/negative principals, license/role policy and two-deployment fixture.
-**Request / close:** operator-approved complete matrix with sanitized identity and
-owned cleanup receipts, no timeout/retry/trust-policy relaxation.
-
-### JAVA-GAP-0016
-
-**Title:** Remote committed revision and complete historical lineage contract unestablished
-
-**Scope:** runtime — Runtime graph, commit reports and revision authority
-
-**Native status:** CONTRACT_PROVISIONAL
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** explain dependencies and converge
-two clients on authoritative committed state. RC-P3.1, RC-P3.4, CAP-06, CAP-10;
-supplemental dependency RC-P3.5;
-alias JAVA-COMMIT-001; [#126](https://github.com/integratedmodelling/klab-services/issues/126).
-**Contract:** existing `GET /api/v1/commit?id=...` with ContextScope authorization
-and `POST /runtime/api/v1/query` are not a complete durable lineage protocol.
-`DigitalTwinImpl` temporary commit cache is source-configured at 200 entries and
-ten minutes after access, not a deployed retention guarantee. Native reports and
-bounded historical provenance reads exist. Expected: exact commit IDs/change
-groups/link triples, explicit unavailable null/missing groups; complete graph,
-durable retention and contiguous numeric revisions remain unestablished.
-DTO/projection: [graph projection](../../python-client/docs/graph-projection.md).
-Complete native two-client revision/lineage race NOT_RUN; event ordering (0005) is
-separate from committed authority.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0016`;
-`developer-tools/klab-service-simulator/tests/test_commits.py` and
-`developer-tools/klab-service-simulator/tests/test_graph_convergence.py`.
-SIM-PROVENANCE-001, SIM-REFRESH-001, SIM-PROVENANCE-DEPENDENCIES-001,
-SIM-REVISION-CONVERGENCE-001, SIM-COMMIT-CACHE-001, SIM-GRAPH-CONVERGENCE-001,
-SIM-EXECUTION-EXPLANATION-001. Synthetic checkpoints/deltas and local SHA manifests
-are not Java commits or scientific authority. **Native blocker:** maintained
-revision/retention DTO contract and matching two-client fixture.
-**Request / close:** establish authoritative revisions, historical access and
-gap-resync behavior; run native race/provenance checks with independent oracles.
-Source cache boundary: [DigitalTwinImpl](../../klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/DigitalTwinImpl.java)
-and the Runtime controller linked in 0006. Cache limits are version-specific source
-settings, not observed deployed retention or durable history authority.
-
-### JAVA-GAP-0017
-
-**Title:** Computation-worker registration, lease and atomic output protocol pending native authority
-
-**Scope:** worker — proposed Runtime worker/backend integration
-
-**Native status:** CONTRACT_PROVISIONAL
-
-**Simulator status:** SIMULATOR_PASS
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P1 / unknown. **Impact:** owner-scoped Python computation
-workers need maintained backend integration, not a Java algorithm port. RC-P5,
-CAP-17; [#127](https://github.com/integratedmodelling/klab-services/issues/127).
-**Contract:** existing Resources contextualize endpoints are not proof of a
-computation-worker registration/lease/result ABI. Proposed experimental worker
-routes are not native Java APIs. [Worker request/lifecycle reference](../../python-worker/README.md).
-Expected: capability/principal registration, lease/ack/cancel, idempotent atomic
-output publication, durable recovery, bounded values/masks/geometry/units and
-process ownership. Actual native worker execution NOT_RUN. No global absence claim.
-
-**Run now:** shared commands with `--gap JAVA-GAP-0017`;
-`python-worker/tests/test_containment.py` and
-`developer-tools/klab-service-simulator/tests/test_worker_output_custody.py`;
-SIM-WORKER-001, SIM-DURABLE-RESTORE-001, SIM-WORKER-OUTPUT-CUSTODY-001.
-Synthetic leases and trusted-script process tests prove only the reference.
-Windows Job Object/POSIX process groups remove owned descendants after outcomes;
-optional memory limits mean Windows aggregate committed memory or POSIX inherited
-per-process RLIMIT_AS, not a portable aggregate RSS cap. Deliberate POSIX `setsid`
-escape, hostile-code sandboxing and total disk quota are not established.
-**Native blocker:** selected supported product role, maintained backend ABI,
-deployment rights and scientific transport fixture. **Request / close:** agree
-native registration/lease/publication/cancellation and qualify the complete
-backend workflow. C implementation is delivered; #127's native obligation stays.
-
-**Proposed wire capsule:** prefix `/experimental/worker/v1/`, header
-`X-Klab-Worker-Protocol: klab.experimental.worker/1`, current credential and owned
-context. POST register `{worker_id,operation}`→REGISTERED; POST tasks
-`{operation,input}`→QUEUED/task ID; POST claim `{worker_id}`→IDLE or LEASED with
-input/lease; GET tasks/{id}→state/output/provenance; POST publish
-`{lease,output,input_sha256,implementation_sha256}`→PUBLISHED/output hash;
-fail→FAILED, cancel→CANCELLED, release→RELEASED/unfinished leases ABORTED.
-Restarted active lease→RECOVERY_REQUIRED; recover requires
-`confirm_recompute:true`. Unknown credential 401, wrong role 403, input 422,
-version/stale lease/terminal conflict 409, capacity 429. Field rank 1..4, ≤4096
-numeric cells, unique axes/coordinates, declared CRS/unit or null, explicit
-boolean validity mask; invalid cells null, zero/negative valid. Output cannot
-change input layout/unit/validity in this reference. No native route is inferred.
-
-### JAVA-GAP-0018
-
-**Title:** Resolver client dataflow encoding has no transport implementation
-
-**Scope:** resolver — Resolver Java client/service encoding boundary
-
-**Native status:** CONFIRMED_MISSING_API
-
-**Simulator status:** SIMULATOR_NOT_IMPLEMENTED
-**Native execution status:** REAL_NOT_RUN
-
-**Priority / owner:** P2 / unknown. **Impact:** the client cannot supply supported
-scientific dataflow encoding. Python `client.resolver.encode_dataflow(dataflow)`
-currently raises `UnsupportedOperationError` before HTTP (same explicit boundary
-in the async facade), rather than returning synthetic encoding. RC-P0 operation inventory; no dedicated issue or
-simulator scenario; newly allocated next unused stable ID (not a renamed old gap).
-**Contract:** audited source at integration SHA above:
-`ResolverClient.encodeDataflow(Dataflow)` returns null at lines 103–105 while
-`ResolverService.encodeDataflow` implements encoding from line 345. The interface
-method exists; **the missing implementation is at the client transport boundary**.
-No REST route/header/request DTO or native return payload is inferred. Source:
-[client](../../klab.core.common/src/main/java/org/integratedmodelling/common/services/client/ResolverClient.java),
-[service](../../klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/ResolverService.java),
-[interface](../../klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Resolver.java).
-Expected supported behavior: maintained encoding contract or explicit unsupported
-disposition, not fabricated scientific output. Actual **source-only** null stub;
-no Java method or native request executed during this audit.
-
-**Run now:** shared static command with `--gap JAVA-GAP-0018`, and
-`python -m pytest -q developer-tools/java-gap-governance/tests/test_encoder_source.py::test_pinned_client_stub_is_not_absence_of_service_encoding`.
-Expected: static assertions distinguish the null client stub from implemented
-service encoding. This is neither a simulator encoder nor native execution.
-The governance runner records `SIMULATOR_NOT_IMPLEMENTED`, not `SIMULATED_PASS`,
-for this record. **Simulator reason:** no maintained remote encoding transport/DTO
-authority; the SDK must retain its explicit unsupported disposition.
-**Native blocker:** supported client construction/transport fixture and maintained
-encoding authority/oracle are not established. A source guard is not a native
-reproducer. **Request / close:** specify the client contract, then run a bounded
-native client invocation with a maintained dataflow fixture and exact expected
-encoding/error. Existing service implementation must not be described as absent.
-Public refusal control:
-`python -m pytest -q python-client/tests/unit/test_client.py::test_explicit_unsupported_and_unconfigured_methods`.
-
-## Native execution backlog
-
-* **Unavailable local prerequisites:** 0001 needs the missing maintained scanner
-  reproducer and frozen crop/oracle custody; 0002 needs an approved disposable
-  resource and cleanup policy; 0011 needs explicit fixture/provider versioning.
-* **Staging-harness questions:** 0003, 0013, 0014 need exact service initialization,
-  namespace/project, context geometry/focus, maintained invocation and REST mapping.
-  Source access is available; runnable environment and execution are not verified.
-* **Contract decisions:** 0005 durable cursor; 0006 block/lease; 0007 distributed
-  operation; 0009 admitted-source revisions; 0016 committed graph authority;
-  0017 worker role/ABI; 0018 client encoding authority. Capability probes cannot replace these decisions.
-* **Confirmed historical defects:** 0001 scanner; 0010 unit export. Reproduce on
-  maintained builds with unchanged oracles before asserting still broken or fixed.
-* **External deployment constraints:** 0004 owned restart/retention fixture;
-  0008 broker/principal/disposal observer; 0012 paired-runtime acceptance;
-  0015 production issuer/license/roles. Missing rights do not authorize repairs.
-
-**Missing genuinely executable complete native reproducers:** every record
-0001–0018, for the individually stated reasons above. Static preflight exists for
-all 18. Historical TIFF inspection exists for 0010. Prepared functional tests are
-plans requiring external manifests; neither class is counted as a native test run.
-Native tests actually run in this consolidation: **0**.
-
-## Resolved setup history
-
-The historical Modeler sequence accepted `imod`, loaded 26 ontologies, provisioned
-the geospatial KAR and installed Neo4j Spatial, then successfully selected the USGS
-model/resource. These are **RESOLVED_SETUP**, not currently missing Java APIs.
-They do not prove scanner transport or scientific output works. Source/test fixture
-drift in 0011 remains a separate unresolved obligation.
-
-Evidence and timestamped gates:
-[Modeler state](../../notes/python-roadmap-execution/MODELER_IDE_STATE.md) and
-[remediation history](../../notes/python-roadmap-execution/MODELER_REAL_DEM_REMEDIATION_REPORT.md).
-For live-dependent work only, use the bounded checker documented in that state
-file. Do not require IDE readiness for static/simulator work. No repair or fresh
-gate transition was performed here. Old local reproduction commands may reference
-private artifacts; they are historical evidence, not portable runnable instructions.
-
-## Appendix
-
-### Source provenance and receipt custody
-
-* Campaign PRs #290–319: descriptions and file lists read; #319 merge is the audited
-  integration SHA above. Original 42 acceptance IDs/history remain unchanged in
-  [acceptance audit](acceptance-audit.json),
-  [execution queue](../../notes/python-roadmap-execution/roadmap-execution-queue.json)
-  and [A+B ledger](../../notes/python-roadmap-execution/AB_COMPLETION_LEDGER.md).
-* Staging repository `integratedmodelling/klab.staging.vxii` was publicly accessible
-  and cloned read-only at `0de15fbafab988455de87edd7d4581a7c22000ac`
-  (commit date 2026-11-04T17:58:30+01:00). `resolve_quality`, `storage_views`,
-  `monthly_process` in `testcases/klab/staging/vxii/testsuite.kactors` were inspected.
-  Views D2_XY/D2_YX/D2_XInvY and mm factor 1000, 12 monthly transitions in 2014 and
-  relative −10 m are source assertions, **not executions here**.
-* Earlier staging file hashes are retained in
-  [source-only manifest](../../notes/python-roadmap-execution/evidence/ab-staging-vxii-source-reference-20261106.json).
-* Historical native TIFF bytes and expected/actual metadata are in the fixture
-  manifest linked in 0010. Private historical scanner receipts are not silently
-  promoted into repository custody. A receipt filename in an old report is not
-  proof the file currently exists.
-* Historical issue #193 references the selected-query production correction in
-  [merged PR #191](https://github.com/integratedmodelling/klab-services/pull/191).
-  Preserve that narrower source correction; do not reclassify it as currently
-  missing or infer complete native parity from it or the broad baseline failure
-  inventory. It is not a newly unresolved gap or a resolved local setup incident.
-* [Full receipt index](evidence/consolidation-20261108/receipt-index.json) retains
-  27 sanitized full artifacts and original/sanitized SHA256 custody, including
-  both failed environment attempts, the intermediate clean 17-record pass, the
-  18-record pass, 65-test governance XML and all 18 static preflights. Sanitization
-  replaces user/private root paths and hostnames, never clips stdout/stderr.
-  The first attempt used an old installed SDK with no worker; the second inherited
-  an incompatible NumPy ABI through system site packages. The final environment
-  was created without system site packages. These are test-environment incidents,
-  not new Java product defects.
-* The 18 static preflights exited 3 with REAL_NOT_RUN, pinned source file hashes and
-  implementation commit. They made no native connection. The complete 18-record
-  run includes 17 simulator passes and the 0018 source-only NOT_IMPLEMENTED guard.
-  Source-union accounting is 37 modules / 33 CLI scenarios / 54 indexed cases /
-  42 current roadmap rows; original history and aliases remain intact.
-
-### Live issue-to-gap crosswalk
-
-Read-only audit on 2026-11-08 UTC covered all 16 services issues (10 open) and the
-one geospatial issue (open), including bodies/comments and campaign PR references.
-Owners/labels/status were not changed. Current snapshot details and historical
-acceptance statements are retained in [issues.json](issues.json). The links below
-are tracking obligations, not a suggestion to close issues on simulator success.
-
-Exact live metadata is retained in [live review](live-issue-review.json), queried
-at 2026-11-08T02:55:46Z. Assignee Dobbes and label `enhancement` remain on closed
-#87/#88/#91. Open #89 is unassigned with labels `enhancement`, `java`. All other
-audited issues have no assignees or labels. Issue authors are not automatically
-Java owners. No closure recommendation authorizes changing any owner or label.
-
-|Issue / current title|State|Outstanding obligation / gaps / simulator tests|Recommendation|
-|---|---|---|---|
-|[#89](https://github.com/integratedmodelling/klab-services/issues/89) — Validate Python client integration with cross-service identity and shared-session permissions|OPEN|Native scope/lifecycle/principal and delivery evidence; 0004/0015; lifecycle and scope-selection tests|Keep open native obligations; Python delivery is separate|
-|[#123](https://github.com/integratedmodelling/klab-services/issues/123) — Backend prerequisite: versioned remote scan/block/slice contract for Python access|OPEN|Published bounded reads/scientific mappings; 0006/0014; read-plan and scientific-adapter tests|Keep open; finite arrays are not native acceptance|
-|[#124](https://github.com/integratedmodelling/klab-services/issues/124) — Specify and implement twin composition/migration contracts required by Python federation|OPEN|Composition/migration/failover; 0007; copied-composition tests|Keep open; attachment is narrower|
-|[#125](https://github.com/integratedmodelling/klab-services/issues/125) — Complete Python agent execution/control and confirmed terminal cleanup beyond source preview|OPEN|Native managed ownership/cleanup; 0008; managed-agent/behavior tests|Keep open acceptance; native lifecycle already exists|
-|[#126](https://github.com/integratedmodelling/klab-services/issues/126) — Define durable notification replay/resync contract beyond best-effort Python hints|OPEN|Durable cursor/committed lineage; 0005/0016; durable-notification/commit tests|Keep open; transient messaging/cache reads are narrower|
-|[#127](https://github.com/integratedmodelling/klab-services/issues/127) — Specify provider/worker SDK role, execution and backend integration contracts|OPEN|Native role/ABI/backend; 0017; worker/output-custody tests|Keep open; C reference delivery does not integrate backend|
-|[#129](https://github.com/integratedmodelling/klab-services/issues/129) — Record Python release support/version decisions and scientific/backend publication gates|OPEN|Operator/release policy, accepted source; 0009/0015; authoring/principal tests|Keep open decisions; not inherently a Java product defect|
-|[#130](https://github.com/integratedmodelling/klab-services/issues/130) — Provide PaL operational artifacts and independent original-study reference contracts|OPEN|Original research inputs/oracles/rights; related 0001/0014, no simulator fulfills it|Keep open research obligation; no replication authorized|
-|[#144](https://github.com/integratedmodelling/klab-services/issues/144) — Remote Context observation reads reach unsupported lifecycle-currentness default|OPEN|Paired-runtime deployed acceptance after merged #148; 0012; partial-refresh tests|Keep open acceptance; preserve source fix|
-|[#193](https://github.com/integratedmodelling/klab-services/issues/193) — Track legacy synthetic fixture incompatibility with current ODO and source validation|OPEN|Versioned worldview/provider fixture; 0011; source-validation tests|Keep original negatives/oracle; no ontology repair|
-|[geospatial #10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10) — Native continuous GeoTIFF export omits observation measurement units|OPEN|Official published unit-preserving native artifact; 0010; native-export-capture test|Keep open; historical bytes still lack units|
-|[#87](https://github.com/integratedmodelling/klab-services/issues/87) — Python client: add typed observation requests and context options|CLOSED|Historical Python tracking; original obligations/links retained in snapshot|Preserve closure; no new native proof|
-|[#88](https://github.com/integratedmodelling/klab-services/issues/88) — Python client: save and restore context, observation and job handles|CLOSED|Historical Python tracking; original obligations/links retained in snapshot|Preserve closure; no new native proof|
-|[#91](https://github.com/integratedmodelling/klab-services/issues/91) — Python client: stream observation exports to files|CLOSED|Historical Python tracking; original obligations/links retained in snapshot|Preserve closure; no new native proof|
-|[#142](https://github.com/integratedmodelling/klab-services/issues/142) — Baseline Java test failure: required POST error-detail expectation contradicts status-only implementation|CLOSED|Historical setup/test correction; not a current missing API|Preserve closure and corrected-test scope|
-|[#145](https://github.com/integratedmodelling/klab-services/issues/145) — Repair baseline core-service test setup for Java-only builds and authority selection|CLOSED|Historical test correction; not a native product fix by simulation|Preserve closure and evidence|
-|[#147](https://github.com/integratedmodelling/klab-services/issues/147) — Baseline Java acceptance inventory: semantic, temporal and lifecycle regressions block Python integration|CLOSED|Historical baseline failure inventory; related 0011, not all confirmed product bugs|Preserve diagnostic failures without broad defect claims|
-
-### Source-union coverage and current roadmap supplements
-
-The [source inventory](simulator-source-inventory.json) conservatively fingerprints
-**37 simulator modules**, **33 CLI source scenarios**, and every path-like AST
-literal, independently of `contract-cases.json`. The existing case index has
-**54 contract cases**, all covered by the
-register's scenario references; that index is not the sole source of coverage.
-Module families map to the records
-above: imports/authoring→0002/0009/0013; candidates→0003; persistence→0004/0017;
-notifications→0005; read plans/windows/raster labels→0006/0014; composition→0007;
-managed agents/behaviors→0008; drafts/accepted documents→0009; exports→0010/0014;
-semantics/source validation→0011/0013; access→0015; commit/graph/revision/explanation
-modules→0016; worker→0017. Shared state/server span the complete register.
-Fixtures/provider transport map to 0001/0013/0014. Generic protocol, comparison,
-selection, dependency and replay helpers map to 0013. These are conservative review
-boundaries, not a proof that every source statement implements a Java endpoint.
-
-The current queue's 42 rows survive unchanged. Six rows with historical empty
-links receive explicit supplemental native dependencies in that inventory:
-
-|Requirement|Native dependency / canonical record|
-|---|---|
-|RC-P0 — operation inventory / compatibility diagnostics|0013/0018: provisional source contracts and unsupported Resolver client encoding|
-|RC-P3.5 — notebook concurrency / own-wait cancellation|0004/0015/0016: Job lifetime, principal isolation and graph reconciliation|
-|RC-P2.4 — bounded stream / interrupt|0014: native export mapping/workload; local bounded buffering alone is not native scale|
-|CAP-08 — sparse typed values / missingness|0013/0014: semantic/scalar answers and scientific missingness mapping|
-|CAP-18 — architecture / irreversible boundaries|0013/0015: unsupported authority assumptions and principal fences|
-|RC-R2 — supported public release|0015: operator support/issuer policy; publication remains separately unauthorized|
-
-Run `python developer-tools/java-gap-governance/source_coverage.py` to detect source
-or scenario drift. New modules/scenarios require an explicit family classification;
-changed source hashes require review and refreshed inventory. CI conservatively
-requires canonical Markdown, register and tests in the same PR for **any** SDK,
-worker or simulator source change, including local-only changes. This deliberately
-errs toward review rather than silently inferring that a change is not Java-facing.
-
-### Status glossary and preserved aliases
-
-`CONFIRMED_DEFECT` means scoped observed native failure, not every deployed build.
-`CONFIRMED_MISSING_API` here means the inspected source boundary, not global Java
-absence. `CONTRACT_PROVISIONAL` is a proposed or incomplete authority contract.
-`NOT_TESTED` means the relevant complete native workflow was not attempted.
-`REAL_NOT_RUN` is never a Java pass. `SIMULATOR_PASS` concerns only its stated
-reference/guard assertions. `RESOLVED_SETUP` is environment history.
-
-All original JAVA-GAP-0001–0017 and aliases listed in the records/index survive;
-JAVA-GAP-0018 is the newly allocated client-encoding record.
-No old ID is renumbered or recycled. Local SHA256 manifests prove byte custody,
-not authoritative Java commits, signatures, semantic admission or scientific lineage.
-
-Inventory change log, 2026-11-08: moved core reproductions into this file; separated
-the status triplet; added a bounded native-only capability/static probe; preserved
-scanner/TIFF failures and setup history; allocated 0018 for the distinct client
-encoder boundary; recorded fresh substitute/preflight results, exact live issue
-titles and conservative source/same-PR gates. Delivery is tracked in
-[PR #320](https://github.com/integratedmodelling/klab-services/pull/320); a draft PR
-or a green local suite is not evidence of completed review/remote merge.
-
-Standing rule: every changed Java-facing SDK/worker/simulator assumption must
-update this document, `gaps.yaml` and relevant runnable tests in the same PR.
-No simulator result closes an unresolved native, research or release obligation.
+Use **unused output names**. Simulator mode runs the packaged SDK against isolated
+test fixtures; expect pass, with full output in `sim-0001.pytest.log`. The two last
+commands exit **3 / REAL_NOT_RUN**, state what executed and exactly what to supply.
+Preflight checks repository custody; real mode is a missing-native-adapter
+disposition, **not a Java request or a passing compatibility test**. Neither falls
+back to simulation. Substitute any stable ID from the inventory below.
+
+The optional native probe `--connect` accepts a private JSON config with
+`approved_read_only:true`, credential-free `base_url`, `expected_service_id`,
+`native_build`, and optional `token_env` naming a bearer-token environment variable.
+It makes one bounded GET to `/public/capabilities`, refuses redirects/identity drift,
+and still does not execute the selected gap. Connection gates fail with exit 4.
+
+Prepared live pytest commands below require explicit `KLAB_FIXTURE_STATE_DIR`,
+`scientist.json` and their named extra manifests. Missing inputs fail, never skip.
+They are **NOT_RUN here**. Do not start, repair, restart or mutate a retained stack
+merely to green this document; obtain disposable-fixture/cleanup approval first.
+
+## Numerical execution
+
+1. **User-visible goal:** observe authentic elevation and retrieve scientifically
+   correct cells, rather than a finished Job containing an error.
+2. **Python interaction:** after approved client/context and native geometry setup:
+
+   ```python
+   from klab_client import ObservationRequest, ObservationOptions
+   region = context.observe(ObservationRequest(
+       "earth:Terrestrial earth:Region", geometry=native_geometry)).result(120)
+   focused = context.within(region)
+   job = focused.observe("geography:Elevation in m", options=ObservationOptions(
+       namespace="scientific.examples.usgs_virginia", project="scientific.usgs.virginia"))
+   elevation = job.result(120)
+   first = elevation.fetch_data(range(256), curve=approved_curve)
+   rest = elevation.fetch_data(range(256, 400), curve=approved_curve)
+   ```
+
+   This is the **target SDK sequence**, not a claim the historical Modeler request
+   was made through Python. `native_geometry` and traversal must come from the
+   recovered fixture, not an invented EPSG:3857 rectangle.
+   Supporting discovery is `inspect_model_candidates(client, ModelCandidateQuery(...))`;
+   source checks use `SourceValidation(client).parse(...)` then `validate(...,
+   document_version=..., expected_revision=...)`. Neither catalog inspection nor
+   successful validation proves executable model admission or numerical computation.
+3. **Expected Java behavior:** existing observation/Resolver/point-read APIs should
+   produce the selected field. Candidate inspection is not model selection;
+   do not use the SDK's deliberately unsupported forced-model option.
+   Submission is POST `/api/v1/submit` under the selected Runtime base; sparse
+   values use POST `/api/v1/observation/value`, not observation metadata as data.
+4. **Actual Java evidence:** **HISTORICAL**, 2026-11-06 02:58–03:11 UTC, build
+   202610301844/imod generation 2, Temurin 21.0.12.1+1: Resources registered the DEM; Resolver selected
+   `scientific.examples.usgs_virginia.elevation-quantifier` and resource
+   `resources.eric.lumsden:staging:usgs:virginia20211229`. Runtime Job 9 returned
+   `empty:true`, id −1 and contextualization errors. Reported stack:
+
+   ```text
+   NullPointerException: Cannot invoke Storage$DoubleScanner.add(double) because filler is null
+     at RasterEncoder.java:183
+     via RasterAdapter.encode:102
+   ```
+
+   The installed Java reader matched all **400** source cells in isolation; Runtime
+   returned none. These are different results. Current-build execution is **NOT_RUN**.
+5. **Reproduction:** run the 0001 simulator/preflight commands above. The SDK test
+   `developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java`
+   delivers recorded USGS cells; it does not execute Java. The native 20×20 EPSG:4269 crop,
+   oracle, exact request/raw receipts and `NullScannerReproducer.java` remain outside
+   Git; the Java reproducer is absent from this checkout. **Portable recovery task:**
+   evidence custodian must package those files, hashes, bounds/noData/unit/datum and
+   cleanup manifest into a reviewed fixture; Ferdinando supplies its producing build.
+   Until then there is no honest clean-checkout end-to-end native reproducer.
+6. **Root cause / uncertainty:** installed `ResourcesProvider.contextualizeSynchronous()` bytecode passes null to the
+   raster adapter (`aconst_null` offset 180; invocation 207). The remote numeric
+   scanner bridge is implicated, not lack of Java numerical capabilities generally.
+   Staging `resolve_quality` instead establishes terrestrial region, focus and
+   explicit namespace/project; its [staging.vxii.basic elevation model](https://github.com/integratedmodelling/klab.staging.vxii/blob/0de15fbafab988455de87edd7d4581a7c22000ac/src/staging/vxii/basic.kim#L119)
+   uses
+   `klab.generators.geospatial.terrain()`, not the remote USGS raster resource.
+   A passing generator/storage test need not exercise the failing scanner bridge.
+   Determine which supported setup and resource path is equivalent before proposing a fix.
+7. **Recommended Java-side action:** Resources/geospatial maintainer, owner not yet
+   assigned: **fix or identify an existing correction** for the null scanner at this
+   boundary, or document the supported remote-resource invocation that uses a valid
+   scanner. The historical smallest correction is a real numeric scanner paired
+   with the existing serializing data builder, not a Python-computed replacement.
+   First compare the exact failing request with staging; do not port terrain
+   computation into Python or rewrite the ontology.
+8. **Acceptance test:** recovered native fixture must select the same model/resource
+   and return all 400 oracle cells with verified axes, coverage/noData, precision and
+   metre provenance through Python. Source NAVD88 attribution is not an output GeoKey.
+   The simulator transport check must also remain passing; that alone cannot close it.
+9. **Traceability:** 0001, 0003, 0011, 0013; RC-P2.1/P2.3/P2.5, RC-P4.1 and CAP-09.
+   [Historical requests, hashes and full scanner account](../../notes/python-roadmap-execution/MODELER_REAL_DEM_REMEDIATION_REPORT.md).
+   Original input: `USGS_1_n38w080_20211229.tif`; [public retrieval URL](https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1/TIFF/historical/n38w080/USGS_1_n38w080_20211229.tif).
+   Original SHA256 `026ec5429ddb1197b46247dd97832e2abe246be112e7133f4fce5029fea50de5`;
+   crop `2c9fcd0748b9ef3d8c036a59af5c1419a826ba14262a3a80d089b1d59023fb26`;
+   oracle `22ed905702f9e8bed9dc6a98f07ff7762877459c55cb50e581ec1a6fa7519b76`.
+   Re-downloading the DEM does not recover the missing producing request/harness.
+
+## Scientific data
+
+1. **User-visible goal:** export/read results whose units, coordinates, masks and
+   selected time states remain meaningful in Rasterio/xarray or another consumer.
+2. **Python interaction:** `observation.fetch_data(offsets, curve=..., slice=...)`
+   for sparse checks; `observation.export_to_file(destination,
+   media_type="image/tiff;application=geotiff", max_bytes=budget)` for an advertised
+   native GeoTIFF representation. The exact public call sequence is in the
+   [native stream workflow](../../python-client/tools/workflows/native_stream_workload.py).
+   [Typed slice workflow](../../python-client/tools/workflows/native_scan_slices.py)
+   shows `ObservationOptions`, `ScanSlice.initialization()` and `fetch_data` end to end.
+3. **Expected Java behavior:** use advertised `/export/{class}/{urn}` representations
+   and published `StorageScan.Point` first. Internal Java plans/storage views exist;
+   they are not automatically a public block/lease API. New remote reads are needed
+   only if existing exports cannot satisfy the agreed window/time workload.
+   Resources contextualization/Avro is another existing contract, not proof of
+   revision-pinned block access to a committed Runtime observation.
+4. **Actual Java evidence:** retained native 5×4 float32 TIFF has values **123.25**,
+   EPSG:3857 and transform `(100,0,200000,0,-100,6000400)`, but `units==(None,)` and
+   band tags `{}` instead of `m`. Producing services: `a0a013a188fb752907f2d143a61b86f4a9cb0a0b`,
+   JDK 21.0.12.1/Windows; geospatial `1.0-20261025.094856-223`.
+   Issue #10 also records the original two-observation/export sequence, Python
+   candidate `ced45f17691ce6a78b6a489ecca4a319564c69be` and worldview
+   `d6c37c0b82afadd004d94bc5311983b66677532c`. This supports a **historically
+   reproduced native export failure**, not a current-build verdict. Exact original
+   execution timestamp/raw transaction IDs are not retained in the artifact manifest.
+5. **Reproduction:** `python -m pytest -q developer-tools/java-gap-governance/tests/test_native_export_capture.py`
+   passes by detecting the preserved missing units without rewriting bytes.
+   [Fixture](../../developer-tools/java-gap-governance/fixtures/native-geotiff-missing-unit.json),
+   TIFF SHA256 `940b21aee3d6eaa7e70c7baef52d29d48d577398b0352ccb0e43347ca37ba2ce`.
+   The original producer uses the full public
+   [python.fixture project](https://github.com/integratedmodelling/klab-services/blob/ced45f17691ce6a78b6a489ecca4a319564c69be/python-client/tools/fixture_hub.py),
+   not an unpublished DEM: constant elevation `100 + 23.25`, the 5×4 geometry
+   above, focused `geography:Elevation in m` in namespace `python.fixture`, then
+   `export_to_file`. Port that sequence to the current SDK's `job.result()` and
+   `context.observe(..., options=ObservationOptions(namespace="python.fixture"))`;
+   the old issue snippet's `wait()`/request-options syntax is version-specific.
+   Run simulated/preflight modes for 0010/0006/0014. Native candidate:
+   `python -m pytest -q -o addopts= -m live python-client/tests/functional/test_native_scan_slices.py`;
+   requires approved `scientist.json` plus registered `consolidation:*` fixtures.
+   It tests a **synthetic Java constant 234.5 m**, not USGS or general temporal blocks.
+6. **Root cause / uncertainty:** unit handling in geospatial `GeodataIO` /
+   `Geotools.stateToCoverage` needs transaction verification. Runtime's published
+   READ_VALUE accepts a Point; remote block/snapshot authority remains unestablished.
+7. **Recommended Java-side action:** geospatial maintainer **reproduce the recovered
+   public producing sequence** and identify the official corrected component, if any.
+   Storage/Runtime maintainer **document the existing export/slice/mediation recipe**;
+   specify a new bounded block contract only for demonstrated uncovered needs.
+8. **Acceptance test:** unchanged native numerical/spatial/mask precision plus
+   embedded measurement unit, and documented metre→millimetre mediation where
+   supported. For blocks, compare the same native fixture's exact cells, descriptors,
+   revision/expiry and cancellation against sparse/export oracles; never stamp units
+   or fabricate axis/dictionary meaning in Python. Staging `storage_views` and
+   `monthly_process` are promising native test sources, not executions here.
+9. **Traceability:** 0010/0006/0014, RC-P2.1/P2.2/P2.4/P2.5, CAP-09/CAP-15;
+   [geospatial #10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10)
+   and [#123](https://github.com/integratedmodelling/klab-services/issues/123) stay open.
+
+## Ownership and lifecycle
+
+1. **User-visible goal:** reconnect or share authorized work without leaking another
+   principal's data, replaying Jobs or deleting somebody else's context.
+2. **Python interaction:** `Client.from_env()` / supported `connect(...)` credential
+   profile → `initialize_user_scope()` → `create_session().create_context()`;
+   save `job.to_handle()` / observation handle → a fresh client's `restore_handle(...)`;
+   `job.cancel()` requests cancellation, while `job.result(timeout=...)` is only a wait.
+   Agent registration uses `AgentExecutions(context, principal_key=...,
+   runtime_incarnation=...).create(source, allow_execute=True)` then explicit AMQP control.
+3. **Expected Java behavior:** existing Engine/Hub, scope, attach, Job and native
+   agent APIs—not new login, stop or retry routes. Broker credentials are separate
+   from HTTP credentials. Closing Python detaches locally; only explicit owned
+   release disposes remote scopes; a stop acknowledgement is not terminal cleanup.
+4. **Actual Java evidence:** historical privacy/restoration/native Java–Qpid slices
+   exist, but the full production issuer/role/two-Runtime/restart/disposal matrix is
+   **NOT_RUN**. Currentness had an original Java exception; source correction
+   [#148](https://github.com/integratedmodelling/klab-services/pull/148) is merged,
+   not missing. [#128](https://github.com/integratedmodelling/klab-services/pull/128)
+   is also a **merged PR**, not an unresolved issue: it rejects cached Runtime-origin mismatch.
+5. **Reproduction:** use per-ID simulator/preflight modes for 0015/0004/0012/0008.
+   Native read-only candidate:
+   `python -m pytest -q -o addopts= -m live python-client/tests/functional/test_shared_context_read.py`.
+   Needs `scientist.json`, `shared-context-read.json`, an existing observation handle,
+   expected offsets/unit/text, a separate reader credential environment variable and
+   operator-attested native build/principal. It does not test restart or disposal.
+6. **Root cause / uncertainty:** no global missing-authentication finding. `ClientKnowledgeGraph`
+   currentness/deployed compatibility and Runtime retention/incarnation are separate
+   from local handle validation. Existing Java agent lifecycle must not be relabeled absent.
+7. **Recommended Java-side action:** Engine/Runtime/operator owners **provide one
+   supported initialization/identity recipe and disposable two-principal fixture**;
+   **qualify deployed #148**, document Job retention and independently observe native
+   agent terminal disposal. Change Java only for failures reproduced by that matrix.
+8. **Acceptance test:** authorized current-credential reads succeed; wrong/expired
+   credentials and foreign origin/private-parent/disposal operations fail. Reconnect
+   creates no replacement Job/session; expiry stays distinct from cancellation;
+   owned release/agent disposal is independently observed. Include both Runtime orders
+   and cached/noncached paths without weakening ACLs.
+9. **Traceability:** 0015/0004/0012/0008; RC-P1.1–P1.4, RC-P3.2/P3.3/P3.5,
+   RC-P4.5, CAP-01/02/07/14; [#89](https://github.com/integratedmodelling/klab-services/issues/89),
+   [#144](https://github.com/integratedmodelling/klab-services/issues/144),
+   [#125](https://github.com/integratedmodelling/klab-services/issues/125).
+
+## Inputs and provenance
+
+1. **User-visible goal:** use an imported input, edit supported source without lost
+   updates, and explain which committed inputs produced an observation after reconnect.
+2. **Python interaction:** `ResourceImporter(client, context).upload(...)` →
+   `receipt.job.result(...)` → `Authoring(client).parse(...)` → explicit
+   `create_workspace`, `create_project`, `create_document(..., allow_write=True)`.
+   This existing ADD/import flow is exercised by
+   [public input workflow](../../developer-tools/klab-service-simulator/tests/test_input_workflow.py).
+   `CommitInspector(context).inspect(commit_id)` reads native reports; `fetch_provenance(observation)`
+   reads partial lineage. `AcceptedDocuments(..., allow_experimental=True)` conditional
+   publication and `read_notifications(..., allow_experimental=True)` durable cursors
+   are explicitly **proposed** APIs, not native fallbacks.
+3. **Expected Java behavior:** Resources import/schema/ADD/project-lock and Runtime
+   GET `/api/v1/commit?id=...` already exist. Native principal-shared project locks
+   are not editor revision fences. Temporary commit reports/transient hints do not
+   imply durable full history, contiguous revisions or gap-free replay.
+4. **Actual Java evidence:** Resources `delete(..., RESOURCE, ...)` lacks a supported
+   branch in audited source; `ResourcesKBox.deleteResource` is internal, not an
+   authorized remote cleanup API. No destructive test was attempted. Generic
+   conditional accepted-source publication and durable lineage/replay remain proposals;
+   complete native workflow **NOT_RUN**. Local SHA256 manifests are not Java commits.
+5. **Reproduction:** per-ID modes for 0002/0009/0005/0016. Native existing-API candidate:
+   `python -m pytest -q -o addopts= -m live python-client/tests/functional/test_commits.py`.
+   Needs `scientist.json`, approved `commit-inspection.json` with native build,
+   Runtime/context/commit IDs and exact expected asset/link groups. This is read-only
+   cache compatibility, not a full-history or publication test. Imported resources
+   additionally need explicit disposable/retained-resource custody before upload.
+6. **Root cause / uncertainty:** `ResourcesProvider.delete` TODO RESOURCE;
+   source admission/lock semantics in `WorkspaceManager`; `DigitalTwinImpl.getCommit`
+   uses a source-configured 200-entry/10-minute-after-access cache—not a deployed promise.
+7. **Recommended Java-side action:** Resources owner **document supported cleanup or
+   retention and accepted-source update/publication usage**. Runtime owner **document
+   authoritative commit/snapshot/retention and resync semantics**. Identify an existing
+   equivalent before agreeing any simulator-derived CAS or cursor protocol.
+8. **Acceptance test:** imported identity/hash matches selected input and recorded
+   native lineage; foreign cleanup is denied. Two editors cannot silently overwrite
+   an agreed revision. Two readers recover committed state or explicitly resync on
+   expiry/gaps; unavailable groups are not converted into empty successful history.
+9. **Traceability:** 0002/0009/0005/0016; RC-P4.3/P4.4, RC-P3.1/P3.4,
+   CAP-10/11/13/14; [#126](https://github.com/integratedmodelling/klab-services/issues/126),
+   [#129](https://github.com/integratedmodelling/klab-services/issues/129).
+
+## Platform contracts
+
+1. **User-visible goal:** optionally compose live twins, contribute a Python worker
+   or serialize a plan—without disguising proposed platform behavior as a Java bug.
+2. **Python interaction:** [copied composition SDK workflow](../../developer-tools/klab-service-simulator/tests/test_public_copied_composition.py)
+   is not live federation. [Worker SDK workflow](../../developer-tools/klab-service-simulator/tests/test_worker_vertical.py)
+   uses a separate proposed backend. `client.resolver.encode_dataflow(dataflow)`
+   currently raises `UnsupportedOperationError` before HTTP, deliberately.
+3. **Expected Java behavior:** only agreed supported operations. `attach_context`
+   is available; native Resources contextualization is not automatically a remote
+   computation-worker ABI; Resolver service encoding is not portable plan replay.
+4. **Actual Java evidence:** `ClientContextScope.connect` and `ServiceContextScope.connect`
+   return null. `ResolverClient.encodeDataflow` returns null while `ResolverService.encodeDataflow`
+   implements encoding. These are **source-scoped client boundaries**, not claims
+   that all federation or encoding is absent. Native worker registration/lease ABI
+   and all three complete native workflows are **NOT_RUN** here.
+5. **Reproduction:** per-ID modes for 0007/0017/0018. For 0018:
+   `python -m pytest -q developer-tools/java-gap-governance/tests/test_encoder_source.py python-client/tests/unit/test_client.py::test_explicit_unsupported_and_unconfigured_methods`.
+   This checks source and honest Python refusal, not native encoding. No maintained
+   live-composition/worker/encoder producer fixture is currently packaged.
+6. **Root cause / uncertainty:** established stubs versus unspecified external
+   operation/identity/ABI contracts. Existing attachments and copied snapshots are
+   narrower alternatives, not evidence of migration/failover or live subscriptions.
+7. **Recommended Java-side action:** Ferdinando/platform owner **choose and document
+   the product contract**, supported alternative or intentional non-support. Only
+   then request a connect implementation, external encoder transport or worker ABI;
+   do not implement the simulator's experimental routes by default.
+8. **Acceptance test:** approved two-twin fixture preserves independent ownership,
+   revocation and C-only disposal; worker stale leases/cancellation cannot publish
+   partial output; encoder matches a maintained exact dataflow oracle. Tests must
+   distinguish native results from synthetic/reference behavior and capture cleanup.
+9. **Traceability:** 0007/0017/0018, CAP-03/17, RC-P0/P5;
+   [#124](https://github.com/integratedmodelling/klab-services/issues/124),
+   [#127](https://github.com/integratedmodelling/klab-services/issues/127).
+
+## Questions for Ferdinando
+
+* **Startup/observation:** what exact Engine/Modeler startup, service advertisement,
+  authority, model-registration and root/focus sequence does staging use? Please
+  provide producing service/component commits and the supported external SDK/DTO sequence.
+* **Runnable staging:** can you provide a command invoking `resolve_quality`,
+  `storage_views` and `monthly_process`, approved dependencies/resources/rights and
+  expected assertions? Source is accessible at
+  [0de15fbafab988455de87edd7d4581a7c22000ac](https://github.com/integratedmodelling/klab.staging.vxii/tree/0de15fbafab988455de87edd7d4581a7c22000ac).
+  It initializes terrestrial regions, explicit namespace/project, storage curves and
+  mm factor 1000, and checks 12 monthly transitions/relative −10 m. Which of these
+  are supported through external HTTP clients rather than local Inspector calls?
+* **Coverage:** does that maintained scenario also verify snapshots/revisions,
+  cancellation, cross-principal ownership and worker execution, or only a subset?
+* **Proposals:** for each proposal below, is there an equivalent Java API? Please
+  give method/path, DTO, auth/scope and an executable fixture; otherwise approve,
+  narrow or reject the proposed capability before implementation.
+* **Stability:** which native contracts/build combinations are intended to be stable
+  for external Python clients? Which behaviors should remain explicitly unsupported?
+
+## Remaining inventory and reproduction crosswalk
+
+Each stable record occurs once below. Full reproductions retain every original
+roadmap/scenario/test link and historical receipt. **Current native execution is
+REAL_NOT_RUN for all 18.** Simulator status is SIMULATOR_PASS for 0001–0017 and
+SIMULATOR_NOT_IMPLEMENTED for 0018 (a source-only guard passes). A simulator pass
+does not prove a Java defect or Java parity.
+Priorities express workflow impact: P0 observed execution blocker, P1 native
+compatibility/usage decision, P2 broader reference assumptions, P3 optional platform extension.
+
+Engineering classifications are recomputed from today's evidence: **2 historically
+reproduced native failures, 4 source-scoped gaps, 6 proposals, 5 native-test cases,
+1 environment/fixture case**. The index preserves the older native-status/evidence
+axes separately. In particular, 0010's historical unit-defect bytes are not erased;
+its producing transaction still needs verification. 0011 is a legacy-fixture/setup
+decision, not a request to change current Java reasoning or rewrite ontologies.
+
+|ID|Short name|Classification|Priority|Native evidence|Simulator/public SDK test|Next owner/action|Full reproduction|
+|---|---|---|---|---|---|---|---|
+|<a id="java-gap-0001"></a>JAVA-GAP-0001|Authentic elevation hits null scanner|REPRODUCED_JAVA_FAILURE|P0|Historical Job 9/stack; current unknown|[400-cell delivery](../../developer-tools/klab-service-simulator/tests/test_vertical.py)|Resources/geospatial: recover fixture; fix or identify correction|[0001](reproductions/JAVA-GAP-0001.md)|
+|<a id="java-gap-0010"></a>JAVA-GAP-0010|Verify native GeoTIFF unit loss|REPRODUCED_JAVA_FAILURE|P1|Pinned export report, public producer and native bytes; current unknown|[Artifact check](../../developer-tools/java-gap-governance/tests/test_native_export_capture.py)|Geospatial/operator: port producer, provide official tuple and retest|[0010](reproductions/JAVA-GAP-0010.md)|
+|<a id="java-gap-0015"></a>JAVA-GAP-0015|Production identity and permissions|NATIVE_TEST_REQUIRED|P1|Historical slices, not production matrix|[Shared reads](../../developer-tools/klab-service-simulator/tests/test_shared_access.py)|Operator/Engine: provide supported principal/scope fixture|[0015](reproductions/JAVA-GAP-0015.md)|
+|<a id="java-gap-0004"></a>JAVA-GAP-0004|Retained Job and restart semantics|NATIVE_TEST_REQUIRED|P1|Completed restoration narrower than continuation|[Recovery](../../developer-tools/klab-service-simulator/tests/test_durable_recovery.py)|Runtime: document retention; approve owned restart fixture|[0004](reproductions/JAVA-GAP-0004.md)|
+|<a id="java-gap-0012"></a>JAVA-GAP-0012|Deployed currentness after source fix|NATIVE_TEST_REQUIRED|P1|Merged #148; paired deployment unverified|[Refresh](../../developer-tools/klab-service-simulator/tests/test_partial_refresh.py)|Runtime: exercise corrected paired-build matrix|[0012](reproductions/JAVA-GAP-0012.md)|
+|<a id="java-gap-0003"></a>JAVA-GAP-0003|Candidate discovery deployment|NATIVE_TEST_REQUIRED|P1|Old installation lacks advertisement; source API exists|[Candidates](../../developer-tools/klab-service-simulator/tests/test_model_candidates.py)|Resources: provide protocol-1 deployment/visibility fixture|[0003](reproductions/JAVA-GAP-0003.md)|
+|<a id="java-gap-0011"></a>JAVA-GAP-0011|Legacy worldview fixture setup|ENVIRONMENT_SETUP|P1|ODO/source negatives and absent authority descriptors|[Validation](../../developer-tools/klab-service-simulator/tests/test_source_validation.py)|Fixture owner: version fixture/providers, preserve old oracle|[0011](reproductions/JAVA-GAP-0011.md)|
+|<a id="java-gap-0002"></a>JAVA-GAP-0002|Owned resource cleanup|SOURCE_CONFIRMED_CONTRACT_GAP|P1|Remote delete branch lacks RESOURCE; no destructive probe|[Import](../../developer-tools/klab-service-simulator/tests/test_resource_imports.py)|Resources: document delete/retention or implement scoped cleanup|[0002](reproductions/JAVA-GAP-0002.md)|
+|<a id="java-gap-0006"></a>JAVA-GAP-0006|Remote bounded blocks and leases|SOURCE_CONFIRMED_CONTRACT_GAP|P1|Point controller, internal plans; remote lease not established|[Read plans](../../developer-tools/klab-service-simulator/tests/test_read_plans.py)|Storage: show export equivalent before agreeing new transport|[0006](reproductions/JAVA-GAP-0006.md)|
+|<a id="java-gap-0014"></a>JAVA-GAP-0014|Scientific mapping and snapshots|CLIENT_CONTRACT_PROPOSAL|P1|Native staging source, unmatched external tuple|[Scientific adapters](../../developer-tools/klab-service-simulator/tests/test_scientific_adapters.py)|Storage/geospatial: provide matching descriptors and oracle|[0014](reproductions/JAVA-GAP-0014.md)|
+|<a id="java-gap-0008"></a>JAVA-GAP-0008|Native managed agent acceptance|NATIVE_TEST_REQUIRED|P1|Java lifecycle/wire exists; complete disposal unverified|[Managed behaviors](../../developer-tools/klab-service-simulator/tests/test_managed_behavior_workflow.py)|Runtime/operator: broker/incarnation and disposal fixture|[0008](reproductions/JAVA-GAP-0008.md)|
+|<a id="java-gap-0009"></a>JAVA-GAP-0009|Accepted-source revision safety|CLIENT_CONTRACT_PROPOSAL|P1|Native ADD/locks differ from reference CAS publication|[Accepted documents](../../developer-tools/klab-service-simulator/tests/test_accepted_documents.py)|Resources: document supported update/admission semantics|[0009](reproductions/JAVA-GAP-0009.md)|
+|<a id="java-gap-0005"></a>JAVA-GAP-0005|Durable event recovery|CLIENT_CONTRACT_PROPOSAL|P1|Transient native hints, no agreed durable cursor|[Notifications](../../developer-tools/klab-service-simulator/tests/test_durable_notifications.py)|Runtime: existing resync usage or agreed replay contract|[0005](reproductions/JAVA-GAP-0005.md)|
+|<a id="java-gap-0016"></a>JAVA-GAP-0016|Committed lineage and revisions|CLIENT_CONTRACT_PROPOSAL|P1|Native commit cache exists, not full durable history|[Commit reads](../../developer-tools/klab-service-simulator/tests/test_commits.py)|Runtime: identify snapshot/history/retention authority|[0016](reproductions/JAVA-GAP-0016.md)|
+|<a id="java-gap-0013"></a>JAVA-GAP-0013|Finite semantic/admission assumptions|CLIENT_CONTRACT_PROPOSAL|P2|Simulator finite answers are not Java requirements|[SDK vertical workflow](../../developer-tools/klab-service-simulator/tests/test_vertical.py)|Ferdinando: map supported staging admission/selection sequence|[0013](reproductions/JAVA-GAP-0013.md)|
+|<a id="java-gap-0007"></a>JAVA-GAP-0007|Live twin composition|SOURCE_CONFIRMED_CONTRACT_GAP|P3|Connect stubs; attach/copy are narrower alternatives|[Copied composition](../../developer-tools/klab-service-simulator/tests/test_public_copied_composition.py)|Platform: choose operation; document equivalent or implement|[0007](reproductions/JAVA-GAP-0007.md)|
+|<a id="java-gap-0017"></a>JAVA-GAP-0017|Computation-worker backend|CLIENT_CONTRACT_PROPOSAL|P3|No maintained native computation-worker ABI established|[Worker](../../developer-tools/klab-service-simulator/tests/test_worker_vertical.py)|Platform: select role/ABI and deployment fixture; optional extension|[0017](reproductions/JAVA-GAP-0017.md)|
+|<a id="java-gap-0018"></a>JAVA-GAP-0018|Resolver client encoder boundary|SOURCE_CONFIRMED_CONTRACT_GAP|P3|Client null stub; service implementation exists|[Source guard](../../developer-tools/java-gap-governance/tests/test_encoder_source.py)|Resolver: supported transport/fixture or intentional non-support|[0018](reproductions/JAVA-GAP-0018.md)|
+
+## Issue reconciliation
+
+Authenticated read-only review refreshed **2026-11-08 UTC**; owners/labels unchanged.
+No unresolved implementation issue is closed by Python/simulator delivery.
+
+|Tracker|Current state|Preserved obligation / disposition|
+|---|---|---|
+|[#89](https://github.com/integratedmodelling/klab-services/issues/89)|OPEN|Full deployed identity/shared-session matrix; keep open (0015/0004)|
+|[#123](https://github.com/integratedmodelling/klab-services/issues/123)|OPEN|Remote scan/block/slice authority; keep open (0006/0014)|
+|[#124](https://github.com/integratedmodelling/klab-services/issues/124)|OPEN|Live composition/migration product contract; keep open (0007)|
+|[#125](https://github.com/integratedmodelling/klab-services/issues/125)|OPEN|Native managed lifecycle/disposal acceptance; preview-only Python claim is obsolete (0008)|
+|[#126](https://github.com/integratedmodelling/klab-services/issues/126)|OPEN|Native durable replay/resync; keep open (0005/0016)|
+|[#127](https://github.com/integratedmodelling/klab-services/issues/127)|OPEN|Native worker backend/ABI/deployment; separate experimental worker is delivered (0017)|
+|[#129](https://github.com/integratedmodelling/klab-services/issues/129)|OPEN|Supported tuples/release decisions, not blanket Java defects; keep open|
+|[#130](https://github.com/integratedmodelling/klab-services/issues/130)|OPEN|PaL operational inputs/oracles/rights; no research replication or closure authorized|
+|[#144](https://github.com/integratedmodelling/klab-services/issues/144)|OPEN|Paired-runtime acceptance after merged #148; keep open (0012)|
+|[#193](https://github.com/integratedmodelling/klab-services/issues/193)|OPEN|Legacy fixture/authority compatibility, not failed numerical science (0011)|
+|[geospatial #10](https://github.com/integratedmodelling/klab.component.geospatial/issues/10)|OPEN|Official unit-preserving native export, unchanged scientific bytes (0010)|
+|[#87](https://github.com/integratedmodelling/klab-services/issues/87)|CLOSED|Typed requests delivered; preserve closure|
+|[#88](https://github.com/integratedmodelling/klab-services/issues/88)|CLOSED|Saved handles delivered; preserve closure|
+|[#91](https://github.com/integratedmodelling/klab-services/issues/91)|CLOSED|Streaming client delivered; component correction remains separate|
+|[#142](https://github.com/integratedmodelling/klab-services/issues/142)|CLOSED|Historical HTTP expectation correction, not current missing API|
+|[#145](https://github.com/integratedmodelling/klab-services/issues/145)|CLOSED|Historical Java-only test setup correction|
+|[#147](https://github.com/integratedmodelling/klab-services/issues/147)|CLOSED|Historical reactor inventory, not proof every failure is a product defect|
+
+PR #128's merged origin-affinity correction is already discussed above; it is not
+a missing issue between #127 and #129. Issue authors are not automatically Java owners.
+
+## Local setup incidents and evidence appendix
+
+**RESOLVED_LOCALLY, not open Java API requests:** graceful Modeler shutdown/startup;
+accepted imod generation 2 with **26 ontologies**; installed geospatial KAR;
+registered authentic DEM resource/model; provisioned Neo4j Spatial; successful
+context-specific Resolver selection. Scanner execution failed **after** those gates.
+Retain this useful installation for diagnosis; no repair/removal is requested here.
+Legacy ODO fixture drift (0011) remains separate and must preserve its old hash and negatives.
+That fixture expects ODO hash prefix `496bc663…`, versus `5c020dac…` after the
+additive `impliesPredicate` change; its 243-file source and TAXA/CHEM authority
+requirements need a versioned fixture decision, not an unsolicited ontology rewrite.
+
+Sources reviewed: complete A+B+C planning guide/acceptance map, final execution
+ledger/package reconciliation, all 18 registry/reproduction records, current issues,
+Java controller/client/storage/Engine contracts and public packaged SDK call paths.
+Java source audit baseline: `9db975b21146093a7962d29e28345a762519befd`.
+No live installed OpenAPI/service DTO refresh or Java execution was performed for
+this rewrite; maintained DTO/build equivalence is a requested fixture, not assumed.
+Source locations: [Runtime controller](../../klab.services.runtime.server/src/main/java/org/integratedmodelling/klab/services/runtime/server/controllers/RuntimeServerController.java),
+[ResourcesProvider](../../klab.services.resources/src/main/java/org/integratedmodelling/klab/services/resources/ResourcesProvider.java),
+[DigitalTwinImpl](../../klab.services.runtime/src/main/java/org/integratedmodelling/klab/services/runtime/digitaltwin/DigitalTwinImpl.java),
+[Resolver client](../../klab.core.common/src/main/java/org/integratedmodelling/common/services/client/ResolverClient.java)
+and [service](../../klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/ResolverService.java).
+
+[Full sanitized prior pass/failure receipts](evidence/consolidation-20261108/receipt-index.json)
+preserve simulator/native separation; [live issue metadata](live-issue-review.json)
+preserves exact titles/states/owners/labels and body/comment hashes. No old gap ID,
+alias, failed receipt or original acceptance obligation has been dropped. Earlier
+versions remain in Git history. `gaps.yaml` is the synchronized evidence index, not
+a substitute for this engineering handoff. Historical source fixes, including
+selected-query [#191](https://github.com/integratedmodelling/klab-services/pull/191),
+do not establish all native workflows passed.
+
+## Exit criteria and handoff checklist
+
+- [ ] [Numerical execution](#numerical-execution): identify supported staging/build
+  sequence and package the original 400-cell reproducer; fix scanner only if still failing.
+- [ ] [Scientific data](#scientific-data): reproduce unit export on an official tuple;
+  document existing external slice/export coverage before approving a new block API.
+- [ ] [Ownership/lifecycle](#ownership-and-lifecycle): supply maintained Engine/principal
+  recipe and approved native reconnect/cancellation/disposal fixture.
+- [ ] [Inputs/provenance](#inputs-and-provenance): give supported cleanup, revision,
+  commit-history and resync contracts, or explicitly mark narrower supported scope.
+- [ ] [Platform contracts](#platform-contracts): accept, narrow or reject optional
+  composition/worker/encoding requirements with API and fixture references.
+
+For each decision, record owner/build/fixture and the exact after-change assertion;
+retain Python→simulator and Python→native results separately. Only an exact native
+retest of the original failure warrants JAVA_FIXED_VERIFIED. Review/delivery remains
+in [PR #320](https://github.com/integratedmodelling/klab-services/pull/320); pending
+maintainer review is pending, not completion or permission for further Java development.

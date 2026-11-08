@@ -91,6 +91,18 @@ def validate(registry=None, audit=None, issues=None):
     scenario_ids = {case["id"] for case in index["cases"]}
     covered = set()
     for gap in gaps:
+        for field in ('handoff_title', 'handoff_classification', 'handoff_workstream', 'native_prerequisite', 'native_acceptance'):
+            if not gap.get(field):
+                raise ValueError('Missing actionable engineering handoff field: ' + field)
+        category = gap['handoff_classification']
+        if category == 'JAVA_FIXED_VERIFIED' and (gap['native_execution_status'] != 'REAL_PASS'
+                or gap['native_status'] != 'NATIVE_WORKS_VERIFIED'):
+            raise ValueError('Engineering handoff cannot declare a Java fix without original native pass evidence')
+        if category == 'REPRODUCED_JAVA_FAILURE' and (gap['native_status'] != 'CONFIRMED_DEFECT'
+                or 'REAL_FAIL' not in (gap['historical_real_result'], gap['current_real_result'])):
+            raise ValueError('Engineering failure requires historical or current native failure evidence')
+        if category == 'SOURCE_CONFIRMED_CONTRACT_GAP' and gap['native_status'] != 'CONFIRMED_MISSING_API':
+            raise ValueError('Source-scoped handoff finding must retain source-confirmed native classification')
         for field in ("native_status", "simulator_status", "native_execution_status"):
             if field not in gap:
                 raise ValueError("Missing independent status dimension: " + field)
@@ -202,40 +214,55 @@ def canonical_check(registry, text=None):
     """Validate the human-authored canonical file; never regenerate its prose."""
     path = DATA / "JAVA_GAPS_FOR_FERDINANDO.md"
     text = path.read_text(encoding="utf-8") if text is None else text
-    headings = re.findall(r"^### (JAVA-GAP-[0-9]{4})$", text, re.M)
-    if Counter(headings) != Counter(gap["id"] for gap in registry["gaps"]):
+    rows = re.findall(r'^\|<a id="(java-gap-[0-9]{4})"></a>(JAVA-GAP-[0-9]{4})\|([^\n]+)\|$', text, re.M)
+    ids = [row[1] for row in rows]
+    if Counter(ids) != Counter(gap["id"] for gap in registry["gaps"]):
         raise ValueError("Canonical Markdown IDs must match the complete register exactly once")
-    sections = dict(re.findall(r"^### (JAVA-GAP-[0-9]{4})\n(.*?)(?=^### JAVA-GAP-|^## |\Z)", text, re.M | re.S))
-    labels = {"native_status": "Native status", "simulator_status": "Simulator status",
-              "native_execution_status": "Native execution status"}
-    summary_counts = dict((status, int(count)) for status, count in
-                          re.findall(r"^\|(CONFIRMED_DEFECT|CONFIRMED_MISSING_API|CONTRACT_PROVISIONAL|NOT_TESTED|NATIVE_WORKS_VERIFIED|RESOLVED_SETUP|SUPERSEDED)\|([0-9]+)\|$", text, re.M))
-    expected_counts = Counter(gap["native_status"] for gap in registry["gaps"])
-    if not summary_counts or any(expected_counts[key] != value for key, value in summary_counts.items()) or any(key not in summary_counts for key in expected_counts):
-        raise ValueError("Canonical native summary counts drift")
+    inventory = {gap_id: (anchor, content.split('|')) for anchor, gap_id, content in rows}
+    workstreams = {'numerical-execution': 'Numerical execution', 'scientific-data': 'Scientific data',
+                  'ownership-and-lifecycle': 'Ownership and lifecycle', 'inputs-and-provenance': 'Inputs and provenance',
+                  'platform-contracts': 'Platform contracts'}
+    sections = dict(re.findall(r'^## ([^\n]+)\n(.*?)(?=^## |\Z)', text, re.M | re.S))
+    labels = ['User-visible goal', 'Python interaction', 'Expected Java behavior', 'Actual Java evidence',
+              'Reproduction', 'Root cause / uncertainty', 'Recommended Java-side action', 'Acceptance test', 'Traceability']
+    for heading in workstreams.values():
+        if heading not in sections:
+            raise ValueError('Missing engineering workflow: ' + heading)
+        actual = re.findall(r'^([1-9])\. \*\*([^*]+):\*\*', sections[heading], re.M)
+        if actual != [(str(n), label) for n, label in enumerate(labels, 1)]:
+            raise ValueError('Workflow must contain the nine actionable subsections: ' + heading)
+    summary = re.search(r'\*\*(\d+) historically\s+reproduced native failures, (\d+) source-scoped gaps, (\d+) proposals, (\d+) native-test cases,\s+(\d+) environment/fixture case\*\*', text)
+    categories = ['REPRODUCED_JAVA_FAILURE', 'SOURCE_CONFIRMED_CONTRACT_GAP', 'CLIENT_CONTRACT_PROPOSAL',
+                  'NATIVE_TEST_REQUIRED', 'ENVIRONMENT_SETUP']
+    expected_counts = Counter(gap['handoff_classification'] for gap in registry['gaps'])
+    if (not summary or list(map(int, summary.groups())) != [expected_counts[c] for c in categories]
+            or set(expected_counts) - set(categories)):
+        raise ValueError('Canonical engineering summary counts drift')
     for gap in registry["gaps"]:
-        section = sections[gap["id"]]
-        if "**Title:** " + gap["title"] + "\n" not in section:
+        anchor, columns = inventory[gap['id']]
+        if anchor != gap['id'].lower() or len(columns) != 7:
+            raise ValueError('Malformed canonical reproduction row: ' + gap['id'])
+        if columns[0] != gap['handoff_title']:
             raise ValueError("Canonical title drift: " + gap["id"])
-        if "**Scope:** " + gap["subsystem"] + " — " not in section:
-            raise ValueError("Canonical scope drift: " + gap["id"])
-        for field, label in labels.items():
-            values = re.findall(r"\*\*" + label + r":\*\* ([A-Z_]+)", section)
-            if values != [gap[field]]:
-                raise ValueError("Canonical status drift: " + gap["id"] + " " + field)
-        for requirement in gap["requirement_ids"]:
-            if requirement not in section:
-                raise ValueError("Canonical requirement omitted: " + requirement)
-        for issue in gap["original_issues"]:
-            if issue not in section:
+        if columns[1] != gap['handoff_classification'] or columns[2] != gap.get('handoff_priority', gap['priority']):
+            raise ValueError('Canonical classification/priority drift: ' + gap['id'])
+        for issue in gap['original_issues']:
+            if issue not in text:
                 raise ValueError("Canonical issue omitted: " + issue)
-        for scenario in gap["simulator_scenario_refs"]:
-            if scenario not in section:
-                raise ValueError("Canonical simulator scenario omitted: " + scenario)
-        if "--gap " + gap["id"] not in section or "Native blocker:" not in section:
-            raise ValueError("Canonical executable command/blocker omitted: " + gap["id"])
+        heading = workstreams[gap['handoff_workstream']]
+        if gap['id'][-4:] not in sections[heading]:
+            raise ValueError('Workflow does not trace its stable record: ' + gap['id'])
+        repro = 'reproductions/' + gap['id'] + '.md'
+        if '(' + repro + ')' not in columns[6] or not columns[4].startswith('[') or not columns[5].strip():
+            raise ValueError('Missing runnable evidence/reproduction/owner action: ' + gap['id'])
+        if not gap.get('native_prerequisite'):
+            raise ValueError('Missing exact native prerequisite: ' + gap['id'])
+    if ('REAL_NOT_RUN for all 18' not in text or 'SIMULATOR_NOT_IMPLEMENTED for 0018' not in text
+            or 'SIMULATOR_PASS for 0001–0017' not in text):
+        raise ValueError('Canonical current real/simulated provenance omitted')
     anchors = {re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-")
                for heading in re.findall(r"^#{1,6} (.+)$", text, re.M)}
+    anchors.update(re.findall(r'<a id="([^"]+)"></a>', text))
     for target in re.findall(r"\[[^\]]*\]\(([^)]+)\)", text):
         if target.startswith("https://"):
             continue
@@ -255,11 +282,10 @@ def canonical_check(registry, text=None):
     live_path = DATA / "live-issue-review.json"
     if live_path.is_file():
         for issue in load(live_path)["issues"]:
-            pattern = (r"\]\(" + re.escape(issue["url"]) + r"\) — "
-                       + re.escape(issue["title"]) + r"\|" + issue["state"] + r"\|")
+            pattern = r'\]\(' + re.escape(issue['url']) + r'\)\|' + issue['state'] + r'\|'
             if not re.search(pattern, text):
-                raise ValueError("Canonical live issue title/state/link drift: " + issue["url"])
-    return {"canonical_records": len(headings)}
+                raise ValueError("Canonical live issue state/link drift: " + issue["url"])
+    return {"canonical_records": len(ids)}
 
 
 def counts(items, field):
@@ -349,6 +375,12 @@ def reproduction_document(gap):
         "Supporting runner/evidence only. The canonical contract, status and inline reproduction are in",
         f"[JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#{gap['id'].lower()}).",
         "Generated from the synchronized index; simulator evidence is not native acceptance.", "",
+        "## Engineering decision and immediate next action", "",
+        f"- Classification: **{gap['handoff_classification']}**; workflow: [{gap['handoff_title']}](../JAVA_GAPS_FOR_FERDINANDO.md#{gap['handoff_workstream']}).",
+        f"- User-impact priority: {gap.get('handoff_priority', gap['priority'])}; Java owner of record: {gap['java_owner']} (do not infer assignment from issue authorship).",
+        "- Required native input / owner action: " + gap['native_prerequisite'],
+        "- Expected after Java change or usage clarification: " + gap['native_acceptance'],
+        "- " + gap.get('handoff_classification_basis', 'Historical observations and source findings retain their original scope; current-build execution is not inferred.'), "",
         "## Classification and affected contract", "",
         f"- Independent status triplet: {gap['native_status']}; {gap['simulator_status']}; {gap['native_execution_status']}.",
         f"- Java: **{gap['java_status']}**; current execution **{gap['current_real_result']}**; historical **{gap['historical_real_result']}**.",
@@ -367,7 +399,8 @@ def reproduction_document(gap):
     lines.extend(f"- `{reference}`" for reference in gap["python_test_refs"])
     lines.extend(["", "## Reproduction commands", "", "From repository root with the test extras installed:", "", "```powershell",
         f"python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap {gap['id']} --output simulated-{gap['id']}.json",
-        f"python developer-tools/java-gap-governance/govern.py contracts --mode real --gap {gap['id']} --output real-{gap['id']}.json", "```", "",
+        f"python developer-tools/java-gap-governance/govern.py contracts --mode real --gap {gap['id']} --output real-{gap['id']}.json",
+        f"python developer-tools/java-gap-governance/native_probe.py --gap {gap['id']} --output preflight-{gap['id']}.json", "```", "",
         "The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.",
         "It is an executable missing-adapter disposition, **not** an actual native test or a simulator fallback.", "",
         "## Required native startup prerequisites and executable test plan", "",
@@ -426,7 +459,10 @@ def contracts(mode, output, selected=None):
     if mode == "real":
         for gap in gaps:
             result["cases"].append({"gap_id": gap["id"], "case_id": gap["contract_case"], "tag": "REAL_NOT_RUN",
-                "reason": "No reviewed pinned real adapter/fixture/authorization; no network operation attempted"})
+                "reason": gap['native_prerequisite'],
+                "executed": "Registry validation and disposition only; no Python-to-Java behavioral request",
+                "not_executed": "Native workflow, scientific oracle, mutation or cleanup",
+                "next_action": 'Supply the named inputs and a reviewed native adapter; no fallback or automatic retry'})
         code = 3
     else:
         references = sorted({reference for gap in gaps for reference in gap["python_test_refs"]})

@@ -4,6 +4,14 @@ Supporting runner/evidence only. The canonical contract, status and inline repro
 [JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0010).
 Generated from the synchronized index; simulator evidence is not native acceptance.
 
+## Engineering decision and immediate next action
+
+- Classification: **REPRODUCED_JAVA_FAILURE**; workflow: [Verify native GeoTIFF unit loss](../JAVA_GAPS_FOR_FERDINANDO.md#scientific-data).
+- User-impact priority: P1; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Operator must serve the full public python.fixture project from fixture_hub.py at ced45f17691ce6a78b6a489ecca4a319564c69be with worldview d6c37c0b82afadd004d94bc5311983b66677532c and the pinned or maintained official geospatial tuple. Review the original issue10 producer for current SDK signatures and approved cleanup; capture fresh request/Job IDs/time. Retained TIFF inspection alone is not a new exporter transaction.
+- Expected after Java change or usage clarification: A newly captured native export on an official pinned component embeds measurement unit m while retaining the independently expected values, transform, CRS, masks and precision; inspect bytes without Python metadata repair and record request/time/build.
+- Fresh issue review recovered the public original producing sequence, Python candidate, worldview and full fixture_hub.py project at ced45f17691ce6a78b6a489ecca4a319564c69be. Together with retained native TIFF bytes this supports a historically reproduced native export failure. Exact original execution timestamp/raw transaction IDs and current-build execution remain unverified; no fresh native pass is inferred.
+
 ## Classification and affected contract
 
 - Independent status triplet: CONFIRMED_DEFECT; SIMULATOR_PASS; REAL_NOT_RUN.
@@ -45,6 +53,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0010 --output simulated-JAVA-GAP-0010.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0010 --output real-JAVA-GAP-0010.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0010 --output preflight-JAVA-GAP-0010.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.
@@ -68,3 +77,4 @@ Original reproducer/evidence: https://github.com/integratedmodelling/klab.compon
 Keep upstream product bug open. Simulator success and a separately corrected local component do not verify an official published fix; values/spatial/mask/precision must stay unchanged.
 
 - https://github.com/integratedmodelling/klab.component.geospatial/issues/10
+- https://github.com/integratedmodelling/klab-services/blob/ced45f17691ce6a78b6a489ecca4a319564c69be/python-client/tools/fixture_hub.py

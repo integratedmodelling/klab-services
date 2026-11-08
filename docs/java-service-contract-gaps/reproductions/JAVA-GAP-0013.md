@@ -4,6 +4,14 @@ Supporting runner/evidence only. The canonical contract, status and inline repro
 [JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0013).
 Generated from the synchronized index; simulator evidence is not native acceptance.
 
+## Engineering decision and immediate next action
+
+- Classification: **CLIENT_CONTRACT_PROPOSAL**; workflow: [Finite semantic/admission assumptions](../JAVA_GAPS_FOR_FERDINANDO.md#numerical-execution).
+- User-impact priority: P2; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Ferdinando must map staging startup, semantic admission, selection and provider inputs to a supported external SDK sequence with independent oracles. Finite simulator parser/scheduler answers are not requirements for Java to implement another reasoning engine.
+- Expected after Java change or usage clarification: A maintained external-client sequence demonstrates the agreed native admission, model selection and provider results with independent oracles; preserve unsupported semantics rather than demanding poll timing or finite simulator answers match Java.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
+
 ## Classification and affected contract
 
 - Independent status triplet: CONTRACT_PROVISIONAL; SIMULATOR_PASS; REAL_NOT_RUN.
@@ -58,6 +66,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0013 --output simulated-JAVA-GAP-0013.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0013 --output real-JAVA-GAP-0013.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0013 --output preflight-JAVA-GAP-0013.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

@@ -4,6 +4,14 @@ Supporting runner/evidence only. The canonical contract, status and inline repro
 [JAVA_GAPS_FOR_FERDINANDO.md](../JAVA_GAPS_FOR_FERDINANDO.md#java-gap-0018).
 Generated from the synchronized index; simulator evidence is not native acceptance.
 
+## Engineering decision and immediate next action
+
+- Classification: **SOURCE_CONFIRMED_CONTRACT_GAP**; workflow: [Resolver client encoder boundary](../JAVA_GAPS_FOR_FERDINANDO.md#platform-contracts).
+- User-impact priority: P3; Java owner of record: UNASSIGNED (do not infer assignment from issue authorship).
+- Required native input / owner action: Resolver maintainer must decide whether external dataflow encoding is supported, identify an existing transport/DTO or document intentional non-support, and supply a native client/dataflow oracle. ResolverService encoding already exists; only the client stub is established missing.
+- Expected after Java change or usage clarification: Either document intentional external non-support with zero-HTTP Python refusal, or exercise the maintained client transport on a declared Dataflow fixture and compare its exact native encoding/error oracle. Service encoding existence alone does not supply client transport.
+- Historical observations and source findings retain their original scope; current-build execution is not inferred.
+
 ## Classification and affected contract
 
 - Independent status triplet: CONFIRMED_MISSING_API; SIMULATOR_NOT_IMPLEMENTED; REAL_NOT_RUN.
@@ -44,6 +52,7 @@ From repository root with the test extras installed:
 ```powershell
 python developer-tools/java-gap-governance/govern.py contracts --mode simulated --gap JAVA-GAP-0018 --output simulated-JAVA-GAP-0018.json
 python developer-tools/java-gap-governance/govern.py contracts --mode real --gap JAVA-GAP-0018 --output real-JAVA-GAP-0018.json
+python developer-tools/java-gap-governance/native_probe.py --gap JAVA-GAP-0018 --output preflight-JAVA-GAP-0018.json
 ```
 
 The real-mode command intentionally records REAL_NOT_RUN and exits3 without network calls.

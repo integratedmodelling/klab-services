@@ -23,6 +23,9 @@ def test_preflight_all_registered_ids_is_repository_only():
         result = probe.preflight(row['id'])
         assert result['native_execution_status'] == 'REAL_NOT_RUN'
         assert result['files_sha256'] and result['fallbacks'] == 0
+        assert result['reason'] and result['next_action']
+        assert 'custody/hash checks only' in result['executed']
+        assert 'SDK-to-Java' in result['not_executed']
 
 
 @pytest.mark.parametrize('url', ['http://example.org', 'https://user:secret@example.org',

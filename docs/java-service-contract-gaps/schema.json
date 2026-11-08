@@ -24,6 +24,13 @@
       "type": "object", "additionalProperties": false,
       "required": ["id", "legacy_ids", "title", "subsystem", "java_component", "api_contract", "requirement_ids", "original_issues", "python_test_refs", "simulator_scenario_refs", "real_java_test_refs", "reproducer_ref", "observed_java_behavior", "simulator_behavior", "contract_confidence", "java_status", "python_status", "priority", "java_owner", "first_observed", "last_verified", "last_verified_basis", "source_build_or_commit", "resolution_criteria", "links", "notes", "lifecycle", "historical_real_result", "current_real_result", "real_command", "contract_case"],
       "properties": {
+        "handoff_title": {"$ref": "#/$defs/text"},
+        "handoff_priority": {"enum": ["P0", "P1", "P2", "P3"]},
+        "handoff_classification": {"enum": ["REPRODUCED_JAVA_FAILURE", "SOURCE_CONFIRMED_CONTRACT_GAP", "CLIENT_CONTRACT_PROPOSAL", "NATIVE_TEST_REQUIRED", "ENVIRONMENT_SETUP", "RESOLVED_LOCALLY", "JAVA_FIXED_VERIFIED"]},
+        "handoff_workstream": {"enum": ["numerical-execution", "scientific-data", "ownership-and-lifecycle", "inputs-and-provenance", "platform-contracts"]},
+        "handoff_classification_basis": {"$ref": "#/$defs/text"},
+        "native_prerequisite": {"$ref": "#/$defs/text"},
+        "native_acceptance": {"$ref": "#/$defs/text"},
         "native_status": {"enum": ["CONFIRMED_DEFECT", "CONFIRMED_MISSING_API", "CONTRACT_PROVISIONAL", "NOT_TESTED", "NATIVE_WORKS_VERIFIED", "RESOLVED_SETUP", "SUPERSEDED"]},
         "simulator_status": {"enum": ["SIMULATOR_PASS", "SIMULATOR_FAIL", "SIMULATOR_NOT_IMPLEMENTED", "SIMULATOR_NOT_TESTED"]},
         "native_execution_status": {"enum": ["REAL_PASS", "REAL_FAIL", "REAL_NOT_RUN", "REAL_BLOCKED"]},
