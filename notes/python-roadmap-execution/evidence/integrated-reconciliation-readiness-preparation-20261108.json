@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "manifest": {
+    "version": 1,
+    "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf",
+    "checks": [
+      {
+        "gate": "offline",
+        "status": "PASS",
+        "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf",
+        "artifact": {
+          "path": "receipt.json",
+          "sha256": "56505f33fbba5b1745529a63a4bf0f0d95418c2052c15dcee727ad2673b507b2"
+        }
+      },
+      {
+        "gate": "coverage",
+        "status": "UNKNOWN",
+        "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf"
+      },
+      {
+        "gate": "core-package",
+        "status": "PASS",
+        "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf",
+        "artifact": {
+          "path": "receipt.json",
+          "sha256": "56505f33fbba5b1745529a63a4bf0f0d95418c2052c15dcee727ad2673b507b2"
+        }
+      },
+      {
+        "gate": "security-failure",
+        "status": "BLOCKED",
+        "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf"
+      },
+      {
+        "gate": "owned-lifecycle",
+        "status": "PASS",
+        "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf",
+        "artifact": {
+          "path": "receipt.json",
+          "sha256": "56505f33fbba5b1745529a63a4bf0f0d95418c2052c15dcee727ad2673b507b2"
+        }
+      },
+      {
+        "gate": "scientific-reference",
+        "status": "PASS",
+        "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf",
+        "artifact": {
+          "path": "receipt.json",
+          "sha256": "56505f33fbba5b1745529a63a4bf0f0d95418c2052c15dcee727ad2673b507b2"
+        }
+      },
+      {
+        "gate": "scale",
+        "status": "BLOCKED",
+        "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf"
+      },
+      {
+        "gate": "server-compatibility",
+        "status": "BLOCKED",
+        "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf"
+      }
+    ]
+  },
+  "assessment": {
+    "candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf",
+    "eligible_for_review": false,
+    "publication_authorized": false,
+    "checks": [
+      {
+        "gate": "offline",
+        "status": "PASS",
+        "evidence_verified": true
+      },
+      {
+        "gate": "coverage",
+        "status": "UNKNOWN",
+        "evidence_verified": false
+      },
+      {
+        "gate": "core-package",
+        "status": "PASS",
+        "evidence_verified": true
+      },
+      {
+        "gate": "security-failure",
+        "status": "BLOCKED",
+        "evidence_verified": false
+      },
+      {
+        "gate": "owned-lifecycle",
+        "status": "PASS",
+        "evidence_verified": true
+      },
+      {
+        "gate": "scientific-reference",
+        "status": "PASS",
+        "evidence_verified": true
+      },
+      {
+        "gate": "scale",
+        "status": "BLOCKED",
+        "evidence_verified": false
+      },
+      {
+        "gate": "server-compatibility",
+        "status": "BLOCKED",
+        "evidence_verified": false
+      }
+    ],
+    "limit": "File identity and supplied states only; human evidence/scientific review and maintainer release authorization still required"
+  },
+  "cli_exit": 3,
+  "scope": "Premerge package/reference custody only; coverage final-candidate replay and native/scale/security/remote-delivery gates not promoted. Final merged-candidate readiness still owed."
+}

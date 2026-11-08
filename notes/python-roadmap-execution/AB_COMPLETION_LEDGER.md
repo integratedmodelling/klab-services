@@ -1,5 +1,39 @@
 # A+B completion ledger — ongoing campaign
 
+## PR312–313 verified merged; combined candidate and42rowpreparationPASS
+
+Premerge readiness preparation also retains all8gates and returns expectedexit3:
+offline/core-package/owned-lifecycle/scientific-referencePASS are bounded by candidate
+receipt; coverageUNKNOWNawaits finalcandidate replay, security-failure/scale/native
+server-compatibilityBLOCKED. NOTELIGIBLE/publicationfalse; machine hashes/states are
+not independent scientific/human release attestation. Evidence
+integrated-reconciliation-readiness-preparation-20261108.json, no gate removed.
+
+312exact77d3c854ad9d1b35d71b2a375d23e04258f648a5/all91checksSUCCESS merged
+29848b050f434f6c742174e81a9f1340d17abd30 at2026-11-08T00:25:40Z.313exact
+be2a72342040c9675ec070e59bcd9845571b937f/all91checksSUCCESS merged
+0048a771f631f30fb08de525bb390fc050bcdbef at00:27:30Z. Both ordinary merges,
+remote state/local ancestry checkpoints verified; prior failures preserved. First313
+verification refused transient metadata; later CLEAN/allSUCCESS verified before merge,
+no bypass. Delivery receipts whole-tree-type-delivery-20261108.json and
+reviewed-operation-delivery-20261108.json.314–316 remain separate pending deliveries.
+
+Fresh combined premergeb35c065d5 candidate parity71SDK/6worker/37reference modules+
+13assetsPASS; installed5305SDK/38tools/116worker/538reference/39governancePASS, zero
+failures/errors/skips. All42original rows/history and17stable gap custody preserved;
+every required referenced Python/reference function/file has passed exact-byte evidence.
+Seven historical parameter refs require exact JUnit case names in addition to function-
+level trace matches: initial strict-string lookup missed these, retained firstreport;
+corrected parametercustody report matches each exact passing case without claiming
+parameter-specific operation presence. Native refs remainNOTRUN and no finaldispositions.
+
+Evidence integrated-reconciliation-candidate-20261108.json pins artifacts/full groups,
+coverage/raw42rowpreparation/17gapdocs and limitations. All455nonabstract mappings remain
+selected assertion associations, not whole-function/exhaustivefunctional/native proof.
+Next314–316exactCI/ordinarymerge/checkpoint, final mergedcandidate package/type/fullsuite/
+readiness/row review and safe ownedcleanup. No native/service/OSrepair, public release,
+develop promotion or original-row acceptance inferred from this premergepass.
+
 ## Combined candidate verification and row-evidence preparation
 
 PR3161641f65c3 published all455nonabstract associations/130reviews;51abstract remain

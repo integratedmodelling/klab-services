@@ -1,0 +1,3732 @@
+{
+  "version": 1,
+  "state": "COMBINED_PREMERGE_CANDIDATE_PASS_NOT_FINAL_MERGED_CANDIDATE_ACCEPTANCE",
+  "package_candidate": "b35c065d556a349ec1c1cd026bf4718270eebcdf",
+  "package_receipt": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\integrated-reconciliation-candidate-first\\receipt.json",
+    "sha256": "56505f33fbba5b1745529a63a4bf0f0d95418c2052c15dcee727ad2673b507b2"
+  },
+  "artifacts": {
+    "sdk": {
+      "wheel": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\integrated-reconciliation-candidate-first\\sdk-dist\\klab_python_client-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "1acc6da6eaedc51990d980df178e12315477a94b5ae7f58f6da2a9d77483b55a",
+      "sdist": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\integrated-reconciliation-candidate-first\\sdk-dist\\klab_python_client-0.1.0.tar.gz",
+      "sdist_sha256": "742b9ecc1e387b90c96823f3460f493d960835e72549ec53922d8f1ebe64d1f0",
+      "modules": 71,
+      "nonpython_assets_sha256": {}
+    },
+    "worker": {
+      "wheel": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\integrated-reconciliation-candidate-first\\worker-dist\\klab_python_worker-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "82fbeb86b4d0d58844afeed1d7d5da8c488915a1ec993cfe7550be93d436ba49",
+      "sdist": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\integrated-reconciliation-candidate-first\\worker-dist\\klab_python_worker-0.1.0.tar.gz",
+      "sdist_sha256": "1c9059056b53766f3f41f897520aa29a201847c38581c48205a3e57c30ca2d27",
+      "modules": 6,
+      "nonpython_assets_sha256": {}
+    },
+    "simulator": {
+      "wheel": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\integrated-reconciliation-candidate-first\\simulator-dist\\klab_service_simulator-0.1.0-py3-none-any.whl",
+      "wheel_sha256": "53f244c08d64705bf184fbb65996e59c107ea3ad95c4ce46c29379e744fbab55",
+      "sdist": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\integrated-reconciliation-candidate-first\\simulator-dist\\klab_service_simulator-0.1.0.tar.gz",
+      "sdist_sha256": "0f71f35a87c689449eb72d449da007b2aa5d7a4bcf46ba54e1954beeb1b92e23",
+      "modules": 37,
+      "nonpython_assets_sha256": {
+        "klab_simulator/fixtures/provider-avro.json": "12b7727d8bff06103480097b9c2a2f334bb463abc5f05d4697c082b7acb70b86",
+        "klab_simulator/fixtures/replay-cases.json": "21fc00c78be5b48617354e8c4ffa2335c76fa96f7ee460ab4c692129c2582a45",
+        "klab_simulator/fixtures/synthetic-category-codes.json": "8fa1375f77f9e7422a086a7f2004f9e66b09abcab154b7723cfed0e26a086db7",
+        "klab_simulator/fixtures/synthetic-category-codes.tif": "e025556feac60d80c68f3dcd7465948f7a071186a9ff5f377c99b28cbc6eaccb",
+        "klab_simulator/fixtures/synthetic-declared-bands.json": "085d074c774e7d0da4ab36e301930145e3b92c9cdd924b3aa379d526986a386d",
+        "klab_simulator/fixtures/synthetic-declared-bands.tif": "6a41239e3b662ff32d901b80fa41ff9202a03523c27c72aae2e25451349763f0",
+        "klab_simulator/fixtures/synthetic-nonuniform-manifest.json": "5106389400d09e666a2cb563e1e226ab15d338b47fbeafb56a0fa7c8a7f88a3f",
+        "klab_simulator/fixtures/synthetic-nonuniform-native.tif": "f9cbe08df11b4c92f4b8f5691690632b297a6706f30b47ba10a88d726161c8fd",
+        "klab_simulator/fixtures/synthetic-nonuniform-oracle.json": "f0848f723b485547c4b37f725e0e1aed63db1c29c49280481e7bcd0439ac9213",
+        "klab_simulator/fixtures/synthetic-oracle.json": "105292fd06cd2f8a0190d250943a91a47caf5a0d964f399988d5cef0159371cb",
+        "klab_simulator/fixtures/usgs-manifest.json": "637ada784d860503a58863f2a77643c13c1da1f395d0ccd3d94735f9a27860c6",
+        "klab_simulator/fixtures/usgs-native-20x20.tif": "2c9fcd0748b9ef3d8c036a59af5c1419a826ba14262a3a80d089b1d59023fb26",
+        "klab_simulator/fixtures/usgs-oracle.json": "3fe5383b15232a3e09bf5188c9bfef41439d2fbac929970d6b682bf52e580607"
+      }
+    }
+  },
+  "groups": {
+    "sdk": {
+      "tests": 5305,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "tooling": {
+      "tests": 38,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "worker": {
+      "tests": 116,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "simulator": {
+      "tests": 538,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "governance": {
+      "tests": 39,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "coverage": {
+    "sdk": {
+      "covered_lines": 10481,
+      "num_statements": 10481,
+      "percent_covered": 99.98551039629066,
+      "percent_covered_display": "99",
+      "missing_lines": 0,
+      "excluded_lines": 165,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100",
+      "num_branches": 3322,
+      "num_partial_branches": 2,
+      "covered_branches": 3320,
+      "missing_branches": 2,
+      "percent_branches_covered": 99.93979530403371,
+      "percent_branches_covered_display": "99"
+    },
+    "worker": {
+      "covered_lines": 369,
+      "num_statements": 396,
+      "percent_covered": 91.01123595505618,
+      "percent_covered_display": "91",
+      "missing_lines": 27,
+      "excluded_lines": 0,
+      "percent_statements_covered": 93.18181818181819,
+      "percent_statements_covered_display": "93",
+      "num_branches": 138,
+      "num_partial_branches": 15,
+      "covered_branches": 117,
+      "missing_branches": 21,
+      "percent_branches_covered": 84.78260869565217,
+      "percent_branches_covered_display": "85"
+    }
+  },
+  "dependency_custody": "Fresh package builds and pip-target installs; existing interpreter dependencies borrowed, not fresh dependency isolation",
+  "row_preparation_receipt": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\integrated-reconciliation-candidate-first\\original-42-row-evidence-preparation-parameter-custody.json",
+    "sha256": "3cbabb95a50268e0eca301bd19c7543238d74894081d6286445327485ca50484"
+  },
+  "original42row_preparation": [
+    {
+      "id": "CAP-04",
+      "original_requirement": "A typed scope/observe/register/query/focus/grid",
+      "public_python_functionality": "Context/AsyncContext.between, relationship_selection, bounded observations pages; selection-preserving submit/resolve, strict v2 saved Context/Observation/Job restoration using current credentials",
+      "work_group": "persisted-relationship-selection",
+      "prior_implementation_status": "PERSISTED_SELECTION_DELIVERED_PR290",
+      "prior_reference_status": "INSTALLED_PUBLIC_SYNC_ASYNC_WORKFLOWS_PASS_FULL_ROW_FINAL_DISPOSITION_PENDING",
+      "historical_audit_sha256": "7c6c9df365600e09582d250e16f109af95d9b406f5f038a3fb9b2afae26d674b",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_client.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 41,
+          "current_file_sha256": "d9b22e659fc3401e15e885a45bbc6c0a8fa472c512ebf781d55bb3cb997d2b32",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_client.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 63,
+          "current_file_sha256": "89086c5212c6c192046eeb1ce66a162e756f3973bca2bfff54a4f665d448be95",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scope_selection_guards.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 38,
+          "current_file_sha256": "e642b788450f281add5cc6a4be1ea0c75131bc860c4927fc866dbe836203659a",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_typed_requests.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 156,
+          "current_file_sha256": "819c4a206cf1066cbb36581a567adf972438ac52fe41954c5075039e74be70b8",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "f627a15f7a6912acb52568b0cad21d201c695c0cb5fb9a53a100848515cf7ca7",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_state.py::test_clockless_states_materialization_cancellation_and_no_idempotency_invention",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "b0462059ffe6424813811b8f29dc34c4fa5351a2f8829ae4d8b0a8805466d7d3",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_request_plan.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "7a9e12f03dbe80146a91e3d544f64c261c570f7ba910162b9391c6d68f800d7d"
+        },
+        {
+          "reference": "python-client/tests/functional/test_typed_compute.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "c0f7e9dccc5fd996a0ce827e50567e6e028b0112f4f01acba9fe61fa1f1d688c"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "selection_delivery",
+          "pr": 290,
+          "head": "f38a332e8d3f2b98ddd3d51abfc8c8c2ac15d3ce",
+          "merge": "6307e93f4bbae747b2908a40e1d55f2b016ad34b",
+          "merged_at": "2026-11-07T13:52:56Z",
+          "final_head_checks": 26,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-observation-selections-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P1.5",
+      "original_requirement": "A requested options visible in actual plan",
+      "public_python_functionality": "Context/AsyncContext.resolve typed planning shares observe options, selection and configured Reasoner/Resolver; ContextOptions/GridOptions plus namespace/project/scenario/observer options materially affect independent synthetic execution, not hard model forcing",
+      "work_group": "material-selection-effects",
+      "prior_implementation_status": "TYPED_PLANNING_AND_MATERIAL_EFFECTS_DELIVERED_PR291",
+      "prior_reference_status": "CORRECTED_INSTALLED_PUBLIC_HTTP_60_NUMERICAL_COMBINATIONS_PASS_FULL_ROW_FINAL_DISPOSITION_PENDING",
+      "historical_audit_sha256": "2dcb659d5c95e02ccf60b3667c1bda62a01ca348372de0eabc80b36b87130c37",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_request_plan_acceptance.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "d0093820d65927ef1de02a485c78e000523d52e1b22865e0ed0b44c3547449dd",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scope_selection_guards.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 38,
+          "current_file_sha256": "e642b788450f281add5cc6a4be1ea0c75131bc860c4927fc866dbe836203659a",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_typed_requests.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 156,
+          "current_file_sha256": "819c4a206cf1066cbb36581a567adf972438ac52fe41954c5075039e74be70b8",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "f627a15f7a6912acb52568b0cad21d201c695c0cb5fb9a53a100848515cf7ca7",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_request_plan.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "7a9e12f03dbe80146a91e3d544f64c261c570f7ba910162b9391c6d68f800d7d"
+        },
+        {
+          "reference": "python-client/tests/functional/test_typed_compute.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "c0f7e9dccc5fd996a0ce827e50567e6e028b0112f4f01acba9fe61fa1f1d688c"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "material_delivery",
+          "pr": 291,
+          "head": "df2e1f1020bf38b0bfbfcc90467e53d1dc8c3b78",
+          "merge": "ceeaf623ae438d3ba52b8924ae0026a5ca7c9848",
+          "merged_at": "2026-11-07T14:24:20Z",
+          "final_head_checks": 37,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-material-selections-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-01",
+      "original_requirement": "A certificate/token providers, profiles, renewal seam",
+      "public_python_functionality": "connect; Connection.catalog/refresh/wait_ready/initialize_peers; IssuedTokenProvider/HubCertificateProvider",
+      "work_group": "onboarding-and-routing-acceptance",
+      "prior_implementation_status": "INSTALLED_PUBLIC_ONBOARDING_EXPIRY_EXPLICIT_PROVIDER_ROUTING_MATRIX_DELIVERED_PR307",
+      "prior_reference_status": "190SDK_1ISOLATEDHTTP_18INDEPENDENTHTTP_CONTROLS_PASS_NATIVE_ISSUER_LICENSE_DEPLOYMENT_DISTINCT",
+      "historical_audit_sha256": "e2ee273e16bccafbb3e6d82eb42ba73a9ac39f2822dcfba9261a4ed235fd82a9",
+      "required_test_reference_custody": [
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_connection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "49a7d4f29e1adf7c921931693c4d21f6ce8a3f3c7cf37e5b88523833c8dc68d2"
+        },
+        {
+          "reference": "python-client/tests/functional/test_onboarding_journey.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3a3b939d05077f4ee2cf56b363d5de35adf1351877a008a2c61b67e54d1e53d5"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_onboarding_delivery",
+          "pr": 307,
+          "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
+          "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
+          "merged_at": "2026-11-07T22:23:23Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-onboarding-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P1.3",
+      "original_requirement": "A collaborator reads, forbidden writes and expiry diagnosis",
+      "public_python_functionality": "Existing current-credential attach/restore/read plus opt-in capability-gated SharedAccess/AsyncSharedAccess inspection, READ grant/revoke and owner grant-state reconciliation; explicit rights/expiry denial and no local authority from DTOs",
+      "work_group": "explicit-collaborator-rights",
+      "prior_implementation_status": "PUBLIC_SHARED_READ_REFERENCE_DELIVERED_PR292",
+      "prior_reference_status": "INSTALLED_SIX_PUBLIC_HTTP_WORKFLOWS_AND_17LINKED_CASES_PASS_FINAL_ROW_DISPOSITION_PENDING",
+      "historical_audit_sha256": "6e63e7989319df6157b050a61ef41292af087aa3782cf45508cb83e48e95dc23",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_connection_guards.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 97,
+          "current_file_sha256": "b044e94c80a581847c5c182d04b59c4ae660be904e00380a3b943320b7a08379",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_shared_context_readers.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 9,
+          "current_file_sha256": "fe0b9c962ac6a4f1f300b233620640bf9a13ef8fc8d1beef0b40718aeb9bc988",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_state.py::test_clockless_states_materialization_cancellation_and_no_idempotency_invention",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "b0462059ffe6424813811b8f29dc34c4fa5351a2f8829ae4d8b0a8805466d7d3",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_shared_context_readers.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "4f86b6d65bd96972113e5323cb59cd076d9895729f3b870063cd20e1a8ea15ff"
+        },
+        {
+          "reference": "python-client/tests/functional/test_connection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "49a7d4f29e1adf7c921931693c4d21f6ce8a3f3c7cf37e5b88523833c8dc68d2"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "sharing_delivery",
+          "pr": 292,
+          "head": "32852ca9cd6b0951b0c8a341758f2358bdf8efaf",
+          "merge": "63e4f33c817caa45a8fef3f898fe27913f79372b",
+          "merged_at": "2026-11-07T15:39:22Z",
+          "final_head_checks": 23,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-shared-access-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-05",
+      "original_requirement": "B semantic search/predicates/composition/revision objects",
+      "public_python_functionality": "SemanticExplorer/AsyncSemanticExplorer; ResourceInspector/AsyncResourceInspector; canonical authority/search/predicates and inert asset reads",
+      "work_group": "revision-aware-validation",
+      "prior_implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_DELIVERED_PR293",
+      "prior_reference_status": "INSTALLED_PUBLIC_NAMESPACE_DIAGNOSTICS_AND_17LINKED_CASES_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "930bc9f820d36f8b901631cf641d435a777a07648cdfd2d48287469f0e441610",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_semantic_explorer.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 34,
+          "current_file_sha256": "01124757b3f898fc4d52f203ee734dad5c81985150b352b6b36f4656752d6b36",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_semantic_dependencies.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 8,
+          "current_file_sha256": "9fafb5b7864448b66f12ed237f765c1d7d05d56585100dc5e477e74873e6d435",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_semantic_explorer.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 87,
+          "current_file_sha256": "1caa8c0d8f2c416ad4bfa5c36bed4c0ba618cb8a9b8210bd0ca99e2a77e7dc3c",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_semantics.py::test_explicit_authority_selection_hierarchy_predicates_and_passive_documentation",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "fc8b1a39c8f7549c2d7f6752be1e3bca87983cf370535fed86ef047bad3085d2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_semantic_explorer.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3f251c511f509d758632f155c5ca29832d9debfa310f04c9df3f64e6c8ec7721"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_semantic_exploration.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "940c4df8b03865b08e3fbf0cf58872dbdd114cfe540dc41a45c83f3066ac26e4"
+        },
+        {
+          "reference": "python-client/tests/functional/test_resource_inspection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3e8fc535079da3b7f1890a705929ca6e5f5ee86513bbf01de739fc9b8a679593"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "validation_delivery",
+          "pr": 293,
+          "head": "213ae23f1d9ee43469b394cef377a89772bb3f5a",
+          "merge": "0376f97c4819086a11c30ebafe376cdf818cd1e6",
+          "merged_at": "2026-11-07T16:00:36Z",
+          "final_head_checks": 25,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-source-validation-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0011"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P4.2",
+      "original_requirement": "B revision-aware parse/validate",
+      "public_python_functionality": "SourcePreviews/AsyncSourcePreviews.parse; Authoring/AsyncAuthoring.parse; AgentPreviews/AsyncAgentPreviews.preview",
+      "work_group": "revision-aware-validation",
+      "prior_implementation_status": "NAMESPACE_SOURCE_DEFINED_VALIDATION_DELIVERED_PR293",
+      "prior_reference_status": "INSTALLED_PUBLIC_NAMESPACE_DIAGNOSTICS_AND_17LINKED_CASES_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "c881fff51b7cf014580f9ee6e51b1c4f6cdca883ba7050ac2f48ff96d60d6422",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_source_previews.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 21,
+          "current_file_sha256": "3ea3adfe0c0c39e06b5fa6db0f3c8071f15ff305b9f2697c79ee1e0ddc570c1f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_source_credential_preflight.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 42,
+          "current_file_sha256": "1b5cacfbcdb29ef3fa7305e29f759b1203ad781c48f4394295146c212757e1c9",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_source_previews.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 57,
+          "current_file_sha256": "a88fe68f22b6144ee7468845d5b480336a5bf4092bdbf59f755b2c3037b95119",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_behavior_drafts.py::test_nonexecuting_behavior_draft_add_uses_exact_native_source_and_never_instantiates",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "f35669fb44c70fe1be20ea9140f7adc1526d9d55554de2c3deadf6af93a4ef20",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_parser_preview.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "f8078d99c868c6c338bb1b45edaea0373c2d5d28f608fd85267f063017340898"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_source_previews.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "d5cc7c4e14ad85d5c8b01aab7bff611b19155c9376983c9b01b17083ee67e7c0"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "validation_delivery",
+          "pr": 293,
+          "head": "213ae23f1d9ee43469b394cef377a89772bb3f5a",
+          "merge": "0376f97c4819086a11c30ebafe376cdf818cd1e6",
+          "merged_at": "2026-11-07T16:00:36Z",
+          "final_head_checks": 25,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-source-validation-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0009",
+        "JAVA-GAP-0011"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-14",
+      "original_requirement": "B authoring/behaviors actual authorized operations",
+      "public_python_functionality": "Authoring/AsyncAuthoring.parse/create_workspace/create_project/create_document; ProjectLock/AsyncProjectLock.acquire/release; ResourceImporter/AsyncResourceImporter.upload; AgentExecutions/AsyncAgentExecutions.create and DeferredAgent control",
+      "work_group": "conditional-authoring",
+      "prior_implementation_status": "OPT_IN_CONDITIONAL_SOURCE_REFERENCE_DELIVERED_PR294",
+      "prior_reference_status": "INSTALLED_CONDITIONAL_SOURCE_CAS_PUBLICATION_READBACK_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "c8ffaa3f9ec6092383e12e00e0331e8c51faa72cfc4b37f8f5a837943c16ded4",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_agent_execution.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 50,
+          "current_file_sha256": "4d44e55df7c51c7d808da0472b7d937dcc82802c91efd17d53cd312ce0677b14",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_authoring.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 60,
+          "current_file_sha256": "e066ca81eda257fd5f5e6de33691a176a863ad1616565d2f3af0bd004f0162bd",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_behavior_authoring.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 42,
+          "current_file_sha256": "9bc53288b42aacaf1e0495a34d2496daf46bba92709b97cad95d3d716e3632d2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_project_locks.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 64,
+          "current_file_sha256": "422a147dd67667cc49e25c6f94c33289f3c9c10428bfb5b1f62fd087339c2f91",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_behavior_drafts.py::test_nonexecuting_behavior_draft_add_uses_exact_native_source_and_never_instantiates",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "f35669fb44c70fe1be20ea9140f7adc1526d9d55554de2c3deadf6af93a4ef20",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "b5752797c04d9d937ea25e7c3de42a67f0ad927984ce02f1d8079b25ecd705ff",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_native_project_lock_principal_sharing_and_explicit_release",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "cfcc1943f4f03e921f0c4d6e28174e75b9ee5c9b18ecafec1955e4ed63dde203",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "72899bd054b6d64792e45b6717e20b50225b1cb924e24da71f81d55d0dbc5dc4",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_authoring_workflow.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "6439f6b5f9d90969df5ca6e15511b85a0a7d17c2a3b2d39c222dcf65df41c1ad"
+        },
+        {
+          "reference": "python-client/tests/functional/test_strategy_authoring.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "d557639b7d56c2fa8fa07d5d7f89ef8c243d3e480418141268b1b6b0c0325671"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "conditional_delivery",
+          "pr": 294,
+          "head": "2ff29e210b4c1941a7b940ee24be173de034b1a9",
+          "merge": "cc71b09919566bea85c6aa39c8dab38d4936b9e1",
+          "merged_at": "2026-11-07T16:38:25Z",
+          "final_head_checks": 37,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-conditional-authoring-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0008",
+        "JAVA-GAP-0009",
+        "JAVA-GAP-0013"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P4.4",
+      "original_requirement": "B authorized edit/publish/conflict",
+      "public_python_functionality": "Existing ADD-only Authoring/project locks plus explicit advertised opt-in AcceptedDocuments/AsyncAcceptedDocuments knowledge/read/update/validate/publish/published and immutable source/knowledge/publication receipts; server-owned source/knowledge CAS, not native unconditional UPDATE",
+      "work_group": "conditional-authoring",
+      "prior_implementation_status": "OPT_IN_CONDITIONAL_SOURCE_REFERENCE_DELIVERED_PR294",
+      "prior_reference_status": "INSTALLED_CONDITIONAL_SOURCE_CAS_PUBLICATION_READBACK_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "da263410f1f8da9b4da2b353ef0e7bf9a151f551334288df3ac301f2dcea2577",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_authoring.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 60,
+          "current_file_sha256": "e066ca81eda257fd5f5e6de33691a176a863ad1616565d2f3af0bd004f0162bd",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_behavior_authoring.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 42,
+          "current_file_sha256": "9bc53288b42aacaf1e0495a34d2496daf46bba92709b97cad95d3d716e3632d2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_project_locks.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 64,
+          "current_file_sha256": "422a147dd67667cc49e25c6f94c33289f3c9c10428bfb5b1f62fd087339c2f91",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_behavior_drafts.py::test_nonexecuting_behavior_draft_add_uses_exact_native_source_and_never_instantiates",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "f35669fb44c70fe1be20ea9140f7adc1526d9d55554de2c3deadf6af93a4ef20",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "b5752797c04d9d937ea25e7c3de42a67f0ad927984ce02f1d8079b25ecd705ff",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_native_project_lock_principal_sharing_and_explicit_release",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "cfcc1943f4f03e921f0c4d6e28174e75b9ee5c9b18ecafec1955e4ed63dde203",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_authoring_workflow.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "6439f6b5f9d90969df5ca6e15511b85a0a7d17c2a3b2d39c222dcf65df41c1ad"
+        },
+        {
+          "reference": "python-client/tests/functional/test_strategy_authoring.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "d557639b7d56c2fa8fa07d5d7f89ef8c243d3e480418141268b1b6b0c0325671"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "conditional_delivery",
+          "pr": 294,
+          "head": "2ff29e210b4c1941a7b940ee24be173de034b1a9",
+          "merge": "cc71b09919566bea85c6aa39c8dab38d4936b9e1",
+          "merged_at": "2026-11-07T16:38:25Z",
+          "final_head_checks": 37,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-conditional-authoring-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0009"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-13",
+      "original_requirement": "B resources/models read/query/dependency inspection",
+      "public_python_functionality": "SemanticExplorer/AsyncSemanticExplorer; ResourceInspector/AsyncResourceInspector; canonical authority/search/predicates and inert asset reads",
+      "work_group": "dependency-inspection",
+      "prior_implementation_status": "NATIVE_MEMBERSHIP_PR295_AND_OPT_IN_SOURCE_BOUND_GRAPH_PR296_DELIVERED",
+      "prior_reference_status": "INSTALLED_SOURCE_BOUND_MODEL_RESOURCE_GRAPH_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "53bfe4d6500d565fd82217848997c1c399e06de0a59d884d43d303ee0015c65b",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_resource_inspector.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 38,
+          "current_file_sha256": "b2734d96f97c52788945854294f102c85ae27c115240375eb84cb8d894c329fa",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_native_codelist_retrieval.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 22,
+          "current_file_sha256": "8c0456c36c5d25aa1e839e5f7ad7ce2de9c66dd11a0ba71aca22140851ca52df",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_resource_inspector.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 47,
+          "current_file_sha256": "9fb30c86b3ba520a79093113fed99043e76d187b8feff41c36af1399fe43cfe4",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "b5752797c04d9d937ea25e7c3de42a67f0ad927984ce02f1d8079b25ecd705ff",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "72899bd054b6d64792e45b6717e20b50225b1cb924e24da71f81d55d0dbc5dc4",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_semantics.py::test_meaning_based_catalog_inspection_remains_advertisement_not_selection",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "fc8b1a39c8f7549c2d7f6752be1e3bca87983cf370535fed86ef047bad3085d2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_semantic_explorer.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3f251c511f509d758632f155c5ca29832d9debfa310f04c9df3f64e6c8ec7721"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_semantic_exploration.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "940c4df8b03865b08e3fbf0cf58872dbdd114cfe540dc41a45c83f3066ac26e4"
+        },
+        {
+          "reference": "python-client/tests/functional/test_resource_inspection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3e8fc535079da3b7f1890a705929ca6e5f5ee86513bbf01de739fc9b8a679593"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "membership_delivery",
+          "pr": 295,
+          "head": "a1a781f547671406bcfea146644558ceb4d84351",
+          "merge": "641eaa161a30941b0d5c875e7beb26d3eaf12772",
+          "merged_at": "2026-11-07T17:09:18Z",
+          "final_head_checks": 40,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-dependency-membership-20261107.json"
+        },
+        {
+          "name": "graph_delivery",
+          "pr": 296,
+          "head": "ffd3fb185d26b10fd243b85cef86f5e11c7b8c55",
+          "merge": "a17f8c3fe2479441625a62db0e530f3dfb1788d1",
+          "merged_at": "2026-11-07T17:37:30Z",
+          "final_head_checks": 28,
+          "receipt": "notes\\python-roadmap-execution\\evidence\\full-roadmap-source-bound-dependency-graphs-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0003",
+        "JAVA-GAP-0013"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P4.1",
+      "original_requirement": "B meaning-based asset applicability/version/access",
+      "public_python_functionality": "SemanticExplorer/AsyncSemanticExplorer; ResourceInspector/AsyncResourceInspector; canonical authority/search/predicates and inert asset reads",
+      "work_group": "dependency-inspection",
+      "prior_implementation_status": "NATIVE_MEMBERSHIP_PR295_AND_OPT_IN_SOURCE_BOUND_GRAPH_PR296_DELIVERED",
+      "prior_reference_status": "INSTALLED_SOURCE_BOUND_MODEL_RESOURCE_GRAPH_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "f52294e2ed49071b98b2da68a5b95d769b4b64860cbf79e25a57561a34c60235",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_semantic_explorer.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 34,
+          "current_file_sha256": "01124757b3f898fc4d52f203ee734dad5c81985150b352b6b36f4656752d6b36",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_resource_inspector.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 47,
+          "current_file_sha256": "9fb30c86b3ba520a79093113fed99043e76d187b8feff41c36af1399fe43cfe4",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_semantic_explorer.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 87,
+          "current_file_sha256": "1caa8c0d8f2c416ad4bfa5c36bed4c0ba618cb8a9b8210bd0ca99e2a77e7dc3c",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_replay.py::test_pinned_semantic_model_and_historical_empty_result",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "134505c85f397671b1710ceca8e2b460e7c4921d5ff793177d6260bc7ecf8dbf",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_semantics.py::test_explicit_authority_selection_hierarchy_predicates_and_passive_documentation",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "fc8b1a39c8f7549c2d7f6752be1e3bca87983cf370535fed86ef047bad3085d2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_semantics.py::test_meaning_based_catalog_inspection_remains_advertisement_not_selection",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "fc8b1a39c8f7549c2d7f6752be1e3bca87983cf370535fed86ef047bad3085d2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_semantic_explorer.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3f251c511f509d758632f155c5ca29832d9debfa310f04c9df3f64e6c8ec7721"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_semantic_exploration.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "940c4df8b03865b08e3fbf0cf58872dbdd114cfe540dc41a45c83f3066ac26e4"
+        },
+        {
+          "reference": "python-client/tests/functional/test_resource_inspection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3e8fc535079da3b7f1890a705929ca6e5f5ee86513bbf01de739fc9b8a679593"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "membership_delivery",
+          "pr": 295,
+          "head": "a1a781f547671406bcfea146644558ceb4d84351",
+          "merge": "641eaa161a30941b0d5c875e7beb26d3eaf12772",
+          "merged_at": "2026-11-07T17:09:18Z",
+          "final_head_checks": 40,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-dependency-membership-20261107.json"
+        },
+        {
+          "name": "graph_delivery",
+          "pr": 296,
+          "head": "ffd3fb185d26b10fd243b85cef86f5e11c7b8c55",
+          "merge": "a17f8c3fe2479441625a62db0e530f3dfb1788d1",
+          "merged_at": "2026-11-07T17:37:30Z",
+          "final_head_checks": 28,
+          "receipt": "notes\\python-roadmap-execution\\evidence\\full-roadmap-source-bound-dependency-graphs-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0003",
+        "JAVA-GAP-0011",
+        "JAVA-GAP-0013"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P4.3",
+      "original_requirement": "B import/annotate/compute with input provenance",
+      "public_python_functionality": "ResourceImporter/AsyncResourceImporter.formats/upload; Authoring/AsyncAuthoring ADD source creation",
+      "work_group": "annotated-input-provenance",
+      "prior_implementation_status": "EXPLICIT_SOURCE_INPUT_PROVENANCE_JOIN_DELIVERED_PR297",
+      "prior_reference_status": "INSTALLED_UPLOAD_SOURCE_PLAN_RECORDED_INPUT_GRAPH_JOIN_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "98d01ff32261ba61dad20c08865156fdfd457eb481427c6b7310b752413b765f",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_model_source_authoring.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 14,
+          "current_file_sha256": "5667bd8256104ab49fc83ef1c29438cfcecb29b8332d2ba598350b61d7a9c652",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_resource_imports.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 71,
+          "current_file_sha256": "7893bfcc559834e5cb201b1c22cf90f74349d7faf076ac7c71d7f88155d4ea77",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_input_workflow.py::test_explicit_import_semantic_source_resolver_and400cell_input_receipt",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "b5752797c04d9d937ea25e7c3de42a67f0ad927984ce02f1d8079b25ecd705ff",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "72899bd054b6d64792e45b6717e20b50225b1cb924e24da71f81d55d0dbc5dc4",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_authoring_workflow.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "6439f6b5f9d90969df5ca6e15511b85a0a7d17c2a3b2d39c222dcf65df41c1ad"
+        },
+        {
+          "reference": "python-client/tests/functional/test_model_source_authoring.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "224c81feda8e19e63fd3dabfea8c9d280429883cedf237ad1263d7296740fe67"
+        },
+        {
+          "reference": "python-client/tests/functional/test_strategy_authoring.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "d557639b7d56c2fa8fa07d5d7f89ef8c243d3e480418141268b1b6b0c0325671"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "annotated_input_candidate",
+          "pr": 297,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-annotated-input-provenance-20261107.json",
+          "native_or_full_row_acceptance": false
+        },
+        {
+          "name": "annotated_input_delivery",
+          "pr": 297,
+          "head": "a2c54ca9a5fb97f09dc7cd3ce3ba07aa4b87dc2e",
+          "merge": "53ee5bed9fd433ec877187ce1d4ed09a0fbd84f2",
+          "merged_at": "2026-11-07T18:09:20Z",
+          "final_head_checks": 29,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-annotated-input-provenance-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0013"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-10",
+      "original_requirement": "A/B typed partial twin graph, stale markers, refresh",
+      "public_python_functionality": "GraphBrowser/AsyncGraphBrowser; GraphProjection/AsyncGraphProjection; explicit invalidation/refetch",
+      "work_group": "reference-commit-convergence",
+      "prior_implementation_status": "NATIVE_CACHE_PR298_AND_COMPLETE_FINITE_GRAPH_CONVERGENCE_PR299_DELIVERED",
+      "prior_reference_status": "INSTALLED_PUBLIC_TWO_CLIENT_GRAPH_DELTA_PROJECTION_GAP_RESYNC_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "d3851bb96b37ea3f4d8552bb3c1ca1c80a61d8a251d965f578813a4d14415daf",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_graph.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 35,
+          "current_file_sha256": "b99580e0100b3688c0fd10480952d051a027406c7e71ef71c83c58eec0bba662",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_graph.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 49,
+          "current_file_sha256": "df6a18bdef770671a8804207c476f269f4f7db9aaef1c5aeefce799735a8cc1d",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_graph_projection.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 33,
+          "current_file_sha256": "c21641cb8c444b690eb07385df4844a2f31c13f33d43b8d6981748c5f6eb325c",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 3,
+          "current_file_sha256": "00ccea18fcaf5c28e3f7a91b8753c5e767fb4f76be99ce13eb928d8aee21a414",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[elevation]",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true,
+          "exact_parameter_junit_pass": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_partial_refresh.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "0c20ea3b9d8c09b8078131312cc3761061d0b4176ef8f7c04e1f2ff30bf44d8c"
+        },
+        {
+          "reference": "python-client/tests/functional/test_graph_workflow.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "a7e2d522fbee2f92281c5750daf5ca7d2d454b3b080d91102ecd513c46a5f87e"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "native_commit_cache_candidate",
+          "pr": 298,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
+          "full_requirement_complete": false
+        },
+        {
+          "name": "native_cache_delivery",
+          "pr": 298,
+          "head": "c3cb53d994151b22ff65da7c86f24226295cfa01",
+          "merge": "1c0b94327a312520794b234e5145f2a8e625af54",
+          "merged_at": "2026-11-07T18:33:41Z",
+          "final_head_checks": 30,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json"
+        },
+        {
+          "name": "finite_graph_convergence_candidate",
+          "pr": 299,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json",
+          "final_original_row_acceptance": false
+        },
+        {
+          "name": "finite_graph_convergence_delivery",
+          "pr": 299,
+          "head": "7c25a73f3ad2ace805835cdddbaf053ebcdd6d37",
+          "merge": "5d6d5139d5a445c784bb4a91b331a4f890046787",
+          "merged_at": "2026-11-07T19:02:21Z",
+          "final_head_checks": 31,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0005",
+        "JAVA-GAP-0012",
+        "JAVA-GAP-0016"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-11",
+      "original_requirement": "A/B best-effort scoped events and resync",
+      "public_python_functionality": "ActivityNotifications; explicit graph invalidate/refetch; no durable replay",
+      "work_group": "reference-commit-convergence",
+      "prior_implementation_status": "NATIVE_CACHE_PR298_AND_COMPLETE_FINITE_GRAPH_CONVERGENCE_PR299_DELIVERED",
+      "prior_reference_status": "INSTALLED_PUBLIC_TWO_CLIENT_GRAPH_DELTA_PROJECTION_GAP_RESYNC_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "0bb593bc2744e8b3a2d8aa767c1db0e9f8ad137b041fa3b2c6b4bb00257e1ddb",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_graph_projection.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 33,
+          "current_file_sha256": "c21641cb8c444b690eb07385df4844a2f31c13f33d43b8d6981748c5f6eb325c",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_notifications.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 78,
+          "current_file_sha256": "3f13f48eb829e16e1a963e07c100519a14500f42a415f7b7b974d6337989fb9d",
+          "executed_test_byte_parity": true
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "native_commit_cache_candidate",
+          "pr": 298,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
+          "full_requirement_complete": false
+        },
+        {
+          "name": "native_cache_delivery",
+          "pr": 298,
+          "head": "c3cb53d994151b22ff65da7c86f24226295cfa01",
+          "merge": "1c0b94327a312520794b234e5145f2a8e625af54",
+          "merged_at": "2026-11-07T18:33:41Z",
+          "final_head_checks": 30,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json"
+        },
+        {
+          "name": "finite_graph_convergence_candidate",
+          "pr": 299,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json",
+          "final_original_row_acceptance": false
+        },
+        {
+          "name": "finite_graph_convergence_delivery",
+          "pr": 299,
+          "head": "7c25a73f3ad2ace805835cdddbaf053ebcdd6d37",
+          "merge": "5d6d5139d5a445c784bb4a91b331a4f890046787",
+          "merged_at": "2026-11-07T19:02:21Z",
+          "final_head_checks": 31,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0005"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P3.1",
+      "original_requirement": "A committed two-client race convergence",
+      "public_python_functionality": "GraphBrowser/AsyncGraphBrowser; GraphProjection/AsyncGraphProjection; explicit invalidation/refetch",
+      "work_group": "reference-commit-convergence",
+      "prior_implementation_status": "NATIVE_CACHE_PR298_AND_COMPLETE_FINITE_GRAPH_CONVERGENCE_PR299_DELIVERED",
+      "prior_reference_status": "INSTALLED_PUBLIC_TWO_CLIENT_GRAPH_DELTA_PROJECTION_GAP_RESYNC_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "56c7b36404f8a49c9c9fc8378a5f6cba74a3cb3d787ed540d9dfdca1230f3dcc",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_graph.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 35,
+          "current_file_sha256": "b99580e0100b3688c0fd10480952d051a027406c7e71ef71c83c58eec0bba662",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_graph_projection.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 33,
+          "current_file_sha256": "c21641cb8c444b690eb07385df4844a2f31c13f33d43b8d6981748c5f6eb325c",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_notifications.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 78,
+          "current_file_sha256": "3f13f48eb829e16e1a963e07c100519a14500f42a415f7b7b974d6337989fb9d",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 3,
+          "current_file_sha256": "00ccea18fcaf5c28e3f7a91b8753c5e767fb4f76be99ce13eb928d8aee21a414",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_partial_refresh.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "0c20ea3b9d8c09b8078131312cc3761061d0b4176ef8f7c04e1f2ff30bf44d8c"
+        },
+        {
+          "reference": "python-client/tests/functional/test_graph_workflow.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "a7e2d522fbee2f92281c5750daf5ca7d2d454b3b080d91102ecd513c46a5f87e"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "native_commit_cache_candidate",
+          "pr": 298,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json",
+          "full_requirement_complete": false
+        },
+        {
+          "name": "native_cache_delivery",
+          "pr": 298,
+          "head": "c3cb53d994151b22ff65da7c86f24226295cfa01",
+          "merge": "1c0b94327a312520794b234e5145f2a8e625af54",
+          "merged_at": "2026-11-07T18:33:41Z",
+          "final_head_checks": 30,
+          "full_requirement_complete": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-native-commit-inspection-20261107.json"
+        },
+        {
+          "name": "finite_graph_convergence_candidate",
+          "pr": 299,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json",
+          "final_original_row_acceptance": false
+        },
+        {
+          "name": "finite_graph_convergence_delivery",
+          "pr": 299,
+          "head": "7c25a73f3ad2ace805835cdddbaf053ebcdd6d37",
+          "merge": "5d6d5139d5a445c784bb4a91b331a4f890046787",
+          "merged_at": "2026-11-07T19:02:21Z",
+          "final_head_checks": 31,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-graph-convergence-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0005",
+        "JAVA-GAP-0016"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-06",
+      "original_requirement": "A typed plans versus execution",
+      "public_python_functionality": "fetch_provenance/async_fetch_provenance; fetch_execution_evidence/async_fetch_execution_evidence",
+      "work_group": "execution-dependency-explanation",
+      "prior_implementation_status": "FINITE_SELECTED_EXECUTION_EXPLANATION_DELIVERED_PR300",
+      "prior_reference_status": "INSTALLED_PUBLIC_INPUT_MODEL_COMPONENT_PLANNED_RECORDED_SEMANTIC_ASSOCIATION_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "71c339de32afe9ea29b6daf6421c38cd05a7adb88dc89c321af326e646bea483",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_execution_evidence.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 24,
+          "current_file_sha256": "6625b4614cf615fd5d577f282782542cb7cef1b23563f2c1983fea8efedc6ce5",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_execution_evidence.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 71,
+          "current_file_sha256": "0b2e9b4fc0c778bc3c8fabbf575e7116447de344cbdc56e77c8f544a3d8f4566",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[elevation]",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true,
+          "exact_parameter_junit_pass": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_execution_evidence.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "bd8e5eab0c5d718cf2023b652f06671f47cbe175ca8e06f3ea49685bda501689"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_recorded_provenance.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "51acd333cbe19c67ac89f49240aac6c7d1a26676bb0f3bb0e80d2b32a66ad6ee"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_execution_evidence.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "71f53171aea8474dc8d9b759f3215b3052730cc10c3a6d75d615eb5772b68c95"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "execution_explanation_candidate",
+          "pr": 300,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json",
+          "final_original_row_acceptance": false
+        },
+        {
+          "name": "execution_explanation_delivery",
+          "pr": 300,
+          "head": "4dd1a2819d9cb320ac140e6a2c919040a1644d86",
+          "merge": "1f879772d5d373c1d0921ce74867f78f189d90e8",
+          "merged_at": "2026-11-07T19:29:08Z",
+          "final_head_checks": 32,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P3.4",
+      "original_requirement": "A explain actual dependencies and semantic effects",
+      "public_python_functionality": "fetch_provenance/async_fetch_provenance; fetch_execution_evidence/async_fetch_execution_evidence",
+      "work_group": "execution-dependency-explanation",
+      "prior_implementation_status": "FINITE_SELECTED_EXECUTION_EXPLANATION_DELIVERED_PR300",
+      "prior_reference_status": "INSTALLED_PUBLIC_INPUT_MODEL_COMPONENT_PLANNED_RECORDED_SEMANTIC_ASSOCIATION_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "9d1b7b0bb0669240c487e196ca6387b5fd18b1ba588817d75b8c1905c6571e65",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_execution_evidence.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 24,
+          "current_file_sha256": "6625b4614cf615fd5d577f282782542cb7cef1b23563f2c1983fea8efedc6ce5",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_async_provenance.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 33,
+          "current_file_sha256": "a191038fa3149b0713ae4e13eb71820a298dd5ad70836f1d611c5836adf56dc8",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_provenance.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 77,
+          "current_file_sha256": "6728e847423866322caadb71f6252e67f620e3ab7916f2c2371fda40d3fdbc26",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[elevation]",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true,
+          "exact_parameter_junit_pass": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_execution_evidence.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "bd8e5eab0c5d718cf2023b652f06671f47cbe175ca8e06f3ea49685bda501689"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_recorded_provenance.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "51acd333cbe19c67ac89f49240aac6c7d1a26676bb0f3bb0e80d2b32a66ad6ee"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_execution_evidence.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "71f53171aea8474dc8d9b759f3215b3052730cc10c3a6d75d615eb5772b68c95"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "execution_explanation_candidate",
+          "pr": 300,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json",
+          "final_original_row_acceptance": false
+        },
+        {
+          "name": "execution_explanation_delivery",
+          "pr": 300,
+          "head": "4dd1a2819d9cb320ac140e6a2c919040a1644d86",
+          "merge": "1f879772d5d373c1d0921ce74867f78f189d90e8",
+          "merged_at": "2026-11-07T19:29:08Z",
+          "final_head_checks": 32,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-execution-explanations-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-03",
+      "original_requirement": "A/B configured origin-qualified routing",
+      "public_python_functionality": "Connection.refresh; Client/AsyncClient attach_context and typed authorization/expiry errors",
+      "work_group": "public-copied-composition",
+      "prior_implementation_status": "PUBLIC_TYPED_COPIED_COMPOSITION_DELIVERED_PR301",
+      "prior_reference_status": "INSTALLED_PUBLIC_THREE_SERVICE_COPIED_SOURCE_RESULT_LIFECYCLE_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "330b720fc7462316b25d5499644bc434bcb8e077e10b6b55a9c5b57a411f43d8",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_connected_workflow_safety.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 3,
+          "current_file_sha256": "22b99038e3d38d91b1d2f707cdd03f221d3cf9cb9c3543b1ed1488ae37c2f823",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_runtime_binding.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 39,
+          "current_file_sha256": "a8bd4d32710d44ce919f9c713d9a3a825eabf5a267c808220ee335af494b4433",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scope_selection_guards.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 38,
+          "current_file_sha256": "e642b788450f281add5cc6a4be1ea0c75131bc860c4927fc866dbe836203659a",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "f627a15f7a6912acb52568b0cad21d201c695c0cb5fb9a53a100848515cf7ca7",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_shared_context_readers.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "4f86b6d65bd96972113e5323cb59cd076d9895729f3b870063cd20e1a8ea15ff"
+        },
+        {
+          "reference": "python-client/tests/functional/test_connection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "49a7d4f29e1adf7c921931693c4d21f6ce8a3f3c7cf37e5b88523833c8dc68d2"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "public_copied_composition_delivery",
+          "pr": 301,
+          "head": "001ca0e2bfffb7aa298fe615c5e92e1314927601",
+          "merge": "a662bf884f8c56c2db7ad4b05e1f71f363768991",
+          "merged_at": "2026-11-07T19:55:28Z",
+          "final_head_checks": 33,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-public-copied-composition-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0007"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P4.5",
+      "original_requirement": "B behavior invocation/outcomes/reconnect",
+      "public_python_functionality": "AgentPreviews/AsyncAgentPreviews; AgentExecutions/AsyncAgentExecutions.create; DeferredAgent; AgentChannel and AgentControlJournal",
+      "work_group": "managed-behavior-workflow",
+      "prior_implementation_status": "FINITE_SOURCE_MANAGED_BEHAVIOR_WORKFLOW_DELIVERED_PR302",
+      "prior_reference_status": "INSTALLED_PUBLIC_SOURCE_RECONNECT_OUTCOME_PRIVATE_SESSION_DISPOSAL_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "ffe3dee8ecaddd6077d81672d3f83f967b71f2bc00d5ce12d3de4ef193b6fbf5",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_agent_control.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 55,
+          "current_file_sha256": "499b3f94804bb6de99721e4680c4fc47254988ddc92bf83471d29a6c080e9487",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_agent_execution.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 50,
+          "current_file_sha256": "4d44e55df7c51c7d808da0472b7d937dcc82802c91efd17d53cd312ce0677b14",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_agent_messaging.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 53,
+          "current_file_sha256": "38b566b9f8a9ebd8352fb21be12c757ca079f8512ed19f9598a10da0fbe85147",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_async_agent_registration.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 33,
+          "current_file_sha256": "e291a0e8d09f9c9e64caec7ecc5f4954e2d0b8fecd4d38dae2b5e82f654a5bdb",
+          "executed_test_byte_parity": true
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "managed_behavior_delivery",
+          "pr": 302,
+          "head": "4ed4352bfaaf387cbdd9219ade942941c5188e98",
+          "merge": "4fe5d45adb9da57fc9fc7573c840ec36403aa535",
+          "merged_at": "2026-11-07T20:19:37Z",
+          "final_head_checks": 34,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-managed-behaviors-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0008"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-17",
+      "original_requirement": "C provider SDK / local embedded runtime",
+      "public_python_functionality": "klab_worker.WorkerClient / Field / Limits / execute / run_once; separate experimental scoped worker",
+      "work_group": "worker-output-and-budget-custody",
+      "prior_implementation_status": "WORKER_AGGREGATE_OUTPUT_EXACT_RECEIPT_AND_DEPLOYMENT_HANDOFF_DELIVERED_PR303",
+      "prior_reference_status": "INSTALLED_PUBLIC_OUTPUT_PROTOCOL_FAILURE_RECOVERY_CUSTODY_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "1f60662d661b2bec2a3c0606ee0bd5d1bc208e64662a3dff51b165a1074059c3",
+      "required_test_reference_custody": [],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "worker_output_custody_delivery",
+          "pr": 303,
+          "head": "9a44d9fca7a11d6397f88ce1687fc954e12e0c0d",
+          "merge": "6c285b6b6e96d48d5d4d87220722c6f7ffabed7e",
+          "merged_at": "2026-11-07T20:46:29Z",
+          "final_head_checks": 45,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-worker-output-custody-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0017"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P5",
+      "original_requirement": "C separate scoped worker product",
+      "public_python_functionality": "klab_worker.WorkerClient / Field / Limits / execute / run_once; separate experimental scoped worker",
+      "work_group": "worker-output-and-budget-custody",
+      "prior_implementation_status": "WORKER_AGGREGATE_OUTPUT_EXACT_RECEIPT_AND_DEPLOYMENT_HANDOFF_DELIVERED_PR303",
+      "prior_reference_status": "INSTALLED_PUBLIC_OUTPUT_PROTOCOL_FAILURE_RECOVERY_CUSTODY_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "41348c38dd4f947c09c75c5283b55de770a1f427b3d6c5572d7e4555b8eaf965",
+      "required_test_reference_custody": [],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "worker_output_custody_delivery",
+          "pr": 303,
+          "head": "9a44d9fca7a11d6397f88ce1687fc954e12e0c0d",
+          "merge": "6c285b6b6e96d48d5d4d87220722c6f7ffabed7e",
+          "merged_at": "2026-11-07T20:46:29Z",
+          "final_head_checks": 45,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-worker-output-custody-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0017"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-09",
+      "original_requirement": "A scientific exports/descriptors, time/space/units/categories",
+      "public_python_functionality": "Client/AsyncClient.export_formats/export_to_file; ObservationImpl.export_to_file/fetch_data (sync or async-bound)",
+      "work_group": "selected-reference-windows",
+      "prior_implementation_status": "SELECTED_FINITE_STATE_WINDOW_READ_GRANTS_DELIVERED_PR304",
+      "prior_reference_status": "INSTALLED_PUBLIC_SELECTED_STATE_WINDOW_AND_DETACHED_PROVENANCE_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "d673b2567c9ea734fc8c71e148964cb9438168a609aee72cd149753a790ff14d",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_exports.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 69,
+          "current_file_sha256": "069bb15595a839dfa8e6ef89f8847b7572d37ae70a5bbde78e620df0ccdd41cf",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scientific_analysis.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 29,
+          "current_file_sha256": "7c5325998e2c64d6f821d3e3ab8f1a5a7e6c16f45cd5ed713786ab082b93e154",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_temporal_exports.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 32,
+          "current_file_sha256": "cc9b6075036ea95d9fa487d4ea50839b667ebca648111e9bf9cface7c97ad917",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_exports.py::test_exact_pinned_native_export_preserves_original400cells_and_metadata",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "cb1d8de1f53ecdcf35b75c711b55af66c777422923ba4ffd9f157fc145d37721",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 4,
+          "current_file_sha256": "fc193e70aba09979f9b337d982ae3c325364bb3769806ba788a9baebd1ba8b5d",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_nonuniform_export.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "6a94e9d2272b3e99acffc26414e8e31655366532cf925a93aec0b7e0e85e97d2"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_native_export.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "8d6a9347c49e19f923a363ce325ffc76e07a3ce7d6f32e6b13ec99415fffec7c"
+        },
+        {
+          "reference": "python-client/tests/functional/test_export_deliverables.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "fe05f1a8f7cf29f727df32fdd96dd64763753451f7b7f6f357f310104bb99558"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "selected_reference_windows_delivery",
+          "pr": 304,
+          "head": "49aa07469140d0de2ee888f8c0ffd57308ba1166",
+          "merge": "d0ccdc531acf6784990e4e4d0be197518dceb462",
+          "merged_at": "2026-11-07T21:21:12Z",
+          "final_head_checks": 49,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-selected-reference-windows-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P2.2",
+      "original_requirement": "A time/window selection, precision, revision and masks",
+      "public_python_functionality": "ScanSlice; bounded fetch_data; native TEMPORAL_TRANSITION export; ExportResult.requested_slice",
+      "work_group": "selected-reference-windows",
+      "prior_implementation_status": "SELECTED_FINITE_STATE_WINDOW_READ_GRANTS_DELIVERED_PR304",
+      "prior_reference_status": "INSTALLED_PUBLIC_SELECTED_STATE_WINDOW_AND_DETACHED_PROVENANCE_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "f99c6d433e3793c21d0435ebd3c720bc2c111dd43a1a5cd1521105793e6b5551",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_scan_slices.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 33,
+          "current_file_sha256": "aa9ecd66e96e65f43af7bab67888abba89eabac55c138be2675ab3c7d59c7a6c",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scientific_tables.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 72,
+          "current_file_sha256": "81d9804840ebd603a0cb713a572690c8dababa266eff6425cdf52e08d4fc4031",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_temporal_exports.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 32,
+          "current_file_sha256": "cc9b6075036ea95d9fa487d4ea50839b667ebca648111e9bf9cface7c97ad917",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 4,
+          "current_file_sha256": "fc193e70aba09979f9b337d982ae3c325364bb3769806ba788a9baebd1ba8b5d",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_native_scan_slices.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "6dd319f6dbb44c0d570ce253ea2919f7513e6fc58a08703bd56dd2f037ebf560"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "selected_reference_windows_delivery",
+          "pr": 304,
+          "head": "49aa07469140d0de2ee888f8c0ffd57308ba1166",
+          "merge": "d0ccdc531acf6784990e4e4d0be197518dceb462",
+          "merged_at": "2026-11-07T21:21:12Z",
+          "final_head_checks": 49,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-selected-reference-windows-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0014"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-15",
+      "original_requirement": "A optional NumPy/pandas/xarray/raster/vector and notebooks",
+      "public_python_functionality": "open_raster/open_vector/to_dataframe; export_for_analysis/async_export_for_analysis; trace_analysis",
+      "work_group": "categorical-reference-data",
+      "prior_implementation_status": "FINITE_REFERENCE_RASTER_DICTIONARY_WORLDVIEW_BAND_TIME_LABELS_DELIVERED_PR305",
+      "prior_reference_status": "INSTALLED_PUBLIC_RASTER_ARRAY_NOTEBOOK_DECLARATIONS_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "d4777e4bfacd2298bdf80f18439cd14e6e739784dd293996f1940dd5fe6f9f85",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_notebook_demos.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 17,
+          "current_file_sha256": "6cd8a12ea385940cf6c1c5c8dd350c1a4d76b2da538f2f3f61a3181cfd3fa1cb",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scientific_analysis.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 29,
+          "current_file_sha256": "7c5325998e2c64d6f821d3e3ab8f1a5a7e6c16f45cd5ed713786ab082b93e154",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_vector_analysis.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 56,
+          "current_file_sha256": "2c8c447502c529b618a3dd063c72e537cad6d5cb3ff93ed18ca725f7c47629ae",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_notebook_client.py::test_owned_exact_sdk_kernel_await_shared_job_local_cancellation_reader_close_and_partial_graph",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "579e4e1128ca1966ca23f69f1d18b0b18bd7610457f23680faf67c8c1785d85b",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 4,
+          "current_file_sha256": "fc193e70aba09979f9b337d982ae3c325364bb3769806ba788a9baebd1ba8b5d",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_scientific_analysis.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "b52dee4ea7fe2dd91d45af87c11ff33473e8af798f6e25c0b133347de8befc06"
+        },
+        {
+          "reference": "python-client/tests/functional/test_vector_analysis.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "ba04d1cbb1ee3675958b2e09fb401db4481d6ee1097ee5b8281bc90b7cd81ecd"
+        },
+        {
+          "reference": "python-client/tests/functional/test_compute_and_analyze.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "98e5da1b7b861145357727396cb952c212c09e5826762b07f41cb4d6738b2c1f"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "reference_raster_labels_delivery",
+          "pr": 305,
+          "head": "1863a62ae8c8816492fa1ba3654c6056ed05350f",
+          "merge": "971f2a98751b3f458eb4b0280a7093a4a4e716cd",
+          "merged_at": "2026-11-07T21:48:46Z",
+          "final_head_checks": 36,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-reference-raster-labels-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P2.5",
+      "original_requirement": "A faithful raster/xarray and categorical views",
+      "public_python_functionality": "open_raster/open_vector/to_dataframe; export_for_analysis/async_export_for_analysis; trace_analysis",
+      "work_group": "categorical-reference-data",
+      "prior_implementation_status": "FINITE_REFERENCE_RASTER_DICTIONARY_WORLDVIEW_BAND_TIME_LABELS_DELIVERED_PR305",
+      "prior_reference_status": "INSTALLED_PUBLIC_RASTER_ARRAY_NOTEBOOK_DECLARATIONS_PASS_FINAL_ROW_PENDING",
+      "historical_audit_sha256": "14ed36324d1b86025e3645ba83e6b935339c7f0e09fe6fb1780c26be69e6238c",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_scientific_analysis.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 29,
+          "current_file_sha256": "7c5325998e2c64d6f821d3e3ab8f1a5a7e6c16f45cd5ed713786ab082b93e154",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scientific_tables.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 72,
+          "current_file_sha256": "81d9804840ebd603a0cb713a572690c8dababa266eff6425cdf52e08d4fc4031",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_vector_analysis.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 56,
+          "current_file_sha256": "2c8c447502c529b618a3dd063c72e537cad6d5cb3ff93ed18ca725f7c47629ae",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 4,
+          "current_file_sha256": "fc193e70aba09979f9b337d982ae3c325364bb3769806ba788a9baebd1ba8b5d",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[usgs-recorded]",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true,
+          "exact_parameter_junit_pass": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_scientific_analysis.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "b52dee4ea7fe2dd91d45af87c11ff33473e8af798f6e25c0b133347de8befc06"
+        },
+        {
+          "reference": "python-client/tests/functional/test_vector_analysis.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "ba04d1cbb1ee3675958b2e09fb401db4481d6ee1097ee5b8281bc90b7cd81ecd"
+        },
+        {
+          "reference": "python-client/tests/functional/test_compute_and_analyze.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "98e5da1b7b861145357727396cb952c212c09e5826762b07f41cb4d6738b2c1f"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "reference_raster_labels_delivery",
+          "pr": 305,
+          "head": "1863a62ae8c8816492fa1ba3654c6056ed05350f",
+          "merge": "971f2a98751b3f458eb4b0280a7093a4a4e716cd",
+          "merged_at": "2026-11-07T21:48:46Z",
+          "final_head_checks": 36,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/full-roadmap-reference-raster-labels-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P0",
+      "original_requirement": "A/B operation inventory and compatibility diagnostics",
+      "public_python_functionality": "connect; Connection.catalog/refresh/wait_ready/initialize_peers; IssuedTokenProvider/HubCertificateProvider",
+      "work_group": "operation-workflow-attribution",
+      "prior_implementation_status": "PUBLIC_CALLABLE_EXECUTABLE_TEST_PRESENCE_TOOLING_DELIVERED_PR306_ASSERTION_REVIEW_PARTIAL",
+      "prior_reference_status": "INSTALLED5243UNIT536SIM_CALL_PRESENCE_PASS_455NONABSTRACT_51ABSTRACT_UNCALLED_NO_NATIVE_PROMOTION",
+      "historical_audit_sha256": "364f0c32149536aa0fa68214b08bd88c309ae421c36cabb584bc8f10fb9ce28e",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_connection_guards.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 97,
+          "current_file_sha256": "b044e94c80a581847c5c182d04b59c4ae660be904e00380a3b943320b7a08379",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_existing_java_compatibility.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 96,
+          "current_file_sha256": "19758b0a166369465189269c4017d484f7500b56237168af88ae890c7704f20e",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_connection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "49a7d4f29e1adf7c921931693c4d21f6ce8a3f3c7cf37e5b88523833c8dc68d2"
+        },
+        {
+          "reference": "python-client/tests/functional/test_onboarding_journey.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3a3b939d05077f4ee2cf56b363d5de35adf1351877a008a2c61b67e54d1e53d5"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "operation_test_presence_delivery",
+          "pr": 306,
+          "head": "10caa5027b57126e579b62b9b66e21f8d968ab1c",
+          "merge": "a9faa8513e6a62b479be8b18a60e9e9aaa8c9f9c",
+          "merged_at": "2026-11-07T22:14:50Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/operation-test-attribution-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-02",
+      "original_requirement": "A explicit catalog/selection/health and peer initialization",
+      "public_python_functionality": "connect; Connection.catalog/refresh/wait_ready/initialize_peers; IssuedTokenProvider/HubCertificateProvider",
+      "work_group": "onboarding-and-routing-acceptance",
+      "prior_implementation_status": "INSTALLED_PUBLIC_ONBOARDING_EXPIRY_EXPLICIT_PROVIDER_ROUTING_MATRIX_DELIVERED_PR307",
+      "prior_reference_status": "190SDK_1ISOLATEDHTTP_18INDEPENDENTHTTP_CONTROLS_PASS_NATIVE_ISSUER_LICENSE_DEPLOYMENT_DISTINCT",
+      "historical_audit_sha256": "2975853115100c5833fef87bbd2a3d88cffa49ed8da5114eff52123ab80a0a59",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_connection.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 32,
+          "current_file_sha256": "9e7b77e3f97e85dd37fc7012eab9b443a209fd0488f39072f3f67696f797f618",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_connection_guards.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 97,
+          "current_file_sha256": "b044e94c80a581847c5c182d04b59c4ae660be904e00380a3b943320b7a08379",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_connection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "49a7d4f29e1adf7c921931693c4d21f6ce8a3f3c7cf37e5b88523833c8dc68d2"
+        },
+        {
+          "reference": "python-client/tests/functional/test_onboarding_journey.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3a3b939d05077f4ee2cf56b363d5de35adf1351877a008a2c61b67e54d1e53d5"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_onboarding_delivery",
+          "pr": 307,
+          "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
+          "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
+          "merged_at": "2026-11-07T22:23:23Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-onboarding-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P1.1",
+      "original_requirement": "A supported onboarding through computation",
+      "public_python_functionality": "connect; Connection.catalog/refresh/wait_ready/initialize_peers; IssuedTokenProvider/HubCertificateProvider",
+      "work_group": "onboarding-and-routing-acceptance",
+      "prior_implementation_status": "INSTALLED_PUBLIC_ONBOARDING_EXPIRY_EXPLICIT_PROVIDER_ROUTING_MATRIX_DELIVERED_PR307",
+      "prior_reference_status": "190SDK_1ISOLATEDHTTP_18INDEPENDENTHTTP_CONTROLS_PASS_NATIVE_ISSUER_LICENSE_DEPLOYMENT_DISTINCT",
+      "historical_audit_sha256": "4a42591d7862023bdda5f9945e9bd3140d2a3114e3c86416fb3e87489bbf63da",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_connection.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 32,
+          "current_file_sha256": "9e7b77e3f97e85dd37fc7012eab9b443a209fd0488f39072f3f67696f797f618",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_onboarding_journey.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 19,
+          "current_file_sha256": "f5fcd4265b7bc33fb37e9a4e93f8abb6e0702ff1ee9cf0749aa3ab70242e25fd",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_connection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "49a7d4f29e1adf7c921931693c4d21f6ce8a3f3c7cf37e5b88523833c8dc68d2"
+        },
+        {
+          "reference": "python-client/tests/functional/test_onboarding_journey.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3a3b939d05077f4ee2cf56b363d5de35adf1351877a008a2c61b67e54d1e53d5"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_onboarding_delivery",
+          "pr": 307,
+          "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
+          "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
+          "merged_at": "2026-11-07T22:23:23Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-onboarding-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0015"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P1.4",
+      "original_requirement": "A actionable readiness/trust diagnostics",
+      "public_python_functionality": "connect; Connection.catalog/refresh/wait_ready/initialize_peers; IssuedTokenProvider/HubCertificateProvider",
+      "work_group": "onboarding-and-routing-acceptance",
+      "prior_implementation_status": "INSTALLED_PUBLIC_ONBOARDING_EXPIRY_EXPLICIT_PROVIDER_ROUTING_MATRIX_DELIVERED_PR307",
+      "prior_reference_status": "190SDK_1ISOLATEDHTTP_18INDEPENDENTHTTP_CONTROLS_PASS_NATIVE_ISSUER_LICENSE_DEPLOYMENT_DISTINCT",
+      "historical_audit_sha256": "6731cf17e975eba5afdd22a0d276dfdaeed11c4d956c7ed784f379161a5f7ec4",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_connection.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 32,
+          "current_file_sha256": "9e7b77e3f97e85dd37fc7012eab9b443a209fd0488f39072f3f67696f797f618",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_connection_guards.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 97,
+          "current_file_sha256": "b044e94c80a581847c5c182d04b59c4ae660be904e00380a3b943320b7a08379",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_connection.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "49a7d4f29e1adf7c921931693c4d21f6ce8a3f3c7cf37e5b88523833c8dc68d2"
+        },
+        {
+          "reference": "python-client/tests/functional/test_onboarding_journey.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3a3b939d05077f4ee2cf56b363d5de35adf1351877a008a2c61b67e54d1e53d5"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_onboarding_delivery",
+          "pr": 307,
+          "head": "4c21ec9ec67e2c30be5b7e63fdefb90cde31ebd6",
+          "merge": "0f50b3b52a4750394fe8b71729ff4f4b00cfd4b0",
+          "merged_at": "2026-11-07T22:23:23Z",
+          "final_head_checks": 19,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-onboarding-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-07",
+      "original_requirement": "A jobs, polling, cancellation, sync/async and bounded concurrency",
+      "public_python_functionality": "Job/AsyncJob.result/cancel; ExperimentRunner; explicit saved-reference restoration",
+      "work_group": "restoration-lifecycle-acceptance",
+      "prior_implementation_status": "INSTALLED_RESTORATION_LIFECYCLE_MATRIX_DELIVERED_PR308",
+      "prior_reference_status": "453SDK_32LIFECYCLEHTTP_30PROVIDERHTTP_PASS_NATIVE_RETENTION_DISTINCT",
+      "historical_audit_sha256": "4e7fb1ad90ed4fa4d8d39610705451ca5dc25d97ad872765602c7d5359227a69",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_client.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 41,
+          "current_file_sha256": "d9b22e659fc3401e15e885a45bbc6c0a8fa472c512ebf781d55bb3cb997d2b32",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_experiment_runner.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 42,
+          "current_file_sha256": "896d984ed880fd52473e19c77e226b13cce85e1863ecd7e9b07224adb34c6d57",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_job_binding.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 193,
+          "current_file_sha256": "c9bc6db4b6d549368700afb9e517fdce043db678fb735ae2656033e810db1bd2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "d255aa5933f48be02035645af9ae1ce7dd064f971a93a9aef5667496b47ece48",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_notebook_client.py::test_owned_exact_sdk_kernel_await_shared_job_local_cancellation_reader_close_and_partial_graph",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "579e4e1128ca1966ca23f69f1d18b0b18bd7610457f23680faf67c8c1785d85b",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_state.py::test_clockless_states_materialization_cancellation_and_no_idempotency_invention",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "b0462059ffe6424813811b8f29dc34c4fa5351a2f8829ae4d8b0a8805466d7d3",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_deliberate_job_failures_are_visible_and_cleanup_is_owned",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 3,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_deleted_state_recovery.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3d0b3f64926d446a63763c8c7aa90a45af4bda682348b0333f632507bce07503"
+        },
+        {
+          "reference": "python-client/tests/functional/test_bounded_experiments.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "766e7998d85462b674aa8b0964fc0a3e8c55bb441e5dd13a039aa5ef74c900a4"
+        },
+        {
+          "reference": "python-client/tests/functional/test_completed_recovery.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "54b13e6c491803349d6e3b29f8dde351853be95ce2d6140cfe52f3d7e7b42a2f"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_restoration_delivery",
+          "pr": 308,
+          "head": "abfc54bda8978115228cdc4c6141a24858b80b3e",
+          "merge": "3fe92c7c192c6db36ed75cf506d6fb1c1a576c00",
+          "merged_at": "2026-11-07T22:39:36Z",
+          "final_head_checks": 38,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-restoration-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0004",
+        "JAVA-GAP-0013"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P1.2",
+      "original_requirement": "A fresh-process restoration without disposal",
+      "public_python_functionality": "save_handle/load_handle/restore_handle/to_handle; Client/AsyncClient restore methods",
+      "work_group": "restoration-lifecycle-acceptance",
+      "prior_implementation_status": "INSTALLED_RESTORATION_LIFECYCLE_MATRIX_DELIVERED_PR308",
+      "prior_reference_status": "453SDK_32LIFECYCLEHTTP_30PROVIDERHTTP_PASS_NATIVE_RETENTION_DISTINCT",
+      "historical_audit_sha256": "15d339c409556c1d8b22e0a99cec25a5986d0703ca746dc0d5efbb6c1d77d953",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_saved_handles.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 26,
+          "current_file_sha256": "19104fb05b2865a2769e4ee9882b59d46c7f4d016a402ca3f0c433cdf725a3d7",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_saved_handles.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 188,
+          "current_file_sha256": "4e9daa0441e1e1f6e5c736febe41c1f6ade306fad2f62f0c994970c4637356fc",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "d255aa5933f48be02035645af9ae1ce7dd064f971a93a9aef5667496b47ece48",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_offline_snapshots.py::test_fresh_sdk_only_process_inspects400_frozen_cells_offline_after_owned_release",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "c041bee6fce649b0d43c235992d8e3cef7671e702a8de975f6700b351effa648",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_state.py::test_clockless_states_materialization_cancellation_and_no_idempotency_invention",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "b0462059ffe6424813811b8f29dc34c4fa5351a2f8829ae4d8b0a8805466d7d3",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_completed_recovery.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "54b13e6c491803349d6e3b29f8dde351853be95ce2d6140cfe52f3d7e7b42a2f"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_handle_restoration.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "96a92740a7599518e4790d3b40f945e40ea55caf02eb12f752a3e14f46deae57"
+        },
+        {
+          "reference": "python-client/tests/functional/test_resume_saved_work.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "69b14f76ed6e2ad57b436f0af22a2bd7183db3bc3496cff3947c5df22ba11e5e"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_restoration_delivery",
+          "pr": 308,
+          "head": "abfc54bda8978115228cdc4c6141a24858b80b3e",
+          "merge": "3fe92c7c192c6db36ed75cf506d6fb1c1a576c00",
+          "merged_at": "2026-11-07T22:39:36Z",
+          "final_head_checks": 38,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-restoration-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0004"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P3.3",
+      "original_requirement": "A cancel/expiry/restart/no replay",
+      "public_python_functionality": "Job/AsyncJob.result/cancel; ExperimentRunner; explicit saved-reference restoration",
+      "work_group": "restoration-lifecycle-acceptance",
+      "prior_implementation_status": "INSTALLED_RESTORATION_LIFECYCLE_MATRIX_DELIVERED_PR308",
+      "prior_reference_status": "453SDK_32LIFECYCLEHTTP_30PROVIDERHTTP_PASS_NATIVE_RETENTION_DISTINCT",
+      "historical_audit_sha256": "24e7a8b7119cdeb3a6aa7b9de3a783961ab2256b1002a98388b036df2a2f7b18",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_deleted_state_recovery.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 17,
+          "current_file_sha256": "3ce5ccfcc69e9f6acfcab57a119464bfa7e0ca5bf722fea3a6e0c65cb6457cd0",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_job_binding.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 193,
+          "current_file_sha256": "c9bc6db4b6d549368700afb9e517fdce043db678fb735ae2656033e810db1bd2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_job_result_envelope.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 26,
+          "current_file_sha256": "b749ba55b8eb1961ead5804e3c90b8774c30bf0cd6c05c2c24b3ced65ef7d572",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "d255aa5933f48be02035645af9ae1ce7dd064f971a93a9aef5667496b47ece48",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_replay.py::test_pinned_semantic_model_and_historical_empty_result",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "134505c85f397671b1710ceca8e2b460e7c4921d5ff793177d6260bc7ecf8dbf",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_state.py::test_clockless_states_materialization_cancellation_and_no_idempotency_invention",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "b0462059ffe6424813811b8f29dc34c4fa5351a2f8829ae4d8b0a8805466d7d3",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_deliberate_job_failures_are_visible_and_cleanup_is_owned",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 3,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_deleted_state_recovery.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "3d0b3f64926d446a63763c8c7aa90a45af4bda682348b0333f632507bce07503"
+        },
+        {
+          "reference": "python-client/tests/functional/test_bounded_experiments.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "766e7998d85462b674aa8b0964fc0a3e8c55bb441e5dd13a039aa5ef74c900a4"
+        },
+        {
+          "reference": "python-client/tests/functional/test_completed_recovery.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "54b13e6c491803349d6e3b29f8dde351853be95ce2d6140cfe52f3d7e7b42a2f"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_restoration_delivery",
+          "pr": 308,
+          "head": "abfc54bda8978115228cdc4c6141a24858b80b3e",
+          "merge": "3fe92c7c192c6db36ed75cf506d6fb1c1a576c00",
+          "merged_at": "2026-11-07T22:39:36Z",
+          "final_head_checks": 38,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-restoration-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0004",
+        "JAVA-GAP-0013"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P3.5",
+      "original_requirement": "A bounded notebook concurrency and own-wait cancellation",
+      "public_python_functionality": "AsyncClient/AsyncJob; ExperimentRunner; native top-level-await notebook workflow",
+      "work_group": "notebook-integrated-acceptance",
+      "prior_implementation_status": "INSTALLED_NOTEBOOK_GUARDS_KERNEL_SMOKE_THREE_PUBLIC_HTTP_WORKFLOWS_DELIVERED_PR309",
+      "prior_reference_status": "24GUARDS_3KERNELSMOKES_3PUBLICHTTPNOTEBOOKS_PASS_NATIVE_SCHEDULER_SCIENCE_DISTINCT",
+      "historical_audit_sha256": "f7f7d475600abbbc8a2825e9693007591bcad24f22827a75941eda01b774c0be",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_notebook_guards.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 7,
+          "current_file_sha256": "f1c3cd5357c02b913ec7d47881ec6fcffa0bc88f18d4c0aa7cebe1f79f38f130",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_experiment_runner.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 42,
+          "current_file_sha256": "896d984ed880fd52473e19c77e226b13cce85e1863ecd7e9b07224adb34c6d57",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_notebook_client.py::test_owned_exact_sdk_kernel_await_shared_job_local_cancellation_reader_close_and_partial_graph",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "579e4e1128ca1966ca23f69f1d18b0b18bd7610457f23680faf67c8c1785d85b",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_notebook.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "e90bf44124e318a2695c54ea19a4fbd47be0420b9ea923095ddf86380de96e3b"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_own_wait.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "d739cfa96e03eaad93aa9933cd3879259e0d29e989cd271189498eca97965227"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_notebook_delivery",
+          "pr": 309,
+          "head": "87cc87c164a30b4dec432a4d2ef5d06e7ffc58e0",
+          "merge": "9145822213d5895c984e5ce4c3c6b357e962b88f",
+          "merged_at": "2026-11-07T22:49:56Z",
+          "final_head_checks": 39,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-notebook-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P2.1",
+      "original_requirement": "A nonuniform multi-shard scientific export",
+      "public_python_functionality": "Client/AsyncClient.export_formats/export_to_file; ObservationImpl.export_to_file/fetch_data (sync or async-bound)",
+      "work_group": "multishard-scientific-acceptance",
+      "prior_implementation_status": "INSTALLED_MULTISHARD_RECORDED_REFERENCE_SNAPSHOT_MATRIX_DELIVERED_PR310",
+      "prior_reference_status": "484SDK_3ISOLATED_52PUBLICHTTP_PASS_REAL_PROVIDER_SCIENCE_DISTINCT",
+      "historical_audit_sha256": "1c3f369175ab8971872594145c7f95e66bcdecd5025236d7e30d912ac89c8301",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_exports.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 42,
+          "current_file_sha256": "feaf185c1fb38dc2383b50422552b9c12437cfd28c3b87cd5318946938ca5384",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_exports.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 69,
+          "current_file_sha256": "069bb15595a839dfa8e6ef89f8847b7572d37ae70a5bbde78e620df0ccdd41cf",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_nonuniform_export_oracle.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 16,
+          "current_file_sha256": "dafb8c3d409de95ea77f48874392a795fce74c840d0fd54cdb230952c0d210af",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_exports.py::test_exact_pinned_native_export_preserves_original400cells_and_metadata",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "cb1d8de1f53ecdcf35b75c711b55af66c777422923ba4ffd9f157fc145d37721",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_scientific_adapters.py::test_nonuniform_native_raster_xarray_precision_mask_coordinates_and_source_trace",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 4,
+          "current_file_sha256": "fc193e70aba09979f9b337d982ae3c325364bb3769806ba788a9baebd1ba8b5d",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[usgs-recorded]",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true,
+          "exact_parameter_junit_pass": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_nonuniform_export.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "6a94e9d2272b3e99acffc26414e8e31655366532cf925a93aec0b7e0e85e97d2"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_native_export.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "8d6a9347c49e19f923a363ce325ffc76e07a3ce7d6f32e6b13ec99415fffec7c"
+        },
+        {
+          "reference": "python-client/tests/functional/test_export_deliverables.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "fe05f1a8f7cf29f727df32fdd96dd64763753451f7b7f6f357f310104bb99558"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_scientific_snapshot_delivery",
+          "pr": 310,
+          "head": "336ea76043b65284bbed7ac268582f7f74679b62",
+          "merge": "3df3ee48d49c7c8a2b10d21f304e10ca1a0feb4b",
+          "merged_at": "2026-11-07T23:00:03Z",
+          "final_head_checks": 40,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-scientific-snapshot-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P2.3",
+      "original_requirement": "A independent real-provider accuracy",
+      "public_python_functionality": "workflows.provider_reference.exercise_live; workflows.scientific_checks.load_reference (explicit independent input/reference required)",
+      "work_group": "native-provider-oracle",
+      "prior_implementation_status": "BOUNDED_IMPLEMENTATION_DELIVERED_ACCEPTANCE_PENDING",
+      "prior_reference_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "historical_audit_sha256": "049d1f7a42e91d5e183075686ad71ae3f7bd2cbfda5fc87bdc580f113baca6f8",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_nonuniform_export_oracle.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 16,
+          "current_file_sha256": "dafb8c3d409de95ea77f48874392a795fce74c840d0fd54cdb230952c0d210af",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scientific_scenario.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 36,
+          "current_file_sha256": "9601f1df21a8ef3a540bef87bdd51ff3eb8e5a4c0585a2e9ed356e914289ed7d",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[usgs-recorded]",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true,
+          "exact_parameter_junit_pass": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_provider_reference.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "b955da2b7a853db4ca6644bc6d1ed45e2bb4804078e562d9d586b0188dddbdfa"
+        }
+      ],
+      "recorded_campaign_deliveries": [],
+      "java_gap_ids": [
+        "JAVA-GAP-0001"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P2.4",
+      "original_requirement": "A representative bounded stream/interrupt",
+      "public_python_functionality": "Client/AsyncClient.export_formats/export_to_file; ObservationImpl.export_to_file/fetch_data (sync or async-bound)",
+      "work_group": "stream-scale-acceptance",
+      "prior_implementation_status": "BOUNDED_IMPLEMENTATION_DELIVERED_ACCEPTANCE_PENDING",
+      "prior_reference_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "historical_audit_sha256": "eb5bfbb46c51a0b864652905ebc50d7910dd3229a37b7f8142a9e6b8bbc1b06a",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_exports.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 42,
+          "current_file_sha256": "feaf185c1fb38dc2383b50422552b9c12437cfd28c3b87cd5318946938ca5384",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_exports.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 69,
+          "current_file_sha256": "069bb15595a839dfa8e6ef89f8847b7572d37ae70a5bbde78e620df0ccdd41cf",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_native_stream_workload.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 10,
+          "current_file_sha256": "47ab3a4aa3c49e1c55130552b19c6cee87422e66f1c2d24b914741bc8783ab57",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_exports.py::test_exact_pinned_native_export_preserves_original400cells_and_metadata",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "cb1d8de1f53ecdcf35b75c711b55af66c777422923ba4ffd9f157fc145d37721",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_nonuniform_export.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "6a94e9d2272b3e99acffc26414e8e31655366532cf925a93aec0b7e0e85e97d2"
+        },
+        {
+          "reference": "python-client/tests/functional/test_async_native_export.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "8d6a9347c49e19f923a363ce325ffc76e07a3ce7d6f32e6b13ec99415fffec7c"
+        },
+        {
+          "reference": "python-client/tests/functional/test_export_deliverables.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "fe05f1a8f7cf29f727df32fdd96dd64763753451f7b7f6f357f310104bb99558"
+        }
+      ],
+      "recorded_campaign_deliveries": [],
+      "java_gap_ids": [],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-08",
+      "original_requirement": "A exact sparse NUMBER/BOOLEAN/TEXT and explicit missingness",
+      "public_python_functionality": "ObservationImpl.fetch_data (sync or async-bound); ScientificData; to_dataframe",
+      "work_group": "safety-regression-acceptance",
+      "prior_implementation_status": "INSTALLED_SAFETY_PRECISION_PARTIAL_REFRESH_OFFLINE_NOOPTIONAL_MATRIX_DELIVERED_PR311",
+      "prior_reference_status": "587SDK_2ISOLATED_31PUBLICHTTP_PASS_NATIVE_AND_OS_SECURITY_DISTINCT",
+      "historical_audit_sha256": "c08738d51edd959cbb884b06bfac0ad15c6507bb5a04fdc31ad897afb101bed8",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_client.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 63,
+          "current_file_sha256": "89086c5212c6c192046eeb1ce66a162e756f3973bca2bfff54a4f665d448be95",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_read_semantics_isolation.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 11,
+          "current_file_sha256": "00cbbb18b1d650930c9be60cf5c9e74865ed4bef0b9d2df1dfd6e68788406843",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scientific_tables.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 72,
+          "current_file_sha256": "81d9804840ebd603a0cb713a572690c8dababa266eff6425cdf52e08d4fc4031",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_synthetic400_discovery_resolver_values_provenance_and_owned_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_read_semantics_isolation.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "8943e8fb60cabbb460a6ea3cbba8b20d06f46737e99216e531fc25fc4df3ec41"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_safety_delivery",
+          "pr": 311,
+          "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
+          "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
+          "merged_at": "2026-11-07T23:02:11Z",
+          "final_head_checks": 23,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-safety-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-12",
+      "original_requirement": "A offline snapshot inspection, never queued replay",
+      "public_python_functionality": "ScientificData.dumps/loads (offline only)",
+      "work_group": "safety-regression-acceptance",
+      "prior_implementation_status": "INSTALLED_SAFETY_PRECISION_PARTIAL_REFRESH_OFFLINE_NOOPTIONAL_MATRIX_DELIVERED_PR311",
+      "prior_reference_status": "587SDK_2ISOLATED_31PUBLICHTTP_PASS_NATIVE_AND_OS_SECURITY_DISTINCT",
+      "historical_audit_sha256": "b098cd001921bfa462875b5e7623a8746d919b401031201032d81693c353ba16",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_scientific_snapshots.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 45,
+          "current_file_sha256": "f2be9c5b5c0c364f2b434fd3256095a0bd8c2e018260e7339617c1994ca74084",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_offline_snapshots.py::test_fresh_sdk_only_process_inspects400_frozen_cells_offline_after_owned_release",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "c041bee6fce649b0d43c235992d8e3cef7671e702a8de975f6700b351effa648",
+          "executed_test_byte_parity": true
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_safety_delivery",
+          "pr": 311,
+          "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
+          "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
+          "merged_at": "2026-11-07T23:02:11Z",
+          "final_head_checks": 23,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-safety-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0014"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-18",
+      "original_requirement": "A/B safe architecture and irreversible-contract boundaries",
+      "public_python_functionality": "Origin/identity/no-replay/redaction guards across public SDK facades",
+      "work_group": "safety-regression-acceptance",
+      "prior_implementation_status": "INSTALLED_SAFETY_PRECISION_PARTIAL_REFRESH_OFFLINE_NOOPTIONAL_MATRIX_DELIVERED_PR311",
+      "prior_reference_status": "587SDK_2ISOLATED_31PUBLICHTTP_PASS_NATIVE_AND_OS_SECURITY_DISTINCT",
+      "historical_audit_sha256": "0222d2de56c1351756ed0b9cd204ede347bfaea21cffdb7b70d9d85b9b4f59c5",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_review_findings.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 41,
+          "current_file_sha256": "3a3b7a7cb4b116bf4a612fc5f93ebceb5e92a721ef239e226582d768cb5e5dd8",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_runtime_binding.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 39,
+          "current_file_sha256": "a8bd4d32710d44ce919f9c713d9a3a825eabf5a267c808220ee335af494b4433",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_source_credential_preflight.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 42,
+          "current_file_sha256": "1b5cacfbcdb29ef3fa7305e29f759b1203ad781c48f4394295146c212757e1c9",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_behavior_drafts.py::test_nonexecuting_behavior_draft_add_uses_exact_native_source_and_never_instantiates",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "f35669fb44c70fe1be20ea9140f7adc1526d9d55554de2c3deadf6af93a4ef20",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_exports.py::test_exact_pinned_native_export_preserves_original400cells_and_metadata",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "cb1d8de1f53ecdcf35b75c711b55af66c777422923ba4ffd9f157fc145d37721",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_lifecycle.py::test_fresh_sdk_process_restore_does_not_create_or_dispose_remote_state",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "d255aa5933f48be02035645af9ae1ce7dd064f971a93a9aef5667496b47ece48",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_offline_snapshots.py::test_fresh_sdk_only_process_inspects400_frozen_cells_offline_after_owned_release",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "c041bee6fce649b0d43c235992d8e3cef7671e702a8de975f6700b351effa648",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 3,
+          "current_file_sha256": "00ccea18fcaf5c28e3f7a91b8753c5e767fb4f76be99ce13eb928d8aee21a414",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_project_locks.py::test_native_project_lock_principal_sharing_and_explicit_release",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "cfcc1943f4f03e921f0c4d6e28174e75b9ee5c9b18ecafec1955e4ed63dde203",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_replay.py::test_pinned_semantic_model_and_historical_empty_result",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "134505c85f397671b1710ceca8e2b460e7c4921d5ff793177d6260bc7ecf8dbf",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_resource_imports.py::test_owned_upload_job_private_catalog_receipt_and_cleanup",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "72899bd054b6d64792e45b6717e20b50225b1cb924e24da71f81d55d0dbc5dc4",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_scope_selection.py::test_same_backend_context_reads_use_current_credentials_and_foreign_binding_is_zero_http",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "f627a15f7a6912acb52568b0cad21d201c695c0cb5fb9a53a100848515cf7ca7",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_semantics.py::test_explicit_authority_selection_hierarchy_predicates_and_passive_documentation",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "fc8b1a39c8f7549c2d7f6752be1e3bca87983cf370535fed86ef047bad3085d2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_semantics.py::test_meaning_based_catalog_inspection_remains_advertisement_not_selection",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "fc8b1a39c8f7549c2d7f6752be1e3bca87983cf370535fed86ef047bad3085d2",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_state.py::test_clockless_states_materialization_cancellation_and_no_idempotency_invention",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "b0462059ffe6424813811b8f29dc34c4fa5351a2f8829ae4d8b0a8805466d7d3",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_deliberate_job_failures_are_visible_and_cleanup_is_owned",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 3,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_safety_delivery",
+          "pr": 311,
+          "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
+          "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
+          "merged_at": "2026-11-07T23:02:11Z",
+          "final_head_checks": 23,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-safety-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-P3.2",
+      "original_requirement": "A disconnect and honest partial refresh",
+      "public_python_functionality": "GraphBrowser/AsyncGraphBrowser; GraphProjection/AsyncGraphProjection; explicit invalidation/refetch",
+      "work_group": "safety-regression-acceptance",
+      "prior_implementation_status": "INSTALLED_SAFETY_PRECISION_PARTIAL_REFRESH_OFFLINE_NOOPTIONAL_MATRIX_DELIVERED_PR311",
+      "prior_reference_status": "587SDK_2ISOLATED_31PUBLICHTTP_PASS_NATIVE_AND_OS_SECURITY_DISTINCT",
+      "historical_audit_sha256": "fe4e902a34a6070da05dbce73971cb6d20e8e37a2db78ee8a59b04b1ed8f4f7d",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_async_graph.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 35,
+          "current_file_sha256": "b99580e0100b3688c0fd10480952d051a027406c7e71ef71c83c58eec0bba662",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_graph_projection.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 33,
+          "current_file_sha256": "c21641cb8c444b690eb07385df4844a2f31c13f33d43b8d6981748c5f6eb325c",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_partial_refresh.py::test_failed_refresh_invalidates_all_pages_then_only_explicit_page_becomes_fresh",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 3,
+          "current_file_sha256": "00ccea18fcaf5c28e3f7a91b8753c5e767fb4f76be99ce13eb928d8aee21a414",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_partial_refresh.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "0c20ea3b9d8c09b8078131312cc3761061d0b4176ef8f7c04e1f2ff30bf44d8c"
+        },
+        {
+          "reference": "python-client/tests/functional/test_graph_workflow.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "a7e2d522fbee2f92281c5750daf5ca7d2d454b3b080d91102ecd513c46a5f87e"
+        }
+      ],
+      "recorded_campaign_deliveries": [
+        {
+          "name": "integrated_safety_delivery",
+          "pr": 311,
+          "head": "8867bb4af42b8cd57b635e56e12cd92f9e051d6d",
+          "merge": "b342a674a3dfa6df36501c2417e53b81174b4582",
+          "merged_at": "2026-11-07T23:02:11Z",
+          "final_head_checks": 23,
+          "final_original_row_acceptance": false,
+          "receipt": "notes/python-roadmap-execution/evidence/integrated-safety-installed-20261107.json"
+        }
+      ],
+      "java_gap_ids": [
+        "JAVA-GAP-0012"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "CAP-16",
+      "original_requirement": "A/B compatibility, fixtures, package, support/migration/scale",
+      "public_python_functionality": "Development package/support/compatibility tools; check_release_readiness; explicit configured client APIs",
+      "work_group": "integrated-packaging-compatibility",
+      "prior_implementation_status": "BOUNDED_IMPLEMENTATION_DELIVERED_ACCEPTANCE_PENDING",
+      "prior_reference_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "historical_audit_sha256": "ce1394a3a054c5847a20c6512bb4f5b8d55bb866f1f06ee654d8b361117df511",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_connected_distribution.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "f9851fd05a88abf32a2b011d202a0579884bf70615663e499df9c39d5e10142a",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_release_readiness.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 55,
+          "current_file_sha256": "7529ccbdc961d8b4182a64c2f2402c7f9749c8143ebdec2dc99ba0c6d790a8af",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_workflow_validation.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 53,
+          "current_file_sha256": "2e6542ba5e717aa013eca00884fbe6fa1ee8eb71c20e1e356462bbcbbbdef459",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_develop_compatibility.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "b5aae077066ad2f7c7345742476870bbc54ef8058e1f16afc2c89b5cb5c78218"
+        }
+      ],
+      "recorded_campaign_deliveries": [],
+      "java_gap_ids": [
+        "JAVA-GAP-0011"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-R1",
+      "original_requirement": "A/B continuous evidence layers",
+      "public_python_functionality": "Development package/support/compatibility tools; check_release_readiness; explicit configured client APIs",
+      "work_group": "integrated-packaging-compatibility",
+      "prior_implementation_status": "BOUNDED_IMPLEMENTATION_DELIVERED_ACCEPTANCE_PENDING",
+      "prior_reference_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "historical_audit_sha256": "c093054cbc5a867e4404631b17cd31905496065b7a1b5554b4b5b4c3914bbc04",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_feature_coverage.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 7,
+          "current_file_sha256": "2f88a46ac0a3113139aa208383e1c10e5380ce03b5877e607d99d09fa4775313",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_scientific_test_inventory.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "c4a9554840f15711e3e652e495c164100c31939d118ec9bc5fa1af58f2d3bb6a",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_workflow_validation.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 53,
+          "current_file_sha256": "2e6542ba5e717aa013eca00884fbe6fa1ee8eb71c20e1e356462bbcbbbdef459",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_replay.py::test_pinned_semantic_model_and_historical_empty_result",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 1,
+          "current_file_sha256": "134505c85f397671b1710ceca8e2b460e7c4921d5ff793177d6260bc7ecf8dbf",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "developer-tools/klab-service-simulator/tests/test_vertical.py::test_native_async400_and_authentic_recorded_delivery_not_java[usgs-recorded]",
+          "authority": "FINITE_REFERENCE_SERVICE",
+          "file_exists": true,
+          "passed_trace_instances": 2,
+          "current_file_sha256": "6a0f0b4a98ccab91c2396e128faf938a01c48452ffda1b0392227bcff7ba364f",
+          "executed_test_byte_parity": true,
+          "exact_parameter_junit_pass": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_develop_compatibility.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "b5aae077066ad2f7c7345742476870bbc54ef8058e1f16afc2c89b5cb5c78218"
+        }
+      ],
+      "recorded_campaign_deliveries": [],
+      "java_gap_ids": [
+        "JAVA-GAP-0011"
+      ],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    },
+    {
+      "id": "RC-R2",
+      "original_requirement": "A/B supported public release",
+      "public_python_functionality": "Development package/support/compatibility tools; check_release_readiness; explicit configured client APIs",
+      "work_group": "release-readiness-not-publication",
+      "prior_implementation_status": "BOUNDED_IMPLEMENTATION_DELIVERED_ACCEPTANCE_PENDING",
+      "prior_reference_status": "BOUNDED_PRIOR_EVIDENCE_FULL_ROW_NOT_YET_ATTESTED",
+      "historical_audit_sha256": "040ffe47ff2cf4e2e7c577241c29437d76e92c0398b0961a58ece282289ef9f6",
+      "required_test_reference_custody": [
+        {
+          "reference": "python-client/tests/unit/test_release_demos.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 20,
+          "current_file_sha256": "c0c04674bd6079d6093031674af58ae1d3aa965f39ca36813b812663d9233c2e",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/unit/test_release_readiness.py",
+          "authority": "SDK_LOCAL_OR_MOCK",
+          "file_exists": true,
+          "passed_trace_instances": 55,
+          "current_file_sha256": "7529ccbdc961d8b4182a64c2f2402c7f9749c8143ebdec2dc99ba0c6d790a8af",
+          "executed_test_byte_parity": true
+        },
+        {
+          "reference": "python-client/tests/functional/test_develop_compatibility.py",
+          "authority": "REAL_NOT_RUN",
+          "file_exists": true,
+          "passed_trace_instances": 0,
+          "current_file_sha256": "b5aae077066ad2f7c7345742476870bbc54ef8058e1f16afc2c89b5cb5c78218"
+        }
+      ],
+      "recorded_campaign_deliveries": [],
+      "java_gap_ids": [],
+      "real_java_axis": "NOT_RUN",
+      "candidate_acceptance": "PENDING_EXACT_MERGED_CANDIDATE_AND_ROW_REVIEW",
+      "proposed_scope": "Bounded implemented Python/reference functionality only; linked native gaps and external approvals remain distinct",
+      "final_disposition": null
+    }
+  ],
+  "stable17gap_custody": [
+    {
+      "id": "JAVA-GAP-0001",
+      "java_status": "CONFIRMED_DEFECT",
+      "historical_real_result": "REAL_FAIL",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0001.md",
+        "sha256": "cf6a44731f34f5bcbda226ecd55da3e2fbe4d920038ebf01ca2ec141cd33784e"
+      },
+      "native_reproducer": "notes/python-roadmap-execution/MODELER_REAL_DEM_REMEDIATION_REPORT.md#12-remaining-failures--smallest-next-action",
+      "native_evidence_limit": "Documents/finite reproductions are not new native execution; JAVA-GAP-0001 historical NullScannerReproducer.java custody remains missing."
+    },
+    {
+      "id": "JAVA-GAP-0002",
+      "java_status": "MISSING_API",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0002.md",
+        "sha256": "946708993479007d6dd640a4ad2a11cc31ca51923961188afdffb1460d10d33d"
+      },
+      "native_reproducer": "docs/JAVA_SERVICE_CONTRACT_GAPS.md",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0003",
+      "java_status": "NOT_TESTED",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0003.md",
+        "sha256": "24b6ddda8be0641fbdb442ab48b96adeac73fda238b03f4519be7a5f5b7e0f89"
+      },
+      "native_reproducer": "notes/python-roadmap-execution/MODELER_IDE_STATE.md",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0004",
+      "java_status": "NOT_TESTED",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0004.md",
+        "sha256": "507909eb179d825223766a7a2efc75d5bf184db3571dfe5ab38996de5018b786"
+      },
+      "native_reproducer": "python-client/docs/job-binding.md",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0005",
+      "java_status": "CONTRACT_PROVISIONAL",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0005.md",
+        "sha256": "3974124938522388f0ed0ec24ee1cc143f2bc96460c913af84b92d8197b7560d"
+      },
+      "native_reproducer": "https://github.com/integratedmodelling/klab-services/issues/126",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0006",
+      "java_status": "MISSING_API",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0006.md",
+        "sha256": "9c148c2fd17e10384836c008e68182843917c9a7652c83d11ba08486816f33ff"
+      },
+      "native_reproducer": "https://github.com/integratedmodelling/klab-services/issues/123",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0007",
+      "java_status": "MISSING_API",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0007.md",
+        "sha256": "067089bf171ba081d5658a845670c22c3c0fb74f8b456af1f875269dc7105733"
+      },
+      "native_reproducer": "https://github.com/integratedmodelling/klab-services/issues/124",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0008",
+      "java_status": "NOT_TESTED",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0008.md",
+        "sha256": "7f7ba976335a51d120a35c0f9453d781cb21cbcf03e9f98a8e450f3187d7cad8"
+      },
+      "native_reproducer": "python-client/docs/agent-execution.md",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0009",
+      "java_status": "CONTRACT_PROVISIONAL",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0009.md",
+        "sha256": "13ad1ebc6b9c8a0e72ce7f23801ac2c6b8a757e259c217bc09a140a1d9767bcd"
+      },
+      "native_reproducer": "docs/JAVA_SERVICE_CONTRACT_GAPS.md",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0010",
+      "java_status": "CONFIRMED_DEFECT",
+      "historical_real_result": "REAL_FAIL",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0010.md",
+        "sha256": "3220ac29de78165fb51c08c376c24391a9ebdaa7a659ebb1e46a8a56b255ac57"
+      },
+      "native_reproducer": "https://github.com/integratedmodelling/klab.component.geospatial/issues/10",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0011",
+      "java_status": "CONTRACT_PROVISIONAL",
+      "historical_real_result": "CONTRACT_DRIFT",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0011.md",
+        "sha256": "56c6407eb57df1348b28a8368fa3a6c1c06da50836929549b9d572202759bdfc"
+      },
+      "native_reproducer": "https://github.com/integratedmodelling/klab-services/issues/193",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0012",
+      "java_status": "NOT_TESTED",
+      "historical_real_result": "REAL_FAIL",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0012.md",
+        "sha256": "803ae4c81f6b42da840984ab7d052d5455209876bcade401bb8a9bae533f6f02"
+      },
+      "native_reproducer": "https://github.com/integratedmodelling/klab-services/issues/144",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0013",
+      "java_status": "CONTRACT_PROVISIONAL",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0013.md",
+        "sha256": "673192f0a250145b0b6daaf5e5327bce4975bc2a23d8e6ac7f4f4153e8b1cb32"
+      },
+      "native_reproducer": "developer-tools/klab-service-simulator/README.md",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0014",
+      "java_status": "CONTRACT_PROVISIONAL",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0014.md",
+        "sha256": "cd628022017a7318569e63dc04ed2b7d158923246f9a45a7251b9a3e9a8a6f1c"
+      },
+      "native_reproducer": "developer-tools/klab-service-simulator/README.md",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0015",
+      "java_status": "NOT_TESTED",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0015.md",
+        "sha256": "a25677d9523a4c4d2001e899d33ed165ac3bed78cf4c4b213ee11d0ef4630fa6"
+      },
+      "native_reproducer": "https://github.com/integratedmodelling/klab-services/issues/89",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0016",
+      "java_status": "CONTRACT_PROVISIONAL",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0016.md",
+        "sha256": "55f45d38a9457954d59be261aaef0d8bcd88b79a601b66f17e5c8d2798c414d1"
+      },
+      "native_reproducer": "notes/python-roadmap-execution/evidence/ab-staging-vxii-source-reference-20261106.json",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    },
+    {
+      "id": "JAVA-GAP-0017",
+      "java_status": "CONTRACT_PROVISIONAL",
+      "historical_real_result": "REAL_NOT_RUN",
+      "current_real_result": "REAL_NOT_RUN",
+      "individual_reproduction_document": {
+        "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\whole-tree-type-contracts\\docs\\java-service-contract-gaps\\reproductions\\JAVA-GAP-0017.md",
+        "sha256": "2f181c4ddad716cf0963fce49b2d1c1a01704ee8fdcab8eb2768f320c2750d37"
+      },
+      "native_reproducer": "python-worker/README.md",
+      "native_evidence_limit": "No new native execution or native resolution inferred"
+    }
+  ],
+  "governance_verification": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\gap-governance-reconciliation-20261108.xml",
+    "sha256": "ce1771c612049ee250a9c65d0548ef7c96d534a18078e48a0f8ed0b532ec15a1"
+  },
+  "operation_associations": {
+    "report": {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\whole-tree-operation-traces-first\\attribution-remaining-review-fourth.json",
+      "sha256": "ec0cc1fec905249bbd16fb0b9bb51e16baa8997d91ac02ec0be564be55893e7b"
+    },
+    "nonabstract_linked": 455,
+    "abstract_uncalled_unmapped": 51,
+    "total_classifications": 506
+  },
+  "parameter_custody": "Trace identities are function-level only. Seven historical parameter-specific references are additionally matched to exact passing JUnit case names in their unique suite test file; no parameter-specific operation presence is inferred. Earlier strict-string lookup report retained.",
+  "retained_first_reference_lookup": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\integrated-reconciliation-candidate-first\\original-42-row-evidence-preparation.json",
+    "sha256": "ce858cb3ff336b5a78092a9c8505b9c5e8c0cd40ecfe616374e4bad610109906"
+  },
+  "limits": "All required referenced Python/reference files/functions match retained passed trace test bytes; seven parameter cases independently matched exact passing JUnit names. This is reference/evidence custody, not automatic original-requirement acceptance. Abstract51 remain uncalled/unmapped; native references NOT_RUN. Exact merged-candidate, final row review/remote delivery/readiness and owned cleanup remain owed.",
+  "final_dispositions": 0,
+  "native": "REAL_NOT_RUN",
+  "publication_authorized": false,
+  "final_original_row_acceptance": false
+}
