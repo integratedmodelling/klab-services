@@ -19,18 +19,18 @@
   "pending_deliveries": [
     {
       "pr": 315,
-      "head": "7b9af529b",
-      "state": "OPEN_281_LINKED_225_MISSING_REVIEW_SUPPLEMENT_CI_PENDING"
+      "head": "24b46614cc7e09ae32bca145e6575f933013c6ea",
+      "state": "OPEN_LEDGER_CONFLICT_RECONCILED_VERIFIED312_314_ANCESTRY_FRESH_EXACT_HEAD_CI_PENDING"
     },
     {
       "pr": 316,
-      "head": "1641f65c3",
-      "state": "OPEN_ALL455_NONABSTRACT_LINKED_51ABSTRACT_UNCALLED_CI_PENDING"
+      "head": "969bd9ace16e9fee88647e4a69c6eb3e8131a0b5",
+      "state": "OPEN_RECONCILED315_HISTORY_ALL455_LINKED_FRESH_EXACT_HEAD_CI_PENDING"
     },
     {
       "pr": 317,
-      "head": "8e6d10eb3",
-      "state": "OPEN_COMBINED_CANDIDATE_42ROW_17GAP_PREPARATION_CI_PENDING_NO_FINAL_DISPOSITIONS"
+      "head": "1cf10234c945e8076d08cfb2b9a065871d9eaf6e",
+      "state": "OPEN_RECONCILED315_316_HISTORY_FRESH_EXACT_HEAD_CI_PENDING_NO_FINAL_DISPOSITIONS"
     }
   ],
   "remaining_runnable_work": [

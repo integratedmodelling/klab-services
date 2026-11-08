@@ -1,5 +1,14 @@
 # A+B completion ledger — ongoing campaign
 
+Final verification preparation tightened without production changes: require clean
+tracked exact merged317candidate before/after verification, no exhausted trace,
+all455nonabstract linked and51abstract uncalled, and end-of-pass raw source/installed/
+executed-test identity checks. Row preparation now binds fresh final attribution to
+the package SDK hashes and exact merged verification receipt, uses fresh governance
+JUnit, and still leaves explicit row review/dispositions pending. Syntax and retained
+premerge SDK-identity preflightPASS; no final run or final acceptance claimed. Fresh
+post-integration instrumentation/queue/workflow24controlsPASS.
+
 ## Follow-up retains reconciliation history
 
 315/316 prior watchers completed on their original heads, not their replacements.
