@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "state": "LOCAL_INSTALLED_BOUNDARY_REGRESSION_PASS_REMOTE_DELIVERY_PENDING",
+  "test_commit": "ec98ed989",
+  "source_candidate": "1e740c34b2adaaf2bd2b3a78c570ed99ca452103",
+  "production_source_parity": "Installed SDK/worker/reference raw hashes equal fresh receipt. Additional worktree checkout differs only in CRLF/LF normalization; git production-source diff against candidate empty. Tests execute exact raw installed packages, not checkout source.",
+  "checkout_newline_only_differences": [
+    "python-client/src/klab_client/_async_transport.py",
+    "python-client/src/klab_client/_bootstrap.py",
+    "python-client/src/klab_client/agent_messaging.py",
+    "python-client/src/klab_client/agents.py",
+    "python-client/src/klab_client/api/services.py",
+    "python-client/src/klab_client/async_client.py",
+    "python-client/src/klab_client/authoring.py",
+    "python-client/src/klab_client/client.py",
+    "python-client/src/klab_client/errors.py",
+    "python-client/src/klab_client/evidence.py",
+    "python-client/src/klab_client/experiments.py",
+    "python-client/src/klab_client/exports.py",
+    "python-client/src/klab_client/graph.py",
+    "python-client/src/klab_client/handles.py",
+    "python-client/src/klab_client/imports.py",
+    "python-client/src/klab_client/notifications.py",
+    "python-client/src/klab_client/provenance.py",
+    "developer-tools/klab-service-simulator/src/klab_simulator/managed_agents.py",
+    "developer-tools/klab-service-simulator/src/klab_simulator/model_candidates.py",
+    "developer-tools/klab-service-simulator/src/klab_simulator/persistence.py",
+    "developer-tools/klab-service-simulator/src/klab_simulator/read_plans.py",
+    "developer-tools/klab-service-simulator/src/klab_simulator/resource_imports.py",
+    "developer-tools/klab-service-simulator/src/klab_simulator/semantics.py",
+    "developer-tools/klab-service-simulator/src/klab_simulator/server.py",
+    "developer-tools/klab-service-simulator/src/klab_simulator/state.py"
+  ],
+  "new_independent_cases": 33,
+  "test_file": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\python-boundary-coverage-controls\\python-client\\tests\\unit\\test_explicit_boundary_controls.py",
+    "sha256": "18ba321aeea5ca98f4682a95257cff0e6200c9e0a6adf4adee688af61a83f3e7"
+  },
+  "installed_sdk": {
+    "counts": {
+      "tests": 5305,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "junit": {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\boundary-controls-full-sdk-first\\junit.xml",
+      "sha256": "1cb8a245fe0882382a43ed127d31777a48109acb7af536d6f21ee0abe3ba8588"
+    }
+  },
+  "current_controls": {
+    "counts": {
+      "tests": 36,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "junit": {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\boundary-controls-full-sdk-first\\current-workflow-controls.xml",
+      "sha256": "36a088249186c1b4e03c8e186694f7c4b4c9f0f273c86d82173c814dcffc09cc"
+    }
+  },
+  "package_receipt": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\whole-tree-types-installed-first\\receipt.json",
+    "sha256": "11d4f0a205ead4fc3c1a4ed6361c6e26d384120925995cf02ade78bab11b0e41"
+  },
+  "coverage": {
+    "receipt": {
+      "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\boundary-controls-full-sdk-first\\coverage.json",
+      "sha256": "e0763400943943a0fabecc585f4317b4fbe3c83071b539d3fbe843d0066edc07"
+    },
+    "totals": {
+      "covered_lines": 10481,
+      "num_statements": 10481,
+      "percent_covered": 99.98551039629066,
+      "percent_covered_display": "99",
+      "missing_lines": 0,
+      "excluded_lines": 165,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100",
+      "num_branches": 3322,
+      "num_partial_branches": 2,
+      "covered_branches": 3320,
+      "missing_branches": 2,
+      "percent_branches_covered": 99.93979530403371,
+      "percent_branches_covered_display": "99"
+    },
+    "remaining_branches": [
+      {
+        "module": "client.py",
+        "arcs": [
+          [
+            236,
+            238
+          ],
+          [
+            383,
+            387
+          ]
+        ],
+        "meaning": "No-deadline polling sleep and geometry truthiness guard after explicit non-None validation. Not waived or counted as covered."
+      }
+    ],
+    "interpretation": "100 percent measured statements, not 100 percent branches or unexcluded coverage;165 existing exclusions remain. Not whole-function functional acceptance."
+  },
+  "contracts": [
+    "Malformed concept/observable metadata, missing observation discriminator and exact integerzero serialization.",
+    "Range/currency/contextual/aggregated semantics refuse implicit storage conversion; unknown artifact, unbound observation and missing geometry encoding refuse.",
+    "Public service list/query/context/resource arrays and release booleans reject independently malformed HTTP replies; detached Runtime refuses before I/O.",
+    "Invalid waits, expired pre-request/post-body deadlines and unserializable private request content fail without unwanted HTTP or secret disclosure.",
+    "Independent finite grid and elevation invariants preserve explicit missingness and reject shape/nonfinite/range/conversion defects; not a new provider accuracy oracle."
+  ],
+  "retained_development_failures": "boundary-controls-first preserves33PASS1FAIL from attempted nonexistent pump helper; subsequent expected state/cleanup errors were corrected and delivery guard moved to parent PR312. Final supplement retains only33independent passing controls, no duplicate guard.",
+  "parent_deliveries": [
+    {
+      "pr": 312,
+      "head_prefix": "77d3c854a",
+      "state": "OPEN_CI_PENDING"
+    },
+    {
+      "pr": 313,
+      "head_prefix": "be2a72342",
+      "state": "OPEN_CI_PENDING"
+    }
+  ],
+  "operation_mapping": "Historical219linked287missing registry unchanged; newly added boundary tests do not inherit old trace presence.",
+  "queue": {
+    "original_ids": 42,
+    "final_dispositions": 0
+  },
+  "native": "REAL_NOT_RUN",
+  "publication_authorized": false,
+  "final_original_row_acceptance": false
+}
