@@ -1,5 +1,33 @@
 # A+B completion ledger — ongoing campaign
 
+## PR315–317 verified ordinary merges; exact merged verification begins
+
+315merge4a2eb39e7/316mergef418b0c8c each48rollup/47exactcommitcheckrunsSUCCESS;
+317head1cf10234c945e8076d08cfb2b9a065871d9eaf6e passed25rollup/24exactcommit
+checks and merged161f06f7a01f9dd4b69df130b0044051794e8db5. All remote/local
+ancestry checkpoints verified. Counts reflect currently triggered checks, not prior
+duplicate/more broadly triggered runs; no workflow/coveragegate removed or relaxed.
+316/317 initialUNKNOWNmergeability refused; laterMERGEABLE/allSUCCESS independently
+verified before normal merges. Separate delivery receipts preserve full CI custody.
+
+Preserve this followup branch before checking out exact317merge for fresh exclusive
+package/type/full-suite/operationtrace/coveragegate verification. Do not relabel prior
+premerge results as final. All42original rows/history/zero finaldispositions preserved;
+native science/rights/security/scale/release remain unapproved. Finalrowreconciliation,
+readiness and ownedcleanup continue immediately after verification.
+
+## PR315 reconciled head delivered
+
+315head24b46614cc7e09ae32bca145e6575f933013c6ea passed48rollup checks,
+including47checkruns independently matched to exact commitSHA; merged normally as
+4a2eb39e7eb1ee5f71014500abc298671481a004 at2026-11-08T00:48:19Z. Remote
+merge state/local ancestry checkpoint verified. Receipt
+reference-assertion-delivery-20261108.json retains CI identities and limited scope.
+Original-head watcher was not substituted after ledger-conflict reconciliation.
+316freshwatcher completed, but first current verification returned mergeabilityUNKNOWN
+and refused; no merge attempted until readiness established.317delivery/final exact
+merged-candidate/42-row acceptance/readiness and ownedcleanup remain owed.
+
 Final verification preparation tightened without production changes: require clean
 tracked exact merged317candidate before/after verification, no exhausted trace,
 all455nonabstract linked and51abstract uncalled, and end-of-pass raw source/installed/

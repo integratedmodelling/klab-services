@@ -9,10 +9,10 @@
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 314,
-    "merge": "41896c2e7c034b8fa8c5d3a68c8da937f535999a",
-    "head": "9baeae38c0aec09885972705d85d60d96f639253",
-    "utc": "2026-11-08T00:33:28Z",
+    "pr": 317,
+    "merge": "161f06f7a01f9dd4b69df130b0044051794e8db5",
+    "head": "1cf10234c945e8076d08cfb2b9a065871d9eaf6e",
+    "utc": "2026-11-08T00:50:06Z",
     "state": "VERIFIED_MERGED"
   },
   "next_actionable_requirement": "RC-P3.5",

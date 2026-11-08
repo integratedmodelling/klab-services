@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr": 317,
+  "state": "REMOTE_MERGED_LOCAL_ANCESTRY_VERIFIED",
+  "remote": {
+    "baseRefName": "feature/python-experiment-runner",
+    "headRefOid": "1cf10234c945e8076d08cfb2b9a065871d9eaf6e",
+    "mergeCommit": {
+      "oid": "161f06f7a01f9dd4b69df130b0044051794e8db5"
+    },
+    "mergedAt": "2026-11-08T00:50:06Z",
+    "state": "MERGED"
+  },
+  "exact_head_rollup_checks": 25,
+  "exact_commit_check_runs": 24,
+  "ci_receipt": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\pr317-verified-reconciled-head-ci.json",
+    "sha256": "16105742dab07f48451fb63910fe9bd404116704a2456a8cdeb2694aa9acf1d9"
+  },
+  "scope": "Combined candidate/42row17gap preparation delivered; exact mergedcandidate local verification and final rowdispositions remain pending. Current triggered checks allSUCCESS; no coverage gate changes or final/native/release promotion.",
+  "native": "REAL_NOT_RUN",
+  "publication_authorized": false,
+  "final_original_row_acceptance": false
+}
