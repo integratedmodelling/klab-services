@@ -45,6 +45,50 @@ PR213 restored default owned authority readiness after a discovered PR212 regres
 the red failure is retained, not recast as a pass. Q7's actual hierarchy discrepancy
 remains unresolved on its preserved branch and is not hidden by offline success.
 
+### Later Python/reference additions do not expand native support
+
+The roadmap campaign adds explicitly opted-in, advertised **finite reference**
+protocols for conditional document revisions/validation/publication, graph
+checkpoints/deltas, retained notification cursors, shared READ grants, selected
+windows/temporal states, declared raster dictionaries/band labels, copied A/B-to-C
+composition and managed-behavior lifecycle/disposal. These are separate from the
+native limits in the table above. In particular:
+
+- A reference publication receipt is not Java source admission or public release.
+- A completed Job is not a graph checkpoint; gaps/epochs require explicit resync.
+- A declared state/band timestamp is not provider time-axis scientific authority.
+- Copied source data/identity is not a live upstream grant or federation lease.
+- A finite actor-state fixture and declared session disposal do not prove native
+  k.Actors execution or actual private-session cleanup.
+
+The reviewed operation registry now links selected assertions for all455
+nonabstract source callables;51 abstract declarations remain uncalled. This is not
+exhaustive functional acceptance, every branch/input, or a support promise. See
+[reviewed assertion limits](reviewed-operation-assertions.md).
+
+### Migration boundaries
+
+Existing configured sync/native-async calls remain available; experimental protocols
+require explicit opt-in **and** server advertisement. Do not catch a capability,
+identity, permission, expired-reference or unsupported-operation error and silently
+switch to the reference service, another provider or guessed protocol.
+
+Saved references are offline identities, not credential/ownership grants. Restore
+through current explicitly configured credentials; stale or mismatched service,
+scope, incarnation/epoch or selection identities must refuse rather than recreate
+work. Keep historical receipts separately from fresh authorized reads.
+
+Scalar snapshots preserve integer/Decimal precision, duplicate offsets, original
+wire text and explicit missingness. Raster/vector views preserve source codes,
+masks and declared layout; dictionaries/time labels add bounded metadata, not
+automatic semantic conversion, resampling or reprojection. Install the relevant
+optional extras explicitly; core operation must not invent substitute libraries.
+
+`Job` result typing distinguishes synchronous values from native Python coroutines.
+Async waits use task cancellation, not synchronous cancellation callbacks. Cancelling
+a local wait or closing a client does not cancel/dispose remote work; use explicitly
+authorized operations and preserve uncertain outcomes without replay.
+
 ## Release evidence checker (development tool, not public SDK)
 
 `tools/check_release_readiness.py` validates a bounded operator-supplied manifest,

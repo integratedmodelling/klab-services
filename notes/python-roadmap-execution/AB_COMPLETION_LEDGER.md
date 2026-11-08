@@ -1,5 +1,31 @@
 # A+B completion ledger — ongoing campaign
 
+## Combined candidate verification and row-evidence preparation
+
+PR3161641f65c3 published all455nonabstract associations/130reviews;51abstract remain
+uncalled/unmapped. Parent312–315 remain separate ordinary deliveries. Resumed remote
+snapshot finds no current-head failures:312has88SUCCESS/3QUEUED;31378SUCCESS/13pending;
+31455SUCCESS/36pending;31515SUCCESS/57pending;316newchecks pending. These are incomplete
+CI snapshots, not merge approval; watchers remain active, prior failures retained.
+
+New owned branchfeat/python-final-roadmap-reconciliation combines314boundarycontrols
+with316review history. Ledger merge conflict resolved by retaining both histories,
+not choosing away evidence. Fresh source/wheel/sdist/installed builds and complete
+SDK/tooling/worker/reference/governance suites run as a premerge candidate preparation;
+not relabelled final merged-candidate acceptance. Both114fileplatformmypy/fatallintPASS.
+Fresh governance39PASS confirms17stable gap narratives/individual reproduction docs,
+not new native reproduction. Historical NullScannerReproducer.java custody remains
+missing; do not fabricate artifact or repair unrelated services.
+
+Private42rowpreparation checks original IDs/history and exact test/evidence identities,
+but assigns zero final dispositions until merged-candidate and row review gates. Support
+guide now distinguishes later opt-in finite reference additions from native limitations
+and gives explicit no-fallback/current-credential/precision/cancellation migration rules.
+No public release/develop promotion/support commitment. Read-only resource inventory
+finds CIwatchers and active verifier descendants, no matching notebook kernels; sampled
+watcher/verifier processes have no visible main windows. Final owned cleanup remains
+owed after jobs; no unrelated process or user terminal terminated.
+
 ## Combined reconciliation candidate — parent delivery still pending
 
 Combined candidate preserves PR314 boundary tests/evidence and PR316 all455nonabstract

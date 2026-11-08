@@ -1,5 +1,31 @@
 # Resume the full Python A+B+C campaign
 
+LATEST: PR31277d3c854a/313be2a72342/3149baeae38c/3157b9af529b/3161641f65c3 OPEN,
+allcurrentheadCI snapshots no failures but queued/running remain. Watchers active,
+never merge on partialchecks or discard previouscoverage/dependency failures.
+316 expands reviewedregistry130entries/455nonabstractlinked/51abstractuncalledunmapped;
+exact current installed/test-byte reconciliation and24controlsPASS, not exhaustive
+functional/native/finalrow acceptance.314has33independentcontrols/5305SDKPASS,
+10481statements3320/3322branches165existingexclusions; no100percentbranch claim.
+
+Current branchfeat/python-final-roadmap-reconciliation combines314+316, retaining
+ledgerhistories. Private verify-integrated-packaging.py runs fresh premerge candidate
+build/install/allgroups in full-roadmap-20261106/integrated-reconciliation-candidate-first.
+Do not change production/test/tool/examplebytes during verification. New support-guide
+reference/migration text and ledger/resume are documentation only. Both platform114
+mypy/fatallintPASS; fresh gapgovernance39PASS at gap-governance-reconciliation-20261108.xml.
+Private prepare-roadmap-row-reconciliation.py takes receipt-directorybasename and
+prepares42originalrow/17gapcustody proof only once packageverifier finishes. It assigns
+no finaldispositions. Final exactmergedcandidate packaging/readiness/42rowacceptance
+and safe ownedcleanup still owed; original primaryworktree57c9b3dd7/caches preserved.
+
+Read-only matching processinventory: CIwatchers and activeverifier descendants; no
+matchingnotebookkernel, sampledownedprocesses have no visiblemainwindow. Do not infer
+finalcleanup while active; no unrelatedterminals/services killed. Native USGS null
+scanner/missing historicalreproducer, unitissue10, currentissuer/rights/deployment,
+durability/history/federation/nativeactors/science/scale/OSsecurity/release remain
+external; no unsolicitedrepair/simulatorfallback/issueclosure/developpromotion.
+
 NEWEST312 secondhead01395fa76 stillFAIL: offlineall3versions and whole-treeWin/Linux
 PASS, but addedfullunit steps need complete extras. Inspected run42426782552 missing
 cryptography/numpy/psutil;42426782662 vector missing. Logs and rollup retained at
