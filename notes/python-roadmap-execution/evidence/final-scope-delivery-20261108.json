@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "pr": 318,
+  "state": "REMOTE_MERGED_LOCAL_ANCESTRY_VERIFIED",
+  "remote": {
+    "baseRefName": "feature/python-experiment-runner",
+    "headRefOid": "fa8198b7cde1f89c46921cb0c29233e5e4d92d15",
+    "mergeCommit": {
+      "oid": "59b2c5c49ff4bd9c6e9bfa3c3a41210da92c16f4"
+    },
+    "mergedAt": "2026-11-08T01:22:30Z",
+    "state": "MERGED"
+  },
+  "exact_head_triggered_checks": 2,
+  "all_triggered_checks": "SUCCESS",
+  "ci_receipt": {
+    "path": "C:\\Users\\lumsd\\AppData\\Local\\Temp\\opencode\\full-roadmap-20261106\\pr318-verified-final-head-ci.json",
+    "sha256": "68c7a8abbd16c51a49780413bdac2e092ac00ba8ca961b19ea76668f4c95a67e"
+  },
+  "verified_implementation_candidate": "161f06f7a01f9dd4b69df130b0044051794e8db5",
+  "notes_only_diff": [
+    "notes/python-roadmap-execution/AB_COMPLETION_LEDGER.md",
+    "notes/python-roadmap-execution/RESUME_FULL_ROADMAP.md",
+    "notes/python-roadmap-execution/evidence/combined-candidate-delivery-20261108.json",
+    "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md",
+    "notes/python-roadmap-execution/evidence/independent-boundary-delivery-20261108.json",
+    "notes/python-roadmap-execution/evidence/reference-assertion-delivery-20261108.json",
+    "notes/python-roadmap-execution/evidence/remaining-operation-delivery-20261108.json",
+    "notes/python-roadmap-execution/evidence/reviewed-operation-delivery-20261108.json",
+    "notes/python-roadmap-execution/roadmap-execution-queue.json"
+  ],
+  "scope": "42boundedPython dispositions delivered,39reference/local verified with3explicitnativeoracle/scale/releaseblocked axes. Fulloriginalnative/scientific/security/scale/release approval remains false. Final closure bookkeeping and safe active-worktree handoff remain distinct.",
+  "native": "REAL_NOT_RUN",
+  "scientific_acceptance": false,
+  "full_original_native_acceptance": false,
+  "publication_authorized": false
+}

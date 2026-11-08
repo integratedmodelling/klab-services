@@ -1,5 +1,29 @@
 # A+B completion ledger — ongoing campaign
 
+## Python scope delivery verified; final closure handoff
+
+318exactfa8198b7cde1f89c46921cb0c29233e5e4d92d15 bothtriggeredchecksSUCCESS
+merged59b2c5c49ff4bd9c6e9bfa3c3a41210da92c16f4 at2026-11-08T01:22:30Z.
+Remote/local ancestrycheckpoint verified. Notes-onlydiff against independently verified
+implementationcandidate161f06f7a; no relabelled native/scientific/release approval.
+Receipt final-scope-delivery-20261108.json. All42boundedscopes delivered, original
+IDs/history/17gaps/failed evidence preserved; no independently runnable implementation
+remaining. Queuecheck must report42scopeddispositions/zero runnable, not fullnativePASS.
+
+Post318read-only matching processinventory finds no ownedservice/kernel/CIwatcher;
+owned prior watch/test processes were windowless. Clean merged boundaryworktree already
+removed normally, original57c9b3dd7 worktree/coverage/caches and all unrelatedworktrees
+untouched. Currentprimary retained only for closure delivery; remove its known owned
+queuebytecode and perform safe sessionhandoff/worktreecleanup after final ordinarymerge.
+Private immutable verification outputs/evidence are intentionally preserved, not junk.
+
+This closure bookkeeping still requires ordinary exact-headCI/merge/checkpoint; no
+gate bypass. Nativeactual-provider science/scanner/encoder/issuer/rights/history/
+durability/federation/actors/worldview/scale/OScontainersecurity and publicrelease/
+develop/support approvals remain unestablished/external, not new Python work or repair
+authorization. ReadinessNOTELIGIBLE/publicationfalse unchanged. Final chat must state
+delivered outcome and retained blockers, not make the user read a separate document.
+
 ## Exact merged317 verification PASS;42 bounded Python scopes reconciled
 
 Post-reconciliation queue/attribution/governance61controlsPASS; queuecheck preserves

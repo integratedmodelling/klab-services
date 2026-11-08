@@ -5,7 +5,7 @@
   "scoped_reconciliation": {
     "candidate": "161f06f7a01f9dd4b69df130b0044051794e8db5",
     "receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md",
-    "state": "42_BOUNDED_PYTHON_SCOPE_DISPOSITIONS_RECONCILED_DELIVERY_AND_CLEANUP_PENDING",
+    "state": "42_BOUNDED_PYTHON_SCOPE_DISPOSITIONS_DELIVERED_PR318_NATIVE_AND_RELEASE_GATES_RETAINED",
     "interpretation": "Per-row final_acceptance_receipt identifies reviewed Python scope and unestablished native axis. Earlier implementation/remaining/test action text is retained campaign preparation history, not a fresh outstanding implementation claim. Original embedded audit unchanged. Scoped dispositions do not accept full original/native requirements.",
     "scientific_acceptance": false,
     "full_original_native_acceptance": false,
@@ -14,21 +14,28 @@
   "active": {
     "branch": "feat/python-final-candidate-acceptance",
     "pr": null,
-    "requirement": "CAP-16",
+    "requirement": null,
     "ci_review_dependencies": []
   },
   "last_verified_checkpoint": {
-    "pr": 317,
-    "merge": "161f06f7a01f9dd4b69df130b0044051794e8db5",
-    "head": "1cf10234c945e8076d08cfb2b9a065871d9eaf6e",
-    "utc": "2026-11-08T00:50:06Z",
+    "pr": 318,
+    "merge": "59b2c5c49ff4bd9c6e9bfa3c3a41210da92c16f4",
+    "head": "fa8198b7cde1f89c46921cb0c29233e5e4d92d15",
+    "utc": "2026-11-08T01:22:30Z",
     "state": "VERIFIED_MERGED"
   },
-  "next_actionable_requirement": "CAP-16",
+  "next_actionable_requirement": null,
   "pending_deliveries": [],
-  "remaining_runnable_work": [
-    "integrated-packaging-compatibility"
-  ],
+  "remaining_runnable_work": [],
+  "closeout": {
+    "python_implementation_and_finite_reference_scope": "COMPLETE_VERIFIED_AT_161f06f7a_AND_DELIVERED_PR318",
+    "independently_runnable_implementation_remaining": false,
+    "owned_extra_worktree": "CLEAN_MERGED_BOUNDARY_WORKTREE_REMOVED_WITHOUT_FORCE",
+    "owned_processes_kernels_windows": "POST318_READONLY_INVENTORY_NO_MATCHING_SERVICE_KERNEL_OR_CI_WATCHER",
+    "primary_worktree": "RETAINED_FOR_FINAL_CLOSURE_DELIVERY_THEN_SAFE_SESSION_HANDOFF",
+    "final_closure_bookkeeping": "REQUIRES_ORDINARY_EXACT_HEAD_CI_MERGE_AND_REMOTE_LOCAL_CHECKPOINT",
+    "external_native_scientific_security_scale_release_gates": "BLOCKED_UNPROMOTED"
+  },
   "external_blockers": [
     "Native actual-provider scientific tuple/permissions/oracles",
     "Maintained scientific encoder authority",
@@ -5837,8 +5844,8 @@
       },
       "work_group": "integrated-packaging-compatibility",
       "priority": 22,
-      "task_state": "in_progress",
-      "next_executable_action": "Exact merged317candidate verification and42scoped dispositions PASS; deliver final bookkeeping through ordinary exact-head CI/merge/checkpoint and verify owned worktree/cache/kernel/service/window cleanup. Do not promote native/scientific/security/scale/release acceptance.",
+      "task_state": "python_scope_reconciled",
+      "next_executable_action": "No independently runnable Python implementation remains. Scope deliveredPR318; preserve final closure remote receipt/ownedcleanup evidence. Native compatibility/scientific/security/scale/release gates require separate approved evidence, never inferred from Python completion.",
       "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
       "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#CAP-16"
     },
@@ -6077,8 +6084,8 @@
       },
       "work_group": "integrated-packaging-compatibility",
       "priority": 22,
-      "task_state": "in_progress",
-      "next_executable_action": "Deliver candidate-bound42row scope reconciliation/readiness through ordinary exact-head CI/merge/checkpoint, then complete owned cleanup and record no independently runnable implementation remains. Native science/rights/security/scale/release remain separately blocked.",
+      "task_state": "python_scope_reconciled",
+      "next_executable_action": "No independently runnable Python implementation remains; candidate-bound42row scope/readiness deliveredPR318. Native science/rights/security/scale/release remain blocked and full original/native acceptance is not granted by this scoped reconciliation.",
       "disposition": "PYTHON_COMPLETE_SIMULATOR_VERIFIED",
       "final_acceptance_receipt": "notes/python-roadmap-execution/evidence/final-python-scope-reconciliation-20261108.md#RC-R1"
     },
