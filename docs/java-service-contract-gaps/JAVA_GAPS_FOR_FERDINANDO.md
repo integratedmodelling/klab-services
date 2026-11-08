@@ -224,7 +224,9 @@ mask and metres. Actual HISTORICAL: Job 9 empty/Error;
 at `RasterEncoder.java:183`, through `RasterAdapter.encode:102`. Installed bytecode
 passes `aconst_null` at offset 180 and invokes the adapter at 207.
 
-**Environment/fixtures:** installed Modeler build `202610301844`. Original DEM SHA256
+**Environment/fixtures:** installed Modeler build `202610301844`.
+Historical live attempt window: **2026-11-06 02:58–03:11 UTC**, as recorded in the
+remediation report; the consolidation did not rerun it. Original DEM SHA256
 `026ec5429ddb1197b46247dd97832e2abe246be112e7133f4fce5029fea50de5`;
 20×20 EPSG:4269 crop `2c9fcd0748b9ef3d8c036a59af5c1419a826ba14262a3a80d089b1d59023fb26`;
 independent oracle `22ed905702f9e8bed9dc6a98f07ff7762877459c55cb50e581ec1a6fa7519b76`.
@@ -565,6 +567,9 @@ component `1.0-20261025.094856-223`, archive SHA256
 `c5192eec7fe1d47a5b4a4750c334ea3ff88520afe8d096e04c8640c3cfb289c6`.
 Retained TIFF SHA256 `940b21aee3d6eaa7e70c7baef52d29d48d577398b0352ccb0e43347ca37ba2ce`;
 [encoded artifact manifest](../../developer-tools/java-gap-governance/fixtures/native-geotiff-missing-unit.json).
+The retained artifact manifest does not contain the exact original Runtime
+execution timestamp. That is an evidence hole; issue update time and component
+build time must not be substituted for execution time.
 
 **Run now:** shared commands with `--gap JAVA-GAP-0010`, or
 `python -m pytest -q developer-tools/java-gap-governance/tests/test_native_export_capture.py`.
@@ -867,7 +872,9 @@ change input layout/unit/validity in this reference. No native route is inferred
 **Native execution status:** REAL_NOT_RUN
 
 **Priority / owner:** P2 / unknown. **Impact:** the client cannot supply supported
-scientific dataflow encoding. RC-P0 operation inventory; no dedicated issue or
+scientific dataflow encoding. Python `client.resolver.encode_dataflow(dataflow)`
+currently raises `UnsupportedOperationError` before HTTP (same explicit boundary
+in the async facade), rather than returning synthetic encoding. RC-P0 operation inventory; no dedicated issue or
 simulator scenario; newly allocated next unused stable ID (not a renamed old gap).
 **Contract:** audited source at integration SHA above:
 `ResolverClient.encodeDataflow(Dataflow)` returns null at lines 103–105 while
@@ -893,6 +900,8 @@ encoding authority/oracle are not established. A source guard is not a native
 reproducer. **Request / close:** specify the client contract, then run a bounded
 native client invocation with a maintained dataflow fixture and exact expected
 encoding/error. Existing service implementation must not be described as absent.
+Public refusal control:
+`python -m pytest -q python-client/tests/unit/test_client.py::test_explicit_unsupported_and_unconfigured_methods`.
 
 ## Native execution backlog
 
@@ -954,6 +963,11 @@ private artifacts; they are historical evidence, not portable runnable instructi
   manifest linked in 0010. Private historical scanner receipts are not silently
   promoted into repository custody. A receipt filename in an old report is not
   proof the file currently exists.
+* Historical issue #193 references the selected-query production correction in
+  [merged PR #191](https://github.com/integratedmodelling/klab-services/pull/191).
+  Preserve that narrower source correction; do not reclassify it as currently
+  missing or infer complete native parity from it or the broad baseline failure
+  inventory. It is not a newly unresolved gap or a resolved local setup incident.
 * [Full receipt index](evidence/consolidation-20261108/receipt-index.json) retains
   27 sanitized full artifacts and original/sanitized SHA256 custody, including
   both failed environment attempts, the intermediate clean 17-record pass, the
