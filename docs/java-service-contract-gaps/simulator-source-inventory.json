@@ -1,0 +1,1038 @@
+{
+  "version": 1,
+  "meaning": "Conservative source custody, not exhaustive semantic proof or native parity",
+  "scenarios": [
+    {
+      "name": "accepted-documents",
+      "java_gap_ids": [
+        "JAVA-GAP-0009"
+      ]
+    },
+    {
+      "name": "annotated-input",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ]
+    },
+    {
+      "name": "candidate-sources",
+      "java_gap_ids": [
+        "JAVA-GAP-0003"
+      ]
+    },
+    {
+      "name": "category-code-export",
+      "java_gap_ids": [
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "commit-inspection",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ]
+    },
+    {
+      "name": "copied-composition",
+      "java_gap_ids": [
+        "JAVA-GAP-0007"
+      ]
+    },
+    {
+      "name": "declared-band-export",
+      "java_gap_ids": [
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "dependency-graphs",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ]
+    },
+    {
+      "name": "dependency-inspection",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ]
+    },
+    {
+      "name": "elevation",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "empty-result",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "execution-explanation",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ]
+    },
+    {
+      "name": "export-denied",
+      "java_gap_ids": [
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "export-interrupted",
+      "java_gap_ids": [
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "export-media-mismatch",
+      "java_gap_ids": [
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "failure",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "graph-convergence",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ]
+    },
+    {
+      "name": "http500",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "import-workflow",
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0013"
+      ]
+    },
+    {
+      "name": "malformed-empty",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "managed-behavior",
+      "java_gap_ids": [
+        "JAVA-GAP-0008"
+      ]
+    },
+    {
+      "name": "material-selections",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ]
+    },
+    {
+      "name": "nonuniform-export",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "observation-selections",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ]
+    },
+    {
+      "name": "provenance-dependencies",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ]
+    },
+    {
+      "name": "provider-avro",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "revision-convergence",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ]
+    },
+    {
+      "name": "selected-read-plans",
+      "java_gap_ids": [
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "semantic-unavailable",
+      "java_gap_ids": [
+        "JAVA-GAP-0011",
+        "JAVA-GAP-0013"
+      ]
+    },
+    {
+      "name": "shared-read",
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ]
+    },
+    {
+      "name": "source-validation",
+      "java_gap_ids": [
+        "JAVA-GAP-0011",
+        "JAVA-GAP-0013"
+      ]
+    },
+    {
+      "name": "usgs-recorded",
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0014"
+      ]
+    },
+    {
+      "name": "zero-negative-nodata",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/__init__.py",
+      "sha256_lf_utf8": "a7413dd7e1496076a975d5532ba514bff503f81da2ec3bff6b03eec0cdeb26c1",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/__main__.py",
+      "sha256_lf_utf8": "ddd60a1df996b2b744c45953165711e5afe2711f5f0249f4e98875e1342411df",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/accepted_documents.py",
+      "sha256_lf_utf8": "ea319f73d3e53ce57134393aa336d427e8d0b8dddb611403f83609bae3097757",
+      "java_gap_ids": [
+        "JAVA-GAP-0009"
+      ],
+      "path_like_literals": [
+        "/experimental/accepted-documents/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/authoring.py",
+      "sha256_lf_utf8": "fb14c6e7c993bee8cb8fd9a859812fef4fcc9681068c9bb83386e849f36edc52",
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0009",
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": [
+        "/api/v1/submit/",
+        "/parseAsset/BEHAVIOR",
+        "/parseAsset/NAMESPACE"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/commits.py",
+      "sha256_lf_utf8": "0e5289a5e35488e6bae9fc2c804fe1de7fac1b2b19f76e4b3cd35d3160747cd2",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ],
+      "path_like_literals": [
+        "/api/v1/commit"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/compare.py",
+      "sha256_lf_utf8": "4ef7b4955f9c722237279453fce1544c0b9978f3cd14ef4dda453179d3c5b9ce",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/composition.py",
+      "sha256_lf_utf8": "7575a52bfdf7a7bd776ddac482e56ed21372df42b0784059bcf347a63c425aaa",
+      "java_gap_ids": [
+        "JAVA-GAP-0007"
+      ],
+      "path_like_literals": [
+        "/experimental/copied-composition/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/contracts.py",
+      "sha256_lf_utf8": "39eaced0693146e84f62912fefc049aa5afdefb80790678bafdac21fd0a3453e",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/dependencies.py",
+      "sha256_lf_utf8": "c9aeab3366c63f14a6a8c916227c16bcbb52d7e2868efb8dced4b035cf488428",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": [
+        "/api/v1/resolve/NAMESPACE/",
+        "/api/v1/resolve/NAMESPACE/synthetic.root"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/dependency_graphs.py",
+      "sha256_lf_utf8": "01111ff420404a46b6c64fee31579f86a1f69fcc624a4a4fdb5faa8e74c54dc8",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": [
+        "/experimental/dependencies/v1/graphs/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/drafts.py",
+      "sha256_lf_utf8": "4ad43825704df46fff843a7c6652164d59c8679258740750df3187cc7ce6d722",
+      "java_gap_ids": [
+        "JAVA-GAP-0009"
+      ],
+      "path_like_literals": [
+        "/experimental/drafts/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/execution_explanations.py",
+      "sha256_lf_utf8": "d3e957d65ac484b16d0ba2554dd8bbe2f9ce122bcafeef9e0ff2324f09cd672b",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ],
+      "path_like_literals": [
+        "/experimental/execution-explanations/v1/observations/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/exports.py",
+      "sha256_lf_utf8": "b2111259dfffeb5bb0a1966cf0cd4cfd698ac21227ca949f44dd42ffdf90a96b",
+      "java_gap_ids": [
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/fixtures.py",
+      "sha256_lf_utf8": "0498c99632e83fcd889f494fda67c89cdda4dc190beb174fe61b203b63c64ea5",
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/graph_commits.py",
+      "sha256_lf_utf8": "1d5beb368aedd5c0bcd2087b5faee97326cc64678b8e88e8d1fddfd8a3e3250d",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ],
+      "path_like_literals": [
+        "/experimental/graph-commits/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/input_provenance.py",
+      "sha256_lf_utf8": "e548734a93da1ee8e6b7e4f22eaf482664ff93a05c715abf8dafc0221f0848d4",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0016"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/managed_agents.py",
+      "sha256_lf_utf8": "0ff50b6dfbca8ee63cc2ff92a182e0673947c706544dda5f8d6013776b8f5480",
+      "java_gap_ids": [
+        "JAVA-GAP-0008"
+      ],
+      "path_like_literals": [
+        "/experimental/managed-agents/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/managed_behaviors.py",
+      "sha256_lf_utf8": "e61c6ffd2dd39b3c2c6ab859b649de7df5947dc479ca468398fa6590afd5098d",
+      "java_gap_ids": [
+        "JAVA-GAP-0008"
+      ],
+      "path_like_literals": [
+        "/experimental/managed-behaviors/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/material_selections.py",
+      "sha256_lf_utf8": "63c42a3333d280206825e1086838aa05774fd29c00cd9df11cc466065782a6d8",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": [
+        "/api/v1/observation/value",
+        "/api/v1/resolve",
+        "/api/v1/resolve/observable",
+        "/api/v1/submit",
+        "/createContext",
+        "/value"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/model_candidates.py",
+      "sha256_lf_utf8": "b9a08a9580bfa66a509df4f148f38c4466c18c9f304011ab2a93ab00a9327028",
+      "java_gap_ids": [
+        "JAVA-GAP-0003"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/notifications.py",
+      "sha256_lf_utf8": "fdaa773d987156e08e8cf29b5612220ceb3b64956be1a9c2dc56ff360994d92f",
+      "java_gap_ids": [
+        "JAVA-GAP-0005"
+      ],
+      "path_like_literals": [
+        "/experimental/notifications/v1/events"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/observation_selections.py",
+      "sha256_lf_utf8": "78e4e7e92dafb46b7cb92614b8d7180ce45c2c351a705d8b586087b20db39230",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": [
+        "/api/v1/observation/value",
+        "/api/v1/query",
+        "/api/v1/resolve",
+        "/api/v1/resolve/observable",
+        "/api/v1/submit"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/persistence.py",
+      "sha256_lf_utf8": "f945e6dad2edbe8dc633356974fecb1f7a0ae3dde32f95052bbe4724dff098a0",
+      "java_gap_ids": [
+        "JAVA-GAP-0004",
+        "JAVA-GAP-0017"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/provenance_fixture.py",
+      "sha256_lf_utf8": "139b382a75e7cc95c5cd2286087c113fc2497f5ecb2192ebbcea3b80ac8d8442",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0016"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/provider_avro.py",
+      "sha256_lf_utf8": "283ad64e545da71520dc5e6dbc84e359c22fd3aa4e81614bb6b135892fb1fc06",
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/read_plans.py",
+      "sha256_lf_utf8": "42c9a4786de78b7e2c5d1607a0c9bf21fed50ff023b4f90d294d63455dc555b3",
+      "java_gap_ids": [
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0014"
+      ],
+      "path_like_literals": [
+        "/experimental/read-plans/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/reference_raster_labels.py",
+      "sha256_lf_utf8": "305cdaad07213c04ff775f16f4f9c11006bc499c09eb14c5331bbadcf7364e98",
+      "java_gap_ids": [
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0014"
+      ],
+      "path_like_literals": [
+        "/experimental/reference-raster-metadata/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/reference_windows.py",
+      "sha256_lf_utf8": "5765508babbcd29f46a2d2a1614cbad2a5ae4041d2bda570239f2e324483a75e",
+      "java_gap_ids": [
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0014"
+      ],
+      "path_like_literals": [
+        "/experimental/read-plan-selections/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/replay.py",
+      "sha256_lf_utf8": "1bbcceb2f35edb96b4d55a086dc1b69a8e1b3bdaf2c683808a9e8f2f513738e4",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": [
+        "/__sim__/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/resource_imports.py",
+      "sha256_lf_utf8": "15f02861e71da4e5180204512b92ceeae5167cf35da7c8d762c4f5620a907a42",
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0009",
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/revision_snapshots.py",
+      "sha256_lf_utf8": "991e12fc81c697e4829d54d14a709be015d5bdc456d6f0fbc43f58f7841ce5d2",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ],
+      "path_like_literals": [
+        "/experimental/revision-snapshots/v1/"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/semantics.py",
+      "sha256_lf_utf8": "bfe47edc5fa3d8a5ad9ee3ddca7c10a7f40cd81f37b4766e66ee28aa499beab3",
+      "java_gap_ids": [
+        "JAVA-GAP-0011",
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": [
+        "/api/v1/authority/documentation",
+        "/api/v1/authority/search",
+        "/api/v1/children",
+        "/api/v1/parents",
+        "/api/v1/resolve/concept",
+        "/api/v1/satisfiable",
+        "/api/v1/subsumes",
+        "/parents",
+        "/satisfiable",
+        "/subsumes"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/server.py",
+      "sha256_lf_utf8": "ff245b905a4469d1f2c16b0ade7a9070e480e3a8999b8cc682a82aebb183c96d",
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0003",
+        "JAVA-GAP-0004",
+        "JAVA-GAP-0005",
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0007",
+        "JAVA-GAP-0008",
+        "JAVA-GAP-0009",
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0011",
+        "JAVA-GAP-0012",
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014",
+        "JAVA-GAP-0015",
+        "JAVA-GAP-0016",
+        "JAVA-GAP-0017"
+      ],
+      "path_like_literals": []
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/shared_access.py",
+      "sha256_lf_utf8": "c67500fbacc123baf950db64937b4321daf70b6dd6afa299ac849c5e71e6baf3",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0015"
+      ],
+      "path_like_literals": [
+        "/api/v1/connect",
+        "/api/v1/observation/value",
+        "/api/v1/query",
+        "/experimental/shared-access/v1/",
+        "/jobs/",
+        "/jobs/retrieve/",
+        "/jobs/status/",
+        "/revoke"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/source_validation.py",
+      "sha256_lf_utf8": "d6597fb0df490169ede07f1228a69f11ae619d7a41cb728703d2082b78701ad4",
+      "java_gap_ids": [
+        "JAVA-GAP-0011",
+        "JAVA-GAP-0013"
+      ],
+      "path_like_literals": [
+        "/api/v1/validate/document",
+        "/parseAsset/NAMESPACE"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/state.py",
+      "sha256_lf_utf8": "6bbde118a7be8d9f23f20cf16a9c236d0ed45acc9eabd1371290610753f2b422",
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0003",
+        "JAVA-GAP-0004",
+        "JAVA-GAP-0005",
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0007",
+        "JAVA-GAP-0008",
+        "JAVA-GAP-0009",
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0011",
+        "JAVA-GAP-0012",
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014",
+        "JAVA-GAP-0015",
+        "JAVA-GAP-0016",
+        "JAVA-GAP-0017"
+      ],
+      "path_like_literals": [
+        "/__sim__/",
+        "/__sim__/advanceDependencies",
+        "/__sim__/advanceDependencyGraph",
+        "/__sim__/advanceValidation",
+        "/__sim__/changeWorldview",
+        "/__sim__/dependencyGraphComplete",
+        "/__sim__/dependencyGraphCycle",
+        "/__sim__/dependencyGraphGap",
+        "/__sim__/executionSemanticUpdate",
+        "/__sim__/expireCommits",
+        "/__sim__/expireJobs",
+        "/__sim__/expireSharedGrant",
+        "/__sim__/graphReferenceDrop",
+        "/__sim__/graphReferenceEpoch",
+        "/__sim__/graphReferenceRename",
+        "/__sim__/queryFault",
+        "/__sim__/reset",
+        "/__sim__/state",
+        "/api/v1/commit",
+        "/api/v1/connect",
+        "/api/v1/list/",
+        "/api/v1/models/candidates",
+        "/api/v1/observation/value",
+        "/api/v1/project/lock/",
+        "/api/v1/project/unlock/",
+        "/api/v1/query",
+        "/api/v1/resolve",
+        "/api/v1/resolve/",
+        "/api/v1/resolve/observable",
+        "/api/v1/retrieve/",
+        "/api/v1/submit",
+        "/api/v1/subsumes",
+        "/cancel/",
+        "/contextualize",
+        "/createContext",
+        "/createSession",
+        "/experimental/accepted-documents/v1/",
+        "/experimental/copied-composition/v1/",
+        "/experimental/dependencies/v1/graphs/",
+        "/experimental/drafts/v1/",
+        "/experimental/execution-explanations/v1/",
+        "/experimental/graph-commits/v1/",
+        "/experimental/managed-agents/v1/",
+        "/experimental/managed-behaviors/v1/",
+        "/experimental/notifications/v1/events",
+        "/experimental/read-plan-selections/v1/",
+        "/experimental/read-plans/v1/",
+        "/experimental/reference-raster-metadata/v1/",
+        "/experimental/revision-snapshots/v1/",
+        "/experimental/worker/v1/",
+        "/export/OBSERVATION/",
+        "/import/",
+        "/jobs/",
+        "/notifyUserScope",
+        "/public/capabilities",
+        "/public/health",
+        "/public/status",
+        "/query",
+        "/releaseContext",
+        "/releaseSession",
+        "/resources",
+        "/retrieve/",
+        "/retrieveData/",
+        "/runtime",
+        "/status/",
+        "/value"
+      ]
+    },
+    {
+      "path": "developer-tools/klab-service-simulator/src/klab_simulator/workers.py",
+      "sha256_lf_utf8": "520fe7716a8bbefa2d3eeb25a7aa4e82f6453fa3ff818247c380e35518b1eda9",
+      "java_gap_ids": [
+        "JAVA-GAP-0017"
+      ],
+      "path_like_literals": [
+        "/experimental/worker/v1/"
+      ]
+    }
+  ],
+  "current_roadmap_rows": [
+    {
+      "id": "CAP-04",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P1.5",
+      "java_gap_ids": [
+        "JAVA-GAP-0013"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-01",
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P1.3",
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-05",
+      "java_gap_ids": [
+        "JAVA-GAP-0011"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P4.2",
+      "java_gap_ids": [
+        "JAVA-GAP-0009",
+        "JAVA-GAP-0011"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-14",
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0008",
+        "JAVA-GAP-0009",
+        "JAVA-GAP-0013"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P4.4",
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0009"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-13",
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0003",
+        "JAVA-GAP-0013"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P4.1",
+      "java_gap_ids": [
+        "JAVA-GAP-0003",
+        "JAVA-GAP-0011",
+        "JAVA-GAP-0013"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P4.3",
+      "java_gap_ids": [
+        "JAVA-GAP-0002",
+        "JAVA-GAP-0013"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-10",
+      "java_gap_ids": [
+        "JAVA-GAP-0005",
+        "JAVA-GAP-0012",
+        "JAVA-GAP-0016"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-11",
+      "java_gap_ids": [
+        "JAVA-GAP-0005"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P3.1",
+      "java_gap_ids": [
+        "JAVA-GAP-0005",
+        "JAVA-GAP-0016"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-06",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P3.4",
+      "java_gap_ids": [
+        "JAVA-GAP-0016"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-03",
+      "java_gap_ids": [
+        "JAVA-GAP-0007"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P4.5",
+      "java_gap_ids": [
+        "JAVA-GAP-0008"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-17",
+      "java_gap_ids": [
+        "JAVA-GAP-0017"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P5",
+      "java_gap_ids": [
+        "JAVA-GAP-0017"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-09",
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P2.2",
+      "java_gap_ids": [
+        "JAVA-GAP-0006",
+        "JAVA-GAP-0014"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-15",
+      "java_gap_ids": [
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P2.5",
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P0",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0018"
+      ],
+      "basis": "explicit supplemental native dependency"
+    },
+    {
+      "id": "CAP-02",
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P1.1",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0015"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P1.4",
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-07",
+      "java_gap_ids": [
+        "JAVA-GAP-0004",
+        "JAVA-GAP-0013"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P1.2",
+      "java_gap_ids": [
+        "JAVA-GAP-0004"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P3.3",
+      "java_gap_ids": [
+        "JAVA-GAP-0004",
+        "JAVA-GAP-0013"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P3.5",
+      "java_gap_ids": [
+        "JAVA-GAP-0004",
+        "JAVA-GAP-0015",
+        "JAVA-GAP-0016"
+      ],
+      "basis": "explicit supplemental native dependency"
+    },
+    {
+      "id": "RC-P2.1",
+      "java_gap_ids": [
+        "JAVA-GAP-0001",
+        "JAVA-GAP-0010",
+        "JAVA-GAP-0014"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P2.3",
+      "java_gap_ids": [
+        "JAVA-GAP-0001"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-P2.4",
+      "java_gap_ids": [
+        "JAVA-GAP-0014"
+      ],
+      "basis": "explicit supplemental native dependency"
+    },
+    {
+      "id": "CAP-08",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0014"
+      ],
+      "basis": "explicit supplemental native dependency"
+    },
+    {
+      "id": "CAP-12",
+      "java_gap_ids": [
+        "JAVA-GAP-0014"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-18",
+      "java_gap_ids": [
+        "JAVA-GAP-0013",
+        "JAVA-GAP-0015"
+      ],
+      "basis": "explicit supplemental native dependency"
+    },
+    {
+      "id": "RC-P3.2",
+      "java_gap_ids": [
+        "JAVA-GAP-0012"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "CAP-16",
+      "java_gap_ids": [
+        "JAVA-GAP-0011"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-R1",
+      "java_gap_ids": [
+        "JAVA-GAP-0011"
+      ],
+      "basis": "current queue"
+    },
+    {
+      "id": "RC-R2",
+      "java_gap_ids": [
+        "JAVA-GAP-0015"
+      ],
+      "basis": "explicit supplemental native dependency"
+    }
+  ]
+}

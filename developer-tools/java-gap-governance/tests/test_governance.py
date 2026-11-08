@@ -14,6 +14,12 @@ govern = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(govern)
 
 
+@pytest.fixture(autouse=True)
+def isolate_receipt_provenance_from_mocked_test_runner(monkeypatch):
+    # Mock runner tests are not real executions or provenance receipts.
+    monkeypatch.setattr(govern, 'repository_commit', lambda: 'MOCK_TEST_ONLY')
+
+
 def test_complete_registry_and_exact_original_acceptance_crosswalk():
     registry, audit, issues = govern.validate()
     assert {f"JAVA-GAP-{number:04}" for number in range(1, 17)} <= {gap["id"] for gap in registry["gaps"]}
@@ -176,20 +182,39 @@ def test_reproduction_generation_never_invents_unknown_native_build_or_endpoint(
     assert "no reviewed adapter/build/permission exists, retain NOT_RUN" in document
 
 
-def test_maintainer_handoff_has_each_gap_once_and_current_counts_with_seed_intact():
+def test_maintainer_handoff_has_each_gap_once_and_current_status_triplet():
     registry = govern.expanded()
     path = govern.DATA / "JAVA_GAPS_FOR_FERDINANDO.md"
     document = path.read_text(encoding="utf-8")
-    block = document.split(govern.HANDOFF_BEGIN)[1].split(govern.HANDOFF_END)[0].strip()
-    assert block == govern.handoff_inventory(registry).strip()
+    assert govern.canonical_check(registry)["canonical_records"] == len(registry["gaps"])
     for gap in registry["gaps"]:
-        assert block.count("|" + gap["id"] + " — ") == 1
-        assert gap["contract_case"] in block
-        assert gap["observed_java_behavior"] in block
-        assert gap["current_real_result"] in block
-    for preserved in ("Executive summary for Ferdinando", "400/400 exact", "NAD83/EPSG:4269", "NAVD88",
-                      "LOCAL_ENVIRONMENT_REPAIRED", "NullScannerReproducer.java", "not claimed delivered"):
+        assert document.count("### " + gap["id"] + "\n") == 1
+    for preserved in ("Executive summary", "EPSG:4269", "NAVD88", "RESOLVED_SETUP",
+                       "NullScannerReproducer.java", "REAL_NOT_RUN"):
         assert preserved in document
+
+
+@pytest.mark.parametrize("change", ["missing-id", "duplicate-id", "title", "native", "simulator", "execution", "link", "selector"])
+def test_canonical_drift_is_rejected(change):
+    text = (govern.DATA / 'JAVA_GAPS_FOR_FERDINANDO.md').read_text(encoding='utf-8')
+    if change == 'missing-id':
+        text = text.replace('### JAVA-GAP-0001\n', '### removed\n')
+    elif change == 'duplicate-id':
+        text += '\n### JAVA-GAP-0001\n'
+    elif change == 'title':
+        text = text.replace('**Title:** Resources remote numeric', '**Title:** Wrong numeric')
+    elif change == 'native':
+        text = text.replace('**Native status:** CONFIRMED_DEFECT', '**Native status:** NATIVE_WORKS_VERIFIED', 1)
+    elif change == 'simulator':
+        text = text.replace('**Simulator status:** SIMULATOR_NOT_TESTED', '**Simulator status:** SIMULATOR_PASS', 1)
+    elif change == 'execution':
+        text = text.replace('**Native execution status:** REAL_NOT_RUN', '**Native execution status:** REAL_PASS', 1)
+    elif change == 'link':
+        text += '\n[bad](missing-file.md)\n'
+    else:
+        text += '\n`python-client/tests/unit/test_connection.py::invented_test`\n'
+    with pytest.raises(ValueError):
+        govern.canonical_check(govern.expanded(), text)
 
 
 def test_handoff_generation_preserves_narrative_and_refuses_missing_or_duplicate_markers():

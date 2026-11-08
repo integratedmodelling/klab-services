@@ -3,9 +3,12 @@ import argparse
 import ast
 from collections import Counter
 import copy
+from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import re
+import platform
 import subprocess
 import sys
 import tempfile
@@ -88,6 +91,21 @@ def validate(registry=None, audit=None, issues=None):
     scenario_ids = {case["id"] for case in index["cases"]}
     covered = set()
     for gap in gaps:
+        for field in ("native_status", "simulator_status", "native_execution_status"):
+            if field not in gap:
+                raise ValueError("Missing independent status dimension: " + field)
+        if gap["native_execution_status"] != gap["current_real_result"]:
+            raise ValueError("Native execution status disagrees with retained execution history")
+        if gap["simulator_status"] == "SIMULATOR_NOT_IMPLEMENTED" and not gap.get("simulator_not_implemented_reason"):
+            raise ValueError("Unimplemented simulator requires an exact reason")
+        if gap["native_status"] == "NATIVE_WORKS_VERIFIED" and gap["native_execution_status"] != "REAL_PASS":
+            raise ValueError("Verified native contract requires actual native pass")
+        if gap["native_execution_status"] != "REAL_NOT_RUN":
+            evidence = gap.get("native_execution_evidence", {})
+            if (evidence.get("kind") != "NATIVE_EXECUTION" or not all(evidence.get(field)
+                    for field in ("build", "environment", "timestamp_utc", "receipt_ref"))):
+                raise ValueError("Non-NOT_RUN native result requires build/environment/time/native execution receipt")
+            local_ref(evidence["receipt_ref"])
         if not set(gap["requirement_ids"]) <= set(original):
             raise ValueError("Unknown original requirement")
         covered.update(gap["simulator_scenario_refs"])
@@ -157,6 +175,65 @@ def validate(registry=None, audit=None, issues=None):
             if row["closure_eligible"]:
                 raise ValueError("Current campaign closure requires reviewed complete migration evidence")
     return registry, audit, issues
+
+
+def canonical_check(registry, text=None):
+    """Validate the human-authored canonical file; never regenerate its prose."""
+    path = DATA / "JAVA_GAPS_FOR_FERDINANDO.md"
+    text = path.read_text(encoding="utf-8") if text is None else text
+    headings = re.findall(r"^### (JAVA-GAP-[0-9]{4})$", text, re.M)
+    if Counter(headings) != Counter(gap["id"] for gap in registry["gaps"]):
+        raise ValueError("Canonical Markdown IDs must match the complete register exactly once")
+    sections = dict(re.findall(r"^### (JAVA-GAP-[0-9]{4})\n(.*?)(?=^### JAVA-GAP-|^## |\Z)", text, re.M | re.S))
+    labels = {"native_status": "Native status", "simulator_status": "Simulator status",
+              "native_execution_status": "Native execution status"}
+    summary_counts = dict((status, int(count)) for status, count in
+                          re.findall(r"^\|(CONFIRMED_DEFECT|CONFIRMED_MISSING_API|CONTRACT_PROVISIONAL|NOT_TESTED|NATIVE_WORKS_VERIFIED|RESOLVED_SETUP|SUPERSEDED)\|([0-9]+)\|$", text, re.M))
+    expected_counts = Counter(gap["native_status"] for gap in registry["gaps"])
+    if not summary_counts or any(expected_counts[key] != value for key, value in summary_counts.items()) or any(key not in summary_counts for key in expected_counts):
+        raise ValueError("Canonical native summary counts drift")
+    for gap in registry["gaps"]:
+        section = sections[gap["id"]]
+        if "**Title:** " + gap["title"] + "\n" not in section:
+            raise ValueError("Canonical title drift: " + gap["id"])
+        for field, label in labels.items():
+            values = re.findall(r"\*\*" + label + r":\*\* ([A-Z_]+)", section)
+            if values != [gap[field]]:
+                raise ValueError("Canonical status drift: " + gap["id"] + " " + field)
+        for requirement in gap["requirement_ids"]:
+            if requirement not in section:
+                raise ValueError("Canonical requirement omitted: " + requirement)
+        for issue in gap["original_issues"]:
+            if issue not in section:
+                raise ValueError("Canonical issue omitted: " + issue)
+        if "--gap " + gap["id"] not in section or "Native blocker:" not in section:
+            raise ValueError("Canonical executable command/blocker omitted: " + gap["id"])
+    anchors = {re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-")
+               for heading in re.findall(r"^#{1,6} (.+)$", text, re.M)}
+    for target in re.findall(r"\[[^\]]*\]\(([^)]+)\)", text):
+        if target.startswith("https://"):
+            continue
+        if target.startswith("#"):
+            if target[1:] not in anchors:
+                raise ValueError("Missing canonical anchor: " + target)
+        else:
+            resolved = (path.parent / target.split("#")[0]).resolve()
+            resolved.relative_to(ROOT)
+            if not resolved.is_file():
+                raise ValueError("Broken canonical relative link: " + target)
+    for ref in re.findall(r"`([^`\n]*\.py(?:::[^`\n ]+)?)`", text):
+        if ref.startswith(("python-client/", "python-worker/", "developer-tools/")):
+            test_ref(ref)
+    if re.search(r"[A-Za-z]:[\\/]Users[\\/]|Bearer [A-Za-z0-9._-]{12,}", text):
+        raise ValueError("Machine-private path or credential in canonical instructions")
+    live_path = DATA / "live-issue-review.json"
+    if live_path.is_file():
+        for issue in load(live_path)["issues"]:
+            pattern = (r"\]\(" + re.escape(issue["url"]) + r"\) — "
+                       + re.escape(issue["title"]) + r"\|" + issue["state"] + r"\|")
+            if not re.search(pattern, text):
+                raise ValueError("Canonical live issue title/state/link drift: " + issue["url"])
+    return {"canonical_records": len(headings)}
 
 
 def counts(items, field):
@@ -279,9 +356,14 @@ def reproduction_document(gap):
 
 def generate(check=False):
     registry, audit, issues = validate()
+    canonical_check(registry)
     documents = {name: "\n".join(lines) + "\n" for name, lines in outputs(registry, audit, issues).items()}
-    handoff = DATA / "JAVA_GAPS_FOR_FERDINANDO.md"
-    documents[handoff.name] = handoff_document(registry, handoff.read_text(encoding="utf-8"))
+    # Old generated summaries are supporting pointers, not competing master lists.
+    for name in ("JAVA_GAP_STATUS.md", "CONTRACT_MATRIX.md", "ISSUE_RECONCILIATION.md"):
+        documents[name] = ("# Supporting evidence pointer\n\n"
+                           "The canonical human-facing inventory, contracts, reproductions and issue crosswalk are in\n"
+                           "[JAVA_GAPS_FOR_FERDINANDO.md](JAVA_GAPS_FOR_FERDINANDO.md).\n\n"
+                           "Historical versions remain available in Git history; machine evidence remains in the adjacent JSON/YAML indexes.\n")
     documents.update({"reproductions/" + gap["id"] + ".md": reproduction_document(gap) for gap in registry["gaps"]})
     for name, text in documents.items():
         path = DATA / name
@@ -293,14 +375,25 @@ def generate(check=False):
             path.write_text(text, encoding="utf-8")
 
 
+def repository_commit():
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True,
+                                   creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)).strip()
+
+
 def contracts(mode, output, selected=None):
+    if output.exists() or output.with_suffix('.pytest.log').exists():
+        raise FileExistsError('Choose an unused result/log path; evidence is never overwritten')
     registry, _, _ = validate()
     gaps = registry["gaps"]
     if selected:
         if not set(selected) <= {g["id"] for g in gaps}:
             raise ValueError("Unknown selected gap")
         gaps = [gap for gap in gaps if gap["id"] in selected]
-    result = {"mode": mode, "fallbacks": 0, "science": "NOT_RUN", "cases": []}
+    result = {"mode": mode, "fallbacks": 0, "science": "NOT_RUN", "cases": [],
+              "started_utc": datetime.now(timezone.utc).isoformat(),
+              "repository_commit": repository_commit(),
+              "python": platform.python_version(), "platform": sys.platform,
+              "govern_sha256_lf_utf8": hashlib.sha256(Path(__file__).read_text(encoding='utf-8').encode('utf-8')).hexdigest()}
     if mode == "real":
         for gap in gaps:
             result["cases"].append({"gap_id": gap["id"], "case_id": gap["contract_case"], "tag": "REAL_NOT_RUN",
@@ -344,11 +437,15 @@ def contracts(mode, output, selected=None):
                 gap_failed = any(outcomes[test_group(ref)]["failed"]
                                  for ref in gap["python_test_refs"])
                 result["cases"].append({"gap_id": gap["id"], "case_id": gap["contract_case"],
-                    "tag": "SIMULATED_PASS" if not gap_failed else None, "status": "FAIL" if gap_failed else "PASS", "current_real": "REAL_NOT_RUN",
+                    "tag": ("SIMULATOR_NOT_IMPLEMENTED" if gap["simulator_status"] == "SIMULATOR_NOT_IMPLEMENTED"
+                            else "SIMULATED_PASS") if not gap_failed else None,
+                    "status": "FAIL" if gap_failed else "PASS", "current_real": "REAL_NOT_RUN",
                     "assertion_scope": gap["simulator_behavior"], "pytest_refs": gap["python_test_refs"]})
             result["groups"] = outcomes
             result["assertion_kind"] = "Explicit HTTP substitutes and client protocol/refusal guards, not missing Java capability acceptance"
-    output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    result["finished_utc"] = datetime.now(timezone.utc).isoformat()
+    with output.open('x', encoding='utf-8') as stream:
+        stream.write(json.dumps(result, indent=2) + "\n")
     return code
 
 
@@ -368,6 +465,7 @@ def main(argv=None):
         generate(args.check)
     else:
         registry, audit, issues = validate()
+        canonical_check(registry)
         print(json.dumps({"gaps": len(registry["gaps"]), "acceptance_rows": len(audit["records"]),
             "issues": len(issues["issues"]), "current_real_execution": "NOT_RUN"}))
     return 0

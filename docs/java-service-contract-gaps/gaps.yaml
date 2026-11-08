@@ -11,6 +11,9 @@
     "lifecycle": "SPECIFIED",
     "historical_real_result": "REAL_NOT_RUN",
     "current_real_result": "REAL_NOT_RUN",
+    "native_execution_status": "REAL_NOT_RUN",
+    "simulator_status": "SIMULATOR_NOT_TESTED",
+    "native_status": "NOT_TESTED",
     "real_command": null,
     "resolution_criteria": [
       "Pin the maintained Java build, identity, input and exact request contract",
@@ -22,6 +25,7 @@
   "gaps": [
     {
       "id": "JAVA-GAP-0001", "legacy_ids": ["JAVA-SCANNER-001"],
+      "native_status": "CONFIRMED_DEFECT",
       "title": "Resources remote numeric scanner is null on preserved USGS workflow",
       "subsystem": "resources", "java_component": "ResourcesProvider.contextualizeSynchronous / RasterEncoder.encodeFromCoverage:183",
       "api_contract": {"method": "POST", "path": "/runtime/api/v1/submit", "request_schema_ref": "python-client/docs/contracts.md", "expected_response_schema_ref": "developer-tools/klab-service-simulator/contract-cases.json#SIM-USGS-001"},
@@ -41,6 +45,7 @@
     },
     {
       "id": "JAVA-GAP-0002", "legacy_ids": ["JAVA-RESOURCE-CLEANUP-001"],
+      "native_status": "CONFIRMED_MISSING_API",
       "title": "Supported owned RESOURCE cleanup contract absent in inspected delete branch",
       "subsystem": "resources", "java_component": "ResourcesProvider.delete RESOURCE handling (source finding)",
       "api_contract": {"method": "POST", "path": "/resources/import/{schema}/{urn}", "request_schema_ref": "python-client/docs/resource-imports.md", "expected_response_schema_ref": "python-client/docs/resource-imports.md"},
@@ -87,6 +92,7 @@
     },
     {
       "id": "JAVA-GAP-0005", "legacy_ids": [],
+      "native_status": "CONTRACT_PROVISIONAL",
       "title": "Durable remote notification cursor and gap-aware resync contract unestablished",
       "last_verified": "2026-11-07",
       "last_verified_basis": "Fresh installed Python/simulator retained-reference tests; NOT fresh native Java execution or AMQP acceptance",
@@ -102,6 +108,7 @@
     },
     {
       "id": "JAVA-GAP-0006", "legacy_ids": [],
+      "native_status": "CONFIRMED_MISSING_API",
       "title": "Published remote block/window/revision-lease API missing from inspected controller",
       "subsystem": "runtime", "java_component": "Runtime READ_VALUE StorageScan.Point controller",
       "api_contract": {"method": "POST", "path": "/runtime/api/v1/observation/value", "request_schema_ref": "python-client/docs/contracts.md", "expected_response_schema_ref": null},
@@ -115,6 +122,7 @@
     },
     {
       "id": "JAVA-GAP-0007", "legacy_ids": [],
+      "native_status": "CONFIRMED_MISSING_API",
       "title": "Composed-twin migration/failover contract absent from inspected connect stubs",
       "subsystem": "federation", "java_component": "ClientContextScope.connect / ServiceContextScope.connect",
       "api_contract": {"method": null, "path": null, "request_schema_ref": "docs/DISTRIBUTED_TWINS.md", "expected_response_schema_ref": null},
@@ -141,6 +149,7 @@
     },
     {
       "id": "JAVA-GAP-0009", "legacy_ids": [],
+      "native_status": "CONTRACT_PROVISIONAL",
       "title": "Generic accepted-source conditional update/history/publication contract unestablished",
       "subsystem": "authoring", "java_component": "ResourcesProvider / WorkspaceManager authoring and project lock operations",
       "api_contract": {"method": null, "path": null, "request_schema_ref": "python-client/docs/revision-draft-reference.md", "expected_response_schema_ref": "python-client/docs/revision-draft-reference.md"},
@@ -154,6 +163,7 @@
     },
     {
       "id": "JAVA-GAP-0010", "legacy_ids": [],
+      "native_status": "CONFIRMED_DEFECT",
       "title": "Published native continuous GeoTIFF loses measurement-unit metadata",
       "subsystem": "geospatial", "java_component": "GeodataIO continuous GeoTIFF / Geotools.stateToCoverage",
       "api_contract": {"method": "GET", "path": "/export/OBSERVATION/{urn}", "request_schema_ref": "python-client/docs/stream-exports.md", "expected_response_schema_ref": "python-client/docs/discover-compare-explain-status.md"},
@@ -169,6 +179,7 @@
     },
     {
       "id": "JAVA-GAP-0011", "legacy_ids": [],
+      "native_status": "CONTRACT_PROVISIONAL",
       "title": "Legacy frozen worldview fixture differs from current ODO/source-validation contracts",
       "subsystem": "semantics", "java_component": "RuntimeFixtureCompatibilitySourceTest / source semantic admission",
       "api_contract": {"method": null, "path": null, "request_schema_ref": "https://github.com/integratedmodelling/klab-services/issues/193", "expected_response_schema_ref": null},
@@ -197,6 +208,7 @@
     },
     {
       "id": "JAVA-GAP-0013", "legacy_ids": ["SIM-CLOCK-001", "SIM-IMPORT-001", "SIM-INPUT-BINDING-001", "SIM-SEMANTICS-001"],
+      "native_status": "CONTRACT_PROVISIONAL",
       "title": "Finite simulator scheduling, admission and semantic answers remain provisional substitutes",
       "subsystem": "simulator-contract", "java_component": "Native Job/scope/Resources/Reasoner compatibility, not a missing Java scheduler/compiler",
       "api_contract": {"method": null, "path": null, "request_schema_ref": "developer-tools/klab-service-simulator/contract-cases.json", "expected_response_schema_ref": "developer-tools/klab-service-simulator/contract-cases.json"},
@@ -212,6 +224,7 @@
     },
     {
       "id": "JAVA-GAP-0014", "legacy_ids": ["SIM-METADATA-001", "SIM-EXPORT-001", "SIM-ADAPTERS-001"],
+      "native_status": "CONTRACT_PROVISIONAL",
       "title": "Synthetic grid metadata, selected temporal export and descriptor mappings need real tuple evidence",
       "subsystem": "scientific-data", "java_component": "GeometryImpl / StorageScan.Point / KlabServiceController.exportAsset / BaseService",
       "api_contract": {"method": "GET", "path": "/runtime/export/OBSERVATION/{urn}", "request_schema_ref": "python-client/docs/native-async.md", "expected_response_schema_ref": "developer-tools/klab-service-simulator/contract-cases.json#SIM-TEMPORAL-EXPORT-001"},
@@ -240,6 +253,7 @@
     },
     {
       "id": "JAVA-GAP-0016", "legacy_ids": ["JAVA-COMMIT-001"],
+      "native_status": "CONTRACT_PROVISIONAL",
       "title": "Remote committed revision and complete historical lineage contract unestablished",
       "subsystem": "runtime", "java_component": "KnowledgeGraphQuery/LinkImpl / native committed selection receipts",
       "api_contract": {"method": "POST", "path": "/runtime/api/v1/query", "request_schema_ref": "python-client/docs/graph-projection.md", "expected_response_schema_ref": null},
@@ -254,6 +268,7 @@
     },
     {
       "id": "JAVA-GAP-0017", "legacy_ids": [],
+      "native_status": "CONTRACT_PROVISIONAL",
       "title": "Computation-worker registration, lease and atomic output protocol pending native authority",
       "subsystem": "worker", "java_component": "Native provider/worker role and transport not established; existing Resources contextualization is a distinct Avro contract",
       "api_contract": {"method": null, "path": null, "request_schema_ref": "python-worker/README.md", "expected_response_schema_ref": "python-worker/README.md"},
@@ -275,6 +290,24 @@
         "Provide operator-approved resource/isolation/security and package/provenance policy; trusted process isolation is not an adversarial sandbox or hard resident-memory guarantee"
       ],
       "notes": "C now in scope under full-roadmap directive; issue127 remains open because a proposal/local process is not actual backend integration. Explicit experimental routes are not authoritative Java APIs. Worker polls retained task state and fails closed on cancellation/status loss; startup-gated Windows Job Object/POSIX process-group cleanup removes owned descendants after all outcomes. Explicit Limits.memory_bytes applies Windows aggregate Job committed-memory limit or POSIX inherited per-process RLIMIT_AS, not a cross-platform aggregate RSS guarantee; defaultNone claims no memory cap. Trusted scripts only: deliberate POSIX setsid escape, hostile-code sandboxing, total disk quota and maintained native transport/ABI/deployment acceptance remain unestablished. No server-supplied code/credentials/scientific model port or production SDK dependency on simulator."
+    },
+    {
+      "id": "JAVA-GAP-0018", "legacy_ids": [],
+      "title": "Resolver client dataflow encoding has no transport implementation",
+      "subsystem": "resolver", "java_component": "ResolverClient.encodeDataflow versus ResolverService.encodeDataflow",
+      "api_contract": {"method": null, "path": null, "request_schema_ref": "klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Resolver.java", "expected_response_schema_ref": null},
+      "requirement_ids": ["RC-P0"], "original_issues": [],
+      "python_test_refs": ["developer-tools/java-gap-governance/tests/test_encoder_source.py::test_pinned_client_stub_is_not_absence_of_service_encoding"],
+      "simulator_scenario_refs": [], "reproducer_ref": "klab.core.common/src/main/java/org/integratedmodelling/common/services/client/ResolverClient.java",
+      "observed_java_behavior": "Audited source ResolverClient.encodeDataflow returns null; ResolverService implements encoding. No client method was executed here and no native HTTP endpoint is inferred.",
+      "simulator_behavior": "NOT_IMPLEMENTED: no substitute encoder; static source regression guard checks client/service distinction only, never produces encoded scientific dataflows.",
+      "simulator_status": "SIMULATOR_NOT_IMPLEMENTED",
+      "simulator_not_implemented_reason": "No maintained remote encoding transport/DTO authority; source inspection guard is executable but not an encoder simulator.",
+      "native_status": "CONFIRMED_MISSING_API", "java_status": "MISSING_API", "python_status": "NOT_TESTED",
+      "contract_confidence": "HARNESS_EVIDENCED", "priority": "P2", "contract_case": "GAP-CASE-0018",
+      "source_build_or_commit": "9db975b21146093a7962d29e28345a762519befd source inspection only",
+      "links": ["klab.core.api/src/main/java/org/integratedmodelling/klab/api/services/Resolver.java", "klab.services.resolver/src/main/java/org/integratedmodelling/klab/services/resolver/ResolverService.java"],
+      "notes": "Confirmed missing client-boundary implementation, not absent Java service encoding and not fresh native execution. Need supported encoding authority and bounded client construction/transport fixture before native reproducer can run. Keep unsupported SDK disposition rather than invent endpoint or scientific encoding."
     }
   ]
 }
