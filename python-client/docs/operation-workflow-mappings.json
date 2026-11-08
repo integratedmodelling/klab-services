@@ -3,6 +3,66 @@
   "scope": "Explicit reviewed assertion descriptions; only linked passed trace scopes count as observed. Not native acceptance; all unlisted operations remain assertion-evidence missing.",
   "workflows": [
     {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_exports.py::test_streamed_export_is_published_only_after_close_and_keeps_exact_bytes",
+      "operations": [["exports.py", "export_formats"], ["exports.py", "export_to_file"], ["api/runtime.py", "ObservationImpl.export_to_file"], ["client.py", "Client.export_to_file"], ["transport.py", "Transport.stream"]],
+      "assertions": "Mock advertised export uses explicit scope/RuntimeID/media and identity encoding; destination stays absent during chunks. After close exact28bytes publish, immutable receipt preserves schema/media/path/count, exactly two HTTP calls and no temporary files. Numeric context-qualified ID is used despite named observationURN. Local atomic publication contract, not actual provider export/remote durability."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_connection.py::test_provider_substitution_uses_same_client_and_origin_headers",
+      "operations": [["_bootstrap.py", "public_fields"], ["_bootstrap.py", "wire_request"], ["_bootstrap.py", "decode_bootstrap"], ["credentials.py", "parse_properties"], ["credentials.py", "CredentialGrant.for_url"], ["connection_models.py", "ServiceCatalog.summary"], ["client.py", "Client.initialize_user_scope"], ["client.py", "Session.id"], ["client.py", "Client.close"]],
+      "assertions": "Explicit issued-token or certificate provider yields same Client/session1, selects probed runtime-uuid rather than issuer referenceID and advertises that probed ID. Certificate request carries exact fields without Authorization; downstream origin requests carry explicit issued credential. Summaries/reprs omit token, local close adds no request/releases and closed client refuses reuse. Mock issuer substitution, not real certificate approval/current native rights."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_exports.py::test_exact_native_bytes_and_advertised_formats_published_after_close",
+      "operations": [["_async_exports.py", "export_formats"], ["_async_exports.py", "export_to_file"], ["async_client.py", "AsyncClient.export_formats"], ["async_client.py", "AsyncClient.export_to_file"], ["_async_transport.py", "AsyncTransport.request"], ["_async_transport.py", "AsyncTransport.stream"], ["_async_transport.py", "AsyncTransport.aclose"]],
+      "assertions": "Mock advertised geojson schema precedes async export with explicit media/identity encoding/focused scope/RuntimeID. Exact65540bytes publish after response close with either explicit overwrite policy and no temporary files retained. Native means Python byte stream, not actual Java export/provider correctness."
+    },
+    {
+      "authority": "MOCK_HTTP_ONLY",
+      "test_ref": "python-client/tests/unit/test_async_exports.py::test_stream_failure_preserves_destination_and_closes_response",
+      "operations": [["_async_exports.py", "export_to_file"], ["_async_transport.py", "AsyncTransport.stream"]],
+      "assertions": "Wrong media/encoding, partial206, mismatched length, empty content, header/stream byte budgets, read transport error and403 all refuse with typed errors. Existing destination remains exact original bytes, response closes and no partial temporary file remains. Mock negative contracts only, not remote atomicity or durable export acceptance."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_wire.py::test_exchange_uses_the_production_java_name_uuid_algorithm",
+      "operations": [["_agent_wire.py", "agent_exchange"]],
+      "assertions": "Explicit federation/agent identity yields exact independently frozen Java exchange name; changing either identity changes name. Local pinned codec compatibility, not running broker topology, ACL or native actor acceptance."
+    },
+    {
+      "authority": "LOCAL_DTO_ONLY",
+      "test_ref": "python-client/tests/unit/test_agent_wire.py::test_python_commands_equal_production_java_json",
+      "operations": [["_agent_wire.py", "encode_command"], ["_agent_wire.py", "decode_message"]],
+      "assertions": "Explicit start/stop/status commands serialize to exact frozen Java JSON envelopes including supplied ID/timestamp; decoding retains absent status. Local frozen wire compatibility only, not successful native command delivery or actor execution."
+    },
+    {
+      "authority": "ORCHESTRATION_DOUBLES_ONLY",
+      "test_ref": "python-client/tests/unit/test_notifications.py::test_owned_queue_manual_ack_timeout_duplicate_and_out_of_order_hints",
+      "operations": [["notifications.py", "ActivityNotifications.open"], ["notifications.py", "ActivityNotifications.read"], ["notifications.py", "ActivityNotifications.close"]],
+      "assertions": "Mock broker opens exactly one exclusive nondurable owned queue with passive fanout exchange, manual acknowledgements and prefetch1. Timeout is no event; duplicate retained hint is accepted, invalid ID rejects; nested payload frozen and secrets omitted. Exactly two ACKs, explicit queue deletion and confirmed local close; reuse/read-after-close refuse. Continuity/overflow UNKNOWN, not real broker ACL/order/replay acceptance."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_reference_windows.py::test_public_exact_windows_temporal_states_masks_layout_and_owned_release",
+      "operations": [["reference_windows.py", "ReferenceWindow.to_wire"], ["reference_windows.py", "ReferenceTemporalState.to_wire"], ["reference_windows.py", "ReadPlanSelections.states"], ["reference_windows.py", "ReadPlanSelections.open"], ["reference_windows.py", "ReadPlanSelections.read"], ["reference_windows.py", "ReadPlanSelections.release"], ["reference_windows.py", "AsyncReadPlanSelections.states"], ["reference_windows.py", "AsyncReadPlanSelections.open"], ["reference_windows.py", "AsyncReadPlanSelections.read"], ["reference_windows.py", "AsyncReadPlanSelections.release"], ["read_plans.py", "open_read_plan"], ["read_plans.py", "read_plan_shard"], ["read_plans.py", "assemble_read_plan"], ["read_plans.py", "release_read_plan"], ["read_plans.py", "async_open_read_plan"], ["read_plans.py", "async_read_plan_shard"], ["read_plans.py", "async_release_read_plan"]],
+      "assertions": "Explicit sync/async reference selection preserves independently calculated 12-cell baseline/alternate values and validity, 3x4 shape, exact affine transform, m units, two UTC instants and distinct source/plan revisions. Repeated reads agree; full plan retains400cells/baseline revision. Bob and out-of-grid window deny; explicit release makes fresh read410 and final plans/scopes zero. Finite selected-window fixture, not native provider time/projection/resampling or scientific accuracy."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_graph_convergence.py::test_public_two_client_snapshots_deltas_job_hints_gaps_and_explicit_resync",
+      "operations": [["reference_commits.py", "ReferenceCommits.snapshot"], ["reference_commits.py", "ReferenceCommits.checkpoint"], ["reference_commits.py", "ReferenceCommits.reconcile"], ["reference_commits.py", "AsyncReferenceCommits.snapshot"], ["reference_commits.py", "AsyncReferenceCommits.checkpoint"], ["reference_commits.py", "AsyncReferenceCommits.reconcile"], ["reference_commits.py", "_Projection.view"], ["reference_commits.py", "_Projection.hint"], ["reference_commits.py", "_Projection.clear"], ["reference_commits.py", "ReferenceGraphProjection.resync"], ["reference_commits.py", "ReferenceGraphProjection.refresh"], ["reference_commits.py", "AsyncReferenceGraphProjection.resync"], ["reference_commits.py", "AsyncReferenceGraphProjection.refresh"]],
+      "assertions": "Two explicit same-principal clients preserve revision0 snapshot across Job completion: completion is not checkpoint. Duplicate local hints invalidate without replacing snapshot; explicit checkpoint1 yields3nodes/3edges and stale expected revision409. Refresh converges rename/drop deltas while revision0 remains readable; retained-gap and epoch changes require explicit resync, preserving invalidated historical snapshot. Bob/focused misuse deny; local clear empties view and owner cleanup is separate. Finite reference convergence only, not native scientific commits/durable history."
+    },
+    {
+      "authority": "SIMULATED_HTTP_ONLY",
+      "test_ref": "developer-tools/klab-service-simulator/tests/test_public_copied_composition.py::test_public_independent_a_b_capture_and_c_result_lifecycle_never_delegates_source_grants",
+      "operations": [["copied_composition.py", "CopiedSourceIdentity.to_wire"], ["copied_composition.py", "CopiedSourceSnapshot.to_wire"], ["copied_composition.py", "capture_copied_source"], ["copied_composition.py", "async_capture_copied_source"], ["copied_composition.py", "CopiedCompositions.compose"], ["copied_composition.py", "CopiedCompositions.inspect"], ["copied_composition.py", "CopiedCompositions.release"], ["copied_composition.py", "AsyncCopiedCompositions.compose"], ["copied_composition.py", "AsyncCopiedCompositions.inspect"], ["copied_composition.py", "AsyncCopiedCompositions.release"]],
+      "assertions": "Three independent reference runtimes preserve equal observationIDs with distinct runtime identities. Explicit A/B snapshots yield exactly400 pairwise sums only where both masks valid; C result preserves source vector/runtime and explicitly false live_federation/durable with caller-asserted-not-grant evidence. Bob cannot restore A; foreign principal cannot inspect C. Release gives410, leaves A/B counts and recaptured values/revisions unchanged; final all scopes/compositions zero and no C scientific submit. Copied finite data, not delegated source rights or live native federation."
+    },
+    {
       "authority": "LOCAL_DTO_ONLY",
       "test_ref": "python-client/tests/unit/test_scientific_snapshots.py::test_independent_known_values_metadata_and_detached_roundtrip",
       "operations": [["_scientific_snapshot.py", "dumps"], ["_scientific_snapshot.py", "loads"], ["api/runtime.py", "GeometryImpl.to_wire"]],

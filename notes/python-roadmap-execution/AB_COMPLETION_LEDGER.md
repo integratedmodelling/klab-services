@@ -1,5 +1,37 @@
 # A+B completion ledger — ongoing campaign
 
+## PR315 integration reconciliation — fresh head CI required
+
+PR315 original head7b9af529b completed its watcher, but merge verification refused
+CONFLICTING/DIRTY after312–314 merged. Reconciled the ledger by retaining both
+historical supplements below; production/test bytes and coverage gates unchanged.
+312merge29848b050/313merge0048a771f/314merge41896c2e7 are now campaign ancestry.
+Fresh updated-head CI and ordinary merge remain required; no final/native acceptance.
+
+## Reference assertion supplement — 281 linked, 225 still missing
+
+Parent31277d3c854a/313be2a72342 remainOPEN/CIpending; corrected dependencies have passing
+feature results but complete exact-head gate remains owed. BoundaryPR3149baeae38c is
+OPEN with33independent cases,5305installedSDK/36controlsPASS and disclosed3320/3322
+branches/165exclusions. No verified merge or native/final-row promotion yet.
+
+New independent branchfeat/python-reference-assertion-supplement adds10reviewed test
+functions (51→61workflows), linking281operations/225missing across unchanged506
+classifications/455observed51abstractuncalled. Reviewed selected windows, graph CAS/
+resync, independent A/B→Ccopied lifecycle, sync/async exports, pinned agent codecs,
+mocked notification queue and token/certificate substitution. Assertions read directly
+from exact repository tests, including denial/expiry/release and explicit uncertainty.
+Reconciliation checks unchanged exact installed source and executed-test hashes against
+retained passing5270SDK538reference traces; no new execution or new-test attribution
+claimed. Attribution/queue/workflow24controlsPASS. Receipt
+reference-assertion-supplement-20261108.json preserves old219/287 counts and identities.
+
+Next continue missing225review, final-headCI/ordinarymerges/remoteancestry checkpoints,
+exact merged package/readiness/42-rowreconciliation and owned cleanup. Native service
+compatibility/science/current rights/durability/federation/OSsecurity/release remain
+external, not silently simulated. All42original IDs/history/zero final dispositions
+preserved; no milestone stopping gate.
+
 ## Independent boundary supplement — installed verification, delivery pending
 
 Owned branchfeat/python-boundary-coverage-controls saves33independent malformed-wire,
