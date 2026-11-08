@@ -54,6 +54,7 @@ def preflight(gap_id):
     return {'gap_id': gap_id, 'native_execution_status': 'REAL_NOT_RUN',
             'preflight': 'PASS', 'files_sha256': files,
             'reason': row['native_prerequisite'],
+            'required_native_inputs': row['native_prerequisite'],
             'classification': row['handoff_classification'],
             'executed': 'Repository test-file custody/hash checks only; no Java request attempted',
             'not_executed': 'Public SDK-to-Java behavior, scientific oracle, mutation or cleanup',
@@ -107,6 +108,8 @@ def main(argv=None):
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--connect', type=Path)
     args = parser.parse_args(argv)
+    if args.output.exists():
+        raise FileExistsError('Choose an unused receipt path before any connection attempt')
     result = preflight(args.gap)
     result['timestamp_utc'] = datetime.now(timezone.utc).isoformat()
     result['repository_commit'] = subprocess.check_output(
@@ -114,6 +117,7 @@ def main(argv=None):
         creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)).strip()
     code = 3
     if args.connect:
+        result['executed'] = 'Repository custody and explicitly requested capability-gate check; selected native workflow not executed'
         try:
             if args.connect.stat().st_size > 16384:
                 raise ValueError('Connection configuration exceeds byte budget')
@@ -124,6 +128,8 @@ def main(argv=None):
             code = 4
     with args.output.open('x', encoding='utf-8') as stream:
         stream.write(json.dumps(result, indent=2) + '\n')
+    print(json.dumps({key: result[key] for key in ('gap_id', 'native_execution_status', 'reason',
+        'required_native_inputs', 'executed', 'next_action')}))
     return code
 
 

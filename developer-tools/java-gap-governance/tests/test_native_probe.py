@@ -58,9 +58,12 @@ def test_redirect_is_never_followed():
     assert probe.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://elsewhere') is None
 
 
-def test_receipt_is_exclusive_and_not_run(tmp_path):
+def test_receipt_is_exclusive_and_not_run(tmp_path, capsys):
     path = tmp_path / 'receipt.json'
     assert probe.main(['--gap', 'JAVA-GAP-0001', '--output', str(path)]) == 3
     assert json.loads(path.read_text())['native_execution_status'] == 'REAL_NOT_RUN'
+    displayed = json.loads(capsys.readouterr().out)
+    assert displayed['required_native_inputs'] and displayed['reason']
+    assert 'custody/hash checks only' in displayed['executed'] and displayed['next_action']
     with pytest.raises(FileExistsError):
         probe.main(['--gap', 'JAVA-GAP-0001', '--output', str(path)])

@@ -511,6 +511,11 @@ def contracts(mode, output, selected=None):
     result["finished_utc"] = datetime.now(timezone.utc).isoformat()
     with output.open('x', encoding='utf-8') as stream:
         stream.write(json.dumps(result, indent=2) + "\n")
+    if mode == 'real':
+        for case in result['cases']:
+            print(json.dumps({'gap_id': case['gap_id'], 'native_execution_status': case['tag'],
+                              'reason': case['reason'], 'executed': case['executed'],
+                              'next_action': case['next_action']}))
     return code
 
 
