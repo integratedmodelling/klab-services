@@ -111,7 +111,7 @@ public final class SemanticEnvironmentFactory
         input.configurationRevision(),
         input.payload(),
         input.beanStatus(),
-        input.diagnostics());
+        input.diagnostics(), input.sourceDiagnostics());
   }
 
   private final Map<String, java.util.Set<String>> coreClassNames;
@@ -433,7 +433,7 @@ public final class SemanticEnvironmentFactory
         errors.isEmpty()
             ? CandidatePublicationCoordinator.BeanStatus.VALID
             : CandidatePublicationCoordinator.BeanStatus.INVALID,
-        errors.stream().map(Notification::getMessage).toList());
+        errors.stream().map(Notification::getMessage).toList(), CandidateDiagnostic.capture(errors));
   }
 
   public static List<String> sourceOrder(Worldview worldview) {
@@ -548,7 +548,7 @@ public final class SemanticEnvironmentFactory
             null,
             CandidatePublicationCoordinator.LogicalStatus.NOT_RUN,
             true,
-            beanErrors.stream().map(Notification::getMessage).toList());
+            beanErrors.stream().map(Notification::getMessage).toList(), CandidateDiagnostic.capture(beanErrors));
     }
     cancellation.checkpoint();
     var unsupported = new ArrayList<String>();
@@ -789,7 +789,8 @@ public final class SemanticEnvironmentFactory
         actor.sealSemanticContent(content);
       }
       var result =
-          new CandidatePublicationCoordinator.Result<>(environment, status, true, messages);
+          new CandidatePublicationCoordinator.Result<>(
+              environment, status, true, messages, CandidateDiagnostic.capture(diagnostics));
       transferred = true;
       environment = null; // Coordinator now owns disposal of returned state.
       return result;

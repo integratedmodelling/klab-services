@@ -108,6 +108,30 @@ class CapturedConfiguredAuthorityTest {
     assertThrows(UnsupportedOperationException.class,()->CapturedAuthorityCatalog.captureRecorded(f.data,f.source,Map.of("UN.M49",0L),CapturedAuthorityCatalog.captureProviderEvidence(f.data)));
     Files.writeString(f.state,"{}");assertThrows(Exception.class,()->capture(f));
   }
+  @Test void configuredSnapshotsPersistIndependentlyOfProducerJsonFormatting() throws Exception {
+    var original = fixture();
+    // Producer bytes are authenticated separately; durable snapshots use canonical value hashes.
+    Files.write(original.state, json.writerWithDefaultPrettyPrinter().writeValueAsBytes(
+        json.readValue(Files.readAllBytes(original.state), ConfiguredAuthoritySnapshot.class)));
+    var f = new Fixture(original.data, original.archive, original.state, original.source,
+        original.binding, original.request, Map.of("UN.M49", digest(Files.readAllBytes(original.state))));
+    var captured = capture(f);
+    var file = directory.resolve("persistent.json");
+    captured.writePersistent(file);
+    var restored = CapturedAuthorityCatalog.readPersistent(file);
+    assertEquals(captured.revision(), restored.revision());
+    assertTrue(restored.certifiesDurableContent(f.source));
+    Files.delete(f.archive);
+    var provider = restored.provider(f.binding, f.request, directory.resolve("restored"));
+    var id = provider.configure(AuthorityBindings.providerRequest(f.request));
+    assertEquals("Spain", provider.resolveIdentity(id, "Spain").getId());
+    provider.releaseConfiguration(id);
+    var tree = json.readTree(Files.readAllBytes(file));
+    ((com.fasterxml.jackson.databind.node.ObjectNode) tree.path("configuredSnapshots")
+        .path("UN.M49").path("snapshot")).put("state", Base64.getEncoder().encodeToString("tampered".getBytes(StandardCharsets.UTF_8)));
+    Files.write(file, json.writeValueAsBytes(tree));
+    assertThrows(java.io.IOException.class, () -> CapturedAuthorityCatalog.readPersistent(file));
+  }
   @Test void configuredCodelistsReplayWithoutConfigureOrInteractiveFallbackAndObeyRelease()throws Exception{
     var f=fixture();var catalog=capture(f);Files.delete(f.archive);
     var provider=catalog.provider(f.binding,f.request,directory.resolve("codelist-offline"),()->false);

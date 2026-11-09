@@ -17,6 +17,19 @@ import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 
 class IdentityRequirementSupportTest {
+  @Test void assertedIndexIsSharedOnlyWithinOneUnchangedOntologyGeneration() throws Exception {
+    try (var t = new Fixture()) {
+      t.require("SUBJECT", t.type("RootA"));
+      t.ready();
+      assertTrue(t.project("SUBJECT").isAbstract());
+      assertFalse(t.project("ThirdSubject").isAbstract());
+      assertEquals(1L, t.owl.identityRequirementCache().metrics().get("indexBuilds"));
+      t.require("ThirdSubject", t.type("RootB"));
+      assertTrue(t.project("ThirdSubject").isAbstract());
+      assertEquals(2L, t.owl.identityRequirementCache().metrics().get("indexBuilds"));
+    }
+  }
+
   @Test void dependentRequirementTargetsInheritedBearerCategoryRatherThanDependentIdentity() throws Exception {
     try (var t = new Fixture()) {
       t.owl.requireOntology("odo", "http://integratedmodelling.org").define(List.of(

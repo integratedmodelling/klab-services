@@ -21,6 +21,24 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 
 class SemanticValidationPublicationTest {
+  @Test void diagnosticOnlyRequestsNeverAccessResourcesOrCompile() throws Exception {
+    var owl = mock(OWL.class);
+    var reasoner = reasoner(owl, new AuthorityBindings());
+    var runtime = mock(AcceptedSemanticRuntime.class);
+    field(reasoner, "candidateRuntime", runtime);
+    when(runtime.status()).thenReturn(new CandidatePublicationCoordinator.Status(1, 0,
+        CandidatePublicationCoordinator.BeanStatus.VALID, CandidatePublicationCoordinator.LogicalStatus.INVALID,
+        Map.of(), Map.of(), List.of("invalid"), List.of()));
+    when(runtime.diagnostics(any(), any())).thenAnswer(invocation -> invocation.getArgument(1));
+    var request = org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.of(ontology("earth"), "saved");
+    request.setDiagnosticsOnly(true);
+    var scope = mock(UserScope.class);
+    reasoner.validateDocument(request, scope);
+    verify(runtime).diagnostics(eq(request), any());
+    verifyNoInteractions(scope, owl);
+    verify(runtime, never()).validate(any(), any(), any());
+  }
+
   @Test void operationalSetterCanClearReadiness() throws Exception {
     var reasoner = reasoner(mock(OWL.class), new AuthorityBindings());
     reasoner.setOperational(true);

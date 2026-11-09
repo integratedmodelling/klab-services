@@ -867,6 +867,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       SemanticValidationRequest request, Scope scope, SemanticValidationResponse response) {
     response.setKnowledgeRevision(knowledgeRevision());
     var document = request.document();
+    if (request.isDiagnosticsOnly()) {
+      if (candidateRuntime != null && !semanticOnly)
+        return candidateRuntime.diagnostics(request, response);
+      response.setStatus(SemanticValidationResponse.Status.UNAVAILABLE);
+      response.setReason("No retained candidate diagnostics are available");
+      return response;
+    }
     // Project type is authoritative Resources metadata. Reject unsupported .kwv documents before
     // attempting a worldview repair: an unchanged adopted worldview cannot ever admit them.
     if (document instanceof KimOntology ontology
@@ -1539,7 +1546,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     + String.join("; ", status.diagnostics());
             if (!diagnostic.equals(lastCandidateDiagnostic)) {
               lastCandidateDiagnostic = diagnostic;
-              Logging.INSTANCE.warn(diagnostic);
+              if (AcceptedSemanticRuntime.validationBlocked(status)) Logging.INSTANCE.error(diagnostic);
+              else Logging.INSTANCE.warn(diagnostic);
             }
           }
           case VALID -> lastCandidateDiagnostic = null;
@@ -1781,9 +1789,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           .put("semantic.validation.reason", AcceptedSemanticRuntime.validationReason(status));
       ret.getMetadata()
           .put("semantic.validation.blocked", AcceptedSemanticRuntime.validationBlocked(status));
-      status
-          .diagnostics()
-          .forEach(message -> ret.getAdvisories().add(Notification.warning(message)));
+      ret.getMetadata().put("semantic.validation.diagnostics", true);
+      if (!status.sourceDiagnostics().isEmpty())
+        status.sourceDiagnostics().stream().map(
+            org.integratedmodelling.klab.services.reasoner.internal.CandidateDiagnostic::notification)
+            .forEach(ret.getAdvisories()::add);
+      else status.diagnostics().forEach(message -> ret.getAdvisories().add(
+          AcceptedSemanticRuntime.validationBlocked(status)
+              ? Notification.error(message) : Notification.warning(message)));
       return ret;
     }
     ret.getMetadata()

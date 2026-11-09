@@ -14,6 +14,11 @@ public class SemanticValidationRequest implements Serializable {
   private String documentVersion;
   private long knowledgeRevision = -1;
   private boolean executableModels;
+  private boolean diagnosticsOnly;
+
+  /** Read retained candidate diagnostics only; never compile, synchronize or validate sources. */
+  public boolean isDiagnosticsOnly() { return diagnosticsOnly; }
+  public void setDiagnosticsOnly(boolean value) { diagnosticsOnly = value; }
   private String executionContext;
   private boolean classifierPreparableDependencies;
 

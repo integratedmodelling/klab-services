@@ -741,6 +741,9 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
               response,
           Scope requestingScope) {
+    var candidate = coordinator.status();
+    if (validationBlocked(candidate) && matchingCandidateSource(candidate, request))
+      return unavailableValidation(request, response, candidate);
     try (var lease = lease()) {
       return validatePinned(request, response, requestingScope, lease, false);
     } catch (IllegalStateException unavailable) {
@@ -840,6 +843,14 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     }
   }
 
+  /** No actor lease or Resources access: this path is safe during failed startup. */
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
+      diagnostics(
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest request,
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response) {
+    return unavailableValidation(request, response, coordinator.status());
+  }
+
   /** Stable, client-readable explanation; polling does not initiate validation. */
   public static boolean validationBlocked(CandidatePublicationCoordinator.Status status) {
     return status.beanStatus() == CandidatePublicationCoordinator.BeanStatus.INVALID
@@ -877,7 +888,22 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
               request,
           org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
               response) {
-    var status = coordinator.status();
+    return unavailableValidation(request, response, coordinator.status());
+  }
+
+  private static boolean matchingCandidateSource(CandidatePublicationCoordinator.Status status,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest request) {
+    var hash = org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest
+        .sourceHash(request.document().getSourceCode());
+    return hash != null && hash.equals(status.candidateSources().get(
+        SemanticEnvironmentFactory.sourceKey(request.document())));
+  }
+
+  static org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
+      unavailableValidation(
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest request,
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response,
+          CandidatePublicationCoordinator.Status status) {
     response.setKnowledgeRevision(status.acceptedGeneration());
     response.setSemanticContentFingerprint(null);
     response.setSemanticSessionId(null);
@@ -891,11 +917,18 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         status.logicalStatus() == CandidatePublicationCoordinator.LogicalStatus.VALID
             ? "The saved document is not part of the accepted semantic generation; waiting for worldview synchronization"
             : validationReason(status));
-    response.addDocumentDiagnostic(
-        request,
-        validationBlocked(status)
-            ? org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error
-            : org.integratedmodelling.klab.api.services.runtime.Notification.Level.Warning);
+    if (matchingCandidateSource(status, request))
+      status.sourceDiagnostics().stream()
+          .filter(diagnostic -> diagnostic.belongsTo(request.document()))
+          .map(CandidateDiagnostic::notification)
+          .forEach(response.getNotifications()::add);
+    if (response.getNotifications().isEmpty())
+      response.addDocumentDiagnostic(
+          request,
+          validationBlocked(status)
+              ? org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error
+              : org.integratedmodelling.klab.api.services.runtime.Notification.Level.Warning);
+    response.deduplicateNotifications();
     return response;
   }
 

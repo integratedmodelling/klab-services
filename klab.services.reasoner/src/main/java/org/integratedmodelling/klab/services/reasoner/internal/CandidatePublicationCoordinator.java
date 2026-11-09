@@ -31,7 +31,13 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
 
   public record Input<I>(Map<String, String> sourceHashes, List<String> sourceOrder,
       String dependencyRevision, String configurationRevision, I payload,
-      BeanStatus beanStatus, List<String> diagnostics) {
+      BeanStatus beanStatus, List<String> diagnostics, List<CandidateDiagnostic> sourceDiagnostics) {
+    public Input(Map<String, String> sourceHashes, List<String> sourceOrder,
+        String dependencyRevision, String configurationRevision, I payload,
+        BeanStatus beanStatus, List<String> diagnostics) {
+      this(sourceHashes, sourceOrder, dependencyRevision, configurationRevision, payload,
+          beanStatus, diagnostics, List.of());
+    }
     public Input {
       sourceHashes = Map.copyOf(sourceHashes);
       sourceOrder = List.copyOf(sourceOrder);
@@ -44,14 +50,20 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
       if (beanStatus == BeanStatus.NOT_CHECKED)
         throw new IllegalArgumentException("Candidate input needs a completed bean preflight");
       diagnostics = List.copyOf(diagnostics);
+      sourceDiagnostics = List.copyOf(sourceDiagnostics);
     }
   }
 
   public record Result<S>(S state, LogicalStatus logicalStatus, boolean isolationVerified,
-      List<String> diagnostics) {
+      List<String> diagnostics, List<CandidateDiagnostic> sourceDiagnostics) {
+    public Result(S state, LogicalStatus logicalStatus, boolean isolationVerified,
+        List<String> diagnostics) {
+      this(state, logicalStatus, isolationVerified, diagnostics, List.of());
+    }
     public Result {
       Objects.requireNonNull(logicalStatus);
       diagnostics = List.copyOf(diagnostics);
+      sourceDiagnostics = List.copyOf(sourceDiagnostics);
       if (logicalStatus == LogicalStatus.PENDING)
         throw new IllegalArgumentException("A completed build cannot be pending");
     }
@@ -60,7 +72,14 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
   public record Status(long inputGeneration, long acceptedGeneration, BeanStatus beanStatus,
       LogicalStatus logicalStatus, Map<String, String> candidateSources,
       Map<String, String> acceptedSources, List<String> diagnostics,
-      List<String> cleanupFailures) {}
+      List<String> cleanupFailures, List<CandidateDiagnostic> sourceDiagnostics) {
+    public Status(long inputGeneration, long acceptedGeneration, BeanStatus beanStatus,
+        LogicalStatus logicalStatus, Map<String, String> candidateSources,
+        Map<String, String> acceptedSources, List<String> diagnostics, List<String> cleanupFailures) {
+      this(inputGeneration, acceptedGeneration, beanStatus, logicalStatus, candidateSources,
+          acceptedSources, diagnostics, cleanupFailures, List.of());
+    }
+  }
 
   @FunctionalInterface public interface Builder<I, S> {
     Result<S> build(Input<I> input, Cancellation cancellation) throws Exception;
@@ -144,6 +163,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
   private Input<I> currentInput;
   private LogicalStatus logicalStatus = LogicalStatus.UNAVAILABLE;
   private List<String> diagnostics = List.of();
+  private List<CandidateDiagnostic> sourceDiagnostics = List.of();
   private Slot accepted;
   private Job<I> pending;
   private boolean workerScheduled;
@@ -175,6 +195,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
       currentInput = input;
       latestBeanStatus = input.beanStatus();
       diagnostics = input.diagnostics();
+      sourceDiagnostics = input.sourceDiagnostics();
       pending = null;
       if (input.beanStatus() == BeanStatus.INVALID) logicalStatus = LogicalStatus.NOT_RUN;
       else {
@@ -208,6 +229,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
     pending = null;
     latestBeanStatus = BeanStatus.NOT_CHECKED;
     logicalStatus = LogicalStatus.CANCELLED;
+    sourceDiagnostics = List.of();
     diagnostics = List.of("Candidate inputs changed; resubmit an authoritative snapshot");
     notifyAll();
   }
@@ -215,7 +237,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
     if (closed) return;
     generation++; pending = null; currentInput = null;
     latestBeanStatus = BeanStatus.INVALID; logicalStatus = LogicalStatus.NOT_RUN;
-    diagnostics = List.copyOf(failures); notifyAll();
+    diagnostics = List.copyOf(failures); sourceDiagnostics = List.of(); notifyAll();
   }
 
   public synchronized Status status() {
@@ -223,7 +245,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
         latestBeanStatus, logicalStatus,
         currentInput == null ? Map.of() : currentInput.sourceHashes(),
         accepted == null ? Map.of() : accepted.input.sourceHashes(),
-        List.copyOf(diagnostics), List.copyOf(cleanupFailures));
+        List.copyOf(diagnostics), List.copyOf(cleanupFailures), sourceDiagnostics);
   }
 
   /** Pin one accepted generation for the entire semantic read, not one accessor at a time. */
@@ -287,6 +309,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
             diagnostics = List.of("Candidate mutable boundaries were not verified isolated");
           } else if (result.logicalStatus() != LogicalStatus.VALID) {
             logicalStatus = result.logicalStatus(); diagnostics = result.diagnostics();
+            sourceDiagnostics = result.sourceDiagnostics();
           } else if (result.state() == null) {
             logicalStatus = LogicalStatus.FAILED;
             diagnostics = List.of("A valid candidate has no semantic state");
@@ -304,6 +327,7 @@ public final class CandidatePublicationCoordinator<I, S extends AutoCloseable>
                 publishedStates.add(new IdentityReference<>(result.state(), identityQueue));
                 discard = null;
                 logicalStatus = LogicalStatus.VALID; diagnostics = result.diagnostics();
+                sourceDiagnostics = result.sourceDiagnostics();
                 if (previous != null) {
                   previous.retired = true;
                   if (previous.readers == 0 && !previous.disposed) {

@@ -101,27 +101,32 @@ public final class IdentityRequirementSupport {
     var required = new LinkedHashSet<OWLClassExpression>();
     var identities = new LinkedHashSet<OWLClassExpression>();
     var visited = new HashSet<OWLClass>();
-    collect(head, required, identities, visited);
+    // One asserted adjacency snapshot per revision, under the actor monitor and cache revision
+    // fence. Repeated owner walks must not scan every ontology for every visited class.
+    var index = owl.identityRequirementCache().assertedIndex(owl);
+    collect(head, required, identities, visited, index);
     if (hasIdentityRequirements()) {
       if (!owl.hasReasoner()) throw new IllegalStateException("Identity hierarchy unavailable");
       if (owl.isPrecomputed(org.semanticweb.owlapi.reasoner.InferenceType.CLASS_HIERARCHY)) {
         var parents = new LinkedHashSet<>(owl.getSuperClasses(head, false).getFlattened());
         parents.addAll(owl.getEquivalentClasses(head).getEntities());
         for (var parent : parents) if (!parent.isOWLThing() && !parent.isOWLNothing())
-          collect(parent, required, identities, visited);
+          collect(parent, required, identities, visited, index);
       } else {
         // A new generated class invalidates global classification. Prove only inheritance from
         // owners capable of contributing a requirement or a concrete inherited identity.
-        for (var owner : owl.reasonerClassSignature()) {
-          if (owner.isOWLThing() || owner.isOWLNothing() || owner.equals(head) || visited.contains(owner)) continue;
+        var contributors = owl.identityRequirementCache().contributors(owl, owner -> {
           var ownerRequirements = new LinkedHashSet<OWLClassExpression>();
           var ownerIdentities = new LinkedHashSet<OWLClassExpression>();
-          collect(owner, ownerRequirements, ownerIdentities, new HashSet<>());
-          if ((!ownerRequirements.isEmpty() || !ownerIdentities.isEmpty())
-              && owl.isEntailed(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(head, owner))) {
+          collect(owner, ownerRequirements, ownerIdentities, new HashSet<>(), index);
+          return !ownerRequirements.isEmpty() || !ownerIdentities.isEmpty();
+        });
+        for (var owner : contributors) {
+          if (owner.isOWLThing() || owner.isOWLNothing() || owner.equals(head) || visited.contains(owner)) continue;
+          if (owl.isEntailed(owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(head, owner))) {
             // Keep the root walk's visited set: independently merging an owner's walk can turn
             // a harmless cyclic union into a new branch-dependent requirement.
-            collect(owner, required, identities, visited);
+            collect(owner, required, identities, visited, index);
           }
         }
       }
@@ -138,7 +143,9 @@ public final class IdentityRequirementSupport {
     private Object reasoner;
     private OWLOntology root;
     private Set<OWLOntology> ontologies;
-    private long retained = -1, hits, computations;
+    private long retained = -1, hits, computations, indexBuilds, contributorBuilds;
+    private BoundAxiomIndex assertedIndex;
+    private List<OWLClass> contributors;
     private final Map<OWLClass, StructuralClosure> answers = new LinkedHashMap<>(32, .75f, true) {
       @Override protected boolean removeEldestEntry(Map.Entry<OWLClass, StructuralClosure> entry) {
         return size() > CAPACITY;
@@ -148,7 +155,7 @@ public final class IdentityRequirementSupport {
     void reset() {
       if (manager != null) manager.removeOntologyChangeListener(listener);
       manager = null; reasoner = null; root = null; ontologies = null;
-      answers.clear(); retained = -1; changed();
+      answers.clear(); assertedIndex = null; contributors = null; retained = -1; changed();
     }
     private long prepare(OWL owl) {
       if (manager != owl.manager) { reset(); manager = owl.manager; manager.addOntologyChangeListener(listener); }
@@ -162,8 +169,27 @@ public final class IdentityRequirementSupport {
         owned.addAll(current); ontologies = owned; reasoner = backend; root = currentRoot; changed();
       }
       long now = revision.get();
-      if (retained != now) { answers.clear(); retained = now; }
+      if (retained != now) { answers.clear(); assertedIndex = null; contributors = null; retained = now; }
       return now;
+    }
+    BoundAxiomIndex assertedIndex(OWL owl) {
+      if (!Thread.holdsLock(owl)) throw new IllegalStateException("Identity index requires the OWL monitor");
+      long before = prepare(owl);
+      if (assertedIndex == null) {
+        var built = BoundAxiomIndex.build(owl.manager, axiom -> false, () -> {}, () -> {});
+        if (before != prepare(owl)) throw new ConcurrentModificationException("Identity assertions changed during indexing");
+        assertedIndex = built; indexBuilds++;
+      }
+      return assertedIndex;
+    }
+    List<OWLClass> contributors(OWL owl, java.util.function.Predicate<OWLClass> contributes) {
+      long before = prepare(owl);
+      if (contributors == null) {
+        var built = owl.reasonerClassSignature().stream().filter(contributes).toList();
+        if (before != prepare(owl)) throw new ConcurrentModificationException("Identity assertions changed during owner discovery");
+        contributors = built; contributorBuilds++;
+      }
+      return contributors;
     }
     StructuralClosure resolve(OWL owl, OWLClass head, java.util.function.Supplier<StructuralClosure> compute) {
       if (!Thread.holdsLock(owl)) throw new IllegalStateException("Identity cache requires the OWL monitor");
@@ -178,7 +204,7 @@ public final class IdentityRequirementSupport {
       if (result.requirements().size() + result.identities().size() <= 4096) answers.put(head, result);
       return result;
     }
-    Map<String, Long> metrics() { return Map.of("entries", (long) answers.size(), "hits", hits, "computations", computations); }
+    Map<String, Long> metrics() { return Map.of("entries", (long) answers.size(), "hits", hits, "computations", computations, "indexBuilds", indexBuilds, "contributorBuilds", contributorBuilds); }
   }
 
   private boolean bearerSatisfies(Concept head, KimConcept syntax,
@@ -407,18 +433,13 @@ public final class IdentityRequirementSupport {
   }
 
   private void collect(OWLClassExpression expression, Set<OWLClassExpression> required,
-      Set<OWLClassExpression> identities, Set<OWLClass> visited) {
+      Set<OWLClassExpression> identities, Set<OWLClass> visited, BoundAxiomIndex index) {
     if (expression instanceof OWLClass named) {
       if (!visited.add(named)) return;
-      for (var ontology : owl.manager.getOntologies()) {
-        for (var axiom : ontology.getSubClassAxiomsForSubClass(named))
-          collect(axiom.getSuperClass(), required, identities, visited);
-        for (var axiom : ontology.getEquivalentClassesAxioms(named))
-          for (var equivalent : axiom.getClassExpressions())
-            if (!equivalent.equals(named)) collect(equivalent, required, identities, visited);
-      }
+      for (var edge : index.parents(named))
+        collect(edge.parent(), required, identities, visited, index);
     } else if (expression instanceof OWLObjectIntersectionOf intersection) {
-      for (var branch : intersection.getOperands()) collect(branch, required, identities, visited);
+      for (var branch : intersection.getOperands()) collect(branch, required, identities, visited, index);
     } else if (expression instanceof OWLObjectSomeValuesFrom some && !some.getProperty().isAnonymous()) {
       var property = some.getProperty().asOWLObjectProperty().getIRI().toString();
       if (property.equals("http://integratedmodelling.org/odo#requiresIdentity")) required.add(some.getFiller());
@@ -428,7 +449,7 @@ public final class IdentityRequirementSupport {
       // be discharged by flattening all branches or choosing one without evidence.
       var branchRequirements = new LinkedHashSet<OWLClassExpression>();
       for (var branch : union.getOperands())
-        collect(branch, branchRequirements, new LinkedHashSet<>(), new HashSet<>(visited));
+        collect(branch, branchRequirements, new LinkedHashSet<>(), new HashSet<>(visited), index);
       if (!branchRequirements.isEmpty()) required.add(owl.manager.getOWLDataFactory().getOWLNothing());
     }
   }

@@ -242,9 +242,12 @@ public final class AuthorityBootstrap {
     var selectionScope=pin==null?owner:pin.scope(owner);
     var components=new ArrayList<ComponentDescriptor>(); var resources=new ResourceSet(); var revisions=new TreeMap<String,String>();
     if(pin!=null)revisions.put("explicit.approval",pin.revision());
+    // Validate pins before starting any network lookup, then resolve independent providers together.
+    if (pin != null) source.getAuthorityBindings().forEach(pin::requireBinding);
+    var resolutions = AuthorityComponentResolver.resolveAll(source.getAuthorityBindings().stream()
+        .map(binding -> binding.provider().urn() + "@" + binding.provider().version()).toList(), selectionScope);
     for (var binding:source.getAuthorityBindings()) {
-      if(pin!=null)pin.requireBinding(binding);
-      var resolution=AuthorityComponentResolver.resolve(binding.provider().urn()+"@"+binding.provider().version(),selectionScope);
+      var resolution=resolutions.get(binding.provider().urn()+"@"+binding.provider().version());
       var selected=resolution.components().stream().filter(c->c.id().equals(binding.componentUrn())
           && c.version().equals(binding.componentVersion()) && c.authorities().contains(binding.provider())).toList();
       if (selected.size()!=1) throw new IllegalStateException("Exact authorized provider metadata unavailable");
@@ -291,7 +294,7 @@ public final class AuthorityBootstrap {
     Throwable failure=null;
     try {
       try { store.seedIdentities(state); }
-      catch (Exception cacheUnavailable) { cacheWarning(); }
+      catch (Exception cacheUnavailable) { cacheWarning(cacheUnavailable); }
       for(var entry:core.entrySet()) {
         var target=knowledge.resolve(entry.getKey()).normalize();if(!target.startsWith(knowledge))throw new IllegalArgumentException("Core escapes staging");
         Files.createDirectories(target.getParent());Files.write(target,entry.getValue());
@@ -327,7 +330,7 @@ public final class AuthorityBootstrap {
       if(!evidence.equals(CapturedAuthorityCatalog.captureProviderEvidence(state))) throw new IllegalStateException("Configured provider provenance changed");
       var result=captureConfigured(actor,state,source,evidence);cancellation.checkpoint();
       try { store.save(result); }
-      catch (Exception cacheUnavailable) { cacheWarning(); }
+      catch (Exception cacheUnavailable) { cacheWarning(cacheUnavailable); }
       CandidateTrace.stage(CandidateTrace.Event.CAPTURE_COMPLETE,null,-1,CandidateTrace.Reason.SUCCESS);
       return result;
     } catch (Throwable error) {
@@ -337,7 +340,7 @@ public final class AuthorityBootstrap {
         // proof and the successful answers even though one code prevented full ingestion.
         try { store.savePartial(captureConfigured(actor, state, source,
             CapturedAuthorityCatalog.captureProviderEvidence(state))); }
-        catch (Exception cacheUnavailable) { cacheWarning(); }
+        catch (Exception cacheUnavailable) { cacheWarning(cacheUnavailable); }
         throw error;
       }
       // The plan/configuration/owner key is unchanged and verified again by prepare(). An
@@ -356,7 +359,7 @@ public final class AuthorityBootstrap {
         if (actor != null) PersistentAuthorityStore.activeEntries(state, actor.activeAuthorityCacheFingerprints());
         store.retainIdentities(state);
       }
-      catch (Exception cacheUnavailable) { cacheWarning(); }
+      catch (Exception cacheUnavailable) { cacheWarning(cacheUnavailable); }
       CandidateTrace.stage(CandidateTrace.Event.PRODUCER_DISPOSE,null,-1,CandidateTrace.Reason.NONE);
       try {
       Throwable cleanupFailure=failure;
@@ -423,9 +426,10 @@ public final class AuthorityBootstrap {
     }
     Files.write(capture.resolve("documentation-materialization.json"),JSON.writeValueAsBytes(ownedDocuments));
   }
-  private static void cacheWarning() {
-    System.getLogger(AuthorityBootstrap.class.getName()).log(System.Logger.Level.WARNING,
-        "Persistent authority cache unavailable; continuing with verified provider/capture state");
+  private static void cacheWarning(Exception failure) {
+    org.slf4j.LoggerFactory.getLogger(AuthorityBootstrap.class).warn(
+        "Persistent authority cache unavailable; continuing with verified provider/capture state",
+        BootstrapFailureDiagnostics.snapshot(failure));
   }
 
   /** Reuse frozen providers first; only a cache miss can lazily configure its owning archive. */
@@ -444,7 +448,7 @@ public final class AuthorityBootstrap {
         if (!target.startsWith(knowledge)) throw new IllegalArgumentException("Core escapes staging");
         Files.createDirectories(target.getParent()); Files.write(target, entry.getValue());
       }
-      try { store.seedIdentities(state); } catch (Exception unavailable) { cacheWarning(); }
+      try { store.seedIdentities(state); } catch (Exception unavailable) { cacheWarning(unavailable); }
       var scope = new SemanticEnvironmentScope(new CapturedSemanticSourceResolver(source).service(), owner);
       actor = new ReasonerService(scope, knowledge, state, previous, true);
       actor.bootstrapDisposalBindings(source);
@@ -454,7 +458,7 @@ public final class AuthorityBootstrap {
         throw new IllegalStateException("Authority refresh compilation failed");
       PersistentAuthorityStore.activeEntries(state, actor.activeAuthorityCacheFingerprints());
       var result = previous.refreshed(state);
-      try { store.save(result); } catch (Exception unavailable) { cacheWarning(); }
+      try { store.save(result); } catch (Exception unavailable) { cacheWarning(unavailable); }
       return result;
     } catch (Exception unavailable) {
       failure = unavailable;
@@ -470,12 +474,12 @@ public final class AuthorityBootstrap {
         var partial = previous.refreshed(state);
         store.savePartial(partial);
         return partial;
-      } catch (Exception cacheUnavailable) { cacheWarning(); return previous; }
+      } catch (Exception cacheUnavailable) { cacheWarning(cacheUnavailable); return previous; }
     } finally {
       try {
         if (actor != null) PersistentAuthorityStore.activeEntries(state, actor.activeAuthorityCacheFingerprints());
         store.retainIdentities(state);
-      } catch (Exception unavailable) { cacheWarning(); }
+      } catch (Exception unavailable) { cacheWarning(unavailable); }
       Exception cleanupFailure = null;
       try { if (actor != null) actor.disposeSemanticEnvironment(); }
       catch (Exception cleanup) { cleanupFailure = cleanup; }

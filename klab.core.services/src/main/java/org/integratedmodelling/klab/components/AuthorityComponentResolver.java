@@ -52,10 +52,12 @@ public final class AuthorityComponentResolver {
     var resources = new ResourceSet();
     var diagnostics = new ArrayList<Notification>();
     var revisions = new TreeMap<String, String>();
-    for (var urn : requested) {
-      // Leave local ambiguity to WorldviewAuthorityValidator; never override it with a remote hit.
-      if (local.stream().anyMatch(component -> matches(component, urn, false))) continue;
-      var resolved = resolve(urn, scope, discoveryScope);
+    // Preserve local precedence, but independent remote metadata lookups need not serialize.
+    var missing = requested.stream().filter(urn -> local.stream()
+        .noneMatch(component -> matches(component, urn, false))).toList();
+    var resolutions = resolveAll(missing, scope, discoveryScope);
+    for (var urn : missing) {
+      var resolved = resolutions.get(urn);
       resolved.components().forEach(component -> selected.putIfAbsent(identity(component), component));
       resources.getResults().addAll(resolved.resources().getResults());
       resources.getServices().putAll(resolved.resources().getServices());
@@ -72,6 +74,32 @@ public final class AuthorityComponentResolver {
   /** Query supported COMPONENT resolution, not the unimplemented COMPONENT query branch. */
   public static Resolution resolve(String authorityUrn, Scope scope) {
     return resolve(authorityUrn, scope, scope);
+  }
+
+  /** One bounded batch, with fresh authorization/metadata checks on every call. No TTL cache. */
+  public static Map<String, Resolution> resolveAll(Collection<String> authorityUrns, Scope scope) {
+    return resolveAll(authorityUrns, scope, scope);
+  }
+
+  private static Map<String, Resolution> resolveAll(Collection<String> authorityUrns,
+      Scope scope, Scope discoveryScope) {
+    var urns = authorityUrns.stream().distinct().sorted().toList();
+    if (urns.isEmpty()) return Map.of();
+    if (urns.size() == 1) return Map.of(urns.getFirst(), resolve(urns.getFirst(), scope, discoveryScope));
+    try (var executor = java.util.concurrent.Executors.newFixedThreadPool(
+        Math.min(4, urns.size()), Thread.ofVirtual().factory())) {
+      var tasks = urns.stream().<java.util.concurrent.Callable<Resolution>>map(
+          urn -> () -> resolve(urn, scope, discoveryScope)).toList();
+      var futures = executor.invokeAll(tasks);
+      var result = new LinkedHashMap<String, Resolution>();
+      for (int i = 0; i < urns.size(); i++) result.put(urns.get(i), futures.get(i).get());
+      return Collections.unmodifiableMap(result);
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Authority metadata batch interrupted", interrupted);
+    } catch (java.util.concurrent.ExecutionException failure) {
+      throw new IllegalStateException("Authority metadata batch failed", failure.getCause());
+    }
   }
 
   private static Resolution resolve(String authorityUrn, Scope scope, Scope discoveryScope) {

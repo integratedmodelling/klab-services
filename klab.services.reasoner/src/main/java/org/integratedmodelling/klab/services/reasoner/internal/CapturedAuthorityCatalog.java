@@ -234,6 +234,9 @@ public final class CapturedAuthorityCatalog {
     return captureRecorded(data, JacksonConfiguration.newObjectMapper().readValue(source, Worldview.class), bindings, evidence, snapshotHashes);
   }
   private static CapturedAuthorityCatalog captureRaw(Path data) throws Exception {
+    return captureRaw(data, null);
+  }
+  private static CapturedAuthorityCatalog captureRaw(Path data, Map<String, String> producerHashes) throws Exception {
     var mutableComponents = data.resolve("components");
     var immutableComponents = data.resolve("captured-authority-state/provider-components");
     boolean hasImmutableComponents = Files.isRegularFile(immutableComponents.resolve("catalog.json"));
@@ -319,8 +322,13 @@ public final class CapturedAuthorityCatalog {
         if (snapshotBytes > 384L * 1024 * 1024) throw unresolved("configured snapshots exceed total bounds");
         var contents = Files.readAllBytes(file);
         var snapshot = JSON.readValue(contents, ConfiguredAuthoritySnapshot.class);
+        // Authenticate the exact producer bytes, then retain a canonical value hash that
+        // survives serialization into the persistent catalog.
+        if (producerHashes != null && snapshot != null
+            && !digest(contents).equals(producerHashes.get(snapshot.request().name())))
+          throw unresolved("configured snapshot differs from its successful producer proof");
         if (snapshot == null || !file.getFileName().toString().equals(digest(snapshot.request().name().getBytes(java.nio.charset.StandardCharsets.UTF_8))+".json")
-            || snapshots.putIfAbsent(snapshot.request().name(), new FrozenConfiguredSnapshot(snapshot, digest(contents))) != null)
+            || snapshots.putIfAbsent(snapshot.request().name(), new FrozenConfiguredSnapshot(snapshot, digest(bytes(snapshot)))) != null)
           throw unresolved("invalid configured snapshot identity");
       }
     }
@@ -364,13 +372,9 @@ public final class CapturedAuthorityCatalog {
   public static CapturedAuthorityCatalog captureRecorded(Path data, Worldview source,
       Map<String, Long> successfullyConfiguredBindings, Map<String, ProviderEvidence> configuredProviderEvidence,
       Map<String, String> configuredSnapshotHashes) throws Exception {
-    var captured = captureRaw(data); var requests = new LinkedHashMap<String, byte[]>();
+    var captured = captureRaw(data, configuredSnapshotHashes); var requests = new LinkedHashMap<String, byte[]>();
     if (configuredSnapshotHashes == null || !configuredSnapshotHashes.keySet().equals(captured.configuredSnapshots.keySet()))
       throw unresolved("configured snapshots differ from successful producer proof");
-    for (var entry : captured.configuredSnapshots.entrySet()) {
-      if (!entry.getValue().contentSha256().equals(configuredSnapshotHashes.get(entry.getKey())))
-        throw unresolved("configured snapshot content differs from successful producer proof");
-    }
     if (!source.getAuthorityBindings().stream().map(Worldview.AuthorityBinding::localId).toList()
         .containsAll(captured.configuredSnapshots.keySet())) throw unresolved("unbound configured snapshot");
     var currentEvidence = captured.providerEvidence();

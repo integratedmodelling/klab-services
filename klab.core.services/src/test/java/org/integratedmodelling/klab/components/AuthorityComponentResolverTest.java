@@ -19,6 +19,23 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Extensions;
 import org.junit.jupiter.api.Test;
 
 class AuthorityComponentResolverTest {
+  @Test void independentProviderMetadataRequestsOverlapAndKeepExactSelection() throws Exception {
+    var remote = source("remote", component("hash-a", publicRights(), "1.0.0")); services(remote);
+    var response = remote.resolve("fixture.authority", KlabAsset.KnowledgeClass.COMPONENT, null);
+    var entered = new java.util.concurrent.CountDownLatch(2);
+    when(remote.resolve(eq("fixture.authority"), eq(KlabAsset.KnowledgeClass.COMPONENT), any()))
+        .thenAnswer(invocation -> {
+          entered.countDown();
+          assertTrue(entered.await(5, java.util.concurrent.TimeUnit.SECONDS), "Metadata lookups serialized");
+          return response;
+        });
+    var batch = AuthorityComponentResolver.resolveAll(
+        List.of("fixture.authority", "fixture.authority@1.0.0"), scope);
+    assertEquals(2, batch.size());
+    assertTrue(batch.values().stream().allMatch(result -> result.components().size() == 1));
+    assertEquals(List.of("fixture.authority", "fixture.authority@1.0.0"), List.copyOf(batch.keySet()));
+  }
+
   private ComponentRegistry owned(ComponentRegistry registry) throws Exception {
     var field=ComponentRegistry.class.getDeclaredField("ownedBootstrapRegistry");
     field.setAccessible(true);field.set(registry,true);return registry;
