@@ -1,0 +1,14 @@
+{
+  "description": "Repository-local context resource inventory; paths are relative to llm/. Not an MCP server configuration.",
+  "entrypoint": "guide",
+  "resources": [
+    {"id": "guide", "path": "README.md", "mimeType": "text/markdown", "purpose": "Overview, semantic essentials and loading instructions"},
+    {"id": "domain-reference", "path": "DOMAIN_CONTEXT_PACK.md", "mimeType": "text/markdown", "purpose": "Semantic reference and ontology proposal workflow"},
+    {"id": "proposal-schema", "path": "../klab.services.resources/src/main/resources/schemas/llm/domain-context-proposal.schema.json", "mimeType": "application/schema+json", "purpose": "Draft 2020-12 proposal validation; context_pack_version 1.3"},
+    {"id": "observables", "path": "../docs/OBSERVABLES.md", "mimeType": "text/markdown", "purpose": "Observable syntax and semantic contracts"},
+    {"id": "ontology-language", "path": "../docs/ONTOLOGY_LANGUAGE.md", "mimeType": "text/markdown", "purpose": "Worldview declaration syntax and contracts"},
+    {"id": "consequences", "path": "../docs/CONSEQUENCE_ENGINE.md", "mimeType": "text/markdown", "purpose": "Post-commit consequence contracts and implementation"},
+    {"id": "consequence-capabilities", "path": "../docs/CONSEQUENCE_ENGINE_STATUS.md", "mimeType": "text/markdown", "purpose": "Supported behavior and explicit limits"},
+    {"id": "consequence-admission", "path": "../docs/CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md", "mimeType": "text/markdown", "purpose": "Evidence required for consequence admission and completion"}
+  ]
+}

@@ -163,8 +163,9 @@ unknown and retain assessment. Real input guards still use the locked native cap
 
 For eligible triggers, each pass visits configuration detection, change processes, role conferral, role
 implication and uncertainty. `register(kind, handler)` supplies the runtime extension
-point. Configuration discovery is installed with an explicit deferred result; change
-resolution is installed and active; the other missing handlers report `DEFERRED`.
+point. The engine installs configuration-discovery and change handlers; Runtime installs
+the concrete configuration backend plus role-conferral and role-implication handlers.
+Uncertainty has no default execution handler; missing handlers report `DEFERRED`.
 Handlers return `APPLIED`, `NO_ACTION`, `DEFERRED` or `FAILED`, an explanation and
 observation evidence IDs. A failed handler does not prevent the other categories or
 later commits from running. Handlers must await their own submissions, honor

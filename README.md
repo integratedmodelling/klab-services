@@ -28,8 +28,7 @@ reviewer/community iterations and protected persistent feedback.
 To follow the central observation process, start with the
 [observable-to-contextualization mapping](docs/OBSERVABLES.md#12-from-observable-meaning-to-contextualization-type),
 then read [observation strategies](docs/OBSERVATION.md) for worldview strategy selection,
-recursive resolution, current implementation gaps, and the staged proposal for explicit graph
-composition. [Resolver internals](docs/RESOLUTION.md) covers coverage, dataflow compilation,
+recursive resolution, graph composition and execution limits. [Resolver internals](docs/RESOLUTION.md) covers coverage, dataflow compilation,
 transport, and runtime integration. Proposed strategy syntax is distinguished from implemented behavior.
 
 ## User-facing languages
@@ -54,18 +53,17 @@ Worldview projects also supply [observation strategy documents](docs/OBSERVATION
 the observation grammar in the sibling `klab-languages` repository. These guide how the Reasoner
 and Resolver select and combine methods for a request; k.IM models provide the concrete methods.
 The observation grammar also defines a separate dataflow form for execution plans.
-The accepted observation-strategy baseline restores the previous working behavior, including
-dependent-model context propagation (maintainer-confirmed 2026-09-09). The
-[language guide](docs/OBSERVATION.md#language-guide) documents structural matching, guarded setup,
-named producers and implicit final output. Interface-based JSON transport is preserved; S3c and
-the implementation ledger distinguish working capabilities from subsequent extensions.
+The [strategy language guide](docs/OBSERVATION.md#language-guide) documents structural
+matching, guarded setup, named producers and implicit final output. The
+[composition and execution limits](docs/OBSERVATION.md#composition-and-execution-limits)
+distinguish accepted syntax from executable lowering routes.
 
-The [pattern language](docs/OBSERVATION.md#45-a-dedicated-pattern-language-with-ordinary-observable-matches-retained)
-isolates strategy patterns from the shared observable grammar while retaining ordinary observable
-matches. Its [persistence design](docs/OBSERVATION.md#72-provenance-to-dataflow-builder) reconstructs
-executable Dataflows from committed provenance through a builder, encodes submitted inputs with
-`define`, and packages observation-language source as a semantically annotated Resource. This
-reconstruction and replication path is planned; the current source encoder is incomplete.
+The [pattern matching contract](docs/OBSERVATION.md#names-setup-and-matching) separates
+strategy patterns from shared observable expressions. The
+[provenance-to-dataflow builder](docs/OBSERVATION.md#provenance-to-dataflow-builder)
+describes reconstruction requirements: dependency closure, submitted inputs, actual methods,
+versions, identities and support. Graph extraction, source generation and general import/replay
+are separate capabilities; a serialized resolution response is not a complete reproduction.
 
 ## Repository layout
 
@@ -106,6 +104,7 @@ No release is available yet, but the artifacts are deployed as SNAPSHOTs in the 
 
 ## Documentation
 
+- [Semantic context pack](llm/README.md): human and MCP reading paths, semantic contracts, and domain-ontology proposal reference and schema
 - [k.LAB technical note](docs/KLAB.md): the semantic commons, service architecture, federated network and composable digital twins
 - [Architecture](docs/ARCHITECTURE.md): service ownership and end-to-end observation lifecycle
 - [Observable expressions](docs/OBSERVABLES.md), [worldview ontologies](docs/ONTOLOGY_LANGUAGE.md), [k.IM](docs/KIM.md) and [k.Actors](docs/AGENTS.md): the user-facing language guides
@@ -113,8 +112,9 @@ No release is available yet, but the artifacts are deployed as SNAPSHOTs in the 
 - [Resources](docs/RESOURCES.md): resource service contract
 - [Reasoning](docs/REASONING.md): reasoner service and client APIs, semantic composition, document validation and knowledge lifecycle
 - [Resolution](docs/RESOLUTION.md): resolver internals, dataflow compilation, limitations and tests
-- [Observation strategies](docs/OBSERVATION.md): end-to-end strategy trace, named-graph composition proposal, scenario walkthroughs, and staged implementation prompts
+- [Observation strategies](docs/OBSERVATION.md): observation lifecycle, executable strategy language, collective selection, composition and execution limits
 - [Classification and characterization](docs/CLASSIFICATION.md): completed semantic-update lifecycle, classifier contracts, atomic persistence, and provenance
+- [Consequences](docs/CONSEQUENCE_ENGINE.md): post-commit configuration detection, conferral, implication, change and uncertainty, with [capabilities and limits](docs/CONSEQUENCE_ENGINE_STATUS.md)
 - [Connections](docs/CONNECTION.md): completed relationship and bond instantiation, endpoint resolution, acknowledgement, and persistence
 - [Running strategy example](docs/OBSERVATION_STRATEGIES_EXAMPLE.md): supplied strategy corpus, comparative translation, and required compatibility cases
 - [Draft observation grammar](docs/grammar/README.md): evolving Observation.xtext sketch, strategy/context/dataflow fixtures, and integration requirements

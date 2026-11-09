@@ -18,6 +18,7 @@ public final class ProjectSettingsIO {
     var manifests = storage.listResources(ProjectStorage.ResourceType.MANIFEST);
     if (!manifests.isEmpty()) {
       var manifest = Utils.Json.load(manifests.getFirst(), ProjectImpl.ManifestImpl.class);
+      settings.setSnapshot(manifest.isSnapshot());
       if (manifest.getMetadata() != null) settings.getMetadata().putAll(manifest.getMetadata());
     }
     // Preserve the former override precedence until the next successful save migrates the file.
@@ -56,6 +57,7 @@ public final class ProjectSettingsIO {
             : Utils.Json.parseObject(
                 new String(previousManifest, StandardCharsets.UTF_8), Map.class);
     fields.put("metadata", settings.getMetadata());
+    if (settings.getSnapshot() != null) fields.put("snapshot", settings.getSnapshot());
     if (settings.getDefinedWorldview() != null) {
       if (settings.getDefinedWorldview().isBlank()) fields.remove("definedWorldview");
       else fields.put("definedWorldview", settings.getDefinedWorldview().strip());

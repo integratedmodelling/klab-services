@@ -9,6 +9,11 @@ public class ProjectSettings implements Serializable {
   private Map<String, Object> metadata = new LinkedHashMap<>();
   private String permissions;
   private String definedWorldview;
+  private Boolean snapshot;
+
+  /** Synchronize with Git origin before loading. Null leaves the manifest setting unchanged. */
+  public Boolean getSnapshot() { return snapshot; }
+  public void setSnapshot(Boolean snapshot) { this.snapshot = snapshot; }
 
   /** Administrator-only manifest update. Null leaves it unchanged; blank removes the declaration.
    * This field updates the manifest only when explicitly supplied. */

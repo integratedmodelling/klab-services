@@ -28,7 +28,7 @@ original native capture checks remain necessary in every path.
 | Relationships/networks | Explicit endpoint semantics and supported structural/component handling | Full scenarios must verify recipient rules, disconnected components, identity/history and observer filtering |
 | Cessation | Local Data.Builder intent bound to actual execution and owned inputs | Remote/Avro cease output has no accepted authority envelope |
 | Scientific completion | Typed resolution/reuse evidence plus current native support and effects | Positive IDs and duplicate metadata do not certify APPLIED |
-| Uncertainty | Quality-specific optional consequence route | No universal automatic uncertainty policy for all observations |
+| Uncertainty | Quality-specific, lowest-priority optional assessment category | No default execution handler; reports DEFERRED without one |
 | Client integration | Typed decision/commit messages and graph invalidation | Reconnect/history and viewer navigation require their own integration checks |
 
 ## Verification requirements

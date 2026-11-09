@@ -3851,6 +3851,35 @@ public class WorkspaceManager {
     return this._projectLoadOrder;
   }
 
+  void synchronizeSnapshotProjects() {
+    for (var descriptor : projectDescriptors.values()) {
+      if (descriptor.storage instanceof FileProjectStorage storage) {
+        descriptor.manifest = readManifest(storage);
+        if (descriptor.manifest.isSnapshot() && storage.isTracked()) {
+          if (storage.isLocked() || projectLocks.containsKey(descriptor.name)) {
+            service.reportProjectSynchronization(Notification.warning(
+                "Project " + descriptor.name + ": snapshot synchronization skipped because the project is locked"));
+          } else {
+            try {
+              var result = Utils.Git.withCredentials(service, scope, null,
+                  () -> Utils.Git.fetchAndMerge(storage.getRootFolder(), scope));
+              for (var notification : result.getNotifications()) {
+                if (notification.getLevel().severity >= Notification.Level.Warning.severity) {
+                  service.reportProjectSynchronization(Notification.create(
+                      "Project " + descriptor.name + ": " + notification.getMessage(), notification.getLevel()));
+                }
+              }
+            } catch (RuntimeException failure) {
+              service.reportProjectSynchronization(Notification.error(
+                  "Project " + descriptor.name + ": snapshot synchronization failed: " + failure.getMessage()));
+            }
+            descriptor.manifest = readManifest(storage);
+          }
+        }
+      }
+    }
+  }
+
   /**
    * Read, validate, resolve and sorts projects locally (all workspaces) and from the network,
    * returning the load order for all projects, including local and externally resolved ones. Check
@@ -3868,6 +3897,10 @@ public class WorkspaceManager {
    *     each returned pair will be non-null.
    */
   public synchronized boolean loadWorkspace() {
+
+    // Suppress file-watcher echoes while synchronizing, before reading dependencies or sources.
+    this.loading.set(true);
+    synchronizeSnapshotProjects();
 
     // clear all caches
     this._projectLoadOrder = null;

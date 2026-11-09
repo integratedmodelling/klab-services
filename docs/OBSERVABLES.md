@@ -1312,28 +1312,30 @@ The intended lifecycle places a configuration detected through (com)presence of
 dependents under those dependents' bearer. Detection from substantials places it
 in root-level cohorts, like substantials. Relationship emergence produces Network
 configurations; resolving an emerged Network then creates the scientific network
-model. Placement for dependent ingredients with different bearers is a future-stage
-question; do not invent automatic bearer coalescing or silently discard ingredients.
+model. Placement for dependent ingredients with different bearers is unsupported; do not invent automatic bearer coalescing or silently discard ingredients.
 
-**Implemented boundary:** source/loaded-world model validation rejects configuration
-instantiation. The API already maps configurations to DETECTION, the grammar carries
-`emerges from`, and the reasoner registers trigger declarations. These are not proof
-of functioning detection or placement: ReasonerService.emergentResolvables currently
-returns an empty map, and its observation catalog/matching runtime is incomplete.
-Detection, placement and network construction are not added by this declaration slice.
+Source/loaded-world model validation rejects configuration instantiation. Runtime
+performs supported positive configuration detection, guarded ingredient capture,
+placement and single-root explanatory recomputation through `Reasoner.consequenceRules`.
+The legacy `emergentResolvables` stub is not the runtime discovery path. Arbitrary
+negative patterns, mixed-bearer placement and multi-root explanation are unsupported.
+See [consequence capabilities](CONSEQUENCE_ENGINE_STATUS.md).
 
-### Future consequence engine: after observation commits
+### Consequence engine: after observation commits
 
-The authoritative collaborator-facing design draft is
-[CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md). It specifies future consequences
-after observation/knowledge commits: configuration DETECTION, change processes for
-qualities in occurrent contexts, conferred roles, role implications and optional
-uncertainty resolution. Consequences can recursively cause consequences through
-models. Reuse resolution idempotency/reuse, verify bounded distinct work as well as
-duplicate suppression, and preserve Tier-0 precedence. The draft separates agreed
-contracts, actual source support, proposed integration and open questions. No
-consequence runtime is implemented by this declaration/validation slice.
+[CONSEQUENCE_ENGINE.md](CONSEQUENCE_ENGINE.md) defines post-commit configuration
+DETECTION, change processes, role conferral, implication and optional uncertainty
+assessment. Successful root observation/knowledge commits enter an asynchronous
+per-twin queue; causal commits can trigger further passes. Normal admitted resolution,
+Tier-0 precedence, observer/cycle binding, native support and guarded publication apply.
+Integrity constraints (`requires`) do not schedule consequences.
 
+Configuration and role handlers are installed by Runtime; CHANGE is installed by the
+engine. Uncertainty is a quality-specific, lowest-priority assessment category and
+reports DEFERRED without an installed handler. The queue is in memory and provides no
+crash replay or exactly-once guarantee. Declaration validity alone proves no execution.
+See [capabilities and limits](CONSEQUENCE_ENGINE_STATUS.md) and
+[admission evidence](CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md).
 
 ### Authority-owned entry hierarchies
 

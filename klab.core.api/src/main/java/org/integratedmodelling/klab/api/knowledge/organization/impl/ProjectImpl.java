@@ -27,6 +27,11 @@ public class ProjectImpl implements Project {
     @Serial private static final long serialVersionUID = -6549113149802016133L;
 
     private String description;
+    private boolean snapshot;
+
+    @Override
+    public boolean isSnapshot() { return snapshot; }
+    public void setSnapshot(boolean snapshot) { this.snapshot = snapshot; }
     private ResourcePrivileges privileges = ResourcePrivileges.PUBLIC;
     private Version version = Version.EMPTY_VERSION;
     private Collection<MetadataConvention> metadataConventions = new HashSet<>();

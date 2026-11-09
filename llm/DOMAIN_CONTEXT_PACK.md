@@ -1,132 +1,18 @@
 # k.LAB domain ontology articulation context pack
 
-## Native collection candidate: preserve result kind
+This reference defines how to interpret k.LAB semantics and prepare reviewable domain
+ontologies. Start with the [context-pack guide](README.md) for the semantic overview,
+reading paths and MCP resource packaging. Sections 1–8 explain the concepts; Sections
+9–13 specify proposal production and review. The proposal format remains version 1.3.
 
-Under validation, not published: a named explicit native-quality `of` dependency may be
-prepared for an installed contextualizer accepting that exact named `@KlabFunction.Input`
-as `MemberQualityCollection`. Preserve invocation container, native member, result support,
-selected observer and source/revision provenance separately. Source preparation is not runtime
-admission. Complete successful empty discovery is an empty collection; failed/partial/unknown
-is not. No-data does not mean zero or absence.
+## Contents
 
-Positive: an explicitly selected mapper consumes Stream-native results keyed by actual Streams
-and computes its own regional output. Negative: one Stream quality or a regional field cannot
-be coerced into a complete-member view, `of Stream` does not make Region the bearer, and an
-untyped function argument does not establish capability. An explicit test maximum is not a
-default redistribution policy. The source-to-compiled-parent gate remains pending.
-
-The bounded candidate supports explicitly unitless Ratio/QUANTIFICATION dependencies without
-declared unit/currency/range or explicit observer clause. It does not complete Height mediation,
-original StreambedGradient Elevation/Slope sampling, generic MemberPlan compilation or automatic
-regional mapping. Ordinary compatible Tier-0 model precedence is retained; direct-view Tier-0
-model outputs have no ABI in this slice. Existing MemberPlan syntax is exposed only through a
-restricted explicit typed API route. Region stays Areal; 2.5D is representation terminology.
-
-## Informative proposal review metadata
-
-Use one existing-syntax annotation for review instrumentation; the owner accepted this
-informative convention. It is separate from logical meaning, validation and runtime admission:
-
-```kwv
-@review(schema="klab.review/1", proposal="demo-sample-001", revision="r1",
-  maturity="experimental", controversy="unassessed",
-  technical_validation="not_recorded", community_acceptance="not_recorded",
-  review_priority="foundational", review_record="reviews/demo-r1.yaml")
-thing Sample;
-```
-
-Sample is a syntax example, not proposed vocabulary. The review record should bind the source
-revision/import hashes, rationale, evidence and recorded decisions. Maturity, controversy,
-technical validation, community acceptance and editorial priority are independent. Community
-acceptance is not owner software permission, a passing test or inclusion in strawman. New
-proposals must not self-assign acceptance. No voting rule or lifecycle transition is implied.
-`klab.review/1` identifies the informative convention; it is not an enforced schema registration.
-
-Current parser/whole-workspace transport retains these fields but does not enforce their values.
-Read the direct authored declaration for the exact revision: inherited annotations cannot grant
-acceptance to descendants. Arbitrary annotation persistence through OWL export is not established.
-`review_priority` is valid syntax; reserved `priority` is not an interchangeable field name.
-
-## Observer perspectives: contract and implementation boundaries
-
-Use existing observable `observed as <observer Agent class>` semantics for observational distinctions
-in models. Do not invent a parallel valuation-specific ValuePerspective taxonomy. Basic valuation
-concepts and stakeholder roles remain separate, legitimate articulation questions.
-
-The agreed contract is implemented in staged source, matching and planning paths; observe the limits below:
-
-- Explicit `observed as X` versus `observed as Y` retains semantic identity; compatibility uses normal
-  clause specialization. Do not replace that rule with string equality or invent a subtype direction.
-- Missing clause means absolute/null perspective, interpreted in sessions through the context's
-  normally nonnull default observer (worldview/user groups/federations); null default is legal.
-  Never globally rewrite stored null into a user-specific class. Preserve explicitness/provenance.
-- Explicit query observer is mandatory: null/absolute candidates cannot satisfy it.
-- Session-only observer prioritizes compatible specific observations/models. Absolute candidates
-  remain eligible and provide fallback after specific resolution/dependency failure. Other semantic
-  incompatibilities are never waived by specificity. Apply the rule to reuse and model ranking.
-- A modeled Agent observation can supply the observer; multiple perspectives may coexist in one
-  knowledge graph. Identity, reuse and caches must retain observer/provenance, scope and relevant
-  revisions/access context. Do not conflate context defaults with explicit query meaning.
-- Observer URN in submission resolution constraints overrides the session/context observer;
-  otherwise use the session observer, which may be null. Selection is per submission and
-  does not mutate the session default. Any eligible Agent observation in the
-  knowledge graph may be selected. Preserve observation/URN, semantic Agent class and explicit
-  query-clause provenance separately. Constraint selection alone must not synthesize `observed as`
-  or turn session-style prioritization into mandatory observer compatibility.
-
-Positive: implicit query O under observer X prefers compatible `O observed as X`; if that resolution
-fails on dependencies, compatible absolute O may be tried. Negative: explicit `O observed as X`
-cannot fall back to absolute O, and unrelated Y is not eligible merely because it ranks well.
-O/X/Y are schematic meanings, not proposed ontology names or executable fixture declarations.
-
-Structured source/interface transport, canonical observer meaning, revision-bound full-wrapper matching,
-per-submission selection and model preference are implemented. Dependent quality/process reuse supports
-planning fallback and measured source support. Mixed specific-model/reference value composition
-is unfinished: reference inputs and coverage receipts do not fill output values, and unsupported
-mixed plans must not claim completion or uniform observer meaning. Existing Tier-0 success precedes Tier-1+ recursive discovery. These changes remain separate from
-the relationship-axis release until their own integration/rollout is approved.
-
-The catalog continuation resolves full stored observable wrappers only after source/revision
-admission, preserving perspective through both catalog backends and secondary-output specialization.
-Server observer URN/numeric constraints and contextualization headers use context-scoped Agent
-selection; a positive global ID is insufficient membership proof. Persisted ordinary actuators
-keep the original operation apart from the refined result.
-
-Autonomous replay recovers the actual Agent from recorded creation/activity provenance, not its
-semantic class. New submission, contextualization and simulation activities explicitly distinguish
-known-null from missing selection. Every relevant creator branch must agree; unknown, conflicting,
-corrupt, cyclic unresolved or inaccessible history rejects recovery with a resubmission diagnostic.
-Known-null clears the execution observer. Never infer missing history from a parent, the current
-session default or an observable's observer class. Explicit new submission/dependency scopes retain
-their own selection. Embedded tests cover committed submission, fresh graph/cache recovery and stored
-values; they do not establish a database-process restart or live-stack acceptance.
-`getPerspectives(observable)` enumerates all existing observation records visible at the scope's
-knowledge-graph insertion point whose canonical semantics are identical after removing only
-`observed as`. Preserve all other clauses; do not use arbitrary subclass compatibility. Include
-absolute/no-clause records under the same rule. Mediator equality uses existing portable definitions
-and distribution flags; do not convert units/currencies or infer synonym equivalence here.
-Retain multiple records/supports/occurrences by
-the same actual Agent: no grouping, ranking, selection, value composition or model resolution.
-Actual provenance Agent identity and semantic observed-as restrictions are different things.
-Never leak records from a different insertion point or knowledge graph. Qualities are the primary
-intended use; perspectives on substantials remain allowed but are not the intended use case.
-Positive: equal native meaning under X, Y and no observer clause returns all visible records,
-including two records by X's same actual Agent. Negative: another bearer or another insertion point
-does not qualify merely because its meaning is compatible. These are schematic examples, not new
-ontology declarations. Enumeration does not relax an explicit query observer's hard compatibility
-constraint during resolution. Wrapper tests alone do not establish live-stack acceptance.
-
-OWL export uses source-owned ontology annotation records, not universal base-class restrictions or
-session-observer assertions. Only trusted captured-source ingestion publishes those records after whole
-source validation; ordinary construction/editor/model validation does not claim namespace ownership or
-publish records. Model wrappers retain their observer meaning, but broader model-publication export
-integration is not supplied by this mechanism. Scope metadata is provenance, not access permission.
-
-Do not claim safe fallback after stateful execution or deferred executable classifier failure: that
-transactional retry is unfinished. Null-context ordering of specific candidates remains unspecified.
-Pending-graph tests with stubbed commit I/O are not durable/live acceptance. See
-[observer semantics](../docs/OBSERVABLES.md#observer-perspective-contract) and
-[resolution requirements](../docs/RESOLUTION.md#observer-aware-resolution-contract) for the exact scope.
+- [Mission](#1-mission) and [governing stance](#2-governing-ontological-stance)
+- [Containment](#21-observational-containment), [consequences](#22-consequences-after-observation-commits), [within](#23-within-conventions) and [observers](#24-observer-perspectives)
+- [Semantic coordinates](#3-the-semantic-coordinate-system) and [observable taxonomy](#4-observable-taxonomy-and-decision-rules)
+- [Predicates](#5-the-four-observable-refining-predicate-types), [operators](#6-unary-semantic-operators) and [composition](#7-combining-an-observable-predicates-and-specialization-clauses)
+- [Articulation procedure](#8-extraction-and-articulation-procedure) and [proposal format](#9-required-proposal-format)
+- [Syntax](#10-minimal-syntax-guidance), [validation](#11-validation-gates), [narrative](#12-required-final-narrative) and [agent instructions](#13-compact-instruction-to-the-analyzing-agent)
 
 ## 1. Mission
 
@@ -144,9 +30,8 @@ The agent receives:
 4. a required target `tier` specifying the intended level of domain generality; and
 5. optionally, prior proposals and community feedback.
 
-For future runtime consequence design and collaborator feedback, consult
-[the consequence-engine design draft](../docs/CONSEQUENCE_ENGINE.md); do not treat its
-proposals as implemented behavior.
+For post-commit behavior, consult [consequence contracts](../docs/CONSEQUENCE_ENGINE.md)
+and [capabilities and limits](../docs/CONSEQUENCE_ENGINE_STATUS.md).
 
 The agent can consult the attached documentation and prior proposals to inform its analysis. It can browse the Web for additional information and inspiration. It can refer to the ODO-IM ontology in its OWL2 source format at https://raw.githubusercontent.com/integratedmodelling/odo-im/refs/heads/master/releases/0.1.0/odo.owl
 
@@ -187,37 +72,37 @@ the final metaphysical inventory of the world.
 
 Apply these commitments throughout the analysis:
 
-1. **Worldview remains coherent.** The worldview is a distributed but coherent corpus of ontologies that import each other and include a tier system, documented later. You are contributing to one ontology in the context of others; domain conceptual boundaries matter deeply when structuring the worldview. Your domain will import those most generic ones that are relevant to it, and these should be supplied as additional context to the request, but may themselves be in flux or incomplete. According to availability, the .kvw source, the YAML community process output, or both will be supplied for the imported domains. Only the root domain of the worldview can access ODO-IM concepts directly.
+1. **Worldview remains coherent.** The worldview is a distributed but coherent corpus of ontologies that import each other and include a tier system, documented later. You are contributing to one ontology in the context of others; domain conceptual boundaries matter deeply when structuring the worldview. Your domain will import those most generic ones that are relevant to it, and these should be supplied as additional context to the request, but may themselves be in flux or incomplete. According to availability, the .kwv source, the YAML community process output, or both will be supplied for the imported domains. Only the root domain of the worldview can access ODO-IM concepts directly.
 2. **Observable is not observation.** An Observable is an abstract, reusable meaning that may
    be observed. An observation is contextualized semantic content produced for an observer in a
    spatial, temporal, and semantic frame.
-2. **Observability is mediated.** Direct perception is not privileged over instruments, data,
+3. **Observability is mediated.** Direct perception is not privileged over instruments, data,
    models, or other scientific artifacts. What matters is an explicit, defensible description
    of what is being observed.
-3. **Perspective has priority.** The same subject matter may be viewed structurally, with a
+4. **Perspective has priority.** The same subject matter may be viewed structurally, with a
    continuant-like substantial as focus, or functionally, with an occurrent-like event as focus.
    Category attribution is therefore about the entity *qua observable in the proposed context*,
    not an unconditional metaphysical verdict.
-4. **Context is indispensable.** Observables live in relation to other observables. Dependence,
+5. **Context is indispensable.** Observables live in relation to other observables. Dependence,
    bearer, participants, endpoints, realm, scale, and observation context must be made explicit
    whenever the source supports them.
-5. **Meaning is community-governed.** Domain distinctions are negotiated scientific concepts.
+6. **Meaning is community-governed.** Domain distinctions are negotiated scientific concepts.
    Record ambiguity and alternatives instead of silently resolving genuine disagreement.
-6. **Concepts are operational commitments.** Type, parentage, predicate applicability, inherency,
+7. **Concepts are operational commitments.** Type, parentage, predicate applicability, inherency,
    endpoints, and clauses affect reasoning and model matching; they are not decorative labels.
-7. **Parser acceptance is not semantic validity.** Candidate syntax remains provisional until
+8. **Parser acceptance is not semantic validity.** Candidate syntax remains provisional until
    references resolve and the active worldview, validators, Reasoner, adapters, and representative
    workflows accept it.
-8. **Internal unambiguity is a hard gate.** A proposed concept must have one stable interpretation
+9. **Internal unambiguity is a hard gate.** A proposed concept must have one stable interpretation
    in the corpus. Polysemous source terms may motivate several separately named concepts, but no
    accepted concept may silently combine their senses. If ambiguity cannot be resolved from
    evidence and scope, keep alternatives open instead of selecting a vague compromise.
-9. **Maximize conceptual orthogonality.** Subject to source faithfulness, concepts should encode
+10. **Maximize conceptual orthogonality.** Subject to source faithfulness, concepts should encode
    independent semantic axes with the least possible overlap. Prefer composition of an observable,
    predicates, clauses, and operators over atomic concepts that bundle several dimensions. The
    ontology's value increases when each dimension is clear, discriminable, and independently
    reusable.
-10. **Separate abstractness from category constraints.** An explicitly abstract concept cannot
+11. **Separate abstractness from category constraints.** An explicitly abstract concept cannot
     be instantiated directly; a concrete specialization does not inherit that declaration flag.
     Abstract identity roots used in `requires identity` are categories, not automatic causes of
     dependent abstractness. They still require positive bearer evidence. Do not generalize this
@@ -226,7 +111,7 @@ Apply these commitments throughout the analysis:
     [observable status](../docs/OBSERVABLES.md#71-declared-status) and
     [identity requirements](../docs/IDENTITY_REQUIREMENTS.md).
 
-### 2.1. Observational containment: authoring contract and implementation boundary
+### 2.1 Observational containment
 
 **Containment here is an observational contract, not spatial enclosure or physical
 parthood.** It declares which collective observation can realize an authored
@@ -249,7 +134,7 @@ An unresolved or failed Stream discovery is not a successful empty result.
   and their recorded invocation support; registration links, IDs and commit metadata
   are insufficient. Failed attempt trees cannot reuse earlier child success. Queries
   conservatively return one proven fragment: exact multi-support composition and
-  discovery-policy/revision/observer reuse keys remain future work. Legacy evidence
+  discovery-policy/revision/observer reuse keys are unsupported. Legacy evidence
   without invocation support is unproven; direct getMembers calls are not certified
   by this query guard. See [collective completion](../docs/COLLECTIVE_COMPLETION.md).
 - The asserted OWL carrier is an annotated `A subClassOf (R min 0 B)`, with marker
@@ -261,17 +146,15 @@ An unresolved or failed Stream discovery is not a successful empty result.
   one named native bearer must satisfy all bearer bounds and specialize the declared member;
   containers inherit through asserted named parents. A narrow member contract cannot authorize
   a broader native bearer. No transitive containment or generic min-zero entailment is used.
-  General S7/S9 execution remains planned. The isolated bounded increment records conditional
-  source obligations and checks the actual context before model matching/execution; source
-  validity is not unconditional executable admission. See
+  Conditional model contexts record source obligations and check the actual context before
+  model matching/execution; source validity is not unconditional executable admission. See
   [conditional model contexts](../docs/CONDITIONAL_MODEL_CONTEXT.md).
   Preserve native identities/bearers. Anonymous bearer expressions without a named witness
-  do not acquire a contextual route from this increment.
+  are unsupported by this contextual route.
 - Legal Tier-0 precomputed fulfillment requires no recursive discovery or collective receipt.
   Resolver observation alternatives are sorted by ascending rank and stop at complete coverage.
   Recursive contextual resolution is Tier-1+ and runs only for outstanding support.
-  Do not claim StreambedGradient or live cotechino acceptance from declaration tests.
-- The isolated [count/presence reducer](../docs/TIER1_COLLECTIVE_REDUCTIONS.md) supports
+- The [count/presence reducer](../docs/TIER1_COLLECTIVE_REDUCTIONS.md) supports
   initialization on explicitly nondistributed whole-support scalars after certified successful
   collective discovery. No Tree/Region containment axiom is needed for this unary route.
   Enumerate visible members; never use producer childrenCount as the requested count. Empty
@@ -286,7 +169,7 @@ An unresolved or failed Stream discovery is not a successful empty result.
   Ratio ancestry AND explicit canonical unity, not the unit library's ratio/angle compatibility.
 - Adding the ODO property changes foundation bytes. Preserve immutable source pins;
   coordinate a compatible core release/pin before production activation rather than
-  substituting modified bytes under the old locator. Fixture replay is not deployment.
+  substituting modified bytes under the old locator. Source validation does not establish deployment compatibility.
 
 **Examples and negative cases.** `thing Region contains hydrology:Stream;` and
 `thing Stream contained into earth:Region;` describe the same directed pair when
@@ -306,22 +189,18 @@ legitimate target constraints and the head's own requirements. Predicate `of Qua
 selects TRANSFORMATION, `of each Subject` CLASSIFICATION, and `of Subject`
 CHARACTERIZATION. Use the effective head kind to interpret the shared OWL relation.
 See [binary of](../docs/OBSERVABLES.md#binary-of-native-inherency-and-applicability).
-Configuration `of` is now agreed emergence shorthand: normalize its operand to
+Configuration `of` is emergence shorthand: normalize its operand to
 `emergesFrom`, never native `isInherentTo`. Explicit `applies to` identifies the
 application target. Use effective resolved head kind, including aliases/derivations;
 do not lift one branch of a boolean expression as an unconditional trigger. Example:
 Network of StreamConnection emerges from connections, while it applies to Region.
 For nested application meaning, use a named configuration specialization with explicit
-`applies to`, not configuration `of`. Elevation describes TerrestrialSurfaceArrangement
-(Terrestrial Region, no Crust); BathymetricSlope describes LocatedBathymetry (Location).
-Depth retains native Height-of-Location. Terrain retains its narrower Crust-qualified
-application target and separate Elevation/Slope/Aspect emergence OR. A describing
-quality uses explicit application scope without making the configuration dependent
-or propagating restrictions backwards through emergence. ODO no longer asserts an
-unconditional native Countable bearer for all Configurations. The `emergesFrom` range permits
-Countable, Quality and Process ingredients; process dependence does not become
-configuration inherency. Runtime detection and
-placement remain future work, described in the consequence-engine design.
+`applies to`, not configuration `of`. A describing quality retains its own bearer and
+any justified description-target scope. Neither that description nor an emergence
+trigger makes the configuration natively dependent or propagates its restrictions
+backwards into ingredients. ODO does not require every Configuration to have a native
+Countable bearer; `emergesFrom` admits Countable, Quality and Process ingredients.
+Runtime performs supported positive detection and guarded placement as described below.
 
 ### Configuration detection and later resolution
 
@@ -332,42 +211,125 @@ an observation after emergence. It must not be described as creating that observ
 `model Quality of each Bearer` qualifies the bearer collectively and is a distinct,
 legal form; unary-derived qualities are classified by their effective quality kind.
 
-The intended lifecycle places a configuration detected through (com)presence of
-dependents under those dependents' bearer. Detection from substantials places it
-in root-level cohorts, like substantials. Relationship emergence produces Network
-configurations; resolving an emerged Network then creates the scientific network
-model. Placement for dependent ingredients with different bearers is a future-stage
-question; do not invent automatic bearer coalescing or silently discard ingredients.
+A configuration detected through (com)presence of dependents is placed under their
+bearer. Detection from substantials places it in root-level cohorts. Relationship
+emergence yields Network configurations; resolving an emerged Network produces its
+scientific network model. Mixed-bearer ingredients do not authorize bearer merging,
+arbitrary placement or discarding ingredients.
 
-**Implemented boundary:** source/loaded-world model validation rejects configuration
-instantiation. The API already maps configurations to DETECTION, the grammar carries
-`emerges from`, and the reasoner registers trigger declarations. These are not proof
-of functioning detection or placement: ReasonerService.emergentResolvables currently
-returns an empty map, and its observation catalog/matching runtime is incomplete.
-Detection, placement and network construction are not added by this declaration slice.
+Source validation rejects configuration instantiation. Runtime supports positive
+configuration matching, guarded native ingredient capture, placement and single-root
+explanatory recomputation. Arbitrary negative patterns, mixed-bearer detection and
+multi-root explanation are unsupported. The active rule API is
+`Reasoner.consequenceRules`; the legacy `emergentResolvables` stub does not describe
+runtime capability. See [configuration contracts](../docs/CONSEQUENCE_ENGINE.md#configuration-lifecycle).
 
-### Future consequence engine: after observation commits
+### 2.2 Consequences after observation commits
 
-The authoritative collaborator-facing design draft is
-[CONSEQUENCE_ENGINE.md](../docs/CONSEQUENCE_ENGINE.md). It specifies future consequences
-after observation/knowledge commits: configuration DETECTION, change processes for
-qualities in occurrent contexts, conferred roles, role implications and optional
-uncertainty resolution. Consequences can recursively cause consequences through
-models. Reuse resolution idempotency/reuse, verify bounded distinct work as well as
-duplicate suppression, and preserve Tier-0 precedence. The draft separates agreed
-contracts, actual source support, proposed integration and open questions. No
-consequence runtime is implemented by this declaration/validation slice.
+The consequence engine assesses successful root observation/knowledge commits in a
+digital twin. These are scientific transactions, not Git commits. Rollback, failed
+commit and intermediate child transactions do not trigger independent passes.
 
-**Agent output boundary.** Record illustrative containment syntax in `candidate_kwv`
-and its rationale in the existing definition/evidence fields. The closed 1.3
-`clauses` object has no typed containment field: do not invent one or silently store
-containment in `applies_to`. No new proposal-schema field or schema version is
+| Mechanism | Contract |
+| --- | --- |
+| `emerges from` | Detect a configuration from supported ingredient observations, then resolve its explanation separately. Configuration `of` is the same emergence relation. |
+| `confers` | A process or relationship attributes a role to eligible substantial recipients, retaining source, observer and support evidence. |
+| `implies` | A role or relationship requests normal resolution of its target; a configuration can attribute an implied role to substantial participants. |
+| Change processes | Assess qualities in occurrent contexts and recognize compatible current process writers before requesting additional work. |
+| Uncertainty | Assess qualities as a lowest-priority optional category; no default execution handler is installed, so execution is deferred without one. |
+| `requires` | Express integrity constraints; it does not schedule consequence execution. |
+
+`confers <role> [to <substantial>|source|target] [within <bearer>]` uses a process's
+actual durable substantial bearer when its recipient is omitted. A relationship's
+omitted recipient means both endpoints; `to source` or `to target` selects one.
+There is no `both` keyword. Explicit `to <substantial>` resolves members normally.
+`within` specializes the role-bearing substantial's application context; it neither
+selects a replacement recipient nor changes the declaring observation's bearer.
+
+Conferral commits intrinsic attribution before the resulting commit triggers role
+implications and optional characterization. A missing characterization model does
+not undo the role. Failed resolution is not equivalent to a proven `NO_MODEL` outcome.
+
+`implies <target> [for <substantial>] [within <bearer>]` preserves target meaning,
+secondary inherency (`for`) and application specialization (`within`) separately.
+A dependent configuration can default to its actual substantial bearer; a configuration
+of substantials requires an explicit role recipient. Relationship implications require
+unambiguous inherency; use `for` when necessary. Relationship role attribution uses
+`confers`, not an alternative implicit `implies` attribution route.
+
+Each twin serializes asynchronous assessments and retains the requesting cycle's
+observer, semantic actor, enablement and causal chain through recursive drain.
+Consequences use normal admitted resolution, Tier-0 precedence, support checks and
+guarded scientific execution. Their top-level requests are optional; mandatory model
+dependencies remain mandatory. A later explicit request waits for the cycle to drain.
+A handler reports `APPLIED`, `NO_ACTION`, `DEFERRED` or `FAILED`; a positive observation
+ID alone proves neither execution nor scientific completion.
+
+The queue is in memory, with local duplicate suppression. It provides no durable
+outbox, crash replay, exactly-once delivery or general retry/backpressure guarantee.
+Reuse of identical work does not prove termination when distinct requests keep being
+generated. Local modeled cessation preserves history and excludes inactive assets
+from current views; remote cessation has no accepted authority envelope.
+See [consequence contracts](../docs/CONSEQUENCE_ENGINE.md),
+[capabilities](../docs/CONSEQUENCE_ENGINE_STATUS.md) and
+[admission evidence](../docs/CONSEQUENCE_ENGINE_ADMISSION_AUDIT.md).
+
+**Agent output boundary.** Record illustrative containment and conferral syntax in
+`candidate_kwv` and rationale in the existing definition/evidence fields. The closed 1.3
+`clauses` object has no typed containment or conferral field: do not invent one or
+silently store these relations in `applies_to`. `alignment.contextualized_within`
+records declaration containment specialization, not native inherency; retain the
+explicit authored relation in `candidate_kwv`. No new proposal-schema field or schema version is
 introduced by this prose clarification. Preserve the 1.3 proposal envelope and
 validate it against the bundled schema. This Markdown is the maintained agent-pack
 source, not generated model code. Reference documentation explains syntax and the
 annotated OWL boundary; neither the pack nor an exported min-zero entailment can
-authorize runtime admission. Do not emit recursive execution as if implemented.
+authorize runtime admission. Do not infer an executable mapping from a containment declaration.
 
+
+### 2.3 `within` conventions
+
+Interpret `within` according to its host construct; it is not a synonym for `of`.
+
+| Form | Meaning | Does not establish |
+| --- | --- | --- |
+| Worldview `Child is Parent within Container`, or nested `Child within Container` | Add `Container observationallyContains Child`, retaining structural inheritance. Supported endpoints are subject/agent pairs or event/process pairs. | Native inherency, members, physical enclosure or generic context switching. |
+| Host `ContextualizedExpression`: `expression within context` | Supply observational context where the host grammar accepts it, including contextualized consequence expressions. | A dependent's native bearer or permission to append `within` to any expression. |
+| Conferral/implication `within` | Specialize the role-bearing substantial's application context or implication's contextual specialization, respectively. | Replacement recipients or rewritten native inherency. |
+| `<identity> within <identity> <extensive-physical-property>` | Observe the first identity's portion of the second, preserving their order and the extensive quantity's value kind. | A ratio, concentration, spatial containment, or automatic extraction from a whole measurement. |
+| Java `scope.within(observation)` | Focus a runtime scope on an observation. | An authored ontology relation. |
+
+For example, `chemistry:Oxygen within chemistry:Air physics:Volume in m3` is a Volume,
+not an oxygen proportion. Both operands are identities; the property must belong to
+ODO's `ExtensivePhysicalProperty` hierarchy. Intensive and nonphysical properties are
+invalid. Matching retains the ordered identity pair and a model supplies the partial
+quantity directly. See [contextualized and quantitative expressions](../docs/OBSERVABLES.md#10-contextualized-expressions).
+
+Write a quality's native bearer explicitly: `is imod:Temperature of earth:Water`.
+Legacy quality-within-subject and process-within-subject declarations are invalid
+containment pairs; migrate the intended native bearer to `of`. A realm's requirement
+that its bearer be within the realm is a separate semantic commitment (Section 5.4).
+
+### 2.4 Observer perspectives
+
+`observed as <Agent class>` is part of observable meaning. Explicit query perspectives
+require compatible explicit perspectives; absolute/no-clause candidates cannot satisfy
+them. A session-selected observer instead prioritizes compatible specific candidates
+and allows compatible absolute fallback when resolution or dependencies fail. It does
+not synthesize an explicit clause or waive other semantic constraints.
+
+Preserve the actual observer Agent, its semantic class, explicit-clause provenance,
+native support, scope and revisions separately. A per-submission observer constraint
+overrides the session selection without mutating it. Null selection is legal; missing
+history is not known-null. Replay recovers the actual Agent from creation/activity
+provenance and rejects ambiguous or unavailable history rather than guessing a default.
+
+`getPerspectives(observable)` enumerates visible records at the scope's insertion point
+whose canonical meaning is identical after removing only `observed as`, including
+absolute records and multiple records by one Agent. It neither ranks nor combines their
+values. Mixed observer-specific model/reference value composition and fallback after
+stateful execution are unsupported. See [observer semantics](../docs/OBSERVABLES.md#observer-perspective-contract)
+and [observer-aware resolution](../docs/RESOLUTION.md#observer-aware-resolution-contract).
 
 ## 3. The semantic coordinate system
 
@@ -758,6 +720,22 @@ Connection uses the analogous collective/existing-instance distinction for
 connected substantials. State whether a domain example requires discovering
 instances or can operate on those already contextualized.
 
+#### Classifier-dependent model inputs
+
+Automatic INIT continuation supports one deferred quality dependency with direct ATTRIBUTE
+occurrences on one explicit native domain. Independent factors produce independent branch
+bindings; their Cartesian product is not an implicit correlated or zipped relation. Required
+classifier prerequisites must succeed, and characterization `NO_MODEL` is an explicit outcome.
+Ordinary precomputed Tier-0 alternatives precede automatic discovery.
+
+Graph-reading contextualizers consume dependency families and their inputs while preserving
+each generated quality's native bearer. Any aggregation is authored computation, not a semantic
+side effect. Successful empty closure differs from failed discovery or an optional generated
+`NO_MODEL`. Shared binding, general multi-domain expansion and persistent invalidation are
+unsupported. See [dependency families](../docs/CLASSIFIER_DEPENDENCY_FAMILIES.md),
+[multiple factors](../docs/CLASSIFIER_CARTESIAN_RECOVERY.md) and
+[native persistence contracts](../docs/CLASSIFIER_NATIVE_ROOT_RECOVERY.md).
+
 #### Use activity distinctions to test conceptual boundaries
 
 For one domain, compare *flood episodes* (`INSTANTIATION`), *one identified flood*
@@ -1051,7 +1029,8 @@ In worldview declarations:
   the corresponding ODO-IM category;
 - `is Parent` adds domain/worldview specialization beyond the inheritance already established by
   the declaration keyword;
-- `is Parent within Context` means contextualized specialization;
+- `is Parent within Container` preserves Parent specialization and declares observational
+  containment of the child by Container (Section 2.3);
 - `is core ExternalConcept`, which is legal **only in the root domain**, creates a
   worldview-visible alias for a foundational concept so that other ontologies can use the alias to
   generalize the scope of observable clauses; and
@@ -1157,13 +1136,15 @@ Propose clauses only when evidence or a transparent modeling rationale supports 
 | `creates X, Y` | declare what a process may produce |
 | `affects X, Y` | declare qualities or observables whose state a process may change |
 | `emerges from E` | state observations from which a configuration/pattern is recognized |
-| `implies E` | state an entailment justified by observing the concept |
+| `implies E` | declare an actionable consequence under the recipient and inherency rules in Section 2.2 |
+| `confers R [to S\|source\|target] [within B]` | attribute role R to eligible substantial recipients (Section 2.2) |
+| `contains B` / `contained into A` | declare additive observational containment (Section 2.1) |
 | `describes X ...` | define a quality through another observable or constraint |
 | `increases with X` / `decreases with X` | qualitative direct/inverse proportionality |
 | `marks X` | connect a deniable marker to a quality condition |
 | `classifies X` | connect an enumerable quality to what it classifies |
 | `discretizes X` | connect an ordering to the quantitative quality it partitions |
-| `requires identity/realm/extent/attribute X` | state a compulsory semantic dimension |
+| `requires identity X` / `requires realm X` | state integrity constraints; `requires attribute` and `requires extent` are unsupported and removed |
 | `requires authority A {...}` | delegate identity validation to an external authority |
 | `has [disjoint] children ...` | define a compact child taxonomy |
 
@@ -1185,7 +1166,7 @@ contribute inherited bearer bounds, which must be retained rather than replaced 
 targets. These implemented identity rules do not assert equal enforcement for every other
 `requires` dimension.
 
-#### Operational and pending validation boundaries
+#### Model validation boundaries
 
 Valid model namespaces remain discoverable while invalid/unavailable/stale namespaces are
 withheld. Retain source diagnostics, then revalidate corrected source before re-admission.
@@ -1194,10 +1175,10 @@ This model-service behavior does not make proposal-review `IMPORT_CONTEXT` or `R
 checks automatically available; report the checks actually run.
 
 Resource-produced datatype compatibility, composed multi-URN/contextualizer paths and
-concept-valued value-operator binding are separate pending contracts. Do not claim bearer
+concept-valued value-operator binding require separate validation contracts. Do not claim bearer
 admission validates resource results or the complete computation. Record composition/order,
-intermediate I/O and conversion decisions as unresolved until specified; see
-[pending model contracts](../docs/SEMANTIC_MODELING.md#pending-model-validation-contracts-2026-10-20).
+intermediate I/O and conversion decisions explicitly; see
+[model validation contracts](../docs/SEMANTIC_MODELING.md#pending-model-validation-contracts-2026-10-20).
 
 ## 8. Extraction and articulation procedure
 
@@ -1335,6 +1316,23 @@ Validate both JSON proposals and YAML proposals parsed into the equivalent JSON 
 that classpath resource. Schema validation is the first gate: it checks structure, required fields,
 enumerations, and action/revision envelopes. It does not replace reference resolution, tier,
 orthogonality, semantic, parser, or Reasoner validation.
+
+Informative review annotations use the existing syntax, independently of logical meaning:
+
+```kwv
+@review(schema="klab.review/1", proposal="demo-sample-001", revision="r1",
+  maturity="experimental", controversy="unassessed",
+  technical_validation="not_recorded", community_acceptance="not_recorded",
+  review_priority="foundational", review_record="reviews/demo-r1.yaml")
+thing Sample;
+```
+
+The example declares no accepted vocabulary. `klab.review/1` is an informative convention,
+not an enforced schema. Maturity, controversy, technical validation, community acceptance
+and priority are independent. Proposals cannot self-assign community acceptance. Bind review
+records to exact source revisions/import hashes; inherited annotations cannot grant acceptance
+to descendants. Use `review_priority`, not reserved `priority`. Annotation transport does not
+establish arbitrary OWL export persistence or runtime admission.
 
 ### 9.1 Workflow-stage attachment contract
 
@@ -2038,8 +2036,7 @@ reactive agent ReservoirOperator
 
 temperature WaterTemperature
     "Temperature inhering in a water body or water material."
-    is imod:Temperature
-    within earth:Water
+    is imod:Temperature of earth:Water
 ;
 
 process Infiltration
@@ -2164,6 +2161,15 @@ exponent syntax.
   compatible subtype, unknown membership and provable incompatibility have separate examples.
 - Native process identity and affected-quality bearer obligations remain independently scoped.
 - `is`, `equals`, `inherits`, predicate composition, and `of` are not conflated.
+- Every `within` identifies its host construct and follows Section 2.3. Quantitative
+  `within` retains two ordered identities and an extensive physical property; declaration
+  `within` adds supported containment without replacing native inherency.
+- Consequence declarations retain emergence ingredients, recipients, target inherency and
+  application specialization separately. `requires` is not an execution trigger.
+- A successful empty collective is distinguished from failed, partial or unknown discovery;
+  no empty membership is used as evidence of a native quality value.
+- Containment and conferral use the existing proposal fields described in Section 2.2;
+  no undeclared fields are added to the closed version-1.3 schema.
 - No target concept or action in a domain proposal contains `is core`.
 - Every generalized-scope alias used by the proposal resolves to an `is core` declaration supplied
   by the root domain, with its foundational concept and allowed scope uses known.
@@ -2287,15 +2293,15 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 > role.
 > Apply Section 2.1: containment is observational, not spatial enclosure or parthood.
 > Configurations emerge through DETECTION; models resolve them afterward, never instantiate
-> them. The observation-commit consequence engine and its placement/confer/change/uncertainty
-> work are planned runtime behavior, not completed detection.
+> them. Apply the consequence contracts in Section 2.2: successful root commits trigger
+> guarded, observer-preserving assessment, and declarations alone do not prove execution.
 > Preserve canonical direction, additive asserted contracts and legal successful empty
 > collectives; do not invent runtime containment routes or confuse native `of` with `within`.
 > Preserve inherited boolean bearer-identity obligations; distinguish abstract categories from
 > explicit abstractness and concrete identity fulfillment. A realm commits the bearer to being
 > within it spatially or conceptually, not merely computed from or associated with it. Prove
 > model dependency eligibility before distance; preserve valid namespaces alongside rejected ones.
-> State pending resource/computation/binding checks and the exact validation scope honestly.
+> State required resource/computation/binding checks and the exact validation scope honestly.
 > For every candidate, assign perspective, dependence arity, bearer/participants/endpoints,
 > value kind, upper alignment, predicates, clauses, evidence, rationale, alternatives, and separate
 > confidence scores. Relate representative composed requests to the contextualization categories
@@ -2320,165 +2326,3 @@ traceable gaps is preferable to a large taxonomy built from weak lexical associa
 > `classpath:/schemas/llm/domain-context-proposal.schema.json` before semantic review. Treat any
 > proposed k.LAB syntax as unverified until it has passed the corresponding parser, adaptation, and
 > Reasoner checks.
-
-
-## Bounded singular binding capability - 2026-10-21
-
-The isolated S7a candidate implements one explicit current-context reference and one
-native quality OBSERVE child, with typed identity/revision transport and lazy Tier-1
-admission. It requires the identical result obligation and full native context support.
-Same-obligation RESOLVE, other context/result bindings, member iteration, discovery and
-composition remain unavailable. See [the capability contract](../docs/SINGULAR_CONTEXT_BINDING.md).
-
-
-## Prepared predicate-dependency expansion boundary - 2026-10-21
-
-The isolated P0 candidate freezes source/declaration/occurrence identities once and applies
-keyed completed outcomes, including nonblocking CompletionStage composition. This preserves
-positional Cartesian choices across asynchronous completion without supplying classifier
-completion certificates, member snapshots or production Resolver wiring. Generated syntax
-still requires redeclaration and eligibility validation before distance/execution. See
-[the precise boundary and remaining integration seam](../docs/PREDICATE_DEPENDENCY_EXPANSION.md).
-
-
-## Runtime classifier member results boundary - 2026-10-21
-
-The isolated P1 foundation wires immutable fresh/reused/optional-absence member invocation
-facts through production Runtime classification Activity evidence and persistence. It does
-not certify complete membership, a graph snapshot, or an expansion closure. The graph semantic
-cache generation does not advance on member-link writes; Runtime still lacks a snapshot-bound
-prerequisite completion API and Resolver continuation. See
-[the implemented path and precise missing contracts](../docs/CLASSIFIER_MEMBER_RESULTS.md).
-
-
-## Request-local classifier continuation candidate - 2026-10-21
-
-The sixth isolated slice adds an explicit Runtime prerequisite hop over one successful live
-producer and its complete owning cohort-plus-attempt overlay. It captures full native member
-inputs, complete fresh/reused outcomes and source/attempt identity; applies keyed Cartesian
-expansion; redeclares and checks canonical eligibility; then calls ordinary Resolver planning.
-Native and local input guards are checked on root commit, including all-reused classifications.
-The normal selected-parent-model loop and generic dependency execution/input fanout are still
-unwired. This is not full recursive classification, persistent reuse or outer composition.
-Earlier P0/P1 absence-of-wiring statements describe those preserved stages; see
-[the sixth capability and precise test seams](../docs/CLASSIFIER_DEPENDENCY_CONTINUATION.md).
-
-
-## Typed classifier redeclaration diagnostic/repair - seventh work in progress
-
-Actual public Reasoner declaration now normalizes invalidated root-null mapped syntax on a detached
-copy, fixing the null canonical lookup exposed by real classifier-expansion redeclaration. Normal
-native validation and eligibility remain unchanged. Generated compound qualification does not yet
-supply an automatic compound-parent subtype link; inspect builder construction rather than using
-semantic distance or global equivalence to bypass that proof. Clause fillers do not propagate
-abstract status to their head. See [the diagnostic boundary](../docs/CLASSIFIER_DEPENDENCY_CONTINUATION.md).
-At this historical diagnostic stage automatic submission was absent. The later selected-model
-singleton section below supersedes that status; crop/multi-result execution remains unimplemented.
-The owner selected independent dependency observations consumed from the graph by one final
-contextualizer, with explicit valuation inputs; do not introduce implicit aggregation or retyping.
-
-
-## Approved monotone attribute-refinement prerequisite - 2026-10-21
-
-The owner approved order-independent directed subtyping for proved subtype replacements of direct
-attributes in otherwise unchanged positive expressions. The isolated refinement candidate implements
-this in complete ordinary/builder/typed construction with private derived OWL links, authoritative
-proof, satisfiability checks, rollback and derived-query cache invalidation. Accepted worldview
-revision does not advance for these derived links. Authority/source changes retract owned proofs;
-authority recovery requires another declaration/refresh. This supersedes the earlier diagnostic's
-missing compound link only within [the exact approved rule and limits](../docs/MONOTONE_ATTRIBUTE_REFINEMENT.md).
-Do not generalize it to negation, transformed expressions, changed/removed clauses, identity/role
-replacement, selectors or relationship positions. No global equivalence, automatic classifier,
-Runtime.submit dependency continuation or numerical crop valuation is implied.
-
-
-## Selected-model singleton submission candidate — 2026-10-21
-
-The isolated submission candidate enters through ordinary Runtime.submit: exact saved dependency,
-typed deferred classifier obligation, genuine producer completion, coherent classification
-snapshot, typed concrete redeclaration/native eligibility, concrete Resolver plan and one
-numerical parent execution. Its acceptance fixture computes 7; precomputed Tier-0 computes 11
-without classifier discovery. See the [boundary and fixture disclosures](../docs/CLASSIFIER_DEPENDENCY_SUBMISSION.md).
-The capability is INIT, one abstract occurrence on the explicit native inherent bearer, the sole
-observed current-context member and at most one concrete scalar dependency. Unsupported
-cardinalities fail before parent execution. Resolution exhausts precomputed rank-0 alternatives
-before planning automatic classifiers, including nested dependencies and operation strategies.
-Accepted partial output cannot be silently composed with a deferred parent. The multi-crop graph children/cash-value case, direct
-abstract quality-head admission, persistent reuse and composition remain subsequent work. Only
-exact framework-owned child-count deltas may be projected through frozen input guards; other
-member/source/result/attempt checks remain. No implicit aggregation or bearer retyping.
-
-
-## Direct-quality classifier dependency families — 2026-10-21 candidate
-
-The next isolated increment follows ordinary Runtime.submit through classifier-preparable source
-admission, actual member-producer/classifier dispatch, fresh or reused complete outcomes, concrete
-quality dependency resolution and one graph-reading contextualizer. Native context is preserved;
-classifier members do not become the generated qualities' bearers. Strict execution stays strict,
-and conditional request/receipt mode is revision- and occurrence-bound in accepted and legacy
-Reasoner paths. Outputs, incompatible bearers and unsupported predicate positions remain rejected.
-
-One dependency/one abstract occurrence can produce multiple independent branch bindings. Family
-inventories distinguish successful empty closure from optional generated NO_MODEL. Required
-classifier prerequisites, Tier-0 precedence and request-local root-commit guards remain. Distinct
-incoming AFFECTS prerequisite bindings survive reference/execution deduplication. A contextualizer
-uses its injected modeled Observation with getDependencyFamilies(output) and getDependencyInputs;
-getTargetObservation remains a relationship endpoint. Actual source and requested storage mediation
-are validated separately; no source retyping or native-parent changes are implied.
-
-The isolated monetary fixture classifies Wheat/Maize observed members, resolves explicit USD@2020
-child valuations 3*5 and 2*11, and performs one authored graph sum37; changed membership Maize gives22.
-Prices are test assumptions, not discovered market data or verified dimensional/FX mediation.
-No generic implicit aggregation, coverage, persistent invalidation or shared binding policy is
-introduced. Ordinary multi-occurrence products and broader native-domain inference remain future.
-See [the exact route and disclosures](../docs/CLASSIFIER_DEPENDENCY_FAMILIES.md) and external evidence
-receipts for current Maven/review status. Earlier unimplemented-status notes are historical.
-
-
-## Multiple direct ATTRIBUTE factors and cold family recovery - eleventh isolated increment
-
-Automatic INIT continuation now admits multiple independent direct ATTRIBUTE occurrences in one
-quality dependency, with one explicit native domain. It freezes producer keys before work and
-shares only equivalent unowned leaf discovery queries in this live attempt. Actual producer and
-child identities remain independent of syntax substitution; no zip/correlation/shared-binding
-syntax or persistent reuse is inferred. Each factor must succeed; required classifier and mandatory
-characterization failures prevent publication. Characterization NO_MODEL is an explicit terminal
-lookup, not a skipped prerequisite.
-
-The distinct Crop/Season fixture observes two outcomes per family and executes four independent
-monetary children and one graph-reading parent with authored sum10. Native family tests feed the
-submission results through real production Neo4j storage/commit, then cold graph restoration and
-incoming family access. The original submission still has explicit native database test adapters;
-this does not verify its full native root commit or numeric-storage restart. The native bridge only
-supplies ID allocation and embedded/driver transport. Prior singleton/family snapshots are frozen.
-One deferred dependency, INIT and direct quality ATTRIBUTE positions remain the automatic boundary;
-other multi-occurrence domains, shared binding, persistent invalidation and composition stay future.
-See [the exact contract and evidence disclosures](../docs/CLASSIFIER_CARTESIAN_RECOVERY.md).
-
-The producer comparison also retains ordered exact model URN contributions (including empty
-models); missing/malformed provenance cannot authorize provisional-ID coalescing. The live attempt
-ownership check runs independently of leaf shape. Only known typed semantic Set fields are sorted;
-authored parameter/metadata/value arrays stay ordered even with type-like field names or tags.
-
-Unnamed model contributions retain an empty provenance marker so mixed named/ad-hoc actuators
-cannot appear certified. Automatic multiple-factor work requires every frozen producer plan to
-prove the same unowned leaf source before any discovery; unsupported/different/incomplete sources
-fail explicitly. Ordinary ad-hoc execution and preserved single-occurrence routes remain available.
-
-### Native root and numeric recovery verification
-
-The subsequent bounded native-root increment installs production KnowledgeGraphNeo4j transactions
-and real StorageManagerImpl before ordinary Runtime.submit. A temporal three-member native cohort
-explicitly includes the current Region; two classifiers produce independent2x2 concrete qualities,
-four children1,2,3,4 and one authored graph-reading parent10. Fresh graph/storage managers cold-load
-the same committed IDs, prerequisite bindings and numeric bytes, with no post-submission copy or
-re-persistence. Catalogue/parser/component transport, ID allocation and embedded-driver value
-conversion remain fixture seams; no full service restart or spatial-index verification is claimed.
-
-Fresh attribution replacements now receive exact owned child-counter increments and rollback.
-Existing attributed native observations atomically add that exact delta during semantic update,
-without rewriting unrelated payload. Guards still reject foreign counters/metadata. Both graph
-writer paths persist single-shard geometry required by reconstruction; no parent-support inference
-or historical migration is added. Native cold Region counts match actual child edges. See
-[the native-root boundary and persistence repairs](../docs/CLASSIFIER_NATIVE_ROOT_RECOVERY.md)
-and the external final verification/review receipts. All earlier snapshots remain preserved.

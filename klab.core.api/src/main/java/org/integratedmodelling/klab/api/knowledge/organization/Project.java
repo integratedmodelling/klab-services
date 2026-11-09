@@ -34,6 +34,9 @@ public interface Project extends KlabAsset {
    */
   interface Manifest extends Serializable {
 
+    /** Whether a Resources service should synchronize this project with Git origin before load. */
+    default boolean isSnapshot() { return false; }
+
     String getDescription();
 
     /**

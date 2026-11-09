@@ -97,6 +97,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class ResourcesProvider extends BaseService implements ResourcesService {
 
+  /** Retain project synchronization problems in the notifications exposed by service status. */
+  public void reportProjectSynchronization(Notification notification) {
+    serviceNotifications().add(notification);
+    if (notification.getLevel() == Notification.Level.Error) serviceScope().error(notification.getMessage());
+    else serviceScope().warn(notification.getMessage());
+  }
+
   // this is for URNs that represent inline resources from namespace defines
   private static final String TEMPORARY_NODE_NAME = "temporary";
   // this for URNs that identify resources. Leaving space for other URN catalogs in the future.

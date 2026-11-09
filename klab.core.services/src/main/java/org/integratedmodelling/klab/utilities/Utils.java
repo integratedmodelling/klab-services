@@ -1918,6 +1918,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
     private static String remoteTrackingBranch(Repository repository, String branch)
         throws IOException {
+      String remote = repository.getConfig().getString("branch", branch, "remote");
+      if (remote != null && !"origin".equals(remote)) return null;
       BranchTrackingStatus trackingStatus = BranchTrackingStatus.of(repository, branch);
       if (trackingStatus != null && trackingStatus.getRemoteTrackingBranch() != null) {
         return trackingStatus.getRemoteTrackingBranch();
@@ -1971,6 +1973,14 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         return;
       }
 
+      // Detect conflicts in memory so a failed automatic merge never writes conflict markers.
+      var preview = org.eclipse.jgit.merge.MergeStrategy.RECURSIVE.newMerger(repository, true);
+      if (!preview.merge(oldCommit, remoteHead)) {
+        ret.getNotifications().add(Notification.error(
+            "Remote changes in " + remoteBranch + " conflict with local commits in "
+                + localRepository + "; no changes were merged."));
+        return;
+      }
       MergeResult mergeResult = git.merge().include(remoteHead).call();
       if (!mergeResult.getMergeStatus().isSuccessful()) {
         resetHard(git, oldCommit);

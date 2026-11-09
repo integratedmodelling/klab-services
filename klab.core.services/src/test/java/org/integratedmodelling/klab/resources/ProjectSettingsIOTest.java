@@ -12,6 +12,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class ProjectSettingsIOTest {
+  @Test void snapshotRoundTripsAndOmittedUpdatesPreserveIt() throws Exception {
+    seed();
+    assertEquals(false, ProjectSettingsIO.read(storage()).getSnapshot());
+    var settings = ProjectSettingsIO.read(storage());
+    settings.setSnapshot(true);
+    ProjectSettingsIO.write(storage(), settings);
+    assertEquals(true, ProjectSettingsIO.read(storage()).getSnapshot());
+    assertTrue(Utils.Json.load(manifest().toUri().toURL(),
+        org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl.ManifestImpl.class).isSnapshot());
+    ProjectSettingsIO.write(storage(), new ProjectSettings());
+    assertEquals(true, ProjectSettingsIO.read(storage()).getSnapshot());
+    settings.setSnapshot(false);
+    ProjectSettingsIO.write(storage(), settings);
+    assertEquals(false, ProjectSettingsIO.read(storage()).getSnapshot());
+  }
   @TempDir Path root;
   Path manifest() { return root.resolve("META-INF/manifest.json"); }
   Path legacy() { return root.resolve("META-INF/project.json"); }
