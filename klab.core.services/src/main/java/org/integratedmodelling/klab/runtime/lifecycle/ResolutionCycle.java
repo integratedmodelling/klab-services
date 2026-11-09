@@ -18,8 +18,12 @@ public final class ResolutionCycle<S> implements AutoCloseable {
   private final S semantics;
   private final AutoCloseable semanticLease;
   private final AtomicBoolean ownerReleased = new AtomicBoolean();
+  private final Object semanticReleaseMonitor = new Object();
+  private boolean semanticReleased;
+  private Throwable semanticReleaseFailure;
   private final CompletableFuture<Void> quiescent = new CompletableFuture<>();
   private int references = 1;
+  private boolean revoked;
 
   public ResolutionCycle(
       String contextId, boolean consequencesEnabled, S semantics, AutoCloseable semanticLease) {
@@ -63,7 +67,7 @@ public final class ResolutionCycle<S> implements AutoCloseable {
   }
 
   public synchronized Lease retain() {
-    if (references == 0) throw new IllegalStateException("Resolution cycle has finished");
+    if (references == 0 || revoked) throw new IllegalStateException("Resolution cycle has finished");
     references++;
     return new Lease();
   }
@@ -85,13 +89,37 @@ public final class ResolutionCycle<S> implements AutoCloseable {
     if (ownerReleased.compareAndSet(false, true)) release();
   }
 
+  /**
+   * Irrevocable context shutdown: deny new work and retire the remote semantic pin. Existing
+   * owners must still close normally; quiescence remains a native-work drain barrier, not a
+   * shortcut permitting graph/storage disposal while an operation is running.
+   */
+  public void revoke() {
+    synchronized (this) { revoked = true; }
+    releaseSemantics();
+  }
+
+  private void releaseSemantics() {
+    synchronized (semanticReleaseMonitor) {
+      if (!semanticReleased) {
+        semanticReleased = true;
+        try { semanticLease.close(); }
+        catch (Throwable failure) { semanticReleaseFailure = failure; }
+      }
+      if (semanticReleaseFailure instanceof RuntimeException failure) throw failure;
+      if (semanticReleaseFailure instanceof Error failure) throw failure;
+      if (semanticReleaseFailure != null)
+        throw new IllegalStateException("Cannot release the cycle's semantic environment", semanticReleaseFailure);
+    }
+  }
+
   private void release() {
     synchronized (this) {
       if (--references != 0) return;
     }
     // Closing outside the ownership monitor cannot admit a new retain: references is already zero.
     try {
-      semanticLease.close();
+      releaseSemantics();
       quiescent.complete(null);
     } catch (Throwable failure) {
       quiescent.completeExceptionally(failure);

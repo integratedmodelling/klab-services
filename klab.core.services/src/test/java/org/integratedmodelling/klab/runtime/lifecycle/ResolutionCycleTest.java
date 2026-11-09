@@ -8,6 +8,40 @@ import org.junit.jupiter.api.Test;
 class ResolutionCycleTest {
   record Epoch(String session,long generation){}
 
+  @Test void contextRevocationReleasesSemanticsButDoesNotPretendRunningWorkHasDrained() {
+    var releases = new AtomicInteger();
+    var cycle = new ResolutionCycle<>("context", true, new Epoch("one", 1), releases::incrementAndGet);
+    var child = cycle.retain();
+    cycle.revoke(); cycle.revoke();
+    assertEquals(1, releases.get());
+    assertThrows(IllegalStateException.class, cycle::retain);
+    assertFalse(cycle.quiescence().toCompletableFuture().isDone());
+    cycle.close();
+    assertFalse(cycle.quiescence().toCompletableFuture().isDone());
+    child.close(); child.close();
+    cycle.quiescence().toCompletableFuture().join();
+    assertEquals(1, releases.get());
+  }
+
+  @Test void concurrentCompletionWaitsForRevocationAcknowledgement() throws Exception {
+    var entered = new java.util.concurrent.CountDownLatch(1);
+    var acknowledge = new java.util.concurrent.CountDownLatch(1);
+    var releases = new AtomicInteger();
+    var cycle = new ResolutionCycle<>("context", true, new Epoch("one", 1), () -> {
+      releases.incrementAndGet(); entered.countDown();
+      assertTrue(acknowledge.await(5, java.util.concurrent.TimeUnit.SECONDS));
+    });
+    var revoke = java.util.concurrent.CompletableFuture.runAsync(cycle::revoke);
+    assertTrue(entered.await(5, java.util.concurrent.TimeUnit.SECONDS));
+    var finish = java.util.concurrent.CompletableFuture.runAsync(cycle::close);
+    try { assertFalse(cycle.quiescence().toCompletableFuture().isDone()); }
+    finally { acknowledge.countDown(); }
+    revoke.get(5, java.util.concurrent.TimeUnit.SECONDS);
+    finish.get(5, java.util.concurrent.TimeUnit.SECONDS);
+    cycle.quiescence().toCompletableFuture().join();
+    assertEquals(1, releases.get());
+  }
+
   @Test void queuedAndRecursiveOwnersRetainTheSameFrozenCycleUntilAllWorkFinishes() {
     var releases=new AtomicInteger();var epoch=new Epoch("old",7);
     var cycle=new ResolutionCycle<>("context",true,epoch,releases::incrementAndGet);

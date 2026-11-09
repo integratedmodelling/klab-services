@@ -64,16 +64,26 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       String contextId,
       String cycleId,
       Scope scope) {
-    var accepted =
-        client
-            .withScope(scope)
-            .postRequired(
-                ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE,
-                new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
-                    runtimeServiceId, contextId, cycleId, binding),
-                Boolean.class);
-    if (!Boolean.TRUE.equals(accepted))
-      throw new IllegalStateException("Semantic cycle release was not acknowledged");
+    var owner = scope instanceof SessionScope
+        ? scope.getParentScope(Scope.Type.USER, UserScope.class) : scope;
+    if (!(owner instanceof UserScope) || owner instanceof SessionScope)
+      throw new SecurityException("Semantic cycle cleanup requires an authenticated user scope");
+    var cleanup = client.withScope(owner);
+    var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(
+        runtimeServiceId, contextId, cycleId, binding);
+    for (int attempt = 0; ; attempt++) {
+      try {
+        var accepted = cleanup.postWithStatus(
+            ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE, request, Boolean.class);
+        if (!Boolean.TRUE.equals(accepted))
+          throw new IllegalStateException("Semantic cycle release was not acknowledged");
+        return;
+      } catch (org.integratedmodelling.common.utils.Utils.Http.Client.RequestFailure failure) {
+        // Release is idempotent for this exact owner/binding. Never retry authorization errors.
+        if (attempt >= 2 || Thread.currentThread().isInterrupted()
+            || (failure.getStatus() != 0 && failure.getStatus() < 500)) throw failure;
+      }
+    }
   }
 
   @Override

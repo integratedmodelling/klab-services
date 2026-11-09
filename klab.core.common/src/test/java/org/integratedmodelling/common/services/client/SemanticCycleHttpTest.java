@@ -17,6 +17,51 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.*;
 import org.junit.jupiter.api.Test;
 
 class SemanticCycleHttpTest {
+  @Test void cleanupSurvivesDeletedContextAndRetriesOnlyTransientFailures() throws Exception {
+    var calls = new AtomicInteger(); var mode = new AtomicInteger(503);
+    var failure = new AtomicReference<Throwable>();
+    var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext(ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE, exchange -> {
+      int call = calls.incrementAndGet();
+      try {
+        assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.SCOPE_HEADER));
+        assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.SERVICE_ID_HEADER));
+        assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.TRANSACTION_ID_HEADER));
+        assertEquals("tester", exchange.getRequestHeaders().getFirst(ServicesAPI.USERNAME_HEADER));
+        exchange.getRequestBody().readAllBytes();
+      } catch (Throwable problem) { failure.set(problem); }
+      int status = mode.get() == 503 && call > 1 ? 200 : mode.get();
+      byte[] body = "true".getBytes();
+      exchange.getResponseHeaders().set("Content-Type", "application/json");
+      exchange.sendResponseHeaders(status, body.length);
+      try (var output = exchange.getResponseBody()) { output.write(body); }
+    });
+    server.start();
+    var context = SemanticCycleFacadeTest.scope();
+    var user = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    var identity = mock(org.integratedmodelling.klab.api.identities.UserIdentity.class);
+    when(identity.getId()).thenReturn("user-id"); when(identity.getUsername()).thenReturn("tester");
+    when(identity.getData()).thenReturn(org.integratedmodelling.klab.api.collections.Parameters.create());
+    when(user.getUser()).thenReturn(identity);
+    when(context.getParentScope(Scope.Type.USER, org.integratedmodelling.klab.api.scope.UserScope.class)).thenReturn(user);
+    when(context.getContextObservation()).thenThrow(new AssertionError("Deleted context must not be hydrated"));
+    try (var http = Utils.Http.getClient("http://127.0.0.1:" + server.getAddress().getPort(), null)) {
+      var client = mock(ReasonerClient.class, CALLS_REAL_METHODS);
+      var field = BaseServiceClient.class.getDeclaredField("client"); field.setAccessible(true); field.set(client, http);
+      var binding = new SemanticCycleBinding(SemanticCycleBinding.VERSION, "reasoner", "session", 1, "fingerprint", "lease");
+      client.releaseSemanticCycle(binding, "runtime", "context", "cycle", context);
+      assertEquals(2, calls.get());
+      mode.set(403); calls.set(0);
+      assertThrows(Utils.Http.Client.RequestFailure.class,
+          () -> client.releaseSemanticCycle(binding, "runtime", "context", "cycle", context));
+      assertEquals(1, calls.get(), "Authorization denial must not be retried");
+      mode.set(500); calls.set(0);
+      assertThrows(Utils.Http.Client.RequestFailure.class,
+          () -> client.releaseSemanticCycle(binding, "runtime", "context", "cycle", context));
+      assertEquals(3, calls.get(), "Transport retries must be bounded");
+      assertNull(failure.get(), () -> String.valueOf(failure.get()));
+    } finally { server.stop(0); }
+  }
   @Test void typedUnavailabilityIsDistinctFromHttpAuthorizationAndMalformedProtocolFailures() throws Exception {
     var mapper=JacksonConfiguration.newObjectMapper();var status=new AtomicInteger(200);
     var body=new AtomicReference<>(mapper.writeValueAsBytes(new SemanticCycleBeginResult(
@@ -59,6 +104,9 @@ class SemanticCycleHttpTest {
           assertEquals(owner.contextId(),request.contextId());response=mapper.writeValueAsBytes(
               new SemanticCycleBeginResult(SemanticCycleBeginResult.Status.BOUND,owner.binding(),null));
         }else if(path.equals(ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE)) {
+          assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.SCOPE_HEADER));
+          assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.TRANSACTION_ID_HEADER));
+          assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.RESOLUTION_CYCLE_HEADER));
           assertEquals(owner,mapper.readValue(bytes,SemanticCycleRequest.class));released.set(true);response="true".getBytes();
         }else {
           assertEquals(ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE,path);
@@ -79,6 +127,8 @@ class SemanticCycleHttpTest {
       try(var output=exchange.getResponseBody()){output.write(response);}
     });server.start();
     var scope=SemanticCycleFacadeTest.scope();
+    when(scope.getParentScope(Scope.Type.USER, org.integratedmodelling.klab.api.scope.UserScope.class))
+        .thenReturn(mock(org.integratedmodelling.klab.api.scope.UserScope.class));
     var focus=mock(org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
     when(focus.getId()).thenReturn(42L);when(scope.getContextObservation()).thenReturn(focus);
     when(scope.getObserverId()).thenReturn(7L);when(scope.getTransactionId()).thenReturn("transaction");

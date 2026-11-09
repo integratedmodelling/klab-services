@@ -19,6 +19,53 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.junit.jupiter.api.*;
 
 class AcceptedSemanticCycleTest {
+  @Test void deletedContextCleanupUsesRecordedOwnershipAndExactRetriesAreIdempotent() throws Exception {
+    var actor = actor("fingerprint", "test:Subject");
+    var current = new AtomicReference<>(state(actor, "fingerprint"));
+    var context = scope("alice", "context", "runtime");
+    var owner = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    var ownerIdentity = context.getUser();
+    when(owner.getUser()).thenReturn(ownerIdentity);
+    var foreign = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    var foreignIdentity = scope("bob", "context", "runtime").getUser();
+    when(foreign.getUser()).thenReturn(foreignIdentity);
+    try (var runtime = new AcceptedSemanticRuntime(AcceptedSemanticObserverScopeTest.factory(current), "reasoner")) {
+      runtime.submit(AcceptedSemanticObserverScopeTest.world());
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      var binding = runtime.beginCycle(request(null, "closed-context"), context);
+      var release = request(binding, "closed-context");
+      assertThrows(SecurityException.class, () -> runtime.releaseCycle(release, foreign));
+      assertThrows(SecurityException.class, () -> runtime.releaseCycle(
+          new SemanticCycleRequest("other", "context", "closed-context", binding), owner));
+      assertThrows(SecurityException.class, () -> runtime.releaseCycle(
+          new SemanticCycleRequest("runtime", "other", "closed-context", binding), owner));
+      assertThrows(SecurityException.class, () -> runtime.invokeCycle(new SemanticCycleInvocation(
+          release, "resolveConcept", List.of(String.class.getName()), List.of("\"test:Subject\"")), owner));
+      assertEquals(1, runtime.activeCycleCount());
+      runtime.releaseCycle(release, owner);
+      runtime.releaseCycle(release, owner);
+      assertEquals(0, runtime.activeCycleCount());
+      assertThrows(SecurityException.class, () -> runtime.releaseCycle(release, foreign));
+      assertThrows(SecurityException.class, () -> runtime.beginCycle(request(null, "new"), owner));
+      assertThrows(SecurityException.class, () -> runtime.releaseCycle(request(binding, "forged"), owner));
+      // A closed cycle cannot be resurrected, and its retry cannot retire a new cycle.
+      assertThrows(IllegalStateException.class, () -> runtime.beginCycle(request(null, "closed-context"), context));
+      var next = runtime.beginCycle(request(null, "next"), context);
+      runtime.releaseCycle(release, owner);
+      assertEquals(1, runtime.activeCycleCount());
+      runtime.releaseCycle(request(next, "next"), owner);
+      assertEquals(0, runtime.activeCycleCount());
+      for (int i = 0; i < 1030; i++) {
+        String id = "history-" + i;
+        runtime.releaseCycle(request(runtime.beginCycle(request(null, id), context), id), owner);
+      }
+      var history = AcceptedSemanticRuntime.class.getDeclaredField("releasedCycles");
+      history.setAccessible(true);
+      assertTrue(((Map<?, ?>) history.get(runtime)).size() <= 1024);
+      assertEquals(0, runtime.activeCycleCount());
+      verify(owner, never()).getService(any());
+    }
+  }
   @BeforeAll static void configure(){org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();}
   static void field(Object target,String name,Object value) throws Exception {
     var f=ReasonerService.class.getDeclaredField(name);f.setAccessible(true);f.set(target,value);
@@ -232,7 +279,7 @@ class AcceptedSemanticCycleTest {
     assertEquals(unavailable,runtime.beginCycleResult(request,scope)); // No late binding in this cycle.
     assertEquals(SemanticCycleBeginResult.Status.BOUND,runtime.beginCycleResult(request(null,"fresh"),scope).status());
     runtime.releaseCycle(request,scope);
-    assertThrows(SecurityException.class,()->runtime.releaseCycle(request,scope));
+    assertDoesNotThrow(()->runtime.releaseCycle(request,scope)); // Lost acknowledgement is retryable.
     runtime.close();assertThrows(IllegalStateException.class,()->runtime.beginCycleResult(request(null,"closed"),scope));
   }
 }

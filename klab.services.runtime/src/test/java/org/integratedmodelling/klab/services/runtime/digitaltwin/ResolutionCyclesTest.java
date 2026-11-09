@@ -13,6 +13,41 @@ import org.integratedmodelling.klab.services.scopes.*;
 import org.junit.jupiter.api.Test;
 
 class ResolutionCyclesTest {
+  @Test void closedContextReleasesSemanticPinBeforeRunningAndQueuedOwnersDrain() throws Exception {
+    try (var f = new Fixture()) {
+      var first = f.cycles.admit(f.scope, true).get(5, TimeUnit.SECONDS);
+      var child = f.cycles.admit(first.scope(), true).get(5, TimeUnit.SECONDS);
+      var queued = f.cycles.admit(f.scope, true);
+      f.cycles.close(); f.cycles.close();
+      verify(f.reasoner).releaseSemanticCycle(any(), eq("runtime"), eq("context"), anyString(), same(f.scope));
+      assertThrows(CancellationException.class, queued::join);
+      assertThrows(IllegalStateException.class, () -> f.cycles.awaitQuiescence(1, TimeUnit.MILLISECONDS));
+      assertThrows(IllegalStateException.class, first.scope().getResolutionCycle()::retain);
+      assertThrows(SecurityException.class, () -> f.cycles.require(first.scope()));
+      first.close(); child.close();
+      f.cycles.awaitQuiescence(5, TimeUnit.SECONDS);
+      verify(f.reasoner, times(1)).releaseSemanticCycle(any(), anyString(), anyString(), anyString(), any());
+      verify(f.reasoner, times(1)).beginSemanticCycleResult(anyString(), anyString(), anyString(), any());
+    }
+  }
+
+  @Test void contextClosingDuringRemoteAdmissionReleasesTheLatePin() throws Exception {
+    try (var f = new Fixture()) {
+      var entered = new CountDownLatch(1); var proceed = new CountDownLatch(1);
+      var binding = new SemanticCycleBinding(SemanticCycleBinding.VERSION, "reasoner", "session", 1, "fingerprint", "late");
+      when(f.reasoner.beginSemanticCycleResult(anyString(), anyString(), anyString(), any())).thenAnswer(call -> {
+        entered.countDown(); assertTrue(proceed.await(5, TimeUnit.SECONDS));
+        return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult(
+            org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult.Status.BOUND, binding, null);
+      });
+      var admission = f.cycles.admit(f.scope, true);
+      assertTrue(entered.await(5, TimeUnit.SECONDS));
+      try { f.cycles.close(); } finally { proceed.countDown(); }
+      assertThrows(CancellationException.class, () -> admission.get(5, TimeUnit.SECONDS));
+      f.cycles.awaitQuiescence(5, TimeUnit.SECONDS);
+      verify(f.reasoner).releaseSemanticCycle(eq(binding), eq("runtime"), eq("context"), anyString(), same(f.scope));
+    }
+  }
   static class Fixture implements AutoCloseable {
     final RuntimeService runtime=mock(RuntimeService.class);
     final Reasoner reasoner=mock(Reasoner.class);

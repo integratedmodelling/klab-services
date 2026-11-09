@@ -52,6 +52,12 @@ class SemanticCycleControllerTest {
     mvc.perform(post(ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE).principal(authorization).contentType(MediaType.APPLICATION_JSON)
         .content(mapper.writeValueAsBytes(owner))).andExpect(status().isOk());
     verify(service).releaseSemanticCycle(binding,"runtime","context","cycle",scope);
+    // A deleted context must not be reconstructed just to release its semantic pin.
+    var cleanupOwner = mock(org.integratedmodelling.klab.api.scope.UserScope.class);
+    when(authorization.getScope()).thenReturn(cleanupOwner);
+    mvc.perform(post(ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE).principal(authorization).contentType(MediaType.APPLICATION_JSON)
+        .content(mapper.writeValueAsBytes(owner))).andExpect(status().isOk());
+    verify(service).releaseSemanticCycle(binding,"runtime","context","cycle",cleanupOwner);
     verify(service,never()).resolveConcept(anyString());
   }
 }

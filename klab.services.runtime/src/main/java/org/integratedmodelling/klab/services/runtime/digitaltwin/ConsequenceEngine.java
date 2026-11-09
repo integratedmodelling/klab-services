@@ -111,14 +111,20 @@ public final class ConsequenceEngine implements AutoCloseable {
   }
 
   /** Called only after a successful root transaction has closed and published its state. */
-  public synchronized void committed(
+  public void committed(
       KnowledgeGraph.Commit commit, ServiceContextScope source, long activityId, long observerId) {
-    if (closed) return;
+    var work = prepareCommit(commit, source, activityId, observerId);
+    if (work != null) executeOwned(work);
+  }
+
+  private synchronized Work prepareCommit(
+      KnowledgeGraph.Commit commit, ServiceContextScope source, long activityId, long observerId) {
+    if (closed) return null;
     var binding = source.getResolutionCycleBinding();
-    if (binding != null && !binding.consequencesEnabled()) return;
+    if (binding != null && !binding.consequencesEnabled()) return null;
     if (commit == null || commit.getId() <= 0 || activityId <= 0)
       throw new IllegalArgumentException("Consequences require a successful root commit");
-    if (pending.contains(commit.getId()) || completed.getIfPresent(commit.getId()) != null) return;
+    if (pending.contains(commit.getId()) || completed.getIfPresent(commit.getId()) != null) return null;
     var snapshot = CommitImpl.copyOf(commit);
     var origin = source.getConsequenceCause();
     var worldview = source.getConfiguration().getWorldviewCommitment();
@@ -130,13 +136,14 @@ public final class ConsequenceEngine implements AutoCloseable {
     if (source.getResolutionCycle() != null)
       cycleLeases.put(commit.getId(), source.getResolutionCycle().retain());
     pending.add(commit.getId());
-    worker.execute(
-        new Work(
+    return new Work(
             0,
             sequence++,
             () -> {
-              var trigger = ConsequenceTrigger.capture(snapshot, activityId, evaluationScope);
+              ConsequenceTrigger trigger = null;
               try {
+                if (closed || Thread.currentThread().isInterrupted()) return;
+                trigger = ConsequenceTrigger.capture(snapshot, activityId, evaluationScope);
                 if (origin != null)
                   publish(
                       Message.MessageType.ConsequenceCommitted,
@@ -157,12 +164,12 @@ public final class ConsequenceEngine implements AutoCloseable {
                 }
               } finally {
                 boolean finishNow;
+                Work continuation = null;
                 synchronized (this) {
-                  finishNow = closed || Thread.currentThread().isInterrupted()
+                  finishNow = trigger == null || closed || Thread.currentThread().isInterrupted()
                       || !trigger.relevant(Consequence.Kind.UNCERTAINTY);
                   if (!finishNow)
-                    worker.execute(
-                        new Work(
+                    continuation = new Work(
                             1,
                             sequence++,
                             () -> {
@@ -180,12 +187,23 @@ public final class ConsequenceEngine implements AutoCloseable {
                                 finish(snapshot.getId());
                               }
                             },
-                            () -> finish(snapshot.getId())));
+                            () -> finish(snapshot.getId()));
                 }
                 if (finishNow) finish(snapshot.getId());
+                else executeOwned(continuation);
               }
             },
-            () -> finish(snapshot.getId())));
+            () -> finish(snapshot.getId()));
+  }
+
+  /** A rejected task never transfers ownership to the executor. */
+  private void executeOwned(Work work) {
+    try {
+      worker.execute(work);
+    } catch (RuntimeException | Error failure) {
+      work.cancel().run();
+      throw failure;
+    }
   }
 
   private void finish(long commitId) {

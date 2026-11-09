@@ -34,6 +34,48 @@ import org.junit.jupiter.api.Test;
 class ConsequenceEngineTest {
   @BeforeAll static void configure() { ServiceConfiguration.injectInstantiators(); }
 
+  @Test void failedTriggerCaptureCannotStrandCompletedCycle() throws Exception {
+    try (var f = new Fixture()) {
+      var source = spy(f.scope);
+      var evaluation = mock(ServiceContextScope.class);
+      doReturn(evaluation).when(source).forConsequence(any());
+      when(evaluation.getDigitalTwin()).thenThrow(new AssertionError("capture failed"));
+      f.engine.committed(commit(1), source, 100, 0);
+      f.scope.getResolutionCycle().close();
+      f.scope.getResolutionCycle().quiescence().toCompletableFuture().get(5, TimeUnit.SECONDS);
+      assertEquals(1, f.semanticReleases.get());
+    }
+  }
+
+  @Test void rejectedInitialWorkReturnsItsCycleOwnership() throws Exception {
+    try (var f = new Fixture()) {
+      var workerField = ConsequenceEngine.class.getDeclaredField("worker");
+      workerField.setAccessible(true);
+      ((java.util.concurrent.ExecutorService) workerField.get(f.engine)).shutdown();
+      assertThrows(java.util.concurrent.RejectedExecutionException.class,
+          () -> f.engine.committed(commit(1), f.scope, 100, 0));
+      f.scope.getResolutionCycle().close();
+      f.scope.getResolutionCycle().quiescence().toCompletableFuture().get(5, TimeUnit.SECONDS);
+      assertEquals(1, f.semanticReleases.get());
+    }
+  }
+
+  @Test void rejectedUncertaintyContinuationReturnsItsCycleOwnership() throws Exception {
+    try (var f = new Fixture()) {
+      var workerField = ConsequenceEngine.class.getDeclaredField("worker");
+      workerField.setAccessible(true);
+      var worker = (java.util.concurrent.ExecutorService) workerField.get(f.engine);
+      f.engine.register(Consequence.Kind.CONFIGURATION_DETECTION, (cause, changes, scope) -> {
+        worker.shutdown();
+        return new ConsequenceEngine.Result(Consequence.Outcome.NO_ACTION, "checked", List.of());
+      });
+      f.engine.committed(commit(1), f.scope, 100, 0);
+      f.scope.getResolutionCycle().close();
+      f.scope.getResolutionCycle().quiescence().toCompletableFuture().get(5, TimeUnit.SECONDS);
+      assertEquals(1, f.semanticReleases.get());
+    }
+  }
+
   static CommitImpl commit(long id) {
     var commit = new CommitImpl();
     commit.setId(id);
@@ -52,6 +94,7 @@ class ConsequenceEngineTest {
     final LinkedBlockingQueue<Message> events = new LinkedBlockingQueue<>();
     final ConsequenceEngine engine;
     final DigitalTwinImpl twin = mock(DigitalTwinImpl.class);
+    final java.util.concurrent.atomic.AtomicInteger semanticReleases = new java.util.concurrent.atomic.AtomicInteger();
     final KnowledgeGraphNeo4j graph = mock(KnowledgeGraphNeo4j.class);
     final KnowledgeGraph.Transaction storage = mock(KnowledgeGraph.Transaction.class);
     final org.integratedmodelling.klab.api.provenance.Agent klab =
@@ -73,7 +116,7 @@ class ConsequenceEngineTest {
           new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding(
               "semantic-cycle-v1", "reasoner", "session", 1, "fingerprint", "lease"));
       scope = base.withResolutionCycle(new org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle<>(
-          binding.cycleId(), "context", true, binding, () -> {}), binding);
+          binding.cycleId(), "context", true, binding, semanticReleases::incrementAndGet), binding);
       scope.onMessage((channel, event) -> events.add(event), Message.Queue.Events);
       engine = new ConsequenceEngine(scope, "context", gracefulCloseMillis, forcedCloseMillis);
       when(twin.getConsequenceEngine()).thenReturn(engine);

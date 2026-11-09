@@ -57,6 +57,12 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   private final Map<CycleOwner, CycleLease> cyclesByOwner = new HashMap<>();
   private final Map<String, CycleLease> cyclesById = new HashMap<>();
   private final Map<CycleOwner, SemanticCycleBeginResult> unavailableCycles = new HashMap<>();
+  // Bounded acknowledgement history: retries cannot release a new cycle or another owner's pin.
+  private final Map<CycleOwner, SemanticCycleRequest> releasedCycles = new LinkedHashMap<>() {
+    @Override protected boolean removeEldestEntry(Map.Entry<CycleOwner, SemanticCycleRequest> entry) {
+      return size() > 1024;
+    }
+  };
 
   private CycleOwner cycleOwner(SemanticCycleRequest request, Scope scope) {
     if (!(scope instanceof org.integratedmodelling.klab.api.scope.UserScope user)
@@ -91,6 +97,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             SemanticCycleBeginResult.Status.BOUND, existing.binding(), null);
       var unavailable = unavailableCycles.get(owner);
       if (unavailable != null) return unavailable;
+      if (releasedCycles.containsKey(owner))
+        throw new IllegalStateException("Semantic cycle has already been released");
       if (deploymentServiceId == null)
         throw new IllegalStateException("Semantic cycles require deployed service identity");
       var accepted = coordinator.accepted();
@@ -134,17 +142,32 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   }
 
   public void releaseCycle(SemanticCycleRequest request, Scope scope) {
-    var owner = cycleOwner(request, scope);
+    // Cleanup must survive removal of the Runtime context. The authenticated user and the
+    // complete recorded owner/binding are sufficient to retire a pin, never to invoke it.
+    final CycleOwner owner;
+    if (scope instanceof ContextScope) owner = cycleOwner(request, scope);
+    else if (scope instanceof org.integratedmodelling.klab.api.scope.UserScope user
+        && !(scope instanceof org.integratedmodelling.klab.api.scope.SessionScope)
+        && user.getUser() != null && !user.getUser().isAnonymous()
+        && user.getUser().getUsername() != null && !user.getUser().getUsername().isBlank())
+      owner = new CycleOwner(user.getUser().getUsername(), request.runtimeServiceId(),
+          request.contextId(), request.cycleId());
+    else throw new SecurityException("Semantic cycle release requires its authenticated owner");
     final CycleLease entry;
     synchronized (lifecycle) {
       requireOpen();
+      if (request.equals(releasedCycles.get(owner))) return;
       if (request.binding() == null) {
-        if (unavailableCycles.remove(owner) != null) return;
+        if (unavailableCycles.remove(owner) != null) {
+          releasedCycles.put(owner, request);
+          return;
+        }
         throw new SecurityException("Unknown or closed unbound semantic cycle");
       }
       entry = requireCycle(request, owner);
       cyclesById.remove(entry.binding().leaseId());
       cyclesByOwner.remove(owner);
+      releasedCycles.put(owner, request);
     }
     entry.lease().close();
   }
@@ -1489,6 +1512,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       cyclesById.clear();
       cyclesByOwner.clear();
       unavailableCycles.clear();
+      releasedCycles.clear();
     }
     cycles.forEach(cycle -> cycle.lease().close());
     coordinator.close();

@@ -306,16 +306,28 @@ public final class ResolutionCycles implements AutoCloseable {
     return closed;
   }
 
-  /** Stop new roots. Active scopes observe normal cooperative shutdown separately from settings. */
+  /** Revoke semantic pins before scope removal; native owners still have to drain normally. */
   @Override
   public void close() {
     List<CompletableFuture<Admission>> cancelled;
+    List<Frame> revoked;
     synchronized (this) {
       closed = true;
       cancelled = List.copyOf(waiting);
       waiting.clear();
+      revoked = List.copyOf(active.values());
     }
     cancelled.forEach(f -> f.cancel(false));
+    RuntimeException failure = null;
+    for (var frame : revoked) {
+      try {
+        frame.cycle().revoke();
+      } catch (RuntimeException problem) {
+        if (failure == null) failure = problem;
+        else failure.addSuppressed(problem);
+      }
+    }
+    if (failure != null) throw failure;
   }
 
   public void awaitQuiescence(long timeout, TimeUnit unit) {
