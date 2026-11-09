@@ -146,6 +146,7 @@ public final class IdentityRequirementSupport {
     private long retained = -1, hits, computations, indexBuilds, contributorBuilds;
     private BoundAxiomIndex assertedIndex;
     private List<OWLClass> contributors;
+    private Boolean hasRequirements;
     private final Map<OWLClass, StructuralClosure> answers = new LinkedHashMap<>(32, .75f, true) {
       @Override protected boolean removeEldestEntry(Map.Entry<OWLClass, StructuralClosure> entry) {
         return size() > CAPACITY;
@@ -155,7 +156,7 @@ public final class IdentityRequirementSupport {
     void reset() {
       if (manager != null) manager.removeOntologyChangeListener(listener);
       manager = null; reasoner = null; root = null; ontologies = null;
-      answers.clear(); assertedIndex = null; contributors = null; retained = -1; changed();
+      answers.clear(); assertedIndex = null; contributors = null; hasRequirements = null; retained = -1; changed();
     }
     private long prepare(OWL owl) {
       if (manager != owl.manager) { reset(); manager = owl.manager; manager.addOntologyChangeListener(listener); }
@@ -169,8 +170,25 @@ public final class IdentityRequirementSupport {
         owned.addAll(current); ontologies = owned; reasoner = backend; root = currentRoot; changed();
       }
       long now = revision.get();
-      if (retained != now) { answers.clear(); assertedIndex = null; contributors = null; retained = now; }
+      if (retained != now) { answers.clear(); assertedIndex = null; contributors = null; hasRequirements = null; retained = now; }
       return now;
+    }
+    boolean hasRequirements(OWL owl) {
+      if (!Thread.holdsLock(owl)) throw new IllegalStateException("Identity cache requires the OWL monitor");
+      long before = prepare(owl);
+      if (hasRequirements == null) {
+        var property = owl.manager.getOWLDataFactory().getOWLObjectProperty(
+            IRI.create("http://integratedmodelling.org/odo#requiresIdentity"));
+        // OWLAPI's entity index avoids expanding every class expression in every axiom.
+        boolean found = owl.manager.ontologies().flatMap(ontology -> ontology.referencingAxioms(property))
+            .flatMap(axiom -> axiom.nestedClassExpressions())
+            .anyMatch(expression -> expression instanceof OWLObjectSomeValuesFrom some
+                && some.getProperty().equals(property));
+        if (before != prepare(owl)) throw new ConcurrentModificationException("Identity requirements changed during discovery");
+        hasRequirements = found;
+      }
+      owl.requireAvailableClosure();
+      return hasRequirements;
     }
     BoundAxiomIndex assertedIndex(OWL owl) {
       if (!Thread.holdsLock(owl)) throw new IllegalStateException("Identity index requires the OWL monitor");
@@ -424,12 +442,7 @@ public final class IdentityRequirementSupport {
   }
 
   private boolean hasIdentityRequirements() {
-    return owl.manager.ontologies().flatMap(ontology -> ontology.axioms())
-        .flatMap(axiom -> axiom.getNestedClassExpressions().stream())
-        .anyMatch(expression -> expression instanceof OWLObjectSomeValuesFrom some
-            && !some.getProperty().isAnonymous()
-            && some.getProperty().asOWLObjectProperty().getIRI().toString()
-                .equals("http://integratedmodelling.org/odo#requiresIdentity"));
+    return owl.identityRequirementCache().hasRequirements(owl);
   }
 
   private void collect(OWLClassExpression expression, Set<OWLClassExpression> required,

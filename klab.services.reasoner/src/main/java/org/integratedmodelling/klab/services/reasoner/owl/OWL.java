@@ -108,12 +108,126 @@ public class OWL {
 
   private final IdentityRequirementSupport.Cache identityRequirementCache =
       new IdentityRequirementSupport.Cache();
+  public String sourceValidationFingerprint(List<String> obligations) {
+    return new AuthorityDependencySupport(this).sourceFingerprint(obligations);
+  }
+
+  private OWLOntologyManager inferenceManager;
+  private Object inferenceBackend;
+  private Set<OWLOntology> specializationOntologies;
+  private final AtomicLong inferenceRevision = new AtomicLong();
+  private long retainedInferenceRevision = -1;
+  private final OWLOntologyChangeListener inferenceChanges = changes -> inferenceRevision.incrementAndGet();
+
+  private void prepareInferenceCache() {
+    if (inferenceBackend != reasoner) {
+      inferenceBackend = reasoner;
+      inferenceRevision.incrementAndGet();
+    }
+    if (inferenceManager != manager) {
+      if (inferenceManager != null) inferenceManager.removeOntologyChangeListener(inferenceChanges);
+      inferenceManager = manager;
+      if (manager != null) manager.addOntologyChangeListener(inferenceChanges);
+      inferenceRevision.incrementAndGet();
+    }
+    long revision = inferenceRevision.get();
+    if (retainedInferenceRevision != revision) {
+      clearInferenceAnswers();
+      retainedInferenceRevision = revision;
+    }
+  }
+
+  // Answers belong to this buffered DL closure, never to a service-wide or caller cache.
+  private final com.github.benmanes.caffeine.cache.Cache<OWLAxiom, Boolean> entailments =
+      com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(20_000).recordStats().build();
+  private final com.github.benmanes.caffeine.cache.Cache<OWLClassExpression, Boolean> satisfiability =
+      com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(5_000).recordStats().build();
+  private record HierarchyKey(OWLClassExpression expression, boolean direct, boolean subclasses) {}
+  private record SpecializationKey(OWLClassExpression candidate, OWLClassExpression bound) {}
+  private final com.github.benmanes.caffeine.cache.Cache<HierarchyKey, List<Set<OWLClass>>> hierarchyAnswers =
+      com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(2_000).recordStats().build();
+  private final com.github.benmanes.caffeine.cache.Cache<OWLClassExpression, Set<OWLClass>> equivalenceAnswers =
+      com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(5_000).recordStats().build();
+  private final com.github.benmanes.caffeine.cache.Cache<SpecializationKey, Boolean> specializationAnswers =
+      com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(65_536).recordStats().build();
+  private final com.github.benmanes.caffeine.cache.Cache<OWLClass, List<OWLClassExpression>> specializationParents =
+      com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(5_000).recordStats().build();
+
+  private void clearInferenceAnswers() {
+    entailments.invalidateAll(); satisfiability.invalidateAll();
+    hierarchyAnswers.invalidateAll(); equivalenceAnswers.invalidateAll(); specializationAnswers.invalidateAll();
+    specializationParents.invalidateAll();
+  }
+
+  /** Only completed empty-visited searches may use this cache; recursive branch answers cannot. */
+  synchronized boolean cachedSpecialization(OWLClassExpression candidate, OWLClassExpression bound,
+      java.util.function.BooleanSupplier compute, Runnable checkpoint) {
+    requireAvailableClosure(); prepareSpecializationCache(); checkpoint.run();
+    var key = new SpecializationKey(candidate, bound);
+    var known = specializationAnswers.getIfPresent(key);
+    if (known != null) return known;
+    long revision = inferenceRevision.get();
+    boolean result = compute.getAsBoolean();
+    checkpoint.run();
+    prepareSpecializationCache();
+    if (revision == inferenceRevision.get()) specializationAnswers.put(key, result);
+    return result;
+  }
+
+  private void prepareSpecializationCache() {
+    prepareInferenceCache();
+    // The asserted fallback includes manager ontologies outside the DL imports. Removing
+    // or replacing one may produce no axiom-change event, so identity is part of its key.
+    var current = manager.getOntologies();
+    if (specializationOntologies == null || current.size() != specializationOntologies.size()
+        || current.stream().anyMatch(ontology -> !specializationOntologies.contains(ontology))) {
+      specializationOntologies = Collections.newSetFromMap(new IdentityHashMap<>());
+      specializationOntologies.addAll(current);
+      inferenceRevision.incrementAndGet();
+      prepareInferenceCache();
+    }
+  }
+
+  private NodeSet<OWLClass> hierarchyAnswer(OWLClassExpression expression, boolean direct, boolean subclasses) {
+    prepareInferenceCache();
+    var saved = hierarchyAnswers.get(new HierarchyKey(expression, direct, subclasses), key -> {
+      var answer = key.subclasses() ? reasoner.getSubClasses(key.expression(), key.direct())
+          : reasoner.getSuperClasses(key.expression(), key.direct());
+      return answer.nodes().map(node -> Set.copyOf(node.getEntities())).toList();
+    });
+    // OWLAPI nodes are mutable. Keep the owned snapshot private, including equivalence groups.
+    return new org.semanticweb.owlapi.reasoner.impl.OWLClassNodeSet(saved.stream()
+        .map(group -> (Node<OWLClass>) new org.semanticweb.owlapi.reasoner.impl.OWLClassNode(group)));
+  }
+
+  /** Asserted edges only; each caller retains its own visited set and complete DL checks. */
+  synchronized List<OWLClassExpression> specializationParents(OWLClass named) {
+    requireAvailableClosure();
+    prepareSpecializationCache();
+    return specializationParents.get(named, key -> java.util.stream.Stream.concat(
+        EntitySearcher.getSuperClasses(key, manager.ontologies()),
+        EntitySearcher.getEquivalentClasses(key, manager.ontologies())).toList());
+  }
+
+  public Map<String, Map<String, Long>> inferenceCacheMetrics() {
+    var result = new LinkedHashMap<String, Map<String, Long>>();
+    Map.of("entailments", entailments, "satisfiability", satisfiability,
+        "hierarchy", hierarchyAnswers, "equivalence", equivalenceAnswers,
+        "specialization", specializationAnswers, "specializationParents", specializationParents).forEach((name, cache) -> {
+      var stats = cache.stats();
+      result.put(name, Map.of("hits", stats.hitCount(), "misses", stats.missCount(),
+          "loadNanos", stats.totalLoadTime()));
+    });
+    return result;
+  }
 
   IdentityRequirementSupport.Cache identityRequirementCache() {
     return identityRequirementCache;
   }
 
   private void structuralChanged() {
+    inferenceRevision.incrementAndGet();
+    clearInferenceAnswers();
     authorityDependencyCache.changed();
     identityRequirementCache.changed();
   }
@@ -453,6 +567,10 @@ public class OWL {
   }
 
   public synchronized void reset() {
+    if (inferenceManager != null) inferenceManager.removeOntologyChangeListener(inferenceChanges);
+    inferenceManager = null;
+    inferenceRevision.incrementAndGet();
+    clearInferenceAnswers();
     authorityDependencyCache.reset();
     identityRequirementCache.reset();
     monotoneRefinements.reset(true);
@@ -3223,7 +3341,8 @@ public class OWL {
 
   public synchronized void flushReasoner() {
     flushRequests++;
-    if (reasoner != null && !reasonerSynchronizing && declarationStagingDepth == 0) {
+    if (reasoner != null && !reasonerSynchronizing && declarationStagingDepth == 0
+        && !reasoner.getPendingChanges().isEmpty()) {
       actualFlushes++;
       structuralChanged();
       reasoner.flush();
@@ -3360,7 +3479,7 @@ public class OWL {
    */
 
   public synchronized void flush() {
-    if (reasoner != null) {
+    if (reasoner != null && !reasoner.getPendingChanges().isEmpty()) {
       structuralChanged();
       reasoner.flush();
     }
@@ -3430,7 +3549,9 @@ public class OWL {
           ReasonerInterruptedException,
           TimeOutException {
     requireAvailableClosure();
-    return reasoner.getEquivalentClasses(arg0);
+    prepareInferenceCache();
+    return new org.semanticweb.owlapi.reasoner.impl.OWLClassNode(equivalenceAnswers.get(arg0,
+        expression -> Set.copyOf(reasoner.getEquivalentClasses(expression).getEntities())));
   }
 
   public synchronized Node<OWLDataProperty> getEquivalentDataProperties(OWLDataProperty arg0)
@@ -3529,7 +3650,7 @@ public class OWL {
           InconsistentOntologyException,
           ClassExpressionNotInProfileException {
     requireAvailableClosure();
-    return reasoner.getSubClasses(arg0, arg1);
+    return hierarchyAnswer(arg0, arg1, true);
   }
 
   public synchronized NodeSet<OWLDataProperty> getSubDataProperties(
@@ -3571,7 +3692,7 @@ public class OWL {
           ReasonerInterruptedException,
           TimeOutException {
     requireAvailableClosure();
-    return reasoner.getSuperClasses(arg0, arg1);
+    return hierarchyAnswer(arg0, arg1, false);
   }
 
   /** Named classes visible to this reasoner, without classifying its hierarchy. */
@@ -3645,7 +3766,8 @@ public class OWL {
           InconsistentOntologyException {
     entailmentQueries++;
     requireAvailableClosure();
-    return reasoner.isEntailed(arg0);
+    prepareInferenceCache();
+    return entailments.get(arg0, reasoner::isEntailed);
   }
 
   public synchronized boolean isEntailed(Set<? extends OWLAxiom> arg0)
@@ -3678,7 +3800,8 @@ public class OWL {
           InconsistentOntologyException {
     satisfiabilityQueries++;
     requireAvailableClosure();
-    return reasoner.isSatisfiable(arg0);
+    prepareInferenceCache();
+    return satisfiability.get(arg0, reasoner::isSatisfiable);
   }
 
   public void registerWithReasoner(KimOntology parsed) {

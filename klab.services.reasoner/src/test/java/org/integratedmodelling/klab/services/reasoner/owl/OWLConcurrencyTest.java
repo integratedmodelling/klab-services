@@ -15,9 +15,16 @@ class OWLConcurrencyTest {
     var active = new AtomicInteger();
     var maximum = new AtomicInteger();
     var delegate = mock(OWLReasoner.class, invocation -> {
+      if (invocation.getMethod().getName().equals("getPendingChanges"))
+        return java.util.List.of(mock(org.semanticweb.owlapi.model.OWLOntologyChange.class));
       int concurrent = active.incrementAndGet();
       maximum.accumulateAndGet(concurrent, Math::max);
-      try { Thread.sleep(2); return invocation.getMethod().getReturnType() == boolean.class ? true : null; }
+      try {
+        Thread.sleep(2);
+        if (invocation.getMethod().getName().equals("getSuperClasses"))
+          return new org.semanticweb.owlapi.reasoner.impl.OWLClassNodeSet();
+        return invocation.getMethod().getReturnType() == boolean.class ? true : null;
+      }
       finally { active.decrementAndGet(); }
     });
     var field = OWL.class.getDeclaredField("reasoner");

@@ -75,6 +75,32 @@ public final class AuthorityDependencySupport {
   private final OWL owl;
   public AuthorityDependencySupport(OWL owl) { this.owl=Objects.requireNonNull(owl); }
 
+  /** Actor-local static proof: hash the module preserving consequences over the source signature,
+   * not the actor's allocation/flush counter. Unrelated derived names must not retire this proof.
+   * Enumeration and executable admission still use the full dependency witness separately. */
+  public String sourceFingerprint(List<String> obligations) {
+    synchronized (owl) {
+      owl.requireAvailableClosure();
+      if (obligations == null || obligations.isEmpty() || owl.getOntology() == null) return null;
+      var signature = new HashSet<OWLEntity>();
+      for (var term : obligations) {
+        var cls = materialized(term);
+        if (cls == null || cls.isOWLNothing()) return null;
+        signature.add(cls);
+      }
+      var all = owl.getOntology().getOWLOntology().importsClosure().flatMap(OWLOntology::axioms).distinct().toList();
+      var module = new HashSet<>(localModule(all.stream(), signature));
+      var names = new HashSet<IRI>();
+      signature.forEach(entity -> names.add(entity.getIRI()));
+      module.forEach(axiom -> axiom.signature().forEach(entity -> names.add(entity.getIRI())));
+      // Static identity/abstractness checks also consume nonlogical source annotations.
+      all.stream().filter(OWLAnnotationAssertionAxiom.class::isInstance)
+          .map(OWLAnnotationAssertionAxiom.class::cast)
+          .filter(axiom -> names.contains(axiom.getSubject())).forEach(module::add);
+      return signature(module.stream().map(Object::toString).sorted().toList());
+    }
+  }
+
   public Closure closure(List<String> obligations,List<AuthorityBindings.Binding> bindings) {
     return closure(obligations, bindings, null);
   }

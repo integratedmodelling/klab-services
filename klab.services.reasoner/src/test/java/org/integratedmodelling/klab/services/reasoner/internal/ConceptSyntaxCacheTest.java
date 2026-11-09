@@ -11,6 +11,24 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.junit.jupiter.api.Test;
 
 class ConceptSyntaxCacheTest {
+  @Test void repeatedQualifiedCoreLookupsReuseSyntaxButStillProjectCurrentEligibility() {
+    var reasoner = mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class, CALLS_REAL_METHODS);
+    var resources = mock(ResourcesService.class);
+    var scope = mock(org.integratedmodelling.klab.api.scope.ServiceScope.class);
+    var cache = new ConceptSyntaxCache();
+    doReturn(scope).when(reasoner).serviceScope();
+    doReturn(cache).when(reasoner).conceptSyntaxCache();
+    when(scope.getService(ResourcesService.class)).thenReturn(resources);
+    var concept = new org.integratedmodelling.common.knowledge.ConceptImpl();
+    concept.setUrn("test:Green test:Tree"); concept.setType(EnumSet.of(SemanticType.SUBJECT, SemanticType.OBSERVABLE));
+    when(resources.declareConcept(concept.getUrn())).thenReturn(syntax("test:Tree"));
+    doAnswer(call -> call.getArgument(0)).when(reasoner).projectExpressionStatus(any(), any());
+    for (int i = 0; i < 20; i++) assertSame(concept, reasoner.coreObservable(concept));
+    verify(resources).declareConcept(concept.getUrn());
+    verify(reasoner, times(20)).projectExpressionStatus(eq(concept), any());
+    cache.clear(); reasoner.coreObservable(concept);
+    verify(resources, times(2)).declareConcept(concept.getUrn());
+  }
   @Test void separateBuildersShareTheReasonerCache() {
     var resources = mock(ResourcesService.class);
     var reasoner = mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class);

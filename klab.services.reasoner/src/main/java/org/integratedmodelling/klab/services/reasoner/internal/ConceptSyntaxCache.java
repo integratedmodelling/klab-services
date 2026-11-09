@@ -30,7 +30,13 @@ public final class ConceptSyntaxCache {
   }
 
   private static Cache<Key, byte[]> newCache() {
-    return Caffeine.newBuilder().maximumSize(5000).build();
+    return Caffeine.newBuilder().maximumSize(5000).recordStats().build();
+  }
+
+  public java.util.Map<String, Long> metrics() {
+    var stats = syntax.stats();
+    return java.util.Map.of("hits", stats.hitCount(), "misses", stats.missCount(),
+        "loadNanos", stats.totalLoadTime());
   }
 
   public void clear() {

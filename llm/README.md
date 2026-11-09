@@ -10,10 +10,10 @@ task at hand.
 | Task | Read |
 | --- | --- |
 | Understand k.LAB | This guide, then [k.LAB overview](../docs/KLAB.md) and [architecture](../docs/ARCHITECTURE.md). |
-| Understand semantic distinctions | [Domain reference, Sections 2–7](DOMAIN_CONTEXT_PACK.md#2-governing-ontological-stance). |
+| Understand semantic distinctions | [Domain reference, Sections 2–8](DOMAIN_CONTEXT_PACK.md#2-governing-ontological-stance). |
 | Write observable expressions or worldview declarations | [Observable language](../docs/OBSERVABLES.md) and [ontology language](../docs/ONTOLOGY_LANGUAGE.md). |
 | Understand post-commit behavior | [Consequence contracts](../docs/CONSEQUENCE_ENGINE.md) and [capabilities and limits](../docs/CONSEQUENCE_ENGINE_STATUS.md). |
-| Produce or review an ontology proposal | [Domain reference, Sections 8–13](DOMAIN_CONTEXT_PACK.md#8-extraction-and-articulation-procedure), the supplied domain literature and imported ontologies, and the [proposal schema](../klab.services.resources/src/main/resources/schemas/llm/domain-context-proposal.schema.json). |
+| Produce or review an ontology proposal | [Domain reference, Sections 9–14](DOMAIN_CONTEXT_PACK.md#9-extraction-and-articulation-procedure), the supplied domain literature and imported ontologies, and the [proposal schema](../klab.services.resources/src/main/resources/schemas/llm/domain-context-proposal.schema.json). |
 | Implement observation workflows | [Observation strategies](../docs/OBSERVATION.md), [resolution](../docs/RESOLUTION.md), [classification](../docs/CLASSIFICATION.md), [connections](../docs/CONNECTION.md) and [scopes](../docs/SCOPES.md). |
 
 The proposal instructions apply when producing a proposal. Reading this pack to answer
@@ -75,7 +75,7 @@ distinct from ontology generality tiers used in proposals.
 
 Use explicit `of` for native quality/process bearers. A legacy quality-within-subject or
 process-within-subject declaration is not a supported observational containment pair.
-See [the detailed conventions](DOMAIN_CONTEXT_PACK.md#23-within-conventions).
+See [the detailed conventions](DOMAIN_CONTEXT_PACK.md#84-within-conventions).
 
 ### Consequences and configuration lifecycle
 
@@ -103,7 +103,7 @@ erase the role. All targets retain native semantics and normal eligibility check
 Top-level consequence requests are optional; mandatory model dependencies remain mandatory.
 Unsupported evidence is deferred explicitly. The queue is in memory and does not guarantee
 crash replay or exactly-once delivery. Arbitrary negative/mixed-bearer configuration patterns
-and multi-root explanation are unsupported. See [consequence details](DOMAIN_CONTEXT_PACK.md#22-consequences-after-observation-commits).
+and multi-root explanation are unsupported. See [consequence details](DOMAIN_CONTEXT_PACK.md#83-consequences-after-observation-commits).
 
 ## MCP resource packaging
 

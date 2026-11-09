@@ -11,6 +11,8 @@ public final class SemanticEnvironment implements AutoCloseable {
   private final ReasonerService actor;
   private final Path assets;
   private final AtomicBoolean closed = new AtomicBoolean();
+  private final SourceValidationProofCache sourceValidationProofs = new SourceValidationProofCache();
+  SourceValidationProofCache sourceValidationProofs() { return sourceValidationProofs; }
   private final long traceGeneration;
   private final String traceKey;
   SemanticEnvironment(ReasonerService actor, Path ownedAssets) {
@@ -34,6 +36,7 @@ public final class SemanticEnvironment implements AutoCloseable {
   public String semanticContentFingerprint() { return actor().semanticContentFingerprint(); }
   @Override public void close() throws Exception {
     if (!closed.compareAndSet(false, true)) return;
+    sourceValidationProofs.clear();
     try (var phase = CandidateTrace.phaseAt(CandidateTrace.Phase.PRIVATE_DISPOSE,traceKey,traceGeneration)) {
       Throwable failure=null;
       try { actor.disposeSemanticEnvironment(); }

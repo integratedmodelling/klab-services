@@ -514,7 +514,22 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private final java.util.concurrent.atomic.AtomicLong resolvingRefinements =
       new java.util.concurrent.atomic.AtomicLong();
   private final Cache<ResolvingKey, List<Concept>> resolvingHeads =
-      Caffeine.newBuilder().maximumSize(1_000).build();
+      Caffeine.newBuilder().maximumSize(1_000).recordStats().build();
+
+  /** Nonblocking counters: status polling must not acquire the semantic actor monitor. */
+  public Map<String, Map<String, Long>> semanticCacheMetrics() {
+    if (candidateRuntime != null && !semanticOnly) return candidateRuntime.semanticCacheMetrics();
+    var result = new LinkedHashMap<String, Map<String, Long>>();
+    Map.of("concepts", concepts, "observables", observables, "resolvingHeads", resolvingHeads,
+        "subsumption", subsumption).forEach((name, cache) -> {
+      var stats = cache.stats();
+      result.put(name, Map.of("hits", stats.hitCount(), "misses", stats.missCount(),
+          "loadNanos", stats.totalLoadTime()));
+    });
+    result.put("conceptSyntax", conceptSyntax.metrics());
+    if (owl != null) result.putAll(owl.inferenceCacheMetrics());
+    return result;
+  }
 
   private final Cache<SubsumptionKey, Boolean> subsumption =
       Caffeine.newBuilder().maximumSize(20_000).recordStats().build();
@@ -824,6 +839,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         request.inputHash(),
         uses,
         reason);
+  }
+
+  /** Internal source-only proof for this exact actor. Never return it as executable or durable
+   * evidence: an unchanged captured closure does not prove freshness of a mutable provider. */
+  public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+      sourceValidationDependencies(
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request,
+          Scope scope) {
+    var current = semanticDependencies(request, scope); // Rechecks authority access for this caller.
+    if (current.status() != org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.REVALIDATION_REQUIRED)
+      return current;
+    long expires = capturedAuthorities.sourceCaptureExpiresAt();
+    if (expires <= System.currentTimeMillis()) return current;
+    String sourceMeaning = owl.sourceValidationFingerprint(request.obligations());
+    if (sourceMeaning == null) return current;
+    String localProof = SemanticValidationRequest.sourceHash(
+        capturedAuthorities.revision() + ":" + sourceMeaning);
+    var uses = current.authorities().stream().map(use ->
+        use.kind() == org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Kind.UNVERSIONED
+            ? new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.AuthorityUse(
+                use.authority(), org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Kind.CAPTURED,
+                localProof, expires) : use).toList();
+    return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness(
+        current.contractVersion(), org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.COMPLETE,
+        current.serviceId(), current.knowledgeRevision(), current.baseFingerprint(), current.inputHash(), uses,
+        "Actor-local static source proof only; no provider freshness or executable grant");
   }
 
   @Override
@@ -1790,6 +1831,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       ret.getMetadata()
           .put("semantic.validation.blocked", AcceptedSemanticRuntime.validationBlocked(status));
       ret.getMetadata().put("semantic.validation.diagnostics", true);
+      ret.getMetadata().put("semantic.validation.sourceProofs", candidateRuntime.sourceValidationMetrics());
+      ret.getMetadata().put("semantic.caches", candidateRuntime.semanticCacheMetrics());
       if (!status.sourceDiagnostics().isEmpty())
         status.sourceDiagnostics().stream().map(
             org.integratedmodelling.klab.services.reasoner.internal.CandidateDiagnostic::notification)
@@ -2267,8 +2310,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       // Preserve the separately supplied identity witnesses in qualified expressions;
       // the OWL hasIdentity union alone cannot reconstruct their authored scope.
       try {
-        var syntax =
-            serviceScope().getService(ResourcesService.class).declareConcept(concept.getUrn());
+        var syntax = conceptSyntaxCache().get(
+            serviceScope().getService(ResourcesService.class), concept.getUrn());
         if (syntax != null) return projectExpressionStatus((ConceptImpl) concept, syntax);
       } catch (RuntimeException unavailable) {
         // Without captured syntax, use conservative evidence from the semantic graph.

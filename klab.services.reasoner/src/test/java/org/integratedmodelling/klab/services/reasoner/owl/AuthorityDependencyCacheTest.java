@@ -11,6 +11,26 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.model.*;
 
 class AuthorityDependencyCacheTest {
+  @Test void sourceProofIgnoresUnrelatedNamesButTracksRelevantAxiomsAndAnnotations() throws Exception {
+    try (var w = new AuthorityDependencySupportTest.World((world, axioms) -> {})) {
+      var support = support(w);
+      var first = support.sourceFingerprint(List.of("w:Tree"));
+      assertNotNull(first);
+      var unrelated = w.factory.getOWLClass(IRI.create("urn:test:Unrelated"));
+      var declaration = w.factory.getOWLDeclarationAxiom(unrelated);
+      w.owl.manager.addAxiom(w.ontology.getOWLOntology(), declaration);
+      assertEquals(first, support.sourceFingerprint(List.of("w:Tree")));
+      var relation = w.factory.getOWLSubClassOfAxiom(w.c("Tree"), w.c("AuthorityRoot"));
+      w.owl.manager.addAxiom(w.ontology.getOWLOntology(), relation);
+      assertNotEquals(first, support.sourceFingerprint(List.of("w:Tree")));
+      w.owl.manager.removeAxiom(w.ontology.getOWLOntology(), relation);
+      assertEquals(first, support.sourceFingerprint(List.of("w:Tree")));
+      var annotation = w.factory.getOWLAnnotationAssertionAxiom(w.factory.getRDFSLabel(), w.c("Tree").getIRI(), w.factory.getOWLLiteral("Changed"));
+      w.owl.manager.addAxiom(w.ontology.getOWLOntology(), annotation);
+      assertNotEquals(first, support.sourceFingerprint(List.of("w:Tree")));
+      assertNull(support.sourceFingerprint(List.of("missing:Tree")));
+    }
+  }
   private AuthorityDependencySupport support(AuthorityDependencySupportTest.World w) {
     return new AuthorityDependencySupport(w.owl);
   }

@@ -894,15 +894,20 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
     checkpoint.run();
     // Recursive answers depend on the visited set. Only complete, empty-visited
     // searches may read/write this memo (including complete negative answers).
+    if (visited.isEmpty() && owl.hasReasoner())
+      return owl.cachedSpecialization(candidate, bound,
+          () -> specializesUncached(candidate, bound, visited, checkpoint), checkpoint);
     boolean root = visited.isEmpty() && hierarchy != null && hierarchy.usable(owl);
     if (!root) return specializesUncached(candidate, bound, visited, checkpoint);
-    var known = hierarchy.root(candidate, bound, checkpoint);
-    if (known != null) return known;
-    long revision = hierarchy.revision();
-    boolean answer = specializesUncached(candidate, bound, visited, checkpoint);
-    checkpoint.run();
-    hierarchy.remember(candidate, bound, answer, revision);
-    return answer;
+    return hierarchy.query(() -> {
+      var known = hierarchy.root(candidate, bound, checkpoint);
+      if (known != null) return known;
+      long revision = hierarchy.revision();
+      boolean answer = specializesUncached(candidate, bound, visited, checkpoint);
+      checkpoint.run();
+      hierarchy.remember(candidate, bound, answer, revision);
+      return answer;
+    }, checkpoint);
   }
 
   private boolean specializesUncached(
@@ -928,6 +933,9 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
     if (!visited.add(candidate)) return false;
     if (candidate instanceof OWLClass named && hierarchy != null && hierarchy.usable(owl))
       return hierarchy.parents(named, checkpoint).stream()
+          .anyMatch(value -> specializes(value, bound, new HashSet<>(visited), checkpoint));
+    if (candidate instanceof OWLClass named && owl.hasReasoner())
+      return owl.specializationParents(named).stream()
           .anyMatch(value -> specializes(value, bound, new HashSet<>(visited), checkpoint));
     if (candidate instanceof OWLClass named)
       return java.util.stream.Stream.concat(

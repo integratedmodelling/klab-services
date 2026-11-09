@@ -160,6 +160,22 @@ class AssertedHierarchyIndexTest {
     }
   }
 
+  @Test void completeSearchChecksEventlessOntologyReplacementBeforeReturning() throws Exception {
+    try (var t = new Fixture()) {
+      var a = t.c("A"); var b = t.c("B");
+      var extra = t.owl.manager.createOntology(IRI.create("urn:query-replacement"));
+      t.owl.manager.addAxiom(extra, t.f.getOWLSubClassOfAxiom(a, b));
+      assertThrows(ConcurrentModificationException.class, () -> t.index.query(() -> {
+        assertTrue(t.query(a, b));
+        t.owl.manager.removeOntology(extra);
+        try { t.owl.manager.createOntology(IRI.create("urn:query-replacement")); }
+        catch (OWLOntologyCreationException failure) { throw new RuntimeException(failure); }
+        return true;
+      }, () -> {}));
+      assertFalse(t.query(a, b), "An interrupted search must not leave a stale root answer");
+    }
+  }
+
   @Test void closedIndexAndDifferentOwnerCannotReusePrivateAnswers() throws Exception {
     try(var t=new Fixture();var other=new Fixture()) {
       assertFalse(t.index.usable(other.owl));

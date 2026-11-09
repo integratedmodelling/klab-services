@@ -9,6 +9,24 @@ import org.junit.jupiter.api.Test;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.*;
 class IdentityHierarchyCacheTest {
+ @Test void requirementPresenceTracksNestedExpressionsAndRetractions() throws Exception {
+  try(var t=new IdentityRequirementSupportTest.Fixture()) {
+   synchronized(t.owl) {
+    var cache=t.owl.identityRequirementCache();
+    assertFalse(cache.hasRequirements(t.owl));
+    assertFalse(cache.hasRequirements(t.owl));
+    var property=t.f.getOWLObjectProperty(IRI.create("http://integratedmodelling.org/odo#requiresIdentity"));
+    var inverse=t.f.getOWLSubClassOfAxiom(t.type("SUBJECT"),t.f.getOWLObjectSomeValuesFrom(property.getInverseProperty(),t.type("RootA")));
+    t.add(inverse);
+    assertFalse(cache.hasRequirements(t.owl),"Inverse property is not an identity requirement");
+    var axiom=t.f.getOWLSubClassOfAxiom(t.type("SUBJECT"),t.f.getOWLObjectAllValuesFrom(property,t.f.getOWLObjectSomeValuesFrom(property,t.type("RootA"))));
+    t.add(axiom);
+    assertTrue(cache.hasRequirements(t.owl),"Nested existential requirements must be detected");
+    t.owl.manager.removeAxiom(t.ontology.getOWLOntology(),axiom);
+    assertFalse(cache.hasRequirements(t.owl));
+   }
+  }
+ }
  static class Counted extends org.semanticweb.HermiT.Reasoner {
   int global;
   Counted(OWLOntology root){super(new org.semanticweb.HermiT.Configuration(),root);}
@@ -22,11 +40,11 @@ class IdentityHierarchyCacheTest {
   synchronized(t.owl){return t.owl.identityRequirementCache().resolve(t.owl,t.type(head),()->{throw new AssertionError("Expected retained answer");});}
  }
  static IdentityRequirementSupport.StructuralClosure reference(IdentityRequirementSupportTest.Fixture t,String head)throws Exception{
-  var method=IdentityRequirementSupport.class.getDeclaredMethod("collect",OWLClassExpression.class,Set.class,Set.class,Set.class);method.setAccessible(true);
+  var method=IdentityRequirementSupport.class.getDeclaredMethod("collect",OWLClassExpression.class,Set.class,Set.class,Set.class,BoundAxiomIndex.class);method.setAccessible(true);
   var support=new IdentityRequirementSupport(t.owl);var req=new LinkedHashSet<OWLClassExpression>();var ids=new LinkedHashSet<OWLClassExpression>();var seen=new HashSet<OWLClass>();
-  t.owl.flush();method.invoke(support,t.type(head),req,ids,seen);
+  t.owl.flush();var index=BoundAxiomIndex.build(t.owl.manager,a->false,()->{},()->{});method.invoke(support,t.type(head),req,ids,seen,index);
   var parents=new LinkedHashSet<>(t.owl.getSuperClasses(t.type(head),false).getFlattened());parents.addAll(t.owl.getEquivalentClasses(t.type(head)).getEntities());
-  for(var p:parents)if(!p.isOWLThing()&&!p.isOWLNothing())method.invoke(support,p,req,ids,seen);
+  for(var p:parents)if(!p.isOWLThing()&&!p.isOWLNothing())method.invoke(support,p,req,ids,seen,index);
   return new IdentityRequirementSupport.StructuralClosure(req,ids);
  }
  void differential(Consumer<IdentityRequirementSupportTest.Fixture> setup,String...heads)throws Exception{
@@ -67,9 +85,9 @@ class IdentityHierarchyCacheTest {
    t.require("SecondSubject",t.type("RootA"));assertTrue(t.project("SecondSubject").isAbstract());assertEquals(globals,dl.global,"Pending changes must flush before isPrecomputed");
   }
  }
- @Test void flushAndReasonerReplacementRetireAnswers()throws Exception{
+ @Test void unchangedFlushRetainsAndReasonerReplacementRetiresAnswers()throws Exception{
   try(var t=new IdentityRequirementSupportTest.Fixture()){
-   t.require("SUBJECT",t.type("RootA"));var old=ready(t);assertFalse(t.project("SecondSubject").isAbstract());long count=t.owl.identityRequirementCache().metrics().get("computations");t.owl.flush();assertFalse(t.project("SecondSubject").isAbstract());assertTrue(t.owl.identityRequirementCache().metrics().get("computations")>count);
+   t.require("SUBJECT",t.type("RootA"));var old=ready(t);assertFalse(t.project("SecondSubject").isAbstract());long count=t.owl.identityRequirementCache().metrics().get("computations");t.owl.flush();assertFalse(t.project("SecondSubject").isAbstract());assertEquals(count,t.owl.identityRequirementCache().metrics().get("computations"),"An unchanged flush must retain structural proofs");
    count=t.owl.identityRequirementCache().metrics().get("computations");ready(t);old.dispose();assertFalse(t.project("SecondSubject").isAbstract());assertTrue(t.owl.identityRequirementCache().metrics().get("computations")>count);
   }
  }

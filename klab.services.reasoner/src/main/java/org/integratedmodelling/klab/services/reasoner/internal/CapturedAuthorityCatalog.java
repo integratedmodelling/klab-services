@@ -206,6 +206,16 @@ public final class CapturedAuthorityCatalog {
     return false;
   }
 
+  /** Lifetime of this owned corpus; this is not evidence of a fresh provider response. */
+  public long sourceCaptureExpiresAt() {
+    long expiry = Long.MAX_VALUE;
+    for (var response : records.values()) {
+      try { expiry = Math.min(expiry, JSON.readTree(response).path("expires").asLong()); }
+      catch (IOException malformed) { return 0; }
+    }
+    return expiry;
+  }
+
   /** Owned public descriptors for discovery; callers cannot mutate the captured catalog. */
   public List<ComponentDescriptor> components() {
     var mapper = JacksonConfiguration.newObjectMapper().addMixIn(ComponentDescriptor.class, ComponentWireMixin.class);
