@@ -19,12 +19,12 @@ public enum UnarySemanticOperator {
   PROPORTION(
       new SemanticType[] {SemanticType.PREDICATE, SemanticType.QUANTIFIABLE},
       SemanticType.QUALITY,
-      "proportion of",
+      "proportion",
       "in"),
   PERCENTAGE(
       new SemanticType[] {SemanticType.PREDICATE, SemanticType.QUANTIFIABLE},
       SemanticType.QUALITY,
-      "percentage of",
+      "percentage",
       "in"),
   RATIO(new SemanticType[] {SemanticType.QUANTIFIABLE}, SemanticType.QUALITY, "ratio of", "to"),
 
@@ -41,7 +41,7 @@ public enum UnarySemanticOperator {
   MONETARY_VALUE(
       new SemanticType[] {SemanticType.OBSERVABLE, SemanticType.CONFIGURATION},
       SemanticType.QUALITY,
-      "monetary value of"),
+      "monetary value of", "over"),
   OCCURRENCE(new SemanticType[] {SemanticType.COUNTABLE}, SemanticType.QUALITY, "occurrence of"),
   CHANGE(new SemanticType[] {SemanticType.QUALITY}, SemanticType.PROCESS, "change in"),
   CHANGED(new SemanticType[] {SemanticType.QUALITY}, SemanticType.EVENT, "changed"),

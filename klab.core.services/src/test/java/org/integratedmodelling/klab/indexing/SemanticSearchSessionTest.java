@@ -13,6 +13,123 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.*;
 import org.junit.jupiter.api.Test;
 
 class SemanticSearchSessionTest {
+  @Test void ratioSupportsSelfRatioAndAnOptionalSecondOperand() {
+    concept("test:Volume", SemanticType.OBSERVABLE, SemanticType.QUALITY, SemanticType.QUANTIFIABLE);
+    concept("test:Area", SemanticType.OBSERVABLE, SemanticType.QUALITY, SemanticType.QUANTIFIABLE);
+    concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.SUBJECT);
+    candidates.add(new SemanticMatch(UnarySemanticOperator.RATIO));
+    valid.put("ratio of test:Volume", valid.get("test:Volume"));
+    valid.put("ratio of test:Volume to test:Area", valid.get("test:Volume"));
+    call(SemanticSearchRequest.Mode.TOKEN);
+    select("ratio of");
+    var numerator = select("test:Volume");
+    assertNotNull(numerator.getObservable());
+    assertTrue(numerator.getMatches().stream().anyMatch(m -> m.getId().equals("to")));
+    var denominator = select("to");
+    assertNull(denominator.getObservable());
+    assertEquals(List.of("test:Area"), denominator.getMatches().stream().map(SemanticMatch::getId).toList());
+    assertNotNull(select("test:Area").getObservable());
+    assertEquals("ratio of test:Volume to", call(SemanticSearchRequest.Mode.UNDO).getDeclaration());
+    assertEquals("ratio of test:Volume", call(SemanticSearchRequest.Mode.UNDO).getDeclaration());
+    assertNotNull(last.getObservable());
+    assertTrue(last.getMatches().stream().anyMatch(m -> m.getId().equals("to")));
+  }
+
+  @Test void optionalWholeAndValueComparisonsUseGrammarSpelling() {
+    concept("test:Event", SemanticType.OBSERVABLE, SemanticType.EVENT, SemanticType.COUNTABLE);
+    concept("test:Region", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    concept("test:Result", SemanticType.OBSERVABLE, SemanticType.QUALITY, SemanticType.QUANTIFIABLE);
+    for (var operator : List.of(UnarySemanticOperator.PROPORTION, UnarySemanticOperator.PERCENTAGE,
+        UnarySemanticOperator.VALUE, UnarySemanticOperator.MONETARY_VALUE)) {
+      candidates.add(new SemanticMatch(operator));
+      String prefix = operator.declaration[0];
+      String operand = operator == UnarySemanticOperator.PERCENTAGE ? "test:Result" : "test:Event";
+      String primary = prefix + " " + operand;
+      valid.put(primary, valid.get("test:Result"));
+      valid.put(primary + " " + operator.declaration[1] + " test:Region", valid.get("test:Result"));
+      call(SemanticSearchRequest.Mode.TOKEN); select(prefix);
+      assertNotNull(select(operand).getObservable(), primary);
+      assertNull(select(operator.declaration[1]).getObservable());
+      assertNotNull(select("test:Region").getObservable());
+      while (!last.getDeclaration().isEmpty()) call(SemanticSearchRequest.Mode.UNDO);
+    }
+    assertEquals("proportion", UnarySemanticOperator.PROPORTION.declaration[0]);
+    assertEquals("percentage", UnarySemanticOperator.PERCENTAGE.declaration[0]);
+  }
+
+  @Test void binaryOfIsNotProposedForIndependentHeads() {
+    concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.SUBJECT);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    candidates.add(new SemanticMatch(SemanticLexicalElement.WITHIN));
+    call(SemanticSearchRequest.Mode.TOKEN);
+    var tree = select("test:Tree");
+    assertTrue(tree.getMatches().stream().noneMatch(m -> Set.of("of", "within").contains(m.getId())));
+  }
+  @Test void quantitativeWithinKeepsOrderedIdentitiesSeparateFromPredicateFamiliesAndNativeOf() {
+    var oxygen = concept("test:Oxygen", SemanticType.IDENTITY, SemanticType.PREDICATE);
+    var air = concept("test:Air", SemanticType.IDENTITY, SemanticType.PREDICATE);
+    when(reasoner.lexicalRoot(oxygen)).thenReturn(oxygen);
+    when(reasoner.lexicalRoot(air)).thenReturn(oxygen); // Same family is legal across the ordered pair.
+    concept("test:Volume", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    concept("test:Temperature", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.WITHIN));
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    valid.put("test:Oxygen within test:Air test:Volume", valid.get("test:Volume"));
+    valid.put("test:Oxygen within test:Air test:Volume of test:Tree", valid.get("test:Volume"));
+    call(SemanticSearchRequest.Mode.TOKEN);
+    assertTrue(select("test:Oxygen").getMatches().stream().anyMatch(m -> m.getId().equals("within")));
+    var whole = select("within");
+    assertNull(whole.getObservable()); assertFalse(whole.isCanOpenScope());
+    assertTrue(whole.getMatches().stream().allMatch(m -> m.getConceptType().contains(SemanticType.IDENTITY)));
+    clearInvocations(reasoner);
+    var property = select("test:Air");
+    assertNull(property.getObservable());
+    verify(reasoner, never()).resolveObservable("test:Oxygen within test:Air");
+    assertTrue(property.getMatches().stream().anyMatch(m -> m.getId().equals("test:Volume")));
+    assertTrue(property.getMatches().stream().noneMatch(m -> m.getId().equals("test:Temperature")));
+    assertNotNull(select("test:Volume").getObservable());
+    assertNull(select("of").getObservable());
+    assertNotNull(select("test:Tree").getObservable());
+    call(SemanticSearchRequest.Mode.UNDO);
+    call(SemanticSearchRequest.Mode.UNDO);
+    assertEquals("test:Oxygen within test:Air", call(SemanticSearchRequest.Mode.UNDO).getDeclaration());
+    assertEquals("test:Oxygen within", call(SemanticSearchRequest.Mode.UNDO).getDeclaration());
+    assertTrue(last.getMatches().stream().anyMatch(m -> m.getId().equals("test:Air")));
+    assertEquals("test:Oxygen", call(SemanticSearchRequest.Mode.UNDO).getDeclaration());
+  }
+
+  @Test void configurationOfAdmitsQualityAndProcessIngredientsWithoutApplicationBearerBounds() {
+    var configuration = concept("test:Terrain", SemanticType.OBSERVABLE, SemanticType.CONFIGURATION);
+    concept("test:Elevation", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    concept("test:Erosion", SemanticType.OBSERVABLE, SemanticType.PROCESS);
+    var region = concept("test:Region", SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.SUBJECT);
+    when(reasoner.applicableObservables(configuration)).thenReturn(List.of(region));
+    when(reasoner.inherent(configuration)).thenReturn(region); // Legacy projection is not a bearer.
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    valid.put("test:Terrain of test:Elevation", valid.get("test:Terrain"));
+    valid.put("test:Terrain of test:Erosion", valid.get("test:Terrain"));
+    call(SemanticSearchRequest.Mode.TOKEN); select("test:Terrain");
+    var ingredients = select("of").getMatches().stream().map(SemanticMatch::getId).toList();
+    assertTrue(ingredients.containsAll(List.of("test:Elevation", "test:Erosion")), ingredients.toString());
+    assertNotNull(select("test:Elevation").getObservable());
+  }
+
+  @Test void clauseOperandIsResolvedOnlyOncePerRequest() {
+    concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
+    var tree = concept("test:Tree", SemanticType.OBSERVABLE, SemanticType.SUBJECT, SemanticType.COUNTABLE);
+    when(reasoner.inherent(reasoner.resolveConcept("test:Height"))).thenReturn(tree);
+    candidates.add(new SemanticMatch(SemanticLexicalElement.OF));
+    valid.put("test:Height of test:Tree", valid.get("test:Height"));
+    call(SemanticSearchRequest.Mode.TOKEN); select("test:Height");
+    clearInvocations(reasoner);
+    select("of");
+    verify(reasoner, times(1)).resolveObservable("test:Tree");
+    clearInvocations(reasoner);
+    select("test:Tree");
+    verify(reasoner, never()).resolveObservable("test:Height of test:Tree");
+  }
+
   @Test void appendingSuggestionsDoesNotRevalidateTheAcceptedPrefix() {
     concept("test:Height", SemanticType.OBSERVABLE, SemanticType.QUALITY);
     candidates.add(new SemanticMatch(SemanticLexicalElement.OF));

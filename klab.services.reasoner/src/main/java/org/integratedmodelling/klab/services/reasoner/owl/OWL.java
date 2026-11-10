@@ -3100,18 +3100,22 @@ public class OWL {
       return concept;
     }
 
+    // An omitted comparison denotes a self-ratio. Preserve that spelling while
+    // using the same property as both semantic operands, without another resolution.
+    var denominator = comparison == null ? concept : comparison;
+
     /*
      * accept only two qualities of the same physical nature (TODO)
      */
     if (!(concept.is(SemanticType.QUALITY) || concept.is(SemanticType.PREDICATE))
-        || !comparison.is(SemanticType.QUALITY)) {
+        || !denominator.is(SemanticType.QUALITY)) {
       throw new KlabValidationException(
           "ratios must be between qualities of the same nature or traits to qualities");
     }
 
     // this.hasUnaryOp = true;
 
-    String cName = getCleanId(concept) + "To" + getCleanId(comparison) + "Ratio";
+    String cName = getCleanId(concept) + "To" + getCleanId(denominator) + "Ratio";
 
     String definition =
         UnarySemanticOperator.RATIO.declaration[0]
@@ -3152,9 +3156,9 @@ public class OWL {
 
       // unit for ratios of physical properties
       if ((concept.is(SemanticType.EXTENSIVE) || concept.is(SemanticType.INTENSIVE))
-          && (comparison.is(SemanticType.EXTENSIVE) || comparison.is(SemanticType.INTENSIVE))) {
+          && (denominator.is(SemanticType.EXTENSIVE) || denominator.is(SemanticType.INTENSIVE))) {
         Object unit1 = concept.getMetadata().get(NS.SI_UNIT_PROPERTY);
-        Object unit2 = comparison.getMetadata().get(NS.SI_UNIT_PROPERTY);
+        Object unit2 = denominator.getMetadata().get(NS.SI_UNIT_PROPERTY);
         if (unit1 != null && unit2 != null) {
           String unit = unit1 + "/" + unit2;
           ax.add(Axiom.AnnotationAssertion(conceptId, NS.SI_UNIT_PROPERTY, unit));
@@ -3177,7 +3181,7 @@ public class OWL {
        * ratio is inherent to the thing that's present.
        */
       restrictSome(ret, getProperty(NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
-      restrictSome(ret, getProperty(NS.IS_COMPARED_TO_PROPERTY), comparison, ontology);
+      restrictSome(ret, getProperty(NS.IS_COMPARED_TO_PROPERTY), denominator, ontology);
     }
 
     return ontology.getConcept(conceptId);

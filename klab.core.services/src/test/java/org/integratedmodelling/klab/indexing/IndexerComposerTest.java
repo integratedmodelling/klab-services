@@ -14,6 +14,18 @@ import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.junit.jupiter.api.Test;
 
 class IndexerComposerTest {
+  @Test void lexicalPrefixesFollowTheActualCausalDirectionAndQuantitativeWithin() throws Exception {
+    try (var fixture = new Fixture()) {
+      var scope = new SemanticScope();
+      scope.lexicalRealm.addAll(List.of(
+          org.integratedmodelling.klab.api.knowledge.SemanticRole.CAUSED,
+          org.integratedmodelling.klab.api.knowledge.SemanticRole.CAUSANT,
+          org.integratedmodelling.klab.api.knowledge.SemanticRole.QUANTITATIVE_WHOLE));
+      assertEquals(List.of("causing"), fixture.index.query("causing", scope, 10).stream().map(SemanticMatch::getId).toList());
+      assertEquals(List.of("caused by"), fixture.index.query("caused", scope, 10).stream().map(SemanticMatch::getId).toList());
+      assertEquals(List.of("within"), fixture.index.query("with", scope, 10).stream().map(SemanticMatch::getId).toList());
+    }
+  }
   @Test void qualifiedQueriesRestrictTheOntologyAndRankTheExactNameFirst() throws Exception {
     try (var fixture = new Fixture()) {
       fixture.add("other:Tree", SemanticType.SUBJECT);

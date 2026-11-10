@@ -574,7 +574,8 @@ asserted to be declarations in the active worldview.
 
 The `in` operand of proportion or percentage states the whole. Do not insert
 `of` after those keywords; it is not in the current grammar. The **ratio
-expression operator** requires both operands: `ratio of numerator to denominator`.
+expression operator** accepts `ratio of numerator to denominator`; omitting
+`to denominator` denotes a self-ratio of the numerator's property.
 The quantities must have an appropriate comparison meaning.
 
 A **named ratio declaration** is a different operation. A worldview can name a
@@ -1054,6 +1055,36 @@ It introduces neither physical parthood nor a way to extract a number from a who
 measurement. Parsing and semantic declaration do not compute the portion. Current
 matching requires the same ordered identity pair; a model must supply the requested
 partial quantity directly. See [implementation boundaries](QUANTITATIVE_CONTAINMENT_PENDING.md).
+
+### Assisted observable composition
+
+The Reasoner's semantic search session supplies the suggestions consumed by the IDE's
+`SemanticComposer`. Its `within` choice is available after a single portion identity;
+the next choice supplies the whole identity, followed by the quality expression.
+The two identities occupy separate positions and may belong to the same identity
+family. The existing semantic declaration path determines eligibility through ODO
+ancestry; the composer does not substitute an `EXTENSIVE` flag check. A subsequent
+`of` still supplies native inherency, independently of the ordered identity pair.
+
+Binary `of` choices follow the effective head: dependent inherency, predicate
+applicability/transformation, or configuration emergence. Independent subject,
+agent and event heads do not offer binary `of`. Configuration application bounds
+are not used as native-bearer bounds on an emergence ingredient. Predicate
+characterization uses authored application bounds, without importing a described
+quality's derived bearer into the subject being characterized.
+
+The session also supports the optional `to` operand of `ratio of`, and optional
+`in` operands of `proportion`/`percentage` and `over` operands of value expressions.
+A ratio without a second operand is a complete self-ratio; choosing `to` makes the
+expression incomplete until its denominator is supplied. Nested derivations
+in comparison operands require parentheses. Consequence declaration clauses such
+as `implies`, `confers`, `emerges from` and `requires`, and host observational
+`within`, are not ordinary observable suffix suggestions.
+
+Selections reuse their prepared proposal state. Repeated successful declarations
+within one request share a resolution result, and clause completion reuses its
+resolved operand. These results are discarded before the next request; no extra
+ontology validation pass or cross-revision semantic cache is introduced.
 
 ## 11. Common query patterns
 

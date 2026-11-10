@@ -44,11 +44,9 @@ public class SemanticClauseSupport {
 
   public List<SemanticClauseRestriction> clauses(Concept concept) {
     var result = new ArrayList<SemanticClauseRestriction>();
-    add(
-        result,
-        SemanticRole.INHERENT,
-        reasoner.directInherent(concept),
-        reasoner.inherent(concept));
+    // A configuration's application target and emergence ingredients are not native bearers.
+    if (!concept.is(SemanticType.CONFIGURATION))
+      add(result, SemanticRole.INHERENT, reasoner.directInherent(concept), reasoner.inherent(concept));
     add(result, SemanticRole.GOAL, reasoner.directGoal(concept), reasoner.goal(concept));
     add(
         result,
@@ -84,13 +82,17 @@ public class SemanticClauseSupport {
   }
 
   public boolean hasBounds(Concept owner, SemanticRole role) {
+    if (role == SemanticRole.INHERENT && owner.is(SemanticType.CONFIGURATION)) return false;
     return clauses(owner).stream().anyMatch(c -> c.getRole() == role)
         || role == SemanticRole.INHERENT
-            && SemanticType.isDependent(owner.getType())
+            && (SemanticType.isDependent(owner.getType()) || owner.is(SemanticType.PREDICATE))
             && !reasoner.applicableObservables(owner).isEmpty();
   }
 
   public boolean accepts(Concept owner, SemanticRole role, Concept operand) {
+    if (role == SemanticRole.INHERENT && owner.is(SemanticType.CONFIGURATION)) return true;
+    if (role == SemanticRole.INHERENT && owner.is(SemanticType.PREDICATE)
+        && SemanticType.isEnumerableSubstantial(operand.getType())) return applicableTo(owner, operand);
     if (role == SemanticRole.INHERENT
         && SemanticType.isDependent(owner.getType())
         && !applicableTo(owner, operand)) return false;

@@ -741,6 +741,10 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
 
   @Override
   public boolean hasBounds(Concept owner, SemanticRole role) {
+    if (role == SemanticRole.INHERENT && owner.is(SemanticType.CONFIGURATION)) return false;
+    // Predicate of a substantial uses application bounds, including authored of restrictions.
+    if (role == SemanticRole.INHERENT && owner.is(SemanticType.PREDICATE))
+      return bounds(owner).stream().anyMatch(b -> b.role() == role);
     return bounds(owner).stream().anyMatch(b -> constrains(b, owner, role));
   }
 
@@ -785,8 +789,17 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
 
   @Override
   public boolean accepts(Concept owner, SemanticRole role, Concept operand) {
+    if (role == SemanticRole.INHERENT && owner.is(SemanticType.CONFIGURATION)) return true;
     var candidate = owl.getOWLClass(operand.isCollective() ? operand.singular() : operand);
     if (candidate == null) return false;
+    if (role == SemanticRole.INHERENT && owner.is(SemanticType.PREDICATE)
+        && SemanticType.isEnumerableSubstantial(operand.getType())) {
+      // Reuse the authored application projection used by clauseCompatibility. In particular,
+      // description-derived quality bearers must not constrain the subject being characterized.
+      var required = new LinkedHashSet<OWLClassExpression>();
+      applicationBounds(owl.getOWLClass(owner), new HashSet<>(), required);
+      return required.stream().allMatch(bound -> specializes(candidate, bound, new HashSet<>()));
+    }
     return bounds(owner).stream()
         .filter(b -> constrains(b, owner, role))
         .allMatch(b -> specializes(candidate, b.filler(), new HashSet<>()));
@@ -958,6 +971,7 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
     var result = new ArrayList<SemanticClauseRestriction>();
     var projected = new HashSet<String>();
     for (var bound : bounds(concept)) {
+      if (concept.is(SemanticType.CONFIGURATION) && bound.role() == SemanticRole.INHERENT) continue;
       if (bound.applicability() && !SemanticType.isDependent(concept.getType())) continue;
       if (!projected.add(
           bound.role()

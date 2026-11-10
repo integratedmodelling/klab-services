@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 public enum SemanticLexicalElement {
 
 
-    OF(SemanticRole.INHERENT, "of", EnumSet.of(SemanticType.OBSERVABLE, SemanticType.PREDICATE), EnumSet.of(SemanticType.COUNTABLE)),
+    OF(SemanticRole.INHERENT, "of", SemanticClause.OF.applicable, EnumSet.of(SemanticType.COUNTABLE)),
     FOR(SemanticRole.GOAL, "for", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.OBSERVABLE)),
     WITH(SemanticRole.COMPRESENT, "with", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.COUNTABLE)),
     CAUSED_BY(SemanticRole.CAUSANT, "caused by", EnumSet.of(SemanticType.OBSERVABLE), EnumSet.of(SemanticType.OBSERVABLE)),
@@ -45,12 +45,24 @@ public enum SemanticLexicalElement {
     PLUS(null, "plus", null, null),
     MINUS(null, "minus", null, null),
     TIMES(null, "times", null, null),
-    OVER(null, "over", null, null);
+    OVER(null, "over", null, null),
+    WITHIN(SemanticRole.QUANTITATIVE_WHOLE, "within", EnumSet.of(SemanticType.IDENTITY), EnumSet.of(SemanticType.IDENTITY));
 
     public String[] declaration;
     public SemanticRole role;
     public Set<SemanticType> applicable;
     public Set<SemanticType> argument;
+
+    /** Operand categories depend on the effective head; configuration of means emergence. */
+    public Set<SemanticType> argumentTypes(org.integratedmodelling.klab.api.knowledge.Concept head) {
+        if (this == OF) {
+            if (head.is(SemanticType.CONFIGURATION))
+                return SemanticClause.OF.argument;
+            if (head.is(SemanticType.PREDICATE))
+                return Set.of(SemanticType.COUNTABLE, SemanticType.QUALITY);
+        }
+        return argument;
+    }
     
     SemanticLexicalElement(SemanticRole role, String decl, Set<SemanticType> applicable, Set<SemanticType> argument) {
         this.declaration = new String[] {decl};

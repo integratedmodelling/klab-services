@@ -8,6 +8,30 @@ import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.junit.jupiter.api.Test;
 
 class QuantitativeContainmentSemanticTest {
+  @Test void selfRatioUsesItsOwnPropertyAsComparisonAndPreservesTheShortForm() throws Exception {
+    try (var t = new ClassifierNativeAdmissionTest.Fixture()) {
+      declare(t);
+      t.owl.getOntology("odo").define(List.of(org.integratedmodelling.common.lang.Axiom.ClassAssertion(
+          "Ratio", EnumSet.of(SemanticType.RATIO, SemanticType.QUALITY, SemanticType.QUANTIFIABLE, SemanticType.OBSERVABLE))));
+      t.owl.requireOntology("klab").define(List.of(
+          org.integratedmodelling.common.lang.Axiom.ObjectPropertyAssertion("describesObservable"),
+          org.integratedmodelling.common.lang.Axiom.ObjectPropertyAssertion("isComparedTo")));
+      var syntax = new KimConceptImpl();
+      syntax.setObservable(t.leaf("Volume"));
+      syntax.setSemanticModifier(org.integratedmodelling.klab.api.lang.UnarySemanticOperator.RATIO);
+      syntax.setType(org.integratedmodelling.klab.api.lang.UnarySemanticOperator.RATIO.apply(t.concept("Volume").getType()));
+      t.register(syntax);
+      org.mockito.Mockito.when(t.resources.declareConcept("ratio of (audit:Volume)")).thenReturn(syntax);
+      var ratio = t.owl.makeRatio(t.concept("Volume"), null);
+      assertTrue(ratio.is(SemanticType.RATIO));
+      assertEquals("ratio of audit:Volume", ratio.getUrn());
+      var property = t.owl.getProperty("klab:isComparedTo").getOWLEntity().asOWLObjectProperty();
+      var comparison = t.f.getOWLObjectSomeValuesFrom(property, t.type("Volume"));
+      assertTrue(t.ontology.getOWLOntology().containsAxiom(
+          t.f.getOWLSubClassOfAxiom(t.owl.getOWLClass(ratio), comparison)));
+      assertEquals(ratio, t.owl.makeRatio(t.concept("Volume"), null));
+    }
+  }
   private void declare(ClassifierNativeAdmissionTest.Fixture t) {
     t.declare("Volume",SemanticType.QUALITY,SemanticType.VOLUME,SemanticType.EXTENSIVE,SemanticType.OBSERVABLE,SemanticType.QUANTIFIABLE);
     t.declare("Temperature",SemanticType.QUALITY,SemanticType.TEMPERATURE,SemanticType.INTENSIVE,SemanticType.OBSERVABLE);

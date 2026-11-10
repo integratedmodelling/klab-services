@@ -11,6 +11,36 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 
 class OWLSemanticClauseSupportTest {
+  @Test void characterizationDoesNotAcquireTheDescribedQualitysDerivedBearer() throws Exception {
+    var scope = org.mockito.Mockito.mock(Scope.class);
+    var owl = new OWL(scope);
+    owl.manager = OWLManager.createOWLOntologyManager();
+    var ontology = owl.requireOntology("domain");
+    ontology.define(List.of(
+        Axiom.ClassAssertion("Predicate", EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE)),
+        Axiom.ClassAssertion("Region", EnumSet.of(SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE)),
+        Axiom.ClassAssertion("Rock", EnumSet.of(SemanticType.SUBJECT, SemanticType.COUNTABLE, SemanticType.OBSERVABLE)),
+        Axiom.ClassAssertion("Configuration", EnumSet.of(SemanticType.CONFIGURATION, SemanticType.OBSERVABLE))));
+    owl.requireOntology("odo").define(List.of(Axiom.ObjectPropertyAssertion("isInherentTo"),
+        Axiom.ObjectPropertyAssertion("appliesTo")));
+    var predicate = ontology.getConcept("Predicate");
+    var region = ontology.getConcept("Region");
+    owl.setApplicableObservables(predicate, List.of(region), ontology);
+    var f = owl.manager.getOWLDataFactory();
+    var derived = f.getOWLObjectSomeValuesFrom(
+        owl.getProperty("odo:isInherentTo").getOWLEntity().asOWLObjectProperty(),
+        owl.getOWLClass(ontology.getConcept("Configuration")));
+    var marker = f.getOWLAnnotation(f.getOWLAnnotationProperty(DescriptionBearerSupport.PROVENANCE),
+        f.getOWLLiteral("derived:description-bearer-intersection"));
+    owl.manager.addAxiom(ontology.getOWLOntology(),
+        f.getOWLSubClassOfAxiom(owl.getOWLClass(predicate), derived, Set.of(marker)));
+    var support = new OWLSemanticClauseSupport(owl);
+    assertTrue(support.accepts(predicate, SemanticRole.INHERENT, region));
+    assertTrue(support.accepts(predicate, SemanticRole.INHERENT, region.collective()));
+    assertFalse(support.accepts(predicate, SemanticRole.INHERENT, ontology.getConcept("Rock")));
+    assertFalse(support.hasBounds(ontology.getConcept("Configuration"), SemanticRole.INHERENT));
+    assertTrue(support.clauses(ontology.getConcept("Configuration")).isEmpty());
+  }
   @Test
   void importedProvenanceRestrictionsDoNotRequireRegisteredNamespaces() throws Exception {
     var scope = (Scope) java.lang.reflect.Proxy.newProxyInstance(
@@ -126,7 +156,11 @@ class OWLSemanticClauseSupportTest {
         assertFalse(
             support.applicableTo(
                 ontology.getConcept("NarrowPredicate"), ontology.getConcept("Rock")));
-        assertFalse(support.hasBounds(ontology.getConcept("Predicate"), SemanticRole.INHERENT));
+        assertTrue(support.hasBounds(ontology.getConcept("Predicate"), SemanticRole.INHERENT));
+        assertTrue(support.accepts(ontology.getConcept("Predicate"), SemanticRole.INHERENT,
+            ontology.getConcept("Rock")));
+        assertFalse(support.accepts(ontology.getConcept("NarrowPredicate"), SemanticRole.INHERENT,
+            ontology.getConcept("Rock")));
         for (String name : List.of("Quality", "Process")) {
           var dependent = ontology.getConcept(name);
           assertTrue(support.hasBounds(dependent, SemanticRole.INHERENT));

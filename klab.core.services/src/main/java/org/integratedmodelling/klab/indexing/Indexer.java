@@ -340,6 +340,9 @@ public class Indexer {
                     case INHERENT:
                         ret.add(new SemanticMatch(SemanticLexicalElement.OF));
                         break;
+                    case QUANTITATIVE_WHOLE:
+                        ret.add(new SemanticMatch(SemanticLexicalElement.WITHIN));
+                        break;
                     case RELATIONSHIP_SOURCE:
                         ret.add(new SemanticMatch(SemanticLexicalElement.LINKING));
                         break;

@@ -27,8 +27,8 @@ public enum SemanticRole {
    */
   INHERENT(true, "of"),
   ADJACENT(true, "adjacent to"),
-  CAUSED(true, "caused by"),
-  CAUSANT(true, "causing"),
+  CAUSED(true, "causing"),
+  CAUSANT(true, "caused by"),
   COMPRESENT(true, "with"),
   GOAL(true, "for"),
   COOCCURRENT(true, "during"),
@@ -47,7 +47,9 @@ public enum SemanticRole {
   BINARY_OPERATOR(true, ""),
   /** grouping scope for parenthesized logical expression */
   GROUP_OPEN(false, ""),
-  GROUP_CLOSE(false, "");
+  GROUP_CLOSE(false, ""),
+  /** Ordered whole identity in a quantitative containment expression. */
+  QUANTITATIVE_WHOLE(false, "within");
 
   /**
    * If true, this represents an operator that can have a complex logical expression as argument.
