@@ -100,6 +100,7 @@ public final class ModelCandidateSources {
       String hash = SemanticValidationRequest.sourceHash(encoded);
       var candidates = source.getStatements().stream().filter(KimModel.class::isInstance)
           .map(KimModel.class::cast).filter(model -> !source.isInactive()
+              && !model.isLearningModel()
               && request.visible(source.getUrn(), source.getProjectName(), model.getScope(), source.isScenario()))
           .toList();
       if (candidates.isEmpty()) continue;

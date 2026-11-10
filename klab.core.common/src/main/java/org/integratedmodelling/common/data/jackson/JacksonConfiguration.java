@@ -571,6 +571,7 @@ public class JacksonConfiguration {
           Semantics.class,
           Observable.class,
           Resource.class,
+          Resource.Attribute.class,
           KimOntology.class,
           KimNamespace.class,
           KlabStatement.class,

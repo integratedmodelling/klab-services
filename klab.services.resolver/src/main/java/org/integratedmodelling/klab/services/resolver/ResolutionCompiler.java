@@ -1005,6 +1005,8 @@ public class ResolutionCompiler {
       ContextScope selectionScope,
       Observable selectedRequest) {
 
+    if (model.isLearningModel())
+      throw new IllegalArgumentException("Learning models require an explicit training operation");
     var admitted = admissionReceipt(model);
     if (model.getNamespace() != null && !model.getNamespace().isBlank()) {
       if (admitted == null
@@ -1918,7 +1920,7 @@ public class ResolutionCompiler {
         .map(Concept::getUrn).collect(java.util.stream.Collectors.toSet()));
     var lexical = org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest.from(
         Parameters.create("resolutionConstraints", scope.getResolutionConstraints()));
-    return model -> model.getObservables().stream().filter(Objects::nonNull)
+    return model -> !model.isLearningModel() && model.getObservables().stream().filter(Objects::nonNull)
         .filter(output -> !output.is(SemanticType.SUBJECTIVE) || lexical.namespaces().contains(model.getNamespace()))
         .anyMatch(output -> {
       var candidate = reasoner.coreObservable(output);

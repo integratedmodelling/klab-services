@@ -104,4 +104,13 @@ public class ResolverController {
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }
+
+  @PostMapping(ServicesAPI.RESOLVER.COMMIT_LEARNED_RESOURCE)
+  public @ResponseBody Resource commitLearnedResource(
+      @RequestBody org.integratedmodelling.klab.api.services.runtime.extension.LearnedResourceSubmission submission,
+      Principal principal) {
+    if (principal instanceof EngineAuthorization authorization)
+      return resolverServer.klabService().commitLearnedResource(submission, requireContext(authorization));
+    throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+  }
 }

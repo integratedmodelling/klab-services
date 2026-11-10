@@ -22,6 +22,11 @@ public interface LearningContextualizer {
   /** Annotation selecting a dependency as a predictor. Its arguments are engine-specific. */
   String PREDICTOR_ANNOTATION = "predictor";
 
+  /** Unsupervised engines override this explicitly; supervised learning is the default. */
+  default boolean requiresTargets() {
+    return true;
+  }
+
   /**
    * A resolved input under its agreed schema name. Parameters preserve annotation arguments such
    * as weight without assigning universal engine semantics. The parameter map is a shallow,

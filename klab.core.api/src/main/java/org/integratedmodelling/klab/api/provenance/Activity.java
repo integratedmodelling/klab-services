@@ -78,6 +78,8 @@ public interface Activity extends Provenance.Node {
     CONSEQUENCE_SUBMISSION,
     INITIALIZATION,
     RESOLUTION,
+    /** Registration of an immutable Resource version, independently of observation production. */
+    RESOURCE_COMMIT,
     INSTANTIATION(Contextualization.INSTANTIATION),
     ACKNOWLEDGEMENT(Contextualization.ACKNOWLEDGEMENT),
     DETECTION(Contextualization.DETECTION),

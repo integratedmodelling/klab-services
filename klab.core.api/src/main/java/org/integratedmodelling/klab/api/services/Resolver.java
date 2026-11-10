@@ -59,6 +59,13 @@ public interface Resolver extends KlabService {
    */
   Resource submitResource(Observation observation, ContextScope contextScope);
 
+  /** Commit an explicitly trained inline Resource. Retries of an attempt return its exact version. */
+  default Resource commitLearnedResource(
+      org.integratedmodelling.klab.api.services.runtime.extension.LearnedResourceSubmission submission,
+      ContextScope scope) {
+    throw new UnsupportedOperationException("Learned resource commits are not supported by this resolver");
+  }
+
   /**
    * Return all resources submitted in the scope. These can be further specified in the modeler for
    * submission to a resource service.

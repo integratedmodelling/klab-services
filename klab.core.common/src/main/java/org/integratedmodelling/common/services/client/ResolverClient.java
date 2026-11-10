@@ -121,4 +121,12 @@ public class ResolverClient extends BaseServiceClient implements Resolver {
         .withScope(scope)
         .getCollection(ServicesAPI.RESOLVER.GET_SUBMITTED_RESOURCES, Resource.class);
   }
+
+  @Override
+  public Resource commitLearnedResource(
+      org.integratedmodelling.klab.api.services.runtime.extension.LearnedResourceSubmission submission,
+      ContextScope scope) {
+    return client.withScope(scope).post(
+        ServicesAPI.RESOLVER.COMMIT_LEARNED_RESOURCE, submission, Resource.class);
+  }
 }

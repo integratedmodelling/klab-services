@@ -618,6 +618,8 @@ public interface ServicesAPI {
 
     String SUBMIT_RESOURCE = API_BASE + "/resource";
 
+    String COMMIT_LEARNED_RESOURCE = API_BASE + "/resource/learned";
+
     String GET_SUBMITTED_RESOURCES = API_BASE + "/resources";
   }
 }

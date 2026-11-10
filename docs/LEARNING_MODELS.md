@@ -66,35 +66,77 @@ has a stable schema name, data type, observation handle and annotation parameter
 predictors are separate from ordered targets; ancillary inputs remain available in the context.
 Source declaration order supplies the initial schema order, which the Resource retains.
 
-For supervised learning, target observations provide known outcomes. A target may be:
+For supervised learning, each declared output defines a target slot. Its `named` alias is the
+slot name; otherwise its stable reference name is used. Target acquisition uses this precedence:
 
-* computed by a contextualizer preceding the learner in the same model;
-* supplied as an already resolved observation in the context;
-* explicitly bound through a declared target mapping by name or semantics.
+1. An explicit observation binding under that name in the training request.
+2. A preceding `set to` or contextualizer explicitly producing that target.
+3. Ordinary resolution of the declared output observable.
 
-An output's `named` alias identifies its target binding. Explicit mappings may identify another
-observation by name or semantics. Binding must produce exactly one compatible observation per
-required target. Missing or ambiguous bindings are errors; collection iteration order must not
-choose among candidates. Semantic matching uses the reasoner's compatibility rules, rather than
-text comparisons of semantic URNs. Engines requiring no supervision receive an empty target list.
+Predictor and ancillary dependency slots use the same naming convention. Names identify slots;
+ordinary resolution supplies their values according to the declared semantics. Explicit bindings
+are validated against the declared type and representation. An invalid explicit binding fails
+instead of falling through. Missing or ambiguous bindings fail; collection order never chooses
+among several candidates. No additional target-mapping annotation is required.
+
+Every required target and non-optional dependency must be resolved before fitting. Missing optional
+dependencies remain absent, subject to the engine's declared requirements. Unsupervised engines
+explicitly declare that they require no targets and receive an empty target list. Resolution is
+checked independently from data completeness: the engine still validates missing values,
+sampling alignment and adequate training samples.
 
 Binding a target is distinct from producing the normal model output. A target resolved in advance
 must remain available as training evidence even if subsequent contextualizers write predictions
 to an output of the same semantics. The learner must not silently train on its own predictions.
-Resolving an external target must exclude the learning model being executed, so that requesting
-its output cannot recursively select the same learner as the source of training evidence.
+All learning models are excluded from ordinary resolution. Previously generated learning previews
+are excluded from automatic training-evidence acquisition; explicit reuse requires a deliberate
+binding. Excluding learner models alone does not prevent an existing prediction from being reused
+as evidence.
 
-The runtime executes preceding target-producing actions before the learner and completes ordinary
-output production through the model's contextualization chain. Learners may use the fitted
-computation to supply predictions through that chain; an observation is not marked successfully
-resolved merely because training completed. A multi-output learner explicitly identifies its
-supported targets and resource outputs. Calibration can use target trajectories or several
-observations to fit parameters without treating each calibrated parameter as a supervised label.
+The runtime executes preceding target-producing actions before the learner. After fitting and
+Resource commit, it regenerates the declared outputs using the exact committed Resource version,
+by default. These predictions are inspection outputs, separate from the evidence. A multi-output
+learner explicitly identifies its supported targets and resource outputs. Calibration can use
+target trajectories or several observations to fit parameters without treating each calibrated
+parameter as a supervised label; its inspection outputs are modeled quantities or trajectories
+obtained using the calibrated parameters.
 
 Predictors and targets must refer to compatible sampling domains. The engine must declare how it
 aligns geometries, times, object identities, missing values, units and categorical encodings.
 Equal array lengths do not establish alignment. Training-time transformations required at
 inference are part of the learned Resource, including feature order and category dictionaries.
+
+## Explicit training and observer-specific outputs
+
+Training is a dedicated runtime operation, conceptually
+`train(model, context, bindings, options)`, selecting an admitted learning model explicitly.
+Ordinary observation requests, including explicit-model shortcuts, never trigger training. The
+runtime orchestrates prerequisite resolution, preparation, fitting, commit and optional preview
+generation. A result identifies the attempt, exact committed Resource version, preview observations
+and separate fitting/commit and preview diagnostics.
+
+A model-level `@learning(observer = ...)` annotation specifies the semantic Agent class for
+generated outputs. Its value is an Agent concept expression or its semantic URN. An explicitly
+configured learning-observer default from the active worldview is used when the argument is
+absent. No class is invented from the model name; a missing or invalid class rejects training.
+The target observable's own `observed as` clause continues to describe the training evidence and
+does not specify the prediction observer.
+
+The runtime creates or reuses an actual Agent observation for the model's stable learned-resource
+identity in the current context. The semantic class describes its perspective; the actual Agent
+distinguishes this model's outputs even when several learning observers share a class. Graph
+identity and reuse preserve that actual observer, output slot and observation support. Predictions
+are stored as `observed as <observer Agent class>` with the actual Agent in provenance. Resource
+versions are provenance, not new observer classes.
+
+Successive successful trainings may replace the current prediction values for the same model,
+actual observer, output slot and support, retaining revision and activity provenance. Canonical
+observations, training evidence and other observers' outputs are preserved. Failed preview
+generation preserves the previous successful preview. A preview of an older Resource version
+cannot replace one already generated from a newer committed version.
+
+Inspection outputs are available through explicit selection of their learning observer. They do
+not become ordinary fallback observations just because observer compatibility would permit it.
 
 ## Learning contextualizers
 
@@ -155,12 +197,24 @@ does not globally change dependency resolution.
 
 ## Resolver lifecycle
 
-The runtime stages a learned Resource and any associated payloads, validates the adapter and
-schema, completes ordinary output computation, then requests resolver registration. The
-operation reports success only when its outputs and learned Resource are available. Failure or
-cancellation discards staged artifacts and leaves committed resource versions intact. If commit
-spans services, retries must identify the same learning attempt and return the same committed
-version rather than create duplicates.
+The runtime stages a learned Resource and its payloads, validates the adapter and schema, then
+requests resolver registration. Each attempt has a stable ID. The resolver atomically allocates
+the next Resource version and registers it; fitting does not hold the commit lock. Retrying an
+already committed attempt returns the same version, including after later versions are committed.
+Concurrent attempts produce distinct versions. Committed versions and their payloads are immutable.
+Failure or cancellation before commit releases staged artifacts and preserves earlier versions.
+
+Resource commit is a distinct provenance Activity, `RESOURCE_COMMIT`, linked to the initiating
+training activity, actor, source model, input evidence and exact committed Resource URN/version.
+It is an orchestration activity rather than an observation contextualization. Recording this
+activity in the knowledge graph is a separate, retryable step when resource storage and graph
+persistence belong to different services. A durable commit receipt permits reconciliation without
+fitting again or allocating a duplicate version.
+
+Resource commit and preview generation have separate outcomes. A committed Resource remains
+available if preview generation or its graph recording fails. The result reports that partial
+outcome explicitly; preview generation can be retried using the committed version. Successful
+preview activities reference both the committed Resource version and its commit activity.
 
 The resolver owns the local Resource, its access rules, scope visibility and version history.
 Existing temporary-resource persistence settings determine how long it survives. Resources are

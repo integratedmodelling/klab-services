@@ -20,6 +20,36 @@ import org.junit.jupiter.api.Test;
 class LearningModelContractTest {
 
   @Test
+  void sourceProjectionRetainsAuthoredAliasesInsteadOfCachedNames() {
+    var scope = mock(ContextScope.class);
+    var reasoner = mock(org.integratedmodelling.klab.api.services.Reasoner.class);
+    when(scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)).thenReturn(reasoner);
+    var concept = new org.integratedmodelling.common.knowledge.ConceptImpl();
+    concept.setUrn("test:Runoff");
+    var resolved = new org.integratedmodelling.common.knowledge.ObservableImpl();
+    resolved.setSemantics(concept);
+    resolved.setUrn("test:Runoff");
+    resolved.setStatedName("cached_name");
+    when(reasoner.resolveObservable("test:Runoff")).thenReturn(resolved);
+    var declared = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
+    declared.setUrn("test:Runoff");
+    declared.setFormalName("training_target");
+    var source = new org.integratedmodelling.klab.api.lang.kim.impl.KimModelImpl();
+    source.getObservables().add(declared);
+    var namespace = new KimNamespaceImpl();
+    var previous = org.integratedmodelling.klab.api.Klab.INSTANCE.getConfiguration();
+    org.integratedmodelling.klab.api.Klab.INSTANCE.setConfiguration(
+        mock(org.integratedmodelling.klab.api.Klab.Configuration.class));
+    try {
+      assertEquals("training_target", SourceModelMapper.load(source, namespace, scope)
+          .getObservables().getFirst().getStatedName());
+      assertEquals("cached_name", resolved.getStatedName());
+    } finally {
+      org.integratedmodelling.klab.api.Klab.INSTANCE.setConfiguration(previous);
+    }
+  }
+
+  @Test
   void adaptationAndProjectionKeepExactResourceIdIndependentOfModelUrn() throws Exception {
     var syntax = mock(ModelSyntax.class);
     when(syntax.getModelType()).thenReturn(ModelSyntax.ModelType.LEARN);
@@ -35,7 +65,15 @@ class LearningModelContractTest {
     assertEquals("fitted.runoff", source.getLearnedResourceId());
     assertNotEquals(source.getLearnedResourceId(), source.getUrn());
 
-    var model = SourceModelMapper.load(source, namespace, mock(ContextScope.class));
+    var previousConfiguration = org.integratedmodelling.klab.api.Klab.INSTANCE.getConfiguration();
+    org.integratedmodelling.klab.api.Klab.INSTANCE.setConfiguration(
+        mock(org.integratedmodelling.klab.api.Klab.Configuration.class));
+    Model model;
+    try {
+      model = SourceModelMapper.load(source, namespace, mock(ContextScope.class));
+    } finally {
+      org.integratedmodelling.klab.api.Klab.INSTANCE.setConfiguration(previousConfiguration);
+    }
     assertTrue(model.isLearningModel());
     assertEquals("fitted.runoff", model.getLearnedResourceId());
     assertEquals("hydrology.training", model.getNamespace());

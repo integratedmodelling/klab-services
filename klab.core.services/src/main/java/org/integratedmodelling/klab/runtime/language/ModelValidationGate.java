@@ -236,6 +236,11 @@ public final class ModelValidationGate {
     var data=new java.util.LinkedHashMap<String,Object>();
     data.put("urn",model.getUrn());data.put("namespace",model.getNamespace());data.put("project",model.getProjectName());
     data.put("type",model.getType());data.put("contextualization",model.getDescriptionType());
+    // Preserve existing ordinary-model receipts while binding all learning identity into proofs.
+    if (model.isLearningModel() || model.getLearnedResourceId() != null) {
+      data.put("learningModel",model.isLearningModel());
+      data.put("learnedResourceId",model.getLearnedResourceId());
+    }
     data.put("observables",model.getObservables().stream().map(ModelValidationGate::observableContent).toList());
     data.put("dependencies",model.getDependencies().stream().map(ModelValidationGate::observableContent).toList());
     data.put("computation",model.getComputation());data.put("annotations",model.getAnnotations());
@@ -715,6 +720,7 @@ public final class ModelValidationGate {
 
   private static AdmissionReceipt validatedAdmission(Model model, Scope scope, Observable requested,
       boolean preparable, boolean inspectInstalled) {
+    if (model == null || model.isLearningModel()) return null;
     try {
       var frozenHash=executableHash(model);
       var reasoner=scope.getService(Reasoner.class);

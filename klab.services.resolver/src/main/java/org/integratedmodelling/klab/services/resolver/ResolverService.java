@@ -50,6 +50,9 @@ public class ResolverService extends BaseService implements Resolver {
   // resource kbox for scope-bound persistent resources from observations that come with
   // contextualization data and request to be persisted.
   private final ResourcesKBox resourcesKbox;
+  private final org.integratedmodelling.klab.resources.LearningResourceCommitter learningCommits;
+  private static final String LEARNING_RESOURCES = "__LEARNING_RESOURCES__";
+  private static final String LEARNING_COMMITS = "__LEARNING_COMMITS__";
   private final ExecutorService resolutionExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
   //  private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
@@ -60,6 +63,8 @@ public class ResolverService extends BaseService implements Resolver {
     setComponentRegistry();
     ServiceConfiguration.INSTANCE.setMainService(this);
     this.resourcesKbox = new ResourcesKBox(scope, options, this);
+    this.learningCommits = new org.integratedmodelling.klab.resources.LearningResourceCommitter(
+        urn -> resourcesKbox.getResource(urn, Version.ANY_VERSION), resourcesKbox::putResource);
   }
 
   @Override
@@ -497,7 +502,67 @@ public class ResolverService extends BaseService implements Resolver {
 
   @Override
   public List<Resource> getSubmittedResources(ContextScope scope) {
-    return scope.getData().get(RESOLUTION_GRAPH_KEY, ResolutionGraph.class).getLocalResources();
+    var graph = scope.getData().get(RESOLUTION_GRAPH_KEY, ResolutionGraph.class);
+    var result = new ArrayList<Resource>(graph == null ? List.of() : graph.getLocalResources());
+    learningResources(scope).values().forEach(resource -> result.add(
+        org.integratedmodelling.common.utils.Utils.Json.parseObject(
+            org.integratedmodelling.common.utils.Utils.Json.asString(resource), Resource.class)));
+    return List.copyOf(result);
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Resource> learningResources(ContextScope scope) {
+    synchronized (scope.getData()) {
+      return (Map<String, Resource>) scope.getData().computeIfAbsent(
+          LEARNING_RESOURCES, ignored -> new java.util.concurrent.ConcurrentHashMap<String, Resource>());
+    }
+  }
+
+  @Override
+  public Resource commitLearnedResource(
+      org.integratedmodelling.klab.api.services.runtime.extension.LearnedResourceSubmission submission,
+      ContextScope scope) {
+    Objects.requireNonNull(scope, "Authorized context required");
+    var visible = learningResources(scope);
+    org.integratedmodelling.klab.resources.LearningResourceCommitter committer;
+    synchronized (scope.getData()) {
+      committer = scope.getConfiguration().getPersistence().survivesShutdown ? learningCommits
+        : (org.integratedmodelling.klab.resources.LearningResourceCommitter) scope.getData().computeIfAbsent(
+            LEARNING_COMMITS, ignored -> new org.integratedmodelling.klab.resources.LearningResourceCommitter(
+                visible::get, resource -> { visible.put(resource.getUrn(), resource); return true; }));
+    }
+    var replay = committer.findCommitted(serviceName(), scope.getId(), scope.getUser().getUsername(), submission);
+    if (replay != null) {
+      showLearningResource(visible, replay);
+      return replay;
+    }
+    var resources = scope.getService(ResourcesService.class);
+    var source = resources.retrieve(submission.namespace(), KimNamespace.class, scope);
+    if (source == null || source.isInactive())
+      throw new IllegalArgumentException("Learning source namespace is unavailable");
+    var model = source.getStatements().stream().filter(KimModel.class::isInstance)
+        .map(KimModel.class::cast).filter(m -> submission.modelUrn().equals(m.getUrn()))
+        .findFirst().orElseThrow(() -> new IllegalArgumentException("Learning model not found"));
+    if (!model.isLearningModel() || model.isInactive()
+        || !submission.resourceId().equals(model.getLearnedResourceId()))
+      throw new IllegalArgumentException("Submission does not match its learning source");
+    org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(model, scope);
+    if (getComponentRegistry().getAdapter(
+        submission.resource().getAdapterType(), Version.ANY_VERSION, scope) == null)
+      throw new IllegalArgumentException("Learned resource inference adapter is unavailable");
+
+    var committed = committer.commit(serviceName(), serviceId(), scope.getId(),
+        scope.getUser().getUsername(), submission);
+    showLearningResource(visible, committed);
+    return committed;
+  }
+
+  private void showLearningResource(Map<String, Resource> visible, Resource committed) {
+    // Replayed old attempts must not roll back the scope's current visible version.
+    visible.compute(committed.getUrn(), (urn, current) -> current == null
+        || current.getVersion().compareTo(committed.getVersion()) < 0
+            ? org.integratedmodelling.common.utils.Utils.Json.parseObject(
+                org.integratedmodelling.common.utils.Utils.Json.asString(committed), Resource.class) : current);
   }
 
   private StringBuffer encodeResources(Dataflow dataflow, Map<String, String> resources) {

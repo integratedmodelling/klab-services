@@ -35,6 +35,8 @@ final class ModelDescriptorFactory {
     this.resourceService = resourceService;
   }
   public Collection<ModelReference> inferModels(KimModel model, Scope monitor) {
+    // Training declarations remain retrievable source, never predictive catalog entries.
+    if (model.isLearningModel()) return List.of();
     org.integratedmodelling.klab.runtime.language.ModelValidationGate.require(model, monitor);
 
     List<ModelReference> ret = new ArrayList<>();

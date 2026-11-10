@@ -51,7 +51,6 @@ public class ResourceBuilderImpl implements Resource.Builder {
     ret.getParameters().putAll(this.parameters);
     ret.getMetadata().putAll(metadata);
     ret.setGeometry(this.geometry);
-    ret.getOutputs().addAll(this.outputs);
     ret.getNotifications().addAll(this.notifications);
     ret.setTimestamp(this.resourceTimestamp);
     ret.setVersion(this.resourceVersion);
@@ -62,6 +61,8 @@ public class ResourceBuilderImpl implements Resource.Builder {
     ret.getAttributes().addAll(this.attributes);
     ret.getInputs().addAll(this.inputs);
     ret.getOutputs().addAll(this.outputs);
+    ret.getHistory().addAll(this.history);
+    this.resourcePaths.stream().map(File::new).forEach(ret.getLocalFiles()::add);
     return ret;
   }
 

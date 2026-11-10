@@ -91,6 +91,7 @@ public class PrioritizerImpl implements Prioritizer<Model> {
   }
 
   public int semanticDistance(Model model) {
+    if (model.isLearningModel()) return Integer.MAX_VALUE;
     return distances.computeIfAbsent(model, candidate -> {
       var receipt = org.integratedmodelling.klab.runtime.language.ModelValidationGate.validatedPreparableAdmission(candidate,scope,observable);
       if (receipt == null) return Integer.MAX_VALUE;

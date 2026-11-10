@@ -69,6 +69,8 @@ public final class SourceModelMapper {
     var resolved = reasoner.resolveObservable(syntax.getUrn());
     if (resolved == null) return null;
     var result = new ObservableImpl((ObservableImpl) resolved);
+    // Port aliases belong to this declaration, independently of the reasoner's semantic cache.
+    if (syntax.getFormalName() != null) result.setStatedName(syntax.getFormalName());
     var semantics = new ConceptImpl((ConceptImpl) resolved.getSemantics());
     semantics.setAnnotations(AnnotationCollector.merge(
         semantics.getAnnotations(), AnnotationCollector.collect(

@@ -7,6 +7,18 @@ import org.integratedmodelling.klab.api.services.resources.*;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.junit.jupiter.api.Test;
 class ModelCandidateSourcesTest {
+  @Test void learningDeclarationsRemainInSourceButAreNeverDiscoveryCandidates() {
+    var source = namespace();
+    source.getStatements().stream().filter(KimModelImpl.class::isInstance)
+        .map(KimModelImpl.class::cast).forEach(model -> {
+          model.setLearningModel(true);
+          model.setLearnedResourceId("trained");
+        });
+    var captured = ModelCandidateSources.capture(List.of(source),
+        new ModelCandidateRequest(1, List.of(), List.of(), List.of()), "supplier", null);
+    assertTrue(captured.getResults().isEmpty());
+    assertFalse(source.getStatements().isEmpty());
+  }
   @Test void failedSupplierIsCapturedOncePerAttempt() {
     var calls=new java.util.concurrent.atomic.AtomicInteger();
     var failure=new IllegalStateException("offline");
