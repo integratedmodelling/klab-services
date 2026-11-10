@@ -40,7 +40,9 @@ public final class SourceModelMapper {
 
     model.setResolutionInfo(resolutionInfo);
 
-    // TODO learners, geometry covered etc.
+    model.setLearningModel(statement.isLearningModel());
+    model.setLearnedResourceId(statement.getLearnedResourceId());
+    // TODO geometry covered etc.
     model.setUrn(statement.getUrn());
     model.setMetadata(
         statement.getMetadata()); // FIXME add processed metadata with the existing symbol table

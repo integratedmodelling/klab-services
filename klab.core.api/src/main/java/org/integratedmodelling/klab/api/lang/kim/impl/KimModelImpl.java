@@ -22,6 +22,7 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
     private Type type;
     private List<Urn> resourceUrns = new ArrayList<>();
     private boolean learningModel;
+    private String learnedResourceId;
     private String urn;
     private List<Contextualizable> contextualization = new ArrayList<>();
     private String docstring;
@@ -96,6 +97,15 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
 
     public void setLearningModel(boolean learningModel) {
         this.learningModel = learningModel;
+    }
+
+    @Override
+    public String getLearnedResourceId() {
+        return learnedResourceId;
+    }
+
+    public void setLearnedResourceId(String learnedResourceId) {
+        this.learnedResourceId = learnedResourceId;
     }
 
     public void setUrn(String urn) {

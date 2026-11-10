@@ -879,6 +879,9 @@ public class LanguageAdapter {
 
     KimModelImpl ret = new KimModelImpl();
 
+    ret.setLearningModel(model.getModelType() == ModelSyntax.ModelType.LEARN);
+    ret.setLearnedResourceId(model.getLearnedComputationURN());
+
     ret.setScope(namespace.getScope());
     ret.setScope(
         model.getScope() == null

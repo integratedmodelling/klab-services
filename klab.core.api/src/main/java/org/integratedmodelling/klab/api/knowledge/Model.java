@@ -14,6 +14,16 @@ import java.util.Map;
 
 public interface Model extends Knowledge, Resolvable {
 
+  /** Whether executing this model also produces a learned resource. */
+  default boolean isLearningModel() {
+    return false;
+  }
+
+  /** Exact local resource ID from the learn declaration; null for ordinary models. */
+  default String getLearnedResourceId() {
+    return null;
+  }
+
   interface ResolutionInfo {
 
     /**

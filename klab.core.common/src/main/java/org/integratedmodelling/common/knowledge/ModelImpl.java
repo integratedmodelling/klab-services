@@ -78,6 +78,26 @@ public class ModelImpl implements Model {
   private Concept observerType;
   private ResolutionInfo resolutionInfo;
   private String serviceId;
+  private boolean learningModel;
+  private String learnedResourceId;
+
+  @Override
+  public boolean isLearningModel() {
+    return learningModel;
+  }
+
+  public void setLearningModel(boolean learningModel) {
+    this.learningModel = learningModel;
+  }
+
+  @Override
+  public String getLearnedResourceId() {
+    return learnedResourceId;
+  }
+
+  public void setLearnedResourceId(String learnedResourceId) {
+    this.learnedResourceId = learnedResourceId;
+  }
 
   @Override
   public String getUrn() {

@@ -35,6 +35,11 @@ public interface KimModel extends KlabStatement, Resolvable {
 
     boolean isLearningModel();
 
+    /** Exact local resource ID following {@code as} in a learn declaration; null otherwise. */
+    default String getLearnedResourceId() {
+        return null;
+    }
+
     /**
      * The URN for a model is namespacePath.modelName
      *
