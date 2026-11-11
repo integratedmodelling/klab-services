@@ -62,6 +62,10 @@ public interface KimModel extends KlabStatement, Resolvable {
      */
     Geometry getCoverage();
 
+    /**
+     * Model documentation as Markdown source, or null when absent. Preserve the source in
+     * transport and render it as Markdown in documentation views.
+     */
     String getDocstring();
 
     String getProjectName();

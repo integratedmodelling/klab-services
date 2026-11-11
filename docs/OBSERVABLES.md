@@ -1,97 +1,5 @@
 # Observable expression language guide
 
-## Observer perspective contract
-
-**Agreed semantics; implementation incomplete.** The observable syntax `observed as
-<observer Agent class>` expresses an observer perspective. Explicit `observed as X` and
-`observed as Y` remain semantically distinct during resolution; normal semantic-clause
-specialization applies when testing compatibility. Distinct expressions are not thereby
-incompatible: use the established compatibility rules, not string equality or a new subtype rule.
-
-An absent observer clause denotes the **absolute/null perspective**. In a session its interpretation
-is equated with the context's default observer, normally associated with the worldview and the user's
-groups/federations. The default may be null. This contextual interpretation must not globally rewrite
-a stored absolute observable into a user-specific class. Preserve whether the query explicitly named
-an observer independently of the effective observer supplied by its context.
-
-An explicit query observer is mandatory: an absolute/null candidate cannot satisfy that query.
-An observer supplied only by the session/context affects prioritization, not this mandatory clause
-constraint. Absolute observations/models remain observer-eligible for such implicit queries and
-provide fallback when compatible observer-specific resolution fails, including dependency failure.
-Other semantic constraints remain mandatory; observer specificity cannot cure incompatibility.
-See [observer-aware resolution](RESOLUTION.md#observer-aware-resolution-contract).
-
-The observer may be selected from a modeled Agent observation. One knowledge graph can consequently
-contain observations from multiple perspectives without conflating their semantic identities.
-An observer URN supplied as a submission resolution constraint takes precedence over the
-session/context observer for that submission only; without that constraint, use the session
-observer, which may be null. This selection does not mutate the session default.
-The selected observer can be any eligible Agent observation in that knowledge graph. Keep three
-things distinct: its actual observation/URN, its semantic Agent class and an explicit query
-`observed as` clause. Selecting an observation by constraint changes the effective perspective;
-it does not synthesize that query clause or convert ranking preference into mandatory compatibility.
-Observer-aware identity, reuse, caches and revision keys must preserve explicitness/provenance and
-the relevant context. No new valuation-specific perspective hierarchy should duplicate this mechanism;
-basic valuation and stakeholder roles are separate articulation concerns.
-
-The implementation retains the structured Agent clause in source beans, interface transport and
-canonical observable construction, including boolean Agent expressions. Full observable wrappers
-reach compatibility and distance checks; an abstract Agent class is a valid perspective constraint
-and does not instantiate an Agent or make the quality itself abstract.
-
-Explicit source perspectives can be exported as versioned, source-owned OWL ontology annotation
-records (`urn:klab:semantics:observer:observable:v1`). These records preserve observable identity,
-base concept, observer class and declaration provenance. They are not restrictions imposed on every
-instance of the native base class. Trusted captured-source ingestion publishes records only after
-complete source validation; ordinary declaration and editor/model validation do not publish them
-into accepted namespaces. Standalone parsed queries have no invented source owner. Declaration
-scope in a record is provenance, not an access grant. Ordinary model publication/export integration
-beyond the structured model wrapper is not yet provided by this record mechanism.
-
-Submission selection, model preference and dependent-observation reuse are implemented in the
-resolution path described in [RESOLUTION](RESOLUTION.md#observer-aware-resolution-contract).
-Null-context ordering of specific candidates and retries after stateful execution has begun remain
-outside the settled implementation. Local regression checks do not establish live acceptance, and
-these changes require a compatible Languages/API/Services rollout before deployment use.
-
-Model catalogs retain the full observable URN separately from their coarse Concept index and
-reconstruct the full wrapper after source/revision admission, before distance filtering. The index
-is not authority to discard the observer clause. Server submission constraints and contextualization
-headers select persisted Agents through context-scoped queries; a global ID lookup alone is not
-proof of membership in the current knowledge graph. Ordinary actuator persistence retains the
-original operation separately from its observer-refined result.
-
-Submission and contextualization activities record the actual selected Agent, or an explicit
-known-null selection. Autonomous replay recovers that selection through committed creation and
-activity provenance; a semantic Agent class does not identify an Agent observation. Every relevant
-provenance branch must establish the same selection. Unknown, ambiguous, corrupt or inaccessible
-history rejects autonomous recovery with an actionable resubmission diagnostic. Known-null is valid
-and clears the execution scope's observer; today's default never replaces history. Explicit new
-submission constraints remain independent of historical recovery.
-
-`getPerspectives(observable)` enumerates existing observations visible at the querying scope's
-knowledge-graph insertion point. It returns every record whose canonical observable meaning is
-the same after removing only `observed as`; all other semantic clauses remain significant.
-Mediator constraints use their existing portable descriptors, including distribution flags;
-enumeration performs no unit/currency conversion. This is equality after that one removal,
-not subclass compatibility. An absolute/no-clause
-observation participates under the same rule. The scope's selected observer does not filter or
-rank these results. Several records from the same actual Agent remain separate, including distinct
-supports and occurrences; the operation neither groups them into one record nor composes values.
-Semantic observer restrictions are distinct from the actual Agent recorded in provenance.
-This operation performs no model resolution and must not expose records from another insertion
-point or knowledge graph. Qualities are its primary intended use. Perspectives on substantials
-remain permitted for now, but are not the intended use case.
-
-For example, two visible observations of the same Temperature meaning, one `observed as X`
-and one absolute, are both perspectives; a third with a different native bearer is excluded.
-Two matching Temperature records attributed to the same Agent are both retained. Here Temperature,
-X and the observations are schematic examples, not additional worldview declarations.
-
-For inspection of syntactic and semantic forms, use `reason info <URN>` or
-`reason info --syntax <URN>`. See [semantic documentation](SEMANTIC_DOCUMENTATION.md) for
-the Markdown endpoint, report contents and asserted/inherited restriction provenance.
-
 An **observable expression** is k.LAB's query language for meaning. It states
 what should be observed independently of any dataset, model, service, or
 digital twin. The same expression is the semantic key used to annotate and
@@ -114,6 +22,10 @@ sublanguage through which the other three refer to the same meaning.
 
 For semantic resolution, assisted composition and source-bound validation diagnostics, see
 the [reasoner documentation](REASONING.md).
+
+For inspection of syntactic and semantic forms, use `reason info <URN>` or
+`reason info --syntax <URN>`. See [semantic documentation](SEMANTIC_DOCUMENTATION.md) for
+the Markdown endpoint, report contents and asserted/inherited restriction provenance.
 
 ## 1. Observable, observation, and model
 
@@ -633,7 +545,7 @@ This last parent supplies no specific measurable kind. The explicit `abstract`
 declaration flag is local and is separate from quality-type inheritance.
 Effective resolution eligibility can also depend on unresolved identity
 requirements, including inherited requirements; see
-[Identity requirements](IDENTITY_REQUIREMENTS.md). See section 14 for the
+[Identity requirements](IDENTITY_REQUIREMENTS.md). See section 15 for the
 unsupported bare `ratio` declaration keyword.
 
 ### 4.6 Value
@@ -934,7 +846,107 @@ units, contextual legality, coverage or computational compatibility. Existing na
 eligibility checks still run. It performs no discovery or classification. In particular it does not
 make a physical quantity a monetary value or supply an aggregation operation.
 
-## 8. Semantic literals in host languages
+## 8. Observer perspective contract
+
+### 8.1 Perspective semantics
+
+**Agreed semantics; implementation incomplete.** The observable syntax `observed as
+<observer Agent class>` expresses an observer perspective. Explicit `observed as X` and
+`observed as Y` remain semantically distinct during resolution; normal semantic-clause
+specialization applies when testing compatibility. Distinct expressions are not thereby
+incompatible: use the established compatibility rules, not string equality or a new subtype rule.
+
+An absent observer clause denotes the **absolute/null perspective**. In a session its interpretation
+is equated with the context's default observer, normally associated with the worldview and the user's
+groups/federations. The default may be null. This contextual interpretation must not globally rewrite
+a stored absolute observable into a user-specific class. Preserve whether the query explicitly named
+an observer independently of the effective observer supplied by its context.
+
+An explicit query observer is mandatory: an absolute/null candidate cannot satisfy that query.
+An observer supplied only by the session/context affects prioritization, not this mandatory clause
+constraint. Absolute observations/models remain observer-eligible for such implicit queries and
+provide fallback when compatible observer-specific resolution fails, including dependency failure.
+Other semantic constraints remain mandatory; observer specificity cannot cure incompatibility.
+See [observer-aware resolution](RESOLUTION.md#observer-aware-resolution-contract).
+
+### 8.2 Selecting an observer
+
+The observer may be selected from a modeled Agent observation. One knowledge graph can consequently
+contain observations from multiple perspectives without conflating their semantic identities.
+An observer URN supplied as a submission resolution constraint takes precedence over the
+session/context observer for that submission only; without that constraint, use the session
+observer, which may be null. This selection does not mutate the session default.
+The selected observer can be any eligible Agent observation in that knowledge graph. Keep three
+things distinct: its actual observation/URN, its semantic Agent class and an explicit query
+`observed as` clause. Selecting an observation by constraint changes the effective perspective;
+it does not synthesize that query clause or convert ranking preference into mandatory compatibility.
+Observer-aware identity, reuse, caches and revision keys must preserve explicitness/provenance and
+the relevant context. No new valuation-specific perspective hierarchy should duplicate this mechanism;
+basic valuation and stakeholder roles are separate articulation concerns.
+
+### 8.3 Representation and source publication
+
+The implementation retains the structured Agent clause in source beans, interface transport and
+canonical observable construction, including boolean Agent expressions. Full observable wrappers
+reach compatibility and distance checks; an abstract Agent class is a valid perspective constraint
+and does not instantiate an Agent or make the quality itself abstract.
+
+Explicit source perspectives can be exported as versioned, source-owned OWL ontology annotation
+records (`urn:klab:semantics:observer:observable:v1`). These records preserve observable identity,
+base concept, observer class and declaration provenance. They are not restrictions imposed on every
+instance of the native base class. Trusted captured-source ingestion publishes records only after
+complete source validation; ordinary declaration and editor/model validation do not publish them
+into accepted namespaces. Standalone parsed queries have no invented source owner. Declaration
+scope in a record is provenance, not an access grant. Ordinary model publication/export integration
+beyond the structured model wrapper is not yet provided by this record mechanism.
+
+### 8.4 Resolution implementation status
+
+Submission selection, model preference and dependent-observation reuse are implemented in the
+resolution path described in [RESOLUTION](RESOLUTION.md#observer-aware-resolution-contract).
+Null-context ordering of specific candidates and retries after stateful execution has begun remain
+outside the settled implementation. Local regression checks do not establish live acceptance, and
+these changes require a compatible Languages/API/Services rollout before deployment use.
+
+### 8.5 Identity, persistence, and provenance
+
+Model catalogs retain the full observable URN separately from their coarse Concept index and
+reconstruct the full wrapper after source/revision admission, before distance filtering. The index
+is not authority to discard the observer clause. Server submission constraints and contextualization
+headers select persisted Agents through context-scoped queries; a global ID lookup alone is not
+proof of membership in the current knowledge graph. Ordinary actuator persistence retains the
+original operation separately from its observer-refined result.
+
+Submission and contextualization activities record the actual selected Agent, or an explicit
+known-null selection. Autonomous replay recovers that selection through committed creation and
+activity provenance; a semantic Agent class does not identify an Agent observation. Every relevant
+provenance branch must establish the same selection. Unknown, ambiguous, corrupt or inaccessible
+history rejects autonomous recovery with an actionable resubmission diagnostic. Known-null is valid
+and clears the execution scope's observer; today's default never replaces history. Explicit new
+submission constraints remain independent of historical recovery.
+
+### 8.6 Enumerating existing perspectives
+
+`getPerspectives(observable)` enumerates existing observations visible at the querying scope's
+knowledge-graph insertion point. It returns every record whose canonical observable meaning is
+the same after removing only `observed as`; all other semantic clauses remain significant.
+Mediator constraints use their existing portable descriptors, including distribution flags;
+enumeration performs no unit/currency conversion. This is equality after that one removal,
+not subclass compatibility. An absolute/no-clause
+observation participates under the same rule. The scope's selected observer does not filter or
+rank these results. Several records from the same actual Agent remain separate, including distinct
+supports and occurrences; the operation neither groups them into one record nor composes values.
+Semantic observer restrictions are distinct from the actual Agent recorded in provenance.
+This operation performs no model resolution and must not expose records from another insertion
+point or knowledge graph. Qualities are its primary intended use. Perspectives on substantials
+remain permitted for now, but are not the intended use case.
+
+For example, two visible observations of the same Temperature meaning, one `observed as X`
+and one absolute, are both perspectives; a third with a different native bearer is excluded.
+Two matching Temperature records attributed to the same Agent are both retained. Here Temperature,
+X and the observations are schematic examples, not additional worldview declarations.
+
+## 9. Semantic literals in host languages
 
 Where a host grammar expects a value, wrap observable semantics in double
 braces:
@@ -945,7 +957,7 @@ braces:
 
 No semicolon appears inside the braces.
 
-### 8.1 k.IM
+### 9.1 k.IM
 
 k.IM uses observables directly for model outputs and dependencies, but braces
 in literal and parameter positions:
@@ -957,7 +969,7 @@ model probability of hydrology:FloodEvent;
 define elevation_query as {{geography:Elevation in m}};
 ```
 
-### 8.2 Worldview ontologies
+### 9.2 Worldview ontologies
 
 Worldview clauses use expressions directly:
 
@@ -970,7 +982,7 @@ process Flooding affects flooding:WaterLevel;
 
 Annotations, maps, and other value positions can carry `{{ ... }}`.
 
-### 8.3 k.Actors
+### 9.3 k.Actors
 
 k.Actors accepts observables only as semantic literals:
 
@@ -990,7 +1002,7 @@ runtime.observe({{each biology:Tree}}):
 The runtime decides whether the literal acts as a query, classifier, message
 value, or observation request.
 
-## 9. Annotations and shared literals
+## 10. Annotations and shared literals
 
 Derived host grammars can accept one or more annotations before an observable.
 For example, k.IM model outputs are `AnnotatedObservable` values:
@@ -1011,7 +1023,7 @@ The host grammar still decides which value rule is accepted in each position:
 - `Literal` admits `{{ observable }}` but not naked concept expressions; and
 - `Variable` adds identifiers and constants.
 
-## 10. Contextualized expressions
+## 11. Contextualized expressions
 
 The shared grammar defines this host-only construct:
 
@@ -1086,7 +1098,7 @@ within one request share a resolution result, and clause completion reuses its
 resolved operand. These results are discarded before the next request; no extra
 ontology validation pass or cross-revision semantic cache is introduced.
 
-## 11. Common query patterns
+## 12. Common query patterns
 
 ```observable
 // Direct concept
@@ -1120,7 +1132,7 @@ model urn:klab:agency:elevation:global:dem
 The URN identifies the asset; the observable says what it can contribute.
 Semantic discovery and ranking need both.
 
-## 12. Authoring guidance
+## 13. Authoring guidance
 
 - **Express meaning before implementation.** Write what a user would ask for,
   not the filename, algorithm, provider, or storage layout.
@@ -1133,7 +1145,7 @@ Semantic discovery and ranking need both.
 - **Keep metadata secondary.** If a distinction affects compatibility or
   resolution, represent it semantically rather than only as a tag.
 
-## 13. Review checklist
+## 14. Review checklist
 
 Check that:
 
@@ -1151,7 +1163,7 @@ Check that:
 - metadata does not substitute for semantic distinctions; and
 - both the parser and Reasoner validate the expression.
 
-## 14. Current implementation status
+## 15. Current implementation status
 
 The grammar defines source structure; full validity requires semantic services:
 

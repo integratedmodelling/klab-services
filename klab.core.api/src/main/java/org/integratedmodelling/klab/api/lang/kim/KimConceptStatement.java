@@ -231,5 +231,9 @@ public interface KimConceptStatement extends KlabStatement {
 
   List<ApplicableConcept> getAppliesTo();
 
+  /**
+   * Concept documentation as Markdown source, or null when absent. Preserve the source in
+   * transport and render it as Markdown in documentation views.
+   */
   String getDocstring();
 }

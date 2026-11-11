@@ -33,6 +33,35 @@ so syntax inspection works independently of a Reasoner connection. Its `Markdown
 result is rendered by the IDE's existing Flexmark Markdown-to-BBCode adapter and AtlantaFX
 layout component. Missing URNs, services and results produce command errors.
 
+## Docstrings
+
+`KimConceptStatement.getDocstring()` and `KimModel.getDocstring()` contain Markdown source.
+Keep that source intact in semantic beans, metadata, indexes and service responses; render it
+at the documentation view rather than converting it to HTML in the service layer.
+
+The current paths are:
+
+- `LanguageAdapter.adaptConceptDefinition` copies the worldview declaration description into
+  `KimConceptStatementImpl.docstring`. `NavigableKimConceptStatement` delegates it unchanged.
+- `ReasonerService` stores concept docstrings as RDFS comments. `OWLMetadata` exposes those
+  comments in concept metadata; `CoreAliasDocumentation` preserves hosted core interpretations
+  and publishes their descriptions under `Metadata.DC_COMMENT`.
+- `SyntacticDocumentation` includes declaration docstrings in the Markdown information report;
+  `CoreAliasDocumentation.describe` includes alias interpretations in the Reasoner report.
+  The IDE's `CommandResult` already renders these reports as Markdown.
+- `ConceptCodelistBuilder` carries concept docstrings into codelist and entry descriptions.
+  `Indexer` copies concept/model docstrings into indexed descriptions.
+- Model beans and `NavigableKimModel` retain/delegate docstrings, but `LanguageAdapter.adaptModel`
+  still leaves their population to future literate programming support. There is currently no
+  model docstring documentation view in `klab-ide`.
+- In `klab-ide`, `ObservableCard` selects the first nonblank `DC_COMMENT`/`RDFS_COMMENT` and
+  renders it using `BBCodeNodeRenderer.fromMarkdown` and AtlantaFX `BBCodeParser.createLayout`.
+  `StyledKimToken.create` also carries `DC_COMMENT` into token descriptions; `Theme.semanticExpression`
+  renders these tooltip descriptions with the same Markdown support.
+
+Plain source editors and generic metadata inspection retain their source representation.
+Future model/concept documentation views should use the same Markdown renderer.
+
 ## Report contents and provenance
 
 Resources documents the adapted `KimConcept`/`KimObservable` properties, including types and

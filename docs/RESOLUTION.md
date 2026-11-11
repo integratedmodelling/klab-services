@@ -390,7 +390,7 @@ own cause and client messages. See [Provenance](PROVENANCE.md) and
 ## Observer-aware resolution contract
 
 **Agreed target behavior, not fully implemented.** Observer semantics are defined in
-[Observable expressions](OBSERVABLES.md#observer-perspective-contract). An explicit `observed as X`
+[Observable expressions](OBSERVABLES.md#8-observer-perspective-contract). An explicit `observed as X`
 query and a query with only a session/context observer are different requests even when their
 effective observer class is the same.
 
