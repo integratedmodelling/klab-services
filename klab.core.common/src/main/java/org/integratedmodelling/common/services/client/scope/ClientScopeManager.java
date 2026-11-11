@@ -167,6 +167,13 @@ public enum ClientScopeManager {
     }
   }
 
+  /** Disconnect one engine's peers while keeping the scheduler usable for the next login. */
+  public void disconnect(org.integratedmodelling.common.services.client.engine.EngineImpl engine) {
+    for (var scope : List.copyOf(scopes.values())) {
+      if (scope.getEngine() == engine) scope.closePeer();
+    }
+  }
+
   void closePeers() {
     // Closing a peer unregisters it. Snapshot the collection before doing local cleanup.
     for (var scope : List.copyOf(scopes.values())) {

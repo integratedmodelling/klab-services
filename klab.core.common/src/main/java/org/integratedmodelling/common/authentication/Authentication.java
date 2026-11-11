@@ -183,13 +183,14 @@ public enum Authentication {
       return Pair.of(new AnonymousUser(), Collections.emptyList());
     }
 
+    boolean validCertificate = certificate.isValid();
     if (certificate.getType() != KlabCertificate.Type.ENGINE) {
       throw new KlabAuthorizationException(
           "wrong certificate for an engine: cannot create identity of type "
               + certificate.getType());
     }
 
-    if (!certificate.isValid()) {
+    if (!validCertificate) {
       /*
        * expired or invalid certificate: throw away the identity, continue as anonymous.
        */

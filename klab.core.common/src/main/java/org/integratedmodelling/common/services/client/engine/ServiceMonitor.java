@@ -56,6 +56,22 @@ public class ServiceMonitor {
   private boolean handleAMQPService = false;
   private boolean handleLanguageServer = false;
   private volatile boolean stoppingLocalServices = false;
+  private volatile boolean closed;
+
+  /** Retire all identity-bound clients without stopping any service process. */
+  public void disconnect() {
+    closed = true;
+    localAuthenticationPackage = null;
+    serviceConsumers.clear();
+    engineConsumers.clear();
+    for (var client : clientSnapshot()) client.disconnect();
+    clients.clear();
+  }
+
+  public boolean hasActiveLocalServices() {
+    return !areLocalProcessesStopped() || clientSnapshot().stream()
+        .anyMatch(c -> c.isLocal() && c.status() != null && c.status().isAvailable());
+  }
   private volatile Thread languageServerShutdownHook;
   private volatile String localAuthenticationPackage;
 
@@ -153,7 +169,7 @@ public class ServiceMonitor {
 
   private void handleStatus(
       BaseServiceClient service, KlabService.ServiceStatus status, Boolean statusChanged) {
-    if (status == null) {
+    if (closed || status == null) {
       return;
     }
     clients.put(service, status);

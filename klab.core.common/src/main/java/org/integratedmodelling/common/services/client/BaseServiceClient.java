@@ -253,6 +253,12 @@ public abstract class BaseServiceClient implements KlabService {
   /**
    * Ask the service process to shut down without unregistering this client from status monitoring.
    */
+  /** Release this identity's client without sending a shutdown request to the service. */
+  public void disconnect() {
+    statusListeners.clear();
+    monitor.release(this);
+  }
+
   public boolean requestShutdown() {
     if (monitor.isLocal()) {
       // FIXME needs the admin user scope

@@ -69,6 +69,7 @@ import org.integratedmodelling.klab.modeler.views.controllers.*;
 public class ModelerImpl extends AbstractUIController implements Modeler, PropertyHolder {
 
   private final Map<String, ContextScope> contexts = new LinkedHashMap<>();
+  private final java.util.concurrent.atomic.AtomicBoolean replacingCertificate = new java.util.concurrent.atomic.AtomicBoolean();
   private SimpleWebServer httpServer = null;
   private File tempDirectory;
   private int serverPort;
@@ -98,6 +99,28 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             + capabilities.getServiceId()
             + ": "
             + message);
+  }
+
+  @Override
+  public UserScope installCertificate(File file) {
+    if (!replacingCertificate.compareAndSet(false, true)) {
+      throw new IllegalStateException("Certificate authentication is already in progress");
+    }
+    try {
+      if (engine() == null) authenticate();
+      return listenToUser(engine().installCertificate(file));
+    } finally {
+      // Failed installation may have restored the old identity into a new scope.
+      try {
+        if (engine() != null) {
+          listenToUser(engine().getOwner());
+          var owner = engine().getOwner();
+          contexts.entrySet().removeIf(e -> owner == null || e.getValue().getUser() != owner.getUser());
+        }
+      } finally {
+        replacingCertificate.set(false);
+      }
+    }
   }
 
   @Override

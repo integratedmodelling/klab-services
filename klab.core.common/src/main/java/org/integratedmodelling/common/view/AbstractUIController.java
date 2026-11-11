@@ -65,6 +65,10 @@ public abstract class AbstractUIController implements UIController {
   private final Map<UIReactor.Type, Object> views = new HashMap<>();
   private final Map<Object, PanelController<?, ?>> panelControllers = new HashMap<>();
   private Engine engine;
+  private UserScope listeningUser;
+  private String eventListener;
+  private String interactionListener;
+  private String notificationListener;
   private final List<VisualizationDescriptor> visualizationDescriptors =
       Collections.synchronizedList(new ArrayList<>());
 
@@ -173,7 +177,7 @@ public abstract class AbstractUIController implements UIController {
     return engine;
   }
 
-  public UserScope authenticate() {
+  public synchronized UserScope authenticate() {
 
     if (engine == null) {
       engine = createEngine();
@@ -181,9 +185,21 @@ public abstract class AbstractUIController implements UIController {
 
     var ret = engine.authenticate();
 
-    ret.onMessage(this::processEvent, Message.Queue.Events);
-    ret.onMessage(this::processInteraction, Message.Queue.UI);
-    ret.onMessage(
+    return listenToUser(ret);
+  }
+
+  protected synchronized UserScope listenToUser(UserScope ret) {
+    if (ret == listeningUser) return ret;
+    if (listeningUser != null) {
+      if (eventListener != null) listeningUser.unregisterMessageListener(eventListener);
+      if (interactionListener != null) listeningUser.unregisterMessageListener(interactionListener);
+      if (notificationListener != null) listeningUser.unregisterMessageListener(notificationListener);
+    }
+    listeningUser = ret;
+    if (ret == null) return null;
+    eventListener = ret.onMessage(this::processEvent, Message.Queue.Events);
+    interactionListener = ret.onMessage(this::processInteraction, Message.Queue.UI);
+    notificationListener = ret.onMessage(
         this::processNotification,
         Message.Queue.Info,
         Message.Queue.Errors,

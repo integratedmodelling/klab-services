@@ -46,7 +46,10 @@ public class EngineImpl implements Engine, PropertyHolder {
   private final AtomicBoolean online = new AtomicBoolean(false);
   private final AtomicBoolean booted = new AtomicBoolean(false);
   private final AtomicBoolean stopped = new AtomicBoolean(false);
-  private UserScope defaultUser;
+  private volatile UserScope defaultUser;
+  private final AtomicBoolean replacingCertificate = new AtomicBoolean();
+  private volatile long authenticationGeneration;
+  private final AtomicBoolean localServiceStartupRunning = new AtomicBoolean();
   private Pair<Identity, List<ServiceReference>> authData;
   private EngineAuthenticationResponse authenticationResponse;
   private final List<UserScope> users = new ArrayList<>();
@@ -159,28 +162,36 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public boolean startAuxiliaryServices(KlabService.Type... types) {
-    if (serviceMonitor == null || softwareStack == null || distributionTag == null) {
-      return false;
+    if (!localServiceStartupRunning.compareAndSet(false, true)) {
+      throw new IllegalStateException("Local service startup is already in progress");
     }
-    if (types != null) {
-      for (KlabService.Type type : types) {
-        if (type == KlabService.Type.LANGUAGE_SERVER) {
-          if (!serviceMonitor.startLSPServer(softwareStack, distributionTag, defaultUser)) {
-            return false;
-          }
-        } else if (type == KlabService.Type.DATABASE || type == KlabService.Type.AMQP_BROKER) {
-          if (!serviceMonitor.startAuxiliaryService(
-              softwareStack, distributionTag, type, defaultUser)) {
-            return false;
-          }
-        } else {
-          throw new UnsupportedOperationException(
-              "Auxiliary service type not yet supported: " + type);
-        }
+    try {
+      if (replacingCertificate.get()) throw new IllegalStateException("Certificate authentication is in progress");
+      if (serviceMonitor == null || softwareStack == null || distributionTag == null) {
+        return false;
       }
-      return true;
+      if (types != null) {
+        for (KlabService.Type type : types) {
+          if (type == KlabService.Type.LANGUAGE_SERVER) {
+            if (!serviceMonitor.startLSPServer(softwareStack, distributionTag, defaultUser)) {
+              return false;
+            }
+          } else if (type == KlabService.Type.DATABASE || type == KlabService.Type.AMQP_BROKER) {
+            if (!serviceMonitor.startAuxiliaryService(
+                softwareStack, distributionTag, type, defaultUser)) {
+              return false;
+            }
+          } else {
+            throw new UnsupportedOperationException(
+                "Auxiliary service type not yet supported: " + type);
+          }
+        }
+        return true;
+      }
+      return false;
+    } finally {
+      localServiceStartupRunning.set(false);
     }
-    return false;
   }
 
   @Override
@@ -206,11 +217,19 @@ public class EngineImpl implements Engine, PropertyHolder {
 
   @Override
   public Map<KlabService.Type, KlabService> startLocalServices() {
-    // this will force a re-advertising of services when they all come up, as long as the engine
-    // becomes operational again only when the 4 local are available
-    onlineStatusNotified = false;
-    scopeAdvertisements.clear();
-    return serviceMonitor.startLocalServices(softwareStack, distributionTag, defaultUser);
+    if (!localServiceStartupRunning.compareAndSet(false, true)) {
+      throw new IllegalStateException("Local service startup is already in progress");
+    }
+    try {
+      if (replacingCertificate.get()) throw new IllegalStateException("Certificate authentication is in progress");
+      // this will force a re-advertising of services when they all come up, as long as the engine
+      // becomes operational again only when the 4 local are available
+      onlineStatusNotified = false;
+      scopeAdvertisements.clear();
+      return serviceMonitor.startLocalServices(softwareStack, distributionTag, defaultUser);
+    } finally {
+      localServiceStartupRunning.set(false);
+    }
   }
 
   @Override
@@ -233,23 +252,7 @@ public class EngineImpl implements Engine, PropertyHolder {
       this.defaultUser = authenticate();
     }
 
-    // This instruments the user scope with the federation queues. Only meant for federation-wide
-    // messaging. TODO check which queues are used and whether they should be persistent or not.
-    // TODO probably the federation queue should be independent and temporary. Also check that
-    // the session scope do not get instrumented at client side.
-    var federation =
-        this.defaultUser
-            .getIdentity()
-            .getData()
-            .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
-
-    /* No federation even with local services, which will message to downstream scopes */
-    if (federation != null
-        && !Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
-        && this.defaultUser instanceof MessagingChannelImpl messagingChannel) {
-      messagingChannel.setupMessaging(
-          federation, federation.getId(), messagingChannel.defaultQueues());
-    }
+    setupUserMessaging();
 
     this.softwareStack = Stack.of("klab", settings);
 
@@ -280,6 +283,27 @@ public class EngineImpl implements Engine, PropertyHolder {
     // TODO see if we need the local federation and if so, ensure the local broker is running
   }
 
+  private void setupUserMessaging() {
+    // This instruments the user scope with the federation queues. Only meant for federation-wide
+    // messaging. TODO check which queues are used and whether they should be persistent or not.
+    // TODO probably the federation queue should be independent and temporary. Also check that
+    // the session scope do not get instrumented at client side.
+    var federation =
+        this.defaultUser
+            .getIdentity()
+            .getData()
+            .get(UserIdentity.FEDERATION_DATA_PROPERTY, Federation.class);
+
+    /* No federation even with local services, which will message to downstream scopes */
+    if (federation != null
+        && !Federation.LOCAL_FEDERATION_ID.equals(federation.getId())
+        && this.defaultUser instanceof MessagingChannelImpl messagingChannel) {
+      messagingChannel.setupMessaging(
+          federation, federation.getId(), messagingChannel.defaultQueues());
+    }
+
+  }
+
   private void notifyLocalEngine(Engine.Status status) {
 
     ensureRuntimeAuxiliariesForLocalRuntime(status);
@@ -297,6 +321,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   private void ensureRuntimeAuxiliariesForLocalRuntime(Engine.Status status) {
+    if (replacingCertificate.get()) return;
     if (serviceMonitor == null || softwareStack == null || distributionTag == null) {
       return;
     }
@@ -307,6 +332,11 @@ public class EngineImpl implements Engine, PropertyHolder {
       }
     }
     if (runtimeAuxiliaryCheckRunning.compareAndSet(false, true)) {
+      // Pair with the install guard without taking engine locks in status callbacks.
+      if (replacingCertificate.get()) {
+        runtimeAuxiliaryCheckRunning.set(false);
+        return;
+      }
       Thread.ofVirtual()
           .name("klab-runtime-auxiliary-ensure")
           .start(
@@ -405,7 +435,7 @@ public class EngineImpl implements Engine, PropertyHolder {
   }
 
   @Override
-  public UserScope authenticate(KlabCertificate certificate) {
+  public synchronized UserScope authenticate(KlabCertificate certificate) {
     if (this.defaultUser != null) {
       return this.defaultUser;
     }
@@ -450,17 +480,100 @@ public class EngineImpl implements Engine, PropertyHolder {
     this.defaultUser = new ClientUserScope((UserIdentity) authData.getFirst(), this);
 
     this.users.add(this.defaultUser);
+    long generation = authenticationGeneration;
     this.serviceMonitor =
         new ServiceMonitor(
             this.defaultUser,
             settings,
             true,
             authData.getSecond(),
-            this::notifyLocalService,
-            this::notifyLocalEngine);
+            (service, status) -> {
+              synchronized (EngineImpl.this) {
+                if (generation == authenticationGeneration) notifyLocalService(service, status);
+              }
+            },
+            status -> {
+              synchronized (EngineImpl.this) {
+                if (generation == authenticationGeneration) notifyLocalEngine(status);
+              }
+            });
     this.serviceMonitor.setLocalAuthenticationResponse(this.authenticationResponse);
 
     return this.defaultUser;
+  }
+
+  @Override
+  public UserScope installCertificate(java.io.File file) {
+    if (!replacingCertificate.compareAndSet(false, true)) {
+      throw new IllegalStateException("Certificate authentication is already in progress");
+    }
+    try {
+      synchronized (this) {
+        if (localServiceStartupRunning.get() || runtimeAuxiliaryCheckRunning.get()
+            || (serviceMonitor != null && serviceMonitor.hasActiveLocalServices())) {
+          throw new IllegalStateException("Stop all local services before replacing the certificate; their authentication would be compromised");
+        }
+        if (file == null || !org.integratedmodelling.common.authentication.CertificateInstallation.accepts(file.toPath())) {
+          throw new IllegalArgumentException("Drop one readable file named klab.cert or starting with klab.cert");
+        }
+        var certificate = org.integratedmodelling.common.authentication.KlabCertificateImpl.createFromFile(file);
+        try {
+          if (!certificate.isValid() || certificate.getType() != KlabCertificate.Type.ENGINE
+              || certificate.getProperty(KlabCertificate.KEY_CERTIFICATE) == null) {
+            throw new IllegalArgumentException("Invalid certificate contents");
+          }
+        } catch (RuntimeException invalid) {
+          throw new IllegalArgumentException("The file is not a valid k.LAB engine certificate", invalid);
+        }
+        var installation = org.integratedmodelling.common.authentication.CertificateInstallation.install(
+            file.toPath(), certificateDirectory());
+        boolean anonymous = settings.get(Setting.LOGIN_ANONYMOUSLY, Boolean.class);
+        try {
+          disconnectAuthentication();
+          settings.set(Setting.LOGIN_ANONYMOUSLY, false).get();
+          var result = authenticate();
+          setupUserMessaging();
+          return result;
+        } catch (Exception failure) {
+          try {
+            disconnectAuthentication();
+            installation.restore();
+            settings.set(Setting.LOGIN_ANONYMOUSLY, anonymous).get();
+            authenticate();
+            setupUserMessaging();
+          } catch (Exception recovery) {
+            failure.addSuppressed(recovery);
+          }
+          throw new IllegalStateException("Certificate authentication failed; the previous certificate was retained as a backup", failure);
+        }
+      }
+    } catch (java.io.IOException e) {
+      throw new IllegalStateException("Cannot install the certificate", e);
+    } finally {
+      replacingCertificate.set(false);
+    }
+  }
+
+  protected java.nio.file.Path certificateDirectory() {
+    return Configuration.INSTANCE.getDataPath().toPath();
+  }
+
+  private void disconnectAuthentication() {
+    authenticationGeneration++;
+    scopeAdvertisements.clear();
+    ClientScopeManager.INSTANCE.disconnect(this);
+    if (serviceMonitor != null) serviceMonitor.disconnect();
+    for (var user : List.copyOf(users)) user.close();
+    users.clear();
+    defaultUser = null;
+    serviceMonitor = null;
+    authData = null;
+    authenticationResponse = null;
+    federationData = null;
+    worldview = null;
+    lastWorldviewUpdate = 0;
+    onlineStatusNotified = false;
+    online.set(false);
   }
 
   @Override

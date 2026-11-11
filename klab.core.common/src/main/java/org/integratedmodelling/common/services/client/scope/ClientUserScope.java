@@ -63,6 +63,12 @@ public class ClientUserScope extends AbstractClientScope implements UserScope {
   }
 
   @Override
+  public void close() {
+    disconnectMessaging();
+    super.close();
+  }
+
+  @Override
   public ContextScope connect(URL digitalTwinURL) {
     return connect(DigitalTwin.Configuration.create(digitalTwinURL, this).validate(this));
   }

@@ -43,6 +43,11 @@ public interface Modeler extends UIController {
    */
   UserScope authenticate();
 
+  /** Install a certificate and replace the authenticated user, reconnecting UI listeners. Blocking. */
+  default UserScope installCertificate(File certificateFile) {
+    throw new UnsupportedOperationException("Certificate replacement is not supported");
+  }
+
   /**
    * User action that obtains or find an asset from a URN and tells the modeler to observe it,
    * whatever that means. The asset should be classified and only valid contexts should be handled.

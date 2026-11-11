@@ -146,6 +146,15 @@ public interface Engine /*extends KlabService*/ {
   UserScope authenticate(KlabCertificate certificate);
 
   /**
+   * Install a downloaded engine certificate in the configuration directory and authenticate anew.
+   * Keeps a uniquely named backup of the old certificate. Rejects concurrent replacement and
+   * running or transitioning local services. Blocking: invoke away from the UI thread.
+   */
+  default UserScope installCertificate(java.io.File certificateFile) {
+    throw new UnsupportedOperationException("Certificate replacement is not supported");
+  }
+
+  /**
    * The engine has booted successfully and it's available for use.
    *
    * @return

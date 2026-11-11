@@ -25,7 +25,8 @@ public class AuthenticationViewControllerImpl extends AbstractUIViewController<A
 
     @Override
     public void installCertificate(File certificateFile) {
-
+        var user = ((org.integratedmodelling.klab.api.view.modeler.Modeler) getController()).installCertificate(certificateFile);
+        if (view() != null) view().notifyUser(user.getUser());
     }
 
     @Override
