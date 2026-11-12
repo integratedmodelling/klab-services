@@ -1,0 +1,10 @@
+.knowledge-ui { color: var(--klab-ink); font-family: var(--klab-font); font-size: 13px; }
+.knowledge-ui button, .knowledge-ui select, .knowledge-ui input { font: inherit; color: inherit; }
+.knowledge-ui button, .knowledge-ui select { background: var(--klab-surface); border: 1px solid var(--klab-field-border); border-radius: var(--klab-radius); min-height: 32px; padding: 5px 10px; cursor: pointer; }
+.knowledge-ui button:hover:not(:disabled) { background: var(--klab-selection); }
+.knowledge-ui button:active:not(:disabled) { transform: translateY(1px); }
+.knowledge-ui button:disabled { opacity: .5; cursor: default; }
+.knowledge-ui :is(button,input,select,summary):focus-visible { outline: 2px solid var(--klab-action); outline-offset: 2px; }
+.knowledge-ui input { min-width: 0; background: var(--klab-surface); border: 1px solid var(--klab-field-border); border-radius: var(--klab-radius); padding: 8px; }
+.knowledge-error { color: var(--klab-danger); background: var(--klab-danger-bg); padding: 10px; }
+@media (pointer: coarse) { .knowledge-ui button, .knowledge-ui select { min-height: 44px; } }

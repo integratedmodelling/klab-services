@@ -1,19 +1,25 @@
 <script setup lang="ts">
+import { ref, shallowRef } from "vue";
 import type { DashboardContext } from "@klab-dashboard/types";
+import SemanticComposer from "@klab-dashboard/components/SemanticComposer.vue";
+import WorldviewBrowser from "@klab-dashboard/components/WorldviewBrowser.vue";
+import type { SemanticResponse, WorldviewCatalog } from "@klab-dashboard/knowledge/model";
 
 defineProps<{ context: DashboardContext }>();
+const catalog = shallowRef<WorldviewCatalog>(), focus = ref("");
+function explore(response: SemanticResponse) {
+  const concept = response.observable?.semantics || response.currentConcept;
+  if (concept?.urn) focus.value = concept.urn;
+}
 </script>
 
 <template>
-  <q-card flat class="workspace-stub">
-    <q-icon name="account_tree" size="52px" color="secondary" />
-    <h2>Knowledge explorer extension point</h2>
-    <p>Replace this full-page stub with namespace, ontology, concept, and reasoning workflows.</p>
-    <q-chip outline color="secondary">{{ context.config.serviceType }}</q-chip>
-  </q-card>
+  <div class="reasoner-workspace">
+    <SemanticComposer :api="context.api" :authorities="catalog?.authorities" @select="explore" @change="explore" />
+    <WorldviewBrowser :api="context.api" :focus="focus" @loaded="catalog = $event" />
+  </div>
 </template>
 
 <style scoped>
-.workspace-stub { min-height: 320px; display: grid; place-content: start; justify-items: start; padding: 32px; color: var(--klab-ink); text-align: left; background: var(--klab-surface); border: 1px solid var(--klab-border); border-radius: var(--klab-radius); }
-h2 { margin: 18px 0 8px; font-size: 21px; } p { max-width: 620px; margin: 0 0 18px; color: var(--klab-muted); }
+.reasoner-workspace { display: grid; gap: 12px; min-width: 0; }
 </style>

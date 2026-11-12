@@ -40,10 +40,10 @@ public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
         .page(
             "knowledge-explorer",
             "Knowledge explorer",
-            "Full-page semantic knowledge and reasoning tools.",
+            "Explore worldview declarations and compose semantic expressions.",
             "reasoner-workspace",
             100,
-            false);
+            true);
   }
 
   @Override

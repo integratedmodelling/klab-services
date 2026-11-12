@@ -23,6 +23,16 @@ public class AssistController {
 
   @Autowired ReasonerServer reasoner;
 
+  @GetMapping(value = ServicesAPI.REASONER.WORLDVIEW_EXPLORER, produces = "application/json")
+  @Operation(summary = "Browse the loaded worldview declaration hierarchy")
+  public org.springframework.http.ResponseEntity<org.integratedmodelling.klab.api.services.reasoner.objects.WorldviewExplorerCatalog>
+      worldviewExplorer(java.security.Principal principal) {
+    AuthoritySearchController.authorizedScope(principal);
+    return org.springframework.http.ResponseEntity.ok()
+        .cacheControl(org.springframework.http.CacheControl.noStore())
+        .body(reasoner.klabService().worldviewExplorerCatalog());
+  }
+
   /**
    * Perform guided semantic search, composing a valid logical expression incrementally
    */

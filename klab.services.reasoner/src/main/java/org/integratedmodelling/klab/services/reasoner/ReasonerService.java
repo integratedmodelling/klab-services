@@ -171,6 +171,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private final IntelligentMap<Set<Emergence>> emergence;
   private ObservationReasoner observationReasoner;
   private volatile Worldview worldview;
+
+  /** A small, parameter-free source hierarchy for the web knowledge explorer. */
+  public org.integratedmodelling.klab.api.services.reasoner.objects.WorldviewExplorerCatalog
+      worldviewExplorerCatalog() {
+    return org.integratedmodelling.klab.api.services.reasoner.objects.WorldviewExplorerCatalog.capture(worldview);
+  }
   private volatile org.integratedmodelling.klab.services.reasoner.internal.AuthoredVocabulary
       authoredVocabulary;
   private volatile org.integratedmodelling.klab.services.reasoner.owl.ConsequenceRuleIndex

@@ -25,6 +25,18 @@
   --klab-radius: 4px;
   --klab-content-width: 1280px;
   --klab-gutter: 32px;
+  --semantic-QUALITY: #237238;
+  --semantic-SUBJECT: #935016;
+  --semantic-PROCESS: #ad3434;
+  --semantic-TRAIT: #2456b8;
+  --semantic-ROLE: #2456b8;
+  --semantic-RELATIONSHIP: #795d08;
+  --semantic-EVENT: #716311;
+  --semantic-EXTENT: #007878;
+  --semantic-CONFIGURATION: #007878;
+  --semantic-DOMAIN: var(--klab-ink);
+  --semantic-UNKNOWN: var(--klab-muted);
+  --semantic-ERROR: var(--klab-danger);
 }
 :root[data-theme="dark"], [data-theme="dark"] {
   color-scheme: dark;
@@ -46,6 +58,15 @@
   --klab-danger-bg: #452c2a;
   --klab-overlay: rgba(0, 0, 0, .62);
   --klab-shadow: 0 12px 36px rgba(0, 0, 0, .3);
+  --semantic-QUALITY: #8fd5a5;
+  --semantic-SUBJECT: #ecb377;
+  --semantic-PROCESS: #ffaaa1;
+  --semantic-TRAIT: #9bbdff;
+  --semantic-ROLE: #9bbdff;
+  --semantic-RELATIONSHIP: #e4c76a;
+  --semantic-EVENT: #ded183;
+  --semantic-EXTENT: #7ad3d0;
+  --semantic-CONFIGURATION: #7ad3d0;
 }
 :root {
   --q-primary: var(--klab-action);

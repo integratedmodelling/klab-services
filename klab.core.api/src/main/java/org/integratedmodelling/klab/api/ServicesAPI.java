@@ -288,6 +288,7 @@ public interface ServicesAPI {
     String DECLARE_OBSERVABLE = API_BASE + "/declare/observable";
 
     String SEMANTIC_SEARCH = API_BASE + "/semanticSearch";
+    String WORLDVIEW_EXPLORER = API_BASE + "/worldview/explorer";
     String VALIDATE_DOCUMENT = API_BASE + "/validate/document";
     String SEMANTIC_DEPENDENCIES = API_BASE + "/semantic/dependencies";
     String SEMANTIC_CYCLE_BEGIN = API_BASE + "/semantic/cycle/begin";
