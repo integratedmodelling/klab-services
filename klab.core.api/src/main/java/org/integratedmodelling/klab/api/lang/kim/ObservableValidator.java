@@ -69,6 +69,10 @@ public class ObservableValidator {
               EnumSet.of(SemanticType.EVENT),
               "The 'proportion of' operator must target an event"),
           new UnaryOperatorRule(
+              UnarySemanticOperator.CHANGED,
+              EnumSet.of(SemanticType.QUALITY),
+              "The 'changed' operator must target a quality"),
+          new UnaryOperatorRule(
               UnarySemanticOperator.TYPE,
               // TODO check - may need to become stricter (IDENTITY only)?
               EnumSet.of(SemanticType.PREDICATE),
@@ -210,6 +214,14 @@ public class ObservableValidator {
   }
 
   private void validateUnaryOperator(KimConcept concept, List<Notification> notifications) {
+    if (concept.getChangedFrom() != null || concept.getChangedTo() != null) {
+      if (concept.getSemanticModifier() != UnarySemanticOperator.CHANGED
+          || concept.getChangedFrom() == null || concept.getChangedTo() == null)
+        notifications.add(Notification.error("changed requires both from and to endpoints", concept));
+      var target = concept.getObservable();
+      if (hasKnownType(target) && !target.is(SemanticType.CLASS))
+        notifications.add(Notification.error("changed from/to requires a 'type of' categorical quality", concept));
+    }
     var operation = concept.semanticOperation();
     if (operation == null) {
       return;

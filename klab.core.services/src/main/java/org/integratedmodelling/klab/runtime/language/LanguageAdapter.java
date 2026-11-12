@@ -397,13 +397,19 @@ public class LanguageAdapter {
       if (semantics.getUnaryOperator().getSecond() != null
           && !semantics.getUnaryOperator().getSecond().isEmpty()) {
 
-        ret.setComparisonConcept(
-            adaptSemanticSequence(
+        var firstArgument = adaptSemanticSequence(
                 asTokens(
                     semantics.getUnaryOperator().getSecond().getFirst(),
                     namespace,
                     projectName,
-                    documentClass)));
+                    documentClass));
+        if (ret.getSemanticModifier() == UnarySemanticOperator.CHANGED) {
+          var arguments = semantics.getUnaryOperator().getSecond();
+          if (arguments.size() != 2)
+            throw new IllegalArgumentException("changed requires both from and to endpoints");
+          ret.setChangedFrom(firstArgument);
+          ret.setChangedTo(adaptSemanticSequence(asTokens(arguments.get(1), namespace, projectName, documentClass)));
+        } else ret.setComparisonConcept(firstArgument);
       }
     }
 

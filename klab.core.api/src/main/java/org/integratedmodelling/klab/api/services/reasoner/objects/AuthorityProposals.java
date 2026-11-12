@@ -72,6 +72,7 @@ public final class AuthorityProposals {
     }
     for (var child : Arrays.asList(concept.getObservable(), concept.getInherent(), concept.getGoal(),
         concept.getCausant(), concept.getCaused(), concept.getCompresent(), concept.getComparisonConcept(),
+        concept.getChangedFrom(), concept.getChangedTo(),
         concept.getRelationshipSource(), concept.getRelationshipTarget(), concept.getCooccurrent(), concept.getAdjacent()))
       collect(child, identities, seen);
     for (var child : concept.getAbout()) collect(child, identities, seen);

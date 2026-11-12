@@ -309,6 +309,8 @@ public class CoreOntology {
     public static final String CREATES_PROPERTY = "odo:creates";
     public static final String CHANGES_PROPERTY = "odo:changes";
     public static final String CHANGED_PROPERTY = "odo:changed";
+    public static final String CHANGED_FROM_PROPERTY = "odo:changedFrom";
+    public static final String CHANGED_TO_PROPERTY = "odo:changedTo";
 
     /**
      * Core observables. TODO the root domain of the worldview should define ALL the core types or

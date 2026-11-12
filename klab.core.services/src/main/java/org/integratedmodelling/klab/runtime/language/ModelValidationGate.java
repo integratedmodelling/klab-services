@@ -835,7 +835,9 @@ public final class ModelValidationGate {
     if (concept.isPattern() || concept.is(SemanticType.ANY)
         || concept.is(SemanticType.ALL) || concept.is(SemanticType.NONE)) return true;
     if (unboundConcept(concept.getObservable(), visited)
-        || unboundConcept(concept.getComparisonConcept(), visited)) return true;
+        || unboundConcept(concept.getComparisonConcept(), visited)
+        || unboundConcept(concept.getChangedFrom(), visited)
+        || unboundConcept(concept.getChangedTo(), visited)) return true;
     for (var trait : concept.getTraits()) if (unboundConcept(trait, visited)) return true;
     for (var role : concept.getRoles()) if (unboundConcept(role, visited)) return true;
     for (var operand : concept.getOperands()) if (unboundConcept(operand, visited)) return true;

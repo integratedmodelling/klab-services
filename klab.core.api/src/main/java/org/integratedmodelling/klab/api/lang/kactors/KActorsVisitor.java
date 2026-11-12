@@ -2320,6 +2320,8 @@ public class KActorsVisitor {
     visitSemanticConcept(concept.getCooccurrent(), context);
     visitSemanticConcept(concept.getAdjacent(), context);
     visitSemanticConcept(concept.getComparisonConcept(), context);
+    visitSemanticConcept(concept.getChangedFrom(), context);
+    visitSemanticConcept(concept.getChangedTo(), context);
     visitSemanticConcept(concept.getRelationshipSource(), context);
     visitSemanticConcept(concept.getRelationshipTarget(), context);
     for (var target : safe(concept.getAbout())) visitSemanticConcept(target, context);

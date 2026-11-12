@@ -464,14 +464,30 @@ and inference behavior come from the worldview and Reasoner.
 ### 4.4 Explicit change
 
 ```observable
-changed ecology:LandCoverClass;
-changed ecology:LandCoverClass
+changed climate:AirTemperature;
+changed (type of ecology:LandCover)
   from ecology:Forest
   to ecology:UrbanArea;
 ```
 
-This differs from `change in X`: `changed` describes a transition and may
-constrain its endpoints.
+`changed X` takes a **quality** and produces an **event**: an occurrence in
+which that quality changes. It accepts numerical qualities as well as categorical
+qualities. In contrast, `change in X` produces a process; `change rate of X`
+produces a numerical quality.
+
+The optional `from A to B` specialization requires a **`type of` categorical
+quality**. Both endpoints must be supplied, and both must specialize the predicate
+classified by that quality. In this hypothetical example, `ecology:LandCover` is
+a predicate and `ecology:Forest` and `ecology:UrbanArea` are its specializations.
+Endpoints are categorical concepts, not numeric thresholds or literal values.
+
+`changed X from A to B` is a subclass of `changed X`. Requesting a specialized
+transition also creates its generic parent if needed, in the same synchronized
+construction. Repeated requests reuse the same concepts; reversing the endpoints
+defines a different transition. The generic event describes the target quality
+and inherits its bearer context. Specialized events inherit these restrictions
+and add distinct OWL `odo:changedFrom` and `odo:changedTo` restrictions. These
+expressions define event types; they do not assert that an event has occurred.
 
 ### 4.5 Proportion, percentage, and ratio
 

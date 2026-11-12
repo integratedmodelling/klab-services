@@ -43,6 +43,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
   private KimConcept caused;
   private KimConcept compresent;
   private KimConcept comparisonConcept;
+  private KimConcept changedFrom;
+  private KimConcept changedTo;
   private String authorityTerm;
   private String authority;
   private UnarySemanticOperator semanticModifier;
@@ -91,6 +93,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.caused = other.caused;
     this.compresent = other.compresent;
     this.comparisonConcept = other.comparisonConcept;
+    this.changedFrom = other.changedFrom;
+    this.changedTo = other.changedTo;
     this.authorityTerm = other.authorityTerm;
     this.authority = other.authority;
     this.semanticModifier = other.semanticModifier;
@@ -180,6 +184,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     ret.caused = map(caused, childPath(path, "caused"), transform);
     ret.compresent = map(compresent, childPath(path, "compresent"), transform);
     ret.comparisonConcept = map(comparisonConcept, childPath(path, "comparisonConcept"), transform);
+    ret.changedFrom = map(changedFrom, childPath(path, "changedFrom"), transform);
+    ret.changedTo = map(changedTo, childPath(path, "changedTo"), transform);
     ret.relationshipSource = map(relationshipSource, childPath(path, "relationshipSource"), transform);
     ret.relationshipTarget = map(relationshipTarget, childPath(path, "relationshipTarget"), transform);
     ret.cooccurrent = map(cooccurrent, childPath(path, "cooccurrent"), transform);
@@ -470,6 +476,24 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     this.compresent = compresent;
   }
 
+  @Override
+  public KimConcept getChangedFrom() {
+    return changedFrom;
+  }
+
+  @Override
+  public KimConcept getChangedTo() {
+    return changedTo;
+  }
+
+  public void setChangedFrom(KimConcept value) {
+    changedFrom = value;
+  }
+
+  public void setChangedTo(KimConcept value) {
+    changedTo = value;
+  }
+
   public void setComparisonConcept(KimConcept comparisonConcept) {
     this.comparisonConcept = comparisonConcept;
   }
@@ -569,6 +593,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     if (this.semanticModifier != null) {
       ret.semanticModifier = null;
       ret.comparisonConcept = null;
+      ret.changedFrom = null;
+      ret.changedTo = null;
       ret.type = this.argumentType;
     }
     ret.resetDefinition();
@@ -583,6 +609,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     ret.type = operator.getApplicableType(operand.getType()); // TODO check
     ret.observable = operand;
     ret.comparisonConcept = comparisonConcept;
+    ret.changedFrom = null;
+    ret.changedTo = null;
     ret.resetDefinition();
     return ret;
   }
@@ -818,7 +846,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         && name == null && semanticModifier == null && selector() == null && !negated
         && traits.isEmpty() && roles.isEmpty() && getModifiers().isEmpty()
         && about.isEmpty() && valueOperators.isEmpty() && operands.isEmpty()
-        && comparisonConcept == null && portionIdentity == null && wholeIdentity == null && authority == null && authorityTerm == null) {
+        && comparisonConcept == null && changedFrom == null && changedTo == null && portionIdentity == null && wholeIdentity == null && authority == null && authorityTerm == null) {
       this.urn = child.finalizeDefinition();
       this.contextualization = Contextualization.forSemantics(this);
       return this.urn;
@@ -843,6 +871,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             .append(semanticModifier.declaration[1])
             .append(" ")
             .append(((KimConceptImpl) comparisonConcept).finalizeDefinition());
+      }
+      if (changedFrom != null || changedTo != null) {
+        if (semanticModifier != UnarySemanticOperator.CHANGED || changedFrom == null || changedTo == null)
+          throw new IllegalStateException("changed requires both from and to endpoints");
+        ret.append(" from ").append(((KimConceptImpl) changedFrom).computeUrnAndParenthesize())
+            .append(" to ").append(((KimConceptImpl) changedTo).computeUrnAndParenthesize());
       }
       main = ret.toString();
       ret = new StringBuilder();
@@ -1175,6 +1209,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
       if (comparisonConcept != null) {
         appender.append(semanticModifier.declaration[1], LexicalRole.PREFIX_SEMANTIC_OPERATOR);
         comparisonConcept.format(appender);
+      }
+      if (changedFrom != null && changedTo != null) {
+        appender.append("from", LexicalRole.PREFIX_SEMANTIC_OPERATOR);
+        changedFrom.format(appender);
+        appender.append("to", LexicalRole.PREFIX_SEMANTIC_OPERATOR);
+        changedTo.format(appender);
       }
     } else {
       if (name != null) {

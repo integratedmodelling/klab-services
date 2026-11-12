@@ -84,7 +84,7 @@ public final class SemanticLabels {
     String prefix = switch (operator) {
       case COUNT -> "Number of";
       case RATE -> "Rate of change of";
-      case CHANGED -> "Change in";
+      case CHANGED -> "Changed";
       default -> sentence(operator.declaration[0]);
     };
     String label = prefix + " " + lower(operator == UnarySemanticOperator.COUNT ? plural(operand) : operand);

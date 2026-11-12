@@ -109,6 +109,11 @@ public interface KimConcept extends KlabStatement {
 
   KimConcept getComparisonConcept();
 
+  /** Optional paired categorical endpoints of the CHANGED event operator. */
+  KimConcept getChangedFrom();
+
+  KimConcept getChangedTo();
+
   String getAuthorityTerm();
 
   String getAuthority();

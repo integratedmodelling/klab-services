@@ -87,6 +87,8 @@ public final class ExpressionStatus {
           || isSubjective(c.getOperands(), leafTypes, visited)
           || isSubjective(c.getModifiers(), leafTypes, visited)
           || isSubjective(c.getComparisonConcept(), leafTypes, visited)
+          || isSubjective(c.getChangedFrom(), leafTypes, visited)
+          || isSubjective(c.getChangedTo(), leafTypes, visited)
           || isSubjective(c.getParent(), leafTypes, visited)
           || isSubjective(c.getValueOperators(), leafTypes, visited);
     }

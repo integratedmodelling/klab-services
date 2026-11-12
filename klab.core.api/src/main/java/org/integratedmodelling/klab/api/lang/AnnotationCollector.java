@@ -53,6 +53,8 @@ public final class AnnotationCollector {
     if (syntax.getWholeIdentity() != null) components.add(syntax.getWholeIdentity());
     for (var modifier : syntax.getModifiers()) components.add(modifier.getSecond());
     if (syntax.getComparisonConcept() != null) components.add(syntax.getComparisonConcept());
+    if (syntax.getChangedFrom() != null) components.add(syntax.getChangedFrom());
+    if (syntax.getChangedTo() != null) components.add(syntax.getChangedTo());
     components.sort(Comparator.comparingInt(KimConcept::getOffsetInDocument));
     for (var component : components.reversed()) {
       result = merge(result, collect(component, concepts, visiting));

@@ -703,7 +703,7 @@ semantic category and explain the new observable's dependence and bearer/context
 | `level of X` | quantifiable | ordered class quality | Produces an ordering/discretization; define level categories or thresholds separately. |
 | `type of X` | identity/trait predicate | enumerable class quality | Reifies a classification space as an observable result; retain the source identity taxonomy. |
 | `change in X` | quality | process | Open-ended change in a quality. Identify bearer and temporal context. |
-| `changed X [from A] [to B]` | quality | event | Bounded transition, optionally constrained by endpoints; distinct from ongoing change. |
+| `changed X [from A to B]` | quality; endpoints require a `type of` categorical quality | event | An occurrence of change in X. Supply both categorical endpoints together; each must specialize the classified predicate. The specialized event is a subclass of `changed X`. |
 | `change rate of X` | quality | rate quality | Requires a temporal reference and a quality for which rate is meaningful. |
 | `proportion X in Y` | trait or quantifiable | relative quantity | `Y` is the whole/reference; current syntax has no `of` after `proportion`. |
 | `percentage X in Y` | trait or quantifiable | percentage quality | Same semantics as proportion with percentage representation. |
@@ -711,6 +711,18 @@ semantic category and explain the new observable's dependence and bearer/context
 | `value of X [over Y]` | observable/configuration | value quality | State valuing subject/agent, criteria, and optional comparison/beneficiary. |
 | `monetary value of X [over Y]` | observable/configuration | monetary value quality | State currency/trading system, reference year where represented, agent, and criteria. |
 | `not X` | deniable attribute | negated predicate | Valid only when the worldview declares the attribute deniable; absence of evidence is not negation. |
+
+For `changed`, the generic form accepts any quality, including a numerical one:
+`changed climate:AirTemperature`. Categorical specialization uses, for example,
+`changed (type of ecology:LandCover) from ecology:Forest to ecology:UrbanArea`,
+where Forest and UrbanArea specialize the LandCover predicate. Endpoints are concepts
+in that classification space, not literal values or numeric thresholds. Requesting
+the specialized event also creates `changed (type of ecology:LandCover)` if needed,
+in the same synchronized construction. Repeated requests reuse the event types;
+reversing endpoints denotes a different transition. OWL preserves the target quality
+and bearer context on the generic event and directed `odo:changedFrom` and
+`odo:changedTo` restrictions on its specialization. An event concept does not assert
+that a transition has occurred. See [the observable contract](../docs/OBSERVABLES.md#44-explicit-change).
 
 Additional rules:
 

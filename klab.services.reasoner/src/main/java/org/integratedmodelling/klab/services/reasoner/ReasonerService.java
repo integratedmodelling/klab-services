@@ -5503,7 +5503,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       if (concept.getComparisonConcept() != null) {
         other = declareInternal(concept.getComparisonConcept(), ontology, monitor);
       }
-      builder.as(
+      if (concept.getSemanticModifier() == UnarySemanticOperator.CHANGED
+          && (concept.getChangedFrom() != null || concept.getChangedTo() != null)) {
+        if (concept.getChangedFrom() == null || concept.getChangedTo() == null)
+          throw new KlabValidationException("changed requires both from and to endpoints");
+        builder.as(concept.getSemanticModifier(),
+            declareInternal(concept.getChangedFrom(), ontology, monitor),
+            declareInternal(concept.getChangedTo(), ontology, monitor));
+      } else builder.as(
           concept.getSemanticModifier(), other == null ? (Concept[]) null : new Concept[] {other});
     }
     // Unary operators wrap the full operand, including its own collectivity. This flag belongs

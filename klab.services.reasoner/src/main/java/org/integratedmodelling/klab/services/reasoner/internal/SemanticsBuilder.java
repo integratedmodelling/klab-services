@@ -205,7 +205,12 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     syntax.setType(transformed == null ? EnumSet.copyOf(operand.getType()) : transformed);
     if (transformed == null) syntax.setCollective(operand.isCollective());
     syntax.setSemanticModifier(type);
-    if (participants != null && participants.length > 0) {
+    if (type == UnarySemanticOperator.CHANGED && participants != null && participants.length > 0) {
+      if (participants.length != 2 || participants[0] == null || participants[1] == null)
+        throw new KlabValidationException("changed requires both from and to endpoints");
+      syntax.setChangedFrom(conceptSyntax(participants[0].getUrn()));
+      syntax.setChangedTo(conceptSyntax(participants[1].getUrn()));
+    } else if (participants != null && participants.length > 0) {
       syntax.setComparisonConcept(conceptSyntax(participants[0].getUrn()));
     }
     syntax.resetDefinition();
@@ -428,6 +433,7 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
 
     String definition = kimConcept.getSemanticModifier() == UnarySemanticOperator.RATE
             || kimConcept.getSemanticModifier() == UnarySemanticOperator.RATIO
+            || kimConcept.getSemanticModifier() == UnarySemanticOperator.CHANGED
         ? reasoner.owl().canonicalOperatorDefinition(kimConcept) : kimConcept.getUrn();
 
     var ret =
@@ -483,7 +489,8 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
                         .makeValue(ret, buildConcept(kimConcept.getComparisonConcept()), true);
                 case OCCURRENCE -> reasoner.owl().makeOccurrence(ret);
                 case CHANGE -> reasoner.owl().makeChange(ret);
-                case CHANGED -> reasoner.owl().makeChanged(ret);
+                case CHANGED -> reasoner.owl().makeChanged(ret,
+                    buildConcept(kimConcept.getChangedFrom()), buildConcept(kimConcept.getChangedTo()));
                 case RATE -> reasoner.owl().makeRate(ret);
                 case MAGNITUDE -> reasoner.owl().makeMagnitude(ret);
                 case LEVEL -> reasoner.owl().makeLevel(ret);

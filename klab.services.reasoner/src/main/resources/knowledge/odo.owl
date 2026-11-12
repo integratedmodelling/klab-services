@@ -12,7 +12,7 @@
      xmlns:prov="http://www.w3.org/ns/prov#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
     <owl:Ontology rdf:about="http://integratedmodelling.org/odo">
-        <owl:versionIRI rdf:resource="http://integratedmodelling.org/odo/0.2.2"/>
+        <owl:versionIRI rdf:resource="http://integratedmodelling.org/odo/0.2.3"/>
         <dc:contributor xml:lang="en">Dr. Ferdinando Villa (ferdinando.villa at bc3research.org)
 Main author
 Dr. Greta Adamo (greta.adamo@bc3research.org)</dc:contributor>
@@ -27,7 +27,7 @@ Dr. Greta Adamo (greta.adamo@bc3research.org)</dc:contributor>
 - ODO-IM does not provide semantics for units of measurement, like other observation ontologies do. The applications where ODO-IM is used do not need units as stated instances and do not use reasoning to validate units. To support applications, ODO-IM simply lists the SI base unit textually in annotation properties linked to all PhysicalProperty observables, using SI conventions. Applications can use a unit parser to translate these into data structures for validation and conversion.
 - ODO-IM does not provide any detail on space, time and any other topologies implied in the definition of scale beyond their statement as extentual observables (Extent), as their specific interpretation is left to worldviews derived from ODO-IM.
 - ODO-IM remains as agnostic as possible about the phenomenology underlying Observables, in an effort to preserve compatibility with an arbitrary upper ontology stated in a derived worldview. It remains as agnostic as possible about the remaining details of the phenomenology underlying Observables, in an effort to preserve maximum orthogonality with an arbitrary upper ontology stated in a derived worldview. The characterization of Observables is intentionally shallow as observables are meant to specialize types in an externally provided upper ontology to form the basis of a worldview. Such links are made in the root domain of the worldview. See the full documentation for minimum expressive requirements and caveats.</rdfs:comment>
-        <owl:versionInfo xml:lang="en">Version 0.2.2</owl:versionInfo>
+        <owl:versionInfo xml:lang="en">Version 0.2.3</owl:versionInfo>
     </owl:Ontology>
     
 
@@ -149,6 +149,16 @@ Dr. Greta Adamo (greta.adamo@bc3research.org)</dc:contributor>
     </owl:ObjectProperty>
     
 
+
+    <!-- Categorical values before and after a changed event. -->
+    <owl:ObjectProperty rdf:about="http://integratedmodelling.org/odo#changedFrom">
+        <rdfs:domain rdf:resource="http://integratedmodelling.org/odo#Event"/>
+        <rdfs:comment>The classified predicate value before a categorical transition.</rdfs:comment>
+    </owl:ObjectProperty>
+    <owl:ObjectProperty rdf:about="http://integratedmodelling.org/odo#changedTo">
+        <rdfs:domain rdf:resource="http://integratedmodelling.org/odo#Event"/>
+        <rdfs:comment>The classified predicate value after a categorical transition.</rdfs:comment>
+    </owl:ObjectProperty>
 
     <!-- http://integratedmodelling.org/odo#changed -->
 

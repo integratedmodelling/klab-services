@@ -220,6 +220,8 @@ public class KimObservableVisitor {
     visitConcept(concept.getCooccurrent(), conceptContext);
     visitConcept(concept.getAdjacent(), conceptContext);
     visitConcept(concept.getComparisonConcept(), conceptContext);
+    visitConcept(concept.getChangedFrom(), conceptContext);
+    visitConcept(concept.getChangedTo(), conceptContext);
     visitConcept(concept.getRelationshipSource(), conceptContext);
     visitConcept(concept.getRelationshipTarget(), conceptContext);
     for (var target : safe(concept.getAbout())) visitConcept(target, conceptContext);

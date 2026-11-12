@@ -2453,73 +2453,83 @@ public class OWL {
     return units.isEmpty() ? null : units.first();
   }
 
-  /**
-   * Turn a concept into its change if it's not already one, implementing the corresponding semantic
-   * operator.
-   *
-   * @param concept the untransformed concept
-   * @return the transformed concept
-   */
+  private boolean changedEndpointMatches(Concept endpoint, Concept classified) {
+    // Staged compilation may not yet have flushed newly declared predicate ancestry.
+    var pending = new ArrayDeque<Concept>();
+    var visited = new HashSet<Concept>();
+    pending.add(endpoint);
+    while (!pending.isEmpty()) {
+      var current = pending.removeFirst();
+      if (!visited.add(current)) continue;
+      if (current.equals(classified)) return true;
+      pending.addAll(getParents(current));
+    }
+    return is(endpoint, classified);
+  }
+
+  /** Construct the event denoting a change in a quality. */
   public synchronized Concept makeChanged(Concept concept) {
+    return makeChanged(concept, null, null);
+  }
 
-    if (concept.is(SemanticType.CHANGED)) {
-      return concept;
-    }
-
-    String cName = "Changed" + getCleanId(concept);
-
-    if (!concept.is(SemanticType.QUALITY)) {
-      return null;
-    }
-
-    // this.hasUnaryOp = true;
+  /**
+   * Construct a categorical transition as a subclass of the unqualified change event.
+   * Validation precedes writes; the generic event and specialization are created under
+   * the same OWL construction lock, including when the specialization is requested first.
+   */
+  public synchronized Concept makeChanged(Concept concept, Concept from, Concept to) {
+    if (concept == null || !concept.is(SemanticType.QUALITY))
+      throw new KlabValidationException("changed must target a quality");
+    if ((from == null) != (to == null))
+      throw new KlabValidationException("changed requires both from and to endpoints");
     var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-
-    String definition = UnarySemanticOperator.CHANGED.declaration[0] + " " + concept.getUrn();
+    if (from != null) {
+      if (!concept.is(SemanticType.CLASS))
+        throw new KlabValidationException("changed from/to requires a 'type of' categorical quality");
+      var classified = reas.describedType(concept);
+      if (classified == null || !classified.is(SemanticType.PREDICATE)
+          || !from.is(SemanticType.PREDICATE) || !to.is(SemanticType.PREDICATE)
+          || !changedEndpointMatches(from, classified)
+          || !changedEndpointMatches(to, classified))
+        throw new KlabValidationException("changed endpoints must specialize the classified predicate");
+    }
+    requireOperatorSuperclass(NS.CORE_EVENT);
+    String definition = "changed (" + concept.getUrn() + ")";
+    if (from != null) definition += " from (" + from.getUrn() + ") to (" + to.getUrn() + ")";
+    definition = canonicalOperatorDefinition(definition);
     Ontology ontology = getOntology(concept.getNamespace());
     String conceptId = ontology.getIdForDefinition(definition);
-    Concept context = reas.inherent(concept);
+    if (conceptId != null) return ontology.getConcept(conceptId);
 
-    if (conceptId == null) {
-
-      conceptId = ontology.createIdForDefinition(definition);
-
-      String reference =
-          UnarySemanticOperator.CHANGED.getReferenceName(concept.getReferenceName(), null);
-
-      Set<SemanticType> newType = UnarySemanticOperator.CHANGED.apply(concept.getType());
-
-      ArrayList<Axiom> ax = new ArrayList<>();
-      ax.add(Axiom.ClassAssertion(conceptId, newType));
-      ax.add(Axiom.SubClass(NS.CORE_EVENT, conceptId));
-      ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
-      ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
-      ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-      ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-      ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-      ax.add(
-          Axiom.AnnotationAssertion(
-              conceptId,
-              NS.DISPLAY_LABEL_PROPERTY,
-              org.integratedmodelling.common.knowledge.SemanticLabels.unary(
-                  UnarySemanticOperator.CHANGED, concept.displayLabel(), null)));
-      ontology.define(ax);
-
-      Concept ret = ontology.getConcept(conceptId);
-
-      restrictSome(
-          ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
-      restrictSome(ret, getProperty(CoreOntology.NS.CHANGED_PROPERTY), concept, ontology);
-
-      /*
-       * context of the change event is the same context as the quality it describes
-       */
-      if (context != null) {
-        restrictSome(ret, getProperty(NS.IS_INHERENT_TO_PROPERTY), context, ontology);
-      }
+    Concept parent = from == null ? null : makeChanged(concept);
+    conceptId = ontology.createIdForDefinition(definition);
+    String reference = UnarySemanticOperator.CHANGED.getReferenceName(concept.getReferenceName(), null);
+    String label = org.integratedmodelling.common.knowledge.SemanticLabels.unary(
+        UnarySemanticOperator.CHANGED, concept.displayLabel(), null);
+    if (from != null) {
+      reference += "_from_" + from.getReferenceName() + "_to_" + to.getReferenceName();
+      label += " from " + from.displayLabel() + " to " + to.displayLabel();
     }
-
-    return ontology.getConcept(conceptId);
+    List<Axiom> axioms = new ArrayList<>();
+    axioms.add(Axiom.ClassAssertion(conceptId, UnarySemanticOperator.CHANGED.apply(concept.getType())));
+    axioms.add(Axiom.SubClass(parent == null ? NS.CORE_EVENT : parent.getNamespace() + ":" + parent.getName(), conceptId));
+    axioms.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
+    axioms.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
+    axioms.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", label));
+    axioms.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY, label));
+    axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
+    ontology.define(axioms);
+    Concept ret = ontology.getConcept(conceptId);
+    if (parent == null) {
+      restrictSome(ret, getProperty(NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
+      restrictSome(ret, getProperty(NS.CHANGED_PROPERTY), concept, ontology);
+      Concept context = reas.inherent(concept);
+      if (context != null) restrictSome(ret, getProperty(NS.IS_INHERENT_TO_PROPERTY), context, ontology);
+    } else {
+      restrictSome(ret, getProperty(NS.CHANGED_FROM_PROPERTY), from, ontology);
+      restrictSome(ret, getProperty(NS.CHANGED_TO_PROPERTY), to, ontology);
+    }
+    return ret;
   }
 
   /**
