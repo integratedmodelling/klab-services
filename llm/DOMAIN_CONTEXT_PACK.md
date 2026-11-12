@@ -703,7 +703,7 @@ semantic category and explain the new observable's dependence and bearer/context
 | `level of X` | quantifiable | ordered class quality | Produces an ordering/discretization; define level categories or thresholds separately. |
 | `type of X` | identity/trait predicate | enumerable class quality | Reifies a classification space as an observable result; retain the source identity taxonomy. |
 | `change in X` | quality | process | Open-ended change in a quality. Identify bearer and temporal context. |
-| `changed X [from A to B]` | quality; endpoints require a `type of` categorical quality | event | An occurrence of change in X. Supply both categorical endpoints together; each must specialize the classified predicate. The specialized event is a subclass of `changed X`. |
+| `changed X [from A to B]` | quality or classified predicate (implicit `type of`); endpoints require categorical values | event | An occurrence of change in X. Supply both categorical endpoints together; each must specialize the classified predicate. The specialized event is a subclass of `changed X`. |
 | `change rate of X` | quality | rate quality | Requires a temporal reference and a quality for which rate is meaningful. |
 | `proportion X in Y` | trait or quantifiable | relative quantity | `Y` is the whole/reference; current syntax has no `of` after `proportion`. |
 | `percentage X in Y` | trait or quantifiable | percentage quality | Same semantics as proportion with percentage representation. |
@@ -714,10 +714,14 @@ semantic category and explain the new observable's dependence and bearer/context
 
 For `changed`, the generic form accepts any quality, including a numerical one:
 `changed climate:AirTemperature`. Categorical specialization uses, for example,
-`changed (type of ecology:LandCover) from ecology:Forest to ecology:UrbanArea`,
-where Forest and UrbanArea specialize the LandCover predicate. Endpoints are concepts
-in that classification space, not literal values or numeric thresholds. Requesting
-the specialized event also creates `changed (type of ecology:LandCover)` if needed,
+`changed ecology:LandCover from ecology:Forest to ecology:UrbanArea`,
+where Forest and UrbanArea specialize the LandCover predicate. `type of LandCover`
+is implicit: authors name the predicate directly, and the explicit `changed (type of
+LandCover)` form denotes the same event. Endpoints are concepts in that classification
+space, not literal values or numeric thresholds. The implicit categorical quality is
+the target to be observed during indirect resolution; its observation strategies remain
+to be defined. Constructing the event concept does not execute those strategies. Requesting
+the specialized event also creates `changed ecology:LandCover` if needed,
 in the same synchronized construction. Repeated requests reuse the event types;
 reversing endpoints denotes a different transition. OWL preserves the target quality
 and bearer context on the generic event and directed `odo:changedFrom` and

@@ -56,8 +56,12 @@ class ChangedEventTest {
         .filter(c -> c.getIRI().getRemainder().orElse("").equals(concept.getName())).findFirst().orElseThrow();
   }
   @Test void grammarAdapterAndSyntaxCopiesPreserveBothEndpoints() throws Exception {
+    assertEquals(SemanticSyntax.Type.EVENT,
+        SemanticSyntax.UnaryOperator.CHANGED.getType(SemanticSyntax.Type.IDENTITY, List.of()));
+    assertEquals(SemanticSyntax.Type.VOID,
+        SemanticSyntax.UnaryOperator.CHANGED.getType(SemanticSyntax.Type.SUBJECT, List.of()));
     var parser = new CapturedSemanticExpressionParser(world());
-    var syntax = (KimConceptImpl) parser.concept("changed (type of k:Cover) from k:Forest to k:Urban");
+    var syntax = (KimConceptImpl) parser.concept("changed k:Cover from k:Forest to k:Urban");
     assertEquals(UnarySemanticOperator.CHANGED, syntax.getSemanticModifier());
     assertTrue(syntax.is(SemanticType.EVENT));
     assertEquals("k:Forest", syntax.getChangedFrom().getUrn());
@@ -82,20 +86,32 @@ class ChangedEventTest {
     assertTrue(validator.validateConcept(syntax).isEmpty());
     var invalid = parser.concept("changed k:Temperature from k:Forest to k:Urban");
     assertTrue(validator.validateConcept(invalid).stream().anyMatch(n -> n.getMessage().contains("categorical")));
-    assertThrows(IllegalArgumentException.class, () -> parser.concept("changed (type of k:Cover) from k:Forest"));
-    assertThrows(IllegalArgumentException.class, () -> parser.concept("changed (type of k:Cover) to k:Urban"));
+    assertThrows(IllegalArgumentException.class, () -> parser.concept("changed k:Cover from k:Forest"));
+    assertThrows(IllegalArgumentException.class, () -> parser.concept("changed k:Cover to k:Urban"));
   }
   @Test void specializedFirstCreatesGenericEventAndRetainsDirectionAcrossBothBuilders() throws Exception {
     try (var state = environment()) {
       var actor = state.actor(); var owl = actor.owl();
-      var transition = actor.resolveConcept("changed (type of k:Cover) from k:Forest to k:Urban");
+      var transition = actor.resolveConcept("changed k:Cover from k:Forest to k:Urban");
       assertNotNull(transition); assertTrue(transition.is(SemanticType.EVENT)); assertTrue(transition.is(SemanticType.CHANGED));
-      var generic = actor.resolveConcept("changed (type of k:Cover)");
+      var explicit = actor.resolveConcept("changed (type of k:Cover) from k:Forest to k:Urban");
+      assertEquals(transition.getName(), explicit.getName());
+      assertEquals(transition.getUrn(), explicit.getUrn());
+      assertEquals(transition.getName(), actor.resolveConceptWithBuilder(
+          "changed (type of k:Cover) from k:Forest to k:Urban", actor.serviceScope()).getName());
+      var generic = actor.resolveConcept("changed k:Cover");
+      assertEquals(generic.getName(), actor.resolveConcept("changed (type of k:Cover)").getName());
+      assertEquals("type of k:Cover", actor.describedType(generic).getUrn());
       assertNotNull(generic); assertTrue(generic.is(SemanticType.EVENT));
       assertEquals(transition.getName(), actor.resolveConceptWithBuilder(transition.getUrn(), actor.serviceScope()).getName());
       assertEquals(transition.getName(), actor.resolveConcept(transition.getUrn()).getName());
-      var reverse = actor.resolveConcept("changed (type of k:Cover) from k:Urban to k:Forest");
+      var reverse = actor.resolveConcept("changed k:Cover from k:Urban to k:Forest");
       assertNotEquals(transition.getName(), reverse.getName());
+      var refinedQuality = actor.resolveConcept("type of k:Cover of k:Body");
+      var refinedEvent = owl.makeChanged(refinedQuality);
+      assertNotEquals(generic.getName(), refinedEvent.getName());
+      assertEquals(refinedQuality.getUrn(), actor.describedType(refinedEvent).getUrn());
+      assertEquals("k:Body", actor.inherent(refinedEvent).getUrn());
       var numerical = actor.resolveConcept("changed k:Temperature");
       assertTrue(numerical.is(SemanticType.EVENT)); assertFalse(numerical.is(SemanticType.PROCESS));
       owl.flushReasoner();
@@ -113,7 +129,7 @@ class ChangedEventTest {
   @Test void concurrentFirstRequestsReuseGenericAndSpecializedEvents() throws Exception {
     try (var state = environment(); var executor = java.util.concurrent.Executors.newFixedThreadPool(4)) {
       var owl = state.actor().owl();
-      var categorical = owl.makeType(owl.getConcept("k:Cover"));
+      var categorical = owl.getConcept("k:Cover");
       var forest = owl.getConcept("k:Forest"); var urban = owl.getConcept("k:Urban");
       var tasks = new ArrayList<java.util.concurrent.Future<Concept>>();
       for (int i = 0; i < 8; i++)
@@ -135,6 +151,7 @@ class ChangedEventTest {
       assertThrows(KlabValidationException.class, () -> owl.makeChanged(owl.getConcept("k:Temperature"), forest, urban));
       assertThrows(KlabValidationException.class, () -> owl.makeChanged(categorical, forest, null));
       assertThrows(KlabValidationException.class, () -> owl.makeChanged(categorical, forest, owl.getConcept("k:Other")));
+      assertThrows(KlabValidationException.class, () -> owl.makeChanged(owl.getConcept("k:Cover"), forest, owl.getConcept("k:Other")));
       assertEquals(before, graph.getAxioms());
     }
   }

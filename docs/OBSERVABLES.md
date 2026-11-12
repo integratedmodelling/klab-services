@@ -465,21 +465,26 @@ and inference behavior come from the worldview and Reasoner.
 
 ```observable
 changed climate:AirTemperature;
-changed (type of ecology:LandCover)
+changed ecology:LandCover
   from ecology:Forest
   to ecology:UrbanArea;
 ```
 
-`changed X` takes a **quality** and produces an **event**: an occurrence in
-which that quality changes. It accepts numerical qualities as well as categorical
-qualities. In contrast, `change in X` produces a process; `change rate of X`
-produces a numerical quality.
+`changed X` produces an **event**: an occurrence in which a quality changes.
+For a numerical quality, X names that quality directly. For a categorical quality,
+X can name its **classified predicate**, with `type of X` implicit. In this
+hypothetical example, `ecology:LandCover` is a predicate and `ecology:Forest` and
+`ecology:UrbanArea` are its specializations. Authors do not need to write
+`changed (type of ecology:LandCover)`; that explicit form denotes the same event.
+In contrast, `change in X` produces a process; `change rate of X` produces a
+numerical quality.
 
-The optional `from A to B` specialization requires a **`type of` categorical
-quality**. Both endpoints must be supplied, and both must specialize the predicate
-classified by that quality. In this hypothetical example, `ecology:LandCover` is
-a predicate and `ecology:Forest` and `ecology:UrbanArea` are its specializations.
+The optional `from A to B` specialization applies only to categorical qualities.
+Both endpoints must be supplied, and both must specialize the classified predicate.
 Endpoints are categorical concepts, not numeric thresholds or literal values.
+The implicit `type of` quality is the target to be observed during indirect
+resolution. The strategies that perform that resolution remain to be defined;
+constructing these semantic concepts does not execute observation strategies.
 
 `changed X from A to B` is a subclass of `changed X`. Requesting a specialized
 transition also creates its generic parent if needed, in the same synchronized

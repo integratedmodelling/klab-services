@@ -44,7 +44,7 @@ public enum UnarySemanticOperator {
       "monetary value of", "over"),
   OCCURRENCE(new SemanticType[] {SemanticType.COUNTABLE}, SemanticType.QUALITY, "occurrence of"),
   CHANGE(new SemanticType[] {SemanticType.QUALITY}, SemanticType.PROCESS, "change in"),
-  CHANGED(new SemanticType[] {SemanticType.QUALITY}, SemanticType.EVENT, "changed"),
+  CHANGED(new SemanticType[] {SemanticType.QUALITY, SemanticType.PREDICATE}, SemanticType.EVENT, "changed"),
   RATE(new SemanticType[] {SemanticType.QUALITY}, SemanticType.QUALITY, "change rate of"),
   MAGNITUDE(new SemanticType[] {SemanticType.QUANTIFIABLE}, SemanticType.QUALITY, "magnitude of"),
   LEVEL(new SemanticType[] {SemanticType.QUANTIFIABLE}, SemanticType.CLASS, "level of"),

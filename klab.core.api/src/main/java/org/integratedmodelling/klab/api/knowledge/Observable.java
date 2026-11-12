@@ -116,7 +116,8 @@ public interface Observable extends Semantics, Resolvable {
      *
      * @param type
      * @param participants operator arguments; CHANGED accepts either none, or exactly two
-     *     categorical concepts in from/to order for a type-of quality
+     *     categorical concepts in from/to order for a categorical quality or its classified
+     *     predicate (the type-of quality is implicit)
      * @return the same builder this was called on, for chaining calls
      * @throws KlabValidationException
      */

@@ -70,8 +70,8 @@ public class ObservableValidator {
               "The 'proportion of' operator must target an event"),
           new UnaryOperatorRule(
               UnarySemanticOperator.CHANGED,
-              EnumSet.of(SemanticType.QUALITY),
-              "The 'changed' operator must target a quality"),
+              EnumSet.of(SemanticType.QUALITY, SemanticType.PREDICATE),
+              "The 'changed' operator must target a quality or a classified predicate"),
           new UnaryOperatorRule(
               UnarySemanticOperator.TYPE,
               // TODO check - may need to become stricter (IDENTITY only)?
@@ -219,8 +219,8 @@ public class ObservableValidator {
           || concept.getChangedFrom() == null || concept.getChangedTo() == null)
         notifications.add(Notification.error("changed requires both from and to endpoints", concept));
       var target = concept.getObservable();
-      if (hasKnownType(target) && !target.is(SemanticType.CLASS))
-        notifications.add(Notification.error("changed from/to requires a 'type of' categorical quality", concept));
+      if (hasKnownType(target) && !target.is(SemanticType.CLASS) && !target.is(SemanticType.PREDICATE))
+        notifications.add(Notification.error("changed from/to requires a categorical quality or its classified predicate", concept));
     }
     var operation = concept.semanticOperation();
     if (operation == null) {

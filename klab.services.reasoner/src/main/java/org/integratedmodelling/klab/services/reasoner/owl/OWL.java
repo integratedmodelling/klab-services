@@ -44,6 +44,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -2394,6 +2395,15 @@ public class OWL {
     var canonical =
         syntax.mapSyntax(
             node -> {
+              if (node.getSemanticModifier() == UnarySemanticOperator.CHANGED) {
+                var operand = node.getObservable();
+                while (operand != null && operand.getName() == null
+                    && operand.getSemanticModifier() == null && bareChangedOperand(operand)
+                    && operand.getObservable() != null) operand = operand.getObservable();
+                if (operand != null && operand.getSemanticModifier() == UnarySemanticOperator.TYPE
+                    && bareChangedOperand(operand) && operand.getObservable() != null)
+                  node.setObservable(operand.getObservable());
+              }
               if (node.getName() == null || !QualifiedName.validate(node.getName())) return;
               var name = new QualifiedName(node.getName());
               var ontology = getOntology(name.getNamespace());
@@ -2405,6 +2415,16 @@ public class OWL {
             });
     canonical.resetDefinition();
     return canonical.getUrn();
+  }
+
+  /** Only erase type-of syntax when no quality-level qualification would be lost. */
+  private static boolean bareChangedOperand(KimConcept operand) {
+    return !operand.isCollective() && !operand.isNegated()
+        && !operand.is(SemanticType.ANY) && !operand.is(SemanticType.ALL) && !operand.is(SemanticType.NONE)
+        && operand.getModifiers().isEmpty() && operand.getTraits().isEmpty() && operand.getRoles().isEmpty()
+        && operand.getAbout().isEmpty() && operand.getValueOperators().isEmpty() && operand.getOperands().isEmpty()
+        && operand.getComparisonConcept() == null && operand.getChangedFrom() == null && operand.getChangedTo() == null
+        && operand.getPortionIdentity() == null && operand.getWholeIdentity() == null;
   }
 
   /**
@@ -2467,7 +2487,7 @@ public class OWL {
     return is(endpoint, classified);
   }
 
-  /** Construct the event denoting a change in a quality. */
+  /** Construct a change event; a predicate operand implicitly denotes its type-of quality. */
   public synchronized Concept makeChanged(Concept concept) {
     return makeChanged(concept, null, null);
   }
@@ -2478,34 +2498,46 @@ public class OWL {
    * the same OWL construction lock, including when the specialization is requested first.
    */
   public synchronized Concept makeChanged(Concept concept, Concept from, Concept to) {
-    if (concept == null || !concept.is(SemanticType.QUALITY))
-      throw new KlabValidationException("changed must target a quality");
+    if (concept == null || !(concept.is(SemanticType.QUALITY) || concept.is(SemanticType.PREDICATE)))
+      throw new KlabValidationException("changed must target a quality or a classified predicate");
     if ((from == null) != (to == null))
       throw new KlabValidationException("changed requires both from and to endpoints");
     var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+    // Preserve the authored predicate shorthand as the event identity. Explicit type-of
+    // operands describe that same event; the quality is the implicit resolution target.
+    Concept classified = concept.is(SemanticType.PREDICATE) ? concept
+        : concept.is(SemanticType.CLASS) ? reas.describedType(concept) : null;
     if (from != null) {
-      if (!concept.is(SemanticType.CLASS))
-        throw new KlabValidationException("changed from/to requires a 'type of' categorical quality");
-      var classified = reas.describedType(concept);
-      if (classified == null || !classified.is(SemanticType.PREDICATE)
+      if (classified == null)
+        throw new KlabValidationException("changed from/to requires a categorical quality or its classified predicate");
+      if (!classified.is(SemanticType.PREDICATE)
           || !from.is(SemanticType.PREDICATE) || !to.is(SemanticType.PREDICATE)
           || !changedEndpointMatches(from, classified)
           || !changedEndpointMatches(to, classified))
         throw new KlabValidationException("changed endpoints must specialize the classified predicate");
     }
     requireOperatorSuperclass(NS.CORE_EVENT);
-    String definition = "changed (" + concept.getUrn() + ")";
+    Concept target = concept;
+    if (classified != null && classified.is(SemanticType.PREDICATE) && !concept.is(SemanticType.PREDICATE)) {
+      // Only the unqualified type delegate is interchangeable with the shorthand.
+      // A refined quality may carry its own bearer or predicates, which must survive.
+      var classifiedOntology = getOntology(classified.getNamespace());
+      var typeId = classifiedOntology.getIdForDefinition("type of " + classified.getUrn());
+      if (typeId != null && concept.equals(classifiedOntology.getConcept(typeId))) target = classified;
+    }
+    String definition = "changed (" + target.getUrn() + ")";
     if (from != null) definition += " from (" + from.getUrn() + ") to (" + to.getUrn() + ")";
     definition = canonicalOperatorDefinition(definition);
     Ontology ontology = getOntology(concept.getNamespace());
     String conceptId = ontology.getIdForDefinition(definition);
     if (conceptId != null) return ontology.getConcept(conceptId);
 
-    Concept parent = from == null ? null : makeChanged(concept);
+    Concept parent = from == null ? null : makeChanged(target);
+    Concept quality = concept.is(SemanticType.PREDICATE) ? makeType(concept) : concept;
     conceptId = ontology.createIdForDefinition(definition);
-    String reference = UnarySemanticOperator.CHANGED.getReferenceName(concept.getReferenceName(), null);
+    String reference = UnarySemanticOperator.CHANGED.getReferenceName(target.getReferenceName(), null);
     String label = org.integratedmodelling.common.knowledge.SemanticLabels.unary(
-        UnarySemanticOperator.CHANGED, concept.displayLabel(), null);
+        UnarySemanticOperator.CHANGED, target.displayLabel(), null);
     if (from != null) {
       reference += "_from_" + from.getReferenceName() + "_to_" + to.getReferenceName();
       label += " from " + from.displayLabel() + " to " + to.displayLabel();
@@ -2521,9 +2553,9 @@ public class OWL {
     ontology.define(axioms);
     Concept ret = ontology.getConcept(conceptId);
     if (parent == null) {
-      restrictSome(ret, getProperty(NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
-      restrictSome(ret, getProperty(NS.CHANGED_PROPERTY), concept, ontology);
-      Concept context = reas.inherent(concept);
+      restrictSome(ret, getProperty(NS.DESCRIBES_OBSERVABLE_PROPERTY), quality, ontology);
+      restrictSome(ret, getProperty(NS.CHANGED_PROPERTY), quality, ontology);
+      Concept context = reas.inherent(quality);
       if (context != null) restrictSome(ret, getProperty(NS.IS_INHERENT_TO_PROPERTY), context, ontology);
     } else {
       restrictSome(ret, getProperty(NS.CHANGED_FROM_PROPERTY), from, ontology);
