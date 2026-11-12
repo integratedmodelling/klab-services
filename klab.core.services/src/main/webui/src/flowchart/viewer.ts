@@ -2,9 +2,21 @@ import "reflect-metadata";
 import { Container, ContainerModule, decorate, injectable } from "inversify";
 import { configureModelElement, configureViewerOptions, loadDefaultModules, LocalModelSource,
   TYPES, SGraphImpl, SGraphView, SNodeImpl, SPortImpl, SLabelImpl, SLabelView, SEdgeImpl,
-  RectangularNodeView, MouseListener, moveFeature, selectFeature, edgeLayoutFeature, svg,
+  RectangularNodeView, MouseListener, SelectMouseListener, moveFeature, selectFeature, edgeLayoutFeature, svg,
   type IView, type RenderingContext, type SModelElementImpl, type IActionDispatcher } from "sprotty";
-import { FitToScreenAction, type Point } from "sprotty-protocol";
+import { BringToFrontAction, FitToScreenAction, type Point, type Selectable } from "sprotty-protocol";
+
+class DiagramSelectMouseListener extends SelectMouseListener {
+  protected override handleSelectTarget(target: SModelElementImpl & Selectable,
+    deselected: SModelElementImpl[], event: MouseEvent) {
+    // ELK containers and their contents are flattened into SVG siblings in paint order.
+    // Raising a selected container would cover its contents and intercept their clicks.
+    return super.handleSelectTarget(target, deselected, event)
+      .filter(action => !("kind" in action) || action.kind !== BringToFrontAction.KIND);
+  }
+}
+
+decorate(injectable(), DiagramSelectMouseListener);
 
 class ElkEdge extends SEdgeImpl { sections: { points: Point[]; arrow: boolean }[] = []; }
 /** Render ELK's exact routes, including multi-section edges, without Sprotty re-routing them. */
@@ -42,6 +54,7 @@ export function createViewer(baseDiv: string, inspect: (id: string) => void) {
   loadDefaultModules(container);
   container.load(new ContainerModule((bind, unbind, isBound, rebind) => {
     const context = { bind, unbind, isBound, rebind };
+    rebind(SelectMouseListener).to(DiagramSelectMouseListener).inSingletonScope();
     bind(TYPES.ModelSource).to(LocalModelSource).inSingletonScope();
     bind(TYPES.MouseListener).toConstantValue(new Inspector(inspect));
     configureModelElement(context, "graph", SGraphImpl, SGraphView);

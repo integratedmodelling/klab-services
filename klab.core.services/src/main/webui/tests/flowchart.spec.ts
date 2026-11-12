@@ -3,6 +3,32 @@ import { readFileSync } from "node:fs";
 const chart = JSON.parse(readFileSync(new URL("./workflow.json", import.meta.url), "utf8"));
 const raw = JSON.parse(readFileSync(new URL("./workflow-raw.json", import.meta.url), "utf8"));
 
+for (const server of [false, true]) test(`keeps nested contents clickable after container selection (${server ? "server" : "browser"} layout)`, async ({ page }) => {
+  const nested = { root: {
+    id: "outer", width: 650, height: 450, metadata: { name: "Outer container" },
+    children: [{ ...structuredClone(chart.root), x: 40, y: 60 }],
+  } };
+  await page.route("**/chart", route => route.fulfill({ json: nested }));
+  await page.goto(`/tests/flowchart.html${server ? "?server" : ""}`);
+  const nodes = page.locator(".flowchart-canvas .sprotty-node");
+  const inspector = page.locator(".flowchart-inspector pre");
+  await expect(nodes).toHaveCount(6);
+  const outer = nodes.nth(0);
+  const container = nodes.nth(1);
+  // Click exposed backgrounds, then the contents, using real hit testing.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await outer.click({ position: { x: 12, y: 12 } });
+    await expect(inspector).toContainText("Outer container");
+    await container.click({ position: { x: 12, y: 12 } });
+    await expect(inspector).toContainText('"workflowId": "review"');
+    await page.locator(".flowchart-canvas .leaf").filter({ hasText: "Review" }).locator("rect.sprotty-node").click();
+    await expect(inspector).toContainText("Work on Review");
+    await outer.click({ position: { x: 12, y: 12 } });
+    await page.locator('.flowchart-canvas g[id$="state:6:Review:in"] .sprotty-port').click();
+    await expect(page.locator(".flowchart-inspector select")).toHaveValue("state:6:Review:in");
+  }
+});
+
 for (const server of [false, true]) test(`renders ${server ? "Java" : "browser"} ELK layout and inspects metadata`, async ({ page }) => {
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
   await page.route("**/chart", route => route.fulfill({ json: server ? chart : raw }));
