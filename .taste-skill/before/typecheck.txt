@@ -1,0 +1,1 @@
+PASS vue-tsc --noEmit (run before edits using the installed vue-tsc entry point).

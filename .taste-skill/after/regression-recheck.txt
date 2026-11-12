@@ -1,0 +1,12 @@
+
+[WebServer] (node:48096) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:30764) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/1] tests\review-workspace.spec.ts:127:1 › browser back preserves the current URL and draft until explicitly discarded
+  1 passed (20.7s)

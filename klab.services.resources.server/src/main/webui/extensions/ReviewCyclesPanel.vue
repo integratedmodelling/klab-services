@@ -324,37 +324,37 @@ defineExpose({ refresh, saveDraft, canSaveDraft, discardDraft, isBusy: () => bus
   </section>
 </template>
 <style scoped>
-.review-rounds { color: #17283b; font-size: 1rem; line-height: 1.55; min-width: 0; }
+.review-rounds { color: var(--klab-ink); font-size: 1rem; line-height: 1.55; min-width: 0; }
 h2 { text-wrap: balance; font-size: 1.375rem; line-height: 1.3; font-weight: 600; margin: 0 0 16px; }
 h3 { text-wrap: balance; font-size: 1.125rem; line-height: 1.4; font-weight: 600; margin: 0 0 12px; }
 p, header, summary { overflow-wrap: anywhere; }
 p { text-wrap: pretty; }
-.review-context { color: #53667b; margin-block-end: 24px; }
+.review-context { color: var(--klab-muted); margin-block-end: 24px; }
 .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 16px; }
 label { display: grid; gap: 8px; min-width: 0; max-width: 100%; margin-block: 16px; }
 .controls label { flex: 1 1 160px; }
-input, select, textarea { padding: 12px; color: #17283b; background: #fff; border: 1px solid #91a1b1; border-radius: 4px; font: inherit; width: 100%; min-width: 0; max-width: 100%; caret-color: #2459a8; box-sizing: border-box; }
+input, select, textarea { padding: 12px; color: var(--klab-ink); background: var(--klab-surface); border: 1px solid var(--klab-field-border); border-radius: var(--klab-radius); font: inherit; width: 100%; min-width: 0; max-width: 100%; caret-color: var(--klab-action); box-sizing: border-box; }
 textarea { resize: vertical; }
 select { text-overflow: ellipsis; }
-textarea:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #2459a8; outline-offset: 3px; }
-::selection { background: #dce9fa; color: #17283b; }
+textarea:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--klab-action); outline-offset: 3px; }
+::selection { background: var(--klab-selection); color: var(--klab-ink); }
 .checkbox-label { display: flex; align-items: start; gap: 8px; }
 .checkbox-label input { width: auto; margin-block-start: 6px; }
-.source-editor { font: .875rem/1.6 monospace; background: #f7f9fc; }
+.source-editor { font: .875rem/1.6 monospace; background: var(--klab-surface-alt); }
 .feedback-composer { border: 0; padding: 0; margin: 24px 0; min-width: 0; }
 .feedback-composer legend { font-size: 1.125rem; font-weight: 600; margin-block-end: 8px; }
-.privacy-note { font-size: .875rem; color: #53667b; }
-.review-disclosure { border-block-start: 1px solid #cad5e2; padding-block: 16px; margin-block: 16px; min-width: 0; }
+.privacy-note { font-size: .875rem; color: var(--klab-muted); }
+.review-disclosure { border-block-start: 1px solid var(--klab-border); padding-block: 16px; margin-block: 16px; min-width: 0; }
 .review-disclosure > summary { padding-block: 8px; min-height: 44px; cursor: pointer; font-weight: 600; display: list-item; list-style: disclosure-closed inside; }
 .review-disclosure[open] > summary { list-style-type: disclosure-open; }
-.review-disclosure > summary::marker { color: #53667b; }
-.contribution { padding-block: 24px; border-block-start: 1px solid #cad5e2; }
+.review-disclosure > summary::marker { color: var(--klab-muted); }
+.contribution { padding-block: 24px; border-block-start: 1px solid var(--klab-border); }
 .contribution p { white-space: pre-wrap; overflow-wrap: anywhere; }
-.contribution time { font-size: .875rem; color: #53667b; }
-.feedback-receipt, .feedback-notice { padding: 16px; color: #183f35; background: #edf7f3; margin-block: 16px; border-radius: 4px; }
-.submission-review { background: #f7f9fc; padding: 16px; border: 1px solid #cad5e2; }
-.submission-warning { padding: 16px; color: #805c1d; background: #fff7e5; }
+.contribution time { font-size: .875rem; color: var(--klab-muted); }
+.feedback-receipt, .feedback-notice { padding: 16px; color: var(--klab-success); background: var(--klab-success-bg); margin-block: 16px; border-radius: var(--klab-radius); }
+.submission-review { background: var(--klab-surface-alt); padding: 16px; border: 1px solid var(--klab-border); }
+.submission-warning { padding: 16px; color: var(--klab-warning); background: var(--klab-warning-bg); }
 .identifier { overflow-wrap: anywhere; }
-[role="alert"] { color: #8c3030; background: #fbecec; padding: 16px; border-radius: 4px; }
+[role="alert"] { color: var(--klab-danger); background: var(--klab-danger-bg); padding: 16px; border-radius: var(--klab-radius); }
 @media (max-width: 600px) { .controls .q-btn { min-height: 44px; } }
 </style>

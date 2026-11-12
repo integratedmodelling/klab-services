@@ -6,6 +6,7 @@ import type {InstanceState, UiSnapshot, WidgetInput} from "./services/applicatio
 import "quasar/dist/quasar.css";
 import "@quasar/extras/material-icons/material-icons.css";
 import "./styles/application-ui.css";
+import "./styles/theme.css";
 
 declare global {
   interface Window {

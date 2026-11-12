@@ -1,0 +1,12 @@
+[
+  {
+    "check": "focus-ring",
+    "target": ".q-virtual-scroll:focus",
+    "reason": "The checker scans Quasar's original outline reset without resolving the cascade. The shared stylesheet restores a 2px action-colour outline with !important on keyboard focus; the regression suite checks the effective button focus style. No framework stylesheet was modified."
+  },
+  {
+    "check": "menu-toggle",
+    "target": "Switch to dark theme",
+    "reason": "This is the theme switch, with aria-pressed and a state-dependent accessible name. It opens no menu. The checker selects it because its class includes toggle. The actual Service interfaces menu is a Quasar dropdown and is exercised on all four services."
+  }
+]

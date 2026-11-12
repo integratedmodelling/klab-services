@@ -1,0 +1,99 @@
+
+[WebServer] (node:31084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 77 tests using 1 worker
+
+(node:27820) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[1/77] tests\application.spec.ts:4:1 › authentication, workflow input, CSS, reconnect and page rebuild retain server state
+[2/77] tests\application.spec.ts:130:1 › installed toolkit module receives canonical snapshots and emits through the standard bus
+[3/77] tests\application.spec.ts:155:1 › real shell preserves the service base on a direct application route and gates launch
+[4/77] tests\application.spec.ts:174:1 › extended widgets, form commands, safe content and HTTP file handles
+[5/77] tests\application.spec.ts:284:1 › packaged IDE renderer uses the shared Quasar catalog and bounded file bridge
+[6/77] tests\authority-codelists.spec.ts:2:1 › declared closed lists retain admin controls and community lists advertise proposals
+[7/77] tests\authority-codelists.spec.ts:11:1 › review transmits exact proposal and displayed revision
+[8/77] tests\authority-codelists.spec.ts:23:1 › reader does not see review controls
+[9/77] tests\authority-codelists.spec.ts:29:1 › configured lists support direct edits while community entries are read-only
+[10/77] tests\credentials.spec.ts:3:1 › credential editor reads only metadata and preserves write-only secrets when saving
+[11/77] tests\flowchart.spec.ts:6:37 › renders browser ELK layout and inspects metadata
+[12/77] tests\flowchart.spec.ts:6:37 › renders Java ELK layout and inspects metadata
+[13/77] tests\flowchart.spec.ts:20:1 › handles URL changes, errors, unmounting and multiple instances
+[14/77] tests\flowchart.spec.ts:39:1 › Resources workflow page lists definitions and changes the diagram
+[15/77] tests\hub-session.browser.spec.ts:5:1 › capabilities can use the negotiated credential while public and signed-out requests stay anonymous
+[16/77] tests\hub-session.browser.spec.ts:35:1 › native browser fetch supports exchange, renewal, logout, and retry under the service base
+[17/77] tests\hub-session.spec.ts:4:1 › coalesces exchanges and returns only the service credential
+[18/77] tests\hub-session.spec.ts:19:1 › refreshes before expiry and revokes the replaced credential
+[19/77] tests\hub-session.spec.ts:38:1 › logout cancels an in-flight exchange and revokes its late credential
+[20/77] tests\hub-session.spec.ts:55:1 › reports hub and owner rejection and allows retry
+[21/77] tests\hub-session.spec.ts:65:1 › rejects malformed or expired service credentials
+[22/77] tests\review-rounds.spec.ts:4:1 › closed-cycle editor can inspect and explicitly retry a minimal digest receipt
+[23/77] tests\review-rounds.spec.ts:16:1 › dashboard transport reads the server's plain Base64 attachment response
+[24/77] tests\review-rounds.spec.ts:30:1 › community round view works without stage access and filters by proposal and contributor
+[25/77] tests\review-rounds.spec.ts:56:1 › private drafts resume and submitting uses the displayed revision without replacing history
+[26/77] tests\review-rounds.spec.ts:82:1 › conflicts keep unsaved feedback and never automatically retry
+[27/77] tests\review-rounds.spec.ts:97:1 › alternative proposals resume privately and filter beside the unchanged candidate
+[28/77] tests\review-rounds.spec.ts:131:1 › external round closure preserves an unsaved draft for download and explicit discard
+[29/77] tests\review-rounds.spec.ts:158:1 › revoked round access clears cached shared feedback and candidate while retaining own unsaved text
+[30/77] tests\review-rounds.spec.ts:174:1 › a denied refresh invalidates a pending candidate response without leaving the page busy
+[31/77] tests\review-rounds.spec.ts:190:1 › a partially revoked view cannot move private peer work into an admitted community iteration
+[32/77] tests\review-rounds.spec.ts:208:1 › an unavailable stage deep link never silently opens a different admitted iteration
+[33/77] tests\review-rounds.spec.ts:219:1 › an unavailable cycle link requires an explicit admitted selection
+[34/77] tests\review-rounds.spec.ts:230:1 › real stage links select dedicated audience views and reject inaccessible stages
+[35/77] tests\review-workspace.spec.ts:7:1 › candidate reading and feedback lead; exact source, alternatives and history stay accessible
+[36/77] tests\review-workspace.spec.ts:23:1 › YAML is readable, markup stays text, and unparseable source has an honest fallback
+[37/77] tests\review-workspace.spec.ts:57:1 › long candidate titles and expanded history fit mobile and zoomed layouts
+[38/77] tests\review-workspace.spec.ts:70:1 › sharing requires explicit commitment, prevents duplicate writes, and returns an audience-bound receipt
+[39/77] tests\review-workspace.spec.ts:87:1 › lost submission response is reconciled without sharing twice
+[40/77] tests\review-workspace.spec.ts:99:1 › failed submission retains text and only re-enables sharing after an explicit status check
+[41/77] tests\review-workspace.spec.ts:112:1 › shell navigation offers stay, save privately, or explicit discard
+[42/77] tests\review-workspace.spec.ts:127:1 › browser back preserves the current URL and draft until explicitly discarded
+[43/77] tests\review-workspace.spec.ts:143:1 › a save conflict in the leave dialog retains the route and private work
+[44/77] tests\review-workspace.spec.ts:156:1 › workspace jump links preserve the review route and unsaved feedback under a service base URL
+[WebServer] 8:56:14 AM [vite] (client) [Unhandled error] Error: ResizeObserver loop completed with undelivered notifications.
+[WebServer]  > ../../../../../../../../@vite/client:539:50
+
+[WebServer] 
+[45/77] tests\review.spec.ts:27:1 › invalid requested tiers never submit or mutate and correction prepares exactly once
+[46/77] tests\review.spec.ts:63:1 › requested-tier restrictions do not change another action's integer semantics
+[47/77] tests\review.spec.ts:72:1 › slow discovery and review permissions show progress instead of an empty bootstrap
+[48/77] tests\review.spec.ts:87:1 › preparation stays visibly pending through delayed proposal and context downloads
+[49/77] tests\review.spec.ts:124:1 › slow stage-detail save locks edits through the review refresh and explains the next step
+[50/77] tests\review.spec.ts:148:1 › a failed candidate download remains visible after context loads and is not reported as success
+[51/77] tests\review.spec.ts:166:1 › an interrupted preparation response retains fields and reconciles before any retry
+[52/77] tests\review.spec.ts:185:1 › delayed preparation conflicts keep the entered parameters and require explicit retry
+[53/77] tests\review.spec.ts:200:3 › leaving during delayed flow never rewrites the next page or publishes old review state
+[54/77] tests\review.spec.ts:200:3 › leaving during delayed review never rewrites the next page or publishes old review state
+[55/77] tests\review.spec.ts:200:3 › leaving during delayed prepare never rewrites the next page or publishes old review state
+[56/77] tests\review.spec.ts:221:1 › stage URL exposes explicit editor action with revision and preserves authored drafts
+[57/77] tests\review.spec.ts:242:1 › read access alone offers no editor action and request conflicts remain visible
+[58/77] tests\review.spec.ts:257:1 › creation opens private bootstrap and coalescing makes termination explicit
+[59/77] tests\review.spec.ts:288:1 › coalescing returns to a new review stage while bootstrap remains historical
+[60/77] tests\review.spec.ts:310:1 › opening and closing optional community stages refreshes flow state without leaving the stage
+[61/77] tests\review.spec.ts:327:1 › candidate conflicts retain unsaved edits until explicit discard unlocks refresh
+[62/77] tests\review.spec.ts:344:1 › interrupted creation prevents repeats and reconciles the persisted bootstrap
+[63/77] tests\review.spec.ts:366:1 › pending creation recovery is scoped to the authenticated account
+[64/77] tests\review.spec.ts:385:1 › named bootstrap saves initial proposal and references atomically and requires an explicit new review
+[65/77] tests\review.spec.ts:427:1 › saved preparation details, reference uploads and notes remain usable before a proposal exists
+[66/77] tests\review.spec.ts:461:1 › stage detail conflicts preserve local work until explicit discard
+[67/77] tests\review.spec.ts:475:1 › uncertain upload blocks repeat submissions until saved files are checked
+[68/77] tests\review.spec.ts:490:1 › missing actor context and failed action discovery have actionable diagnostics
+[69/77] tests\review.spec.ts:502:1 › an interrupted note upload keeps unsaved text when reconciliation finds no saved file
+[70/77] tests\review.spec.ts:519:1 › discarding an uncreated form re-enables navigation without creating a flow
+[71/77] tests\review.spec.ts:531:1 › refreshing rounds in another tab cannot rebase stale stage details over a newer title
+[72/77] tests\review.spec.ts:568:1 › saving stage details refreshes review revision before immediately starting the existing candidate
+[73/77] tests\review.spec.ts:585:1 › coalescing retains the frozen ontology source when the editor previews a different reference
+[74/77] tests\review.spec.ts:617:1 › a saved bootstrap accepts a selected proposal file and saves YAML edits without a JSON-only gate
+[75/77] tests\theme.spec.ts:13:1 › theme follows an explicit choice across reloads, routes and tabs
+[WebServer] Files in the public directory are served at the root path.
+[WebServer] Instead of /public/ui/config, use /ui/config.
+
+[76/77] tests\theme.spec.ts:28:1 › dashboard controls and navigation fit small screens and retain keyboard focus
+[WebServer] 8:57:20 AM [vite] (client) [Unhandled error] Error: ResizeObserver loop completed with undelivered notifications.
+[WebServer]  > ../../../../../../../../@vite/client:539:50
+[WebServer] 
+
+[77/77] tests\theme.spec.ts:46:1 › theme remains usable when browser storage is unavailable
+  77 passed (2.4m)

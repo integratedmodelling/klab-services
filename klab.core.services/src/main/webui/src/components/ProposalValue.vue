@@ -21,9 +21,9 @@ const label = (key: string) => key.replaceAll("_", " ").replace(/([a-z])([A-Z])/
 </template>
 <style scoped>
 .proposal-fields { margin: 0; display: grid; gap: 24px; }
-.proposal-fields dt { font-size: .875rem; font-weight: 600; text-transform: capitalize; margin-block-end: 6px; color: #53667b; }
+.proposal-fields dt { font-size: .875rem; font-weight: 600; text-transform: capitalize; margin-block-end: 6px; color: var(--klab-muted); }
 .proposal-fields dd { margin: 0; }
 .proposal-value { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }
 .proposal-items { padding-inline-start: 24px; display: grid; gap: 16px; margin: 0; }
-.reader-note { color: #53667b; font-size: .875rem; }
+.reader-note { color: var(--klab-muted); font-size: .875rem; }
 </style>

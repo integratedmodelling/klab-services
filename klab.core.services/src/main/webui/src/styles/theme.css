@@ -1,0 +1,59 @@
+/* Shared dashboard theme. Override these semantic properties to brand an installation.
+   Service extensions must consume tokens rather than define their own colours. */
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --klab-background: #f4f4f2;
+  --klab-surface: #ffffff;
+  --klab-surface-alt: #edeeeb;
+  --klab-ink: #242722;
+  --klab-muted: #4b544c;
+  --klab-border: #d4d8d1;
+  --klab-field-border: #879185;
+  --klab-action: #2456b8;
+  --klab-action-ink: #ffffff;
+  --klab-selection: #e1eafb;
+  --klab-success: #277345;
+  --klab-success-bg: #edf5ee;
+  --klab-warning: #7c5314;
+  --klab-warning-bg: #fff5df;
+  --klab-danger: #ac302b;
+  --klab-danger-bg: #fbedeb;
+  --klab-overlay: rgba(20, 27, 23, .42);
+  --klab-shadow: 0 12px 36px rgba(20, 27, 23, .14);
+  --klab-font: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --klab-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  --klab-radius: 4px;
+  --klab-content-width: 1280px;
+  --klab-gutter: 32px;
+}
+:root[data-theme="dark"], [data-theme="dark"] {
+  color-scheme: dark;
+  --klab-background: #191d20;
+  --klab-surface: #22272b;
+  --klab-surface-alt: #2a3035;
+  --klab-ink: #e9edee;
+  --klab-muted: #b2bcc1;
+  --klab-border: #41494f;
+  --klab-field-border: #7e8c94;
+  --klab-action: #9bbdff;
+  --klab-action-ink: #142540;
+  --klab-selection: #314a6c;
+  --klab-success: #8fd5a5;
+  --klab-success-bg: #243c2d;
+  --klab-warning: #edc47d;
+  --klab-warning-bg: #423622;
+  --klab-danger: #ffb3a9;
+  --klab-danger-bg: #452c2a;
+  --klab-overlay: rgba(0, 0, 0, .62);
+  --klab-shadow: 0 12px 36px rgba(0, 0, 0, .3);
+}
+:root {
+  --q-primary: var(--klab-action);
+  --q-secondary: var(--klab-muted);
+  --q-accent: var(--klab-action);
+  --q-positive: var(--klab-success);
+  --q-warning: var(--klab-warning);
+  --q-negative: var(--klab-danger);
+  --q-dark: var(--klab-ink);
+  --q-dark-page: var(--klab-background);
+}

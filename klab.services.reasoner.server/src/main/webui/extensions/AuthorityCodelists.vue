@@ -128,13 +128,25 @@ async function remove(namespace: string, alias: string) {
   </section>
 </template>
 <style scoped>
-.codelists { padding: 24px; max-width: 1100px; margin: auto; }
+.codelists { padding: 24px; max-width: 1100px; margin: auto; min-width: 0; font-size: 16px; line-height: 1.5; }
+.codelists h2 { margin: 0 0 24px; font-size: 24px; line-height: 1.3; font-weight: 600; }
+.codelists h3 { margin: 24px 0 16px; font-size: 20px; line-height: 1.4; font-weight: 600; }
+.codelists h4 { margin: 24px 0 16px; font-size: 16px; line-height: 1.5; font-weight: 600; }
+.codelists button { min-height: 44px; max-width: 100%; background: var(--klab-surface); color: var(--klab-ink); cursor: pointer; }
+.codelists button:disabled { cursor: default; opacity: .5; }
+.codelists table { table-layout: fixed; }
+.codelists td, .codelists th { overflow-wrap: anywhere; vertical-align: top; }
+@media (max-width: 580px) {
+  .codelists { padding: 16px; }
+  .codelists td, .codelists th { padding: 8px 6px; }
+  .codelists table button { padding: 8px; }
+}
 .controls { display: flex; gap: 16px; align-items: end; flex-wrap: wrap; }
 label { display: grid; gap: 6px; margin: 12px 0; }
-input, select, textarea, button { padding: 9px 12px; border-radius: 5px; border: 1px solid #79998e; }
-input, select, textarea { background: #fff; color: #17372e; }
+input, select, textarea, button { padding: 9px 12px; border-radius: var(--klab-radius); border: 1px solid var(--klab-field-border); }
+input, select, textarea { background: var(--klab-surface); color: var(--klab-ink); }
 button { cursor: pointer; } button:disabled { opacity: .5; cursor: default; }
-table { width: 100%; border-collapse: collapse; } td, th { padding: 10px; text-align: left; border-bottom: 1px solid #79998e; }
-.review { border: 1px solid #79998e; border-radius: 8px; padding: 16px; margin-top: 20px; }
-[role=alert] { color: #ffb4ab; }
+table { width: 100%; border-collapse: collapse; } td, th { padding: 10px; text-align: left; border-bottom: 1px solid var(--klab-field-border); }
+.review { border: 1px solid var(--klab-field-border); border-radius: var(--klab-radius); padding: 16px; margin-top: 20px; }
+[role=alert] { color: var(--klab-danger); }
 </style>

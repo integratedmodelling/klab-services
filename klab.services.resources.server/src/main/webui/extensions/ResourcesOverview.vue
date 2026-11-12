@@ -20,6 +20,6 @@ const transportGroups = computed(() =>
 
 <style scoped>
 .stub-extension { display: flex; gap: 16px; align-items: start; }
-strong { font-size: 15px; }
-p { margin: 5px 0 0; color: #9ebdb4; font-size: 13px; line-height: 1.55; }
+strong { font-size: 16px; }
+p { margin: 5px 0 0; color: var(--klab-muted); font-size: 16px; line-height: 1.55; }
 </style>

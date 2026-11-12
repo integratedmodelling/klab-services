@@ -52,7 +52,7 @@ function countSchemata(value: unknown): number {
       </div>
       <div v-if="permissions.length" class="permission-row">
         <span class="metric-label">Your permissions</span>
-        <q-chip v-for="permission in permissions" :key="String(permission)" dense color="teal-9" text-color="teal-1">
+        <q-chip v-for="permission in permissions" :key="String(permission)" dense>
           {{ permission }}
         </q-chip>
       </div>

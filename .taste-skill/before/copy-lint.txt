@@ -1,0 +1,14 @@
+
+== klab.core.services/src/main/webui/src/App.vue  (1258 words)  1 FAIL, 1 WARN
+  FAIL copy-residue         chatbot residue, a template token, markdown or a [NEED] left on the page
+       - "{{ page.title }}" in: >{{ page.title }}</a>
+       - "{{ link.label }}" in: >{{ link.label }}</a>
+       - "{{ page.title }}" in: <q-item-section>{{ page.title }}</q-item-section>
+       - "{{ link.label }}" in: <q-item-section>{{ link.label }}</q-item-section>
+       fix: write the real words from the brief, or leave the element out and list what is missing in the report
+  WARN copy-exclaim         10 lines with an exclamation mark
+       - if (!dirtyGuards.value.length) { action(); return; }
+       - if (savingBeforeLeave.value || cannotDiscard.value || (save && !canSaveBeforeLeave.value)) return;
+       - if (!await guard.save()) { leaveError.value = "Your work could not be saved. Stay here to review the messag...
+       - get config() { return config.value!; },
+       fix: end on a full stop: copy.md bans exclamation marks

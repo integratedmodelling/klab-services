@@ -1,0 +1,4 @@
+Unavailable on the original live URL: the unmodified skill performance script exited with:
+Error: Runtime.evaluate: Inspected target navigated or closed
+The Keycloak check-sso redirect changed the browser target during measurement.
+No baseline timing values are inferred. Final preview timing skips automatic SSO on its unregistered origin and is reported separately.

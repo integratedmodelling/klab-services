@@ -1,21 +1,17 @@
 import { createApp } from "vue";
-import { Notify, Quasar } from "quasar";
+import { Dark, Notify, Quasar } from "quasar";
 
 import "@quasar/extras/material-icons/material-icons.css";
 import "quasar/dist/quasar.css";
 
 import App from "./App.vue";
+import "./styles/theme.css";
 import "./styles.css";
+import { initializeTheme } from "./services/theme";
 
-createApp(App)
+const app = createApp(App)
   .use(Quasar, {
-    plugins: { Notify },
-    config: {
-      brand: {
-        primary: "#18b795",
-        secondary: "#9ab558",
-        dark: "#092f2a",
-      },
-    },
-  })
-  .mount("#app");
+    plugins: { Notify, Dark },
+  });
+initializeTheme();
+app.mount("#app");

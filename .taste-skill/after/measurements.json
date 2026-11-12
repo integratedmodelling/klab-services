@@ -1,0 +1,622 @@
+[
+  {
+    "service": "reasoner",
+    "width": 1440,
+    "overflow": 0,
+    "pageHeight": 1055,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 80,
+    "rightEdge": 80,
+    "background": "none"
+  },
+  {
+    "service": "reasoner",
+    "width": 1024,
+    "overflow": 0,
+    "pageHeight": 1075,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 32,
+    "rightEdge": 32,
+    "background": "none"
+  },
+  {
+    "service": "reasoner",
+    "width": 820,
+    "overflow": 0,
+    "pageHeight": 1486,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 24,
+    "rightEdge": 24,
+    "background": "none"
+  },
+  {
+    "service": "reasoner",
+    "width": 768,
+    "overflow": 0,
+    "pageHeight": 1486,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 24,
+    "rightEdge": 24,
+    "background": "none"
+  },
+  {
+    "service": "reasoner",
+    "width": 390,
+    "overflow": 0,
+    "pageHeight": 1966,
+    "h1Size": "28px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 16,
+    "rightEdge": 16,
+    "background": "none"
+  },
+  {
+    "service": "reasoner",
+    "width": 320,
+    "overflow": 0,
+    "pageHeight": 2080,
+    "h1Size": "28px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 16,
+    "rightEdge": 16,
+    "background": "none"
+  },
+  {
+    "service": "reasoner",
+    "route": "knowledge-explorer",
+    "title": "Knowledge explorer",
+    "gated": false,
+    "forms": 0
+  },
+  {
+    "service": "reasoner",
+    "route": "authority-codelists",
+    "title": "Authority codelists",
+    "gated": true,
+    "forms": 0
+  },
+  {
+    "service": "reasoner",
+    "controls": [
+      {
+        "tag": "A",
+        "label": "Skip to content",
+        "href": "#main-content"
+      },
+      {
+        "tag": "A",
+        "label": "Service dashboard",
+        "href": "./"
+      },
+      {
+        "tag": "A",
+        "label": "Knowledge explorer",
+        "href": "ui/knowledge-explorer"
+      },
+      {
+        "tag": "A",
+        "label": "Authority codelists",
+        "href": "ui/authority-codelists"
+      },
+      {
+        "tag": "A",
+        "label": "OpenAPI",
+        "href": "swagger-ui/index.html"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Service interfaces",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Switch to dark theme",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "loginSign in",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Refresh dashboard",
+        "href": null
+      }
+    ],
+    "errors": [],
+    "openapi": 200,
+    "mobileMenu": true
+  },
+  {
+    "service": "reasoner",
+    "openapiClick": true,
+    "url": "http://localhost:8091/reasoner/swagger-ui/index.html"
+  },
+  {
+    "service": "reasoner",
+    "signInHandoff": {
+      "path": "/realms/im/protocol/openid-connect/auth",
+      "client": "klab-dashboard",
+      "returnUri": "http://localhost:8091/reasoner/"
+    }
+  },
+  {
+    "service": "resources",
+    "width": 1440,
+    "overflow": 0,
+    "pageHeight": 1055,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 80,
+    "rightEdge": 80,
+    "background": "none"
+  },
+  {
+    "service": "resources",
+    "width": 1024,
+    "overflow": 0,
+    "pageHeight": 1075,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 32,
+    "rightEdge": 32,
+    "background": "none"
+  },
+  {
+    "service": "resources",
+    "width": 820,
+    "overflow": 0,
+    "pageHeight": 1486,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 24,
+    "rightEdge": 24,
+    "background": "none"
+  },
+  {
+    "service": "resources",
+    "width": 768,
+    "overflow": 0,
+    "pageHeight": 1486,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 24,
+    "rightEdge": 24,
+    "background": "none"
+  },
+  {
+    "service": "resources",
+    "width": 390,
+    "overflow": 0,
+    "pageHeight": 1966,
+    "h1Size": "28px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 16,
+    "rightEdge": 16,
+    "background": "none"
+  },
+  {
+    "service": "resources",
+    "width": 320,
+    "overflow": 0,
+    "pageHeight": 2007,
+    "h1Size": "28px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 16,
+    "rightEdge": 16,
+    "background": "none"
+  },
+  {
+    "service": "resources",
+    "route": "resource-catalog",
+    "title": "Resource catalog",
+    "gated": false,
+    "forms": 0
+  },
+  {
+    "service": "resources",
+    "route": "workflows",
+    "title": "Workflows",
+    "gated": true,
+    "forms": 0
+  },
+  {
+    "service": "resources",
+    "route": "review",
+    "title": "Ontology review",
+    "gated": true,
+    "forms": 0
+  },
+  {
+    "service": "resources",
+    "controls": [
+      {
+        "tag": "A",
+        "label": "Skip to content",
+        "href": "#main-content"
+      },
+      {
+        "tag": "A",
+        "label": "Service dashboard",
+        "href": "./"
+      },
+      {
+        "tag": "A",
+        "label": "Resource catalog",
+        "href": "ui/resource-catalog"
+      },
+      {
+        "tag": "A",
+        "label": "Workflows",
+        "href": "ui/workflows"
+      },
+      {
+        "tag": "A",
+        "label": "Ontology review",
+        "href": "ui/review"
+      },
+      {
+        "tag": "A",
+        "label": "OpenAPI",
+        "href": "swagger-ui/index.html"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Service interfaces",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Switch to dark theme",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "loginSign in",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Refresh dashboard",
+        "href": null
+      }
+    ],
+    "errors": [],
+    "openapi": 200,
+    "mobileMenu": true
+  },
+  {
+    "service": "resources",
+    "openapiClick": true,
+    "url": "http://localhost:8092/resources/swagger-ui/index.html"
+  },
+  {
+    "service": "resources",
+    "signInHandoff": {
+      "path": "/realms/im/protocol/openid-connect/auth",
+      "client": "klab-dashboard",
+      "returnUri": "http://localhost:8092/resources/"
+    }
+  },
+  {
+    "service": "resolver",
+    "width": 1440,
+    "overflow": 0,
+    "pageHeight": 1055,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 80,
+    "rightEdge": 80,
+    "background": "none"
+  },
+  {
+    "service": "resolver",
+    "width": 1024,
+    "overflow": 0,
+    "pageHeight": 1075,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 32,
+    "rightEdge": 32,
+    "background": "none"
+  },
+  {
+    "service": "resolver",
+    "width": 820,
+    "overflow": 0,
+    "pageHeight": 1453,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 24,
+    "rightEdge": 24,
+    "background": "none"
+  },
+  {
+    "service": "resolver",
+    "width": 768,
+    "overflow": 0,
+    "pageHeight": 1453,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 24,
+    "rightEdge": 24,
+    "background": "none"
+  },
+  {
+    "service": "resolver",
+    "width": 390,
+    "overflow": 0,
+    "pageHeight": 1859,
+    "h1Size": "28px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 16,
+    "rightEdge": 16,
+    "background": "none"
+  },
+  {
+    "service": "resolver",
+    "width": 320,
+    "overflow": 0,
+    "pageHeight": 1963,
+    "h1Size": "28px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 16,
+    "rightEdge": 16,
+    "background": "none"
+  },
+  {
+    "service": "resolver",
+    "route": "resolution-workbench",
+    "title": "Resolution workbench",
+    "gated": true,
+    "forms": 0
+  },
+  {
+    "service": "resolver",
+    "controls": [
+      {
+        "tag": "A",
+        "label": "Skip to content",
+        "href": "#main-content"
+      },
+      {
+        "tag": "A",
+        "label": "Service dashboard",
+        "href": "./"
+      },
+      {
+        "tag": "A",
+        "label": "Resolution workbench",
+        "href": "ui/resolution-workbench"
+      },
+      {
+        "tag": "A",
+        "label": "OpenAPI",
+        "href": "swagger-ui/index.html"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Service interfaces",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Switch to dark theme",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "loginSign in",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Refresh dashboard",
+        "href": null
+      }
+    ],
+    "errors": [],
+    "openapi": 200,
+    "mobileMenu": true
+  },
+  {
+    "service": "resolver",
+    "openapiClick": true,
+    "url": "http://localhost:8093/resolver/swagger-ui/index.html"
+  },
+  {
+    "service": "resolver",
+    "signInHandoff": {
+      "path": "/realms/im/protocol/openid-connect/auth",
+      "client": "klab-dashboard",
+      "returnUri": "http://localhost:8093/resolver/"
+    }
+  },
+  {
+    "service": "runtime",
+    "width": 1440,
+    "overflow": 0,
+    "pageHeight": 1055,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 80,
+    "rightEdge": 80,
+    "background": "none"
+  },
+  {
+    "service": "runtime",
+    "width": 1024,
+    "overflow": 0,
+    "pageHeight": 1075,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 32,
+    "rightEdge": 32,
+    "background": "none"
+  },
+  {
+    "service": "runtime",
+    "width": 820,
+    "overflow": 0,
+    "pageHeight": 1453,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 24,
+    "rightEdge": 24,
+    "background": "none"
+  },
+  {
+    "service": "runtime",
+    "width": 768,
+    "overflow": 0,
+    "pageHeight": 1453,
+    "h1Size": "32px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 24,
+    "rightEdge": 24,
+    "background": "none"
+  },
+  {
+    "service": "runtime",
+    "width": 390,
+    "overflow": 0,
+    "pageHeight": 1859,
+    "h1Size": "28px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 16,
+    "rightEdge": 16,
+    "background": "none"
+  },
+  {
+    "service": "runtime",
+    "width": 320,
+    "overflow": 0,
+    "pageHeight": 1942,
+    "h1Size": "28px",
+    "h1Font": "\"Segoe UI\", -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+    "cardRadius": "4px",
+    "cardShadow": "none",
+    "leftEdge": 16,
+    "rightEdge": 16,
+    "background": "none"
+  },
+  {
+    "service": "runtime",
+    "route": "session-monitor",
+    "title": "Session monitor",
+    "gated": true,
+    "forms": 0
+  },
+  {
+    "service": "runtime",
+    "controls": [
+      {
+        "tag": "A",
+        "label": "Skip to content",
+        "href": "#main-content"
+      },
+      {
+        "tag": "A",
+        "label": "Service dashboard",
+        "href": "./"
+      },
+      {
+        "tag": "A",
+        "label": "Session monitor",
+        "href": "ui/session-monitor"
+      },
+      {
+        "tag": "A",
+        "label": "OpenAPI",
+        "href": "swagger-ui/index.html"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Service interfaces",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Switch to dark theme",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "loginSign in",
+        "href": null
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Refresh dashboard",
+        "href": null
+      }
+    ],
+    "errors": [],
+    "openapi": 200,
+    "mobileMenu": true
+  },
+  {
+    "service": "runtime",
+    "openapiClick": true,
+    "url": "http://localhost:8094/runtime/swagger-ui/index.html"
+  },
+  {
+    "service": "runtime",
+    "signInHandoff": {
+      "path": "/realms/im/protocol/openid-connect/auth",
+      "client": "klab-dashboard",
+      "returnUri": "http://localhost:8094/runtime/"
+    }
+  }
+]

@@ -1,0 +1,1131 @@
+{
+ "start": "2026-11-12T07:00:21.172Z",
+ "round": 3,
+ "idle": 0,
+ "errors": 0,
+ "status": "open",
+ "history": [
+  {
+   "at": "2026-11-12T07:39:05.877Z",
+   "mode": "manual",
+   "status": "fail",
+   "fails": 32,
+   "round": 1,
+   "reused": false,
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-12T07:44:50.346Z",
+   "mode": "manual",
+   "status": "fail",
+   "fails": 30,
+   "round": 2,
+   "reused": true,
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-12T07:47:35.924Z",
+   "mode": "manual",
+   "status": "open",
+   "fails": 27,
+   "round": 3,
+   "reused": false,
+   "stopHookActive": false
+  }
+ ],
+ "max": 3,
+ "marker": {
+  "page": null,
+  "url": "http://127.0.0.1:5190/resources/?build=index-BFcyPZLe.js",
+  "root": null,
+  "kind": "software",
+  "category": "resources",
+  "primary": "Refresh dashboard",
+  "rounds": 3,
+  "start": "2026-11-12T07:00:21.172Z",
+  "by": "gate.mjs --start"
+ },
+ "manual": true,
+ "roundKey": "18f2715c939cdfdd:011b5a5f",
+ "roundFree": false,
+ "idleFree": false,
+ "blockKey": null,
+ "fp": "18f2715c939cdfdd",
+ "page": "http://127.0.0.1:5190/resources/?build=index-BFcyPZLe.js",
+ "found": {
+  "fails": [
+   {
+    "check": "hero-fill",
+    "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state Operational Ready for \"",
+    "msg": "the next section shows on the first screen: it starts at 245px on a 900px screen (the hero ends at 217px)",
+    "fix": "let the hero fill the first screen alone (min-height: 100svh, less above it): nothing of the next section on load",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "hero-fill"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.status-grid \"Operational state Operational Ready for \""
+    ]
+   },
+   {
+    "check": "flush",
+    "where": "main.dashboard-main > section.intro-row > div > p \"Resource catalogs, adapters, and transpo\"",
+    "msg": "its last line sits 2px above the rule on top of section.status-grid",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "flush"
+    ],
+    "wheres": [
+     "main.dashboard-main > section.intro-row > div > p \"Resource catalogs, adapters, and transpo\""
+    ]
+   },
+   {
+    "check": "flush",
+    "where": "div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) \"Discovery Capabilities hub Service name \"",
+    "msg": "its first line sits 0px under the top edge of section.dashboard-content, where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "flush"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) \"Discovery Capabilities hub Service name \""
+    ]
+   },
+   {
+    "check": "text-only",
+    "where": "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\"",
+    "msg": "the closing section is only text: no picture, icon, mock or effect in it",
+    "fix": "give the section a visual: a photograph that fits, the real icons, or a UI fragment on a ground",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-only"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\""
+    ]
+   },
+   {
+    "check": "cta",
+    "where": "div#main-content > main.dashboard-main > section.intro-row",
+    "msg": "the hero has no button (the nav's does not count)",
+    "fix": "add the action: a button in the hero, one on every priced item, one in the closing section",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "cta"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.intro-row"
+    ]
+   },
+   {
+    "check": "cta",
+    "where": "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\"",
+    "msg": "the last section before the footer ends with no button",
+    "fix": "add the action: a button in the hero, one on every priced item, one in the closing section",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "cta"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\""
+    ]
+   },
+   {
+    "check": "focus-ring",
+    "where": ".q-virtual-scroll:focus",
+    "msg": "\".q-virtual-scroll:focus\" in index-DziNTRoo.css removes the focus outline and sets nothing in its place",
+    "fix": "keep the kit's :focus-visible ring, or put a change of the same strength (a 2px line in --action) in the rule that removes it",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "focus-ring"
+    ],
+    "wheres": [
+     ".q-virtual-scroll:focus"
+    ]
+   },
+   {
+    "check": "moment-none",
+    "where": "(the page)",
+    "msg": "a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)",
+    "fix": "deal one (moments.mjs pick --page software) and mount it in its own section",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "moment-none"
+    ],
+    "wheres": [
+     "(the page)"
+    ]
+   },
+   {
+    "check": "hero-screen",
+    "where": "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\"",
+    "msg": "the hero ends at 217px on a 900px screen, 683px above the fold: it ends at the fold, 1px either way (SR-1)",
+    "fix": "make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "hero-screen"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\""
+    ]
+   },
+   {
+    "check": "hero-screen",
+    "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\"",
+    "msg": "655px of the next section shows on the first screen (from 245px on a 900px screen): nothing below the hero shows at load (SR-1)",
+    "fix": "end the hero at the fold so nothing of the next section shows at load (hero height: 100svh)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "hero-screen"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div#main-content > footer.dashboard-footer \"k.LAB service interfacePublic telemetry \"",
+    "msg": "the section is 77px tall (0.1 screens), 824px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)",
+    "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div#main-content > footer.dashboard-footer \"k.LAB service interfacePublic telemetry \"",
+     "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\"",
+     "div#main-content > main.dashboard-main > section.dashboard-content \"DiscoveryCapabilitieshubService namereso\"",
+     "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\""
+    ]
+   },
+   {
+    "check": "section-air",
+    "where": "main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) > hr.q-separator.q-separator--horizontal",
+    "msg": "a rule (<hr>) between the section's content: sections and their parts are told apart by air and ground, not lines (SR-3)",
+    "fix": "take the rule out: sections and their parts are parted by their ground and the air between them",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-air"
+    ],
+    "wheres": [
+     "main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) > hr.q-separator.q-separator--horizontal"
+    ]
+   },
+   {
+    "check": "section-air",
+    "where": "main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(2) > hr.q-separator.q-separator--horizontal",
+    "msg": "a rule (<hr>) between the section's content: sections and their parts are told apart by air and ground, not lines (SR-3)",
+    "fix": "take the rule out: sections and their parts are parted by their ground and the air between them",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-air"
+    ],
+    "wheres": [
+     "main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(2) > hr.q-separator.q-separator--horizontal"
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "main.dashboard-main > section.intro-row > div > h1 \"Resources overview\"",
+    "msg": "the screen at scroll 0px (stride 0) shows 150px of section 2 and the heading of section 1 whole and the content of 3 sections, over 24px each beside section 3: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+    "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "main.dashboard-main > section.intro-row > div > h1 \"Resources overview\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\"",
+    "msg": "the screen at scroll 121px (the top of section 1) shows 150px of section 2 and the content of 2 sections, over 24px each beside section 3: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+    "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\""
+    ]
+   },
+   {
+    "check": "one-heading",
+    "where": "div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > h2 \"Resource workspace\"",
+    "msg": "the section holds 2 h2 headings: one per section, first in its .wrap (SR-5)",
+    "fix": "give each section one h2, first in its .wrap, and the hero only its h1",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-heading"
+    ],
+    "wheres": [
+     "div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > h2 \"Resource workspace\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#app \"Skip to contentIntegrated modellingk.LAB\"",
+    "msg": "a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+    "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#app \"Skip to contentIntegrated modellingk.LAB\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\"",
+    "msg": "the section needs exactly one in-flow child .wrap (it has 2 in-flow children, 0 .wrap) (SR-6)",
+    "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\"",
+    "msg": "the section needs exactly one in-flow child .wrap (it has 4 in-flow children, 0 .wrap) (and 2 more like it: \"DiscoveryCapabilitieshub\", \"k.LAB service interfaceP\") (SR-6)",
+    "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > h2 \"Resource workspace\"",
+    "msg": "the h2 starts 721px right of the container's left: every h1 and h2 starts on it, 2px either way (SR-6)",
+    "fix": "start the text on the container's left, or on the one split line every split shares",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > h2 \"Resource workspace\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.q-item.q-item-type > div.q-item__section.column:nth-of-type(2) > i.q-icon.notranslate > span \"extension\"",
+    "msg": "1 text block starts on a left line at x 121, 41px from the container's left: text starts on the container's left, or on one split line (x 623, 732, 841) (SR-6)",
+    "fix": "start the text on the container's left, or on the one split line every split shares",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.q-item.q-item-type > div.q-item__section.column:nth-of-type(2) > i.q-icon.notranslate > span \"extension\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.q-card.q-card--flat:nth-of-type(1) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > div.eyebrow \"Discovery\"",
+    "msg": "7 text blocks start on a left line at x 105, 25px from the container's left: text starts on the container's left, or on one split line (x 623, 732, 841) (also \"Capabilities\", \"Service name\", \"Service ID\") (and 1 more like it: \"Capabilities\") (SR-6)",
+    "fix": "start the text on the container's left, or on the one split line every split shares",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.q-card.q-card--flat:nth-of-type(1) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > div.eyebrow \"Discovery\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) \"DiscoveryCapabilitieshubService namereso\"",
+    "msg": "a box over half the container wide runs 80-752px, not on the container's lines at 80-1360px (SR-6)",
+    "fix": "run the picture or box from the container's left line to its right line, or put it in a row or a split",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) \"DiscoveryCapabilitieshubService namereso\""
+    ]
+   },
+   {
+    "check": "nav",
+    "where": "div#app > div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal > div.q-toolbar.row",
+    "msg": "nav links wrap onto 2 rows",
+    "fix": "make the nav one bar from the content's left edge to its right edge, with every link and action inside it",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "nav"
+    ],
+    "wheres": [
+     "div#app > div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal > div.q-toolbar.row"
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state Operational Ready for \"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.status-grid \"Operational state Operational Ready for \""
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\""
+    ]
+   },
+   {
+    "check": "heading-scale",
+    "where": "section.status-grid > div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert > div.metric-value \"-1%\"",
+    "msg": "the figure \"-1%\" is set at 28px, larger than the section headings (h2 21px); 4 more like it",
+    "fix": "set figures at the h2 size or under: a stat reads as data, not as the heading",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "heading-scale"
+    ],
+    "wheres": [
+     "section.status-grid > div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert > div.metric-value \"-1%\""
+    ]
+   },
+   {
+    "check": "menu-toggle",
+    "where": "div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal > div.q-toolbar.row > button.q-btn.q-btn-item:nth-of-type(2) \"Switch to dark theme\"",
+    "msg": "the menu button (\"Switch to dark theme\") has no aria-expanded: a screen reader cannot tell the menu is open or shut",
+    "fix": "use the starter's button: <button class=\"nav__toggle\" type=\"button\" aria-expanded=\"false\" aria-label=\"Menu\">; system.js flips it",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "menu-toggle"
+    ],
+    "wheres": [
+     "div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal > div.q-toolbar.row > button.q-btn.q-btn-item:nth-of-type(2) \"Switch to dark theme\""
+    ]
+   },
+   {
+    "check": "container",
+    "where": "page",
+    "msg": "no .wrap",
+    "fix": "put the content in one .wrap",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "layout",
+    "ids": [
+     "container"
+    ],
+    "wheres": [
+     "page"
+    ]
+   }
+  ],
+  "warns": [
+   {
+    "check": "flush",
+    "where": "section.status-grid > div.q-card.q-card--flat:nth-of-type(1) > div.q-card__section.q-card__section--vert > div.metric-label \"Operational state\"",
+    "msg": "its first line sits 25px under the top edge of section.status-grid, where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert > div.q-linear-progress.text-primary > div.q-linear-progress__model.absolute-full",
+    "msg": "its last line sits 25px above the lower edge of section.status-grid, where the ground changes to section.dashboard-content",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "fold-card",
+    "where": "div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) \"Discovery Capabilities hub Service name \"",
+    "msg": "the 672x503 card starts on the first screen and runs 30px past its bottom",
+    "fix": "end the card inside the first screen, or start it lower, so its whole edge shows",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-buttons",
+    "where": "header.q-header.q-layout__section--marginal > div.q-toolbar.row > div.login-control > button.q-btn.q-btn-item \"login Sign in\"",
+    "msg": "\"login Sign in\" does not start with a verb (book, buy, try, start, get, see...)",
+    "fix": "label buttons with a verb and what the visitor gets (\"Book a room\", \"Start free trial\")",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-actions",
+    "where": "(the page)",
+    "msg": "the main action \"Refresh dashboard\" does not read word for word the same in the nav or hero and the closing section",
+    "fix": "few actions, one wording: at most 2 in the hero, the main action word for word in nav, hero and close",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "heading-scale",
+    "where": "section.status-grid > div.q-card.q-card--flat:nth-of-type(1) > div.q-card__section.q-card__section--vert > div.metric-value.state-value \"Operational\"",
+    "msg": "1 line of plain text set larger than the section headings (28px against h2 21px)",
+    "fix": "size headings by level: the h1 largest, one size per level, each level below the one above",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "nav-family",
+    "where": "div#app > div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal",
+    "msg": "the nav's links and actions use 2 type families (Segoe UI, Material Icons)",
+    "fix": "keep one nav on every screen: the same bar, fill, links and type",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "progress-bar",
+    "where": "section.status-grid > div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert > div.q-linear-progress.text-primary \"Health -1%\"",
+    "msg": "a progress or meter bar on the page, like the one in \"Health -1%\": the house rules have no drag or progress bars",
+    "fix": "show the figure in words or as a number (\"2 of 5 done\"), not as a bar that fills",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "share-meta",
+    "where": "head",
+    "msg": "the head lacks og:title, og:description, og:image, twitter:card: a shared link shows no picture or title of its own",
+    "fix": "copy the head block of starter.html: og tags, twitter:card, the icon and theme-color (references/system.md, Head)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "section-air",
+    "where": "div#main-content > main.dashboard-main > section.status-grid / div#main-content > main.dashboard-main > section.dashboard-content",
+    "msg": "84px of air between the content of these two sections: 128-480px (64-600px WARN) (SR-3)",
+    "fix": "keep 128-480px of air between the content of neighbouring sections (112-420px on a phone): the sections' padding (--padt, --padb)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-stat-strip",
+    "msg": "stat strip x1",
+    "fix": "a strip only of figures the brief gives (a price, hours, a count); otherwise put each number in the sentence it proves, or leave it out (references/copy-tells.md)",
+    "widths": [],
+    "from": "copy",
+    "where": "copy x1: \"-1% / 0.0% / 3 / 5 / 2\"",
+    "exact": false
+   }
+  ],
+  "crashed": [],
+  "seconds": {
+   "consistency": 93,
+   "layout": 17
+  }
+ },
+ "open": [
+  {
+   "check": "hero-fill",
+   "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state Operational Ready for \"",
+   "msg": "the next section shows on the first screen: it starts at 245px on a 900px screen (the hero ends at 217px)",
+   "fix": "let the hero fill the first screen alone (min-height: 100svh, less above it): nothing of the next section on load",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "hero-fill"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.status-grid \"Operational state Operational Ready for \""
+   ]
+  },
+  {
+   "check": "flush",
+   "where": "main.dashboard-main > section.intro-row > div > p \"Resource catalogs, adapters, and transpo\"",
+   "msg": "its last line sits 2px above the rule on top of section.status-grid",
+   "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "flush"
+   ],
+   "wheres": [
+    "main.dashboard-main > section.intro-row > div > p \"Resource catalogs, adapters, and transpo\""
+   ]
+  },
+  {
+   "check": "flush",
+   "where": "div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) \"Discovery Capabilities hub Service name \"",
+   "msg": "its first line sits 0px under the top edge of section.dashboard-content, where the ground changes",
+   "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "flush"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) \"Discovery Capabilities hub Service name \""
+   ]
+  },
+  {
+   "check": "text-only",
+   "where": "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\"",
+   "msg": "the closing section is only text: no picture, icon, mock or effect in it",
+   "fix": "give the section a visual: a photograph that fits, the real icons, or a UI fragment on a ground",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-only"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\""
+   ]
+  },
+  {
+   "check": "cta",
+   "where": "div#main-content > main.dashboard-main > section.intro-row",
+   "msg": "the hero has no button (the nav's does not count)",
+   "fix": "add the action: a button in the hero, one on every priced item, one in the closing section",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "cta"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.intro-row"
+   ]
+  },
+  {
+   "check": "cta",
+   "where": "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\"",
+   "msg": "the last section before the footer ends with no button",
+   "fix": "add the action: a button in the hero, one on every priced item, one in the closing section",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "cta"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\""
+   ]
+  },
+  {
+   "check": "moment-none",
+   "where": "(the page)",
+   "msg": "a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)",
+   "fix": "deal one (moments.mjs pick --page software) and mount it in its own section",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "moment-none"
+   ],
+   "wheres": [
+    "(the page)"
+   ]
+  },
+  {
+   "check": "hero-screen",
+   "where": "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\"",
+   "msg": "the hero ends at 217px on a 900px screen, 683px above the fold: it ends at the fold, 1px either way (SR-1)",
+   "fix": "make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "hero-screen"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\""
+   ]
+  },
+  {
+   "check": "hero-screen",
+   "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\"",
+   "msg": "655px of the next section shows on the first screen (from 245px on a 900px screen): nothing below the hero shows at load (SR-1)",
+   "fix": "end the hero at the fold so nothing of the next section shows at load (hero height: 100svh)",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "hero-screen"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div#main-content > footer.dashboard-footer \"k.LAB service interfacePublic telemetry \"",
+   "msg": "the section is 77px tall (0.1 screens), 824px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)",
+   "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div#main-content > footer.dashboard-footer \"k.LAB service interfacePublic telemetry \"",
+    "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\"",
+    "div#main-content > main.dashboard-main > section.dashboard-content \"DiscoveryCapabilitieshubService namereso\"",
+    "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\""
+   ]
+  },
+  {
+   "check": "section-air",
+   "where": "main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) > hr.q-separator.q-separator--horizontal",
+   "msg": "a rule (<hr>) between the section's content: sections and their parts are told apart by air and ground, not lines (SR-3)",
+   "fix": "take the rule out: sections and their parts are parted by their ground and the air between them",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-air"
+   ],
+   "wheres": [
+    "main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) > hr.q-separator.q-separator--horizontal"
+   ]
+  },
+  {
+   "check": "section-air",
+   "where": "main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(2) > hr.q-separator.q-separator--horizontal",
+   "msg": "a rule (<hr>) between the section's content: sections and their parts are told apart by air and ground, not lines (SR-3)",
+   "fix": "take the rule out: sections and their parts are parted by their ground and the air between them",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-air"
+   ],
+   "wheres": [
+    "main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(2) > hr.q-separator.q-separator--horizontal"
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "main.dashboard-main > section.intro-row > div > h1 \"Resources overview\"",
+   "msg": "the screen at scroll 0px (stride 0) shows 150px of section 2 and the heading of section 1 whole and the content of 3 sections, over 24px each beside section 3: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+   "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "main.dashboard-main > section.intro-row > div > h1 \"Resources overview\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\"",
+   "msg": "the screen at scroll 121px (the top of section 1) shows 150px of section 2 and the content of 2 sections, over 24px each beside section 3: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+   "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\""
+   ]
+  },
+  {
+   "check": "one-heading",
+   "where": "div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > h2 \"Resource workspace\"",
+   "msg": "the section holds 2 h2 headings: one per section, first in its .wrap (SR-5)",
+   "fix": "give each section one h2, first in its .wrap, and the hero only its h1",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-heading"
+   ],
+   "wheres": [
+    "div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > h2 \"Resource workspace\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#app \"Skip to contentIntegrated modellingk.LAB\"",
+   "msg": "a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+   "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#app \"Skip to contentIntegrated modellingk.LAB\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\"",
+   "msg": "the section needs exactly one in-flow child .wrap (it has 2 in-flow children, 0 .wrap) (SR-6)",
+   "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.intro-row \"RESOURCESResources overviewResource cata\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\"",
+   "msg": "the section needs exactly one in-flow child .wrap (it has 4 in-flow children, 0 .wrap) (and 2 more like it: \"DiscoveryCapabilitieshub\", \"k.LAB service interfaceP\") (SR-6)",
+   "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.status-grid \"Operational state OperationalReady for r\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > h2 \"Resource workspace\"",
+   "msg": "the h2 starts 721px right of the container's left: every h1 and h2 starts on it, 2px either way (SR-6)",
+   "fix": "start the text on the container's left, or on the one split line every split shares",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > h2 \"Resource workspace\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.q-item.q-item-type > div.q-item__section.column:nth-of-type(2) > i.q-icon.notranslate > span \"extension\"",
+   "msg": "1 text block starts on a left line at x 121, 41px from the container's left: text starts on the container's left, or on one split line (x 623, 732, 841) (SR-6)",
+   "fix": "start the text on the container's left, or on the one split line every split shares",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.q-item.q-item-type > div.q-item__section.column:nth-of-type(2) > i.q-icon.notranslate > span \"extension\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.q-card.q-card--flat:nth-of-type(1) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > div.eyebrow \"Discovery\"",
+   "msg": "7 text blocks start on a left line at x 105, 25px from the container's left: text starts on the container's left, or on one split line (x 623, 732, 841) (also \"Capabilities\", \"Service name\", \"Service ID\") (and 1 more like it: \"Capabilities\") (SR-6)",
+   "fix": "start the text on the container's left, or on the one split line every split shares",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.q-card.q-card--flat:nth-of-type(1) > div.q-card__section.q-card__section--vert:nth-of-type(1) > div > div.eyebrow \"Discovery\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) \"DiscoveryCapabilitieshubService namereso\"",
+   "msg": "a box over half the container wide runs 80-752px, not on the container's lines at 80-1360px (SR-6)",
+   "fix": "run the picture or box from the container's left line to its right line, or put it in a row or a split",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) \"DiscoveryCapabilitieshubService namereso\""
+   ]
+  },
+  {
+   "check": "nav",
+   "where": "div#app > div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal > div.q-toolbar.row",
+   "msg": "nav links wrap onto 2 rows",
+   "fix": "make the nav one bar from the content's left edge to its right edge, with every link and action inside it",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "nav"
+   ],
+   "wheres": [
+    "div#app > div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal > div.q-toolbar.row"
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div#main-content > main.dashboard-main > section.status-grid \"Operational state Operational Ready for \"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.status-grid \"Operational state Operational Ready for \""
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div#main-content > main.dashboard-main > section.dashboard-content \"Capabilities\""
+   ]
+  },
+  {
+   "check": "heading-scale",
+   "where": "section.status-grid > div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert > div.metric-value \"-1%\"",
+   "msg": "the figure \"-1%\" is set at 28px, larger than the section headings (h2 21px); 4 more like it",
+   "fix": "set figures at the h2 size or under: a stat reads as data, not as the heading",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "heading-scale"
+   ],
+   "wheres": [
+    "section.status-grid > div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert > div.metric-value \"-1%\""
+   ]
+  },
+  {
+   "check": "container",
+   "where": "page",
+   "msg": "no .wrap",
+   "fix": "put the content in one .wrap",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "layout",
+   "ids": [
+    "container"
+   ],
+   "wheres": [
+    "page"
+   ]
+  }
+ ],
+ "waived": [
+  {
+   "check": "focus-ring",
+   "where": ".q-virtual-scroll:focus",
+   "msg": "\".q-virtual-scroll:focus\" in index-DziNTRoo.css removes the focus outline and sets nothing in its place",
+   "fix": "keep the kit's :focus-visible ring, or put a change of the same strength (a 2px line in --action) in the rule that removes it",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "focus-ring"
+   ],
+   "wheres": [
+    ".q-virtual-scroll:focus"
+   ],
+   "reason": "The checker scans Quasar's original outline reset without resolving the cascade. The shared stylesheet restores a 2px action-colour outline with !important on keyboard focus; the regression suite checks the effective button focus style. No framework stylesheet was modified."
+  },
+  {
+   "check": "menu-toggle",
+   "where": "div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal > div.q-toolbar.row > button.q-btn.q-btn-item:nth-of-type(2) \"Switch to dark theme\"",
+   "msg": "the menu button (\"Switch to dark theme\") has no aria-expanded: a screen reader cannot tell the menu is open or shut",
+   "fix": "use the starter's button: <button class=\"nav__toggle\" type=\"button\" aria-expanded=\"false\" aria-label=\"Menu\">; system.js flips it",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "menu-toggle"
+   ],
+   "wheres": [
+    "div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal > div.q-toolbar.row > button.q-btn.q-btn-item:nth-of-type(2) \"Switch to dark theme\""
+   ],
+   "reason": "This is the theme switch, with aria-pressed and a state-dependent accessible name. It opens no menu. The checker selects it because its class includes toggle. The actual Service interfaces menu is a Quasar dropdown and is exercised on all four services."
+  }
+ ],
+ "warnCount": 11,
+ "at": "2026-11-12T07:47:35.928Z",
+ "openTold": true
+}

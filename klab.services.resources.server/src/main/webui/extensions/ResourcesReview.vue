@@ -1037,8 +1037,8 @@ onMounted(async () => {
 </template>
 <style scoped>
 .ontology-review {
-  --q-primary: #2459a8;
-  color: #17283b;
+  --q-primary: var(--klab-action);
+  color: var(--klab-ink);
   max-width: 1400px;
   margin-inline: auto;
   padding: 24px;
@@ -1114,13 +1114,13 @@ input, select, textarea {
   max-width: 100%;
   min-width: 0;
   padding: 12px;
-  color: #17283b;
-  background: #fff;
-  border: 1px solid #91a1b1;
-  border-radius: 4px;
+  color: var(--klab-ink);
+  background: var(--klab-surface);
+  border: 1px solid var(--klab-field-border);
+  border-radius: var(--klab-radius);
   font: inherit;
   font-weight: 400;
-  caret-color: #2459a8;
+  caret-color: var(--klab-action);
 }
 
 select {
@@ -1132,13 +1132,13 @@ input:disabled, select:disabled, textarea:disabled {
 }
 
 input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, a:focus-visible {
-  outline: 3px solid #2459a8;
+  outline: 3px solid var(--klab-action);
   outline-offset: 3px;
 }
 
 ::selection {
-  background: #dce9fa;
-  color: #17283b;
+  background: var(--klab-selection);
+  color: var(--klab-ink);
 }
 
 textarea {
@@ -1153,7 +1153,7 @@ textarea {
   min-height: 280px;
   margin-block: 16px;
   font: .875rem/1.6 monospace;
-  background: #f7f9fc;
+  background: var(--klab-surface-alt);
   tab-size: 2;
 }
 
@@ -1187,11 +1187,11 @@ textarea {
   gap: 16px 32px;
   padding-inline-start: 24px;
   margin-block: 32px;
-  color: #53667b;
+  color: var(--klab-muted);
 }
 
 .review-disclosure {
-  border-block-start: 1px solid #cad5e2;
+  border-block-start: 1px solid var(--klab-border);
   padding-block: 16px;
   margin-block: 16px;
   min-width: 0;
@@ -1212,7 +1212,7 @@ textarea {
 }
 
 .review-disclosure > summary::marker {
-  color: #53667b;
+  color: var(--klab-muted);
 }
 
 .review-workspace {
@@ -1229,7 +1229,7 @@ textarea {
 }
 
 .feedback-panel {
-  border-inline-start: 1px solid #cad5e2;
+  border-inline-start: 1px solid var(--klab-border);
   padding-inline-start: 32px;
 }
 
@@ -1241,7 +1241,7 @@ textarea {
 }
 
 .workspace-jumps a {
-  color: #2459a8;
+  color: var(--klab-action);
   text-underline-offset: 4px;
   min-height: 44px;
   display: inline-flex;
@@ -1256,18 +1256,18 @@ textarea {
 
 .progress-message, .success-message, [role="alert"] {
   padding: 16px;
-  border-radius: 4px;
+  border-radius: var(--klab-radius);
   margin-block: 16px;
 }
 
 [role="alert"] {
-  color: #8c3030;
-  background: #fbecec;
+  color: var(--klab-danger);
+  background: var(--klab-danger-bg);
 }
 
 .progress-message, .success-message {
-  color: #183f35;
-  background: #edf7f3;
+  color: var(--klab-success);
+  background: var(--klab-success-bg);
 }
 
 .progress-message, .success-message {
@@ -1287,8 +1287,8 @@ textarea {
 .progress-spinner {
   flex: 0 0 16px;
   height: 16px;
-  border: 2px solid #91a1b1;
-  border-top-color: #2459a8;
+  border: 2px solid var(--klab-field-border);
+  border-top-color: var(--klab-action);
   border-radius: 50%;
   animation: review-progress 1s linear infinite;
 }
@@ -1314,7 +1314,7 @@ textarea {
   .feedback-panel {
     border-inline-start: 0;
     padding-inline-start: 0;
-    border-block-start: 1px solid #cad5e2;
+    border-block-start: 1px solid var(--klab-border);
     padding-block-start: 32px;
   }
 }

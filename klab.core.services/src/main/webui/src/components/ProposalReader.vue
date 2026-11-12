@@ -67,12 +67,12 @@ const reading = computed(() => {
 </template>
 <style scoped>
 .proposal-reader { font-size: 1rem; line-height: 1.65; max-width: 72ch; min-width: 0; overflow-wrap: anywhere; }
-.reader-note { font-size: .875rem; color: #53667b; text-wrap: pretty; }
+.reader-note { font-size: .875rem; color: var(--klab-muted); text-wrap: pretty; }
 .reader-fallback { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
 .proposal-title { font-size: 1.5rem; line-height: 1.35; margin: 0 0 24px; font-weight: 600; overflow-wrap: anywhere; text-wrap: balance; }
-.document-metadata { margin-block-start: 32px; border-block-start: 1px solid #cad5e2; padding-block-start: 16px; }
-.document-metadata summary { cursor: pointer; font-size: .875rem; color: #53667b; margin-block-end: 16px; min-height: 44px; display: list-item; list-style: disclosure-closed inside; }
+.document-metadata { margin-block-start: 32px; border-block-start: 1px solid var(--klab-border); padding-block-start: 16px; }
+.document-metadata summary { cursor: pointer; font-size: .875rem; color: var(--klab-muted); margin-block-end: 16px; min-height: 44px; display: list-item; list-style: disclosure-closed inside; }
 .document-metadata[open] > summary { list-style-type: disclosure-open; }
-.document-metadata summary::marker { color: #53667b; }
-.document-metadata summary:focus-visible { outline: 3px solid #2459a8; outline-offset: 3px; }
+.document-metadata summary::marker { color: var(--klab-muted); }
+.document-metadata summary:focus-visible { outline: 3px solid var(--klab-action); outline-offset: 3px; }
 </style>

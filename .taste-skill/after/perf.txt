@@ -1,0 +1,54 @@
+
+perf 127.0.0.1:5190/resources/ @ 1440px
+  PASS  host CPU load (before/after)               41/50 %        
+  WARN  total transfer                             1956.9 KiB     html 1.5K  css 229.4K  js 1115K  font 125.8K  img 1.2K  other 484.1K
+  PASS  requests                                   12             11 by load
+  PASS  images bytes                               1.2 KiB        1 files
+  PASS  largest image                              1.2 KiB        resources/klab-logo.svg
+  FAIL  JS parsed                                  1114.5 KiB     2 files, 1115K gz
+  WARN  CSS                                        229.4 KiB      2 files
+  PASS  font families                              1              Material Icons
+  PASS  font files                                 1              125.8K
+  PASS  font bytes                                 125.8 KiB      
+  PASS  images without width+height                0              
+  PASS  below-fold images not lazy                 0              
+  PASS  oversized images (natural > 2.2x shown)    0              
+  PASS  WebGL live at load                         0              
+  PASS  WebGL live at bottom                       0              
+  PASS  WebGL peak live                            0              0 contexts made in all
+  PASS  long tasks                                 2              runs 3, 1..2, max 230ms
+  PASS  blocking time                              166 ms         runs 3, 96..189 ms; at load 166ms
+  PASS  FCP (CPU, relative)                        376 ms         runs 3, 248..384
+  PASS  LCP (CPU, relative)                        416 ms         runs 3, 284..428, p
+  PASS  layout shift                               0.013          runs 3, 0.013..0.013; at load 0.013
+  PASS  modules loaded, never mounted              0              
+  PASS  broken requests                            0              
+  PASS  page height                                1.2 screens    DOM 171 nodes
+
+perf 127.0.0.1:5190/resources/ @ 390px
+  PASS  host CPU load (before/after)               41/50 %        
+  WARN  total transfer                             1955.8 KiB     html 1.5K  css 229.4K  js 1115K  font 125.8K  img 1.2K  other 482.9K
+  PASS  requests                                   11             10 by load
+  PASS  images bytes                               1.2 KiB        1 files
+  PASS  largest image                              1.2 KiB        resources/klab-logo.svg
+  FAIL  JS parsed                                  1114.5 KiB     2 files, 1115K gz
+  WARN  CSS                                        229.4 KiB      2 files
+  PASS  font families                              1              Material Icons
+  PASS  font files                                 1              125.8K
+  PASS  font bytes                                 125.8 KiB      
+  PASS  images without width+height                0              
+  WARN  below-fold images not lazy                 1              klab-logo.svg
+  PASS  oversized images (natural > 2.2x shown)    0              
+  PASS  WebGL live at load                         0              
+  PASS  WebGL live at bottom                       0              
+  PASS  WebGL peak live                            0              0 contexts made in all
+  PASS  long tasks                                 2              runs 3, 2..2, max 252ms
+  PASS  blocking time                              198 ms         runs 3, 175..208 ms; at load 198ms
+  PASS  FCP (CPU, relative)                        404 ms         runs 3, 344..464
+  PASS  LCP (CPU, relative)                        404 ms         runs 3, 344..464, h1
+  PASS  layout shift                               0.000          runs 3, 0.000..0.000; at load 0.000
+  PASS  modules loaded, never mounted              0              
+  PASS  broken requests                            0              
+  PASS  page height                                2.3 screens    DOM 171 nodes
+
+SUMMARY 127.0.0.1:5190/resources/: 2 FAIL, 5 WARN  -> FAIL

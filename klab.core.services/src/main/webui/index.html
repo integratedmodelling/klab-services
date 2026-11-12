@@ -1,9 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-type="software">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#092f2a" />
+    <meta name="theme-color" content="#f4f4f2" />
+    <meta name="page-type" content="software" />
+    <meta name="site-kind" content="software" />
+    <script>
+      try { document.documentElement.dataset.theme = localStorage.getItem('klab-dashboard-theme') === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
+    </script>
     <meta name="description" content="Status and capabilities for a k.LAB service" />
     <base href="__KLAB_BASE_HREF__" />
     <script type="importmap">

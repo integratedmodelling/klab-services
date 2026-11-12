@@ -16,7 +16,6 @@ function signOut() {
         v-else-if="auth.enabled && !auth.authenticated"
         outline
         no-caps
-        rounded
         color="primary"
         icon="login"
         label="Sign in"
@@ -26,7 +25,6 @@ function signOut() {
         v-else-if="auth.authenticated"
         flat
         no-caps
-        rounded
         color="primary"
         icon="account_circle"
         :label="auth.username || 'Account'"
@@ -40,7 +38,7 @@ function signOut() {
         </q-item>
       </q-list>
     </q-btn-dropdown>
-    <q-chip v-else dense outline color="grey-7" text-color="grey-7" icon="public">
+    <q-chip v-else dense outline color="secondary" icon="public">
       Public access
     </q-chip>
   </div>

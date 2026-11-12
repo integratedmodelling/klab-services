@@ -65,6 +65,6 @@ onMounted(refresh);
 <style scoped>
 .workflow-controls { display: flex; gap: 14px; align-items: end; flex-wrap: wrap; margin-bottom: 18px; }
 .workflow-controls label { display: grid; gap: 6px; flex: 1; min-width: 220px; }
-.workflow-controls select { border: 1px solid #70999d; background: #fff; color: #1d3f49; border-radius: 6px; padding: 10px; }
-.workflow-error { color: #edaaaa; }
+.workflow-controls select { border: 1px solid var(--klab-field-border); background: var(--klab-surface); color: var(--klab-ink); border-radius: var(--klab-radius); padding: 10px; }
+.workflow-error { color: var(--klab-danger); }
 </style>

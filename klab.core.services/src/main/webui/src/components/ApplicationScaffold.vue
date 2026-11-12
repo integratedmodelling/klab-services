@@ -4,7 +4,7 @@ import ApplicationNode from "./ApplicationNode.vue";
 import type {UiSnapshot, WidgetInput} from "../services/application-ui";
 const props = defineProps<{snapshot: UiSnapshot; disabled?: boolean}>();
 const emit = defineEmits<{input: [event: WidgetInput]}>();
-const theme = computed(() => props.snapshot.root.properties.theme || "light");
+const theme = computed(() => props.snapshot.root.properties.theme || "inherit");
 const regions = computed(() => {
   const nodes = props.snapshot.root.children;
   return {header: nodes.filter(n => n.type === "header"), footer: nodes.filter(n => n.type === "footer"),

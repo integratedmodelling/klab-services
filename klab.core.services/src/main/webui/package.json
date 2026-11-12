@@ -10,7 +10,8 @@
     "test:flowchart": "playwright test",
     "test:auth": "playwright test --config playwright.auth.config.ts",
     "test:application": "playwright test --config playwright.application.config.ts",
-    "test:review": "playwright test --config playwright.review.config.ts"
+    "test:review": "playwright test --config playwright.review.config.ts",
+    "test:design": "playwright test --config playwright.design.config.ts"
   },
   "dependencies": {
     "@quasar/extras": "2.0.4",

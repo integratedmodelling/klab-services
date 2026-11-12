@@ -1,0 +1,88 @@
+gate: checking http://127.0.0.1:5190/resources/?build=index-BFcyPZLe.js (software); this takes a few minutes on a CPU Chrome
+gate: rounds used up; 27 FAIL open
+  FAIL hero-fill        div#main-content > main.dashboard-main > section.status-grid "Operational state Operationa  [1440, 390]
+       the next section shows on the first screen: it starts at 245px on a 900px screen (the hero ends at 217px)
+       fix: let the hero fill the first screen alone (min-height: 100svh, less above it): nothing of the next section on load
+  FAIL flush            main.dashboard-main > section.intro-row > div > p "Resource catalogs, adapters, and transp  [1440, 390]
+       its last line sits 2px above the rule on top of section.status-grid
+       fix: give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)
+  FAIL flush            div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--fl  [1440, 390]
+       its first line sits 0px under the top edge of section.dashboard-content, where the ground changes
+       fix: give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)
+  FAIL text-only        div#main-content > main.dashboard-main > section.dashboard-content "Capabilities"  [1440]
+       the closing section is only text: no picture, icon, mock or effect in it
+       fix: give the section a visual: a photograph that fits, the real icons, or a UI fragment on a ground
+  FAIL cta              div#main-content > main.dashboard-main > section.intro-row  [1440, 390]
+       the hero has no button (the nav's does not count)
+       fix: add the action: a button in the hero, one on every priced item, one in the closing section
+  FAIL cta              div#main-content > main.dashboard-main > section.dashboard-content "Capabilities"  [1440, 390]
+       the last section before the footer ends with no button
+       fix: add the action: a button in the hero, one on every priced item, one in the closing section
+  FAIL moment-none      (the page)  [1440]
+       a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)
+       fix: deal one (moments.mjs pick --page software) and mount it in its own section
+  FAIL hero-screen      div#main-content > main.dashboard-main > section.intro-row "RESOURCESResources overviewRes  [1440]
+       the hero ends at 217px on a 900px screen, 683px above the fold: it ends at the fold, 1px either way (SR-1)
+       fix: make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter
+  FAIL hero-screen      div#main-content > main.dashboard-main > section.status-grid "Operational state Operationa  [1440]
+       655px of the next section shows on the first screen (from 245px on a 900px screen): nothing below the hero shows at load (SR-1)
+       fix: end the hero at the fold so nothing of the next section shows at load (hero height: 100svh)
+  FAIL section-height   div#main-content > footer.dashboard-footer "k.LAB service interfacePublic telemetry "  [1440]
+       the section is 77px tall (0.1 screens), 824px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)
+       fix: set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit
+  FAIL section-air      main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(1) >  [1440]
+       a rule (<hr>) between the section's content: sections and their parts are told apart by air and ground, not lines (SR-3)
+       fix: take the rule out: sections and their parts are parted by their ground and the air between them
+  FAIL section-air      main.dashboard-main > section.dashboard-content > div.q-card.q-card--flat:nth-of-type(2) >  [1440]
+       a rule (<hr>) between the section's content: sections and their parts are told apart by air and ground, not lines (SR-3)
+       fix: take the rule out: sections and their parts are parted by their ground and the air between them
+  FAIL one-section      main.dashboard-main > section.intro-row > div > h1 "Resources overview"  [1440]
+       the screen at scroll 0px (stride 0) shows 150px of section 2 and the heading of section 1 whole and the content of 3 sections, over 24px each beside section 3: a screen shows one section (another may peek 8px, 24px WARN)
+       fix: make each section exactly one screen or two, so a screen shows one section and no neighbour peeks
+  FAIL one-section      div#main-content > main.dashboard-main > section.status-grid "Operational state Operationa  [1440]
+       the screen at scroll 121px (the top of section 1) shows 150px of section 2 and the content of 2 sections, over 24px each beside section 3: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)
+       fix: make each section exactly one screen or two, so a screen shows one section and no neighbour peeks
+  FAIL one-heading      div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-  [1440]
+       the section holds 2 h2 headings: one per section, first in its .wrap (SR-5)
+       fix: give each section one h2, first in its .wrap, and the hero only its h1
+  FAIL container-edges  div#app "Skip to contentIntegrated modellingk.LAB"  [1440]
+       a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)
+       fix: build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing
+  FAIL container-edges  div#main-content > main.dashboard-main > section.intro-row "RESOURCESResources overviewRes  [1440]
+       the section needs exactly one in-flow child .wrap (it has 2 in-flow children, 0 .wrap) (SR-6)
+       fix: build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing
+  FAIL container-edges  div#main-content > main.dashboard-main > section.status-grid "Operational state Operationa  [1440]
+       the section needs exactly one in-flow child .wrap (it has 4 in-flow children, 0 .wrap) (and 2 more like it: "DiscoveryCapabilitieshub", "k.LAB service interfaceP") (SR-6)
+       fix: build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing
+  FAIL container-edges  div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card__section--vert:nth-of-  [1440]
+       the h2 starts 721px right of the container's left: every h1 and h2 starts on it, 2px either way (SR-6)
+       fix: start the text on the container's left, or on the one split line every split shares
+  FAIL container-edges  div.q-item.q-item-type > div.q-item__section.column:nth-of-type(2) > i.q-icon.notranslate   [1440]
+       1 text block starts on a left line at x 121, 41px from the container's left: text starts on the container's left, or on one split line (x 623, 732, 841) (SR-6)
+       fix: start the text on the container's left, or on the one split line every split shares
+  FAIL container-edges  div.q-card.q-card--flat:nth-of-type(1) > div.q-card__section.q-card__section--vert:nth-of-  [1440]
+       7 text blocks start on a left line at x 105, 25px from the container's left: text starts on the container's left, or on one split line (x 623, 732, 841) (also "Capabilities", "Service name", "Service ID") (and 1 more lik
+       fix: start the text on the container's left, or on the one split line every split shares
+  FAIL container-edges  div#main-content > main.dashboard-main > section.dashboard-content > div.q-card.q-card--fl  [1440]
+       a box over half the container wide runs 80-752px, not on the container's lines at 80-1360px (SR-6)
+       fix: run the picture or box from the container's left line to its right line, or put it in a row or a split
+  FAIL nav              div#app > div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal >   [390]
+       nav links wrap onto 2 rows
+       fix: make the nav one bar from the content's left edge to its right edge, with every link and action inside it
+  FAIL no-visual        div#main-content > main.dashboard-main > section.status-grid "Operational state Operationa  [390]
+       no picture, effect or mock in this section; a feature section needs a visual
+       fix: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+  FAIL no-visual        div#main-content > main.dashboard-main > section.dashboard-content "Capabilities"  [390]
+       no picture, effect or mock in this section; a feature section needs a visual
+       fix: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+  FAIL heading-scale    section.status-grid > div.q-card.q-card--flat:nth-of-type(2) > div.q-card__section.q-card_  [390]
+       the figure "-1%" is set at 28px, larger than the section headings (h2 21px); 4 more like it
+       fix: set figures at the h2 size or under: a stat reads as data, not as the heading
+  FAIL container        page  [1440, 390]
+       no .wrap
+       fix: put the content in one .wrap
+  WAIVED focus-ring .q-virtual-scroll:focus: The checker scans Quasar's original outline reset without resolving the cascade. The shared stylesheet restores a 2px action-colour outline with !important on keyboard focus; the regression suite checks the effective button focus style. No framework stylesheet was modified.
+  WAIVED menu-toggle div.q-layout.q-layout--standard > header.q-header.q-layout__section--marginal > : This is the theme switch, with aria-pressed and a state-dependent accessible name. It opens no menu. The checker selects it because its class includes toggle. The actual Service interfaces menu is a Quasar dropdown and is exercised on all four services.
+  11 WARN (not blocking), first: flush section.status-grid > div.q-card.q-card-; flush div.q-card.q-card--flat:nth-of-type(2) >; fold-card div#main-content > main.dashboard-main >; copy-buttons header.q-header.q-layout__section--margi; copy-actions (the page)
+Stop fixing: put these open FAILs and the waivers in your report, then finish.
+GATE: OPEN 27 (rounds used up)

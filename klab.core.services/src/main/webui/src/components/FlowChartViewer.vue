@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import "../styles/theme.css";
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import { layoutChart, toSprotty, type FlowChart, type DiagramSelection } from "../flowchart/model";
 import { createViewer } from "../flowchart/viewer";
@@ -100,25 +101,25 @@ defineExpose({ refresh, fit: () => viewer?.fit() });
 </template>
 
 <style>
-.flowchart-component { color: #1d3f49; background: #fff; border: 1px solid #b7cecd; border-radius: 12px; overflow: hidden; }
-.flowchart-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; font-size: 13px; background: #eef6f5; }
-.flowchart-component button, .flowchart-component select { color: #1d3f49; background: #fff; border: 1px solid #91b6b6; border-radius: 5px; padding: 6px 10px; }
+.flowchart-component { color: var(--klab-ink); background: var(--klab-surface); border: 1px solid var(--klab-border); border-radius: var(--klab-radius); overflow: hidden; }
+.flowchart-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; font-size: 13px; background: var(--klab-surface-alt); }
+.flowchart-component button, .flowchart-component select { color: var(--klab-ink); background: var(--klab-surface); border: 1px solid var(--klab-field-border); border-radius: var(--klab-radius); padding: 6px 10px; }
 .flowchart-canvas { height: 560px; min-height: 280px; position: relative; }
 .flowchart-canvas > svg { width: 100%; height: 100%; display: block; }
 .flowchart-hidden { position: absolute; visibility: hidden; width: 0; height: 0; overflow: hidden; }
-.flowchart-canvas .sprotty-node { fill: #eaf5f3; stroke: #70999d; stroke-width: 1.4; rx: 6; }
-.flowchart-canvas .compound .sprotty-node { fill: #f7fafb; }
-.flowchart-canvas .sprotty-node.selected { stroke: #147f93; stroke-width: 3; }
-.flowchart-canvas .sprotty-port { fill: #208085; stroke: white; }
-.flowchart-canvas .output .sprotty-port { fill: #be7424; }
-.flowchart-canvas .sprotty-label { stroke: none; fill: #1d3f49; font: 14px sans-serif; }
-.flowchart-canvas .sprotty-edge { stroke: #1d3f49; stroke-width: 1.5; }
-.flowchart-canvas .sprotty-edge.selected { stroke: #147f93; stroke-width: 3; }
-.flowchart-canvas .sprotty-edge .arrow { fill: #1d3f49; }
-.flowchart-inspector { border-top: 1px solid #d5e3e3; padding: 12px 16px; }
+.flowchart-canvas .sprotty-node { fill: var(--klab-surface-alt); stroke: var(--klab-field-border); stroke-width: 1.4; rx: 6; }
+.flowchart-canvas .compound .sprotty-node { fill: var(--klab-surface-alt); }
+.flowchart-canvas .sprotty-node.selected { stroke: var(--klab-action); stroke-width: 3; }
+.flowchart-canvas .sprotty-port { fill: var(--klab-action); stroke: var(--klab-surface); }
+.flowchart-canvas .output .sprotty-port { fill: var(--klab-warning); }
+.flowchart-canvas .sprotty-label { stroke: none; fill: var(--klab-ink); font: 14px sans-serif; }
+.flowchart-canvas .sprotty-edge { stroke: var(--klab-ink); stroke-width: 1.5; }
+.flowchart-canvas .sprotty-edge.selected { stroke: var(--klab-action); stroke-width: 3; }
+.flowchart-canvas .sprotty-edge .arrow { fill: var(--klab-ink); }
+.flowchart-inspector { border-top: 1px solid var(--klab-border); padding: 12px 16px; }
 .flowchart-inspector select { margin-left: 12px; max-width: 100%; }
-.flowchart-inspector pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 220px; overflow: auto; font-size: 12px; }
+.flowchart-inspector pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 220px; overflow: auto; font-size: 13px; }
 .flowchart-message, .flowchart-error { padding: 12px 16px; }
-.flowchart-error { color: #a33030; background: #fff0ef; }
+.flowchart-error { color: var(--klab-danger); background: var(--klab-danger-bg); }
 @media (max-width: 700px) { .flowchart-toolbar { flex-wrap: wrap; } .flowchart-canvas { height: 400px; } }
 </style>

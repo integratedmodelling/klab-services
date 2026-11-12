@@ -1,0 +1,11 @@
+{
+ "page": null,
+ "url": "http://127.0.0.1:5190/resources/?build=index-BFcyPZLe.js",
+ "root": null,
+ "kind": "software",
+ "category": "resources",
+ "primary": "Refresh dashboard",
+ "rounds": 3,
+ "start": "2026-11-12T07:00:21.172Z",
+ "by": "gate.mjs --start"
+}

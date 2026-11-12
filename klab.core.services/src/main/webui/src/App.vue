@@ -9,6 +9,7 @@ import StatusGrid from "./components/StatusGrid.vue";
 import ActorApplication from "./components/ActorApplication.vue";
 import { authState, initializeAuthentication } from "./services/auth";
 import { serviceApi } from "./services/api";
+import { theme, toggleTheme } from "./services/theme";
 import type { DashboardConfiguration, DashboardContext, FullPageComponent, UnsavedWorkGuard } from "./types";
 
 const config = ref<DashboardConfiguration | null>(null);
@@ -24,6 +25,7 @@ const applicationUrn = ref(applicationFromLocation());
 const headerRef = ref<{ $el: HTMLElement }>();
 const headerHeight = ref(0);
 let headerObserver: ResizeObserver | undefined;
+let headerMeasureFrame: number | undefined;
 const navigationGuards = shallowReactive(new Set<UnsavedWorkGuard>());
 const dirtyGuards = computed(() => [...navigationGuards].filter(guard => guard.isDirty()));
 const leaveDialog = ref(false), savingBeforeLeave = ref(false), leaveError = ref("");
@@ -80,10 +82,19 @@ const selectedPage = computed<FullPageComponent | undefined>(() =>
 const canAdminister = computed(() => authState.authenticated && Array.isArray(capabilities.value?.permissions)
   && capabilities.value.permissions.includes("ADMINISTER"));
 const isFullPageRoute = computed(() => pageName.value !== null);
+const serviceLabel = computed(() => {
+  const type = config.value?.serviceType?.toLowerCase() || "service";
+  return type.charAt(0).toUpperCase() + type.slice(1);
+});
 
 onMounted(async () => {
   if (headerRef.value?.$el) {
-    headerObserver = new ResizeObserver(([entry]) => { headerHeight.value = entry.target.getBoundingClientRect().height; });
+    headerObserver = new ResizeObserver(([entry]) => {
+      if (headerMeasureFrame !== undefined) cancelAnimationFrame(headerMeasureFrame);
+      headerMeasureFrame = requestAnimationFrame(() => {
+        headerHeight.value = entry.target.getBoundingClientRect().height;
+      });
+    });
     headerObserver.observe(headerRef.value.$el);
   }
   window.addEventListener("popstate", updateRoute);
@@ -102,6 +113,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   headerObserver?.disconnect();
+  if (headerMeasureFrame !== undefined) cancelAnimationFrame(headerMeasureFrame);
   window.clearInterval(refreshTimer);
   window.removeEventListener("popstate", updateRoute);
 });
@@ -172,13 +184,14 @@ watch(() => authState.authenticated, () => {
 
 <template>
   <q-layout view="hHh lpR fFf" class="dashboard-shell" :style="{ '--klab-header-height': `${headerHeight}px` }">
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <q-header ref="headerRef" class="dashboard-header">
       <q-toolbar class="header-inner">
         <a href="./" class="brand-link" aria-label="Service dashboard" @click.prevent="navigate('./', null)">
-          <img v-if="config" :src="config.logoUrl" alt="k.LAB logo" class="brand-logo" />
+          <img v-if="config" :src="config.logoUrl" alt="k.LAB logo" class="brand-logo" width="44" height="44" />
         </a>
         <div class="brand-copy">
-          <div class="brand-kicker">INTEGRATED MODELLING</div>
+          <div class="brand-kicker">Integrated modelling</div>
           <q-toolbar-title>{{ config?.title || "k.LAB service" }}</q-toolbar-title>
         </div>
         <q-space />
@@ -188,6 +201,7 @@ watch(() => authState.authenticated, () => {
             :key="page.name"
             :href="`ui/${encodeURIComponent(page.name)}`"
             :class="{ 'header-link--active': page.name === pageName }"
+            :aria-current="page.name === pageName ? 'page' : undefined"
             @click.prevent="navigate(`ui/${encodeURIComponent(page.name)}`, page.name)"
           >{{ page.title }}</a>
           <a
@@ -203,7 +217,6 @@ watch(() => authState.authenticated, () => {
           class="header-menu"
           flat
           round
-          color="dark"
           icon="apps"
           aria-label="Service interfaces"
         >
@@ -233,7 +246,11 @@ watch(() => authState.authenticated, () => {
             </q-item>
           </q-list>
         </q-btn-dropdown>
-        <q-btn v-if="canAdminister" flat label="Credentials" @click="navigate('ui/credentials', 'credentials')" />
+        <q-btn v-if="canAdminister" class="credentials-link" flat label="Credentials" @click="navigate('ui/credentials', 'credentials')" />
+        <q-btn flat round class="theme-toggle" :icon="theme === 'light' ? 'dark_mode' : 'light_mode'" :aria-pressed="theme === 'dark'"
+          :aria-label="theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'" @click="toggleTheme">
+          <q-tooltip>{{ theme === 'light' ? 'Dark theme' : 'Light theme' }}</q-tooltip>
+        </q-btn>
         <LoginControl :auth="authState" :request-navigation="requestNavigation" />
       </q-toolbar>
     </q-header>
@@ -255,7 +272,7 @@ watch(() => authState.authenticated, () => {
       </q-card>
     </q-dialog>
     <q-page-container>
-      <q-page class="dashboard-page">
+      <div id="main-content" class="dashboard-page" tabindex="-1">
         <CredentialsPanel v-if="pageName === 'credentials' && canAdminister" :key="authState.username" />
         <ActorApplication v-else-if="applicationUrn && config" :urn="applicationUrn" :context="context" />
         <FullPageExtension
@@ -273,13 +290,13 @@ watch(() => authState.authenticated, () => {
           <section class="intro-row">
             <div>
               <div class="service-type">{{ config?.serviceType || "SERVICE" }}</div>
-              <h1>{{ config?.subtitle || "Service overview" }}</h1>
-              <p>Live operational telemetry and the functions advertised by this endpoint.</p>
+              <h1>{{ serviceLabel }} overview</h1>
+              <p>{{ config?.subtitle || "Service status and capabilities" }}</p>
             </div>
             <q-btn
               flat
               round
-              color="secondary"
+              color="primary"
               icon="refresh"
               aria-label="Refresh dashboard"
               :loading="refreshing"
@@ -314,15 +331,15 @@ watch(() => authState.authenticated, () => {
           <span>k.LAB service interface</span>
           <span>Public telemetry · authenticated operations</span>
         </footer>
-      </q-page>
+      </div>
     </q-page-container>
   </q-layout>
 </template>
 
 <style scoped>
 .header-menu { display: none; }
-@media (max-width: 900px) { .header-menu { display: inline-flex; } }
-.unsaved-work-dialog { width: min(560px, calc(100vw - 32px)); padding: 8px; color: #17283b; }
+@media (max-width: 1100px) { .header-menu { display: inline-flex; } }
+.unsaved-work-dialog { width: min(560px, calc(100vw - 32px)); padding: 8px; color: var(--klab-ink); }
 .unsaved-work-dialog h2 { font-size: 1.5rem; line-height: 1.3; font-weight: 600; text-wrap: balance; margin: 0 0 16px; }
 .unsaved-work-dialog p { font-size: 16px; line-height: 1.5; }
 .unsaved-work-actions { gap: 8px; flex-wrap: wrap; }

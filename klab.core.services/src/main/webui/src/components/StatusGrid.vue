@@ -55,7 +55,7 @@ function formatUptime(value: unknown): string {
       <q-card-section>
         <div class="metric-label">Health</div>
         <div class="metric-value">{{ loading ? "—" : `${health}%` }}</div>
-        <q-linear-progress rounded size="6px" :value="health / 100" color="secondary" track-color="grey-8"/>
+        <q-linear-progress size="4px" :value="health / 100" color="primary"/>
       </q-card-section>
     </q-card>
 
