@@ -25,7 +25,11 @@ async function send(path: string, init: RequestInit = {},
 
 async function request<T>(path: string, init: RequestInit = {}, authenticated = !path.startsWith("public/")): Promise<T> {
   const response = await send(path, init, authenticated);
-  return response.status === 204 ? undefined as T : response.json() as Promise<T>;
+  // Spring's nullable @ResponseBody methods also return an empty 200, not just 204.
+  const body = await response.text();
+  if (!body.trim()) return undefined as T;
+  try { return JSON.parse(body) as T; }
+  catch { throw new Error(`Invalid JSON from ${path} (HTTP ${response.status})`); }
 }
 
 export const serviceApi: ServiceApi = {
