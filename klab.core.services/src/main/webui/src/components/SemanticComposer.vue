@@ -21,6 +21,14 @@ let requestId = 0, searchId = 0, revision = 0, disposed = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let active: AbortController | undefined;
 let queue: Promise<void> = Promise.resolve();
+let opening: Promise<void> | undefined;
+function openComposer() {
+  if (props.disabled) return;
+  opened.value = true;
+  if (!state.value && !opening && !restartNeeded.value && !uncertain.value) {
+    opening = search().finally(() => { opening = undefined; });
+  }
+}
 const rows = computed(() => matches.value.filter(m => filter.value === "all" ||
   (filter.value === "concepts" ? m.matchType === "CONCEPT" : m.matchType !== "CONCEPT")));
 const canSubmit = computed(() => !props.disabled && !busy.value && !uncertain.value && !query.value.trim() && !!state.value?.declaration);
@@ -153,7 +161,6 @@ defineExpose({ focus: () => input.value?.focus(), submit });
 <template>
   <div ref="root" class="semantic-composer knowledge-ui" @focusout="closeOutside" @keydown.esc="opened = false">
     <div class="semantic-field" :class="{ 'has-error': error }">
-      <label class="semantic-label" :for="id">Concept</label>
       <div class="semantic-expression">
         <span v-for="(token, index) in state?.code || []" :key="index" :title="token.description"
           :style="{ color: `var(--semantic-${token.color}, var(--klab-ink))`, fontWeight: token.font?.includes('BOLD') ? '700' : undefined,
@@ -161,7 +168,7 @@ defineExpose({ focus: () => input.value?.focus(), submit });
         <input :id="id" ref="input" v-model="query" role="combobox" aria-label="Compose a concept"
           :aria-expanded="opened" :aria-controls="`${id}-results`" :aria-activedescendant="opened && current ? `${id}-option-${selected}` : undefined"
           aria-autocomplete="list" autocomplete="off" :disabled="disabled" placeholder="Find a concept or compose an expression…"
-          @input="schedule" @keydown="key" />
+          @focus="openComposer" @click="openComposer" @input="schedule" @keydown="key" />
       </div>
       <button v-if="error" type="button" :disabled="busy || disabled" @click="retry">{{ restartNeeded ? 'Restart' : 'Retry' }}</button>
       <button type="button" aria-label="Explore confirmed expression" title="Explore confirmed expression (Ctrl+Enter)" :disabled="!canSubmit" @click="submit">{{ busy ? '…' : '→' }}</button>
@@ -191,7 +198,6 @@ defineExpose({ focus: () => input.value?.focus(), submit });
 
 <style scoped>
 .semantic-composer { position: relative; min-width: 0; }
-.semantic-label { padding-left: 8px; color: var(--klab-muted); }
 .semantic-field { display: flex; gap: 6px; align-items: center; padding: 4px; border: 1px solid var(--klab-field-border); border-radius: var(--klab-radius); background: var(--klab-surface); }
 .semantic-field:focus-within { outline: 2px solid var(--klab-action); outline-offset: 1px; }
 .semantic-field.has-error { border-color: var(--klab-danger); }

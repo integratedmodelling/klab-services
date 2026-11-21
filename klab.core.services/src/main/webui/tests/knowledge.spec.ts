@@ -1,9 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { fixtureResponse } from "./knowledge-fixtures";
+import { fixtureResponse, catalog as fixtureCatalog } from "./knowledge-fixtures";
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { graphRelations, loadNeighborhood, WorldviewCache, type Concept, type WorldviewCatalog } from "../src/knowledge/model";
+import { graphRelations, loadNeighborhood, WorldviewCache, conceptLabel, conceptDocumentation, type Concept, type WorldviewCatalog } from "../src/knowledge/model";
+import { documentationMarkdown } from "../src/knowledge/markdown";
 import type { ServiceApi } from "../src/services/api";
 test.beforeEach(async ({ page }) => {
   let declaration = "";
@@ -35,6 +36,131 @@ test("composer starts compact, selects a server proposal, colors tokens and rece
   await input.press("Backspace");
   await expect(page.locator(".semantic-expression > span")).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test("composer opens on focus before typing and reopens on a click after a choice", async ({ page }) => {
+  await page.goto("/tests/knowledge.html");
+  const input = page.getByRole("combobox", { name: "Compose a concept" });
+  await expect(page.locator(".semantic-overlay")).toHaveCount(0);
+  await input.click();
+  await expect(page.locator(".semantic-overlay")).toBeVisible();
+  await expect(input).toHaveValue("");
+  await expect(page.getByRole("listbox")).toContainText("Landscape");
+  await input.fill("Landscape");
+  await expect(page.getByRole("listbox").getByRole("option")).toHaveCount(1);
+  await page.getByRole("listbox").getByRole("option").click();
+  await expect(page.locator(".semantic-overlay")).toHaveCount(0);
+  await expect(input).toBeFocused();
+  await input.click(); await expect(page.locator(".semantic-overlay")).toBeVisible();
+  await input.press("Escape"); await expect(page.locator(".semantic-overlay")).toHaveCount(0);
+});
+
+test("ontologies start collapsed, tree controls expand/reset, and the search stays above the scroller", async ({ page }) => {
+  const catalog = structuredClone(fixtureCatalog);
+  catalog.ontologies.push({ urn: "additional", children: Array.from({ length: 100 }, (_, index) => ({ urn: `additional:C${index}`, label: `Concept ${index}`, type: ["SUBJECT"], children: [] })) });
+  await page.route("**/api/v1/worldview/explorer", route => route.fulfill({ json: catalog }));
+  await page.goto("/tests/knowledge.html");
+  await expect(page.locator(".worldview-ontology")).toHaveCount(2);
+  await expect(page.locator(".worldview-sidebar details[open]")).toHaveCount(0);
+  await page.getByRole("button", { name: "Expand tree", exact: true }).click();
+  await expect(page.locator(".worldview-ontology[open]")).toHaveCount(2);
+  await expect(page.locator(".worldview-tree details[open]")).toHaveCount(2);
+  const input = page.getByRole("searchbox", { name: "Filter declarations" });
+  const initial = (await input.boundingBox())!;
+  const scroller = page.locator(".worldview-tree-scroll");
+  await scroller.evaluate(element => { element.scrollTop = 1200; });
+  expect(await scroller.evaluate(element => element.scrollTop)).toBeGreaterThan(500);
+  expect((await input.boundingBox())!.y).toBe(initial.y);
+  await page.getByRole("button", { name: "Collapse tree", exact: true }).click();
+  await expect(page.locator(".worldview-sidebar details[open]")).toHaveCount(0);
+  await expect(page.locator(".worldview-ontology summary").last()).toBeVisible();
+});
+
+test("full screen contains the composer and graph and restores the normal layout", async ({ page }) => {
+  await page.goto("/tests/knowledge.html");
+  await expect(page.locator(".worldview-browser")).toHaveAttribute("aria-busy", "false");
+  const before = (await page.locator(".worldview-browser").boundingBox())!;
+  await page.getByRole("button", { name: "Enter full screen", exact: true }).click();
+  await expect(page.locator(".reasoner-workspace")).toHaveClass(/knowledge-fullscreen/);
+  expect(await page.evaluate(() => {
+    const target = document.fullscreenElement || document.querySelector('.knowledge-fullscreen');
+    return target?.contains(document.querySelector('.semantic-composer')) && target?.contains(document.querySelector('.worldview-browser'));
+  })).toBe(true);
+  const box = (await page.locator(".reasoner-workspace").boundingBox())!;
+  expect(box.y).toBe(0); expect(box.height).toBe(await page.evaluate(() => innerHeight));
+  await page.screenshot({ path: "test-results/knowledge-fullscreen.png" });
+  await page.getByRole("button", { name: "Exit full screen", exact: true }).click();
+  await expect(page.locator(".reasoner-workspace")).not.toHaveClass(/knowledge-fullscreen/);
+  expect((await page.locator(".worldview-browser").boundingBox())!.height).toBeCloseTo(before.height, 0);
+});
+
+test("embedded-browser full screen fallback exits with Escape and restores scrolling", async ({ page }) => {
+  await page.addInitScript(() => { Object.defineProperty(HTMLElement.prototype, "requestFullscreen", { configurable: true, value: undefined }); });
+  await page.goto("/tests/knowledge.html");
+  const overflow = await page.evaluate(() => document.body.style.overflow);
+  await page.getByRole("button", { name: "Enter full screen", exact: true }).click();
+  await expect(page.locator(".reasoner-workspace")).toHaveClass(/knowledge-fullscreen/);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".reasoner-workspace")).not.toHaveClass(/knowledge-fullscreen/);
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe(overflow);
+});
+
+for (const theme of ["light", "dark"]) test(`metadata labels, rendered documentation and observable details share the loaded snapshot in ${theme}`, async ({ page }) => {
+  await page.setViewportSize({ width: theme === "dark" ? 390 : 1440, height: 900 });
+  const urn = "k.derived:K_DERIVED_000000123";
+  const concept = { urn, name: "K_DERIVED_000000123", type: ["QUALITY", "ABSTRACT"], metadata: { delegate: {
+    "klab:displayLabel": "Forest canopy cover", "rdfs:comment": "**Canopy coverage** in a landscape.\n\n- Measured as a percentage\n- See `earth:Forest`\n\n<img src=x onerror=alert(1)>", "dc:source": "Community worldview",
+  } }, notifications: [{ message: "Abstract quality declaration" }] };
+  let calls = 0; page.on("request", r => { if (r.url().includes("/api/v1/")) calls++; });
+  await page.route("**/api/v1/resolve/concept", route => route.fulfill({ json: concept }));
+  await page.route("**/api/v1/roles?*", route => route.fulfill({ json: [{ urn: "earth:Habitat", name: "Habitat", type: ["ROLE"], metadata: { "dc:label": "Habitat role" } }] }));
+  await page.goto(`/tests/knowledge.html?standalone&graph-only&theme=${theme}`);
+  await expect(page.locator(".worldview-browser")).toHaveAttribute("aria-busy", "false");
+  const node = page.locator(".worldview-canvas .focus");
+  await expect(node).toContainText("Forest canopy cover"); await expect(node).toContainText(urn);
+  const before = calls;
+  await page.getByRole("button", { name: "Show details", exact: true }).click();
+  const card = page.getByRole("article", { name: "Observable details" });
+  await expect(card.getByRole("heading", { name: "Forest canopy cover" })).toBeVisible();
+  await expect(card.locator(".concept-documentation strong")).toHaveText("Canopy coverage");
+  await expect(card.locator(".concept-documentation li")).toHaveCount(2);
+  await expect(card).toContainText("quality / abstract"); await expect(card).toContainText("Community worldview");
+  await expect(card).toContainText("Abstract quality declaration"); await expect(card.getByRole("button", { name: "Habitat role" })).toBeVisible();
+  await node.locator("rect").hover({ position: { x: 8, y: 8 } });
+  await expect(page.getByRole("tooltip").locator(".concept-documentation strong")).toHaveText("Canopy coverage");
+  await expect.poll(async () => {
+    const canvas = (await page.locator('.worldview-canvas').boundingBox())!;
+    const bounds = (await node.boundingBox())!;
+    return bounds.y >= canvas.y && bounds.y + bounds.height <= canvas.y + canvas.height;
+  }).toBe(true);
+  await page.screenshot({ path: `test-results/knowledge-details-${theme}.png`, fullPage: true });
+  await expect(page.locator(".concept-documentation img")).toHaveCount(0);
+  expect(calls).toBe(before);
+});
+
+test("single clicking inspects locally; double clicking recenters the graph", async ({ page }) => {
+  let calls = 0; page.on("request", r => { if (r.url().includes("/api/v1/")) calls++; });
+  await page.goto("/tests/knowledge.html?standalone");
+  await expect(page.locator(".worldview-browser")).toHaveAttribute("aria-busy", "false");
+  const forest = page.locator(".worldview-canvas g.semantic-SUBJECT").filter({ hasText: "earth:Forest" });
+  const before = calls;
+  await forest.click();
+  await expect(page.locator(".worldview-inspector code")).toHaveText("earth:Forest");
+  await expect(page.getByRole("combobox", { name: "Focus concept" })).toHaveValue("earth:Landscape");
+  expect(calls).toBe(before);
+  await forest.dblclick();
+  await expect(page.getByRole("combobox", { name: "Focus concept" })).toHaveValue("earth:Forest");
+  await expect(page.locator(".worldview-browser")).toHaveAttribute("aria-busy", "false");
+  expect(calls).toBeGreaterThan(before);
+});
+
+test("metadata fallbacks and documentation Markdown never render source HTML or executable links", () => {
+  const concept: Concept = { urn: "test:Internal", name: "Internal", metadata: { delegate: { "rdfs:label": "Readable concept", "rdfs:comment": "Documentation" } } };
+  expect(conceptLabel(concept)).toBe("Readable concept"); expect(conceptDocumentation(concept)).toBe("Documentation");
+  const html = documentationMarkdown('## Detail\n\n**Bold** and *italic*.\n\n1. First\n2. Second\n\n```\n<img onerror=alert(1)>\n```\n\n[unsafe](javascript:alert(1)) [link](https://example.org)');
+  expect(html).toContain('<h3>Detail</h3>'); expect(html).toContain('<ol>'); expect(html).toContain('<strong>Bold</strong>');
+  expect(html).not.toContain('<img'); expect(html).not.toContain('href="javascript:'); expect(html).toContain('href="https://example.org"');
+  expect(documentationMarkdown('- \n\n1. ')).toBe('<p>- </p>\n<p>1. </p>');
 });
 
 test("tree navigation, history, search and graph-only component configuration", async ({ page }) => {
@@ -300,6 +426,7 @@ test("canonical aliases retain graph focus and source tree selection", async ({ 
 for (const theme of ["light", "dark"]) test(`tree chevrons remain visible and toggle branches in ${theme}`, async ({ page }) => {
   await page.goto(`/tests/knowledge.html?theme=${theme}`);
   await expect(page.locator(".worldview-inspector code")).toHaveText("earth:Subject");
+  await page.getByRole("button", { name: "Expand tree", exact: true }).click();
   const branch = page.locator(".worldview-tree details").first();
   const chevron = branch.locator(":scope > summary > svg");
   await expect(chevron).toBeVisible();

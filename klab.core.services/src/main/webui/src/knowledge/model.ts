@@ -5,6 +5,9 @@ export interface Concept {
   name?: string;
   type?: string[];
   metadata?: Record<string, unknown>;
+  abstract?: boolean;
+  collective?: boolean;
+  notifications?: { message: string; level?: string }[];
 }
 export interface Declaration {
   urn: string;
@@ -35,8 +38,26 @@ export function post<T>(api: ServiceApi, path: string, body: unknown, signal?: A
     headers: { "Content-Type": typeof body === "string" ? "text/plain" : "application/json" },
     body: typeof body === "string" ? body : JSON.stringify(body) });
 }
+export function conceptMetadata(concept: Concept): Record<string, unknown> {
+  const metadata = concept.metadata || {};
+  const delegate = metadata.delegate;
+  return { ...(delegate && typeof delegate === "object" ? delegate : {}), ...metadata };
+}
 export function conceptLabel(concept: Concept): string {
-  return String(concept.metadata?.["dc:label"] || concept.name || concept.urn.split(":").pop());
+  const metadata = conceptMetadata(concept);
+  for (const key of ["klab:displayLabel", "dc:label", "rdfs:label", "im:suggested-name"]) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return concept.name || concept.urn.split(":").pop() || concept.urn;
+}
+export function conceptDocumentation(concept: Concept): string {
+  const metadata = conceptMetadata(concept);
+  for (const key of ["dc:comment", "rdfs:comment", "dc:description"]) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
 }
 export function semanticColor(types: string[] = []): string {
   return ["DOMAIN", "QUALITY", "SUBJECT", "AGENT", "RELATIONSHIP", "EXTENT", "EVENT", "PROCESS", "PREDICATE", "ROLE", "CONFIGURATION"]

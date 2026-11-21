@@ -1,6 +1,6 @@
-# Knowledge explorer components
+# Worldview explorer components
 
-`SemanticComposer` and `WorldviewBrowser` are independent Vue 3 components exported from
+`SemanticComposer`, `WorldviewBrowser` and `ObservableCard` are independent Vue 3 components exported from
 the stable `@klab/webui` browser module (`src/plugin-api.ts`). They take an authenticated
 `ServiceApi`, without depending on dashboard context, Quasar, or a global store. Include
 the host's shared `assets/flowchart-viewer.css` when using the browser module outside the
@@ -35,7 +35,9 @@ Props: `api`, optional `authorities` (catalog authority descriptors), and `disab
 Events: `change` for every server-confirmed snapshot, `select` for the arrow/Ctrl+Enter
 host action, and `error`. Exposed methods: `focus()` and `submit()`.
 
-Typing opens the overlay and debounces search by 350 ms. Arrow keys move through matches;
+Focusing or clicking the input opens the overlay immediately, before typing. An initial
+read-only TOKEN request supplies default suggestions; repeated focus/click events do not
+duplicate it. Typing debounces subsequent search by 350 ms. Arrow keys move through matches;
 Enter chooses the highlighted match or accepts a requested literal; exact-match Space
 also chooses. Backspace on the empty pending field undoes one confirmed step. Parentheses
 operate on scopes when permitted. Escape closes suggestions. Confirmed tokens retain the
@@ -54,7 +56,18 @@ semantic revision for IDENTITY; providers are never called directly from the bro
 ## Worldview browser
 
 Props: `api`, optional `focus` (concept URN/expression), `catalog`, `disabled`, and
-`showTree` (default **true**). `showTree: false` hides the tree and its toggle. The source
+`showTree` (default **true**), plus `fullscreenTarget` (an optional host HTMLElement).
+The full-screen button uses the native Fullscreen API when available; otherwise it fills
+the application viewport, makes surrounding controls inert, and restores them on exit.
+The Reasoner workspace passes its container so the composer and graph expand together.
+A standalone browser expands itself. Escape exits the fallback mode; native mode also
+supports the browser's standard Escape action. Unmounting cleans up either mode.
+
+Ontologies initially appear collapsed. The pinned search header contains **Collapse tree**
+(restore the collapsed initial state) and **Expand tree** controls. Only the declarations
+scroll; searching displays matching declarations independently of expansion state.
+
+`showTree: false` hides the tree and its toggle. The source
 catalog is still needed for declaration-only graph relationships; an embedding host can
 provide it through `catalog` to avoid fetching it. The browser responds to changes in this
 configuration. Events: `loaded` (catalog), `select` (resolved focused concept), and `error`.
@@ -79,7 +92,9 @@ IDE. Predicate application through `of` is separate from a quality/process nativ
 No source-text heuristics or tree nesting are used to invent graph edges. The updated
 Reasoner API and Web UI must be deployed together to include these source contracts.
 
-Selecting a tree item, graph node or keyboard focus option loads its neighborhood. Back
+Clicking a graph node highlights it and updates its local inspector without fetching or
+moving the graph. Double-clicking a node, selecting a tree item or choosing a keyboard
+focus option loads its neighborhood. Back
 retraces focus history. Depth is 1–4; traversal is cycle-safe, limited to 150 concepts,
 and explicitly reports truncation. At most six HTTP relation requests run concurrently;
 independent relation types do not wait for each other. Each browser keeps a bounded cache
@@ -91,6 +106,19 @@ as absence, while malformed nonempty JSON still reports the failing endpoint.
 Superseded graph/catalog requests and ELK workers are cancelled; graph requests have a
 45-second deadline. A relation failure reports an error rather than presenting incomplete
 data as an empty neighborhood.
+
+The inspector's **Show details** action expands an `ObservableCard` based on the IDE's
+structure: semantic title, fundamental type and qualifiers, full URN, rendered Markdown,
+notifications, scalar metadata, and already-loaded incoming/outgoing relationships.
+Relationship targets navigate to their concepts. Hovering a graph node displays its
+Markdown docstring in a bounded tooltip. Neither inspecting, expanding nor hovering
+performs extra reasoning calls. The graph refits when its available canvas changes.
+
+Labels prefer `klab:displayLabel`, `dc:label`, `rdfs:label`, then `im:suggested-name`, with
+name/URN fallbacks. Both plain metadata maps and `MetadataImpl.delegate` are supported.
+Documentation uses `dc:comment`, then `rdfs:comment` or `dc:description`. Documentation
+Markdown supports paragraphs, headings, emphasis, lists, quotes, fenced code and links;
+raw HTML is escaped and executable link schemes are not rendered.
 
 The graph reuses the existing open-source Eclipse Sprotty renderer and ELK worker layout.
 ELK's layered algorithm provides directional, orthogonal routing and edge labels without

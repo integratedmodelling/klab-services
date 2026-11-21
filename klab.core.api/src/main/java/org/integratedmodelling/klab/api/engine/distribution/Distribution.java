@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -37,18 +38,21 @@ public interface Distribution {
    * @param size
    */
   record FileData(String hash, String name, long size) {
+    private static final Pattern FILE_ENTRY = Pattern.compile("(\\S+)\\s+(.+?)\\s+(\\d+)");
+
     public static FileData of(String string) {
       if (string == null || string.isBlank()) {
         throw new IllegalArgumentException("empty filelist entry");
       }
-      var parts = string.split("\\s+");
-      if (parts.length < 3) {
+      var entry = FILE_ENTRY.matcher(string.strip());
+      if (!entry.matches()) {
         throw new IllegalArgumentException("malformed filelist entry: " + string);
       }
+      var name = entry.group(2);
       return new FileData(
-          parts[0],
-          parts[1].startsWith("./") ? parts[1].substring(2) : parts[1],
-          Long.parseLong(parts[2]));
+          entry.group(1),
+          name.startsWith("./") ? name.substring(2) : name,
+          Long.parseLong(entry.group(3)));
     }
   }
 
@@ -711,6 +715,7 @@ public interface Distribution {
   String PRODUCT_TYPE_PROPERTY = "klab.product.type";
   String PRODUCT_PLATFORM_PROPERTY = "klab.product.platform";
   String PRODUCT_JAVA_OPTIONS_PROPERTY = "klab.product.options.java";
+  /** Comma-separated, product-relative directories shipped outside the JVM classpath. */
   String PRODUCT_ADDITIONAL_DIRECTORIES_PROPERTY = "klab.product.additional-directories";
 
   String DEVELOP_RELEASE = "develop";

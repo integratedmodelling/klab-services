@@ -14,7 +14,10 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class JavaLocalInstance extends LocalInstanceImpl {
 
@@ -107,10 +110,23 @@ public class JavaLocalInstance extends LocalInstanceImpl {
 
   private String getClassPath() {
 
+    var additionalDirectories =
+        getProduct().getProperty(Distribution.PRODUCT_ADDITIONAL_DIRECTORIES_PROPERTY);
+    Set<Path> excludedDirectories =
+        additionalDirectories == null
+            ? Set.of()
+            : Arrays.stream(additionalDirectories.split(","))
+                .map(String::strip)
+                .filter(directory -> !directory.isEmpty())
+                .map(directory -> Path.of(directory.replace('\\', '/')).normalize())
+                .collect(Collectors.toUnmodifiableSet());
     StringBuilder ret = new StringBuilder();
     this.njars = 0;
     this.ndirs = 0;
     for (File file : Objects.requireNonNull(getProduct().getLocalPath().listFiles())) {
+      if (excludedDirectories.contains(file.toPath().getFileName())) {
+        continue;
+      }
       if (file.toString().endsWith(".jar")) {
         this.njars++;
         ret.append((ret.isEmpty()) ? "" : Utils.OS.get().getClasspathSeparator())

@@ -7,6 +7,7 @@ import type { SemanticResponse, WorldviewCatalog } from "@klab-dashboard/knowled
 
 defineProps<{ context: DashboardContext }>();
 const catalog = shallowRef<WorldviewCatalog>(), focus = ref("");
+const workspace = ref<HTMLElement>();
 function explore(response: SemanticResponse) {
   const concept = response.observable?.semantics || response.currentConcept;
   if (concept?.urn) focus.value = concept.urn;
@@ -14,9 +15,9 @@ function explore(response: SemanticResponse) {
 </script>
 
 <template>
-  <div class="reasoner-workspace">
+  <div ref="workspace" class="reasoner-workspace">
     <SemanticComposer :api="context.api" :authorities="catalog?.authorities" @select="explore" @change="explore" />
-    <WorldviewBrowser :api="context.api" :focus="focus" @loaded="catalog = $event" />
+    <WorldviewBrowser :api="context.api" :focus="focus" :fullscreen-target="workspace" @loaded="catalog = $event" />
   </div>
 </template>
 

@@ -12,11 +12,14 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Pattern;
 import org.apache.commons.exec.CommandLine;
 import org.integratedmodelling.common.services.client.engine.SettingsImpl;
 import org.integratedmodelling.common.utils.Utils;
@@ -176,6 +179,57 @@ class StackImplTest {
     var remaining = stack.resolve(installed);
     assertFalse(remaining.availableLocally());
     assertFalse(stack.delete(remaining));
+  }
+
+  @Test
+  void synchronizesAdditionalJarsAndKeepsThemOffTheJavaClasspath() throws Exception {
+    var local = temporaryDirectory.resolve("local");
+    createDistribution(remoteDirectory, true);
+    var productRoot = buildRoot(remoteDirectory).resolve("engine");
+    writeProperties(
+        productRoot.resolve(Distribution.PRODUCT_PROPERTIES_FILE),
+        Distribution.PRODUCT_TYPE_PROPERTY,
+        Distribution.Product.Type.CLI.name(),
+        Distribution.PRODUCT_PLATFORM_PROPERTY,
+        Distribution.Product.Platform.JAR.name(),
+        Distribution.PRODUCT_MAINCLASS_PROPERTY,
+        "app.Main",
+        Distribution.PRODUCT_ADDITIONAL_DIRECTORIES_PROPERTY,
+        " ./plugins/ , bundled plugins , lib/nested ");
+    var library = "lib/runtime.jar";
+    var plugins =
+        List.of("plugins/spatial.jar", "bundled plugins/spatial plugin.jar", "lib/nested/spatial.jar");
+    var productFiles = new ArrayList<>(plugins);
+    productFiles.add(library);
+    for (var name : productFiles) {
+      var file = productRoot.resolve(name);
+      Files.createDirectories(file.getParent());
+      Files.writeString(file, name);
+      var hash =
+          HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(Files.readAllBytes(file)));
+      Files.writeString(
+          productRoot.resolve(Distribution.BUILD_DIGEST_FILE),
+          hash + "  ./" + name + " " + Files.size(file) + System.lineSeparator(),
+          StandardOpenOption.APPEND);
+    }
+    var settings = settings(local);
+    when(settings.get(Setting.RUN_DIRECTORY, File.class))
+        .thenReturn(temporaryDirectory.resolve("run").toFile());
+    var stack = new StackImpl("klab", settings);
+    var tag = stack.tags().getFirst();
+    assertTrue(stack.synchronize(tag, DistributionImpl.actingSynchronizer));
+    assertTrue(stack.verify(tag));
+
+    var product = (JavaLocalInstance) stack.instance(Distribution.Product.Type.CLI, tag);
+    for (var name : plugins) {
+      assertTrue(Files.isRegularFile(product.getProduct().getLocalPath().toPath().resolve(name)));
+    }
+    var command = product.getCommandLine(product.getProduct(), settings);
+    var arguments = List.of(command.getArguments());
+    var classpath = arguments.get(arguments.indexOf("-cp") + 1);
+    assertEquals(
+        Set.of("payload.jar", "lib" + File.separator + "*"),
+        Set.of(classpath.split(Pattern.quote(File.pathSeparator))));
   }
 
   @Test

@@ -2,6 +2,7 @@ package org.integratedmodelling.common.distribution;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -15,6 +16,7 @@ import org.integratedmodelling.klab.api.configuration.Settings;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.*;
 import org.integratedmodelling.klab.api.engine.distribution.Stack;
+import org.springframework.web.util.UriUtils;
 
 public class DistributionImpl extends Utils.Properties.Container implements Distribution {
 
@@ -469,7 +471,9 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
           var productFileList = new ArrayList<ProductFile>();
           productFiles.put(product, productFileList);
           for (var file : product.getFiles()) {
-            var sourceUrl = Utils.URLs.newURL(product.getUrl() + "/" + file.name());
+            var sourceUrl =
+                Utils.URLs.newURL(
+                    product.getUrl() + "/" + UriUtils.encodePath(file.name(), StandardCharsets.UTF_8));
             var productDestination = new File(productDirectory, file.name());
             var common = commonFiles.contains(file);
             var storageDestination =
@@ -553,10 +557,12 @@ public class DistributionImpl extends Utils.Properties.Container implements Dist
     if (existingFiles == null) {
       return;
     }
-    var requiredFileNames =
-        product.getFiles().stream().map(Distribution.FileData::name).collect(Collectors.toSet());
+    var requiredEntries =
+        product.getFiles().stream()
+            .map(file -> file.name().split("/", 2)[0])
+            .collect(Collectors.toSet());
     for (var file : existingFiles) {
-      if (requiredFileNames.contains(file.getName()) || isProductMetadataFile(file)) {
+      if (requiredEntries.contains(file.getName()) || isProductMetadataFile(file)) {
         continue;
       }
       monitor.delete(file);

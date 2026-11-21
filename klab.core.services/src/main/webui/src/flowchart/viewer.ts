@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { Container, ContainerModule, decorate, injectable } from "inversify";
 import { configureModelElement, configureViewerOptions, loadDefaultModules, LocalModelSource,
   TYPES, SGraphImpl, SGraphView, SNodeImpl, SPortImpl, SLabelImpl, SLabelView, SEdgeImpl,
-  RectangularNodeView, MouseListener, SelectMouseListener, moveFeature, selectFeature, edgeLayoutFeature, svg,
+  RectangularNodeView, MouseListener, SelectMouseListener, InitializeCanvasBoundsAction, moveFeature, selectFeature, edgeLayoutFeature, svg,
   type IView, type RenderingContext, type SModelElementImpl, type IActionDispatcher } from "sprotty";
 import { BringToFrontAction, FitToScreenAction, type Point, type Selectable } from "sprotty-protocol";
 
@@ -40,23 +40,37 @@ class ElkEdgeView implements IView {
 decorate(injectable(), ElkEdgeView);
 
 class Inspector extends MouseListener {
-  constructor(private readonly inspect: (id: string) => void) { super(); }
+  constructor(private readonly inspect: (id: string) => void,
+    private readonly hover?: (id: string | undefined, event: MouseEvent) => void,
+    private readonly activate?: (id: string) => void) { super(); }
   mouseDown(target: SModelElementImpl) {
     let element = target;
     while (element.type === "label" && "parent" in element) element = element.parent as SModelElementImpl;
     this.inspect(element.id);
     return [];
   }
+  mouseMove(target: SModelElementImpl, event: MouseEvent) {
+    let element = target;
+    while (element.type === "label" && "parent" in element) element = element.parent as SModelElementImpl;
+    this.hover?.(event.buttons ? undefined : element.id, event); return [];
+  }
+  mouseOut(_target: SModelElementImpl, event: MouseEvent) { this.hover?.(undefined, event); return []; }
+  doubleClick(target: SModelElementImpl) {
+    let element = target;
+    while (element.type === "label" && "parent" in element) element = element.parent as SModelElementImpl;
+    this.activate?.(element.id); return [];
+  }
 }
 
-export function createViewer(baseDiv: string, inspect: (id: string) => void) {
+export function createViewer(baseDiv: string, inspect: (id: string) => void,
+  hover?: (id: string | undefined, event: MouseEvent) => void, activate?: (id: string) => void) {
   const container = new Container();
   loadDefaultModules(container);
   container.load(new ContainerModule((bind, unbind, isBound, rebind) => {
     const context = { bind, unbind, isBound, rebind };
     rebind(SelectMouseListener).to(DiagramSelectMouseListener).inSingletonScope();
     bind(TYPES.ModelSource).to(LocalModelSource).inSingletonScope();
-    bind(TYPES.MouseListener).toConstantValue(new Inspector(inspect));
+    bind(TYPES.MouseListener).toConstantValue(new Inspector(inspect, hover, activate));
     configureModelElement(context, "graph", SGraphImpl, SGraphView);
     configureModelElement(context, "node", SNodeImpl, RectangularNodeView, { disable: [moveFeature] });
     configureModelElement(context, "port", SPortImpl, RectangularNodeView, { enable: [selectFeature] });
@@ -67,6 +81,15 @@ export function createViewer(baseDiv: string, inspect: (id: string) => void) {
   }));
   const source = container.get<LocalModelSource>(TYPES.ModelSource);
   const dispatcher = container.get<IActionDispatcher>(TYPES.IActionDispatcher);
-  return { source, fit: () => dispatcher.dispatch(FitToScreenAction.create([], { padding: 24, maxZoom: 1 })),
+  return { source, fit: async () => {
+    // Sprotty tracks window resize, but inspector/sidebar changes resize only this canvas.
+    const canvas = document.getElementById(baseDiv);
+    if (canvas) {
+      const bounds = canvas.getBoundingClientRect();
+      await dispatcher.dispatch(InitializeCanvasBoundsAction.create({ x: bounds.left + window.scrollX,
+        y: bounds.top + window.scrollY, width: bounds.width, height: bounds.height }));
+    }
+    await dispatcher.dispatch(FitToScreenAction.create([], { padding: 24, maxZoom: 1 }));
+  },
     dispose: () => container.unbindAll() };
 }

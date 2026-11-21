@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import type { Declaration } from "../knowledge/model";
 import { semanticColor } from "../knowledge/model";
-const props = defineProps<{ nodes: Declaration[]; selected?: string; disabled?: boolean }>();
-const emit = defineEmits<{ select: [string] }>();
-function containsSelected(node: Declaration): boolean {
-  return node.urn === props.selected || node.children.some(containsSelected);
-}
+defineProps<{ nodes: Declaration[]; selected?: string; disabled?: boolean; expanded: ReadonlySet<string> }>();
+const emit = defineEmits<{ select: [string]; toggle: [string, boolean] }>();
 </script>
 <template>
   <ul class="worldview-tree">
     <li v-for="node in nodes" :key="node.urn">
-      <details v-if="node.children.length" :open="containsSelected(node) || undefined">
+      <details v-if="node.children.length" :open="expanded.has(node.urn)" @toggle="emit('toggle', node.urn, ($event.currentTarget as HTMLDetailsElement).open)">
         <summary><svg class="tree-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg><button type="button" :disabled="disabled" :aria-current="selected === node.urn ? 'true' : undefined" :title="node.urn" @click="emit('select', node.urn)"><i :style="{ background: `var(--semantic-${semanticColor(node.type)})` }" />{{ node.label }}</button></summary>
-        <WorldviewTree :nodes="node.children" :selected="selected" :disabled="disabled" @select="emit('select', $event)" />
+        <WorldviewTree :nodes="node.children" :selected="selected" :disabled="disabled" :expanded="expanded" @select="emit('select', $event)" @toggle="(urn, open) => emit('toggle', urn, open)" />
       </details>
       <button v-else type="button" :disabled="disabled" :aria-current="selected === node.urn ? 'true' : undefined" :title="node.urn" @click="emit('select', node.urn)"><i :style="{ background: `var(--semantic-${semanticColor(node.type)})` }" />{{ node.label }}</button>
     </li>

@@ -22,7 +22,7 @@ createApp(defineComponent({ setup() {
   const shown = ref(true), showTree = ref(!params.has("graph-only"));
   return () => h("main", { style: "padding: 16px; max-width: 1440px; margin: auto;" }, [
     h("header", { style: "display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px" }, [
-      h("h1", { style: "font: 500 24px var(--klab-font); margin:0;" }, "Knowledge explorer"),
+      h("h1", { style: "font: 500 24px var(--klab-font); margin:0;" }, "Worldview explorer"),
       h("button", { onClick: () => { document.documentElement.dataset.theme = document.documentElement.dataset.theme === "light" ? "dark" : "light"; } }, "Change theme"),
     ]),
     params.has("standalone") ? [

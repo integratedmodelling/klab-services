@@ -39,7 +39,7 @@ public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
             false)
         .page(
             "knowledge-explorer",
-            "Knowledge explorer",
+            "Worldview explorer",
             "Explore worldview declarations and compose semantic expressions.",
             "reasoner-workspace",
             100,
