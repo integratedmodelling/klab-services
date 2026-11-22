@@ -96,8 +96,6 @@ button, input, select, textarea { font: inherit; }
 .q-field--filled .q-field__control { background: var(--klab-surface-alt); }
 .q-linear-progress { color: var(--klab-action); background: var(--klab-surface-alt); border-radius: 0; }
 .q-linear-progress__track { opacity: 1; background: var(--klab-surface-alt) !important; }
-.credentials-page { width: min(var(--klab-content-width), 100%); margin-inline: auto; color: var(--klab-ink); }
-.credentials-page h1 { font: 600 32px/1.2 var(--klab-font); letter-spacing: -.035em; }
 @media (max-width: 1100px) { .header-links { display: none; } }
 @media (max-width: 900px) {
   :root { --klab-gutter: 24px; }
@@ -119,7 +117,6 @@ button, input, select, textarea { font: inherit; }
   .brand-copy .q-toolbar__title { font-size: 15px; white-space: normal; }
   .header-inner > .q-space { display: none; }
   .header-inner .login-control { grid-area: 2 / 4; justify-self: end; }
-  .credentials-link { grid-area: 3 / 1 / 4 / -1; justify-self: start; }
   .dashboard-main { padding-block: 24px 32px; }
   .intro-row { gap: 8px; margin-bottom: 24px; }
   .intro-row h1, .full-page-heading h1 { font-size: 28px; }

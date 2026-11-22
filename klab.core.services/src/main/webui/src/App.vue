@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive, watch } from "vue";
-import CredentialsPanel from "./components/CredentialsPanel.vue";
+import ServiceAdministration from "./components/ServiceAdministration.vue";
+import type { ComponentOption } from "./services/administration";
 import CapabilitiesPanel from "./components/CapabilitiesPanel.vue";
 import ExtensionPanel from "./components/ExtensionPanel.vue";
 import FullPageExtension from "./components/FullPageExtension.vue";
@@ -81,6 +82,14 @@ const selectedPage = computed<FullPageComponent | undefined>(() =>
 );
 const canAdminister = computed(() => authState.authenticated && Array.isArray(capabilities.value?.permissions)
   && capabilities.value.permissions.includes("ADMINISTER"));
+const isAdministrationRoute = computed(() => ["administration", "settings", "credentials", "import"].some(name => name === pageName.value));
+const administrationSection = computed(() => {
+  if (pageName.value === "credentials") return "credentials";
+  if (pageName.value === "import") return "import";
+  return "general";
+});
+const installedComponents = computed(() => Array.isArray(capabilities.value?.components)
+  ? capabilities.value.components as ComponentOption[] : []);
 const isFullPageRoute = computed(() => pageName.value !== null);
 const serviceLabel = computed(() => {
   const type = config.value?.serviceType?.toLowerCase() || "service";
@@ -195,7 +204,7 @@ watch(() => authState.authenticated, () => {
           <q-toolbar-title>{{ config?.title || "k.LAB service" }}</q-toolbar-title>
         </div>
         <q-space />
-        <nav v-if="config && (config.pages.length || config.links.length)" class="header-links" aria-label="Service links">
+        <nav v-if="config && (config.pages.length || config.links.length || canAdminister)" class="header-links" aria-label="Service links">
           <a
             v-for="page in config.pages"
             :key="page.name"
@@ -211,9 +220,12 @@ watch(() => authState.authenticated, () => {
             :target="link.external ? '_blank' : undefined"
             :rel="link.external ? 'noreferrer' : undefined"
           >{{ link.label }}</a>
+          <a v-if="canAdminister" href="ui/administration"
+            :class="{ 'header-link--active': isAdministrationRoute }" :aria-current="isAdministrationRoute ? 'page' : undefined"
+            @click.prevent="navigate('ui/administration', 'administration')">Administration</a>
         </nav>
         <q-btn-dropdown
-          v-if="config && (config.pages.length || config.links.length)"
+          v-if="config && (config.pages.length || config.links.length || canAdminister)"
           class="header-menu"
           flat
           round
@@ -244,9 +256,13 @@ watch(() => authState.authenticated, () => {
               <q-item-section avatar><q-icon :name="link.external ? 'open_in_new' : 'link'" /></q-item-section>
               <q-item-section>{{ link.label }}</q-item-section>
             </q-item>
+            <q-item v-if="canAdminister" clickable v-close-popup href="ui/administration"
+              :aria-current="isAdministrationRoute ? 'page' : undefined" @click.prevent="navigate('ui/administration', 'administration')">
+              <q-item-section avatar><q-icon name="settings" /></q-item-section>
+              <q-item-section>Administration</q-item-section>
+            </q-item>
           </q-list>
         </q-btn-dropdown>
-        <q-btn v-if="canAdminister" class="credentials-link" flat label="Credentials" @click="navigate('ui/credentials', 'credentials')" />
         <q-btn flat round class="theme-toggle" :icon="theme === 'light' ? 'dark_mode' : 'light_mode'" :aria-pressed="theme === 'dark'"
           :aria-label="theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'" @click="toggleTheme">
           <q-tooltip>{{ theme === 'light' ? 'Dark theme' : 'Light theme' }}</q-tooltip>
@@ -273,7 +289,18 @@ watch(() => authState.authenticated, () => {
     </q-dialog>
     <q-page-container>
       <div id="main-content" class="dashboard-page" tabindex="-1">
-        <CredentialsPanel v-if="pageName === 'credentials' && canAdminister" :key="authState.username" />
+        <ServiceAdministration v-if="isAdministrationRoute && canAdminister" :key="`${authState.username}:${pageName}`"
+          :initial-section="administrationSection" :service-title="config?.title || 'k.LAB service'"
+          :components="installedComponents" :import-schemata="capabilities?.importSchemata" @components-changed="refresh" />
+        <main v-else-if="isAdministrationRoute" class="full-page-main">
+          <header class="full-page-heading"><h1>Administration</h1></header>
+          <p v-if="loading || (refreshing && authState.authenticated && !capabilities)" class="empty-state" role="status">
+            Checking administrator access…
+          </p>
+          <q-banner v-else class="advisory-banner">
+            {{ authState.authenticated ? "Administrator permission is required to manage this service." : "Sign in with an administrator account to manage this service." }}
+          </q-banner>
+        </main>
         <ActorApplication v-else-if="applicationUrn && config" :urn="applicationUrn" :context="context" />
         <FullPageExtension
           v-else-if="selectedPage"

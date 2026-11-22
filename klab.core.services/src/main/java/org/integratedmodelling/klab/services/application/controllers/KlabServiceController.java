@@ -319,11 +319,11 @@ public class KlabServiceController {
         }
 
         String originalFilename = file.getOriginalFilename();
-        String extension =
-            originalFilename != null
-                ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                : "";
+        int lastDot = originalFilename == null ? -1 : originalFilename.lastIndexOf('.');
+        String extension = lastDot < 0 ? "" : originalFilename.substring(lastDot);
+        if (!extension.matches("\\.[A-Za-z0-9]{1,16}")) extension = "";
         Path tempFile = Files.createTempFile("upload", extension);
+        tempFile.toFile().deleteOnExit();
         file.transferTo(tempFile.toFile());
         var result =
             ((ServiceUserScope) scope)
@@ -331,7 +331,6 @@ public class KlabServiceController {
                 .submit(
                     instance.klabService().importAsset(s, s.asset(tempFile.toFile()), urn, scope),
                     "Upload of asset using schema " + s.getSchemaId());
-        tempFile.toFile().deleteOnExit();
         return result;
       } catch (IOException e) {
         throw new KlabInternalErrorException(

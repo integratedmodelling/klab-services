@@ -139,7 +139,9 @@ public final class DiagnosticLogReader implements AutoCloseable {
                 } else omitted++;
               }
               state.event = event(match, state.lineStart, state.lineTruncated, state.identity);
-            } else if (state.event != null) state.event.append(safeContinuation(line), state.lineTruncated);
+            } else if (state.event != null && state.event.vetted) {
+              state.event.append(safeContinuation(line), state.lineTruncated);
+            }
             state.lineStart = state.position; state.lineTruncated = false;
           } else if (state.line.size() < 8192) state.line.write(b);
           else state.lineTruncated = true;
@@ -212,11 +214,11 @@ public final class DiagnosticLogReader implements AutoCloseable {
         throw new IllegalArgumentException();
       if (q.loggerPrefix() != null && !q.loggerPrefix().matches("[A-Za-z0-9_.$]{1,256}"))
         throw new IllegalArgumentException();
-      return Arrays.asList(q.from(), q.to(), q.minLevel(), q.loggerPrefix()).toString();
+      return Arrays.asList(q.from(), q.to(), q.minLevel(), q.loggerPrefix(), q.includeMetadata()).toString();
     } catch (RuntimeException invalid) { throw new Failure(400, "Invalid log filter"); }
   }
   private boolean eligible(Event event, LogQuery q) {
-    if (!event.vetted) return false;
+    if (!event.vetted && (!q.includeMetadata() || q.loggerPrefix() != null)) return false;
     var levels = List.of("TRACE","DEBUG","INFO","WARN","ERROR");
     return (q.from() == null || !event.time.isBefore(Instant.parse(q.from())))
         && (q.to() == null || !event.time.isAfter(Instant.parse(q.to())))
@@ -300,6 +302,10 @@ public final class DiagnosticLogReader implements AutoCloseable {
       var e=new Event(id,time,level,logger,message,fields,vetted,truncated);e.stack.append(stack);return e;
     }
     LogRecord record(boolean partial) {
+      if (!vetted) {
+        return new LogRecord(id,time.toString(),level,"","Message withheld by diagnostic policy",
+            "",Map.of(),partial,false);
+      }
       return new LogRecord(id,time.toString(),level,logger,message,stack.toString(),
           Map.copyOf(fields),partial,truncated);
     }

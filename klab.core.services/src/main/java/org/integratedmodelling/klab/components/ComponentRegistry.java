@@ -2473,9 +2473,10 @@ public class ComponentRegistry {
           var serviceInfo = createVerbPrototype(namespacePrefix, method.getAnnotation(Verb.class));
           verbs.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
         }*/ else if (method.isAnnotationPresent(Importer.class)) {
-        var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Importer.class));
+        var importer = method.getAnnotation(Importer.class);
+        var serviceInfo = createPrototype(namespacePrefix, importer);
         importers.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
-        ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
+        ResourceTransport.INSTANCE.registerImportSchema(serviceInfo, importer.fileExtensions());
       } else if (method.isAnnotationPresent(Exporter.class)) {
         var serviceInfo = createPrototype(namespacePrefix, method.getAnnotation(Exporter.class));
         exporters.add(Pair.of(serviceInfo, createFunctionDescriptor(serviceInfo, cls, method)));
@@ -4426,13 +4427,14 @@ public class ComponentRegistry {
           this.typeAttributor = funcData.getFirst();
 
         } else if (method.isAnnotationPresent(Importer.class)) {
-          var serviceInfo = createPrototype(name + ".", method.getAnnotation(Importer.class));
-          var schema = ResourceTransport.INSTANCE.registerImportSchema(serviceInfo);
+          var importer = method.getAnnotation(Importer.class);
+          var serviceInfo = createPrototype(name + ".", importer);
+          var schema = ResourceTransport.INSTANCE.registerImportSchema(serviceInfo, importer.fileExtensions());
           schema.setAdapter(name);
           importSchemata.add(schema);
           serviceImplementations.put(
               schema.getSchemaId(),
-              createServiceImplementation(method, method.getAnnotation(Importer.class))
+              createServiceImplementation(method, importer)
                   .getSecond());
         } else if (method.isAnnotationPresent(Exporter.class)) {
           var serviceInfo = createPrototype(name + ".", method.getAnnotation(Exporter.class));

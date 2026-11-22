@@ -144,6 +144,24 @@ class DiagnosticLogReaderTest {
     var result=page(null,10,false);assertTrue(result.records().isEmpty());
     assertFalse(result.toString().contains("SECRET"));
   }
+  @Test void metadataViewShowsOrdinaryLogHeadersWithoutTheirPayloadOrLogger() throws Exception {
+    Files.writeString(file, "[2026-10-23 13:31:46.123] INFO [my-private-thread] org.example.SecretLogger: private payload\n"
+        + "\tat org.example.SecretLogger.execute(PrivateFile.java:10)\n"
+        + head("AUTHORITY_BOOTSTRAP_FAILURE phase=PRODUCE"));
+    var metadata = reader.query(new LogQuery("service",null,10,false,null,null,null,null,true),"admin");
+    assertEquals(2, metadata.records().size());
+    var ordinary = metadata.records().getFirst();
+    assertEquals("2026-10-23T13:31:46.123Z", ordinary.timestamp());
+    assertEquals("INFO", ordinary.level());
+    assertEquals("", ordinary.logger());
+    assertEquals("", ordinary.stackTrace());
+    assertTrue(ordinary.diagnostics().isEmpty());
+    assertEquals("Message withheld by diagnostic policy", ordinary.message());
+    assertEquals("AUTHORITY_BOOTSTRAP_FAILURE", metadata.records().getLast().message());
+    assertFalse(metadata.toString().contains("SecretLogger"));
+    assertFalse(metadata.toString().contains("private payload"));
+    assertEquals(1, page(null,10,false).records().size());
+  }
   @Test void abbreviatedProducerAndGroovyCustomCausePreserveSafeStructure() throws Exception {
     Files.writeString(file,head("AUTHORITY_BOOTSTRAP_COMPONENT_FAILURE phase=COMPONENT_EXPORT reason=EXCEPTION")
         .replace("org.integratedmodelling.klab.components.OwnedBootstrapDiagnostics","o.i.k.c.OwnedBootstrapDiagnostics")

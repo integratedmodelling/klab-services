@@ -258,4 +258,8 @@ public class SettingsImpl implements Settings {
     }
     executionHandlers.put(setting, handler);
   }
+
+  public synchronized boolean hasExecutionHandler(Setting setting) {
+    return executionHandlers.containsKey(setting);
+  }
 }

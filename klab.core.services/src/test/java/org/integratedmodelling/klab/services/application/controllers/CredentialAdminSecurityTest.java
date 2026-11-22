@@ -7,7 +7,10 @@ import java.nio.file.*;
 import java.util.*;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.common.services.client.engine.SettingsImpl;
+import org.integratedmodelling.klab.services.JobManager;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.*;
 import org.integratedmodelling.klab.services.application.security.Role;
@@ -48,6 +51,61 @@ class CredentialAdminSecurityTest {
     when(scope.getUser()).thenReturn(identity);return authorization;
   }
   @AfterEach void clear() { SecurityContextHolder.clearContext(); }
+
+  @Test void administratorEditorReturnsTypedSettingsAndKeepsSmtpPasswordWriteOnly() throws Exception {
+    try (var context = new AnnotationConfigWebApplicationContext()) {
+      context.setServletContext(new MockServletContext());
+      context.register(Config.class);
+      context.refresh();
+      var manager = context.getBean(ServiceAuthorizationManager.class);
+      var admin = authorization(true);
+      var reader = authorization(false);
+      when(manager.validateToken(eq("reader-token"), anyMap())).thenReturn(reader);
+      when(manager.validateToken(eq("admin-token"), anyMap())).thenReturn(admin);
+      var service = mock(org.integratedmodelling.klab.services.base.BaseService.class);
+      when(context.getBean(ServiceNetworkedInstance.class).klabService()).thenReturn(service);
+      var settings = mock(SettingsImpl.class);
+      when(service.settings()).thenReturn(settings);
+      when(settings.asMap()).thenReturn(Map.of(
+          "EMAIL_PASSWORD", "fixture-secret", "EMAIL_SMTP_PORT", 587,
+          "RELOAD_WORLDVIEW", Map.of(), "CLEAR_WORKSPACE", Map.of()));
+      when(settings.hasExecutionHandler(Setting.RELOAD_WORLDVIEW)).thenReturn(true);
+      when(settings.property2Setting("EMAIL_PASSWORD")).thenReturn(Setting.EMAIL_PASSWORD);
+      when(settings.set(eq(Setting.EMAIL_PASSWORD), anyString())).thenAnswer(call ->
+          java.util.concurrent.CompletableFuture.completedFuture(call.getArgument(1)));
+      when(((ServiceUserScope) admin.getScope()).getJobManager()).thenReturn(new JobManager());
+      var mvc = MockMvcBuilders.webAppContextSetup(context)
+          .addFilters(context.getBean("springSecurityFilterChain", jakarta.servlet.Filter.class)).build();
+
+      assertEquals(403, mvc.perform(get(ServicesAPI.ADMIN.SETTINGS).param("view", "editor")
+          .header("Authorization", "Bearer reader-token")).andReturn().getResponse().getStatus());
+      var described = mvc.perform(get(ServicesAPI.ADMIN.SETTINGS).param("view", "editor")
+          .header("Authorization", "Bearer admin-token")).andReturn().getResponse();
+      assertEquals(200, described.getStatus());
+      assertTrue(described.getHeader("Cache-Control").contains("no-store"));
+      assertFalse(described.getContentAsString().contains("fixture-secret"));
+      var json = new com.fasterxml.jackson.databind.ObjectMapper();
+      var fields = new HashMap<String, com.fasterxml.jackson.databind.JsonNode>();
+      json.readTree(described.getContentAsString()).forEach(field ->
+          fields.put(field.get("name").asText(), field));
+      assertTrue(fields.get("EMAIL_PASSWORD").get("configured").asBoolean());
+      assertEquals(587, fields.get("EMAIL_SMTP_PORT").get("value").asInt());
+      assertEquals("action", fields.get("RELOAD_WORLDVIEW").get("kind").asText());
+      assertFalse(fields.containsKey("CLEAR_WORKSPACE"));
+      assertEquals("fixture-secret", json.readTree(mvc.perform(get(ServicesAPI.ADMIN.SETTINGS)
+          .header("Authorization", "Bearer admin-token")).andReturn().getResponse().getContentAsString())
+          .get("EMAIL_PASSWORD").asText());
+
+      for (String password : List.of("new-fixture-secret", "")) {
+        var response = mvc.perform(post(ServicesAPI.ADMIN.SET, "EMAIL_PASSWORD")
+            .contentType("text/plain; charset=UTF-8").content(password)
+            .header("Authorization", "Bearer admin-token")).andReturn().getResponse();
+        assertEquals(200, response.getStatus());
+        assertTrue(Long.parseLong(response.getContentAsString()) > 0);
+        verify(settings).set(Setting.EMAIL_PASSWORD, password);
+      }
+    }
+  }
 
   @Test void realSecurityChainProtectsEveryCredentialRouteAndAdminCrudNeverReturnsSecrets() throws Exception {
     try (var context = new AnnotationConfigWebApplicationContext()) {

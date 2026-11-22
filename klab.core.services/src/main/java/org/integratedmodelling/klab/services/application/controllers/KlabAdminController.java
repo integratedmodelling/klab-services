@@ -8,7 +8,6 @@ import org.integratedmodelling.common.services.client.resources.CredentialsReque
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
@@ -21,10 +20,14 @@ import org.integratedmodelling.klab.services.application.security.ServiceAuthori
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -148,9 +151,8 @@ public class KlabAdminController {
 
   /**
    * Post the given setting to the service and return -1 if unsuccessful, 0 if successful, or a
-   * taskId > 1L if the change has triggered an operation. The posted {@link Parameters} value
-   * should, in most situations, contain the new setting value in its "value" field, but may contain
-   * more data in case the setting triggers a parameterizable operation.
+   * positive job ID if a change was submitted. The body is a plain string for string settings or
+   * the serialized value for other settings, including parameter maps for actions.
    *
    * @return
    */
@@ -160,7 +162,7 @@ public class KlabAdminController {
           "Apply an administrative setting and return its asynchronous job ID when applicable")
   @PostMapping(ServicesAPI.ADMIN.SET)
   public @ResponseBody long postSetting(
-      @RequestBody String dataBody,
+      @RequestBody(required = false) String dataBody,
       @PathVariable(name = "setting") String setting,
       Principal principal) {
     var scope =
@@ -170,7 +172,10 @@ public class KlabAdminController {
         && instance.klabService().settings() instanceof SettingsImpl settings) {
       var s = settings.property2Setting(setting);
       if (s != null) {
-        var body = Utils.Json.parseObject(dataBody, s.valueClass);
+        if (dataBody == null && s.valueClass != String.class) {
+          throw new KlabIllegalArgumentException("Missing value for setting: " + setting);
+        }
+        var body = Utils.Json.parseObject(dataBody == null ? "" : dataBody, s.valueClass);
         return userScope
             .getJobManager()
             .submit(settings.set(s, body), "Setting change: " + setting);
@@ -217,4 +222,36 @@ public class KlabAdminController {
     }
     throw new KlabAuthorizationException("ADMINISTER permission is required for service settings");
   }
+
+  /** Typed editor view of the same settings. Passwords are write-only in the web UI. */
+  @GetMapping(value = ServicesAPI.ADMIN.SETTINGS, params = "view=editor")
+  public ResponseEntity<List<SettingField>> describeSettings(Principal principal) {
+    var values = getSettings(principal);
+    var settings = instance.klabService().settings();
+    var fields = new ArrayList<SettingField>();
+    for (var setting : Setting.values()) {
+      var name = setting.name();
+      if (!values.containsKey(name)) continue;
+      var value = values.get(name);
+      var type = setting.valueClass;
+      if (setting == Setting.EMAIL_PASSWORD) {
+        fields.add(new SettingField(name, setting.page, setting.description, "password", null,
+            value instanceof String password && !password.isEmpty()));
+      } else if (type == Map.class) {
+        if (settings instanceof SettingsImpl impl && impl.hasExecutionHandler(setting)) {
+          fields.add(new SettingField(name, setting.page, setting.description, "action", null, false));
+        }
+      } else if (type == File.class) {
+        fields.add(new SettingField(name, setting.page, setting.description, "path",
+            value instanceof File file ? file.getPath() : null, false));
+      } else {
+        var kind = type == Boolean.class ? "boolean" : type == Integer.class ? "integer" : "text";
+        fields.add(new SettingField(name, setting.page, setting.description, kind, value, false));
+      }
+    }
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore().cachePrivate()).body(fields);
+  }
+
+  public record SettingField(String name, Setting.Page page, String description, String kind,
+                             Object value, boolean configured) {}
 }
