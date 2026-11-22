@@ -26,6 +26,8 @@ public class AuthorityCodelistController {
       return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(reasoner.klabService().authorityCodelists(request, scope));
     } catch (SecurityException e) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, e.getMessage());
+    } catch (UnsupportedOperationException e) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
     } catch (java.util.ConcurrentModificationException e) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
     } catch (java.util.NoSuchElementException e) {

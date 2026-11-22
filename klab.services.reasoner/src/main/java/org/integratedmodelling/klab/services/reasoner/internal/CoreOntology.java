@@ -240,6 +240,8 @@ public class CoreOntology {
     public static final String DESCRIBES_QUALITY_PROPERTY = "odo:describesQuality";
     public static final String IS_COMPARED_TO_PROPERTY = "klab:isComparedTo";
     public static final String HAS_ROLE_PROPERTY = "odo:hasRole";
+    public static final String IMPLIES_ROLE_PROPERTY = "odo:impliesRole";
+    public static final String IMPLIES_PREDICATE_PROPERTY = "odo:impliesPredicate";
     public static final String DENIABILITY_PROPERTY = "odo:isDeniable";
     public static final String APPLIES_TO_PROPERTY = "odo:appliesTo";
     public static final String IMPLIES_SOURCE_PROPERTY = "odo:impliesSource";

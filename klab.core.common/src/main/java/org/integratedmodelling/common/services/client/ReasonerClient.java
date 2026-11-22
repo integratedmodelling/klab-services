@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
+import org.integratedmodelling.klab.api.services.reasoner.objects.ConcretizationRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
@@ -865,8 +866,14 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts) {
-    throw new KlabUnimplementedException(
-        "Inference-based generic concretization is not implemented");
+    Class<? extends Semantics> resultType =
+        pattern instanceof Observable ? Observable.class : Concept.class;
+    @SuppressWarnings("unchecked")
+    T result = (T) client.postRequired(
+        ServicesAPI.REASONER.CONCRETIZE,
+        new ConcretizationRequest(pattern, concreteConcepts),
+        resultType);
+    return result;
   }
 
   @Override

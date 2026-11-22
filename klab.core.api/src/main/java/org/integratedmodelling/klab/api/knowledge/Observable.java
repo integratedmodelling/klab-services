@@ -269,6 +269,9 @@ public interface Observable extends Semantics, Resolvable {
      */
     Builder optional(boolean optional);
 
+    /** Mark the observable as requiring specialization before resolution. */
+    Builder generic(boolean generic);
+
     /**
      * Remove all the elements <em>directly</em> stated in the current concept corresponding to the
      * passed role, if existing, and return a builder for the concept without them.

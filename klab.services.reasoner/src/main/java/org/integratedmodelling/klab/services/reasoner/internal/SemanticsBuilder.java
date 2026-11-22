@@ -340,6 +340,12 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
   }
 
   @Override
+  public Observable.Builder generic(boolean generic) {
+    this.generic = generic;
+    return this;
+  }
+
+  @Override
   public Observable.Builder without(SemanticRole... roles) {
     this.syntax = (KimConceptImpl) this.syntax.removeComponents(roles);
     return this;
@@ -928,6 +934,7 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     ret.setOptional(this.optional);
     ret.getAnnotations().addAll(annotations);
     ret.setGeneric(this.generic);
+    if (this.generic) ret.setAbstract(true);
     ret.setRange(this.numericRange);
     ret.setDefaultValue(this.defaultValue);
     ret.setValue(this.value);

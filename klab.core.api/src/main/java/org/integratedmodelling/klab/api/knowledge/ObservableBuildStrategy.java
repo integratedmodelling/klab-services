@@ -455,6 +455,12 @@ public class ObservableBuildStrategy implements Observable.Builder {
   }
 
   @Override
+  public Builder generic(boolean generic) {
+    operations.add(new Operation(OperationType.AS_GENERIC, generic));
+    return this;
+  }
+
+  @Override
   public Builder without(SemanticRole... roles) {
     this.operations.add(new Operation(OperationType.WITHOUT_ROLES, roles));
     return this;

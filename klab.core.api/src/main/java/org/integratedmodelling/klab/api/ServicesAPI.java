@@ -405,6 +405,8 @@ public interface ServicesAPI {
 
     String MATCHES = API_BASE + "/matches";
 
+    String CONCRETIZE = API_BASE + "/concretize";
+
     String RELATIONSHIP_TARGETS = API_BASE + "/relationshipTargets";
 
     String SATISFIABLE = API_BASE + "/satisfiable";

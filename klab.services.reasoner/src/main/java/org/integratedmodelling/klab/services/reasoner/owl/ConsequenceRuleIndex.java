@@ -279,6 +279,11 @@ public final class ConsequenceRuleIndex {
 
   public record Selection(List<ConsequenceRuleResponse.Entry> rules, Set<String> obligations) {}
 
+  /** Look up a captured operand without re-parsing it through Resources. */
+  public static Concept capturedMeaning(OWL owl, KimConcept operand) {
+    return require(owl.existingMeaning(operand.getUrn()));
+  }
+
   public Selection select(
       ConsequenceRuleQuery query, Function<Concept, Collection<String>> semanticKeys) {
     var requested = query.kinds();

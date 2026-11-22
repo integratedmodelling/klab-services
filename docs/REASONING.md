@@ -787,6 +787,27 @@ dispatch. Operations with one semantic result may legitimately return `null` onl
 corresponding restriction or ancestor does not exist. Unsupported operations throw explicitly;
 they must not silently return `false`, `0`, an empty collection, or `null`.
 
+`impliedRoles` projects the cycle-safe semantic role implication graph from inherited
+`odo:impliesRole` and role-valued `odo:impliesPredicate` restrictions, excluding the input role.
+It optionally includes source/destination restrictions for roles applicable to relationships.
+An empty graph returns an empty collection. This read-only projection does not execute scoped
+consequence rules or attribute roles to observed bearers; those require runtime recipient and
+application-context evidence. The accepted semantic generation owns each query, and Explorer
+neighborhood caching reuses its result.
+
+`rolesFor` combines carried roles with roles that follow from authored implications or conferrals
+in the supplied semantic context. It checks the declared recipient, `within` and role applicability
+bounds. `impliedRole` returns the most-specific matching role, returns null when no role matches,
+and rejects incomparable matches. These queries describe semantic applicability. Observation-level
+attribution still requires evidence from the runtime.
+
+Inference-based `concretize` uses subsumption to bind abstract or explicitly generic components to
+supplied concrete concepts. Unrelated concepts are ignored, unresolved slots remain in the
+pattern, and ambiguous bindings are rejected.
+
+Authority codelist listing remains available with the accepted semantic runtime. Codelist
+mutations, reviews and authority configuration report HTTP 409 while that runtime is active.
+
 ## Remaining implementation gaps
 
 Distributed worldview acquisition from certified root/higher-tier providers and authority source
@@ -801,9 +822,6 @@ for the intended rule, local development requirements, and outstanding decisions
   activation and recursive identity materialization are implemented; see
   [Authorities](AUTHORITIES.md#development-plan).
 - Generic substitution capture for abstract semantic patterns.
-- Inference-based concretization from a collection of concrete concepts.
-- Contextual role inference (`rolesFor`), implied role selection (`impliedRole`) and
-  implied role closure (`impliedRoles`).
 - Semantic styling through the general `style` API (the composer's styled tokens are separate).
 - Remote transport of split-operator results and namespace exports.
 - Reasoner asset retrieval.

@@ -909,7 +909,9 @@ public interface Reasoner extends KlabService {
   <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts);
 
   /**
-   * All the roles played by the passed observable within the passed context.
+   * Roles carried by the observable and roles inferred from semantic consequences in the supplied
+   * context. A null context limits inference to the observable and its roles. The result describes
+   * semantic applicability and carries no observation-level attribution.
    *
    * @param observable
    * @param context
@@ -919,7 +921,8 @@ public interface Reasoner extends KlabService {
 
   /**
    * Return the specific role that is baseRole and is implied by the context observable, either
-   * directly or through its implication closure.
+   * directly or through its implication closure. Returns null when no role fits and throws
+   * {@link IllegalArgumentException} when several incomparable most-specific roles fit.
    *
    * @param baseRole
    * @param contextObservable

@@ -14,13 +14,16 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.ConcretizationRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.reasoner.ReasonerServer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @Tag(
@@ -103,6 +106,8 @@ public class ReasonerController {
     if (principal instanceof EngineAuthorization authorization) {
       try {
         return reasoner.klabService().configureAuthority(request, authorization.getScope());
+      } catch (UnsupportedOperationException e) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
       } catch (org.integratedmodelling.klab.api.exceptions.KlabValidationException
           | IllegalArgumentException e) {
         throw new org.springframework.web.server.ResponseStatusException(
@@ -1226,7 +1231,13 @@ public class ReasonerController {
   public Collection<Concept> rolesFor(
       @Parameter(description = "Array of one or two concepts") @RequestBody Concept[] args) {
     requireArguments(args, 1, 2, "Context role inference");
-    return reasoner.klabService().rolesFor(args[0], args.length == 1 ? null : args[1]);
+    try {
+      return reasoner.klabService().rolesFor(args[0], args.length == 1 ? null : args[1]);
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    } catch (IllegalStateException e) {
+      throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
+    }
   }
 
   @Operation(
@@ -1241,7 +1252,22 @@ public class ReasonerController {
   public Concept impliedRole(
       @Parameter(description = "Array of one or two concepts") @RequestBody Concept[] args) {
     requireArguments(args, 1, 2, "Implied-role inference");
-    return reasoner.klabService().impliedRole(args[0], args.length == 1 ? null : args[1]);
+    try {
+      return reasoner.klabService().impliedRole(args[0], args.length == 1 ? null : args[1]);
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    } catch (IllegalStateException e) {
+      throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
+    }
+  }
+
+  @PostMapping(ServicesAPI.REASONER.CONCRETIZE)
+  public Semantics concretize(@RequestBody ConcretizationRequest request) {
+    try {
+      return reasoner.klabService().concretize(request.pattern(), request.concreteConcepts());
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
   }
 
   @Operation(

@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.integratedmodelling.common.diagnostics.DocumentValidationTrace;
@@ -46,6 +47,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.reasoner.objects.ConsequenceRuleQuery;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
@@ -70,7 +72,9 @@ import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.IngestionNotifications;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
+import org.integratedmodelling.klab.services.reasoner.owl.ConsequenceRuleIndex;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
+import org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.OwlDocumentation;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
@@ -197,7 +201,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           != org.integratedmodelling.klab.api.services.reasoner.objects.AuthorityCodelistRequest
               .Operation.LIST)
         throw new UnsupportedOperationException(
-            "Authority ledger changes require authoritative persistence and candidate dependency publication");
+            "Authority codelist changes and reviews are unavailable while the accepted semantic runtime is active. Listing is available.");
       return candidateRuntime.invoke(
           "authorityCodelists",
           new Class<?>[] {
@@ -248,7 +252,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       Authority.ConfigurationRequest request, Scope scope) {
     if (candidateRuntime != null && !semanticOnly)
       throw new UnsupportedOperationException(
-          "Authority configuration requires a captured, independently owned candidate provider");
+          "Authority configuration is unavailable while the accepted semantic runtime is active. Configure the provider in the worldview and reload it.");
     semanticContentFingerprint = null;
     var result = configureAuthorityBinding(request, scope);
     if (semanticValidationState.ready()) publishSemanticCapabilities();
@@ -4571,8 +4575,129 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           "concretize",
           new Class<?>[] {Semantics.class, List.class},
           new Object[] {pattern, concreteConcepts});
-    throw new KlabUnimplementedException(
-        "Inference-based generic concretization is not implemented");
+    Objects.requireNonNull(pattern, "pattern");
+    Objects.requireNonNull(concreteConcepts, "concreteConcepts");
+    if (concreteConcepts.isEmpty()) return pattern;
+    owl.requireAvailableClosure();
+
+    var slots = new LinkedHashMap<Concept, Set<String>>();
+    var meaning = resolveConcept(pattern.asConcept().getUrn());
+    if (meaning.is(SemanticType.NOTHING))
+      throw new IllegalArgumentException("Unknown concretization pattern " + pattern.getUrn());
+    if (pattern instanceof Observable observable) {
+      for (var slot : observable.getGenericComponents()) {
+        var canonical = resolveConcept(slot.getUrn());
+        if (canonical.is(SemanticType.NOTHING))
+          throw new IllegalArgumentException("Unknown generic component " + slot.getUrn());
+        var term = canonical.getUrn();
+        var constraint = canonical.is(SemanticType.ANY) && term.startsWith("any ")
+            ? resolveConcept(term.substring(4)) : canonical;
+        slots.computeIfAbsent(constraint, ignored -> new LinkedHashSet<>()).add(term);
+      }
+    }
+    if (meaning.isAbstract() || pattern.isGeneric() || meaning.getUrn().contains("any ")) {
+      if (Urn.isAtomicConcept(meaning.getUrn())) {
+        slots.computeIfAbsent(meaning, ignored -> new LinkedHashSet<>()).add(meaning.getUrn());
+      } else {
+        var syntax = conceptSyntax.get(
+            serviceScope().getService(ResourcesService.class), meaning.getUrn());
+        if (!(syntax instanceof KimConceptImpl parsed) || syntax.is(SemanticType.NOTHING))
+          throw new IllegalArgumentException("Cannot read generic pattern " + meaning.getUrn());
+        parsed.mapSyntax(node -> {
+          var name = node.getName();
+          if (name == null || node.getSemanticModifier() == UnarySemanticOperator.TYPE) return;
+          var component = resolveConcept(name);
+          if (component.is(SemanticType.NOTHING)) return;
+          if (node.is(SemanticType.ANY) || (meaning.isAbstract() && component.isAbstract()))
+            slots.computeIfAbsent(component, ignored -> new LinkedHashSet<>())
+                .add(node.is(SemanticType.ANY) ? "any " + name : name);
+        });
+      }
+    }
+    if (slots.isEmpty() && pattern.isGeneric()) slots.put(meaning, Set.of(meaning.getUrn()));
+    if (slots.isEmpty()) return pattern;
+
+    var replacements = new LinkedHashMap<Concept, Concept>();
+    for (var supplied : concreteConcepts) {
+      if (supplied == null) throw new IllegalArgumentException("A concrete concept cannot be null");
+      var concrete = resolveConcept(supplied.getUrn());
+      if (concrete.isAbstract() || concrete.isGeneric() || concrete.is(SemanticType.NOTHING)
+          || concrete.is(SemanticType.ANY) || concrete.is(SemanticType.ALL)
+          || concrete.is(SemanticType.NONE))
+        continue;
+      var matching = slots.keySet().stream().filter(slot -> is(concrete, slot)).toList();
+      if (matching.size() > 1)
+        throw new IllegalArgumentException(
+            concrete.getUrn() + " matches multiple generic components: " + matching);
+      if (matching.isEmpty()) continue;
+      var slot = matching.getFirst();
+      var previous = replacements.putIfAbsent(slot, concrete);
+      if (previous != null && !previous.equals(concrete))
+        throw new IllegalArgumentException(
+            "Multiple concrete concepts match " + slot.getUrn() + ": " + previous + ", " + concrete);
+    }
+    if (replacements.isEmpty()) return pattern;
+    var byUrn = new LinkedHashMap<String, String>();
+    replacements.forEach((slot, concrete) ->
+        slots.get(slot).forEach(term -> byUrn.put(term, concrete.getUrn())));
+    var declaration = substituteGenericComponents(pattern.getUrn(), byUrn);
+    Semantics result = pattern instanceof Observable
+        ? resolveObservable(declaration) : resolveConcept(declaration);
+    if (result == null || result.is(SemanticType.NOTHING))
+      throw new IllegalArgumentException("Concretization produced an invalid expression: " + declaration);
+    if (result instanceof ObservableImpl resolved && pattern instanceof Observable original) {
+      // The resolved declaration is cached. Specialization metadata belongs to this call.
+      var specialized = original instanceof ObservableImpl source
+          ? new ObservableImpl(source) : new ObservableImpl(resolved);
+      specialized.setSemantics(resolved.asConcept());
+      specialized.setObserverSemantics(resolved.getObserverSemantics());
+      specialized.setDescriptionType(resolved.getContextualization());
+      specialized.setArtifactType(resolved.getArtifactType());
+      specialized.setUrn(resolved.getUrn());
+      specialized.setName(resolved.getName());
+      specialized.setReferenceName(resolved.getReferenceName());
+      specialized.setNamespace(resolved.getNamespace());
+      var remaining = new LinkedHashSet<>(original.getGenericComponents());
+      remaining.removeIf(component -> byUrn.containsKey(component.getUrn()));
+      specialized.setGenericComponents(remaining);
+      var bindings = new ArrayList<>(original.getSpecializedComponents());
+      replacements.forEach((slot, concrete) -> bindings.add(Pair.of(slot, concrete)));
+      specialized.setSpecializedComponents(bindings);
+      boolean unresolved = slots.size() != replacements.size() || resolved.isAbstract();
+      specialized.setGeneric(original.isGeneric() && unresolved);
+      specialized.setAbstract(unresolved);
+      result = specialized;
+    }
+    @SuppressWarnings("unchecked")
+    T typed = (T) result;
+    return typed;
+  }
+
+  /** Substitute whole terms simultaneously and leave quoted literal values alone. */
+  private static String substituteGenericComponents(
+      String declaration, Map<String, String> byUrn) {
+    var terms = byUrn.keySet().stream()
+        .sorted(Comparator.comparingInt(String::length).reversed())
+        .map(Pattern::quote)
+        .collect(Collectors.joining("|"));
+    var matcher = Pattern.compile(
+        "\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*'|(?<![\\w:.-])(" + terms + ")(?![\\w:.-])")
+        .matcher(declaration);
+    var used = new HashSet<String>();
+    var result = matcher.replaceAll(match -> {
+      var slot = match.group(1);
+      if (slot == null) return Matcher.quoteReplacement(match.group());
+      used.add(slot);
+      var value = byUrn.get(slot);
+      if (!Urn.isAtomicConcept(value) && !declaration.equals(slot)) value = "(" + value + ")";
+      return Matcher.quoteReplacement(value);
+    });
+    if (used.size() != byUrn.size()) {
+      var absent = new LinkedHashSet<>(byUrn.keySet());
+      absent.removeAll(used);
+      throw new IllegalArgumentException("Generic components are absent from the pattern: " + absent);
+    }
+    return result;
   }
 
   @Override
@@ -5815,7 +5940,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           "rolesFor",
           new Class<?>[] {Concept.class, Concept.class},
           new Object[] {observable, context});
-    throw new KlabUnimplementedException("Context-implied role computation is not implemented");
+    var bearer = roleQueryConcept(observable);
+    var trigger = context == null ? null : roleQueryConcept(context);
+    var seeds = new LinkedHashSet<>(roles(bearer));
+    if (bearer.is(SemanticType.ROLE)) seeds.add(bearer);
+    if (trigger != null) seeds.addAll(contextualRoleTargets(trigger, bearer));
+    return contextualRoleClosure(seeds, bearer.is(SemanticType.ROLE) ? null : bearer);
   }
 
   @Override
@@ -5825,7 +5955,119 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           "impliedRole",
           new Class<?>[] {Concept.class, Concept.class},
           new Object[] {baseRole, contextObservable});
-    throw new KlabUnimplementedException("Context-implied role computation is not implemented");
+    var requested = roleQueryConcept(baseRole);
+    if (!requested.is(SemanticType.ROLE))
+      throw new IllegalArgumentException("Expected a base role: " + requested.getUrn());
+    if (contextObservable == null) return null;
+
+    var context = roleQueryConcept(contextObservable);
+    var bearer = SemanticType.isEnumerableSubstantial(context.getType())
+        ? context : inherent(context);
+    var seeds = new LinkedHashSet<>(roles(context));
+    if (context.is(SemanticType.ROLE)) seeds.add(context);
+    if (bearer != null) seeds.addAll(contextualRoleTargets(context, bearer));
+    var matching = contextualRoleClosure(seeds, bearer).stream()
+        .filter(role -> is(role, requested)).toList();
+    var mostSpecific = matching.stream()
+        .filter(role -> matching.stream().noneMatch(other -> is(other, role) && !is(role, other)))
+        .toList();
+    if (mostSpecific.isEmpty()) return null;
+    var selected = mostSpecific.getFirst();
+    if (mostSpecific.stream().anyMatch(other -> !is(selected, other) || !is(other, selected)))
+      throw new IllegalArgumentException(
+          "Multiple implied roles specialize " + requested.getUrn() + ": " + mostSpecific);
+    return selected;
+  }
+
+  private Concept roleQueryConcept(Concept concept) {
+    if (concept == null) throw new IllegalArgumentException("A concept is required for role inference");
+    var canonical = resolveConcept(concept.getUrn());
+    if (canonical.is(SemanticType.NOTHING))
+      throw new IllegalArgumentException("Unknown role inference concept " + concept.getUrn());
+    return canonical;
+  }
+
+  private List<Concept> contextualRoleClosure(Collection<Concept> seeds, Concept bearer) {
+    var applicable = new OWLSemanticClauseSupport(owl);
+    var result = new TreeMap<String, Concept>();
+    var pending = new ArrayDeque<>(seeds);
+    while (!pending.isEmpty()) {
+      var role = pending.removeFirst();
+      if (!role.is(SemanticType.ROLE) || result.containsKey(role.getUrn())
+          || bearer != null && !applicable.applicableTo(role, bearer)) continue;
+      result.put(role.getUrn(), role);
+      pending.addAll(contextualRoleTargets(role, bearer));
+    }
+    return List.copyOf(result.values());
+  }
+
+  private Collection<Concept> contextualRoleTargets(Concept trigger, Concept bearer) {
+    if (bearer != null && !SemanticType.isEnumerableSubstantial(bearer.getType())) return List.of();
+    var role = trigger.is(SemanticType.ROLE);
+    var configuration = trigger.is(SemanticType.CONFIGURATION);
+    var relationship = trigger.is(SemanticType.RELATIONSHIP);
+    var conferral = relationship || trigger.is(SemanticType.EVENT) || trigger.is(SemanticType.PROCESS);
+    if (!role && !configuration && !conferral) return List.of();
+    var targets = new LinkedHashSet<Concept>();
+    var index = consequenceRuleIndex;
+    if (role) {
+      targets.addAll(restrictedRoleTargets(trigger, NS.IMPLIES_ROLE_PROPERTY));
+      // A compiled impliesPredicate restriction loses its authored recipient and within clauses.
+      if (index == null && worldview == null)
+        targets.addAll(restrictedRoleTargets(trigger, NS.IMPLIES_PREDICATE_PROPERTY));
+    }
+    if (index == null || !index.belongsTo(worldview)) {
+      if (worldview != null)
+        throw new IllegalStateException(consequenceRuleIndexFailure == null
+            ? "Authored consequence rules are unavailable" : consequenceRuleIndexFailure);
+      return targets;
+    }
+    var kind = role || configuration ? KimConsequenceRule.Kind.IMPLIES : KimConsequenceRule.Kind.CONFERS;
+    var selection = index.select(
+        new ConsequenceRuleQuery(List.of(trigger), List.of(), Set.of(kind), null),
+        concept -> ConsequenceRuleIndex.semanticKeys(owl, concept));
+    for (var entry : selection.rules()) {
+      if (!is(trigger, entry.owner())) continue;
+      var rule = entry.rule();
+      var target = ConsequenceRuleIndex.capturedMeaning(owl, rule.target());
+      if (!target.is(SemanticType.ROLE)) continue;
+      if (rule.within() != null && !matchesRoleRecipient(bearer, rule.within())) continue;
+      boolean recipient = switch (rule.recipient().kind()) {
+        case EXPRESSION -> matchesRoleRecipient(bearer, rule.recipient().expression());
+        case SOURCE -> relationship && matchesRoleEndpoint(bearer, relationshipSources(trigger));
+        case TARGET -> relationship && matchesRoleEndpoint(bearer, relationshipTargets(trigger));
+        case DEFAULT -> rule.secondaryInherency() != null
+            ? matchesRoleRecipient(bearer, rule.secondaryInherency())
+            : role || defaultRoleRecipient(trigger, bearer, relationship);
+      };
+      if (recipient) targets.add(target);
+    }
+    return targets;
+  }
+
+  private boolean matchesRoleRecipient(Concept bearer, KimConcept recipient) {
+    return bearer != null
+        && matchesRoleEndpoint(bearer, List.of(ConsequenceRuleIndex.capturedMeaning(owl, recipient)));
+  }
+
+  private boolean defaultRoleRecipient(Concept trigger, Concept bearer, boolean relationship) {
+    if (bearer == null || !SemanticType.isEnumerableSubstantial(bearer.getType())) return false;
+    if (relationship)
+      return matchesRoleEndpoint(bearer, relationshipSources(trigger))
+          || matchesRoleEndpoint(bearer, relationshipTargets(trigger));
+    var nativeBearer = inherent(trigger);
+    return nativeBearer != null && !nativeBearer.is(SemanticType.NOTHING) && is(bearer, nativeBearer);
+  }
+
+  private boolean matchesRoleEndpoint(Concept bearer, Collection<Concept> endpoints) {
+    return bearer != null && SemanticType.isEnumerableSubstantial(bearer.getType())
+        && endpoints.stream().anyMatch(endpoint -> !endpoint.is(SemanticType.NOTHING) && is(bearer, endpoint));
+  }
+
+  private Collection<Concept> restrictedRoleTargets(Concept trigger, String propertyName) {
+    var property = owl.getProperty(propertyName);
+    return property == null ? List.of() : owl.getRestrictedClasses(trigger, property, true).stream()
+        .filter(target -> target.is(SemanticType.ROLE)).toList();
   }
 
   @Override
@@ -5835,7 +6077,35 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
           "impliedRoles",
           new Class<?>[] {Concept.class, boolean.class},
           new Object[] {role, includeRelationshipEndpoints});
-    throw new KlabUnimplementedException("Implied role closure is not implemented");
+    if (role == null) throw new IllegalArgumentException("A role concept is required");
+    if (!role.is(SemanticType.ROLE)) return List.of();
+
+    // Project the semantic implication graph, not executable role attribution. In particular,
+    // scoped consequence rules still require their recipient and application context at runtime.
+    var result = new LinkedHashSet<Concept>();
+    var visited = new HashSet<String>();
+    var pending = new ArrayDeque<Concept>();
+    pending.add(role);
+    while (!pending.isEmpty()) {
+      var current = pending.removeFirst();
+      if (!visited.add(current.getUrn())) continue;
+      // Older worldviews use impliesRole; current declaration clauses use impliesPredicate.
+      for (var name : List.of(NS.IMPLIES_ROLE_PROPERTY, NS.IMPLIES_PREDICATE_PROPERTY)) {
+        for (var implied : restrictedRoleTargets(current, name)) {
+          if (!role.getUrn().equals(implied.getUrn())) {
+            result.add(implied);
+            if (!visited.contains(implied.getUrn())) pending.addLast(implied);
+          }
+        }
+      }
+      if (includeRelationshipEndpoints
+          && applicableObservables(current).stream().anyMatch(c -> c.is(SemanticType.RELATIONSHIP))) {
+        result.addAll(relationshipSources(current));
+        result.addAll(relationshipTargets(current));
+      }
+    }
+    result.removeIf(c -> role.getUrn().equals(c.getUrn()));
+    return result;
   }
 
   /**
@@ -6117,6 +6387,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
         case AS_OPTIONAL -> {
           ret = ret.optional((Boolean) op.getPod());
+        }
+        case AS_GENERIC -> {
+          ret = ret.generic((Boolean) op.getPod());
         }
         case WITHOUT_ROLES -> {
           ret = ret.without(op.getRoles().toArray(new SemanticRole[0]));
