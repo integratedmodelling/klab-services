@@ -507,6 +507,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       Object[] fields = {
         new TreeMap<>(SemanticEnvironmentFactory.sources(snapshot)),
         SemanticEnvironmentFactory.sourceOrder(snapshot),
+        snapshot.getMetadata().get(Worldview.PROJECT_SOURCES),
         factory.dependencyRevision(),
         SemanticEnvironmentFactory.CONFIGURATION_REVISION,
         snapshot
@@ -584,6 +585,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           Arrays.asList(
               new TreeMap<>(SemanticEnvironmentFactory.sources(snapshot)),
               SemanticEnvironmentFactory.sourceOrder(snapshot),
+              snapshot.getMetadata().get(Worldview.PROJECT_SOURCES),
               factory.dependencyRevision(),
               SemanticEnvironmentFactory.CONFIGURATION_REVISION,
               metadataRevision,

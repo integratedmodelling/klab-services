@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import org.h2.util.IOUtils;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -166,12 +167,16 @@ public class KlabServiceController {
     if (principal instanceof EngineAuthorization authorization
         && authorization.getScope() instanceof UserScope userScope) {
       var markdown = instance.klabService().info(urn, objectClass, String.class, userScope);
-      return markdown == null
-          ? ResponseEntity.notFound().build()
-          : ResponseEntity.ok()
-              .contentType(MediaType.parseMediaType("text/markdown;charset=UTF-8"))
-              .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
-              .body(markdown);
+      if (markdown == null) return ResponseEntity.notFound().build();
+      var response = ResponseEntity.ok()
+          .contentType(MediaType.parseMediaType("text/markdown;charset=UTF-8"));
+      if (objectClass == KlabAsset.KnowledgeClass.WORLDVIEW) {
+        response.header(HttpHeaders.CACHE_CONTROL, "private, no-cache")
+            .eTag(SemanticValidationRequest.sourceHash(markdown));
+      } else {
+        response.header(HttpHeaders.CACHE_CONTROL, "private, no-store");
+      }
+      return response.body(markdown);
     }
     throw new KlabAuthorizationException("No valid scope in service INFO request");
   }

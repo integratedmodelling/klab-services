@@ -31,6 +31,15 @@ class MarkdownInfoTest {
     assertThrows(KlabAuthorizationException.class, () -> controller.infoMarkdown("audit:Tree", KnowledgeClass.OBSERVABLE, null));
     when(service.info("audit:Tree", KnowledgeClass.OBSERVABLE, Integer.class, user)).thenReturn(42);
     assertEquals(42, (Integer) controller.info("audit:Tree", KnowledgeClass.OBSERVABLE, "java.lang.Integer", principal));
+    when(service.info("current", KnowledgeClass.WORLDVIEW, String.class, user)).thenReturn("# First");
+    var snapshot = controller.infoMarkdown("current", KnowledgeClass.WORLDVIEW, principal);
+    assertEquals("private, no-cache", snapshot.getHeaders().getCacheControl());
+    assertNotNull(snapshot.getHeaders().getETag());
+    assertEquals(snapshot.getHeaders().getETag(),
+        controller.infoMarkdown("current", KnowledgeClass.WORLDVIEW, principal).getHeaders().getETag());
+    when(service.info("current", KnowledgeClass.WORLDVIEW, String.class, user)).thenReturn("# Revised");
+    assertNotEquals(snapshot.getHeaders().getETag(),
+        controller.infoMarkdown("current", KnowledgeClass.WORLDVIEW, principal).getHeaders().getETag());
     var mapping = KlabServiceController.class.getMethod("infoMarkdown", String.class, KnowledgeClass.class,
         java.security.Principal.class).getAnnotation(GetMapping.class);
     assertArrayEquals(new String[]{"text/markdown"}, mapping.produces());

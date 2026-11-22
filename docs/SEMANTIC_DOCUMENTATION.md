@@ -18,6 +18,25 @@ In Java, request `service.info(urn, KnowledgeClass.OBSERVABLE, String.class, use
 The common service client negotiates Markdown for concept/observable String projections.
 Other String projections retain their existing behavior.
 
+## Integrated worldview report
+
+On the Reasoner, request `GET /api/v1/info/WORLDVIEW/current` with `Accept: text/markdown`
+in an authenticated user scope. The loaded worldview URN or ID can also select the report.
+The Java equivalent is `reasoner.info("current", KnowledgeClass.WORLDVIEW, String.class, scope)`.
+The staged Reasoner reads the accepted generation. A request without an available accepted
+runtime can fail until admission completes. An unknown worldview selector returns 404.
+
+The report lists ontology documents in load order with source hashes, imports, declarations,
+nesting, notes and authored clauses. Each domain includes its translated logical axioms.
+Direct inferred named superclasses, strategy documents, authority bindings and diagnostics
+provide context for interpreting those declarations. Use the individual semantic reports for
+axiom provenance and the authorized Resources `GET /api/v1/list/WORLDVIEW` snapshots for the
+original ontology and strategy source. When multiple providers contribute, the report
+identifies the selected provider of each project. Local projects override remote copies as a
+unit; a file removed locally stays removed. Match ontology URNs and SHA-256 hashes of UTF-8 source
+before combining providers. Report caching is private and requires revalidation. The Reasoner
+reuses a rendered report within the same semantic revision and refinement state.
+
 ## CLI and IDE
 
 ```text

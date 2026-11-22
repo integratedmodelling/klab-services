@@ -72,6 +72,8 @@ import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.IngestionNotifications;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
+import org.integratedmodelling.klab.services.reasoner.internal.WorldviewSources;
+import org.integratedmodelling.klab.services.reasoner.owl.WorldviewDocumentation;
 import org.integratedmodelling.klab.services.reasoner.owl.ConsequenceRuleIndex;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.OWLSemanticClauseSupport;
@@ -93,6 +95,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         && !semanticOnly
         && infoClass == String.class
         && (objectClass == KlabAsset.KnowledgeClass.CONCEPT
+            || objectClass == KlabAsset.KnowledgeClass.WORLDVIEW
             || objectClass == KlabAsset.KnowledgeClass.OBSERVABLE))
       return candidateRuntime.invoke(
           "info",
@@ -100,6 +103,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             String.class, KlabAsset.KnowledgeClass.class, Class.class, UserScope.class
           },
           new Object[] {urn, objectClass, infoClass, scope});
+    if (objectClass == KlabAsset.KnowledgeClass.WORLDVIEW && infoClass == String.class)
+      return infoClass.cast(worldviewDocumentation(urn));
     if (infoClass == String.class
         && (objectClass == KlabAsset.KnowledgeClass.CONCEPT
             || objectClass == KlabAsset.KnowledgeClass.OBSERVABLE)) {
@@ -175,6 +180,39 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private final IntelligentMap<Set<Emergence>> emergence;
   private ObservationReasoner observationReasoner;
   private volatile Worldview worldview;
+
+  private record DocumentationSnapshot(long revision, long refinements, long generation, String markdown) {}
+  private DocumentationSnapshot documentationSnapshot;
+
+  private ResourcesService resourcesForDocument(UserScope scope, KlabDocument<?> document) {
+    var providers = scope.getServices(ResourcesService.class);
+    if (providers.size() <= 1) return scope.getService(ResourcesService.class);
+    var selected = WorldviewSources.discover(scope);
+    if (selected == null) return null;
+    var owners = selected.getMetadata().get(Worldview.PROJECT_SOURCES);
+    var id = owners instanceof Map<?, ?> map ? map.get(document.getProjectName()) : null;
+    if (id == null && selected instanceof org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl impl)
+      id = impl.getServiceId();
+    for (var provider : providers) if (id != null && id.equals(provider.serviceId())) return provider;
+    return null;
+  }
+
+  private synchronized String worldviewDocumentation(String urn) {
+    if (!knowledgeReady || worldview == null || worldview.isEmpty()
+        || !("current".equals(urn) || Objects.equals(urn, worldview.getWorldviewId())
+            || Objects.equals(urn, worldview.getUrn()))) return null;
+    var portable = portableCapabilities();
+    long revision = portable == null ? knowledgeRevision() : portable.generation();
+    long refinements = resolvingRefinements.get();
+    if (documentationSnapshot == null || documentationSnapshot.revision() != revision
+        || documentationSnapshot.refinements() != refinements
+        || documentationSnapshot.generation() != capabilitiesGeneration) {
+      var markdown = WorldviewDocumentation.render(worldview, revision, consistent.get(),
+          owl, loadedOntologySources, worldviewLoadDiagnostics);
+      documentationSnapshot = new DocumentationSnapshot(revision, refinements, capabilitiesGeneration, markdown);
+    }
+    return documentationSnapshot.markdown();
+  }
 
   /** A small, parameter-free source hierarchy for the web knowledge explorer. */
   public org.integratedmodelling.klab.api.services.reasoner.objects.WorldviewExplorerCatalog
@@ -978,7 +1016,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         && response.getSourceHash() != null
         && scope instanceof UserScope userScope) {
       try {
-        var resources = scope.getService(ResourcesService.class);
+        var resources = resourcesForDocument(userScope, document);
         if (resources != null) {
           var saved = resources.retrieve(document.getUrn(), KimOntology.class, userScope);
           if (saved != null
@@ -1011,14 +1049,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                       .get(
                           org.integratedmodelling.klab.services.reasoner.internal
                               .SemanticEnvironmentFactory.sourceKey(document)))) {
-        var resources = userScope.getService(ResourcesService.class);
-        var saved = resources.retrieve(document.getUrn(), KimOntology.class, userScope);
+        var resources = resourcesForDocument(userScope, document);
+        var saved = resources == null ? null : resources.retrieve(document.getUrn(), KimOntology.class, userScope);
         if (saved != null
             && Objects.equals(
                 response.getSourceHash(),
                 SemanticValidationRequest.sourceHash(saved.getSourceCode()))
             && worldview != null) {
-          var complete = resources.retrieve(worldview.getUrn(), Worldview.class, userScope);
+          var complete = userScope.getServices(ResourcesService.class).size() > 1
+              ? WorldviewSources.discover(userScope)
+              : resources.retrieve(worldview.getUrn(), Worldview.class, userScope);
           if (complete != null) {
             if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled())
               org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
@@ -1167,6 +1207,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
   /** Synchronize only authoritative saved sources, never an ontology supplied in the request. */
   private boolean synchronizeValidationOntology(KimOntology requested, UserScope scope) {
+    if (scope.getServices(ResourcesService.class).size() > 1) {
+      var selected = WorldviewSources.discover(scope);
+      var hash = SemanticValidationRequest.sourceHash(requested.getSourceCode());
+      if (selected == null || hash == null || selected.getOntologies().stream().noneMatch(
+          ontology -> requested.getUrn().equals(ontology.getUrn())
+              && hash.equals(SemanticValidationRequest.sourceHash(ontology.getSourceCode())))) return false;
+      return !Utils.Resources.hasErrors(refreshSelectedWorldview(selected, scope))
+          && hash.equals(loadedOntologySources.get(requested.getUrn()));
+    }
     var resources = scope.getService(ResourcesService.class);
     var saved = resources.retrieve(requested.getUrn(), KimOntology.class, scope);
     var hash = SemanticValidationRequest.sourceHash(requested.getSourceCode());
@@ -1627,85 +1676,30 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     var ret = candidatePublication && candidateRuntime.status().acceptedGeneration() > 0;
     if (candidatePublication) setOperational(ret);
-    // Prefer local authoring sources, while allowing certificate-advertised remote sources
-    // when no local worldview is available. Never replace an unchanged local selection remotely.
-    var sources = worldviewSources();
-    for (var resources : sources) {
-
-      if (resources.status().isAvailable()
-          && resources.capabilities(serviceScope()).isWorldviewProvider()) {
-
-        // FIXME switch to using the full service list and use the updated worldview retrieval
-        // logic.
-        // FIXME set up a worldview update check at a configurable interval in timedTasks
-
-        // The service scheduler retries every five seconds. Sleeping/retrying here blocks its
-        // status and initialization work without making an unavailable worldview arrive sooner.
-        // Discovery is public during startup, before a user scope exists.
-        long discoveryStarted = System.nanoTime();
-        Worldview discovered =
-            resources.list(Worldview.class, null).stream().findFirst().orElse(null);
-        if (discovered == null) continue;
-        if (candidateRuntime != null
-            && !semanticOnly
-            && !candidateRuntime.shouldRetryPreflight(discovered, serviceScope())) return ret;
-        serviceScope()
-            .info(
-                "Worldview discovered from "
-                    + resources.getUrl()
-                    + " in "
-                    + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - discoveryStarted)
-                    + " ms");
-        if (org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled())
-          org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.emit(
-              org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Event
-                  .DISCOVERY,
-              candidateRuntime == null ? -1 : candidateRuntime.status().inputGeneration(),
-              -1,
-              -1,
-              org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.enabled()
-                  ? org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.digest(
-                      resources.serviceId())
-                  : null,
-              null,
-              org.integratedmodelling.klab.services.reasoner.internal.CandidateTrace.Reason
-                  .SERVICE);
-        var notifications = loadKnowledge(discovered, serviceScope());
-        if (candidatePublication) {
-          // A submitted candidate compiles asynchronously. Keep this source selected while
-          // pending, and poll it again for source/provider changes on the next scheduler tick.
-          ret = candidateRuntime.status().acceptedGeneration() > 0;
-          setOperational(ret);
-          break;
-        }
-        if (knowledgeReady
-            && (Utils.URLs.isLocalHost(getUrl()) || !Utils.Resources.hasErrors(notifications))) {
-          setOperational(true);
-          ret = true;
-          serviceScope()
-              .info(
-                  Utils.Resources.hasErrors(notifications)
-                      ? "Worldview loaded for local editing; validation errors remain"
-                      : "Worldview loaded into local reasoner");
-
-          // TODO if there were previous logical notifications they should be deleted now
-
-          /*
-          We stop at the first worldview that loads. All available worldiews should be
-          synchronized and mirrored automatically, and two services with different worldviews
-          accessible to the same reasoner is a configuration abomination that should never happen.
-           */
-          break;
-        }
-      }
+    Worldview discovered;
+    try {
+      discovered = WorldviewSources.discover(serviceScope());
+    } catch (RuntimeException failure) {
+      serviceScope().warn("Worldview discovery failed: " + failure.getMessage());
+      return ret;
+    }
+    if (discovered == null || (candidatePublication
+        && !candidateRuntime.shouldRetryPreflight(discovered, serviceScope()))) return ret;
+    serviceScope().info("Discovered worldview " + discovered.getUrn() + " from Resources services");
+    if (CandidateTrace.enabled())
+      CandidateTrace.emit(CandidateTrace.Event.DISCOVERY,
+          candidatePublication ? candidateRuntime.status().inputGeneration() : -1, -1, -1,
+          CandidateTrace.digest(discovered.getWorldviewId()), null, CandidateTrace.Reason.SERVICE);
+    var notifications = loadKnowledge(discovered, serviceScope());
+    if (candidatePublication) {
+      ret = candidateRuntime.status().acceptedGeneration() > 0;
+      setOperational(ret);
+    } else if (knowledgeReady
+        && (Utils.URLs.isLocalHost(getUrl()) || !Utils.Resources.hasErrors(notifications))) {
+      setOperational(true);
+      ret = true;
     }
     return ret;
-  }
-
-  private List<ResourcesService> worldviewSources() {
-    return serviceScope().getServices(ResourcesService.class).stream()
-        .sorted(Comparator.comparing(resources -> !Utils.URLs.isLocalHost(resources.getUrl())))
-        .toList();
   }
 
   /** Rediscover using the service's authority, then report the outcome of this exact reload. */
@@ -1721,14 +1715,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       synchronized (this) {
         runtime = candidateRuntime != null && !semanticOnly ? candidateRuntime : null;
         try (var collector = new IngestionNotifications(serviceScope(), notifications)) {
-          Worldview discovered = null;
-          for (var resources : worldviewSources()) {
-            if (resources.status().isAvailable()
-                && resources.capabilities(serviceScope()).isWorldviewProvider()) {
-              discovered = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
-              if (discovered != null) break;
-            }
-          }
+          var discovered = WorldviewSources.discover(serviceScope());
           if (discovered == null) {
             notifications.add(Notification.error("No worldview is available from Resources services"));
             return Map.of("result", false, "notifications", List.copyOf(notifications));
@@ -3692,8 +3679,28 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     return Utils.Resources.createFromLexicalNotifications(ret);
   }
 
+  private ResourceSet refreshSelectedWorldview(Worldview selected, UserScope scope) {
+    if (candidateRuntime != null && !semanticOnly) return loadKnowledge(selected, scope);
+    var owned = org.integratedmodelling.klab.services.reasoner.internal.ServiceWorldviewAdmission
+        .resolve(selected, serviceScope());
+    return loadKnowledge(owned, serviceScope());
+  }
+
   @Override
   public synchronized ResourceSet updateKnowledge(ResourceSet changes, UserScope scope) {
+    // A provider-local event cannot describe a composed generation. Re-read the complete
+    // selection, including deletions, and let global admission independently verify it.
+    if (scope.getServices(ResourcesService.class).size() > 1
+        || (serviceScope() != null && serviceScope().getServices(ResourcesService.class).size() > 1)) {
+      try {
+        var selected = WorldviewSources.discover(scope);
+        if (selected == null) changes.getNotifications().add(Notification.error("Resources worldview unavailable"));
+        else changes.getNotifications().addAll(refreshSelectedWorldview(selected, scope).getNotifications());
+      } catch (RuntimeException unavailable) {
+        changes.getNotifications().add(Notification.error("Worldview refresh failed: " + unavailable.getMessage()));
+      }
+      return changes;
+    }
     var ownResources = scope.getService(ResourcesService.class);
     Map<URL, ResourcesService> services = new HashMap<>();
 

@@ -38,6 +38,10 @@ class MarkdownInfoTransportTest {
       assertEquals("/api/v1/info/OBSERVABLE/" + urn,
           URLDecoder.decode(request.get(), StandardCharsets.UTF_8));
       assertFalse(request.get().contains("infoClass"));
+      assertEquals("# Árbol\n\n- metadata: café",
+          resources.info("current", KnowledgeClass.WORLDVIEW, String.class, null));
+      assertEquals("text/markdown", accept.get());
+      assertEquals("/api/v1/info/WORLDVIEW/current", request.get());
     } finally { server.stop(0); }
   }
 }

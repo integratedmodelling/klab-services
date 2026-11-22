@@ -404,9 +404,13 @@ answers semantic questions for services that do those things.
 
 ### Loading Knowledge
 
-At startup, Reasoner looks for a Resources service that can provide a worldview.
-In local workflows it prefers a local Resources service. Once it retrieves a
-worldview, it loads the ontologies into the OWL layer, registers them with the
+At discovery and reload, Reasoner reads all available Resources worldview providers.
+Providers on the same host take precedence, with service ID and endpoint as stable
+tie-breakers. Snapshots with the same root URN contribute whole projects. For a
+duplicated project the selected provider owns its entire ontology and strategy
+membership, including removals. Distinct remote projects remain eligible. The
+Reasoner orders the selected ontologies by import dependency, detects namespace
+collisions and submits one candidate for validation. It loads the ontologies into the OWL layer, registers them with the
 reasoner, flushes inference, and registers observation strategies.
 
 If semantic loading reports errors, Reasoner marks itself inconsistent. Its

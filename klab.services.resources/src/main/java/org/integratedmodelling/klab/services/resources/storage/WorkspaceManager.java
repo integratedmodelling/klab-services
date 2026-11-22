@@ -4532,6 +4532,8 @@ public class WorkspaceManager {
 
       _worldview = new WorldviewImpl();
       _worldview.getOntologies().addAll(getOntologies(true));
+      var projectSources = new java.util.TreeMap<String, String>();
+      _worldview.getMetadata().put(Worldview.PROJECT_SOURCES, projectSources);
       // basic validations: non-empty, first must be root, take the worldview name from it
       // go back to the projects and load all observation strategies, adding project metadata
       for (var pd : projectDescriptors.values().stream()
@@ -4540,6 +4542,7 @@ public class WorkspaceManager {
           continue;
         }
 
+        projectSources.put(pd.name, service.serviceId());
         DefaultObserver.mergeMetadata(_worldview.getMetadata(), projectMetadata(pd), pd.name,
             message -> _worldview.getNotifications().add(Notification.warning(message)));
 

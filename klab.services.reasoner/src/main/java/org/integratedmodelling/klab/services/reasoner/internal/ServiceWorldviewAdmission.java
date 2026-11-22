@@ -1,11 +1,8 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
-import java.util.Comparator;
 import java.util.Objects;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 /** Resolves request-triggered changes at the service's global publication boundary. */
 public final class ServiceWorldviewAdmission {
@@ -29,17 +26,8 @@ public final class ServiceWorldviewAdmission {
 
   /** Resolve only service-visible beans; request errors must never become global rejection evidence. */
   public static Worldview discover(ServiceScope service) {
-    var sources = service.getServices(ResourcesService.class).stream()
-        .sorted(Comparator.comparing(resources -> !Utils.URLs.isLocalHost(resources.getUrl())))
-        .toList();
-    for (var resources : sources) {
-      if (!resources.status().isAvailable()
-          || !resources.capabilities(service).isWorldviewProvider()) continue;
-      var discovered = resources.list(Worldview.class, null).stream().findFirst().orElse(null);
-      if (discovered == null) continue;
-      var owned = BeanIngestionPreflight.snapshot(discovered);
-      return owned;
-    }
-    throw new IllegalArgumentException("Service worldview discovery is unavailable");
+    var selected = WorldviewSources.discover(service);
+    if (selected == null) throw new IllegalArgumentException("Service worldview discovery is unavailable");
+    return BeanIngestionPreflight.snapshot(selected);
   }
 }

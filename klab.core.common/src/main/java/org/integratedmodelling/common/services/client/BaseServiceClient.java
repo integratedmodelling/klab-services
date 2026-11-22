@@ -115,6 +115,7 @@ public abstract class BaseServiceClient implements KlabService {
       String urn, KlabAsset.KnowledgeClass objectClass, Class<T> infoClass, UserScope scope) {
     if (infoClass == String.class
         && (objectClass == KlabAsset.KnowledgeClass.CONCEPT
+            || objectClass == KlabAsset.KnowledgeClass.WORLDVIEW
             || objectClass == KlabAsset.KnowledgeClass.OBSERVABLE)) {
       return requestClient(scope).accepting(List.of("text/markdown"))
           .get(ServicesAPI.INFO, infoClass, "urn", urn, "knowledgeClass", objectClass);

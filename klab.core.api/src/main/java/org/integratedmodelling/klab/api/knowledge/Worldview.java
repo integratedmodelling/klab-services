@@ -66,6 +66,9 @@ public interface Worldview extends KlabAsset {
    */
   String getWorldviewId();
 
+  /** Project URN to selected Resources service ID for a composite worldview. */
+  String PROJECT_SOURCES = "klab.worldview.project.sources";
+
   /** Validated worldview-local authority definitions. No provider configuration IDs or secrets. */
   default List<AuthorityBinding> getAuthorityBindings() { return List.of(); }
 
