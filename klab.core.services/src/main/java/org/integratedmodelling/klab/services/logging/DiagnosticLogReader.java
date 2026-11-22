@@ -9,13 +9,15 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.regex.*;
 import org.integratedmodelling.klab.api.services.logging.*;
 
-/** Bounded active-file diagnostic reader. Unknown messages never cross the remote boundary. */
+/** Bounded active-file diagnostics with an opt-in view of redacted message text. */
 public final class DiagnosticLogReader implements AutoCloseable {
   public static final int MAX_SCAN = 256 * 1024, MAX_EVENT = 64 * 1024, MAX_CURSORS = 256;
   public static final String POLICY = "vetted-diagnostics-v1";
+  public static final String MESSAGE_POLICY = "redacted-messages-v1";
   private static final Pattern HEADER = Pattern.compile(
       "^\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})]\\s+(?:-\\s+[^ ]*\\s+)?(TRACE|DEBUG|INFO|WARN|ERROR)\\s+\\[[^]\\r\\n]{0,256}]\\s+(?:---\\s+)?([A-Za-z0-9_.$]{1,256}): (.*)$");
   private static final Pattern FIELD = Pattern.compile("(?:^| )([A-Za-z]+)=([^ ]+)");
@@ -31,6 +33,7 @@ public final class DiagnosticLogReader implements AutoCloseable {
   private long sourceEpoch;
   private final ZoneId zone;
   private final Clock clock;
+  private final Supplier<String> currentSmtpPassword;
   private final String instance = UUID.randomUUID().toString();
   private final Map<String, State> cursors = new LinkedHashMap<>();
   private final Map<String, Long> lastQuery = new HashMap<>();
@@ -42,7 +45,13 @@ public final class DiagnosticLogReader implements AutoCloseable {
   }
 
   public DiagnosticLogReader(Path file, ZoneId zone) { this(file, zone, Clock.systemUTC()); }
+  public DiagnosticLogReader(Path file, ZoneId zone, Supplier<String> currentSmtpPassword) {
+    this(file, zone, Clock.systemUTC(), currentSmtpPassword);
+  }
   DiagnosticLogReader(Path file, ZoneId zone, Clock clock) {
+    this(file, zone, clock, () -> null);
+  }
+  DiagnosticLogReader(Path file, ZoneId zone, Clock clock, Supplier<String> currentSmtpPassword) {
     this.file = Objects.requireNonNull(file).toAbsolutePath().normalize();
     try {
       this.registeredParent = this.file.getParent().toRealPath();
@@ -52,11 +61,12 @@ public final class DiagnosticLogReader implements AutoCloseable {
     }
     catch (IOException unavailable) { throw new Failure(503, "Configured log directory unavailable"); }
     this.zone = zone; this.clock = clock;
+    this.currentSmtpPassword = currentSmtpPassword;
     if (file.toString().startsWith("~")) throw new IllegalArgumentException("Log path must be resolved by Spring");
   }
   public LogCapabilities capabilities() {
     return new LogCapabilities(instance, List.of("service"), 200, 1000, MAX_SCAN,
-        MAX_EVENT, zone.getId(), POLICY, false, false);
+        MAX_EVENT, zone.getId(), POLICY, false, false, true);
   }
 
   /** Actor is resolved server-side from the authenticated administrative scope. */
@@ -74,6 +84,8 @@ public final class DiagnosticLogReader implements AutoCloseable {
     if (lastQuery.size() >= MAX_CURSORS && !lastQuery.containsKey(actor))
       throw new Failure(429, "Log query capacity exceeded");
     lastQuery.put(actor, now);
+    boolean includeMessages = query.includeMessages();
+    String knownSecret = includeMessages ? currentSmtpPassword.get() : null;
     try {
       if (Files.isSymbolicLink(file) || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS))
         throw new Failure(503, "Configured log source unavailable");
@@ -128,7 +140,7 @@ public final class DiagnosticLogReader implements AutoCloseable {
             if (match.matches()) {
               if (state.event != null) {
                 if (eligible(state.event, query)) {
-                  var record = state.event.record(false);
+                  var record = state.event.record(false, includeMessages, knownSecret);
                   int cost = recordBudget(record);
                   if (cost > responseBudget) {
                     // Leave this header unread and retain the preceding event for the next page.
@@ -138,7 +150,8 @@ public final class DiagnosticLogReader implements AutoCloseable {
                   records.add(record); responseBudget -= cost;
                 } else omitted++;
               }
-              state.event = event(match, state.lineStart, state.lineTruncated, state.identity);
+              state.event = event(match, state.lineStart, state.lineTruncated, state.identity,
+                  includeMessages, knownSecret);
             } else if (state.event != null && state.event.vetted) {
               state.event.append(safeContinuation(line), state.lineTruncated);
             }
@@ -149,9 +162,10 @@ public final class DiagnosticLogReader implements AutoCloseable {
       }
       // EOF can precede a later stack continuation. Return an updatable partial event, retaining it.
       boolean caughtUp = state.position == state.boundary;
-      if (caughtUp && state.event != null && records.size() < limit && eligible(state.event, query)
-          && recordBudget(state.event.record(true)) <= responseBudget)
-        records.add(state.event.record(true));
+      if (caughtUp && state.event != null && records.size() < limit && eligible(state.event, query)) {
+        var partial = state.event.record(true, includeMessages, knownSecret);
+        if (recordBudget(partial) <= responseBudget) records.add(partial);
+      }
       var after = Files.readAttributes(file, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
       observeRotation();
       if (!identity.equals(String.valueOf(after.fileKey()) + ":" + after.creationTime().toMillis()+":"+sourceEpoch)
@@ -162,7 +176,7 @@ public final class DiagnosticLogReader implements AutoCloseable {
       if (cursors.size() >= MAX_CURSORS) cursors.remove(cursors.keySet().iterator().next());
       cursors.put(next, state);
       return new LogPage(instance, zone.getId(), List.copyOf(records), next, caughtUp,
-          state.boundary, omitted, POLICY);
+          state.boundary, omitted, includeMessages ? MESSAGE_POLICY : POLICY);
     } catch (IOException error) {
       throw new Failure(503, "Configured log source could not be read");
     }
@@ -196,7 +210,7 @@ public final class DiagnosticLogReader implements AutoCloseable {
   @Override public synchronized void close() throws IOException { rotationWatch.close(); cursors.clear(); }
 
   private static int recordBudget(LogRecord record) {
-    // All emitted values are ASCII vetted text; six bytes per character also bounds JSON escaping.
+    // Six bytes per UTF-16 code unit bounds UTF-8 and JSON escaping.
     int chars = record.eventId().length()+record.timestamp().length()+record.level().length()
         +record.logger().length()+record.message().length()+record.stackTrace().length();
     for (var entry : record.diagnostics().entrySet()) chars += entry.getKey().length()+entry.getValue().length();
@@ -214,18 +228,20 @@ public final class DiagnosticLogReader implements AutoCloseable {
         throw new IllegalArgumentException();
       if (q.loggerPrefix() != null && !q.loggerPrefix().matches("[A-Za-z0-9_.$]{1,256}"))
         throw new IllegalArgumentException();
-      return Arrays.asList(q.from(), q.to(), q.minLevel(), q.loggerPrefix(), q.includeMetadata()).toString();
+      return Arrays.asList(q.from(), q.to(), q.minLevel(), q.loggerPrefix(),
+          q.includeMetadata(), q.includeMessages()).toString();
     } catch (RuntimeException invalid) { throw new Failure(400, "Invalid log filter"); }
   }
   private boolean eligible(Event event, LogQuery q) {
-    if (!event.vetted && (!q.includeMetadata() || q.loggerPrefix() != null)) return false;
+    if (!event.vetted && (!(q.includeMetadata() || q.includeMessages()) || q.loggerPrefix() != null)) return false;
     var levels = List.of("TRACE","DEBUG","INFO","WARN","ERROR");
     return (q.from() == null || !event.time.isBefore(Instant.parse(q.from())))
         && (q.to() == null || !event.time.isAfter(Instant.parse(q.to())))
         && (q.minLevel() == null || levels.indexOf(event.level) >= levels.indexOf(q.minLevel()))
         && (q.loggerPrefix() == null || event.logger.startsWith(q.loggerPrefix()));
   }
-  private Event event(Matcher m, long offset, boolean truncated, String sourceIdentity) {
+  private Event event(Matcher m, long offset, boolean truncated, String sourceIdentity,
+      boolean includeMessages, String knownSecret) {
     var fields = new LinkedHashMap<String,String>();
     String message = m.group(4).replaceFirst("^(Resources|Reasoner|Runtime|Resolver|Community) service: ",""), code = null;
     for (String known : List.of("AUTHORITY_BOOTSTRAP_COMPONENT_FAILURE", "AUTHORITY_BOOTSTRAP_FAILURE",
@@ -263,7 +279,8 @@ public final class DiagnosticLogReader implements AutoCloseable {
         ? m.group(3) : "[redacted logger]";
     return new Event(instance + ":" + UUID.nameUUIDFromBytes(sourceIdentity.getBytes(StandardCharsets.UTF_8))
         + ":" + offset, time, m.group(2), logger,
-        code == null ? "[unvetted diagnostic]" : code, fields, code != null, truncated);
+        code, fields, truncated,
+        includeMessages ? LogMessageRedactor.redact(m.group(4), knownSecret, truncated) : null);
   }
   private static boolean knownEmitter(String logger,String expected) {
     // Standard %logger abbreviation shortens package segments, never the producer class name.
@@ -282,16 +299,17 @@ public final class DiagnosticLogReader implements AutoCloseable {
     return line.isBlank() ? "" : "[redacted continuation]";
   }
   private static final class Event {
-    final String id, level, logger, message;
+    final String id, level, logger, code, redactedMessage;
     final Instant time;
     final Map<String,String> fields;
     final boolean vetted;
     final StringBuilder stack = new StringBuilder();
     boolean truncated;
-    Event(String id, Instant time, String level, String logger, String message,
-        Map<String,String> fields, boolean vetted, boolean truncated) {
-      this.id=id;this.time=time;this.level=level;this.logger=logger;this.message=message;
-      this.fields=fields;this.vetted=vetted;this.truncated=truncated;
+    Event(String id, Instant time, String level, String logger, String code,
+        Map<String,String> fields, boolean truncated, String redactedMessage) {
+      this.id=id;this.time=time;this.level=level;this.logger=logger;this.code=code;
+      this.fields=fields;this.vetted=code!=null;this.truncated=truncated;
+      this.redactedMessage=redactedMessage;
     }
     void append(String line, boolean lineTruncated) {
       if (stack.length()+line.length()+1 <= MAX_EVENT) stack.append(line).append('\n');
@@ -299,14 +317,23 @@ public final class DiagnosticLogReader implements AutoCloseable {
       truncated |= lineTruncated;
     }
     Event copy() {
-      var e=new Event(id,time,level,logger,message,fields,vetted,truncated);e.stack.append(stack);return e;
+      var e=new Event(id,time,level,logger,code,fields,truncated,redactedMessage);e.stack.append(stack);return e;
     }
-    LogRecord record(boolean partial) {
+    LogRecord record(boolean partial, boolean includeMessages, String knownSecret) {
+      if (includeMessages) {
+        var diagnostics = new LinkedHashMap<String,String>();
+        fields.forEach((key, value) -> diagnostics.put(key, LogMessageRedactor.redactIdentifiers(value, knownSecret)));
+        return new LogRecord(id,time.toString(),level,
+            vetted ? LogMessageRedactor.redactIdentifiers(logger, knownSecret) : "",
+            redactedMessage,
+            LogMessageRedactor.redactIdentifiers(stack.toString(), knownSecret),Map.copyOf(diagnostics),
+            partial,truncated);
+      }
       if (!vetted) {
         return new LogRecord(id,time.toString(),level,"","Message withheld by diagnostic policy",
             "",Map.of(),partial,false);
       }
-      return new LogRecord(id,time.toString(),level,logger,message,stack.toString(),
+      return new LogRecord(id,time.toString(),level,logger,code,stack.toString(),
           Map.copyOf(fields),partial,truncated);
     }
   }

@@ -1,6 +1,6 @@
 # Administrative diagnostic logs
 
-This initial API exposes vetted diagnostics from the active service log. It is an administration API, not public log access or arbitrary file retrieval. The IDE `LogViewer(LogSource)` can consume pages through `RemoteLogSource` and the selected service's existing authenticated client; its Path constructors retain local-file behaviour.
+The administrative log API serves vetted diagnostics and redacted messages from the active service log. The IDE `LogViewer(LogSource)` uses the vetted view through `RemoteLogSource` and the selected service's authenticated client. Its Path constructors retain local-file behaviour.
 
 ## Source and access
 
@@ -12,10 +12,12 @@ The existing administrator/system controller policy is retained. Every handler a
 
 ```json
 {"streamId":"service","cursor":null,"limit":200,"follow":false,
- "from":null,"to":null,"minLevel":"ERROR","loggerPrefix":null}
+ "from":null,"to":null,"minLevel":"ERROR","loggerPrefix":null,"includeMessages":true}
 ```
 
 `from` and `to` are optional UTC ISO instants; logger prefix applies to the displayed full or abbreviated logger. The standard file timestamp lacks an offset, so conversion uses the service JVM's source zone, returned explicitly in the page. A custom incompatible file pattern may not be recognized; this reader supports the standard startup and fallback patterns.
+
+When capabilities advertise `redactedMessages`, the web Administration log requests `includeMessages` and receives pages with policy `redacted-messages-v1`. Both `includeMessages` and `includeMetadata` default to false. Metadata mode adds timestamp and severity for unvetted events. With a logger prefix, only vetted events are eligible in either extended view. Cursor continuations must retain the original mode.
 
 Results contain hosting service ID, per-reader/process instance ID, records, next cursor, snapshot byte boundary, caughtUp, omission count and policy version. No filesystem path is returned. Cursors expire after ten minutes or bounded cache eviction. Defaults are 200 records, maximum 1,000, at most 256KiB scanned per query plus bounded boundary witnesses, 64KiB retained stack per event, at most 256 cursor states, and a conservative 1MiB response budget. Queries are rate limited per actor and globally serialized within this bounded reader. Reading these logs is audited to a separate bounded rolling sink (`<configured-log>.admin-audit`) to avoid polling its own audit output.
 
@@ -37,7 +39,9 @@ Managed-file origin alone does not make raw text safe for remote disclosure. Vet
 - AUTHORITY_BOOTSTRAP_FAILURE from AuthorityBootstrap;
 - Unhandled service request failure from Logging.
 
-Producer matching accepts full names and standard package abbreviations while requiring the exact producer class. Unapproved emitters and unknown message families are omitted. Fields are individually validated: phase/reason enums, canonical public component coordinates, numeric HTTP status, binding counts and approved revision hashes. Unknown fields, credentials, request/response bodies and raw messages are not exported. No unredacted admin bypass is provided.
+Producer matching accepts full names and standard package abbreviations while requiring the exact producer class. The default view omits unapproved emitters and unknown message families. Fields are individually validated against phase and reason enums, public component coordinates, numeric HTTP status, binding counts and approved revision hashes.
+
+The message view masks the current configured SMTP password and patterns for credential fields, authorization values, common token formats, email addresses, and URL user information, queries and fragments. The reader withholds truncated headers and private-key blocks and excludes unvetted continuation lines. This is pattern-based redaction of free-form logs. Unlabelled secrets in unknown formats can escape detection, so log producers must avoid writing sensitive data.
 
 Original exception/cause types, safe source frames, suppressed chains and explicit truncation are retained. Existing bootstrap Throwable redaction remains in force. OwnedBootstrapDiagnostics additionally captures a numeric RequestFailure status from a bounded cause search before the snapshot loses that field; no provider response text is restored. Historical statuses that were never logged cannot be reconstructed.
 
@@ -45,4 +49,4 @@ Original exception/cause types, safe source frames, suppressed chains and explic
 
 Construct `new LogViewer(new RemoteLogSource(selectedClient))`. Calls run on a daemon background poller; FX updates retain at most 5,000 remote rows and update partial events by ID. Closing does not wait for network completion or let a late reply advance a reset source. Authorization/expiry/gap/transport failure stops polling and displays a safe status; use `setSource` for an explicit reset or service selection. No remote payloads or credentials are persisted. `setFile` switches back to the existing local watcher.
 
-This API cannot serve diagnostics when HTTP fails before startup, recover never-written async logs, or retrieve expired archives. Infrastructure/container logs remain the fallback. Broader redacted text, archive browsing and streaming tail are separate future work. Deployment must coordinate matching API/common client and IDE artifacts; no Languages, ODO, authority or worldview change is required.
+This API cannot serve diagnostics when HTTP fails before startup, recover never-written async logs, or retrieve expired archives. Infrastructure and container logs remain the fallback. Archive browsing and streaming tail are separate work.

@@ -5,6 +5,7 @@ import java.security.Principal;
 import java.time.ZoneId;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.services.logging.*;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -58,7 +59,7 @@ public class AdminLogController {
         String configured = environment.getProperty("logging.file.name");
         if (configured == null || configured.isBlank() || configured.startsWith("~"))
           throw new DiagnosticLogReader.Failure(503, "Resolved service log configuration unavailable");
-        try { current = new DiagnosticLogReader(Path.of(configured), ZoneId.systemDefault()); }
+        try { current = new DiagnosticLogReader(Path.of(configured), ZoneId.systemDefault(), this::currentSmtpPassword); }
         catch (IllegalArgumentException invalid) {
           throw new DiagnosticLogReader.Failure(503, "Resolved service log configuration invalid");
         }
@@ -66,6 +67,12 @@ public class AdminLogController {
       }
     }
     return current;
+  }
+
+  private String currentSmtpPassword() {
+    var service = instance == null ? null : instance.klabService();
+    var settings = service == null ? null : service.settings();
+    return settings == null ? null : settings.get(Setting.EMAIL_PASSWORD, String.class);
   }
 
   @GetMapping(ServicesAPI.ADMIN.LOGS_CAPABILITIES)

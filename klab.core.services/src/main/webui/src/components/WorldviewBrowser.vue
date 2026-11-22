@@ -204,9 +204,6 @@ defineExpose({ center, refresh, fit: () => viewer?.fit() });
       <button type="button" class="worldview-icon" aria-label="Home" title="Home" :disabled="!allDeclarations.length || disabled" @click="center(allDeclarations.find(d => d.type.includes('SUBJECT'))?.urn || allDeclarations[0].urn)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9" /></svg></button>
       <button type="button" class="worldview-icon" aria-label="Reload" title="Reload worldview" :disabled="busy || disabled" @click="initialize(true)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M20 12a8 8 0 1 0-2 5M20 12l-3-4" /></svg></button>
       <button type="button" class="worldview-icon" aria-label="Fit graph" title="Fit graph" :disabled="busy || !snapshot || disabled" @click="viewer?.fit()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5m0 8v5h-5M3 16v5h5" /><rect x="8" y="8" width="8" height="8" rx="1" /></svg></button>
-      <button type="button" class="worldview-icon" :disabled="!selected || disabled" :aria-label="detailsOpen ? 'Hide details' : 'Show details'" :title="detailsOpen ? 'Hide concept details' : 'Show concept details'" :aria-expanded="detailsOpen" :aria-controls="`${id}-details`" @click="detailsOpen = !detailsOpen">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 14h16" /><path :d="detailsOpen ? 'm9 8 3 3 3-3' : 'm9 11 3-3 3 3'" /></svg>
-      </button>
       <button type="button" class="worldview-icon" :disabled="disabled" :aria-label="fullscreen ? 'Exit full screen' : 'Enter full screen'" :title="fullscreen ? 'Exit full screen' : 'Enter full screen'" :aria-pressed="fullscreen" @click="toggleFullscreen">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path :d="fullscreen ? 'M3 8h5V3m8 0v5h5M21 16h-5v5M8 21v-5H3' : 'M8 3H3v5m13-5h5v5m0 8v5h-5M3 16v5h5'" /></svg>
       </button>
@@ -248,8 +245,13 @@ defineExpose({ center, refresh, fit: () => viewer?.fit() });
         <div :id="`${id}-hidden`" class="worldview-hidden" /><div :id="`${id}-popup`" />
         <div v-if="selected" class="worldview-inspector" :class="{ expanded: detailsOpen }">
           <div class="worldview-inspector-summary">
-          <strong :style="{ color: `var(--semantic-${semanticColor(selected.type)})` }">{{ conceptLabel(selected) }}</strong>
-          <code>{{ selected.urn }}</code><span>{{ selected.type?.join(' · ').toLowerCase() }}</span>
+            <div class="worldview-inspector-text">
+              <strong :style="{ color: `var(--semantic-${semanticColor(selected.type)})` }">{{ conceptLabel(selected) }}</strong>
+              <code>{{ selected.urn }}</code><span>{{ selected.type?.join(' · ').toLowerCase() }}</span>
+            </div>
+            <button type="button" class="worldview-icon" :disabled="disabled" :aria-label="detailsOpen ? 'Hide details' : 'Show details'" :title="detailsOpen ? 'Hide concept details' : 'Show concept details'" :aria-expanded="detailsOpen" :aria-controls="`${id}-details`" @click="detailsOpen = !detailsOpen">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 14h16" /><path :d="detailsOpen ? 'm9 8 3 3 3-3' : 'm9 11 3-3 3 3'" /></svg>
+            </button>
           </div>
           <ObservableCard v-if="detailsOpen" :id="`${id}-details`" :concept="selected" :relationships="selectedRelationships" @select="center" />
         </div>
@@ -325,7 +327,8 @@ defineExpose({ center, refresh, fit: () => viewer?.fit() });
 .worldview-canvas .sprotty-edge .sprotty-label { font-size: 11px; fill: var(--klab-muted); }
 .worldview-inspector { flex: none; min-height: 0; border-top: 1px solid var(--klab-border); background: var(--klab-surface); overflow-wrap: anywhere; }
 .worldview-inspector.expanded { display: flex; flex-direction: column; max-height: 60%; }
-.worldview-inspector-summary { display: flex; gap: 8px 16px; align-items: baseline; flex-wrap: wrap; padding: 8px 12px; flex: none; }
+.worldview-inspector-summary { display: flex; gap: 12px; align-items: center; padding: 8px 12px; flex: none; }
+.worldview-inspector-text { display: flex; flex: 1; min-width: 0; gap: 8px 16px; align-items: baseline; flex-wrap: wrap; }
 .worldview-inspector-summary code, .worldview-inspector-summary span { color: var(--klab-muted); font-size: 12px; }
 .worldview-inspector > .observable-card { min-height: 0; overflow: auto; border-top: 1px solid var(--klab-border); }
 .worldview-tooltip { position: fixed; z-index: 100; width: min(360px, calc(100vw - 24px)); max-height: 240px; overflow: auto; padding: 12px; background: var(--klab-surface); color: var(--klab-ink); border: 1px solid var(--klab-border); border-radius: var(--klab-radius); box-shadow: var(--klab-shadow); }

@@ -10,7 +10,14 @@ public record LogQuery(
     String to,
     String minLevel,
     String loggerPrefix,
-    boolean includeMetadata) {
+    boolean includeMetadata,
+    boolean includeMessages) {
+  public LogQuery(
+      String streamId, String cursor, Integer limit, boolean follow, String from, String to,
+      String minLevel, String loggerPrefix, boolean includeMetadata) {
+    this(streamId, cursor, limit, follow, from, to, minLevel, loggerPrefix, includeMetadata, false);
+  }
+
   public LogQuery(
       String streamId,
       String cursor,

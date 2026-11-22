@@ -171,4 +171,47 @@ class DiagnosticLogReaderTest {
     assertTrue(record.stackTrace().contains("org.example.CustomProblem: message redacted"));
     assertTrue(record.stackTrace().contains("Script1.groovy:3"));assertFalse(record.stackTrace().contains("secret"));
   }
+
+  @Test void messageViewRetainsTroubleshootingTextAndRedactsSecretsAcrossPages() throws Exception {
+    Files.writeString(file, head("SMTP handshake failed using fixture-mail-password")
+        + head("Import rejected for https://fixture-user:fixture-pass@example.org/item?sig=fixture-sig#private")
+        + head("HTTP request failed Authorization: Bearer fixture-bearer")
+        + head("Settings rejected {\"clientSecret\":\"escaped\\\"fixture-secret\",\"port\":587}")
+        + head("Authentication failed with webui_fixtureSessionToken for fixture@example.org")
+        + head("SMTP config invalid <password><![CDATA[fixture-xml-secret]]></password> at port 587")
+        + head("Certificate parse failed -----BEGIN PRIVATE KEY----- fixture-key"));
+    try (var messageReader = new DiagnosticLogReader(file, ZoneOffset.UTC, clock, () -> "fixture-mail-password")) {
+      var first = messageReader.query(new LogQuery("service",null,2,false,null,null,null,null,true,true),"admin");
+      assertEquals(DiagnosticLogReader.MESSAGE_POLICY, first.redactionPolicy());
+      assertEquals("SMTP handshake failed using [redacted]", first.records().getFirst().message());
+      assertTrue(first.records().getLast().message().contains("example.org/item"));
+      assertFalse(first.toString().contains("fixture-user"));
+      assertFalse(first.toString().contains("fixture-pass"));
+      assertFalse(first.toString().contains("fixture-sig"));
+      assertFalse(first.toString().contains("#private"));
+      clock.millis += 250;
+      assertEquals(400, assertThrows(DiagnosticLogReader.Failure.class, () ->
+          messageReader.query(new LogQuery("service",first.nextCursor(),10,false,null,null,null,null,true),"admin")).status());
+      clock.millis += 250;
+      var next = messageReader.query(new LogQuery("service",first.nextCursor(),10,false,null,null,null,null,true,true),"admin");
+      assertEquals("HTTP request failed Authorization: [redacted]", next.records().getFirst().message());
+      assertTrue(next.records().get(1).message().contains("\"port\":587"));
+      assertEquals("[message withheld by redaction policy]", next.records().getLast().message());
+      var wire = JacksonConfiguration.newObjectMapper().writeValueAsString(next);
+      for (String secret : new String[]{"fixture-bearer", "fixture-secret", "fixtureSessionToken", "fixture@example.org", "fixture-xml-secret", "fixture-key"}) {
+        assertFalse(wire.contains(secret), secret);
+      }
+    }
+  }
+
+  @Test void messageViewWithholdsTruncatedHeadersAndNeverReadsUnsupportedContinuations() throws Exception {
+    Files.writeString(file, head("request failed " + "a".repeat(8150) + " password=fixture-password")
+        + "raw request continuation contains fixture-body\n"
+        + head("Connection refused on SMTP port 587"));
+    var result = reader.query(new LogQuery("service",null,10,false,null,null,null,null,false,true),"admin");
+    assertEquals("[message withheld by redaction policy]", result.records().getFirst().message());
+    assertTrue(result.records().getFirst().truncated());
+    assertEquals("Connection refused on SMTP port 587", result.records().getLast().message());
+    assertFalse(result.toString().contains("fixture-"));
+  }
 }

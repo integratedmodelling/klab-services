@@ -64,11 +64,12 @@ test("service settings save through jobs, leave SMTP passwords write-only, and r
   await page.route("**/credentials/schemata", route => route.fulfill({ json: [] }));
   await page.route("**/admin/logs/capabilities", route =>
     route.fulfill({ json: { streamIds: ["service"], defaultLimit: 200, sourceZone: "UTC",
-      redactionPolicy: "vetted-diagnostics-v1" } }));
+      redactionPolicy: "vetted-diagnostics-v1", redactedMessages: true } }));
   await page.route("**/admin/logs/query", route => {
-    const { streamId, cursor, follow, includeMetadata } = route.request().postDataJSON();
+    const { streamId, cursor, follow, includeMetadata, includeMessages } = route.request().postDataJSON();
     expect(streamId).toBe("service");
     expect(includeMetadata).toBe(true);
+    expect(includeMessages).toBe(true);
     if (cursor === "page-2") {
       expect(follow).toBe(true);
       return route.fulfill({ status: 410 });
@@ -76,10 +77,10 @@ test("service settings save through jobs, leave SMTP passwords write-only, and r
     expect(follow).toBe(false);
     return route.fulfill({ json: { caughtUp: !!cursor, nextCursor: cursor ? "page-2" : "page-1", omittedEvents: 0,
       records: [{ eventId: "event-1", level: "INFO", logger: "Runtime", timestamp: "2026-11-22T08:00:00Z",
-        message: cursor ? "Service started" : "Message withheld by diagnostic policy", partial: !cursor, truncated: false }] } });
+        message: cursor ? "Service started" : "SMTP connection failed password=[redacted]", partial: !cursor, truncated: false }] } });
   });
 
-  await page.goto("/tests/theme.html");
+  await page.goto("/tests/theme.html", { waitUntil: "domcontentloaded" });
   await page.getByRole("link", { name: "Administration", exact: true }).click();
   await expect(page).toHaveURL(/\/ui\/administration$/);
   await page.getByLabel("Max concurrent shard tasks", { exact: true }).fill("8");
@@ -108,14 +109,14 @@ test("service settings save through jobs, leave SMTP passwords write-only, and r
   expect(results).toBe(1);
 
   await page.getByRole("tab", { name: "Logs" }).click();
-  await expect(page.getByText("Message withheld by diagnostic policy")).toBeVisible();
+  await expect(page.getByText("SMTP connection failed password=[redacted]")).toBeVisible();
   await page.getByRole("button", { name: "Load more entries" }).click();
   await expect(page.getByText("Service started")).toBeVisible();
-  await expect(page.getByText("Message withheld by diagnostic policy")).toHaveCount(0);
+  await expect(page.getByText("SMTP connection failed password=[redacted]")).toHaveCount(0);
   await page.getByRole("button", { name: "Refresh log" }).click();
   await expect(page.getByRole("alert")).toContainText("Start a new query");
   await page.getByRole("button", { name: "Start new query" }).click();
-  await expect(page.getByText("Message withheld by diagnostic policy")).toBeVisible();
+  await expect(page.getByText("SMTP connection failed password=[redacted]")).toBeVisible();
 
   await page.setViewportSize({ width: 320, height: 900 });
   await page.getByRole("button", { name: "Switch to dark theme" }).click();

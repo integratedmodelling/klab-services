@@ -26,6 +26,7 @@ interface LogCapabilities {
   defaultLimit: number;
   sourceZone: string;
   redactionPolicy: string;
+  redactedMessages?: boolean;
 }
 
 const props = defineProps<{ visible: boolean }>();
@@ -81,6 +82,7 @@ async function readPage() {
       limit: capabilities.value.defaultLimit,
       follow: !!cursor.value && caughtUp.value,
       includeMetadata: true,
+      ...(capabilities.value.redactedMessages ? { includeMessages: true } : {}),
     };
     // A refresh or restart can follow immediately after the previous cursor response.
     const now = Date.now();
@@ -167,7 +169,10 @@ onBeforeUnmount(() => { stopFollowing(); controller.abort(); });
     <header class="logs-heading">
       <div>
         <h2 id="service-logs-title">Service log</h2>
-        <p v-if="capabilities">Source time zone {{ capabilities.sourceZone }} · Unvetted entries show timestamp and level</p>
+        <p v-if="capabilities">
+          Source time zone {{ capabilities.sourceZone }} ·
+          {{ capabilities.redactedMessages ? 'Messages are redacted before display' : 'Unvetted entries show timestamp and level' }}
+        </p>
       </div>
       <div class="log-actions">
         <q-btn outline color="primary" :label="cursor && !caughtUp && !expired ? 'Load more entries' : 'Refresh log'"

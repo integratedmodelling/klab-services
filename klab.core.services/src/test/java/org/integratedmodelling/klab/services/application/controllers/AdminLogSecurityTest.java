@@ -50,11 +50,15 @@ class AdminLogSecurityTest {
   @AfterEach void clear() { SecurityContextHolder.clearContext(); }
 
   @Test void productionSecurityChainRejectsInvalidTokenAndReaderButPermitsAdmin() throws Exception {
-    var file=root.resolve("runtime.log");Files.writeString(file,"");
+    var file=root.resolve("runtime.log");
+    Files.writeString(file,"[2026-10-23 13:31:46.123] ERROR [main] example.Runtime: SMTP connection failed password=fixture-password\n");
     try(var context=new AnnotationConfigWebApplicationContext()) {
       context.setServletContext(new MockServletContext());
       context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("test",Map.of("logging.file.name",file.toString())));
       context.register(Config.class);context.refresh();
+      var instance = context.getBean(ServiceNetworkedInstance.class);
+      var service = mock(org.integratedmodelling.klab.services.base.BaseService.class);
+      when(instance.klabService()).thenReturn(service);
       var manager=context.getBean(ServiceAuthorizationManager.class);
       var readerAuthorization=authorization(false);
       var adminAuthorization=authorization(true);
@@ -70,7 +74,16 @@ class AdminLogSecurityTest {
       var allowed=mvc.perform(get(ServicesAPI.ADMIN.LOGS_CAPABILITIES)
           .header("Authorization","Bearer admin-token")).andReturn().getResponse();
       assertEquals(200,allowed.getStatus());assertFalse(allowed.getContentAsString().contains("fixture-private"));
-      verify(manager).validateToken(eq("admin-token"),anyMap());
+      var query = "{\"streamId\":\"service\",\"includeMessages\":true}";
+      assertEquals(403,mvc.perform(post(ServicesAPI.ADMIN.LOGS_QUERY).contentType("application/json")
+          .content(query).header("Authorization","Bearer reader-token")).andReturn().getResponse().getStatus());
+      var page = mvc.perform(post(ServicesAPI.ADMIN.LOGS_QUERY).contentType("application/json")
+          .content(query).header("Authorization","Bearer admin-token")).andReturn().getResponse();
+      assertEquals(200,page.getStatus());
+      assertTrue(page.getHeader("Cache-Control").contains("no-store"));
+      assertTrue(page.getContentAsString().contains("SMTP connection failed password=[redacted]"));
+      assertFalse(page.getContentAsString().contains("fixture-password"));
+      verify(manager,times(2)).validateToken(eq("admin-token"),anyMap());
     }
   }
 }
