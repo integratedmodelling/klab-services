@@ -5044,6 +5044,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 source,
                 worldview == null ? concept.getProjectName() : worldview.getWorldviewId());
       }
+      indexer.indexConcept(concept, annotated);
     }
   }
 
@@ -5275,6 +5276,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         pending.scope().error(error, pending.statement());
       }
     }
+    indexer.refresh();
   }
 
   private Concept buildInternal(
@@ -5407,7 +5409,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     org.integratedmodelling.klab.services.reasoner.owl.WorldviewDeclarationSupport
         .compileDeniability(owl, ontology, main, concept);
 
-    indexer.index(concept);
+    indexer.indexConcept(concept, main);
 
     if (concept.getDeclaredParent() != null) {
 

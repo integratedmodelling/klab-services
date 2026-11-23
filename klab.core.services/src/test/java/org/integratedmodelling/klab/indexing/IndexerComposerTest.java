@@ -90,7 +90,7 @@ class IndexerComposerTest {
       fixture.refresh();
       var scope = SemanticScope.root(); scope.lexicalRealm.clear();
       var checks = new java.util.concurrent.atomic.AtomicInteger();
-      scope.candidateFilter = concept -> { checks.incrementAndGet(); return true; };
+      scope.candidateFilter = (id, concept) -> { checks.incrementAndGet(); return true; };
       scope.searchCancelled = () -> checks.get() > 0;
       assertThrows(java.util.concurrent.CancellationException.class, () -> fixture.index.query("", scope, 30));
       assertEquals(1, checks.get());
@@ -126,7 +126,7 @@ class IndexerComposerTest {
       fixture.refresh();
       var scope = SemanticScope.root();
       scope.lexicalRealm.clear();
-      scope.candidateFilter = concept -> concept.is(SemanticType.QUALITY);
+      scope.candidateFilter = (id, concept) -> concept.is(SemanticType.QUALITY);
       assertEquals(List.of("test:Elevation"), fixture.index.query("", scope, 1).stream().map(SemanticMatch::getId).toList());
     }
   }

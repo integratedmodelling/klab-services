@@ -122,6 +122,15 @@ public class Indexer {
     }
 
     public SemanticMatch index(KlabStatement object) {
+        return index(object, null);
+    }
+
+    /** Index one installed declaration under its authored name, including aliases. */
+    public SemanticMatch indexConcept(KimConceptStatement statement, Concept concept) {
+        return index(statement, concept.getType());
+    }
+
+    private SemanticMatch index(KlabStatement object, Set<SemanticType> resolvedType) {
 
         SemanticMatch ret = null;
         Set<SemanticType> semanticType = null;
@@ -137,22 +146,26 @@ public class Indexer {
              * although certainly not as suggestions. They could be indexed to provide
              * "negative" suggestions for a smarter bar.
              */
-            if (!conceptStatement.getType().contains(SemanticType.NOTHING)) {
+            semanticType = resolvedType == null ? conceptStatement.getType() : resolvedType;
+            if (!semanticType.isEmpty() && !semanticType.contains(SemanticType.NOTHING)) {
 
-                ret = new SemanticMatch(SemanticMatch.Type.CONCEPT, conceptStatement.getType());
+                ret = new SemanticMatch(SemanticMatch.Type.CONCEPT, semanticType);
                 ret.setDescription(conceptStatement.getDocstring());
-                ret.setId(object.getNamespace() + ":" + conceptStatement.getUrn());
-                ret.setName(conceptStatement.getUrn());
-
-                semanticType = conceptStatement.getType();
+                String urn = conceptStatement.getUrn();
+                int separator = urn.indexOf(':');
+                ret.setId(separator < 0 ? object.getNamespace() + ":" + urn : urn);
+                ret.setName(urn.substring(separator + 1));
+                ret.setAbstract(semanticType.contains(SemanticType.ABSTRACT));
 
                 /*
                  * TODO a concept that 'equals' something should index its definition with high
                  * weight; a concept that 'is' something should index its parent's definition
                  * with lower weight
                  */
-                for (var child : conceptStatement.getChildren()) {
-                    index(child);
+                if (resolvedType == null) {
+                    for (var child : conceptStatement.getChildren()) {
+                        index(child);
+                    }
                 }
             }
 
@@ -200,7 +213,11 @@ public class Indexer {
                 document.add(new StoredField("vmtype", ret.getMatchType().ordinal()));
                 document.add(new StoredField("smtype", encodeType(semanticType)));
 
-                this.writer.addDocument(document);
+                if (resolvedType == null) {
+                    this.writer.addDocument(document);
+                } else {
+                    this.writer.updateDocument(new Term("id", ret.getId()), document);
+                }
 
             } catch (Throwable e) {
                 throw new KlabInternalErrorException(e);
@@ -248,6 +265,14 @@ public class Indexer {
             }
         };
         writerThread.start();
+    }
+
+    public void refresh() {
+        try {
+            searcherManager.maybeRefreshBlocking();
+        } catch (IOException e) {
+            throw new KlabIOException(e);
+        }
     }
 
     public boolean ensureClosed() {
@@ -409,21 +434,22 @@ public class Indexer {
                     composer.checkSearchCancelled();
 
                     Document document = searcher.storedFields().document(hit.doc);
-                    Concept concept = scope.getService(Reasoner.class).resolveConcept(document.get("id"));
+                    String id = document.get("id");
+                    Concept concept = scope.getService(Reasoner.class).resolveConcept(id);
                     SemanticMatch.Type matchType = SemanticMatch.Type.values()[Integer
                             .parseInt(document.get("vmtype"))];
 
-                    if (concept == null || ids.contains(document.get("id"))) {
+                    if (concept == null || concept.is(SemanticType.NOTHING) || ids.contains(id)) {
                         continue;
                     }
 
                     for (SemanticScope.Constraint constraint : composer.getAdmittedLogicalInput()) {
 
                         if (constraint.matches(concept)) {
-                            if (!composer.candidateFilter.test(concept)) break;
+                            if (!composer.candidateFilter.test(id, concept)) break;
 
                             SemanticMatch match = new SemanticMatch();
-                            match.setId(document.get("id"));
+                            match.setId(id);
                             match.setName(document.get("name"));
                             match.setDescription(document.get("description"));
                             match.setScore(hit.score);
@@ -434,7 +460,7 @@ public class Indexer {
                                     "vctype"))]);
 
                             ret.add(match);
-                            ids.add(document.get("id"));
+                            ids.add(id);
 
                             break;
                         }

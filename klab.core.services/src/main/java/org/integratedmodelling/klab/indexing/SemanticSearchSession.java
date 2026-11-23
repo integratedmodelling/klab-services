@@ -56,6 +56,8 @@ public final class SemanticSearchSession {
   private List<SemanticMatch> proposals = List.of();
   private Map<String, PreparedSelection> preparedSelections = Map.of();
   private record PreparedSelection(Object token, State state) {}
+  // Keep the authored name for parsing and display while checking the resolved semantics.
+  private record ConceptSelection(Concept concept, String declaration) {}
   private int proposalRequestId;
   private int lastRequestId = -1;
   private final java.util.concurrent.atomic.AtomicInteger latestRequestId =
@@ -230,14 +232,15 @@ public final class SemanticSearchSession {
     try {
       // The real indexer uses this predicate before its limit. Alternative search providers
       // may ignore it; the proposal loop below still validates every returned match.
-      frame.scope.candidateFilter = concept -> {
+      frame.scope.candidateFilter = (id, concept) -> {
         try {
           frame.scope.checkSearchCancelled();
+          var selected = new ConceptSelection(concept, id);
           var trial = new ArrayList<>(tokens);
-          trial.add(concept);
+          trial.add(selected);
           var candidate = replay(trial);
           frame.scope.checkSearchCancelled();
-          prepared.put(concept.getUrn(), new PreparedSelection(concept, candidate));
+          prepared.put(id, new PreparedSelection(selected, candidate));
           return true;
         } catch (java.util.concurrent.CancellationException cancelled) {
           throw cancelled;
@@ -254,7 +257,7 @@ public final class SemanticSearchSession {
     } catch (RuntimeException ex) {
       response.getErrors().add("Suggestions are unavailable: " + failureMessage(ex));
     } finally {
-      frame.scope.candidateFilter = concept -> true;
+      frame.scope.candidateFilter = (id, concept) -> true;
       frame.scope.searchCancelled = () -> false;
     }
     for (var match : candidates) {
@@ -339,7 +342,7 @@ public final class SemanticSearchSession {
       Concept concept = reasoner.resolveConcept(match.getId());
       if (concept == null || concept.is(SemanticType.NOTHING))
         throw new IllegalArgumentException("This concept is unavailable.");
-      return concept;
+      return new ConceptSelection(concept, match.getId());
     }
     if (match.getMatchType() == SemanticMatch.Type.MODIFIER && "each".equals(match.getId()))
       return Qualifier.EACH;
@@ -366,6 +369,7 @@ public final class SemanticSearchSession {
     }
     for (int i = start; i < input.size(); i++) {
       Object token = input.get(i);
+      if (token instanceof ConceptSelection selected) token = selected.concept();
       if (token instanceof AuthoritySelection identity) token = identity.concept();
       Frame frame = frames.peek();
       if ("(".equals(token)) {
@@ -678,6 +682,11 @@ public final class SemanticSearchSession {
   }
 
   private StyledKimToken styled(Object token) {
+    if (token instanceof ConceptSelection selected) {
+      var styled = StyledKimToken.create(selected.concept());
+      styled.setValue(selected.declaration());
+      return styled;
+    }
     if (token instanceof Continuation continuation) {
       var styled = new StyledKimToken();
       styled.setValue(continuation.code());

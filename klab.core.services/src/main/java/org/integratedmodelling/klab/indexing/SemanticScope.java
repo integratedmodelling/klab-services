@@ -29,7 +29,7 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 public class SemanticScope {
     // Session-specific validation must run before the indexer's result limit, so invalid
     // prefix/head combinations cannot crowd eligible concepts out of the candidate page.
-    java.util.function.Predicate<Concept> candidateFilter = concept -> true;
+    java.util.function.BiPredicate<String, Concept> candidateFilter = (id, concept) -> true;
     java.util.function.BooleanSupplier searchCancelled = () -> false;
 
     void checkSearchCancelled() {

@@ -103,6 +103,63 @@ class CoreAliasDocumentationTest {
     }
   }
 
+  @Test void composerSelectsCoreAndOrdinaryAliasesUnderTheirAuthoredNames() throws Exception {
+    var world = world("composer", "Worldview meaning", true, false, false);
+    var root = world.getOntologies().getFirst();
+    var identity = declaration("Individual", SemanticType.IDENTITY);
+    identity.setType(EnumSet.of(SemanticType.IDENTITY, SemanticType.PREDICATE));
+    root.getStatements().add(identity);
+    var ordinaryAlias = alias("Actor", "A second name");
+    ordinaryAlias.setUpperConceptDefined(null);
+    ordinaryAlias.setAlias(true);
+    ordinaryAlias.setDeclaredParent(ref("w:Agent"));
+    root.getStatements().add(ordinaryAlias);
+
+    var built = build(factory(), world);
+    assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID,
+        built.logicalStatus(), built.diagnostics().toString());
+    try (var state = built.state()) {
+      var actor = state.actor();
+      for (String name : List.of("Agent", "ZAgent", "Actor")) {
+        var request = new SemanticSearchRequest();
+        request.setRequestId(1);
+        request.setQueryString("w:Individual");
+        var identityMatches = actor.semanticSearch(request);
+        var selectedIdentity = select(actor, identityMatches, "w:Individual");
+        assertEquals("w:Individual", selectedIdentity.getDeclaration());
+
+        request.setSearchId(selectedIdentity.getSearchId());
+        request.setRequestId(3);
+        request.setQueryString("w:" + name);
+        var aliasMatches = actor.semanticSearch(request);
+        String id = "w:" + name;
+        assertTrue(aliasMatches.getErrors().isEmpty(), aliasMatches.getErrors().toString());
+        var match = aliasMatches.getMatches().stream()
+            .filter(candidate -> id.equals(candidate.getId())).findFirst().orElseThrow(
+                () -> new AssertionError("Missing composer match " + id));
+        assertTrue(match.isAbstract());
+        var expression = select(actor, aliasMatches, id);
+        assertEquals("w:Individual " + id, expression.getDeclaration());
+        assertEquals(id, expression.getCode().getLast().getValue());
+        assertNotNull(expression.getObservable());
+        assertTrue(actor.is(expression.getObservable(), actor.resolveConcept("odo:Agent")));
+        assertTrue(actor.hasTrait(expression.getObservable(), actor.resolveConcept("w:Individual")));
+      }
+    }
+  }
+
+  private SemanticSearchResponse select(ReasonerService actor, SemanticSearchResponse proposals, String id) {
+    var request = new SemanticSearchRequest();
+    request.setSearchId(proposals.getSearchId());
+    request.setRequestId(proposals.getRequestId() + 1);
+    request.setMatchesRequestId(proposals.getRequestId());
+    request.setSearchMode(SemanticSearchRequest.Mode.SELECT);
+    request.setSelectedMatchId(id);
+    var response = actor.semanticSearch(request);
+    assertTrue(response.getErrors().isEmpty(), response.getErrors().toString());
+    return response;
+  }
+
   @Test void warmedCanonicalAndDelegateViewsRefreshOnReplacementBlankAndOwnerRelease()throws Exception {
     var world=world("A","A meaning",false,false,false);var built=build(factory(),world);
     try(var state=built.state()) {
