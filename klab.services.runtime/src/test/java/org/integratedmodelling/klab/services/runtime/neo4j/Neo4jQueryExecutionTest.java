@@ -13,6 +13,36 @@ import org.neo4j.harness.Neo4jBuilders;
 
 /** Execute the generated query, rather than only checking its syntax. */
 class Neo4jQueryExecutionTest {
+  @Test void classificationActivityBatchIncludesBothEffectsOnceAndHonorsScopeAndCurrentMembers() {
+    try (var database = Neo4jBuilders.newInProcessBuilder().withDisabledServer()
+        .withConfig(org.neo4j.configuration.connectors.BoltConnector.enabled, false).build()) {
+      database.defaultDatabaseService().executeTransactionally("""
+          CREATE (root:Context {id:'owner'}), (foreign:Context {id:'foreign'}),
+                 (a:Observation {id:1}), (b:Observation {id:2}),
+                 (old:Observation {id:3, klabCurrent:false}), (other:Observation {id:4}),
+                 (classifier:Activity {id:11}), (characterizer:Activity {id:12}),
+                 (unrelated:Activity {id:13}), (historical:Activity {id:14}),
+                 (external:Activity {id:15}), (transient:Activity {id:-1}),
+                 (root)-[:HAS_CHILD]->(a), (root)-[:HAS_CHILD]->(b),
+                 (root)-[:HAS_CHILD]->(old), (foreign)-[:HAS_CHILD]->(other),
+                 (root)-[:HAS_ACTIVITY]->(classifier), (root)-[:HAS_ACTIVITY]->(characterizer),
+                 (root)-[:HAS_ACTIVITY]->(unrelated), (root)-[:HAS_ACTIVITY]->(historical),
+                 (root)-[:HAS_ACTIVITY]->(transient), (foreign)-[:HAS_ACTIVITY]->(external),
+                 (classifier)-[:CLASSIFIED]->(a), (classifier)-[:CLASSIFIED]->(b),
+                 (characterizer)-[:CHARACTERIZED]->(b), (unrelated)-[:RESOLVED]->(a),
+                 (historical)-[:CLASSIFIED]->(old), (external)-[:CLASSIFIED]->(other),
+                 (external)-[:CHARACTERIZED]->(a), (transient)-[:CLASSIFIED]->(a)
+          """);
+      var statement = Neo4jQueryCompiler.classificationActivities(List.of(1L, 2L, 3L, 4L), "owner");
+      var ids = database.defaultDatabaseService().executeTransactionally(
+          statement.cypher(), statement.parameters(), rows -> rows.stream()
+              .map(row -> (org.neo4j.graphdb.Node) row.get("n"))
+              .map(node -> (Long) node.getProperty("id")).toList());
+      assertEquals(2, ids.size());
+      assertEquals(java.util.Set.of(11L, 12L), java.util.Set.copyOf(ids));
+    }
+  }
+
   @Test void collectiveCompletionQueryReadsTypedActivityOnlyInsideOwnedContext() {
     try(var database=Neo4jBuilders.newInProcessBuilder().withDisabledServer()
         .withConfig(org.neo4j.configuration.connectors.BoltConnector.enabled,false).build()) {

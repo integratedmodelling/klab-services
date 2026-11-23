@@ -1,10 +1,15 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import org.integratedmodelling.common.knowledge.CandidateHeadMatcher;
 import org.integratedmodelling.common.knowledge.GeometryRepository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -32,6 +37,8 @@ import org.jgrapht.graph.DefaultEdge;
 
 /** Resolution compiler for k.LAB 1.0. Contains the majority of the resolution logics. */
 public class ResolutionCompiler {
+  private static final boolean PROFILE_CHARACTERIZATION =
+      Boolean.getBoolean("klab.profile.characterization");
 
   record QueryMatch(
       Observation result,
@@ -62,6 +69,7 @@ public class ResolutionCompiler {
   private final java.util.Set<String> activeClassifierDependencies = new java.util.HashSet<>();
   private boolean automaticClassifiersAllowed = true;
   private boolean strictTierZeroOnly;
+  private boolean profileCharacterization;
 
   /** Identity keys prevent mutable Model equality from moving cached grants between instances. */
   private record ModelIdentity(Model model) {
@@ -230,9 +238,19 @@ public class ResolutionCompiler {
   private double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
   private List<Notification> notifications = new ArrayList<>();
 
+  private final boolean matchingResolutionHeads;
+  private final boolean batchCandidateFiltering;
+
   public ResolutionCompiler(ResolverService service) {
+    this(service, false, false);
+  }
+
+  ResolutionCompiler(ResolverService service, boolean matchingResolutionHeads,
+      boolean batchCandidateFiltering) {
     this.resolutionCache.addVertex(RuntimeAsset.CONTEXT_ASSET);
     this.resolver = service;
+    this.matchingResolutionHeads = matchingResolutionHeads;
+    this.batchCandidateFiltering = batchCandidateFiltering;
   }
 
   /**
@@ -243,15 +261,17 @@ public class ResolutionCompiler {
    * @return
    */
   public ResolutionGraph resolve(Observation observation, ContextScope scope) {
+    profileCharacterization = PROFILE_CHARACTERIZATION && observation.getObservable() != null
+        && observation.getObservable().getContextualization() == Contextualization.CHARACTERIZATION;
     long started = System.nanoTime();
     var semanticStart = org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics();
     try (var validation =
         org.integratedmodelling.klab.runtime.language.ModelValidationGate.openSession();
-        var candidates = org.integratedmodelling.common.knowledge.ModelCandidateSources.openSession()) {
+        var candidates = resolver.openCandidateSession(scope)) {
       return resolveAttempt(observation, scope);
     } finally {
       long elapsed = System.nanoTime() - started;
-      if (elapsed >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1)) {
+      if (profileCharacterization || elapsed >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1)) {
         var semanticEnd = org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics();
         org.integratedmodelling.common.logging.Logging.INSTANCE.info(
             "Resolution attempt timing: total=" + elapsed / 1_000_000 + "ms"
@@ -1837,8 +1857,12 @@ public class ResolutionCompiler {
             .stream()
             .reduce(ResourceSet.empty(), Utils.Resources::merge);
     long discovered = System.nanoTime();
+    var discoverySemantics = profileCharacterization
+        ? org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics() : null;
     var ret = new ArrayList<>(resolver.ingestResources(models, scope, Model.class, true));
     long mapped = System.nanoTime();
+    var mappingSemantics = profileCharacterization
+        ? org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics() : null;
     int suppliedCount = ret.size();
     if (org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(
         models.getNotifications())) throw new KlabIllegalStateException("Model discovery failed");
@@ -1848,13 +1872,17 @@ public class ResolutionCompiler {
     modelQueries++;
     // The provider supplies syntax, not semantic eligibility. Repeat the catalog's coarse core
     // lookup with this workflow's retained Reasoner before preparing any contextualizers.
-    java.util.function.Predicate<Model> candidateCoreFilter = ret.stream().anyMatch(model ->
+    var sourceCandidates = ret.stream().filter(model ->
         model.getMetadata() != null && model.getMetadata().containsKey(
-            org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE))
-        ? candidateCoreFilter(observable, scope) : model -> true;
-    ret.removeIf(model -> model.getMetadata() != null && model.getMetadata().containsKey(
-        org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE)
-        && (!candidateCoreFilter.test(model) || !candidateSpaceMatches(model, scale)));
+            org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE)).toList();
+    if (!sourceCandidates.isEmpty()) {
+      var filter = batchCandidateFiltering || matchingResolutionHeads
+          ? candidateCoreFilter(observable, scope, sourceCandidates, batchCandidateFiltering)
+          : candidateCoreFilter(observable, scope);
+      ret.removeIf(model -> model.getMetadata() != null && model.getMetadata().containsKey(
+          org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE)
+          && (!filter.test(model) || !candidateSpaceMatches(model, scale)));
+    }
     matchedModels += ret.size();
     // Catalog PREPARABLE results have no executable/ranking grant. Preserve the original
     // source snapshot while the existing Runtime path prepares components/resources under
@@ -1865,6 +1893,8 @@ public class ResolutionCompiler {
         && !selection.visible(model.getNamespace(), model.getProjectName(), model.getResolutionInfo().getScope(),
             model.getResolutionInfo().isInScenario()));
     long filtered = System.nanoTime();
+    var filteringSemantics = profileCharacterization
+        ? org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics() : null;
     int eligibleCount = ret.size();
     ret.removeIf(model -> !prepareCandidate(model, observable, scope));
     ret.removeIf(
@@ -1895,7 +1925,7 @@ public class ResolutionCompiler {
     ret.sort(prioritizer);
     long finished = System.nanoTime();
     var semanticEnd = org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics();
-    if (finished - started >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1))
+    if (profileCharacterization || finished - started >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1))
       org.integratedmodelling.common.logging.Logging.INSTANCE.info(
           "Model query timing for " + observable.getUrn()
               + ": discovery=" + (discovered - started) / 1_000_000 + "ms"
@@ -1905,6 +1935,16 @@ public class ResolutionCompiler {
               + ", semanticCalls=" + (semanticEnd.calls() - semanticStart.calls())
               + ", semanticTime=" + (semanticEnd.elapsedNanos() - semanticStart.elapsedNanos()) / 1_000_000 + "ms"
               + ", candidates=" + suppliedCount + "/" + eligibleCount + "/" + ret.size());
+    if (profileCharacterization)
+      org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+          "Characterization model phase timing: discovery=" + (discovered - started) / 1_000_000 + "ms"
+              + ", mapping=" + (mapped - discovered) / 1_000_000 + "ms"
+              + ", filtering=" + (filtered - mapped) / 1_000_000 + "ms"
+              + ", admission=" + (finished - filtered) / 1_000_000 + "ms"
+              + ", mappingCalls=" + (mappingSemantics.calls() - discoverySemantics.calls())
+              + ", mappingReasoner=" + (mappingSemantics.elapsedNanos() - discoverySemantics.elapsedNanos()) / 1_000_000 + "ms"
+              + ", filteringCalls=" + (filteringSemantics.calls() - mappingSemantics.calls())
+              + ", filteringReasoner=" + (filteringSemantics.elapsedNanos() - mappingSemantics.elapsedNanos()) / 1_000_000 + "ms");
     return ret;
   }
 
@@ -1926,21 +1966,31 @@ public class ResolutionCompiler {
       var candidate = reasoner.coreObservable(output);
       if (candidate == null) return false;
       if (Objects.equals(core.getUrn(), candidate.getUrn())) return true;
-      if (qualitySubstantialMismatch(core, candidate)) return false;
+        if (CandidateHeadMatcher.disjointCoreTypes(core, candidate)) return false;
       return heads.get().contains(candidate.getUrn());
     });
   }
 
-  /** Only reject the disjoint quality/substantial categories; unknown and subtype cases expand. */
-  private static boolean qualitySubstantialMismatch(Concept first, Concept second) {
-    if (first.getType() == null || first.getType().isEmpty()
-        || second.getType() == null || second.getType().isEmpty()) return false;
-    var a = SemanticType.fundamentalType(first.getType());
-    var b = SemanticType.fundamentalType(second.getType());
-    var substantial = java.util.EnumSet.of(SemanticType.SUBJECT, SemanticType.AGENT,
-        SemanticType.PROCESS, SemanticType.EVENT, SemanticType.RELATIONSHIP, SemanticType.CONFIGURATION);
-    return a == SemanticType.QUALITY && substantial.contains(b)
-        || b == SemanticType.QUALITY && substantial.contains(a);
+  static java.util.function.Predicate<Model> candidateCoreFilter(
+      Observable requested, ContextScope scope, List<Model> candidates, boolean batch) {
+    var reasoner = scope.getService(Reasoner.class);
+    var lexical = org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest.from(
+        Parameters.create("resolutionConstraints", scope.getResolutionConstraints()));
+    var outputs = new ArrayList<List<Observable>>(candidates.size());
+    for (var model : candidates) {
+      outputs.add(model.isLearningModel() ? List.of() : model.getObservables().stream()
+          .filter(Objects::nonNull)
+          .filter(output -> !output.is(SemanticType.SUBJECTIVE)
+              || lexical.namespaces().contains(model.getNamespace()))
+          .toList());
+    }
+    var matches = batch
+        ? reasoner.matchingCandidateOutputs(requested.asConcept(), outputs.stream()
+            .map(group -> group.stream().map(Observable::asConcept).toList()).toList())
+        : CandidateHeadMatcher.match(reasoner, requested, outputs);
+    var accepted = Collections.newSetFromMap(new IdentityHashMap<Model, Boolean>());
+    for (var index : matches) accepted.add(candidates.get(index));
+    return accepted::contains;
   }
 
   /** Preserve the supplier catalog's conservative spatial prefilter in the owning workflow. */

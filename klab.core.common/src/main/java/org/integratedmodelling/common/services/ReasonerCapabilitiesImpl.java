@@ -10,6 +10,17 @@ public class ReasonerCapabilitiesImpl extends AbstractServiceCapabilities
   private java.util.List<org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding>
       authorityBindings = new java.util.ArrayList<>();
   private String worldviewUrn;
+  private boolean matchingResolutionHeadsSupported;
+
+  @Override
+  public boolean isMatchingResolutionHeadsSupported() {
+    return matchingResolutionHeadsSupported;
+  }
+
+  public void setMatchingResolutionHeadsSupported(boolean supported) {
+    matchingResolutionHeadsSupported = supported;
+  }
+
   public String getWorldviewUrn() { return worldviewUrn; }
   public void setWorldviewUrn(String value) { worldviewUrn = value; }
   public java.util.List<org.integratedmodelling.klab.api.knowledge.Worldview.AuthorityBinding>

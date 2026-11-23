@@ -1,5 +1,8 @@
 # Testing k.LAB with k.Actors
 
+For phase timings and baseline comparisons on the live services, see
+[Profiling resolution and contextualization](RESOLUTION_PROFILING.md).
+
 k.Actors testcases exercise running k.LAB services and the assets they produce. Import
 `core.inspector as inspector` to turn captured assets into assertion predicates. The Inspector
 is a static actor: it needs no `new` call. Its functions inspect the supplied snapshot, return

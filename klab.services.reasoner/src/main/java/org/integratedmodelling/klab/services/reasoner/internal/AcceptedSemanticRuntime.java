@@ -24,6 +24,12 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 
 /** Production publication owner: one complete actor per accepted generation, one lease per call. */
 public final class AcceptedSemanticRuntime implements AutoCloseable {
+  private static final com.fasterxml.jackson.databind.ObjectMapper SEMANTIC_COPY_MAPPER =
+      JacksonConfiguration.newObjectMapper();
+  private static final com.fasterxml.jackson.databind.ObjectMapper GENERIC_COPY_MAPPER =
+      JacksonConfiguration.newObjectMapper()
+          .disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
   private final SemanticEnvironmentFactory factory;
   private final CandidatePublicationCoordinator<Worldview, SemanticEnvironment> coordinator;
   private final Object lifecycle = new Object();
@@ -31,11 +37,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   private final java.util.concurrent.atomic.LongAdder sourceProofHits = new java.util.concurrent.atomic.LongAdder();
   private final java.util.concurrent.atomic.LongAdder sourceProofMisses = new java.util.concurrent.atomic.LongAdder();
   private final java.util.concurrent.atomic.LongAdder executableValidations = new java.util.concurrent.atomic.LongAdder();
+  private final java.util.concurrent.atomic.LongAdder executableProofHits = new java.util.concurrent.atomic.LongAdder();
 
   public Map<String, Long> sourceValidationMetrics() {
     var result = new java.util.LinkedHashMap<String, Long>();
     result.put("hits", sourceProofHits.sum()); result.put("misses", sourceProofMisses.sum());
     result.put("executableValidations", executableValidations.sum());
+    result.put("executableProofHits", executableProofHits.sum());
     try (var lease = lease()) { result.putAll(lease.state().sourceValidationProofs().metrics()); }
     catch (IllegalStateException unavailable) { /* No accepted environment yet. */ }
     return result;
@@ -241,7 +249,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         long computedAt = System.nanoTime();
         var output = new ArrayList<String>();
         for (int i = 0; i < arguments.length; i++)
-          output.add(SemanticCycleCodec.encode(arguments[i], types[i]));
+          output.add(method.getName().equals("matchingCandidateOutputs")
+              ? "null" : SemanticCycleCodec.encode(arguments[i], types[i]));
         var response = new SemanticCycleResult(
             SemanticCycleCodec.encode(result, method.getGenericReturnType()), output);
         logSlowSemantic("cycle." + method.getName(), started, preparedAt, enteredAt,
@@ -835,10 +844,16 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       try (var portable = portableCapabilities(actor, lease.generation())) {
         var proofCache = lease.state().sourceValidationProofs();
         var proofKey = SourceValidationProofCache.key(request);
+        long refinements = actor.semanticRefinementGeneration();
+        if (proofKey != null && request.isExecutableModels()) proofKey += ":" + refinements;
         if (proofKey != null) {
-          var cached = proofCache.get(proofKey, terms -> sourceDependencyProof(actor, lease, terms, requestingScope));
-          if (cached != null) {
-            sourceProofHits.increment();
+          var cached = proofCache.get(proofKey, terms -> request.isExecutableModels()
+              ? executionDependencyProof(actor, lease, terms, requestingScope)
+              : sourceDependencyProof(actor, lease, terms, requestingScope));
+          if (cached != null && (!request.isExecutableModels()
+              || actor.semanticRefinementGeneration() == refinements)) {
+            if (request.isExecutableModels()) executableProofHits.increment();
+            else sourceProofHits.increment();
             var saved = cached.response();
             response.getNotifications().addAll(saved.getNotifications());
             response.getPendingClassifierDependencies().addAll(saved.getPendingClassifierDependencies());
@@ -849,12 +864,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             response.setSemanticObligationsComplete(saved.isSemanticObligationsComplete());
             response.setSourceSemanticsComplete(true);
             // A complete STATIC proof must never upgrade an incomplete execution footprint.
-            response.setSemanticWitness(saved.getSemanticWitness());
+            response.setSemanticWitness(request.isExecutableModels() ? cached.proof() : saved.getSemanticWitness());
             response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
             return response;
           }
-          sourceProofMisses.increment();
-        } else if (request.isExecutableModels()) executableValidations.increment();
+          if (!request.isExecutableModels()) sourceProofMisses.increment();
+        }
+        if (request.isExecutableModels()) executableValidations.increment();
         var validator =
             new DocumentSemanticValidator(
                 actor,
@@ -899,14 +915,29 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         response.setStatus(
             org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
                 .Status.COMPLETE);
-        if (proofKey != null && response.valid() && response.isSourceSemanticsComplete())
-          proofCache.put(proofKey, response,
-              sourceDependencyProof(actor, lease, validator.getSemanticObligations(), requestingScope));
+        if (proofKey != null && response.valid() && response.isSourceSemanticsComplete()
+            && (!request.isExecutableModels() || actor.semanticRefinementGeneration() == refinements))
+          proofCache.put(proofKey, response, request.isExecutableModels()
+              ? response.getSemanticWitness()
+              : sourceDependencyProof(actor, lease, validator.getSemanticObligations(), requestingScope));
         long completedAt = System.nanoTime();
         logSlowSemantic("documentValidation", started, preparedAt, enteredAt, enteredAt,
             completedAt, completedAt);
         return response;
       }
+    }
+  }
+
+  private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+      executionDependencyProof(
+          ReasonerService actor, CandidatePublicationCoordinator<Worldview, SemanticEnvironment>.Lease lease,
+          List<String> terms, Scope scope) {
+    var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+        deploymentServiceId, lease.generation(), lease.state().semanticContentFingerprint(), terms);
+    try { return actor.semanticDependencies(request, scope); }
+    catch (SecurityException denied) {
+      return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(
+          request, "Authority dependency access is not authorized for this validation scope");
     }
   }
 
@@ -1380,10 +1411,10 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       return actor.serviceScope().getService(ResourcesService.class);
     if (value instanceof Scope scoped) return scope(scoped, actor);
     if (value instanceof org.integratedmodelling.klab.api.lang.kim.KimConcept)
-      return JacksonConfiguration.newObjectMapper()
+      return SEMANTIC_COPY_MAPPER
           .convertValue(value, org.integratedmodelling.klab.api.lang.kim.KimConcept.class);
     if (value instanceof org.integratedmodelling.klab.api.lang.kim.KimObservable)
-      return JacksonConfiguration.newObjectMapper()
+      return SEMANTIC_COPY_MAPPER
           .convertValue(value, org.integratedmodelling.klab.api.lang.kim.KimObservable.class);
     if (value
         instanceof org.integratedmodelling.klab.api.knowledge.observation.Observation observation) {
@@ -1412,13 +1443,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       return owned;
     }
     if (value instanceof Observable observable) {
-      var owned = JacksonConfiguration.newObjectMapper().convertValue(observable, Observable.class);
+      var owned = SEMANTIC_COPY_MAPPER.convertValue(observable, Observable.class);
       ((ObservableImpl) owned).setSemantics((Concept) bind(observable.getSemantics(), actor));
       return owned;
     }
     if (value instanceof ObservableBuildStrategy strategy) {
       var owned =
-          JacksonConfiguration.newObjectMapper()
+          SEMANTIC_COPY_MAPPER
               .convertValue(strategy, ObservableBuildStrategy.class);
       owned.setBaseConcept((Concept) bind(strategy.getBaseConcept(), actor));
       owned.setBaseObservable((Observable) bind(strategy.getBaseObservable(), actor));
@@ -1440,7 +1471,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     // Annotations implement Map, but observation getters and Jackson transport require Annotation.
     // Copy through the configured polymorphic reader before binding semantic parameter values.
     if (value instanceof org.integratedmodelling.klab.api.lang.Annotation annotation) {
-      var result = JacksonConfiguration.newObjectMapper()
+      var result = SEMANTIC_COPY_MAPPER
           .convertValue(annotation, org.integratedmodelling.klab.api.lang.Annotation.class);
       annotation.forEach((key, item) -> result.put(key, bind(item, actor)));
       return result;
@@ -1477,13 +1508,13 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         || value instanceof Boolean
         || value instanceof Enum<?>) return value;
     if (value instanceof org.integratedmodelling.klab.api.knowledge.observation.Observation)
-      return JacksonConfiguration.newObjectMapper()
+      return SEMANTIC_COPY_MAPPER
           .convertValue(
               value, org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
     if (value instanceof Concept)
-      return JacksonConfiguration.newObjectMapper().convertValue(value, Concept.class);
+      return SEMANTIC_COPY_MAPPER.convertValue(value, Concept.class);
     if (value instanceof Observable)
-      return JacksonConfiguration.newObjectMapper().convertValue(value, Observable.class);
+      return SEMANTIC_COPY_MAPPER.convertValue(value, Observable.class);
     if (value instanceof Map<?, ?> map) {
       var result = new LinkedHashMap<>();
       map.forEach((k, v) -> result.put(copy(k), copy(v)));
@@ -1497,9 +1528,7 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     if (value instanceof org.integratedmodelling.klab.api.collections.Pair<?, ?> pair)
       return org.integratedmodelling.klab.api.collections.Pair.of(
           copy(pair.getFirst()), copy(pair.getSecond()));
-    return JacksonConfiguration.newObjectMapper()
-        .disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .convertValue(value, value.getClass());
+    return GENERIC_COPY_MAPPER.convertValue(value, value.getClass());
   }
 
   @Override

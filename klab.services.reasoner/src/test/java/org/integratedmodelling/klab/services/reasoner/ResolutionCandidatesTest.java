@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
+import java.util.Set;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -12,6 +13,26 @@ import org.integratedmodelling.klab.services.reasoner.internal.SemanticsBuilder;
 import org.junit.jupiter.api.Test;
 
 class ResolutionCandidatesTest {
+  @Test void batchMatchesExactAndGeneralizedGroupsWithOneHeadExpansion() {
+    var reasoner = reasoner();
+    var requested = concept("test:Specific", SemanticType.QUALITY);
+    var generalized = concept("test:General", SemanticType.QUALITY);
+    var unrelated = concept("test:Unrelated", SemanticType.QUALITY);
+    var substantial = concept("test:Subject", SemanticType.SUBJECT);
+    doAnswer(call -> call.getArgument(0)).when(reasoner).coreObservable(any());
+    doReturn(Set.of("test:General")).when(reasoner).matchingResolutionHeads(
+        requested, Set.of("test:General", "test:Unrelated"));
+
+    List<List<Concept>> candidates = List.of(
+        List.of(unrelated, requested),
+        List.of(substantial),
+        List.of(generalized),
+        List.of(unrelated),
+        List.<Concept>of());
+    assertEquals(Set.of(0, 2), reasoner.matchingCandidateOutputs(requested, candidates));
+    verify(reasoner).matchingResolutionHeads(requested, Set.of("test:General", "test:Unrelated"));
+  }
+
   @Test void classificationSurvivesInternalAndIncompatibleAncestors() { exercise(true); }
   @Test void characterizationSurvivesInternalAndIncompatibleAncestors() { exercise(false); }
 
@@ -84,6 +105,12 @@ class ResolutionCandidatesTest {
     try (var builders = mockStatic(SemanticsBuilder.class)) {
       builders.when(() -> SemanticsBuilder.create(request, reasoner, null)).thenReturn(stripping);
       builders.when(() -> SemanticsBuilder.create(head, reasoner, null)).thenReturn(application);
+      var offered = Set.of(generalized.getUrn(), "test:Unrelated");
+      when(application.canBuildResolutionHead(offered)).thenAnswer(call -> bearer[0].singular().equals(location));
+      assertEquals(Set.of(generalized.getUrn()), reasoner.matchingResolutionHeads(request, offered));
+      verify(application, times(1)).buildConcept();
+      assertEquals(Set.of(generalized.getUrn()), reasoner.matchingResolutionHeads(request, offered));
+      verify(application, times(1)).buildConcept();
       assertEquals(java.util.Set.of(request, generalized), java.util.Set.copyOf(reasoner.resolving(request)));
     }
   }
@@ -93,6 +120,8 @@ class ResolutionCandidatesTest {
     try {
       var heads=ReasonerService.class.getDeclaredField("resolvingHeads");heads.setAccessible(true);
       heads.set(reasoner,com.github.benmanes.caffeine.cache.Caffeine.newBuilder().build());
+      var matching=ReasonerService.class.getDeclaredField("matchingHeads");matching.setAccessible(true);
+      matching.set(reasoner,com.github.benmanes.caffeine.cache.Caffeine.newBuilder().build());
       var epoch=ReasonerService.class.getDeclaredField("resolvingRefinements");epoch.setAccessible(true);
       epoch.set(reasoner,new java.util.concurrent.atomic.AtomicLong());
     } catch(ReflectiveOperationException failure){throw new AssertionError(failure);}

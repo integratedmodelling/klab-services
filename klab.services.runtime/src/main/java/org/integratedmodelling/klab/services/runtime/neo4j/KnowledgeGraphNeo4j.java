@@ -4492,7 +4492,22 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
       throw new QueryException(
           QueryException.Code.INVALID_QUERY, "Query requires the owning context scope");
     }
-    var statement = Neo4jQueryCompiler.compile(query, rootContextId);
+    return executeGraphRead(Neo4jQueryCompiler.compile(query, rootContextId), resultClass, context);
+  }
+
+  /** Read committed classification provenance for a cohort with the normal query visibility rules. */
+  public List<Activity> classificationActivities(Collection<Long> memberIds, ContextScope scope) {
+    if (scope == null || !Objects.equals(rootContextId, scope.getId())) {
+      throw new QueryException(
+          QueryException.Code.INVALID_QUERY, "Query requires the owning context scope");
+    }
+    if (memberIds.isEmpty()) return List.of();
+    return executeGraphRead(
+        Neo4jQueryCompiler.classificationActivities(memberIds, rootContextId), Activity.class, scope);
+  }
+
+  private <T extends RuntimeAsset> List<T> executeGraphRead(
+      Neo4jQueryCompiler.Statement statement, Class<T> resultClass, ContextScope scope) {
     if (!isOnline()) {
       throw new QueryException(
           QueryException.Code.BACKEND_UNAVAILABLE, "Knowledge graph is unavailable");
@@ -4527,8 +4542,8 @@ public abstract class KnowledgeGraphNeo4j extends AbstractKnowledgeGraph {
           var link = new LinkImpl();
           link.setRelationship(GraphModel.Relationship.valueOf(relationship.type()));
           link.setProperties(Parameters.create(relationship.asMap()));
-          link.setSource(queryEndpoint(record.get(1), context));
-          link.setTarget(queryEndpoint(record.get(2), context));
+          link.setSource(queryEndpoint(record.get(1), scope));
+          link.setTarget(queryEndpoint(record.get(2), scope));
           link.setSequence(
               link.properties()
                   .get(

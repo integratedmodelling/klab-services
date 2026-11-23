@@ -345,6 +345,43 @@ class SemanticExecutionEvidenceTest {
     assertFalse(SemanticExecutionEvidence.verified(previous, scope));
   }
 
+  @Test void repeatedAuthorityFreeProofIsVerifiedOnceAndCollectorStillChecksSemanticIdentity() {
+    var original = new SemanticExecutionEvidence.Collector();
+    original.term("test:Native");
+    var proof = original.finish(scope);
+    clearInvocations(reasoner);
+
+    var collector = new SemanticExecutionEvidence.Collector();
+    collector.inherit(proof, scope);
+    collector.inherit(Utils.Json.parseObject(Utils.Json.asString(proof), SemanticEvidenceBinding.class), scope);
+    verify(reasoner).semanticDependencies(any(), eq(scope));
+
+    when(caps.getSemanticSessionId()).thenReturn("owner-two");
+    assertFalse(collector.finish(scope).complete());
+    verify(reasoner).semanticDependencies(any(), eq(scope));
+  }
+
+  @Test void authorityBackedProofIsCheckedOnEveryInheritance() {
+    when(reasoner.semanticDependencies(any(), eq(scope))).thenAnswer(call -> {
+      SemanticDependencyRequest request = call.getArgument(0);
+      return new SemanticDependencyWitness(SemanticDependencyWitness.VERSION,
+          SemanticDependencyWitness.Status.COMPLETE, "reasoner", 1, BASE, request.inputHash(),
+          List.of(new SemanticDependencyWitness.AuthorityUse(
+              "snapshot", SemanticDependencyWitness.Kind.SNAPSHOT, "d".repeat(64), Long.MAX_VALUE)),
+          null);
+    });
+    var original = new SemanticExecutionEvidence.Collector();
+    original.term("test:Native");
+    var proof = original.finish(scope);
+    clearInvocations(reasoner);
+
+    var collector = new SemanticExecutionEvidence.Collector();
+    collector.inherit(proof, scope);
+    collector.inherit(proof, scope);
+    verify(reasoner, times(2)).semanticDependencies(any(), eq(scope));
+    assertTrue(collector.finish(scope).complete());
+  }
+
   @Test void transportedNativeInputAcceptsRevalidatedCounterChangeButNotChangedPayloadOrProof() {
     var signature = new SemanticExecutionEvidence.Collector(); signature.term("test:Native");
     var original = new ObservationImpl(); original.setId(Observation.QUERY_ID);

@@ -7,6 +7,65 @@ import org.integratedmodelling.klab.api.services.resources.*;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.junit.jupiter.api.Test;
 class ModelCandidateSourcesTest {
+  @Test void siblingAttemptsCoalesceByCycleOwnerAndLexicalQuery() throws Exception {
+    var cache = new ModelCandidateSources.SharedCatalogs();
+    var entered = new java.util.concurrent.CountDownLatch(1);
+    var release = new java.util.concurrent.CountDownLatch(1);
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    var request = ModelCandidateRequest.from(null);
+    java.util.function.Supplier<ResourceSet> fetch = () -> {
+      calls.incrementAndGet();
+      entered.countDown();
+      try {
+        if (!release.await(5, java.util.concurrent.TimeUnit.SECONDS)) throw new AssertionError("Fetch blocked");
+      } catch (InterruptedException failure) {
+        throw new AssertionError(failure);
+      }
+      return ModelCandidateSources.capture(List.of(namespace()), request, "provider", null);
+    };
+    try (var executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
+      var first = executor.submit(() -> {
+        try (var session = cache.openSession("owner/cycle")) {
+          return ModelCandidateSources.freeze("provider", request, fetch);
+        }
+      });
+      try {
+        assertTrue(entered.await(5, java.util.concurrent.TimeUnit.SECONDS));
+        var second = executor.submit(() -> {
+          try (var session = cache.openSession("owner/cycle")) {
+            return ModelCandidateSources.freeze("provider", request, fetch);
+          }
+        });
+        release.countDown();
+        var firstReply = first.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        var secondReply = second.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        firstReply.getResults().clear();
+        assertEquals(1, secondReply.getResults().size());
+        assertEquals(1, calls.get());
+      } finally {
+        release.countDown();
+      }
+    }
+    try (var session = cache.openSession("different-owner/cycle")) {
+      ModelCandidateSources.freeze("provider", request, fetch);
+    }
+    try (var session = cache.openSession("owner/cycle")) {
+      ModelCandidateSources.freeze("provider", new ModelCandidateRequest(1, List.of("ns"), List.of(), List.of()), fetch);
+    }
+    assertEquals(3, calls.get());
+  }
+
+  @Test void compactCatalogRoundTripRestoresDetachedSources() {
+    var request = new ModelCandidateRequest(2, List.of("ns"), List.of("project"), List.of());
+    var compact = ModelCandidateSources.capture(List.of(namespace()), request, "provider", null);
+    assertEquals(3, compact.getResults().size());
+    assertEquals(1, compact.getNamespaces().size());
+    for (var result : compact.getResults())
+      assertFalse(result.getMetadata().containsKey(ModelCandidateSources.SOURCE));
+    var expanded = ModelCandidateSources.expand(compact);
+    for (var result : expanded.getResults())
+      assertEquals("ns", ModelCandidateSources.read(result).getUrn());
+  }
   @Test void learningDeclarationsRemainInSourceButAreNeverDiscoveryCandidates() {
     var source = namespace();
     source.getStatements().stream().filter(KimModelImpl.class::isInstance)
@@ -67,6 +126,73 @@ class ModelCandidateSourcesTest {
             item.getMetadata().get(ModelCandidateSources.SOURCE).toString()));
     try(var session=ModelCandidateSources.openSession()) {
       ModelCandidateSources.project(item,scope,mapper);assertEquals(3,calls.get());
+    }
+  }
+
+  @Test void provenProjectionsCrossSiblingAttemptsOnlyForExactSourceAndOwner() {
+    var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+    var semantic = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding(
+        "semantic-cycle-v1", "reasoner", "session", 3, "fingerprint", "lease");
+    var binding = new org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding(
+        1, "cycle", "context", "runtime", true, semantic);
+    org.mockito.Mockito.when(scope.getResolutionCycleBinding()).thenReturn(binding);
+    var item = ModelCandidateSources.capture(List.of(namespace()), ModelCandidateRequest.from(null),
+        "supplier", null).getResults().iterator().next();
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    java.util.function.BiFunction<KimNamespace, Boolean, ModelCandidateSources.CandidateProjection>
+        mapper = (ns, prove) -> {
+          calls.incrementAndGet();
+          var model = new ModelImpl();
+          model.setUrn(item.getResourceUrn());
+          return new ModelCandidateSources.CandidateProjection(model, prove);
+        };
+    var cache = new ModelCandidateSources.SharedCatalogs();
+    try (var session = cache.openSession("owner")) {
+      var first = ModelCandidateSources.project(item, scope, mapper);
+      first.getMetadata().put("attempt", "mutable");
+    }
+    try (var session = cache.openSession("owner")) {
+      var sibling = ModelCandidateSources.project(item, scope, mapper);
+      assertFalse(sibling.getMetadata().containsKey("attempt"));
+      assertEquals(1, calls.get());
+      var original = item.getMetadata().get(ModelCandidateSources.SOURCE);
+      item.getMetadata().put(ModelCandidateSources.SOURCE, original + " ");
+      assertThrows(IllegalArgumentException.class, () -> ModelCandidateSources.project(item, scope, mapper));
+      item.getMetadata().put(ModelCandidateSources.SOURCE, original);
+    }
+    try (var session = cache.openSession("other-owner")) {
+      ModelCandidateSources.project(item, scope, mapper);
+      assertEquals(2, calls.get());
+    }
+    org.mockito.Mockito.when(scope.getResolutionCycleBinding()).thenReturn(
+        new org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding(
+            1, "other-cycle", "context", "runtime", true, semantic));
+    try (var session = cache.openSession("owner")) {
+      ModelCandidateSources.project(item, scope, mapper);
+      assertEquals(3, calls.get());
+    }
+  }
+
+  @Test void declinedProofPreservesPerAttemptMapping() {
+    var scope = org.mockito.Mockito.mock(org.integratedmodelling.klab.api.scope.ContextScope.class);
+    var semantic = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding(
+        "semantic-cycle-v1", "reasoner", "session", 3, "fingerprint", "lease");
+    org.mockito.Mockito.when(scope.getResolutionCycleBinding()).thenReturn(
+        new org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding(
+            1, "cycle", "context", "runtime", true, semantic));
+    var item = ModelCandidateSources.capture(List.of(namespace()), ModelCandidateRequest.from(null),
+        "supplier", null).getResults().iterator().next();
+    var cache = new ModelCandidateSources.SharedCatalogs();
+    for (var shouldProve : List.of(true, false)) {
+      try (var session = cache.openSession("owner")) {
+        var model = ModelCandidateSources.project(item, scope, (ns, prove) -> {
+          assertEquals(shouldProve, prove);
+          var mapped = new ModelImpl();
+          mapped.getMetadata().put("invocation", prove);
+          return new ModelCandidateSources.CandidateProjection(mapped, false);
+        });
+        assertEquals(shouldProve, model.getMetadata().get("invocation"));
+      }
     }
   }
 

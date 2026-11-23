@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -23,6 +24,8 @@ public interface Reasoner extends KlabService {
   /** Advisory scheduling signal only; never a semantic admission decision. */
   String ACTIVE_SEMANTIC_CYCLES_METADATA = "semantic.activeCycles";
 
+  /** Status metadata advertised by Reasoners that accept batched candidate filtering. */
+  String CANDIDATE_FILTERING_BATCH_METADATA = "semantic.candidateFilteringBatch";
 
   default org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult
       beginSemanticCycleResult(
@@ -107,6 +110,10 @@ public interface Reasoner extends KlabService {
    * authentication but the endpoint should be publicly available as well.
    */
   interface Capabilities extends ServiceCapabilities {
+
+    default boolean isMatchingResolutionHeadsSupported() {
+      return false;
+    }
 
     /**
      * If this returns true, the reasoner has loaded inconsistent axioms and should not be used.
@@ -204,6 +211,19 @@ public interface Reasoner extends KlabService {
    * @return
    */
   Collection<Concept> resolving(Semantics semantics);
+
+  /** Returns the authored URNs that intersect the semantic resolution heads. */
+  default Set<String> matchingResolutionHeads(Semantics semantics, Set<String> candidateUrns) {
+    var matches = new java.util.HashSet<String>();
+    for (var head : resolving(semantics))
+      if (candidateUrns.contains(head.getUrn())) matches.add(head.getUrn());
+    return matches;
+  }
+
+  /** Returns the indexes of candidate groups with a matching output core. */
+  default Set<Integer> matchingCandidateOutputs(Concept requested, List<List<Concept>> candidates) {
+    throw new UnsupportedOperationException("Batch candidate filtering is not supported");
+  }
 
   /**
    * Basic reasoning operation for subsumption between concepts.

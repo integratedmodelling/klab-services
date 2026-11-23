@@ -11,6 +11,9 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 
 /** Runtime-owned child lifecycle. Called once after staging, before classification can commit. */
 final class CharacterizationLifecycle {
+  private static final boolean PROFILE_CHARACTERIZATION =
+      Boolean.getBoolean("klab.profile.characterization");
+
   static void run(
       List<MemberClassifierExecutor.PendingAttribution> pending,
       ServiceContextScope classificationScope,
@@ -21,6 +24,7 @@ final class CharacterizationLifecycle {
         throw new java.util.concurrent.CancellationException("Member characterization cancelled");
       var key = attribution.member().getId() + ":" + attribution.predicate().getUrn();
       if (!visited.add(key)) continue;
+      long started = PROFILE_CHARACTERIZATION ? System.nanoTime() : 0;
       var member = classificationScope.getObservation(attribution.member().getId());
       if (member == null) throw new IllegalStateException("Missing staged classified member");
       var memberScope = classificationScope.within(member);
@@ -42,16 +46,26 @@ final class CharacterizationLifecycle {
         var builder = new Observation.NaiveBuilder(observable, resolutionScope);
         builder.geometry(member.getGeometry());
         var request = builder.make();
+        long submitted = PROFILE_CHARACTERIZATION ? System.nanoTime() : 0;
         var plan =
             resolutionScope.getService(Resolver.class).resolve(request, resolutionScope).join();
+        long resolved = PROFILE_CHARACTERIZATION ? System.nanoTime() : 0;
         validate(plan);
         RuntimeService.attachResolutionDiagnostics(plan, activity);
         activity.getMetadata().put("resolutionOutcome", plan.getResolutionOutcome().name());
         if (plan.getResolutionOutcome() != Dataflow.ResolutionOutcome.NO_MODEL) {
           runtime.executeCharacterization(plan, member, attribution.event(), resolutionScope);
         }
+        long readyToCommit = PROFILE_CHARACTERIZATION ? System.nanoTime() : 0;
         if (resolutionScope.commit() < 0)
           throw new IllegalStateException("Characterization resolution commit failed");
+        if (PROFILE_CHARACTERIZATION)
+          org.integratedmodelling.common.logging.Logging.INSTANCE.info(
+              "Characterization child timing: outcome=" + plan.getResolutionOutcome()
+                  + ", prepare=" + (submitted - started) / 1_000_000 + "ms"
+                  + ", resolver=" + (resolved - submitted) / 1_000_000 + "ms"
+                  + ", apply=" + (readyToCommit - resolved) / 1_000_000 + "ms"
+                  + ", commit=" + (System.nanoTime() - readyToCommit) / 1_000_000 + "ms");
       } catch (Throwable failure) {
         resolutionScope.fail(failure);
         throw new IllegalStateException("Member characterization failed", failure);

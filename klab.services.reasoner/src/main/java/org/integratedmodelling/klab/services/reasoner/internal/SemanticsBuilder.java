@@ -155,6 +155,17 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     return this;
   }
 
+  /** An ordinary atomic predicate with an explicit bearer is registered under its syntax URN. */
+  public boolean canBuildResolutionHead(Set<String> candidateUrns) {
+    if (syntax.getName() == null || syntax.isCollective() || syntax.getSemanticModifier() != null
+        || syntax.getInherent() == null || syntax.getModifiers().size() != 1
+        || !syntax.getTraits().isEmpty() || !syntax.getRoles().isEmpty()
+        || !syntax.getValueOperators().isEmpty() || !syntax.getOperands().isEmpty()
+        || syntax.getPortionIdentity() != null || syntax.getWholeIdentity() != null)
+      return true; // Complex builders retain the full semantic path.
+    return candidateUrns.contains(syntax.getUrn());
+  }
+
   @Override
   public Observable.Builder with(Concept compresent) {
     syntax.setCompresent(conceptSyntax(compresent.getUrn()));

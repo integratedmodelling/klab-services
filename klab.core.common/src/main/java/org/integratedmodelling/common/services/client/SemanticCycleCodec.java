@@ -93,6 +93,8 @@ public final class SemanticCycleCodec {
           "leastGeneralCommon",
           "lexicalRoot",
           "match",
+          "matchingResolutionHeads",
+          "matchingCandidateOutputs",
           "negated",
           "observableType",
           "occurrent",

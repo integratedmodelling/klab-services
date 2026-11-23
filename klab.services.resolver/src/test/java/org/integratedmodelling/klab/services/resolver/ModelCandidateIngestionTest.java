@@ -12,6 +12,36 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resources.*;
 import org.junit.jupiter.api.Test;
 class ModelCandidateIngestionTest {
+ @Test void batchFilteringUsesOneCallAndKeepsLexicalRulesInResolver() {
+  var scope = mock(ContextScope.class);
+  var reasoner = mock(Reasoner.class);
+  when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+  var concept = new ConceptImpl();
+  concept.setUrn("test:Quality");
+  concept.setType(EnumSet.of(SemanticType.QUALITY));
+  var output = ObservableImpl.promote(concept, null);
+  var subjective = new ConceptImpl(concept);
+  subjective.getType().add(SemanticType.SUBJECTIVE);
+  var privateOutput = ObservableImpl.promote(subjective, null);
+  var learned = mock(Model.class);
+  when(learned.isLearningModel()).thenReturn(true);
+  var privateModel = mock(Model.class);
+  when(privateModel.getNamespace()).thenReturn("other");
+  when(privateModel.getObservables()).thenReturn(List.of(privateOutput));
+  var exact = mock(Model.class);
+  when(exact.getObservables()).thenReturn(Arrays.asList(null, output));
+  when(reasoner.matchingCandidateOutputs(concept, List.of(List.of(), List.of(), List.of(concept))))
+      .thenReturn(Set.of(2));
+
+  var filter = ResolutionCompiler.candidateCoreFilter(
+      output, scope, List.of(learned, privateModel, exact), true);
+  assertTrue(filter.test(exact));
+  assertFalse(filter.test(privateModel));
+  assertFalse(filter.test(learned));
+  verify(reasoner).matchingCandidateOutputs(concept, List.of(List.of(), List.of(), List.of(concept)));
+  verifyNoMoreInteractions(reasoner);
+ }
+
  @Test void exactCoreMatchesDoNotExpandGeneralizedHeads() {
   var scope=mock(ContextScope.class);var actor=mock(Reasoner.class);
   when(scope.getService(Reasoner.class)).thenReturn(actor);

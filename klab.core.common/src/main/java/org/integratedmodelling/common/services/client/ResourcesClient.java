@@ -57,7 +57,11 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
         var request = org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest.from(query);
         var response = org.integratedmodelling.common.knowledge.ModelCandidateSources.freeze(
             serviceId(), request, () -> fetchModelCandidatesWithinDeadline(request, scope));
-        return (List<T>) List.of(response);
+        try {
+          return (List<T>) List.of(org.integratedmodelling.common.knowledge.ModelCandidateSources.expand(response));
+        } catch (IllegalArgumentException invalid) {
+          throw new Utils.Http.Client.RequestFailure(0, "Candidate supplier returned an invalid snapshot protocol", invalid);
+        }
       } catch (Utils.Http.Client.RequestFailure failure) {
         // Empty security-filter responses otherwise hide both the provider and HTTP status
         // when concurrent frozen discovery propagates through ResourcesMerger.
@@ -110,11 +114,12 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
       org.integratedmodelling.klab.api.services.resources.ModelCandidateRequest request, UserScope scope) {
     ResourceSet response;
     var advertised = capabilities(scope);
-    if (advertised == null || advertised.getModelCandidateProtocol() != 1) {
+    if (advertised == null || advertised.getModelCandidateProtocol() == 0) {
       response = legacyCandidateSources(request, scope);
     } else try {
       response = client.withResourceSupplierScope(scope).withTimeout(candidateTimeoutSeconds()).postResourceSnapshot(
-          ServicesAPI.RESOURCES.MODEL_CANDIDATES, request, ResourceSet.class);
+          ServicesAPI.RESOURCES.MODEL_CANDIDATES,
+          request.withVersion(advertised.getModelCandidateProtocol() >= 2 ? 2 : 1), ResourceSet.class);
     } catch (Utils.Http.Client.RequestFailure unsupported) {
       if (unsupported.getStatus() != 404) throw unsupported;
       // An older supplier can export authorized source without entering the graph workflow.
@@ -122,10 +127,6 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
     }
     if (response == null) throw new Utils.Http.Client.RequestFailure(0,
         "Candidate supplier returned no source snapshot", null);
-    for (var descriptor : response.getResults())
-      if (descriptor.getKnowledgeClass() != KnowledgeClass.MODEL
-          || !descriptor.getMetadata().containsKey(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE))
-        throw new Utils.Http.Client.RequestFailure(0, "Candidate supplier returned an invalid snapshot protocol", null);
     return response;
   }
 

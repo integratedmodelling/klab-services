@@ -21,16 +21,19 @@ public final class SemanticCycleFacade {
   /** Pure semantic calls need the authenticated context and lease, not its native perspective. */
   static Scope transportScope(SemanticCycleInvocation invocation, Scope authorized) {
     var method = SemanticCycleCodec.method(invocation.method(), invocation.parameterTypes());
-    if (!(authorized instanceof ContextScope)
-        || SemanticCycleCodec.usesPerspective(method))
-      return authorized;
+    return SemanticCycleCodec.usesPerspective(method) ? authorized : ownershipScope(authorized);
+  }
+
+  private static final Set<String> PERSPECTIVE_GETTERS = Set.of(
+      "getContextObservation", "getSourceObservation", "getTargetObservation",
+      "getObserver", "getObserverId", "getTransactionId");
+
+  static Scope ownershipScope(Scope authorized) {
+    if (!(authorized instanceof ContextScope)) return authorized;
     return (ContextScope) Proxy.newProxyInstance(ContextScope.class.getClassLoader(),
         new Class<?>[] {ContextScope.class}, (proxy, getter, arguments) -> {
-          // Omitting the perspective prevents authentication from materializing observations
-          // through Runtime before a scope-free Reasoner operation even reaches its controller.
-          if (Set.of("getContextObservation", "getSourceObservation", "getTargetObservation",
-              "getObserver", "getObserverId", "getTransactionId").contains(getter.getName()))
-            return null;
+          // Cycle ownership is checked against the authenticated context and Runtime.
+          if (PERSPECTIVE_GETTERS.contains(getter.getName())) return null;
           try { return getter.invoke(authorized, arguments); }
           catch (InvocationTargetException failure) { throw failure.getCause(); }
         });

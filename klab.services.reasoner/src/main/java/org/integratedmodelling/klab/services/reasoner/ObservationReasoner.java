@@ -29,7 +29,7 @@ public class ObservationReasoner {
   private final List<KimObservationStrategy> strategies = new CopyOnWriteArrayList<>();
 
   public ObservationReasoner(ReasonerService reasoner) {
-    this(reasoner, reasoner::declareObservable);
+    this(reasoner, reasoner::declareStrategyObservable);
     if (!reasoner.isSemanticExecution())
       reasoner.getComponentRegistry()
           .loadExtensions("org.integratedmodelling.klab.services.reasoner.functors");
@@ -44,6 +44,12 @@ public class ObservationReasoner {
   public List<ObservationStrategy> computeMatchingStrategies(
       Observation observation, ContextScope scope, boolean isResolution) {
     List<ObservationStrategy> result = new ArrayList<>();
+    // Retained scopes bind these observables on access. Share the binding across alternatives.
+    var requested = com.google.common.base.Suppliers.memoize(observation::getObservable);
+    var context = com.google.common.base.Suppliers.memoize(() -> {
+      var focused = scope.getContextObservation();
+      return focused == null ? null : focused.getObservable();
+    });
     for (var strategy : strategies) {
       if (strategy.getType()
           != (isResolution
@@ -51,7 +57,7 @@ public class ObservationReasoner {
               : KimObservationStrategy.Type.IDENTIFICATION)) continue;
       String phase = "selection";
       try {
-        var variables = select(strategy, observation.getObservable(), scope);
+        var variables = select(strategy, requested.get(), context, scope);
         phase = "setup";
         if (variables != null && setup(strategy, variables, scope)) {
           phase = "lowering";
@@ -99,17 +105,14 @@ public class ObservationReasoner {
   }
 
   private Map<String, Object> select(
-      KimObservationStrategy strategy, Observable observable, ContextScope scope) {
+      KimObservationStrategy strategy, Observable observable,
+      java.util.function.Supplier<Observable> context, ContextScope scope) {
     if (strategy.getModelVersion() != 2 || strategy.getSelection() == null)
       throw new IllegalArgumentException("Expected a version-2 selection");
     for (var alternative : strategy.getSelection().getAlternatives()) {
       Map<String, Object> variables = new LinkedHashMap<>();
       variables.put("this", observable);
-      variables.put(
-          "context",
-          scope.getContextObservation() == null
-              ? null
-              : scope.getContextObservation().getObservable());
+      variables.put("context", context.get());
       boolean matches;
       if (alternative.getPattern() != null) {
         var pattern = alternative.getPattern();

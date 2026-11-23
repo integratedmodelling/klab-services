@@ -563,13 +563,24 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       new java.util.concurrent.atomic.AtomicLong();
   private final Cache<ResolvingKey, List<Concept>> resolvingHeads =
       Caffeine.newBuilder().maximumSize(1_000).recordStats().build();
+  private record MatchingHeadsKey(ResolvingKey semantics, Set<String> candidates) {}
+  private final Cache<MatchingHeadsKey, Set<String>> matchingHeads =
+      Caffeine.newBuilder().maximumSize(1_000).recordStats().build();
+  private final Cache<KimObservable, Observable> strategyObservables =
+      Caffeine.newBuilder().weakKeys().maximumSize(512).recordStats().build();
+
+  /** In-process semantic changes within an accepted publication. */
+  public long semanticRefinementGeneration() {
+    return resolvingRefinements.get();
+  }
 
   /** Nonblocking counters: status polling must not acquire the semantic actor monitor. */
   public Map<String, Map<String, Long>> semanticCacheMetrics() {
     if (candidateRuntime != null && !semanticOnly) return candidateRuntime.semanticCacheMetrics();
     var result = new LinkedHashMap<String, Map<String, Long>>();
     Map.of("concepts", concepts, "observables", observables, "resolvingHeads", resolvingHeads,
-        "subsumption", subsumption).forEach((name, cache) -> {
+        "subsumption", subsumption, "strategyObservables", strategyObservables,
+        "matchingResolutionHeads", matchingHeads).forEach((name, cache) -> {
       var stats = cache.stats();
       result.put(name, Map.of("hits", stats.hitCount(), "misses", stats.missCount(),
           "loadNanos", stats.totalLoadTime()));
@@ -1279,6 +1290,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public void derivedRefinementsChanged() {
     if (resolvingRefinements != null) resolvingRefinements.incrementAndGet();
     if (resolvingHeads != null) resolvingHeads.invalidateAll();
+    if (matchingHeads != null) matchingHeads.invalidateAll();
+    if (strategyObservables != null) strategyObservables.invalidateAll();
     if (semanticExpressions != null) semanticExpressions.invalidateAll();
     if (concepts != null) concepts.invalidateAll();
     if (observables != null) observables.invalidateAll();
@@ -1810,6 +1823,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   @Override
   public ServiceStatus status() {
     var ret = super.status();
+    ret.getMetadata().put(Reasoner.CANDIDATE_FILTERING_BATCH_METADATA, true);
     if (candidateRuntime != null && !semanticOnly) {
       var status = candidateRuntime.status();
       ret.getMetadata().put(Reasoner.ACTIVE_SEMANTIC_CYCLES_METADATA, candidateRuntime.activeCycleCount());
@@ -2423,6 +2437,39 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   }
 
   Collection<Concept> computeResolving(Semantics semantics) {
+    return computeResolving(semantics, null);
+  }
+
+  @Override
+  public Set<Integer> matchingCandidateOutputs(Concept requested, List<List<Concept>> candidates) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke("matchingCandidateOutputs",
+          new Class<?>[] {Concept.class, List.class}, new Object[] {requested, candidates});
+    return org.integratedmodelling.common.knowledge.CandidateHeadMatcher.match(
+        this, requested, candidates);
+  }
+
+  @Override
+  public Set<String> matchingResolutionHeads(Semantics semantics, Set<String> candidates) {
+    if (candidateRuntime != null && !semanticOnly)
+      return candidateRuntime.invoke("matchingResolutionHeads",
+          new Class<?>[] {Semantics.class, Set.class}, new Object[] {semantics, candidates});
+    if (candidates.isEmpty()) return Set.of();
+    if (owl != null) owl.requireAvailableClosure();
+    var key = new ResolvingKey(knowledgeRevision(), resolvingRefinements.get(), semantics.asConcept());
+    var matchingKey = new MatchingHeadsKey(key, Set.copyOf(candidates));
+    var cached = matchingHeads.getIfPresent(matchingKey);
+    if (cached != null) return cached;
+    var expanded = resolvingHeads.getIfPresent(key);
+    var heads = expanded == null ? computeResolving(semantics, matchingKey.candidates()) : expanded;
+    var matches = heads.stream().map(Concept::getUrn).filter(matchingKey.candidates()::contains)
+        .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    if (key.revision() == knowledgeRevision() && key.refinements() == resolvingRefinements.get())
+      matchingHeads.put(matchingKey, matches);
+    return matches;
+  }
+
+  private Collection<Concept> computeResolving(Semantics semantics, Set<String> candidates) {
     var concept = semantics.asConcept();
     Set<Concept> ret = new LinkedHashSet<>();
 
@@ -2455,10 +2502,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             if (bearer.is(SemanticType.NOTHING)
                 || CoreOntology.isCore(bearer) && !bearer.is(SemanticType.OBSERVABLE)) continue;
             try {
-              var candidate =
-                  SemanticsBuilder.create(head, this, serviceScope())
-                      .of(inherent.isCollective() ? bearer.collective() : bearer)
-                      .buildConcept();
+              var builder = SemanticsBuilder.create(head, this, serviceScope());
+              builder.of(inherent.isCollective() ? bearer.collective() : bearer);
+              if (candidates != null && !builder.canBuildResolutionHead(candidates)) continue;
+              var candidate = builder.buildConcept();
               if (candidate != null && !candidate.is(SemanticType.NOTHING)) ret.add(candidate);
             } catch (KlabValidationException incompatibleGeneralization) {
               // A valid predicate application need not remain valid for every ancestor of
@@ -3007,6 +3054,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public Capabilities capabilities(Scope scope) {
 
     var ret = new ReasonerCapabilitiesImpl();
+    ret.setMatchingResolutionHeadsSupported(true);
     long revision = knowledgeRevision();
     long generation = capabilitiesGeneration;
     String validation =
@@ -4211,6 +4259,21 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         observableDeclaration,
         this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()),
         serviceScope());
+  }
+
+  /** Reuse closed literals from the retained actor's own strategy declarations. */
+  Observable declareStrategyObservable(KimObservable declaration) {
+    if (!semanticOnly || declaration.getPattern() != null) return declareObservable(declaration);
+    var cached = strategyObservables.getIfPresent(declaration);
+    if (cached != null) return (Observable) AcceptedSemanticRuntime.copy(cached);
+    long generation = semanticRefinementGeneration();
+    var resolved = declareObservable(declaration);
+    if (resolved != null && !resolved.is(SemanticType.NOTHING)
+        && generation == semanticRefinementGeneration()) {
+      // A lowered strategy may expose its observable to the caller.
+      strategyObservables.put(declaration, (Observable) AcceptedSemanticRuntime.copy(resolved));
+    }
+    return resolved;
   }
 
   public Observable declareObservable(

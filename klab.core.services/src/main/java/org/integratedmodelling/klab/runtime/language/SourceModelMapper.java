@@ -18,7 +18,12 @@ public final class SourceModelMapper {
   private SourceModelMapper() {}
 
   public static Model load(KimModel statement, KimNamespace namespace, Scope scope) {
+    return load(statement, namespace, scope, null);
+  }
 
+  /** Optionally record the exact semantic dependencies of this projection. */
+  public static Model load(KimModel statement, KimNamespace namespace, Scope scope,
+      java.util.Set<String> semanticReads) {
     var reasoner = scope.getService(Reasoner.class);
 
     ModelImpl model = new ModelImpl();
@@ -32,10 +37,10 @@ public final class SourceModelMapper {
 
     model.getAnnotations().addAll(AnnotationCollector.merge(statement.getAnnotations()));
     for (KimObservable observable : statement.getObservables()) {
-      model.getObservables().add(annotatedObservable(observable, reasoner));
+      model.getObservables().add(annotatedObservable(observable, reasoner, semanticReads));
     }
     for (KimObservable observable : statement.getDependencies()) {
-      model.getDependencies().add(annotatedObservable(observable, reasoner));
+      model.getDependencies().add(annotatedObservable(observable, reasoner, semanticReads));
     }
 
     model.setResolutionInfo(resolutionInfo);
@@ -65,8 +70,14 @@ public final class SourceModelMapper {
   }
 
   private static org.integratedmodelling.klab.api.knowledge.Observable annotatedObservable(
-      KimObservable syntax, Reasoner reasoner) {
+      KimObservable syntax, Reasoner reasoner, java.util.Set<String> semanticReads) {
     var resolved = reasoner.resolveObservable(syntax.getUrn());
+    if (semanticReads != null) {
+      semanticReads.add(syntax.getSemantics() == null ? null : syntax.getSemantics().getUrn());
+      recordRead(resolved == null ? null : resolved.getSemantics(), semanticReads);
+      if (resolved != null && resolved.getObserverSemantics() != null)
+        recordRead(resolved.getObserverSemantics(), semanticReads);
+    }
     if (resolved == null) return null;
     var result = new ObservableImpl((ObservableImpl) resolved);
     // Port aliases belong to this declaration, independently of the reasoner's semantic cache.
@@ -74,11 +85,25 @@ public final class SourceModelMapper {
     var semantics = new ConceptImpl((ConceptImpl) resolved.getSemantics());
     semantics.setAnnotations(AnnotationCollector.merge(
         semantics.getAnnotations(), AnnotationCollector.collect(
-            syntax.getSemantics(), reasoner::resolveConcept)));
+            syntax.getSemantics(), name -> {
+              var concept = reasoner.resolveConcept(name);
+              if (semanticReads != null) {
+                semanticReads.add(name);
+                recordRead(concept, semanticReads);
+              }
+              return concept;
+            })));
     result.setSemantics(semantics);
     result.setAnnotations(AnnotationCollector.merge(
         resolved.getAnnotations(), syntax.getAnnotations()));
     return result;
+  }
+
+  private static void recordRead(org.integratedmodelling.klab.api.knowledge.Concept concept,
+      java.util.Set<String> semanticReads) {
+    semanticReads.add(concept == null
+        || concept.is(org.integratedmodelling.klab.api.knowledge.SemanticType.NOTHING)
+        ? null : concept.getUrn());
   }
 
 }

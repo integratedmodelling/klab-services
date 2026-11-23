@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import org.integratedmodelling.common.knowledge.KnowledgeRepository;
+import org.integratedmodelling.common.knowledge.ModelCandidateSources;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.ServiceStartupOptions;
@@ -54,6 +55,26 @@ public class ResolverService extends BaseService implements Resolver {
   private static final String LEARNING_RESOURCES = "__LEARNING_RESOURCES__";
   private static final String LEARNING_COMMITS = "__LEARNING_COMMITS__";
   private final ExecutorService resolutionExecutor = Executors.newVirtualThreadPerTaskExecutor();
+  private final ModelCandidateSources.SharedCatalogs candidateCatalogs =
+      new ModelCandidateSources.SharedCatalogs();
+
+  private record CatalogOwner(
+      org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding cycle,
+      String username, String credentialDigest, String federation) {}
+
+  ModelCandidateSources.Session openCandidateSession(ContextScope scope) {
+    var cycle = scope.getResolutionCycleBinding();
+    var user = scope.getUser();
+    if (cycle == null || cycle.semanticBinding() == null || user == null || user.isAnonymous()
+        || user.getId() == null || user.getUsername() == null
+        || !Objects.equals(scope.getId(), cycle.contextId())
+        || !Objects.equals(scope.getHostServiceId(), cycle.runtimeServiceId()))
+      return ModelCandidateSources.openSession();
+    var federation = org.integratedmodelling.klab.api.Klab.INSTANCE.getFederationData(user);
+    return candidateCatalogs.openSession(new CatalogOwner(cycle, user.getUsername(),
+        org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.sourceHash(user.getId()),
+        federation == null ? null : federation.getId()));
+  }
 
   //  private final ResolutionCompiler resolutionCompiler = new ResolutionCompiler(this);
 
@@ -79,11 +100,15 @@ public class ResolverService extends BaseService implements Resolver {
       for (var descriptor : resourceSet.getResults()) {
         if (descriptor.getKnowledgeClass() != KlabAsset.KnowledgeClass.MODEL) continue;
         try {
-          var model = org.integratedmodelling.common.knowledge.ModelCandidateSources.project(descriptor, scope, source -> {
+          var model = ModelCandidateSources.project(descriptor, scope, (source, prove) -> {
             var statement = source.getStatements().stream().filter(KimModel.class::isInstance)
                 .map(KimModel.class::cast).filter(m -> descriptor.getResourceUrn().equals(m.getUrn()))
                 .findFirst().orElseThrow();
-            return loadModel(statement, source, scope);
+            var reads = prove ? new java.util.HashSet<String>() : null;
+            var projection = org.integratedmodelling.klab.runtime.language.SourceModelMapper.load(
+                statement, source, scope, reads);
+            return new ModelCandidateSources.CandidateProjection(
+                projection, prove && projectionIsAuthorityFree((ContextScope) scope, reads));
           });
           model.getMetadata().put(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE,
               descriptor.getMetadata().get(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE));
@@ -198,7 +223,14 @@ public class ResolverService extends BaseService implements Resolver {
           try (var observerUse =
               org.integratedmodelling.klab.runtime.ObserverSemanticUse.capture(
                   contextScope, owner)) {
-            var compiler = new ResolutionCompiler(this);
+            var cycle = contextScope.getResolutionCycleBinding();
+            var status = reasoner != null && cycle != null && cycle.semanticBinding() != null
+                ? reasoner.status() : null;
+            var compiler = new ResolutionCompiler(this,
+                capabilities != null && capabilities.isMatchingResolutionHeadsSupported(),
+                status != null && status.getMetadata() != null && Boolean.TRUE.equals(
+                    status.getMetadata().get(org.integratedmodelling.klab.api.services.Reasoner
+                        .CANDIDATE_FILTERING_BATCH_METADATA)));
             var ret = compiler.resolve(observation, contextScope);
             if (!ret.isEmpty()) {
               var result = new DataflowCompiler(observation, ret, contextScope).compile();
@@ -293,6 +325,26 @@ public class ResolverService extends BaseService implements Resolver {
   private Model loadModel(KimModel statement, KimNamespace namespace, Scope scope) {
     return org.integratedmodelling.klab.runtime.language.SourceModelMapper.load(
         statement, namespace, scope);
+  }
+
+  private boolean projectionIsAuthorityFree(ContextScope scope, java.util.Set<String> reads) {
+    if (reads.isEmpty() || reads.contains(null)) return false;
+    var binding = scope.getResolutionCycleBinding().semanticBinding();
+    try {
+      var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+          binding.reasonerServiceId(), binding.knowledgeRevision(), binding.semanticFingerprint(),
+          java.util.List.copyOf(reads));
+      var witness = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)
+          .semanticDependencies(request, scope);
+      return witness != null && witness.completeAt(System.currentTimeMillis())
+          && witness.authorities().isEmpty()
+          && Objects.equals(binding.reasonerServiceId(), witness.serviceId())
+          && binding.knowledgeRevision() == witness.knowledgeRevision()
+          && Objects.equals(binding.semanticFingerprint(), witness.baseFingerprint())
+          && Objects.equals(request.inputHash(), witness.inputHash());
+    } catch (RuntimeException unavailable) {
+      return false;
+    }
   }
 
   @Override

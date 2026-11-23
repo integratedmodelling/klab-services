@@ -8,10 +8,15 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 public record ModelCandidateRequest(int version, List<String> namespaces, List<String> projects,
     List<String> scenarios) {
   public ModelCandidateRequest {
-    if (version != 1) throw new IllegalArgumentException("Unsupported model candidate protocol");
+    if (version != 1 && version != 2)
+      throw new IllegalArgumentException("Unsupported model candidate protocol");
     namespaces = namespaces == null ? List.of() : List.copyOf(namespaces);
     projects = projects == null ? List.of() : List.copyOf(projects);
     scenarios = scenarios == null ? List.of() : List.copyOf(scenarios);
+  }
+
+  public ModelCandidateRequest withVersion(int version) {
+    return new ModelCandidateRequest(version, namespaces, projects, scenarios);
   }
 
   public static ModelCandidateRequest from(Parameters<String> query) {

@@ -101,6 +101,10 @@ class SemanticCycleHttpTest {
         var bytes=exchange.getRequestBody().readAllBytes();
         if(path.equals(ServicesAPI.REASONER.SEMANTIC_CYCLE_BEGIN)) {
           var request=mapper.readValue(bytes,SemanticCycleRequest.class);assertNull(request.binding());
+          assertEquals("context", exchange.getRequestHeaders().getFirst(ServicesAPI.SCOPE_HEADER));
+          assertEquals("runtime", exchange.getRequestHeaders().getFirst(ServicesAPI.SERVICE_ID_HEADER));
+          assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.CONTEXT_OBSERVATION_ID_HEADER));
+          assertNull(exchange.getRequestHeaders().getFirst(ServicesAPI.TRANSACTION_ID_HEADER));
           assertEquals(owner.contextId(),request.contextId());response=mapper.writeValueAsBytes(
               new SemanticCycleBeginResult(SemanticCycleBeginResult.Status.BOUND,owner.binding(),null));
         }else if(path.equals(ServicesAPI.REASONER.SEMANTIC_CYCLE_RELEASE)) {
@@ -127,15 +131,18 @@ class SemanticCycleHttpTest {
       try(var output=exchange.getResponseBody()){output.write(response);}
     });server.start();
     var scope=SemanticCycleFacadeTest.scope();
+    when(scope.getHostServiceId()).thenReturn("runtime");
     when(scope.getParentScope(Scope.Type.USER, org.integratedmodelling.klab.api.scope.UserScope.class))
         .thenReturn(mock(org.integratedmodelling.klab.api.scope.UserScope.class));
     var focus=mock(org.integratedmodelling.klab.api.knowledge.observation.Observation.class);
-    when(focus.getId()).thenReturn(42L);when(scope.getContextObservation()).thenReturn(focus);
+    when(focus.getId()).thenReturn(org.integratedmodelling.klab.api.knowledge.observation.Observation.UNASSIGNED_ID);
+    when(scope.getContextObservation()).thenReturn(focus);
     when(scope.getObserverId()).thenReturn(7L);when(scope.getTransactionId()).thenReturn("transaction");
     try(var http=Utils.Http.getClient("http://127.0.0.1:"+server.getAddress().getPort(),null)) {
       var client=mock(ReasonerClient.class,CALLS_REAL_METHODS);doReturn("reasoner").when(client).serviceId();
       var field=BaseServiceClient.class.getDeclaredField("client");field.setAccessible(true);field.set(client,http);
       var binding=client.beginSemanticCycle("runtime","context","cycle",scope);assertEquals(owner.binding(),binding);
+      when(focus.getId()).thenReturn(42L);
       var pinned=client.bindSemanticCycle(binding,"runtime","context","cycle",scope);
       assertEquals("test:Tree",pinned.resolveConcept("test:Tree").getUrn());
       var builder=new ObservableBuildStrategy(meaning,scope);builder.of(meaning);

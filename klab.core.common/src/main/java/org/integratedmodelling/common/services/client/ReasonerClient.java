@@ -49,7 +49,7 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
       beginSemanticCycleResult(
           String runtimeServiceId, String contextId, String cycleId, Scope scope) {
     return client
-        .withScope(scope)
+        .withScope(SemanticCycleFacade.ownershipScope(scope))
         .postRequired(
             ServicesAPI.REASONER.SEMANTIC_CYCLE_BEGIN,
             new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleRequest(

@@ -109,16 +109,33 @@ class SourceValidationProofReuseTest {
   }
   @Test void executableContextsRemainCheckedAndCannotUseStaticProofs() throws Exception {
     var current = new AtomicReference<>(environment("first"));
+    var actor = current.get().actor();
+    when(actor.semanticDependencies(any(), any())).thenAnswer(call ->
+        actor.sourceValidationDependencies(call.getArgument(0), call.getArgument(1)));
     try (var runtime = new AcceptedSemanticRuntime(AcceptedSemanticObserverScopeTest.factory(current), "reasoner");
-        var validators = validators()) {
+        var validators = mockConstruction(DocumentSemanticValidator.class, (validator, construction) -> {
+          when(validator.validate(any())).thenReturn("test:WrongContext".equals(construction.arguments().get(3))
+              ? List.of(Notification.error("Context does not satisfy model")) : List.of());
+          when(validator.isSourceSemanticsComplete()).thenReturn(true);
+          when(validator.isSemanticObligationsComplete()).thenReturn(true);
+          when(validator.getSemanticObligations()).thenReturn(List.of("test:Subject"));
+        })) {
       runtime.submit(AcceptedSemanticObserverScopeTest.world()); assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
       var request = SemanticValidationRequest.of(source(), "1");
       assertTrue(validate(runtime, request).valid());
       request.setExecutableModels(true); request.setExecutionContext("test:RightContext");
       assertTrue(validate(runtime, request).valid());
+      assertTrue(validate(runtime, request).valid());
+      assertEquals(1L, runtime.sourceValidationMetrics().get("executableProofHits"));
       request.setExecutionContext("test:WrongContext"); assertFalse(validate(runtime, request).valid());
-      assertEquals(3, validators.constructed().size());
-      assertEquals(2L, runtime.sourceValidationMetrics().get("executableValidations"));
+      request.setExecutionContext("test:RightContext");
+      request.setClassifierPreparableDependencies(true);
+      assertTrue(validate(runtime, request).valid());
+      request.setClassifierPreparableDependencies(false);
+      authority.set("c".repeat(64));
+      assertTrue(validate(runtime, request).valid());
+      assertEquals(5, validators.constructed().size());
+      assertEquals(4L, runtime.sourceValidationMetrics().get("executableValidations"));
     }
   }
 

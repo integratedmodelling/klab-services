@@ -51,6 +51,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
 public class ResourcesMerger implements ResourcesService {
 
   private final Scope owningScope;
+  private static final java.util.concurrent.Executor CANDIDATE_QUERIES = Thread::startVirtualThread;
 
   public ResourcesMerger(Scope owningScope) {
     this.owningScope = Objects.requireNonNull(owningScope);
@@ -527,7 +528,7 @@ public class ResourcesMerger implements ResourcesService {
           identity += transport.getStatus() > 0 ? " (HTTP " + transport.getStatus() + ")" : " (transport failure)";
         return List.of(ResourceSet.empty(candidateUnavailable(identity)));
       }
-    }))).toList();
+    }), CANDIDATE_QUERIES)).toList();
     CompletableFuture.allOf(responses.toArray(CompletableFuture[]::new)).join();
     var result = new ArrayList<ResourceSet>();
     responses.forEach(response -> result.addAll(response.join()));

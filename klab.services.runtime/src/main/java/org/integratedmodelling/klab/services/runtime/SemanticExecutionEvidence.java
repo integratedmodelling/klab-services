@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDepend
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.runtime.language.ModelValidationGate;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
+import org.integratedmodelling.klab.services.runtime.neo4j.KnowledgeGraphNeo4j;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -54,26 +55,24 @@ final class SemanticExecutionEvidence {
       if (source == null) missingSources.add(id);
       else inputs.add(source);
     }
-    for (var input : inputs) {
-      var sources = new ArrayList<>(sourceActivities(input, scope));
-      sources.addAll(attributionActivities(input, scope));
-      for (var source : sources)
-        if (seen.add(source))
-          activities.add(
-              diagnostic(
-                  "id",
-                  source.getId(),
-                  "type",
-                  source.getType(),
-                  "outcome",
-                  source.getOutcome(),
-                  "evidence",
-                  decode(source),
-                  "diagnostic",
-                  source.getMetadata().get(DIAGNOSTIC_KEY),
-                  "footprints",
-                  source.getMetadata().get(SemanticExecutionFootprints.DIAGNOSTIC_KEY)));
-    }
+    var sources = new ArrayList<>(attributionActivities(inputs, scope));
+    for (var input : inputs) sources.addAll(sourceActivities(input, scope));
+    for (var source : sources)
+      if (seen.add(source))
+        activities.add(
+            diagnostic(
+                "id",
+                source.getId(),
+                "type",
+                source.getType(),
+                "outcome",
+                source.getOutcome(),
+                "evidence",
+                decode(source),
+                "diagnostic",
+                source.getMetadata().get(DIAGNOSTIC_KEY),
+                "footprints",
+                source.getMetadata().get(SemanticExecutionFootprints.DIAGNOSTIC_KEY)));
     return Utils.Json.asString(
         diagnostic(
             "version",
@@ -307,6 +306,8 @@ final class SemanticExecutionEvidence {
     private final Set<Actuator> visited = Collections.newSetFromMap(new IdentityHashMap<>());
     private boolean complete = true;
     private final List<Object> diagnostics = new ArrayList<>();
+    private final Map<ServiceContextScope, Set<SemanticEvidenceBinding>> verifiedLocalProofs =
+        new IdentityHashMap<>();
 
     void trace(String gate, Object value) {
       diagnostics.add(diagnostic("gate", gate, "value", value));
@@ -547,13 +548,25 @@ final class SemanticExecutionEvidence {
     }
 
     void inherit(SemanticEvidenceBinding proof, ServiceContextScope scope) {
-      pin(scope);
-      boolean accepted = verified(proof, scope);
+      // finish checks the admitted semantic identity again. External authorities have their own
+      // expiry and can change independently of that identity, so those proofs are always checked.
+      boolean reusable = proof != null && proof.witness() != null
+          && proof.witness().authorities().isEmpty();
+      var cached = reusable
+          ? verifiedLocalProofs.computeIfAbsent(scope, ignored -> new HashSet<>()) : null;
+      boolean reused = cached != null && cached.contains(proof);
+      boolean accepted = reused;
+      if (!reused) {
+        pin(scope);
+        accepted = verified(proof, scope);
+        pin(scope);
+        if (accepted && complete && cached != null) cached.add(proof);
+      }
       trace(
           "inherit",
           diagnostic(
-              "accepted", accepted, "proof", proof, "verification", LAST_VERIFICATION.get()));
-      pin(scope);
+              "accepted", accepted, "proof", proof, "verification",
+              reused ? diagnostic("gate", "collector-memo") : LAST_VERIFICATION.get()));
       if (!accepted) {
         unknown();
         return;
@@ -975,44 +988,44 @@ final class SemanticExecutionEvidence {
               encoded, org.integratedmodelling.klab.api.knowledge.CollectiveSelectionView.class);
       collector.inherit(prior.semanticEvidence(), scope);
     }
-    for (var member : members) {
-      collector.observation(member);
-      // Classification facts are not reclassified to a desired answer. Their actual source
-      // activities still contribute the classifier/model/input semantic obligations on replay;
-      // caller-supplied view metadata cannot narrow those durable dependencies.
-      for (var activity : attributionActivities(member, scope)) {
-        if (activity.getOutcome() != Activity.Outcome.SUCCESS) collector.unknown();
-        else collector.inherit(decode(activity), scope);
-      }
+    for (var member : members) collector.observation(member);
+    // Include actual source activities so that view metadata cannot narrow these dependencies.
+    for (var activity : attributionActivities(members, scope)) {
+      if (activity.getOutcome() != Activity.Outcome.SUCCESS) collector.unknown();
+      else collector.inherit(decode(activity), scope);
     }
     return collector.finish(scope);
   }
 
   private static List<Activity> attributionActivities(
-      Observation member, ServiceContextScope scope) {
+      Collection<Observation> members, ServiceContextScope scope) {
+    if (members.isEmpty()) return List.of();
+    var staged = Collections.newSetFromMap(new IdentityHashMap<Activity, Boolean>());
     var result = new ArrayList<Activity>();
-    for (var effect :
-        List.of(GraphModel.Relationship.CLASSIFIED, GraphModel.Relationship.CHARACTERIZED)) {
-      for (var transaction = scope.getCurrentTransaction();
-          transaction != null;
-          transaction = transaction.getParent())
+    var effects = List.of(GraphModel.Relationship.CLASSIFIED, GraphModel.Relationship.CHARACTERIZED);
+    for (var transaction = scope.getCurrentTransaction();
+        transaction != null;
+        transaction = transaction.getParent()) {
+      if (!(transaction instanceof DigitalTwinImpl.TransactionImpl nativeAttempt)) continue;
+      for (var member : members)
         for (var link : transaction.incoming(member))
-          if (link.type() == effect
+          if (effects.contains(link.type())
               && link.source() instanceof Activity activity
-              && transaction instanceof DigitalTwinImpl.TransactionImpl nativeAttempt
-              && nativeAttempt.ownsExecutionActivity(activity)) result.add(activity);
-      if (member.getId() > 0)
-        result.addAll(
-            scope
-                .getDigitalTwin()
-                .getKnowledgeGraph()
-                .query(Activity.class, scope)
-                .target(member)
-                .along(effect)
-                .run(scope)
-                .stream()
-                .filter(activity -> activity.getId() > 0)
-                .toList());
+              && nativeAttempt.ownsExecutionActivity(activity)
+              && staged.add(activity)) result.add(activity);
+    }
+    var committed = members.stream().filter(member -> member.getId() > 0).toList();
+    if (committed.isEmpty()) return result;
+    var graph = scope.getDigitalTwin().getKnowledgeGraph();
+    if (graph instanceof KnowledgeGraphNeo4j neo4j) {
+      var ids = committed.stream().map(Observation::getId).distinct().toList();
+      result.addAll(neo4j.classificationActivities(ids, scope));
+    } else {
+      for (var member : committed) {
+        for (var effect : effects)
+          for (var activity : graph.query(Activity.class, scope).target(member).along(effect).run(scope))
+            if (activity.getId() > 0) result.add(activity);
+      }
     }
     return result;
   }

@@ -79,6 +79,19 @@ public final class Neo4jQueryCompiler {
     return new Statement(code, Map.copyOf(compiler.parameters));
   }
 
+  static Statement classificationActivities(Collection<Long> memberIds, String contextId) {
+    var compiler = new Neo4jQueryCompiler();
+    compiler.contextParameter = compiler.parameter(contextId);
+    var ids = compiler.parameter(List.copyOf(memberIds));
+    return new Statement(
+        "MATCH (n:Activity)-[:CLASSIFIED|CHARACTERIZED]->(member:Observation)"
+            + " WHERE member.id IN " + ids
+            + " AND n.id > 0 AND " + compiler.visible("member")
+            + " AND " + compiler.visible("n")
+            + " RETURN DISTINCT n ORDER BY elementId(n) ASC",
+        Map.copyOf(compiler.parameters));
+  }
+
   private void validate(KnowledgeGraphQuery<?> query, boolean root) {
     if (query == null || query.getResultType() == null || query.getType() == null)
       throw invalid("Missing query type");

@@ -8,8 +8,8 @@ import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.reasoner.objects.*;
 
-/** Receiver-owned static proofs for one accepted environment. Caller holds its environment lock.
- * No executable approval or caller authorization is cached. */
+/** Receiver-owned document validation proofs for one accepted environment.
+ * The caller holds its environment lock and rechecks scoped dependencies on every hit. */
 final class SourceValidationProofCache {
   private static final com.fasterxml.jackson.databind.ObjectMapper JSON = JacksonConfiguration.newObjectMapper();
   private record Entry(byte[] response, SemanticDependencyWitness proof) {}
@@ -26,11 +26,12 @@ final class SourceValidationProofCache {
   }
 
   static String key(SemanticValidationRequest request) {
-    if (!(request.document() instanceof KimNamespace) || request.isExecutableModels()
-        || request.isDiagnosticsOnly() || request.getExecutionContext() != null
-        || request.isClassifierPreparableDependencies()
-        || !request.getPreparableMemberQualityDependencies().isEmpty()
-        || request.document().getSourceCode() == null || request.document().getSourceCode().isBlank()) return null;
+    if (!(request.document() instanceof KimNamespace) || request.isDiagnosticsOnly()) return null;
+    if (!request.isExecutableModels()
+        && (request.getExecutionContext() != null || request.isClassifierPreparableDependencies()
+            || !request.getPreparableMemberQualityDependencies().isEmpty()
+            || request.document().getSourceCode() == null || request.document().getSourceCode().isBlank()))
+      return null;
     // Hash the parsed bean as well as exact text: equal text cannot authenticate altered syntax.
     ObjectNode source = JSON.valueToTree(request.document());
     source.remove("lastUpdateTimestamp");
@@ -38,6 +39,14 @@ final class SourceValidationProofCache {
       metadata.remove(ResourcesService.NAMESPACE_ADMISSION_METADATA);
       if (metadata.get("delegate") instanceof ObjectNode values)
         values.remove(ResourcesService.NAMESPACE_ADMISSION_METADATA);
+    }
+    if (request.isExecutableModels()) {
+      var executable = JSON.createObjectNode();
+      executable.set("namespace", source);
+      executable.put("executionContext", request.getExecutionContext());
+      executable.put("classifierPreparable", request.isClassifierPreparableDependencies());
+      executable.set("preparableMemberQualities", JSON.valueToTree(request.getPreparableMemberQualityDependencies()));
+      source = executable;
     }
     return SemanticContentFingerprint.sha256(SemanticContentFingerprint.canonical(JSON.convertValue(source, Object.class)));
   }

@@ -1389,7 +1389,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   public Capabilities capabilities(Scope scope) {
 
     var ret = new ResourcesCapabilitiesImpl();
-    ret.setModelCandidateProtocol(1);
+    ret.setModelCandidateProtocol(2);
     ret.setWorldviewProvider(workspaceManager.isWorldviewProvider());
     ret.setAdoptedWorldview(workspaceManager.getAdoptedWorldview());
     ret.setWorkspaceNames(workspaceManager.getWorkspaceURNs());

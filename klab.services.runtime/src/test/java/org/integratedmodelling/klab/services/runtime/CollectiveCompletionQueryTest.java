@@ -129,6 +129,19 @@ class CollectiveCompletionQueryTest {
     when(activities.run(scope)).thenAnswer(call->durableLinks.stream()
         .filter(link->link.get(2)==effect[0] && ((RuntimeAsset)link.get(1)).getId()==target[0].getId())
         .map(link->(Activity)durable.get(((RuntimeAsset)link.getFirst()).getId())).toList());
+    when(graph.classificationActivities(anyCollection(), eq(scope))).thenAnswer(call -> {
+      Collection<Long> memberIds = call.getArgument(0);
+      return durableLinks.stream()
+          .filter(link -> link.get(2) == GraphModel.Relationship.CLASSIFIED
+              || link.get(2) == GraphModel.Relationship.CHARACTERIZED)
+          .filter(link -> memberIds.contains(((RuntimeAsset) link.get(1)).getId()))
+          .map(link -> durable.get(((RuntimeAsset) link.getFirst()).getId()))
+          .filter(Activity.class::isInstance)
+          .map(Activity.class::cast)
+          .filter(activity -> activity.getId() > 0)
+          .distinct()
+          .toList();
+    });
   }
 
   ObservableImpl memberObservable() {
