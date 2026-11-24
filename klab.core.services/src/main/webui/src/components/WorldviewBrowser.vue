@@ -129,7 +129,8 @@ function report(cause: unknown) {
   error.value = failure.name === "AbortError" ? "The worldview request timed out. Retry to load it again." : failure.message;
   emit("error", failure);
 }
-async function refresh() {
+let reflectingRelations = false;
+async function refresh(discoverRelations = true) {
   tooltip.value = undefined;
   const ticket = ++generation; controller?.abort();
   const request = new AbortController(); controller = request;
@@ -137,8 +138,14 @@ async function refresh() {
   busy.value = true; error.value = "";
   try {
     if (!focus.value || !viewer) return;
-    const result = await loadNeighborhood(props.api, focus.value, depth.value, relations.value, request.signal, cache, catalog.value);
+    const result = await loadNeighborhood(props.api, focus.value, depth.value, relations.value, request.signal, cache, catalog.value, discoverRelations);
     if (disposed || ticket !== generation) return;
+    if (discoverRelations) {
+      // Reflect discovery without starting another request or overriding a manual filter change.
+      reflectingRelations = true;
+      relations.value = [...new Set([...relations.value, ...result.availableRelations])];
+      reflectingRelations = false;
+    }
     // Source declarations can resolve to canonical aliases (e.g. imod:Subject -> odo:Subject).
     focus.value = result.concepts[0].urn;
     const chart: FlowChart = { root: { id: `${id}-root`, children: result.concepts.map(c => ({
@@ -162,7 +169,8 @@ async function refresh() {
   finally { clearTimeout(timeout); request.abort(); if (!disposed && ticket === generation) busy.value = false; }
 }
 function center(urn: string, remember = true) {
-  if (props.disabled || urn === focus.value) return;
+  if (props.disabled) return;
+  if (urn === focus.value) { void refresh(); return; }
   if (remember && focus.value) history.value.push(focus.value);
   focus.value = urn; void refresh();
 }
@@ -170,7 +178,8 @@ function back() { const previous = history.value.pop(); if (previous) center(pre
 watch(() => props.focus, urn => { if (urn) center(urn); });
 watch(() => [props.catalog, props.api], () => { void initialize(true); });
 watch(() => props.showTree, show => { if (show && !catalog.value) void initialize(); });
-watch([depth, relations], () => { void refresh(); }, { deep: true });
+watch(depth, () => { void refresh(); });
+watch(relations, () => { if (!reflectingRelations) void refresh(false); }, { deep: true, flush: "sync" });
 watch([detailsOpen, treeVisible, fullscreen], async () => { await nextTick(); if (!disposed) void viewer?.fit(); });
 onMounted(() => {
   window.addEventListener("resize", placeRelations);
@@ -223,7 +232,7 @@ defineExpose({ center, refresh, fit: () => viewer?.fit() });
     <div class="worldview-body" :class="{ 'without-tree': !showTree || !treeVisible }">
       <aside v-if="showTree && treeVisible" class="worldview-sidebar" aria-label="Worldview declarations">
         <div class="worldview-sidebar-header">
-          <label class="worldview-search"><span>Filter declarations</span><input v-model="treeQuery" type="search" placeholder="Name or namespace" :disabled="disabled" /></label>
+          <input v-model="treeQuery" class="worldview-search" type="search" aria-label="Filter declarations" placeholder="Name or namespace" :disabled="disabled" />
           <div class="worldview-tree-actions">
             <button type="button" aria-label="Collapse tree" title="Collapse tree" :disabled="disabled" @click="expandTree(false)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 10 6 6 6-6M6 4l6 6 6-6" transform="rotate(180 12 12)" /></svg></button>
             <button type="button" aria-label="Expand tree" title="Expand tree" :disabled="disabled" @click="expandTree(true)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 10 6 6 6-6M6 4l6 6 6-6" /></svg></button>
@@ -290,13 +299,14 @@ defineExpose({ center, refresh, fit: () => viewer?.fit() });
 .worldview-body { display: grid; grid-template-columns: 245px minmax(0, 1fr); height: clamp(420px, 66vh, 900px); min-height: 0; }
 .worldview-body.without-tree { grid-template-columns: minmax(0, 1fr); }
 .worldview-sidebar { display: flex; flex-direction: column; min-height: 0; overflow: hidden; border-right: 1px solid var(--klab-border); }
-.worldview-sidebar-header { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 12px; flex: none; border-bottom: 1px solid var(--klab-border); }
-.worldview-search { display: contents; color: var(--klab-muted); }
-.worldview-search > span { align-self: center; }
-.worldview-search > input { grid-row: 2; grid-column: 1 / -1; width: 100%; }
-.worldview-tree-actions { display: flex; gap: 4px; grid-row: 1; grid-column: 2; }
-.worldview-tree-actions button, .worldview-icon { padding: 4px !important; width: 32px; flex: none; display: inline-grid; place-items: center; }
+.worldview-sidebar-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 10px 12px; flex: none; border-bottom: 1px solid var(--klab-border); }
+.worldview-search { width: 100%; }
+.worldview-tree-actions { display: flex; gap: 2px; }
+.worldview-tree-actions button, .worldview-icon { padding: 4px; width: 32px; flex: none; display: inline-grid; place-items: center; }
 .worldview-tree-actions svg, .worldview-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.worldview-icon { padding: 4px !important; }
+.worldview-tree-actions button { width: 24px; min-height: 24px; padding: 3px; border: 0; background: transparent; }
+.worldview-tree-actions svg { width: 14px; height: 14px; }
 .worldview-icon[aria-expanded="true"] { background: var(--klab-selection); }
 .worldview-tree-scroll { min-height: 0; flex: 1; overflow: auto; padding: 6px; }
 .worldview-ontology > summary { display: flex; gap: 6px; align-items: center; list-style: none; cursor: pointer; padding: 8px; font-weight: 600; overflow-wrap: anywhere; }
@@ -342,5 +352,6 @@ defineExpose({ center, refresh, fit: () => viewer?.fit() });
 @media (max-width: 760px) { .worldview-body { grid-template-columns: 180px minmax(0, 1fr); } }
 @media (max-width: 620px) { .worldview-options { justify-content: flex-end; width: 100%; } .worldview-focus { flex: 0 1 auto; max-width: calc(100% - 112px); } }
 @media (pointer: coarse) { .worldview-icon { width: 36px; } .worldview-dropdown { min-height: 44px; } }
+@media (pointer: coarse) { .worldview-tree-actions button { width: 32px; min-height: 44px; } }
 @media (max-width: 520px) { .worldview-body { display: flex; height: auto; min-height: 480px; flex-direction: column; } .worldview-sidebar { max-height: 210px; border-right: 0; border-bottom: 1px solid var(--klab-border); } .worldview-stage { height: 440px; } .worldview-toolbar { gap: 4px; } }
 </style>

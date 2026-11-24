@@ -331,17 +331,18 @@ test("malformed nonempty JSON remains an explicit endpoint error", async ({ page
   await expect(page.getByRole("alert")).toContainText("Invalid JSON from /api/v1/roles?direct=true");
 });
 
-test("relationship switches match the IDE labels, order and default status", async ({ page }) => {
+test("relationship switches retain the IDE families with corrected causal labels and quantitative within", async ({ page }) => {
   const ide = await readFile(new URL("../../../../../../klab-ide/src/main/java/org/integratedmodelling/klab/ide/components/WorldviewGraphModel.java", import.meta.url), "utf8").catch(() => "");
   test.skip(!ide, "The sibling IDE source is needed for this parity check");
   const expected = [...ide.matchAll(/\b([A-Z_]+)\(\s*"([^"]+)",\s*(true|false)/g)]
-    .map(match => ({ id: match[1], label: match[2], selected: match[3] === "true" }));
+    .map(match => ({ id: match[1], label: match[1] === "CAUSED" ? "Causing" : match[1] === "CAUSANT" ? "Caused by" : match[2], selected: match[3] === "true" }));
   expect(expected).toHaveLength(30);
-  expect(graphRelations.map(({ id, label, selected }) => ({ id, label, selected }))).toEqual(expected);
+  expect(graphRelations.filter(r => r.id !== "QUANTITATIVE_WITHIN").map(({ id, label, selected }) => ({ id, label, selected }))).toEqual(expected);
   await page.goto("/tests/knowledge.html");
   await expect(page.locator(".worldview-inspector code")).toHaveText("earth:Subject");
   await page.locator(".worldview-relations summary").click();
-  await expect(page.locator('.worldview-relations input[type="checkbox"]')).toHaveCount(30);
+  await expect(page.locator('.worldview-relations input[type="checkbox"]')).toHaveCount(31);
+  await expect(page.getByRole("checkbox", { name: "Within: quantitative identities", exact: true })).toBeChecked();
   for (const relation of expected) {
     const checkbox = page.getByRole("checkbox", { name: relation.label, exact: true });
     if (relation.selected) await expect(checkbox).toBeChecked();
@@ -380,8 +381,9 @@ test("all relation families use the IDE projections and share cached influence q
   const snapshot = await loadNeighborhood(api, root.urn, 1, graphRelations.map(r => r.id), new AbortController().signal, cache);
   for (const kind of kinds) expect(snapshot.links).toContainEqual({ source: `test:${kind}Source`, target: `test:${kind}Target`, label: kind.toLowerCase().replaceAll('_', ' ') });
   expect(calls.filter(path => path.endsWith("influences"))).toHaveLength(1);
-  for (const endpoint of ["parents", "children", "described", "identities", "attributes", "realms", "roles", "inherent", "adjacent", "caused", "causant", "compresent", "goal", "cooccurent", "relativeTo", "relationshipSources", "relationshipTargets", "operands"])
+  for (const endpoint of ["parents", "children", "described", "identities", "attributes", "realms", "roles", "inherent", "adjacent", "caused", "causant", "compresent", "goal", "cooccurent", "relativeTo", "relationshipSources", "relationshipTargets"])
     expect(calls).toContain(`api/v1/${endpoint}?direct=true`);
+  expect(calls).not.toContain("api/v1/operands?direct=true");
   expect(calls).toContain("api/v1/applicable"); expect(maximum).toBeLessThanOrEqual(6);
   const count = calls.length;
   await loadNeighborhood(api, root.urn, 1, graphRelations.map(r => r.id), new AbortController().signal, cache);
@@ -413,6 +415,90 @@ test("declared contracts preserve direction and grouped operands, and reject uns
   expect(result.links).toContainEqual({ source: values[3].urn, target: values[0].urn, label: "emerges from (declared)" });
   expect(result.concepts.some(c => c.urn === values[4].urn)).toBe(true);
   expect(result.links.some(link => link.target === values[2].urn)).toBe(false);
+});
+
+test("quantitative within preserves ordered authority identities on a composed concept", async () => {
+  const quantity: Concept = { urn: "derived:Quantity", type: ["QUALITY"], metadata: { delegate: {
+    "urn:klab:semantics:quantitative-portion-identity": "CHEMISTRY:Oxygen",
+    "urn:klab:semantics:quantitative-whole-identity": "CHEMISTRY:Air",
+  } } };
+  const cache = new WorldviewCache();
+  [quantity, { urn: "CHEMISTRY:Oxygen", type: ["IDENTITY", "AUTHORITY_IDENTITY"] },
+    { urn: "CHEMISTRY:Air", type: ["IDENTITY", "AUTHORITY_IDENTITY"] }].forEach(c => cache.concept(c));
+  const request: ServiceApi["request"] = async () => { throw new Error("Reuse cached authority identities"); };
+  const api: ServiceApi = { request, get: request };
+  const graph = await loadNeighborhood(api, quantity.urn, 1, ["QUANTITATIVE_WITHIN", "CONTAINS"], new AbortController().signal, cache);
+  expect(graph.links).toEqual([
+    { source: quantity.urn, target: "CHEMISTRY:Oxygen", label: "portion identity (quantitative within)" },
+    { source: quantity.urn, target: "CHEMISTRY:Air", label: "whole identity (quantitative within)" },
+  ]);
+  expect(graph.availableRelations).toEqual(["QUANTITATIVE_WITHIN"]);
+  quantity.metadata = { "urn:klab:semantics:quantitative-portion-identity": "CHEMISTRY:Oxygen" };
+  expect((await loadNeighborhood(api, quantity.urn, 1, ["QUANTITATIVE_WITHIN"], new AbortController().signal, cache)).links).toEqual([]);
+});
+
+test("every accessor edge follows its semantic role, including both causal directions", async () => {
+  const cases = [
+    ["DESCRIBES", "described", "describes"], ["IDENTITIES", "identities", "identity"],
+    ["ATTRIBUTES", "attributes", "attribute"], ["REALMS", "realms", "realm"], ["ROLES", "roles", "role"],
+    ["INHERENT", "inherent", "of"], ["CAUSED", "caused", "causing"], ["CAUSANT", "causant", "caused by"],
+    ["ADJACENT", "adjacent", "adjacent to"], ["COMPRESENT", "compresent", "with"], ["GOAL", "goal", "for"],
+    ["COOCCURRENT", "cooccurent", "during"], ["RELATIVE", "relativeTo", "relative to"],
+    ["SOURCE", "relationshipSources", "links source"], ["TARGET", "relationshipTargets", "links target"],
+    ["IMPLIES", "impliedRoles", "implies"], ["OPERANDS", "operands", "operand"], ["APPLIES", "applicable", "applies to"],
+  ];
+  const semanticRoles = await readFile(new URL("../../../../../klab.core.api/src/main/java/org/integratedmodelling/klab/api/knowledge/SemanticRole.java", import.meta.url), "utf8");
+  expect(semanticRoles).toContain('CAUSED(true, "causing")'); expect(semanticRoles).toContain('CAUSANT(true, "caused by")');
+  for (const [relation, endpoint, label] of cases) {
+    const root: Concept = { urn: "test:Owner", type: [relation === "IMPLIES" ? "ROLE" : relation === "OPERANDS" ? "UNION" : "QUALITY"] };
+    const target: Concept = { urn: "test:Operand" }, cache = new WorldviewCache(); cache.concept(root);
+    const request: ServiceApi["request"] = async path => path.split('/').pop()!.split('?')[0] === endpoint ? [target] as any : [] as any;
+    const graph = await loadNeighborhood({ request, get: request }, root.urn, 1, [relation], new AbortController().signal, cache);
+    expect(graph.links, relation).toEqual([{ source: root.urn, target: target.urn, label }]);
+  }
+  const owner: Concept = { urn: "test:Child", type: ["SUBJECT"] }, cache = new WorldviewCache(); cache.concept(owner);
+  const request: ServiceApi["request"] = async path => [{ urn: path.includes("children?") ? "test:Grandchild" : "test:Parent" }] as any;
+  const graph = await loadNeighborhood({ request, get: request }, owner.urn, 1, ["SUBCLASS"], new AbortController().signal, cache);
+  expect(graph.links).toEqual([{ source: owner.urn, target: "test:Parent", label: "is" }, { source: "test:Grandchild", target: owner.urn, label: "is" }]);
+});
+
+test("navigation discovers hidden relationships, manual filtering works, and cached Back restores the complete view", async ({ page }) => {
+  const quantity: Concept = { urn: "derived:Quantity", name: "Oxygen volume within air", type: ["QUALITY"], metadata: {
+    "urn:klab:semantics:quantitative-portion-identity": "CHEMISTRY:Oxygen", "urn:klab:semantics:quantitative-whole-identity": "CHEMISTRY:Air",
+  } };
+  const cause: Concept = { urn: "test:Cause", name: "Cause", type: ["PROCESS"] };
+  let calls = 0; page.on("request", r => { if (r.url().includes("/api/v1/")) calls++; });
+  await page.route("**/api/v1/resolve/concept", route => {
+    const urn = route.request().postData()!;
+    return route.fulfill({ json: urn === quantity.urn ? quantity : urn.startsWith("CHEMISTRY:") ? { urn, type: ["IDENTITY", "AUTHORITY_IDENTITY"] } : fixtureResponse(route.request().url(), urn) });
+  });
+  await page.route("**/api/v1/causant?*", route => route.fulfill({ json: route.request().postDataJSON().urn === quantity.urn ? cause : null }));
+  await page.route("**/api/v1/semanticSearch", route => {
+    const body = route.request().postDataJSON(), response = fixtureResponse(route.request().url(), body);
+    return route.fulfill({ json: { ...response, matches: [{ id: quantity.urn, name: quantity.name, matchType: "CONCEPT" }],
+      ...(body.searchMode === "SELECT" ? { declaration: quantity.urn, currentConcept: quantity, code: [{ value: quantity.urn }] } : {}) } });
+  });
+  await page.goto("/tests/knowledge.html");
+  await expect(page.locator(".worldview-browser")).toHaveAttribute("aria-busy", "false");
+  await page.locator(".worldview-relations summary").click();
+  await page.getByRole("checkbox", { name: "Within: quantitative identities", exact: true }).uncheck();
+  await page.locator(".worldview-relations summary").click();
+  const input = page.getByRole("combobox", { name: "Compose a concept" }); await input.fill("Oxygen");
+  await page.getByRole("option", { name: /Oxygen volume/ }).click();
+  await expect(page.locator(".worldview-inspector code")).toHaveText(quantity.urn);
+  await expect(page.locator(".worldview-canvas .sprotty-node")).toHaveCount(4);
+  await page.locator(".worldview-relations summary").click();
+  const within = page.getByRole("checkbox", { name: "Within: quantitative identities", exact: true });
+  const causedBy = page.getByRole("checkbox", { name: "Caused by", exact: true });
+  await expect(within).toBeChecked(); await expect(causedBy).toBeChecked();
+  const beforeFilter = calls; await causedBy.uncheck();
+  await expect(page.locator(".worldview-canvas .sprotty-node")).toHaveCount(3); expect(calls).toBe(beforeFilter);
+  await page.locator(".worldview-relations summary").click();
+  await page.getByRole("combobox", { name: "Focus concept" }).selectOption("CHEMISTRY:Air");
+  await expect(page.locator(".worldview-browser")).toHaveAttribute("aria-busy", "false");
+  const beforeBack = calls; await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page.locator(".worldview-canvas .sprotty-node")).toHaveCount(4); expect(calls).toBe(beforeBack);
+  await page.locator(".worldview-relations summary").click(); await expect(causedBy).toBeChecked();
 });
 
 test("canonical aliases retain graph focus and source tree selection", async ({ page }) => {

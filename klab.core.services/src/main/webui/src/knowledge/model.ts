@@ -82,14 +82,16 @@ export const graphRelations = [
     description: "Quality or process → native bearer. Independent of observational containment." },
   { id: "CONTAINS", label: "Contains / within: observational containment", selected: true,
     description: "Declared container → contained type. Does not imply members exist, physical enclosure or inherency." },
+  { id: "QUANTITATIVE_WITHIN", label: "Within: quantitative identities", selected: true,
+    description: "Measured quantity → ordered portion and whole identities, including authority identities. Does not assert physical parthood or a ratio." },
   { id: "EMERGENCE", label: "Emerges from: configuration ingredients", selected: true,
     description: "Declared configuration → ingredient expression. Ingredients are not native bearers or application targets." },
   { id: "REQUIRED_IDENTITIES", label: "Requires identity (declared)", selected: true,
     description: "Declared identity requirement. On qualities and processes this constrains the bearer, not their own traits." },
   { id: "REQUIRED_REALMS", label: "Requires realm (declared)", selected: false },
   { id: "ADJACENT", label: "Adjacent to", selected: false },
-  { id: "CAUSED", label: "Caused by", selected: false },
-  { id: "CAUSANT", label: "Causing", selected: false },
+  { id: "CAUSED", label: "Causing", selected: false },
+  { id: "CAUSANT", label: "Caused by", selected: false },
   { id: "COMPRESENT", label: "With", selected: false },
   { id: "GOAL", label: "For", selected: false },
   { id: "COOCCURRENT", label: "During", selected: false },
@@ -102,7 +104,7 @@ export const graphRelations = [
   { id: "OPERANDS", label: "Logical operands", selected: false },
 ] as const;
 export const defaultGraphRelations: string[] = graphRelations.filter(r => r.selected).map(r => r.id);
-export interface Neighborhood { concepts: Concept[]; links: { source: string; target: string; label: string }[]; truncated: boolean }
+export interface Neighborhood { concepts: Concept[]; links: { source: string; target: string; label: string }[]; truncated: boolean; availableRelations: string[] }
 /** Owned by one browser/service context, never shared between authenticated hosts. */
 export class WorldviewCache {
   readonly concepts = new Map<string, Concept>();
@@ -116,7 +118,7 @@ export class WorldviewCache {
 }
 /** Bounded breadth-first traversal: at most six HTTP relation requests, not six serial chains. */
 export async function loadNeighborhood(api: ServiceApi, urn: string, depth: number, relations: string[], signal: AbortSignal,
-  cache = new WorldviewCache(), catalog?: WorldviewCatalog): Promise<Neighborhood> {
+  cache = new WorldviewCache(), catalog?: WorldviewCatalog, discoverRelations = false): Promise<Neighborhood> {
   // One limiter covers all requests, including multi-endpoint switches and source endpoint resolution.
   let active = 0;
   const waiting: (() => void)[] = [];
@@ -165,11 +167,23 @@ export async function loadNeighborhood(api: ServiceApi, urn: string, depth: numb
   const direct: Record<string, [string, string]> = {
     DESCRIBES: ["described", "describes"], IDENTITIES: ["identities", "identity"], ATTRIBUTES: ["attributes", "attribute"],
     REALMS: ["realms", "realm"], ROLES: ["roles", "role"], INHERENT: ["inherent", "of"], ADJACENT: ["adjacent", "adjacent to"],
-    CAUSED: ["caused", "caused by"], CAUSANT: ["causant", "causing"], COMPRESENT: ["compresent", "with"], GOAL: ["goal", "for"],
+    CAUSED: ["caused", "causing"], CAUSANT: ["causant", "caused by"], COMPRESENT: ["compresent", "with"], GOAL: ["goal", "for"],
     COOCCURRENT: ["cooccurent", "during"], RELATIVE: ["relativeTo", "relative to"],
     SOURCE: ["relationshipSources", "links source"], TARGET: ["relationshipTargets", "links target"], OPERANDS: ["operands", "operand"],
   };
   async function relationEdges(concept: Concept, relation: string): Promise<Edge[]> {
+    if (relation === "QUANTITATIVE_WITHIN") {
+      const metadata = conceptMetadata(concept);
+      const portion = metadata["urn:klab:semantics:quantitative-portion-identity"];
+      const whole = metadata["urn:klab:semantics:quantitative-whole-identity"];
+      if (typeof portion !== "string" || !portion.trim() || typeof whole !== "string" || !whole.trim()) return [];
+      const [portionConcept, wholeConcept] = await Promise.all([resolve(portion), resolve(whole)]);
+      if (!portionConcept || !wholeConcept) return [];
+      return [...edges(concept, [portionConcept], "portion identity (quantitative within)"),
+        ...edges(concept, [wholeConcept], "whole identity (quantitative within)")];
+    }
+    // The operands API returns the concept itself for atomic concepts: that is not a graph edge.
+    if (relation === "OPERANDS" && !concept.type?.some(t => ["UNION", "INTERSECTION"].includes(t))) return [];
     if (relation === "SUBCLASS") {
       const [parents, children] = await Promise.all([query<Concept[]>("parents?direct=true", concept), query<Concept[]>("children?direct=true", concept)]);
       return [...edges(concept, list(parents), "is"), ...edges(concept, list(children), "is", true)];
@@ -211,26 +225,31 @@ export async function loadNeighborhood(api: ServiceApi, urn: string, depth: numb
   const nodes = new Map([[focus.urn, focus]]), links = new Map<string, Neighborhood["links"][number]>();
   let frontier = [focus], truncated = false;
   const visited = new Set<string>();
+  const availableRelations = new Set<string>();
   for (let level = 0; level < depth; level++) {
     const next: Concept[] = [];
     const tasks = frontier.filter(concept => !visited.has(concept.urn)).flatMap(concept => {
       visited.add(concept.urn);
-      return graphRelations.filter(r => relations.includes(r.id)).map(relation => ({ concept, relation }));
+      return graphRelations.filter(r => discoverRelations || relations.includes(r.id)).map(relation => ({ concept, relation }));
     });
     const results = await Promise.all(tasks.map(({ concept, relation }) => relationEdges(concept, relation.id)));
-    for (const result of results) for (const edge of result) {
-      for (const endpoint of [edge.source, edge.target]) {
-        if (!nodes.has(endpoint.urn)) {
-          if (nodes.size >= 150) { truncated = true; continue; }
-          nodes.set(endpoint.urn, endpoint); next.push(endpoint);
+    for (let index = 0; index < results.length; index++) {
+      const result = results[index];
+      if (result.length) availableRelations.add(tasks[index].relation.id);
+      for (const edge of result) {
+        for (const endpoint of [edge.source, edge.target]) {
+          if (!nodes.has(endpoint.urn)) {
+            if (nodes.size >= 150) { truncated = true; continue; }
+            nodes.set(endpoint.urn, endpoint); next.push(endpoint);
+          }
         }
-      }
-      if (nodes.has(edge.source.urn) && nodes.has(edge.target.urn)) {
-        const link = { source: edge.source.urn, target: edge.target.urn, label: edge.label };
-        links.set(JSON.stringify(link), link);
+        if (nodes.has(edge.source.urn) && nodes.has(edge.target.urn)) {
+          const link = { source: edge.source.urn, target: edge.target.urn, label: edge.label };
+          links.set(JSON.stringify(link), link);
+        }
       }
     }
     frontier = next;
   }
-  return { concepts: [...nodes.values()], links: [...links.values()], truncated };
+  return { concepts: [...nodes.values()], links: [...links.values()], truncated, availableRelations: [...availableRelations] };
 }

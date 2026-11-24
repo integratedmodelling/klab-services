@@ -77,13 +77,35 @@ The source hierarchy is loaded from authenticated `GET api/v1/worldview/explorer
 The transport includes local authority discovery IDs, but no source text, provider
 parameters or configuration IDs. It preserves declaration nesting and qualifies local
 concept names with their ontology. The tree represents **authored nesting**, not inferred
-subsumption. The graph uses the IDE's complete 30-switch relationship set, with identical
-labels, order, descriptions and defaults. Subclass controls parents and children together.
+subsumption. The graph retains the IDE's 30 relationship families, corrects the causal labels
+to the API's semantic roles, and adds **Within: quantitative identities**. Subclass controls parents and children together.
 The seven influence layers share a single cached `influences` request per concept.
 Identity traits, attributes and realm qualifications have independent switches. The other
 layers cover described type, roles, native bearer, declared containment/emergence/identity
 and realm requirements, adjacency, causation, compresence, goal, cooccurrence, relativity,
 relationship endpoints, application scope, implied roles and logical operands.
+
+On initial load, focus navigation (including Back/Home), and depth changes, the browser
+discovers all supported relationship families and checks those with actual connections.
+Manual unchecking filters the current view until the next focus/depth navigation. Discovery
+uses the same bounded cache and request limiter, including cached empty results; it does not
+issue a second request when reflecting the discovered switches. Atomic concepts do not have
+self-referential operand edges. Single-click inspection retains its local-only behavior.
+
+Composer quantities retain ordered portion/whole identities in semantic metadata. The
+quantitative `within` layer resolves those identities (including authority identities) and
+draws quantity → portion and quantity → whole edges with explicit labels. A complete pair
+is required. This is separate from observational container → contained contracts and does
+not assert physical parthood, a ratio, or a numerical extraction operation.
+
+Every arrow follows the edge label from source to target: child → parent **is**; owner →
+trait/role **identity/attribute/realm/role**; dependent → bearer **of**; predicate/configuration →
+application target **applies to**; configuration → ingredient **emerges from**; owner →
+requirement **requires**; relationship → endpoint **links source/target**; expression → logical
+operand **operand**. For causation, **causant** is the cause: effect → cause **caused by**;
+**caused** is the effect: cause → effect **causing**. Influence results preserve their explicit
+source/target, even when the query is made at the target. Observational declarations always
+retain container → contained direction, including authored `contained into` and `within`.
 
 `declaredLinks` in the catalog contains only the four typed source contracts, indexed at
 both endpoints. Boolean operands remain grouped; containment is restricted to matching
