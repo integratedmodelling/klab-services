@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import "../styles/theme.css";
 import "../knowledge/knowledge.css";
-import { computed, nextTick, onBeforeUnmount, ref, shallowRef, useId } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, shallowRef, useId, watch } from "vue";
 import type { ServiceApi } from "../services/api";
 import { post, type SemanticMatch, type SemanticMode, type SemanticResponse } from "../knowledge/model";
 
@@ -32,6 +32,30 @@ function openComposer() {
 const rows = computed(() => matches.value.filter(m => filter.value === "all" ||
   (filter.value === "concepts" ? m.matchType === "CONCEPT" : m.matchType !== "CONCEPT")));
 const canSubmit = computed(() => !props.disabled && !busy.value && !uncertain.value && !query.value.trim() && !!state.value?.declaration);
+const observableUrn = computed(() => state.value?.observable?.urn || state.value?.declaration || "");
+const copying = ref(false), copyState = ref<"idle" | "copied" | "failed">("idle");
+const canCopy = computed(() => canSubmit.value && !!observableUrn.value && !state.value?.errors?.length);
+watch([state, query], () => { copyState.value = "idle"; });
+function copyWithSelection(value: string) {
+  // Clipboard API requires a secure context; retain support for HTTP-hosted service UIs.
+  const field = document.createElement("textarea"), focused = document.activeElement as HTMLElement | null;
+  field.value = value; field.readOnly = true; field.style.cssText = "position:fixed;left:-10000px;top:0";
+  root.value!.appendChild(field);
+  try { field.focus(); field.select(); if (!document.execCommand("copy")) throw new Error("Copy unavailable"); }
+  finally { field.remove(); focused?.focus({ preventScroll: true }); }
+}
+async function copyObservableUrn() {
+  if (!canCopy.value || copying.value) return;
+  const value = observableUrn.value; copying.value = true; copyState.value = "idle";
+  try {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard API unavailable");
+      await navigator.clipboard.writeText(value);
+    } catch { if (!disposed) copyWithSelection(value); else return; }
+    if (!disposed && value === observableUrn.value && !query.value.trim()) copyState.value = "copied";
+  } catch { if (!disposed) copyState.value = "failed"; }
+  finally { copying.value = false; }
+}
 const current = computed(() => rows.value[selected.value]);
 function tokenText(token: SemanticResponse["code"][number], index: number): string {
   const code = state.value?.code || [];
@@ -171,8 +195,12 @@ defineExpose({ focus: () => input.value?.focus(), submit });
           @focus="openComposer" @click="openComposer" @input="schedule" @keydown="key" />
       </div>
       <button v-if="error" type="button" :disabled="busy || disabled" @click="retry">{{ restartNeeded ? 'Restart' : 'Retry' }}</button>
+      <button type="button" class="semantic-copy" aria-label="Copy to clipboard" :aria-busy="copying" :title="copyState === 'copied' ? 'Observable URN copied' : 'Copy full observable URN to clipboard'" :disabled="!canCopy" @click="copyObservableUrn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path v-if="copyState === 'copied'" d="m5 12 4 4L19 6" /><template v-else><rect x="8" y="8" width="12" height="13" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" /></template></svg>
+      </button>
       <button type="button" aria-label="Explore confirmed expression" title="Explore confirmed expression (Ctrl+Enter)" :disabled="!canSubmit" @click="submit">{{ busy ? '…' : '→' }}</button>
     </div>
+    <div v-if="copyState !== 'idle'" role="status" :class="copyState === 'failed' ? 'knowledge-error' : 'semantic-copy-status'">{{ copyState === 'copied' ? 'Observable URN copied to clipboard.' : 'Could not copy the observable URN. Check clipboard permissions and try again.' }}</div>
     <div v-if="error" role="alert" class="knowledge-error">{{ error }}</div>
     <div v-if="opened" class="semantic-overlay">
       <div class="semantic-choosers">
@@ -205,6 +233,9 @@ defineExpose({ focus: () => input.value?.focus(), submit });
 .semantic-expression input { flex: 1; min-width: 190px; border: 0; outline: none; font-family: inherit; }
 .semantic-expression input::placeholder { color: var(--klab-muted); }
 .semantic-field > button { min-width: 34px; }
+.semantic-field > .semantic-copy { display: inline-grid; place-items: center; padding: 5px; flex: none; }
+.semantic-copy svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.semantic-copy-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .semantic-overlay { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; right: 0; max-height: min(62vh, 460px); overflow: auto; background: var(--klab-surface); border: 1px solid var(--klab-border); border-radius: var(--klab-radius); box-shadow: var(--klab-shadow); }
 .semantic-choosers { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--klab-border); }
 .semantic-choosers label { display: flex; gap: 8px; align-items: center; color: var(--klab-muted); }

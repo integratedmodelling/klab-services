@@ -53,6 +53,12 @@ released on unmount. Expired sessions retain the displayed expression and requir
 explicit Restart; restarting preserves pending text. Authority search uses canonical codes and the same acknowledged
 semantic revision for IDENTITY; providers are never called directly from the browser.
 
+The copy icon immediately before Submit copies the full confirmed observable URN (falling
+back to the confirmed declaration when no observable wrapper is returned), preserving
+units and other qualifiers. It is disabled for empty, pending, uncertain or erroneous
+expressions. Copy uses the Clipboard API with a selection-based fallback for HTTP hosts,
+retains focus, reports success/failure, and performs no Reasoner requests.
+
 ## Worldview browser
 
 Props: `api`, optional `focus` (concept URN/expression), `catalog`, `disabled`, and

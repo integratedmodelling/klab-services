@@ -55,6 +55,45 @@ test("composer opens on focus before typing and reopens on a click after a choic
   await input.press("Escape"); await expect(page.locator(".semantic-overlay")).toHaveCount(0);
 });
 
+for (const clipboardMode of ["clipboard", "fallback", "denied"]) test(`composer copies the full observable URN with ${clipboardMode} clipboard access`, async ({ page }) => {
+  const urn = "chemistry:Oxygen within chemistry:Air physics:Volume of earth:Region in m3";
+  await page.addInitScript(mode => {
+    (window as any).copiedUrns = [];
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: mode === "fallback" ? undefined : {
+      writeText: async (value: string) => { if (mode === "denied") throw new Error("Permission denied"); (window as any).copiedUrns.push(value); },
+    } });
+    document.execCommand = (command: string) => {
+      if (command !== "copy" || mode === "denied") return false;
+      (window as any).copiedUrns.push(document.querySelector("textarea")?.value); return true;
+    };
+  }, clipboardMode);
+  await page.route("**/api/v1/semanticSearch", route => {
+    const body = route.request().postDataJSON(), result = fixtureResponse(route.request().url(), body);
+    return route.fulfill({ json: { ...result, ...(body.searchMode === "SELECT" ? { observable: { urn, semantics: result.currentConcept } } : {}) } });
+  });
+  let calls = 0; page.on("request", r => { if (r.url().includes("/api/v1/")) calls++; });
+  await page.goto("/tests/knowledge.html");
+  const copy = page.getByRole("button", { name: "Copy to clipboard", exact: true });
+  await expect(copy).toBeDisabled();
+  const input = page.getByRole("combobox", { name: "Compose a concept" });
+  await input.fill("Landscape"); await expect(page.getByRole("listbox").getByRole("option")).toHaveCount(1);
+  await input.press("Enter"); await expect(copy).toBeEnabled();
+  await expect(page.locator(".worldview-browser")).toHaveAttribute("aria-busy", "false");
+  expect((await copy.boundingBox())!.x).toBeLessThan((await page.getByRole("button", { name: "Explore confirmed expression" }).boundingBox())!.x);
+  const before = calls; await copy.click();
+  if (clipboardMode === "denied") {
+    await expect(page.getByRole("status")).toHaveText(/Could not copy the observable URN/);
+    expect(await page.evaluate(() => (window as any).copiedUrns)).toEqual([]);
+  } else {
+    await expect(copy).toHaveAttribute("title", "Observable URN copied");
+    expect(await page.evaluate(() => (window as any).copiedUrns)).toEqual([urn]);
+  }
+  expect(calls).toBe(before); await expect(copy).toBeFocused();
+  await expect(page.locator("textarea")).toHaveCount(0);
+  await expect(page.locator(".semantic-expression > span")).toHaveText("earth:Landscape ");
+  await input.fill("unconfirmed"); await expect(copy).toBeDisabled();
+});
+
 test("ontologies start collapsed, tree controls expand/reset, and the search stays above the scroller", async ({ page }) => {
   const catalog = structuredClone(fixtureCatalog);
   catalog.ontologies.push({ urn: "additional", children: Array.from({ length: 100 }, (_, index) => ({ urn: `additional:C${index}`, label: `Concept ${index}`, type: ["SUBJECT"], children: [] })) });
