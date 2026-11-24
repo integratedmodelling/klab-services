@@ -99,6 +99,9 @@ both endpoints. A configuration implying a role needs an explicit recipient unle
 actual substantial bearer supplies the default. Conferral commits attribution before role
 implications and optional characterization; lack of a characterization model does not
 erase the role. All targets retain native semantics and normal eligibility checks.
+Roles, realms, identities, processes and relationships can imply optional target
+resolution. A process defaults to its actual bearer. A realm or identity defaults to
+the committed substantial whose observable carries that predicate.
 
 Top-level consequence requests are optional; mandatory model dependencies remain mandatory.
 Unsupported evidence is deferred explicitly. The queue is in memory and does not guarantee

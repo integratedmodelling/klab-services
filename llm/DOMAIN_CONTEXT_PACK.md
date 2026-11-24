@@ -649,8 +649,7 @@ State:
 - which observable types can play the role (`applies to`);
 - the context that makes the role hold;
 - any related process, event, relationship, or counterpart role;
-- remember that a process or a continuant-bound configuration may imply (`implies`) a role for the continuant that the process inheres to; and
-- remember that a process or a continuant-bound configuration may imply (`implies`) a role for the continuant that the process inheres to; and
+- which processes or relationships `confer` the role, and which configurations `imply` it;
 - whether the literature treats the term as a role or as an identity across all contexts.
 
 Do not turn every participant label into a role. If it is only a local argument name in one method,
@@ -1129,7 +1128,7 @@ commit and intermediate child transactions do not trigger independent passes.
 | --- | --- |
 | `emerges from` | Detect a configuration from supported ingredient observations, then resolve its explanation separately. Configuration `of` is the same emergence relation. |
 | `confers` | A process or relationship attributes a role to eligible substantial recipients, retaining source, observer and support evidence. |
-| `implies` | A role or relationship requests normal resolution of its target; a configuration can attribute an implied role to substantial participants. |
+| `implies` | Roles, realms, identities, processes and relationships can request optional target resolution. Configurations can attribute roles to substantial participants. |
 | Change processes | Assess qualities in occurrent contexts and recognize compatible current process writers before requesting additional work. |
 | Uncertainty | Assess qualities as a lowest-priority optional category; no default execution handler is installed, so execution is deferred without one. |
 | `requires` | Express integrity constraints; it does not schedule consequence execution. |
@@ -1147,10 +1146,14 @@ not undo the role. Failed resolution is not equivalent to a proven `NO_MODEL` ou
 
 `implies <target> [for <substantial>] [within <bearer>]` preserves target meaning,
 secondary inherency (`for`) and application specialization (`within`) separately.
+A process can imply resolution of a quality on its actual bearer after the process
+observation commits. Role, realm and identity implications default to their matching
+bearer. Realms and identities match the semantics of committed substantial observations.
+A top-level `for` selects a recipient. Parenthesize a target with its own `for`.
 A dependent configuration can default to its actual substantial bearer; a configuration
 of substantials requires an explicit role recipient. Relationship implications require
-unambiguous inherency; use `for` when necessary. Relationship role attribution uses
-`confers`, not an alternative implicit `implies` attribution route.
+unambiguous inherency; use `for` when necessary. Process and relationship role attribution
+uses `confers`.
 
 Each twin serializes asynchronous assessments and retains the requesting cycle's
 observer, semantic actor, enablement and causal chain through recursive drain.

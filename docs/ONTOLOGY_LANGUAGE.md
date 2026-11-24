@@ -559,13 +559,22 @@ configuration StreamNetwork
     emerges from hydrology:StreamConnection within earth:Region
 ;
 
-realm Floodplain
-    implies earth:Terrestrial within hydrology:Watershed
+process Harvesting
+    implies agriculture:HarvestedBiomass
 ;
 ```
 
-`emerges from` identifies conditions from which an emergent concept may be recognized. `implies`
-records an entailment associated with the declaration. Multiple expressions may be comma-separated.
+`emerges from` identifies conditions from which an emergent concept may be recognized.
+The grammar accepts one `implies` clause per declaration, including parenthesized children.
+Write multiple consequences as comma-separated entries in that clause. Each entry has the
+form `<target> [for <substantial>] [within <bearer>]`. A top-level `for` selects a recipient.
+Use `of` for native target inherency, or parenthesize a target with its own `for` expression.
+
+Semantic validation admits roles, realms, identities, processes, configurations and
+relationships as sources. After a process resolves, its implication can request optional
+resolution of a quality on the process's actual bearer. A configuration can imply a role.
+Processes and relationships use `confers` for role attribution. See the
+[consequence contract](CONSEQUENCE_ENGINE.md#implication) for target types and recipient rules.
 
 ### 7.8. Description clauses
 

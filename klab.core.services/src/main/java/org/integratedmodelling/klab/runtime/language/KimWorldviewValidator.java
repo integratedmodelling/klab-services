@@ -92,7 +92,9 @@ public class KimWorldviewValidator extends KimValidator implements KimOntologyVi
       for (var message : errors) result.add(Notification.error(message, lexical));
     }
     for (var clause : statement.getDeclarationClauses()) {
-      if ((clause.kind().equals("impliesClause") || clause.kind().equals("emergesFromClause"))
+      if ((clause.kind().equals("emergesFromClause") || clause.kind().equals("impliesClause")
+              && statement.getConsequenceRules().stream().noneMatch(rule ->
+                  rule != null && rule.kind() == org.integratedmodelling.klab.api.lang.kim.KimConsequenceRule.Kind.IMPLIES))
               && clause.source().matches("(?s).*\\bwithin\\b.*"))
         result.add(
             Notification.warning(

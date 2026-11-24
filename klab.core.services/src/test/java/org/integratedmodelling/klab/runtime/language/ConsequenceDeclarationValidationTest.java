@@ -83,6 +83,34 @@ class ConsequenceDeclarationValidationTest {
       if(type==SemanticType.ROLE)invalid("CLAUSE_TYPE_INVALID",owner);else valid(owner);
     }
   }
+  @Test void processRealmAndIdentityCanImplyABearerQuality() {
+    for (var type : List.of(SemanticType.PROCESS, SemanticType.REALM, SemanticType.IDENTITY)) {
+      var owner = declaration("Source", type);
+      var bearer = target("Bearer", SemanticType.SUBJECT);
+      owner.getConsequenceRules().add(rule(KimConsequenceRule.Kind.IMPLIES,
+          target("Quality", SemanticType.QUALITY), KimConsequenceRule.Recipient.implicit(),
+          bearer, bearer));
+      valid(owner);
+    }
+  }
+
+  @Test void repeatedCopiesOfAnImplicationErrorKeepOnlyOneDiagnosticPerSourceSpan() {
+    var owner = declaration("Source", SemanticType.QUALITY);
+    var first = rule(KimConsequenceRule.Kind.IMPLIES, target("Target", SemanticType.QUALITY));
+    owner.getConsequenceRules().add(first);
+    owner.getConsequenceRules().add(first);
+    owner.getConsequenceRules().add(new KimConsequenceRule(first.kind(), first.target(),
+        first.recipient(), null, null,
+        new KimConceptStatement.DeclarationClause("impliesClause", "second consequence", 25, 20)));
+    var ontology = new KimOntologyImpl();
+    ontology.setUrn("rules");
+    ontology.setStatements(new ArrayList<>(List.of(owner)));
+    var errors = org.integratedmodelling.klab.api.services.runtime.Notification.distinctOccurrences(
+        new WorldviewDeclarationRegistry(List.of(ontology)).errors());
+    assertEquals(List.of(0, 25), errors.stream()
+        .map(error -> error.getLexicalContext().getOffsetInDocument()).toList());
+    assertTrue(errors.getFirst().getMessage().contains("Implies is allowed on roles"));
+  }
   @Test void conferralAndRoleImplicationWithinSpecializeTheRoleBearingSubstantialNotTheDeclarationOwner() {
     for(var withinType:List.of(SemanticType.SUBJECT,SemanticType.AGENT,SemanticType.EVENT,
         SemanticType.RELATIONSHIP,SemanticType.QUALITY,SemanticType.PROCESS,SemanticType.ROLE)) {

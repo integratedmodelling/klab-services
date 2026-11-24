@@ -277,6 +277,53 @@ class DefaultRoleConsequenceRuntimeTest {
     verify(f.role.f.reasoner).consequenceRules(argThat(query->query.ownerTriggers().equals(List.of(f.role.role))&&query.expectedEpoch().semanticSessionId().equals("session")));
     verify(f.role.f.scope).observation(any());verify(f.role.f.twin,never()).transaction(any(),any(),any());
   }
+  @Test void committedProcessImpliesQualityInItsActualBearer() throws Exception {
+    var f = new Fixture();
+    var process = f.role.source;
+    var trigger = process.getObservable().asConcept();
+    f.authored(KimConsequenceRule.Kind.IMPLIES, "test:Dependent", trigger, null);
+    f.target("test:Dependent", SemanticType.QUALITY,
+        ResolutionOutcomeReceipt.terminal(Observation.empty(), Dataflow.ResolutionOutcome.NO_MODEL));
+    var effect = f.runtime.sourceImplications(null, committedSource(f, process), f.role.f.scope);
+
+    assertEquals(RoleConsequenceRuntime.Resolution.NO_MODEL, effect.resolution(), effect.reason());
+    verify(f.role.f.scope).within(f.role.recipient);
+    verify(f.role.f.scope, never()).within(process);
+  }
+
+  @Test void realmAndIdentityImplicationsUseTheirMatchingSubstantial() throws Exception {
+    for (var type : List.of(SemanticType.REALM, SemanticType.IDENTITY)) {
+      var f = new Fixture();
+      var bearer = f.role.recipient;
+      var trigger = new ConceptImpl();
+      trigger.setUrn("test:Trigger");
+      trigger.setType(EnumSet.of(type, SemanticType.PREDICATE));
+      if (type == SemanticType.REALM)
+        when(f.role.f.reasoner.realms(bearer.getObservable())).thenReturn(List.of(trigger));
+      else
+        when(f.role.f.reasoner.identities(bearer.getObservable())).thenReturn(List.of(trigger));
+      when(f.role.f.reasoner.is(trigger, trigger)).thenReturn(true);
+      f.authored(KimConsequenceRule.Kind.IMPLIES, "test:Dependent", trigger, null);
+      f.target("test:Dependent", SemanticType.QUALITY,
+          ResolutionOutcomeReceipt.terminal(Observation.empty(), Dataflow.ResolutionOutcome.NO_MODEL));
+
+      var effect = f.runtime.sourceImplications(null, committedSource(f, bearer), f.role.f.scope);
+
+      assertEquals(RoleConsequenceRuntime.Resolution.NO_MODEL, effect.resolution(), effect.reason());
+      verify(f.role.f.scope).within(bearer);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static KnowledgeGraph.Commit committedSource(Fixture fixture, Observation source) {
+    KnowledgeGraph.Query<Observation> query = mock(KnowledgeGraph.Query.class);
+    when(fixture.role.f.kg.query(eq(Observation.class), any())).thenReturn(query);
+    when(query.id(source.getId())).thenReturn(query);
+    when(query.peek(any())).thenReturn(Optional.of(source));
+    var commit = mock(KnowledgeGraph.Commit.class);
+    when(commit.getAddedObservations()).thenReturn(Set.of(source.getId()));
+    return commit;
+  }
   @Test void sourceDriftAfterOrdinaryRequestAdmissionRejectsTheActualDerivedCommit()throws Exception {
     var f=new Fixture();when(f.role.f.reasoner.hasRole(eq(f.role.before),any())).thenReturn(true);
     f.authored(KimConsequenceRule.Kind.IMPLIES,"test:Dependent",f.role.role,null);

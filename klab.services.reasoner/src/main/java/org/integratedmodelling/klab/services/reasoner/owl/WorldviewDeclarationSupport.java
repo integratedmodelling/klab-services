@@ -380,25 +380,14 @@ public final class WorldviewDeclarationSupport {
               && !target.is(SemanticType.NOTHING)
               && (target.is(SemanticType.PREDICATE)
                   || target.getType().stream().anyMatch(SemanticType::isPredicate));
-      boolean configuration = owner.is(SemanticType.CONFIGURATION);
-      boolean role = owner.is(SemanticType.ROLE);
-      boolean relationship = owner.is(SemanticType.RELATIONSHIP);
       if (!rules.isEmpty()
-          && (!(configuration || role || relationship)
-              || target == null
-              || target.is(SemanticType.NOTHING)
-              || (configuration
-                  ? !target.is(SemanticType.ROLE)
-                  : !(SemanticType.isDependent(target.getType())
-                          || target.is(SemanticType.RELATIONSHIP)
-                          || predicate)
-                      || relationship && target.is(SemanticType.ROLE))))
+          && (!KimConsequenceRule.implicationSource(owner.getType())
+              || target == null || !KimConsequenceRule.implicationTarget(owner.getType(), target.getType())))
         throw new KlabValidationException(
-            "Invalid implication source or target: " + operand.getUrn());
+            "Invalid implies clause on " + owner.getUrn() + " for target " + operand.getUrn());
       if (predicate) {
-        if (!(role
-            || configuration && target.is(SemanticType.ROLE)
-            || relationship && !target.is(SemanticType.ROLE)))
+        if (!KimConsequenceRule.implicationSource(owner.getType())
+            || !KimConsequenceRule.implicationTarget(owner.getType(), target.getType()))
           throw new KlabValidationException("Invalid predicate implication: " + operand.getUrn());
         restrictions.computeIfAbsent("odo:impliesPredicate", key -> new ArrayList<>()).add(target);
       } else {

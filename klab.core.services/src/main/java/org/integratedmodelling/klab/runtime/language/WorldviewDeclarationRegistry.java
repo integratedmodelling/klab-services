@@ -259,12 +259,6 @@ public final class WorldviewDeclarationRegistry {
     return !type.contains(SemanticType.NOTHING)&&SemanticType.isEnumerableSubstantial(type);
   }
 
-  private static boolean implicationTarget(Set<SemanticType> type) {
-    return !type.contains(SemanticType.NOTHING)
-        &&(SemanticType.isDependent(type)||type.contains(SemanticType.RELATIONSHIP)
-            ||type.contains(SemanticType.PREDICATE)||type.stream().anyMatch(SemanticType::isPredicate));
-  }
-
   private void validateConsequences(Declaration entry) {
     var own=entry.statement().getType();
     for(var rule:entry.statement().getConsequenceRules()) {
@@ -273,10 +267,15 @@ public final class WorldviewDeclarationRegistry {
       }
       boolean validSource=!own.contains(SemanticType.NOTHING)&&switch(rule.kind()) {
         case CONFERS -> own.contains(SemanticType.PROCESS)||own.contains(SemanticType.RELATIONSHIP);
-        case IMPLIES -> own.contains(SemanticType.ROLE)||own.contains(SemanticType.CONFIGURATION)
-            ||own.contains(SemanticType.RELATIONSHIP);
+        case IMPLIES -> KimConsequenceRule.implicationSource(own);
         case EMERGES_FROM -> own.contains(SemanticType.CONFIGURATION);
       };
+      if (!validSource && rule.kind() == KimConsequenceRule.Kind.IMPLIES) {
+        implicationError("SOURCE_INVALID", entry, rule,
+            "declared as " + SemanticType.fundamentalType(own)
+                + ". Implies is allowed on roles, realms, identities, processes, configurations and relationships");
+        continue;
+      }
       if(!validSource)error("DECLARATION_CLAUSE_SOURCE_INVALID: "+entry.urn()+" "+rule.kind(),entry);
       switch(rule.kind()) {
         case CONFERS -> {
@@ -289,22 +288,42 @@ public final class WorldviewDeclarationRegistry {
             error("DECLARATION_CLAUSE_RECIPIENT_INVALID: endpoint selector requires a relationship at "+entry.urn(),entry);
         }
         case IMPLIES -> {
-          if(own.contains(SemanticType.CONFIGURATION)) {
-            require(entry,rule.target(),"configuration implies",type->!type.contains(SemanticType.NOTHING)&&type.contains(SemanticType.ROLE));
-            if(rule.secondaryInherency()==null&&definitelySubstantialConfiguration(entry))
-              error("DECLARATION_CLAUSE_RECIPIENT_MISSING: a configuration of substantials requires implies for at "+entry.urn(),entry);
-          }else require(entry,rule.target(),"implies",type->implicationTarget(type)
-              &&(!own.contains(SemanticType.RELATIONSHIP)||!type.contains(SemanticType.ROLE)));
-          require(entry,rule.secondaryInherency(),"implies for",WorldviewDeclarationRegistry::substantial);
+          var target = typeOf(rule.target(), entry.ontology().getUrn());
+          boolean configuration = own.contains(SemanticType.CONFIGURATION);
+          if (!KimConsequenceRule.implicationTarget(own, target)) {
+            var expected = configuration ? "a role"
+                : "a quality, process, relationship or predicate";
+            implicationError("TYPE_INVALID", entry, rule,
+                "target " + rule.target().getUrn() + (target.contains(SemanticType.ROLE) && !configuration
+                    ? " is a role. Use confers to attribute a role from a process or relationship"
+                    : " must resolve to " + expected));
+          }
+          if (configuration && rule.secondaryInherency() == null && definitelySubstantialConfiguration(entry))
+            implicationError("RECIPIENT_MISSING", entry, rule,
+                "a configuration of substantials needs an explicit 'for <substantial>' recipient");
+          validateImplicationBearer(entry, rule, rule.secondaryInherency(), "for");
+          validateImplicationBearer(entry, rule, rule.within(), "within");
         }
         case EMERGES_FROM -> require(entry,rule.target(),"emerges from",WorldviewDeclarationRegistry::observable);
       }
       // `within` specializes the role-bearing substantial, never the declaring process/role.
       // Actual subtype/recipient compatibility is an obligation of the retained Runtime match.
-      if(rule.kind()==KimConsequenceRule.Kind.CONFERS
-          ||rule.kind()==KimConsequenceRule.Kind.IMPLIES&&own.contains(SemanticType.ROLE))
+      if(rule.kind()==KimConsequenceRule.Kind.CONFERS)
         require(entry,rule.within(),"consequence within",WorldviewDeclarationRegistry::substantial);
     }
+  }
+
+  private void validateImplicationBearer(Declaration entry, KimConsequenceRule rule,
+                                         KimConcept expression, String clause) {
+    if (expression != null && !substantial(typeOf(expression, entry.ontology().getUrn())))
+      implicationError("TYPE_INVALID", entry, rule,
+          "'" + clause + " " + expression.getUrn() + "' must identify a substantial bearer");
+  }
+
+  private void implicationError(String code, Declaration entry, KimConsequenceRule rule, String detail) {
+    var source = rule.source();
+    errors.add(Notification.error("DECLARATION_CLAUSE_" + code + ": " + entry.urn() + " implies: " + detail,
+        Notification.LexicalContext.of(entry.ontology(), source.offset(), source.length())));
   }
 
   private boolean definitelySubstantialConfiguration(Declaration entry) {

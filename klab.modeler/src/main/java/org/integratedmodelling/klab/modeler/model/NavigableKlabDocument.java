@@ -40,6 +40,12 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
 
   public NavigableKlabDocument(T document, NavigableKlabAsset<?> parent) {
     super(document, parent);
+    var notifications = document.getNotifications();
+    var distinct = Notification.distinctOccurrences(notifications);
+    if (distinct.size() != notifications.size()) {
+      notifications.clear();
+      notifications.addAll(distinct);
+    }
   }
 
   public String getFileExtension() {
@@ -261,14 +267,19 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
     this.localMetadata.putAll(metadata);
     if (metadata.get(org.integratedmodelling.klab.api.services.resources.AuthoringSource.ID) != null) {
       // Source-aware authoring descriptors are complete diagnostic snapshots, not append events.
-      var replacement = new java.util.ArrayList<>(notifications);
+      var replacement = Notification.distinctOccurrences(notifications);
       this.getNotifications().clear();
       this.getNotifications().addAll(replacement);
       return true;
     }
 
-    for (var notification : notifications) {
-      this.getNotifications().add(notification);
+    var previous = Notification.distinctOccurrences(getNotifications());
+    var merged = new java.util.ArrayList<>(previous);
+    merged.addAll(notifications);
+    var distinct = Notification.distinctOccurrences(merged);
+    getNotifications().clear();
+    getNotifications().addAll(distinct);
+    for (var notification : distinct.subList(previous.size(), distinct.size())) {
       if (notification.getLexicalContext() != null) {
         var key =
             switch (notification.getLevel()) {

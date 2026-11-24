@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
 import java.util.Objects;
+import java.util.Set;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 
 /**
  * Lossless authored consequence syntax. This is a declaration, not proof that its condition
@@ -25,6 +27,23 @@ public record KimConsequenceRule(
     SOURCE,
     TARGET,
     EXPRESSION
+  }
+
+  public static boolean implicationSource(Set<SemanticType> type) {
+    return !type.contains(SemanticType.NOTHING)
+        && (type.contains(SemanticType.ROLE) || type.contains(SemanticType.REALM)
+            || type.contains(SemanticType.IDENTITY) || type.contains(SemanticType.PROCESS)
+            || type.contains(SemanticType.CONFIGURATION) || type.contains(SemanticType.RELATIONSHIP));
+  }
+
+  public static boolean implicationTarget(Set<SemanticType> source, Set<SemanticType> target) {
+    if (target.contains(SemanticType.NOTHING)) return false;
+    if (source.contains(SemanticType.CONFIGURATION)) return target.contains(SemanticType.ROLE);
+    if (target.contains(SemanticType.ROLE)
+        && (source.contains(SemanticType.RELATIONSHIP) || source.contains(SemanticType.PROCESS)))
+      return false;
+    return SemanticType.isDependent(target) || target.contains(SemanticType.RELATIONSHIP)
+        || target.contains(SemanticType.PREDICATE) || target.stream().anyMatch(SemanticType::isPredicate);
   }
 
   public record Recipient(RecipientKind kind, KimConcept expression) {

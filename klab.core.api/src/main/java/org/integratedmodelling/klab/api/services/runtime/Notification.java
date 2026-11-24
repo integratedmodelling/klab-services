@@ -12,8 +12,25 @@ import org.integratedmodelling.klab.api.view.UIView;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public interface Notification extends Serializable {
+
+  /** Coalesce copies of the same diagnostic while preserving separate source occurrences. */
+  static List<Notification> distinctOccurrences(Collection<Notification> notifications) {
+    record Occurrence(Level level, String message, String document, String project, int offset, int length) {}
+    var unique = new LinkedHashMap<Occurrence, Notification>();
+    for (var notification : notifications) {
+      var context = notification.getLexicalContext();
+      var key = new Occurrence(notification.getLevel(), notification.getMessage(),
+          context == null ? null : context.getDocumentUrn(), context == null ? null : context.getProjectUrn(),
+          context == null ? -1 : context.getOffsetInDocument(), context == null ? -1 : context.getLength());
+      unique.putIfAbsent(key, notification);
+    }
+    return List.copyOf(unique.values());
+  }
 
   enum Mode {
     Silent,
@@ -83,9 +100,13 @@ public interface Notification extends Serializable {
      * @return
      */
     static LexicalContext of(Statement statement, KlabDocument<?> document) {
+      return of(document, statement.getOffsetInDocument(), statement.getLength());
+    }
+
+    static LexicalContext of(KlabDocument<?> document, int offset, int length) {
       var ret = new NotificationImpl.LexicalContextImpl();
-      ret.setLength(statement.getLength());
-      ret.setOffsetInDocument(statement.getOffsetInDocument());
+      ret.setLength(length);
+      ret.setOffsetInDocument(offset);
       ret.setDocumentType(KlabAsset.KnowledgeClass.classify(document.getClass()));
       ret.setDocumentUrn(document.getUrn());
       ret.setProjectUrn(document.getProjectName());

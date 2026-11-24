@@ -51,6 +51,14 @@ successful parsing or successful declaration is not evidence that all supplied
 constraints were asserted. No production translation or core ontology changes are
 made by this audit; the gaps below are the implementation backlog.
 
+## W11 follow-up
+
+`KimConceptStatement.getConsequenceRules()` now carries the authored `implies` target,
+secondary inherency (`for`), specialization (`within`) and source span. OWL projects
+the target through `odo:impliesObservable` or `odo:impliesPredicate`. The accepted
+rule index retains the full clause for runtime application. See the
+[consequence contract](CONSEQUENCE_ENGINE.md#implication) for supported sources and recipients.
+
 ## Evidence and reproducibility
 
 Source boundaries inspected:

@@ -330,7 +330,7 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
           "Recipient expression is not a collective substantial");
     var admission =
         new RequestAdmission(
-            cycle, inputs, sourceId, trigger, candidates, entry, observable, scope, null);
+            cycle, inputs, sourceId, trigger, candidates, entry, observable, scope, null, 0);
     var admitted = scope.withConsequenceSubmissionAdmission(admission);
     var result = submit(observable, admitted);
     if (result.effect().resolution() != Resolution.RESOLVED)
@@ -348,10 +348,10 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
     // Re-establish the same authored source under fresh native inputs, never normalize drift.
     var completionInputs = captureSource(sourceId, List.of(), freshScope);
     var completionSource = completionInputs.observation(sourceId);
-    var completionTrigger = trigger.is(SemanticType.ROLE) ? trigger : meaning(completionSource);
-    if (trigger.is(SemanticType.ROLE)
-        ? !freshCycle.reasoner().hasRole(completionSource.getObservable(), trigger)
-        : !freshCycle.reasoner().is(meaning(completionSource), entry.owner()))
+    var completionTrigger = trigger.is(SemanticType.PREDICATE)
+        || trigger.getType().stream().anyMatch(SemanticType::isPredicate)
+        ? trigger : meaning(completionSource);
+    if (!matchesImplicationTrigger(freshCycle, completionSource, entry.owner()))
       throw new IllegalStateException("Consequence source changed after recipient discovery");
     var completionCandidates = query(freshCycle, completionTrigger, entry.rule().kind());
     var authoredIdentity = identity(entry);
@@ -363,11 +363,6 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
                 () ->
                     new IllegalStateException(
                         "Authored consequence changed after recipient discovery"));
-    if (completionTrigger.is(SemanticType.ROLE)
-        && entry.rule().kind() == KimConsequenceRule.Kind.IMPLIES
-        && !within(freshCycle, completionEntry.rule(), completionSource))
-      throw new IllegalStateException(
-          "Role implication context no longer applies after recipient discovery");
     var completionAdmission =
         new RequestAdmission(
             freshCycle,
@@ -378,7 +373,7 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
             completionEntry,
             observable,
             freshScope,
-            null);
+            null, 0);
     var completionScope = freshScope.withConsequenceSubmissionAdmission(completionAdmission);
     // Normal authorized local query is the issuer boundary. Preserve an existing qualified
     // virtual receipt exactly; a durable unqualified producer is copied only to request ID zero.
@@ -948,6 +943,7 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
     private final Perspective perspective;
     private final String targetUrn;
     private final SelectionProof selection;
+    private final long implicationRecipient;
     private final ServiceContextScope origin;
     private final String owner;
     private volatile DigitalTwin.Transaction boundRoot;
@@ -969,7 +965,8 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
         ConsequenceRuleResponse.Entry entry,
         Observable target,
         ServiceContextScope execution,
-        SelectionProof selection) {
+        SelectionProof selection,
+        long implicationRecipient) {
       this.cycle = cycle;
       this.inputs = inputs;
       this.sourceId = sourceId;
@@ -980,6 +977,7 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
       this.perspective = perspective(execution);
       this.targetUrn = target.getUrn();
       this.selection = selection;
+      this.implicationRecipient = implicationRecipient;
       this.origin = execution;
       this.owner = execution.getUser().getUsername();
     }
@@ -1013,22 +1011,20 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
       if (!active.binding().equals(cycle.binding()) || !perspective.equals(perspective(execution)))
         throw new IllegalStateException("Consequence request cycle/perspective changed");
       var source = inputs.observation(sourceId);
-      if (trigger.is(SemanticType.ROLE)) {
-        if (!active.reasoner().hasRole(source.getObservable(), trigger))
-          throw new IllegalStateException("Trigger role no longer applies to captured source");
-      } else if (!active.reasoner().is(meaning(source), trigger))
-        throw new IllegalStateException("Consequence source no longer matches its owner");
+      if (!matchesImplicationTrigger(active, source, trigger))
+        throw new IllegalStateException("Consequence trigger no longer applies to captured source");
       if (entry != null) {
         var result = query(active, trigger, entry.rule().kind());
         if (!SemanticDependencyWitness.revalidates(candidates.witness(), result.witness())
             || result.rules().stream().noneMatch(rule -> identity(rule).equals(ruleIdentity)))
           throw new IllegalStateException(
               "Implication source rule no longer revalidates in its retained cycle");
-        if (entry.rule().kind() == KimConsequenceRule.Kind.IMPLIES
-            && trigger.is(SemanticType.ROLE)
-            && !within(active, entry.rule(), source))
-          throw new IllegalStateException(
-              "Role implication within condition is no longer satisfied");
+        if (entry.rule().kind() == KimConsequenceRule.Kind.IMPLIES) {
+          boolean occurrence = trigger.is(SemanticType.PROCESS) || trigger.is(SemanticType.RELATIONSHIP);
+          if ((!occurrence || implicationRecipient > 0)
+              && !within(active, entry.rule(), occurrence ? inputs.observation(implicationRecipient) : source))
+            throw new IllegalStateException("Implication within condition is no longer satisfied");
+        }
       }
       if (selection != null) revalidateSelection(selection, execution);
     }
@@ -1363,7 +1359,7 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
                 null,
                 request,
                 requestScope,
-                null));
+                null, 0));
     return switch (localRuntime.characterizeConsequence(recipient, request, admitted)) {
       case NO_MODEL ->
           effect(
@@ -1405,8 +1401,7 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
         recipient,
         cycle,
         scope,
-        false,
-        arrival.role());
+        arrival.role(), new HashSet<>());
   }
 
   @Override
@@ -1439,18 +1434,22 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
           effects.add(configurationImplications(cause, id, scope));
           continue;
         }
-        if (!current.getObservable().is(SemanticType.RELATIONSHIP)) continue;
-        var inputs = captureSource(id, List.of(), scope);
-        var source = inputs.observation(id);
-        effects.add(
-            imply(
-                query(cycle, meaning(source), KimConsequenceRule.Kind.IMPLIES),
-                inputs,
-                source,
-                cycle,
-                scope,
-                true,
-                meaning(source)));
+        var trigger = meaning(current);
+        var triggers = new LinkedHashSet<Concept>();
+        if (trigger.is(SemanticType.PROCESS) || trigger.is(SemanticType.RELATIONSHIP))
+          triggers.add(trigger);
+        if (SemanticType.isEnumerableSubstantial(trigger.getType())) {
+          triggers.addAll(cycle.reasoner().realms(current.getObservable()));
+          triggers.addAll(cycle.reasoner().identities(current.getObservable()));
+        }
+        var handled = new HashSet<String>();
+        for (var sourceTrigger : triggers) {
+          var candidates = query(cycle, sourceTrigger, KimConsequenceRule.Kind.IMPLIES);
+          if (candidates.rules().isEmpty()) continue;
+          var inputs = captureSource(id, List.of(), scope);
+          if (!matchesImplicationTrigger(cycle, inputs.observation(id), sourceTrigger)) continue;
+          effects.add(imply(candidates, inputs, inputs.observation(id), cycle, scope, sourceTrigger, handled));
+        }
       } catch (InterruptedException cancellation) {
         throw cancellation;
       } catch (Exception failure) {
@@ -1544,18 +1543,19 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
       Observation bearer,
       Cycle cycle,
       ServiceContextScope scope,
-      boolean relationship,
-      Concept queryOwner)
+      Concept queryOwner,
+      Set<String> handled)
       throws Exception {
+    boolean relationship = queryOwner.is(SemanticType.RELATIONSHIP);
+    boolean process = queryOwner.is(SemanticType.PROCESS);
     var effects = new ArrayList<Effect>();
     for (var entry : response.rules()) {
       active(scope);
       if (entry.rule().kind() != KimConsequenceRule.Kind.IMPLIES) continue;
       try {
-        if (!relationship && !cycle.reasoner().hasRole(bearer.getObservable(), entry.owner()))
-          continue;
-        if (relationship && !cycle.reasoner().is(meaning(bearer), entry.owner())) continue;
-        if (!relationship && !within(cycle, entry.rule(), bearer)) continue;
+        if (!matchesImplicationTrigger(cycle, bearer, entry.owner())) continue;
+        if (!relationship && !process && !within(cycle, entry.rule(), bearer)) continue;
+        if (!handled.add(identity(entry))) continue;
         var target = cycle.reasoner().resolveObservable(urn(entry.rule().target()));
         if (target == null) {
           effects.add(
@@ -1565,12 +1565,9 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
                   Resolution.UNRESOLVED));
           continue;
         }
-        if (relationship && target.is(SemanticType.ROLE)) {
-          effects.add(
-              effect(
-                  Consequence.Outcome.DEFERRED,
-                  "Relationship roles must use confers",
-                  Resolution.UNRESOLVED));
+        if ((relationship || process) && target.is(SemanticType.ROLE)) {
+          effects.add(effect(Consequence.Outcome.DEFERRED,
+              "Process and relationship role attribution uses confers", Resolution.UNRESOLVED));
           continue;
         }
         if (!target.is(SemanticType.QUALITY)
@@ -1622,12 +1619,10 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
           var fresh = captureSource(bearer.getId(), selectedIds, scope);
           // This separate request starts after discovery's own committed focus/perception changes.
           var freshSource = fresh.observation(bearer.getId());
-          if (relationship
-              ? !cycle.reasoner().is(meaning(freshSource), entry.owner())
-              : !cycle.reasoner().hasRole(freshSource.getObservable(), entry.owner()))
+          if (!matchesImplicationTrigger(cycle, freshSource, entry.owner()))
             throw new IllegalStateException(
                 "Implication trigger no longer applies after recipient discovery");
-          requestTrigger = relationship ? meaning(freshSource) : queryOwner;
+          requestTrigger = relationship || process ? meaning(freshSource) : queryOwner;
           requestCandidates = query(cycle, requestTrigger, KimConsequenceRule.Kind.IMPLIES);
           var authoredIdentity = identity(entry);
           requestEntry =
@@ -1662,13 +1657,22 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
                     Resolution.UNRESOLVED));
             continue;
           }
+        } else if (process) {
+          var parents = edgeRecipients(inputs, bearer.getId(), GraphModel.Relationship.HAS_CHILD, true);
+          if (parents.size() != 1) {
+            effects.add(effect(Consequence.Outcome.DEFERRED,
+                "Process implication requires one accessible bearer or an explicit for recipient",
+                Resolution.UNRESOLVED));
+            continue;
+          }
+          recipients = List.of(inputs.observation(parents.iterator().next()));
         } else recipients = List.of(bearer);
         for (var recipient : recipients) {
           try {
             if (!within(
                 cycle,
                 entry.rule(),
-                relationship ? recipient : requestInputs.observation(bearer.getId()))) continue;
+                relationship || process ? recipient : requestInputs.observation(bearer.getId()))) continue;
             var requestScope = scope.within(recipient);
             var request = target;
             // The selected focus supplies secondary inherency. An authored native inherent such
@@ -1686,7 +1690,8 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
                         requestEntry,
                         request,
                         requestScope,
-                        selectedProof));
+                        selectedProof,
+                        recipient.getId()));
             effects.add(submit(request, admitted).effect());
           } catch (InterruptedException cancellation) {
             throw cancellation;
@@ -1709,6 +1714,18 @@ public final class DefaultRoleConsequenceRuntime implements RoleConsequenceRunti
       }
     }
     return combine(effects, "Implied targets");
+  }
+
+  private static boolean matchesImplicationTrigger(Cycle cycle, Observation source, Concept trigger) {
+    if (trigger.is(SemanticType.ROLE))
+      return cycle.reasoner().hasRole(source.getObservable(), trigger);
+    if (trigger.is(SemanticType.REALM))
+      return cycle.reasoner().realms(source.getObservable()).stream()
+          .anyMatch(realm -> cycle.reasoner().is(realm, trigger));
+    if (trigger.is(SemanticType.IDENTITY))
+      return cycle.reasoner().identities(source.getObservable()).stream()
+          .anyMatch(identity -> cycle.reasoner().is(identity, trigger));
+    return cycle.reasoner().is(meaning(source), trigger);
   }
 
   private static Effect combine(List<Effect> effects, String label) {

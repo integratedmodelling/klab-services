@@ -2822,7 +2822,7 @@ public class WorkspaceManager {
       if (value != null) resource.getMetadata().put(key, value);
     }
     resource.getNotifications().clear();
-    resource.getNotifications().addAll(document.getNotifications());
+    resource.getNotifications().addAll(Notification.distinctOccurrences(document.getNotifications()));
     if (DocumentValidationTrace.enabled())
       DocumentValidationTrace.resources(
           resource,

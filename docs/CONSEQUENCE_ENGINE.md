@@ -467,6 +467,13 @@ a top-level `for` is the secondary clause; parentheses can preserve a native tar
 - A role implies a dependent, relationship or predicate by requesting normal optional
   resolution of the target when the role is attributed. For a consequence-conferred
   role, attempt the implications before characterization of that role.
+- A realm or identity can request the same target types from a committed substantial whose
+  observable semantics carry that realm or identity. The matching substantial is the default
+  recipient. A `within` condition specializes that substantial.
+- A process can request optional resolution of a dependent, relationship or non-role
+  predicate after the process observation commits. Without `for`, use its single accessible
+  bearer. With `for`, select matching substantial recipients. `within` checks the recipient.
+  A process uses `confers` to attribute a role.
 - A configuration implies a role on selected substantial participants. Without `for`,
   only a dependent configuration's actual bearer is a default. A configuration of
   substantials has no such bearer and needs an explicit recipient. Never assign a role

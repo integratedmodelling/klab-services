@@ -11,7 +11,8 @@ semantic assessment. Handlers retain the cycle's observer, semantic actor, enabl
 chain, use normal admitted optional resolution and publish effects through new guarded commits.
 Causal commits can enqueue more work. A later explicit request waits for the cycle to drain.
 
-Process/relationship conferral, implication, positive configuration detection and guarded
+Process/relationship conferral, role/realm/identity/process/relationship implications,
+configuration-to-role implication, positive configuration detection and guarded
 single-root explanatory recomputation have Runtime paths. CHANGE checks current semantic process
 writers before submitting redundant work. Local modeled cessation is execution-bound and retains
 native history; it is not arbitrary asset deletion. Currentness, source/admission, support and
