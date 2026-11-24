@@ -62,6 +62,57 @@ class CapturedAuthorityCatalogTest {
     Files.writeString(root.resolve("catalogs/configuration/" + "a".repeat(64) + "/catalog.json"), "broken");
     assertNull(store.exact());
   }
+
+  @Test void persistedIdentityReplaysWithoutItsOptionalPubChemGif() throws Exception {
+    var fixture = fixture();
+    response(fixture, "", "1", Long.MAX_VALUE);
+    response(fixture, "", "2", Long.MAX_VALUE);
+    byte[] depiction = "depiction".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    String hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(depiction));
+    var gifFile = directory.resolve("klab.authority.pubchem/documentation").resolve(hash + ".gif");
+    var gif = gifFile.toUri().toString();
+    var markdown = directory.resolve("klab.authority.taxa/documentation/absent.md").toUri().toString();
+    var state = Files.createDirectories(fixture.data().resolve("captured-authority-state"));
+    var manifest = json.createArrayNode();
+    for (var uri : List.of(gif, markdown)) {
+      manifest.addObject().put("originalUri", uri).put("missingAtCapture", true);
+    }
+    Files.write(state.resolve("documentation-materialization.json"), json.writeValueAsBytes(manifest));
+    addDocumentation(fixture, "1", "image/gif", gif);
+    addDocumentation(fixture, "1", "image/png", "https://example.org/water.png");
+    addDocumentation(fixture, "2", "text/markdown", markdown);
+    var store = new PersistentAuthorityStore(directory.resolve("persistent"), "configuration", "a".repeat(64));
+    store.save(captured(fixture));
+
+    var restored = store.exact();
+    var provider = restored.provider(fixture.binding(), request(), directory.resolve("restored"));
+    var id = provider.configure(AuthorityBindings.providerRequest(request()));
+    var identity = provider.resolveIdentity(id, "1");
+    assertEquals("1", identity.getId());
+    assertEquals(Set.of("image/png"), identity.getDocumentation().keySet());
+    assertThrows(UnsupportedOperationException.class, () -> provider.resolveIdentity(id, "2"));
+
+    Files.createDirectories(gifFile.getParent());
+    Files.write(gifFile, depiction);
+    assertFalse(provider.resolveIdentity(id, "1").getDocumentation().containsKey("image/gif"));
+    provider.releaseConfiguration(id);
+
+    var refreshed = restored.refreshed(fixture.data());
+    var refreshedProvider = refreshed.provider(fixture.binding(), request(), directory.resolve("refreshed"));
+    var refreshedId = refreshedProvider.configure(AuthorityBindings.providerRequest(request()));
+    var ownedGif = refreshedProvider.resolveIdentity(refreshedId, "1").getDocumentation().get("image/gif");
+    assertArrayEquals(depiction, Files.readAllBytes(Path.of(ownedGif.toURI())));
+    refreshedProvider.releaseConfiguration(refreshedId);
+  }
+
+  private void addDocumentation(Fixture fixture, String id, String type, String uri) throws Exception {
+    var file = fixture.responses().resolve(
+        CachedAuthority.digest(json.writeValueAsString(List.of("identity", "", id))) + ".json");
+    var envelope = json.readTree(Files.readAllBytes(file));
+    ((com.fasterxml.jackson.databind.node.ObjectNode) envelope.path("value").path("documentation")).put(type, uri);
+    Files.write(file, json.writeValueAsBytes(envelope));
+  }
+
   @Test void acceptedSearchUsesOwnedProviderWhileCandidatesRemainReplayOnly() throws Exception {
     var fixture = fixture(); var catalog = captured(fixture);
     var enabled = new java.util.concurrent.atomic.AtomicBoolean();

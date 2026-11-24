@@ -42,6 +42,34 @@ class CachedAuthorityTest {
     assertEquals("A", restored.resolveIdentity(id, "A").getId());
     assertEquals(0, unavailable.lookups);
   }
+
+  @Test void cachedIdentityWithMissingPubChemGifSurvivesProviderOutage() throws Exception {
+    var source = org.mockito.Mockito.mock(Authority.class);
+    var request = request();
+    org.mockito.Mockito.when(source.getUrn()).thenReturn("klab.authority.pubchem");
+    org.mockito.Mockito.when(source.getCachePolicy()).thenReturn(new Authority.CachePolicy("v1", 100, 100, 100));
+    org.mockito.Mockito.when(source.configure(request)).thenReturn("transient");
+    var gif = directory.resolve("klab.authority.pubchem/documentation/water.gif");
+    Files.createDirectories(gif.getParent());
+    Files.writeString(gif, "depiction");
+    var identity = new CachedAuthority.StoredIdentity("CID:962", "CID_962", "CHEM", null,
+        List.of(), List.of(), "Water", "Water", 1, "CHEM:CID_962",
+        Map.of("image/gif", gif.toUri().toURL(), "image/png", documentationUrl()));
+    org.mockito.Mockito.when(source.resolveIdentity("transient", "CID:962")).thenReturn(identity)
+        .thenThrow(new IllegalStateException("provider offline"));
+    var first = new CachedAuthority(source, directory.resolve("cache"), Clock.systemUTC(), "implementation");
+    var firstId = first.configure(request);
+    assertTrue(first.resolveIdentity(firstId, "CID:962").getDocumentation().containsKey("image/gif"));
+    first.releaseConfiguration(firstId);
+    Files.delete(gif);
+
+    var restarted = new CachedAuthority(source, directory.resolve("cache"), Clock.systemUTC(), "implementation");
+    var id = restarted.configure(request);
+    var cached = restarted.resolveIdentity(id, "CID:962");
+    assertEquals("CID:962", cached.getId());
+    assertEquals(Set.of("image/png"), cached.getDocumentation().keySet());
+    org.mockito.Mockito.verify(source).resolveIdentity("transient", "CID:962");
+  }
   @Test void durableIdentityAndAncestryAreCacheFirstAcrossRestartsAndExpireOnlyWithConfiguration() {
     var clock = new Time();
     var firstProvider = new Provider();

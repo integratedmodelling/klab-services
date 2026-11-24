@@ -1,14 +1,38 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.util.*;
+import org.integratedmodelling.klab.api.configuration.DataRootSelection;
 
 /** Reads owned bytes keyed by the original URI; never accesses the URI's filesystem target. */
 final class CapturedDocumentation {
+  private static final Path PUBCHEM_CACHE = Path.of("authority-cache/klab.authority.pubchem/documentation");
+
   private CapturedDocumentation() {}
+
+  static boolean isPubChemGif(URI uri) {
+    String path = uri.getPath();
+    return "file".equals(uri.getScheme()) && path != null
+        && path.contains("/klab.authority.pubchem/documentation/") && path.endsWith(".gif");
+  }
+
+  static boolean matchesContentAddress(URI uri, String hash) {
+    String path = uri.getPath();
+    return path.substring(path.lastIndexOf('/') + 1).startsWith(hash + ".");
+  }
+
+  static boolean inPubChemCache(Path path, Path realPath) throws IOException {
+    var data = DataRootSelection.select(System.getProperties());
+    var root = data.resolve(PUBCHEM_CACHE);
+    if (!path.toAbsolutePath().normalize().startsWith(root)) return false;
+    if (realPath == null) return true;
+    var realRoot = root.toRealPath();
+    return realRoot.equals(data.toRealPath().resolve(PUBCHEM_CACHE)) && realPath.startsWith(realRoot);
+  }
 
   static byte[] lookup(Map<String, byte[]> owned, String originalUri) {
     byte[] contents = owned.get(originalUri);
@@ -54,8 +78,7 @@ final class CapturedDocumentation {
         result.put(original, new byte[0]); continue;
       }
       String hash = entry.path("sha256").asText();
-      String basename = uri.getPath().substring(uri.getPath().lastIndexOf('/') + 1);
-      if (!hash.matches("[0-9a-f]{64}") || !basename.startsWith(hash + "."))
+      if (!hash.matches("[0-9a-f]{64}") || !matchesContentAddress(uri, hash))
         throw new IllegalArgumentException("Documentation hash differs from original content identity");
       Path relative = Path.of(entry.path("bundlePath").asText());
       Path file = state.resolve(relative).toAbsolutePath().normalize();

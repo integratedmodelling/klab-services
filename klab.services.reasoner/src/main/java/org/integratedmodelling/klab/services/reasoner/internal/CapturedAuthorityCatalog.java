@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.*;
 import java.lang.reflect.*;
 import java.net.*;
@@ -81,13 +82,24 @@ public final class CapturedAuthorityCatalog {
         if (locations.isObject()) for (var location : locations) {
           var uri = URI.create(location.asText());
           if ("file".equals(uri.getScheme())) {
-            if (docs.containsKey(location.asText())) continue;
-            var path = Path.of(uri).toRealPath();
-            if ((!path.startsWith(Path.of(System.getProperty("java.io.tmpdir")).toRealPath())
-                && !path.startsWith(state.toRealPath()))
-                || Files.size(path) > 4L * 1024 * 1024)
-              throw new IOException("Provider documentation is outside the owned capture boundary");
-            docs.put(location.asText(), Files.readAllBytes(path));
+            boolean optional = CapturedDocumentation.isPubChemGif(uri);
+            var previous = docs.get(location.asText());
+            if (previous != null && (!optional || previous.length > 0)) continue;
+            try {
+              var original = Path.of(uri);
+              var path = original.toRealPath();
+              if ((!path.startsWith(Path.of(System.getProperty("java.io.tmpdir")).toRealPath())
+                  && !path.startsWith(state.toRealPath())
+                  && !CapturedDocumentation.inPubChemCache(original, path))
+                  || Files.size(path) > 4L * 1024 * 1024)
+                throw new IOException("Provider documentation is outside the owned capture boundary");
+              var contents = Files.readAllBytes(path);
+              docs.put(location.asText(), optional && (contents.length == 0
+                  || !CapturedDocumentation.matchesContentAddress(uri, digest(contents))) ? new byte[0] : contents);
+            } catch (NoSuchFileException missing) {
+              if (!optional) throw missing;
+              docs.put(location.asText(), new byte[0]);
+            }
           }
         }
       }
@@ -451,7 +463,8 @@ public final class CapturedAuthorityCatalog {
           if (file.toAbsolutePath().normalize().startsWith(root)
               && (!Files.exists(file) || (Files.exists(root) && file.toRealPath().startsWith(root.toRealPath())))) allowed = true;
         }
-        if (!allowed) throw unresolved("provider documentation escapes declared capture roots: " + file);
+        if (!allowed && !CapturedDocumentation.inPubChemCache(file, Files.exists(file) ? file.toRealPath() : null))
+          throw unresolved("provider documentation escapes declared capture roots: " + file);
         if (!Files.exists(file)) { result.put(uri.toString(), new byte[0]); continue; }
         if (!Files.isRegularFile(file) || Files.size(file) > 4 * 1024 * 1024) throw unresolved("captured documentation is missing or too large: " + file);
         result.put(uri.toString(), Files.readAllBytes(file));
@@ -602,15 +615,29 @@ public final class CapturedAuthorityCatalog {
     }
     private Identity identity(JsonNode source) {
       var owned = source.deepCopy();
-      var docs = owned.path("documentation");
-      if (docs.isObject()) docs.fields().forEachRemaining(entry -> {
-        String location = entry.getValue().asText(); var bytes = documentation.get(location);
-        if (bytes != null && bytes.length == 0) throw unresolved("captured provider documentation is unavailable: " + location);
-        if (bytes != null) try {
-          var target = CapturedDocumentation.materialize(assets, location, bytes);
-          ((com.fasterxml.jackson.databind.node.ObjectNode)docs).put(entry.getKey(), target.toUri().toString());
-        } catch (Exception failure) { throw new IllegalStateException("Cannot materialize owned documentation", failure); }
-      });
+      if (owned.path("documentation") instanceof ObjectNode docs) {
+        var entries = docs.fields();
+        while (entries.hasNext()) {
+          var entry = entries.next();
+          String location = entry.getValue().asText();
+          var bytes = documentation.get(location);
+          boolean optional = "image/gif".equals(entry.getKey())
+              && CapturedDocumentation.isPubChemGif(URI.create(location));
+          if (optional && (bytes == null || bytes.length == 0)) {
+            // A depiction can be absent without changing the verified identity.
+            entries.remove();
+            continue;
+          }
+          if (bytes != null && bytes.length == 0)
+            throw unresolved("captured provider documentation is unavailable: " + location);
+          if (bytes != null) try {
+            var target = CapturedDocumentation.materialize(assets, location, bytes);
+            docs.put(entry.getKey(), target.toUri().toString());
+          } catch (Exception failure) {
+            throw new IllegalStateException("Cannot materialize owned documentation", failure);
+          }
+        }
+      }
       try { return JSON.treeToValue(owned, CachedAuthority.StoredIdentity.class); }
       catch (IOException failure) { throw new IllegalStateException(failure); }
     }
