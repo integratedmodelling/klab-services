@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.runtime.kactors.JavaArgumentConversions;
 
 /** Strict argument handling shared by the Context actor's read and submission paths. */
@@ -43,12 +44,15 @@ final class ContextActorSupport {
 
   static ContextScope submissionScope(ContextScope context, Metadata options) {
     // Validate the entire request before deriving scopes or touching runtime/graph services.
-    var allowed = Set.of("within", "source", "target", "observer", "namespace", "project");
+    var allowed =
+        Set.of("within", "source", "target", "observer", "namespace", "project", "consequences");
     for (String key : options.keySet()) if (!allowed.contains(key))
       throw new IllegalArgumentException("Unknown context submit option: " + key);
     for (String key : List.of("namespace", "project")) if (options.containsKey(key)
         && (!(options.get(key) instanceof String value) || value.isBlank()))
       throw new IllegalArgumentException(key + " requires a nonblank string");
+    if (options.containsKey("consequences") && !(options.get("consequences") instanceof Boolean))
+      throw new IllegalArgumentException("consequences requires a Boolean (use !consequences to disable)");
     boolean within = options.containsKey("within"), source = options.containsKey("source"),
         target = options.containsKey("target");
     if (within && (source || target))
@@ -67,7 +71,10 @@ final class ContextActorSupport {
         throw new IllegalArgumentException("observer requires a persisted concrete singular Agent observation");
     }
     var selected = focus(context, options);
-    var constraints = new ArrayList<org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint>();
+    var constraints = new ArrayList<ResolutionConstraint>();
+    if (Boolean.FALSE.equals(options.get("consequences"))) {
+      constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.DisableConsequences, true));
+    }
     if (options.containsKey("observer")) {
       // Negation inhibits automatic preparation; it never clears an inherited actual observer.
       constraints.add(org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint.of(

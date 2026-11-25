@@ -700,7 +700,9 @@ public final class SemanticEnvironmentFactory
           try (var phase =
               CandidateTrace.phase(CandidateTrace.Phase.DOCUMENT_VALIDATE, ontology.getUrn())) {
             var validator = new DocumentSemanticValidator(actor);
-            diagnostics.addAll(validator.validate(ontology));
+            var sourceDiagnostics = validator.validate(ontology);
+            environment.retainOntologyValidation(ontology, validator, sourceDiagnostics);
+            diagnostics.addAll(sourceDiagnostics);
             validatedSources.add(validator);
           }
           cancellation.checkpoint();

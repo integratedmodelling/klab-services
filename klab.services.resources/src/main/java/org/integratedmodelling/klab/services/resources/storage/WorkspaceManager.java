@@ -338,7 +338,7 @@ public class WorkspaceManager {
   }
 
   /** Stable authenticated principal; anonymous and non-user identities remain credential-scoped. */
-  static String projectLockOwner(Scope requester) {
+  public static String projectLockOwner(Scope requester) {
     if (requester == null || requester.getIdentity() == null) return null;
     var identity = requester.getIdentity();
     if (identity.getId() == null || identity.getId().isBlank()) return null;
@@ -356,6 +356,28 @@ public class WorkspaceManager {
       return owner.toString();
     }
     return "credential:" + identity.getId();
+  }
+
+  public synchronized boolean canLockProject(String urn, Scope requester) {
+    var descriptor = projectDescriptors.get(urn);
+    var owner = projectLockOwner(requester);
+    return descriptor != null && descriptor.storage instanceof FileProjectStorage
+        && owner != null && (!projectLocks.containsKey(urn) || owner.equals(projectLocks.get(urn)));
+  }
+
+  /** Hold a project lock for one browser request without releasing an existing IDE lock. */
+  public synchronized <T> T withProjectLock(
+      String urn, UserScope requester, java.util.function.Supplier<T> operation) {
+    var alreadyLocked = projectLocks.containsKey(urn);
+    if (!lockProject(urn, requester)) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+          "Project is unavailable for editing: " + urn);
+    }
+    try {
+      return operation.get();
+    } finally {
+      if (!alreadyLocked) unlockProject(urn, requester);
+    }
   }
 
   public synchronized boolean lockProject(String urn, Scope requester) {
@@ -3268,6 +3290,20 @@ public class WorkspaceManager {
       Collection<Notification> notifications) {
     return invalidDocument(
         new KimObservationStrategiesImpl(), urn, projectName, source, timestamp, notifications);
+  }
+
+  /** Parser diagnostics for a draft, without translating, indexing or storing the document. */
+  public List<Notification> checkSourceSyntax(ProjectStorage.ResourceType type, String text) {
+    Parser<?> parser = switch (type) {
+      case ONTOLOGY -> ontologyParser;
+      case MODEL_NAMESPACE -> namespaceParser;
+      case STRATEGY -> strategyParser;
+      case BEHAVIOR, BEHAVIOR_COMPONENT, APPLICATION, SCRIPT, TESTCASE -> behaviorParser;
+      default -> null;
+    };
+    var diagnostics = new ArrayList<Notification>();
+    if (parser != null) parser.parse(new StringReader(text), diagnostics);
+    return diagnostics;
   }
 
   public <T extends KlabAsset> T parseAsset(String input, Class<T> assetClass) {

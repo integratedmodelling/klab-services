@@ -24,6 +24,17 @@
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- Keep the bundled Xtext runtime reproducible despite Ecore's open EMF range. -->
+            <dependency>
+                <groupId>org.eclipse.emf</groupId>
+                <artifactId>org.eclipse.emf.common</artifactId>
+                <version>2.30.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
@@ -164,6 +175,20 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>
+                <executions>
+                    <execution>
+                        <id>editor-runtime</id>
+                        <phase>generate-resources</phase>
+                        <goals><goal>single</goal></goals>
+                        <configuration>
+                            <descriptors><descriptor>src/assembly/editor-runtime.xml</descriptor></descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>

@@ -15,11 +15,55 @@ import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class SemanticEnvironmentFactoryTest {
+  @Test
+  void acceptedOntologyResultRequiresMatchingSourceSyntaxAndRefinement() throws Exception {
+    ServiceConfiguration.injectInstantiators();
+    var worldview = world("retained-ontology", false);
+    var ontology = (KimOntologyImpl) worldview.getOntologies().getFirst();
+    var factory = new SemanticEnvironmentFactory(directory.resolve("actors"), core());
+    try (var runtime = new AcceptedSemanticRuntime(factory, "reasoner")) {
+      runtime.submit(worldview);
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(30)));
+      assertEquals(CandidatePublicationCoordinator.LogicalStatus.VALID, runtime.status().logicalStatus());
+
+      var request = SemanticValidationRequest.of(ontology, "editor-1");
+      var result = runtime.validate(request, SemanticValidationResponse.forRequest(request));
+      assertTrue(result.valid());
+      assertEquals("editor-1", result.getDocumentVersion());
+      assertEquals(1L, runtime.sourceValidationMetrics().get("acceptedOntologyHits"));
+      result.getNotifications().add(Notification.error("caller mutation"));
+
+      ontology.setLastUpdateTimestamp(2);
+      request.setDocumentVersion("editor-2");
+      result = runtime.validate(request, SemanticValidationResponse.forRequest(request));
+      assertTrue(result.valid());
+      assertEquals("editor-2", result.getDocumentVersion());
+      assertEquals(2L, runtime.sourceValidationMetrics().get("acceptedOntologyHits"));
+
+      var statement = (KimConceptStatementImpl) ontology.getStatements().getFirst();
+      int offset = statement.getOffsetInDocument();
+      statement.setOffsetInDocument(offset + 1);
+      assertTrue(runtime.validate(request, SemanticValidationResponse.forRequest(request)).valid());
+      statement.setOffsetInDocument(offset);
+      request.setExecutionContext("w:A");
+      assertTrue(runtime.validate(request, SemanticValidationResponse.forRequest(request)).valid());
+      request.setExecutionContext(null);
+      try (var lease = runtime.lease()) {
+        lease.state().actor().derivedRefinementsChanged();
+      }
+      assertTrue(runtime.validate(request, SemanticValidationResponse.forRequest(request)).valid());
+      assertEquals(2L, runtime.sourceValidationMetrics().get("acceptedOntologyHits"));
+    }
+  }
+
   @Test void declaredOdoIsCapturedBeforePreflightAndWorkerUsesFrozenRemoteBytes() throws Exception {
     var bytes = new String(CoreOntologyCatalog.bundledOdo(), java.nio.charset.StandardCharsets.UTF_8)
         .replace("</rdf:RDF>", "<owl:Class rdf:about=\"http://integratedmodelling.org/odo#OnlyRemote\">"

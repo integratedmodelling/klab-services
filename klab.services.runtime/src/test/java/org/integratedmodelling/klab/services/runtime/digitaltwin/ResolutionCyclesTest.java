@@ -9,10 +9,31 @@ import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.services.scopes.*;
 import org.junit.jupiter.api.Test;
 
 class ResolutionCyclesTest {
+  @Test
+  void submissionCanDisableConsequencesForOneRootAndItsChildren() throws Exception {
+    try (var f = new Fixture()) {
+      var optOut = ResolutionConstraint.of(ResolutionConstraint.Type.DisableConsequences, true);
+      var selected = f.scope.withResolutionConstraints(optOut);
+      try (var root = f.cycles.admit(selected, true).get(5, TimeUnit.SECONDS);
+          var child = f.cycles.admit(root.scope(), true).get(5, TimeUnit.SECONDS)) {
+        assertFalse(root.scope().getResolutionCycleBinding().consequencesEnabled());
+        assertFalse(child.scope().getResolutionCycleBinding().consequencesEnabled());
+        assertNotNull(root.scope().getResolutionCycleBinding().semanticBinding());
+      }
+      try (var root = f.cycles.admit(f.scope, true).get(5, TimeUnit.SECONDS);
+          var child = f.cycles.admit(root.scope().withResolutionConstraints(optOut), true)
+              .get(5, TimeUnit.SECONDS)) {
+        assertTrue(root.scope().getResolutionCycleBinding().consequencesEnabled());
+        assertTrue(child.scope().getResolutionCycleBinding().consequencesEnabled());
+      }
+    }
+  }
+
   @Test void closedContextReleasesSemanticPinBeforeRunningAndQueuedOwnersDrain() throws Exception {
     try (var f = new Fixture()) {
       var first = f.cycles.admit(f.scope, true).get(5, TimeUnit.SECONDS);

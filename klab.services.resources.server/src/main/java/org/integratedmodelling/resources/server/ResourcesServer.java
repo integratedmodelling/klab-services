@@ -45,6 +45,8 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
             "resources-workspace",
             100,
             false)
+        .page("workspaces", "Workspaces", "Browse projects and edit workspace documents.",
+            "resources-workspaces", 105, true)
         .page("workflows", "Workflows", "Browse workflow definitions and process diagrams.",
             "resources-workflows", 110, true)
         .page("review", "Ontology review", "Prepare and edit ontology review drafts.",

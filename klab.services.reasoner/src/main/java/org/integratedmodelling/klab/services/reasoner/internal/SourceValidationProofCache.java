@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.function.Function;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.reasoner.objects.*;
 
@@ -32,9 +33,7 @@ final class SourceValidationProofCache {
             || !request.getPreparableMemberQualityDependencies().isEmpty()
             || request.document().getSourceCode() == null || request.document().getSourceCode().isBlank()))
       return null;
-    // Hash the parsed bean as well as exact text: equal text cannot authenticate altered syntax.
-    ObjectNode source = JSON.valueToTree(request.document());
-    source.remove("lastUpdateTimestamp");
+    ObjectNode source = documentTree(request.document());
     if (source.get("metadata") instanceof ObjectNode metadata) {
       metadata.remove(ResourcesService.NAMESPACE_ADMISSION_METADATA);
       if (metadata.get("delegate") instanceof ObjectNode values)
@@ -48,7 +47,19 @@ final class SourceValidationProofCache {
       executable.set("preparableMemberQualities", JSON.valueToTree(request.getPreparableMemberQualityDependencies()));
       source = executable;
     }
-    return SemanticContentFingerprint.sha256(SemanticContentFingerprint.canonical(JSON.convertValue(source, Object.class)));
+    return fingerprint(source);
+  }
+
+  // Hash the parsed bean as well as exact text: equal text cannot authenticate altered syntax.
+  static ObjectNode documentTree(KlabDocument<?> document) {
+    ObjectNode source = JSON.valueToTree(document);
+    source.remove("lastUpdateTimestamp");
+    return source;
+  }
+
+  static String fingerprint(ObjectNode source) {
+    return SemanticContentFingerprint.sha256(
+        SemanticContentFingerprint.canonical(JSON.convertValue(source, Object.class)));
   }
 
   Hit get(String key, Function<List<String>, SemanticDependencyWitness> verify) {
@@ -65,20 +76,23 @@ final class SourceValidationProofCache {
   void put(String key, SemanticValidationResponse response, SemanticDependencyWitness proof) {
     if (key == null || !response.valid() || !response.isSourceSemanticsComplete()
         || proof == null || !proof.completeAt(System.currentTimeMillis())) { unproved.increment(); return; }
-    try {
-      byte[] encoded = JSON.writeValueAsBytes(response);
-      if (encoded.length > 1024 * 1024) return;
-      var old = proofs.put(key, new Entry(encoded, proof));
-      stored.increment();
-      bytes += encoded.length - (old == null ? 0 : old.response().length);
-      while (proofs.size() > 256 || bytes > 16 * 1024 * 1024) {
-        var oldest = proofs.keySet().iterator().next();
-        bytes -= proofs.remove(oldest).response().length;
-      }
-    } catch (java.io.IOException invalid) { throw new IllegalStateException("Cannot retain source proof", invalid); }
+    byte[] encoded = encode(response);
+    if (encoded.length > 1024 * 1024) return;
+    var old = proofs.put(key, new Entry(encoded, proof));
+    stored.increment();
+    bytes += encoded.length - (old == null ? 0 : old.response().length);
+    while (proofs.size() > 256 || bytes > 16 * 1024 * 1024) {
+      var oldest = proofs.keySet().iterator().next();
+      bytes -= proofs.remove(oldest).response().length;
+    }
   }
 
-  private static SemanticValidationResponse decode(byte[] bytes) {
+  static byte[] encode(SemanticValidationResponse response) {
+    try { return JSON.writeValueAsBytes(response); }
+    catch (java.io.IOException invalid) { throw new IllegalStateException("Cannot retain validation result", invalid); }
+  }
+
+  static SemanticValidationResponse decode(byte[] bytes) {
     try { return JSON.readValue(bytes, SemanticValidationResponse.class); }
     catch (java.io.IOException invalid) { throw new IllegalStateException("Cannot restore owned source proof", invalid); }
   }

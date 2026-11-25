@@ -35,7 +35,7 @@ Align service logs with the action timestamps. Where available, join records usi
 | Validation and dependency proofs | Reasoner `documentValidation`, `cycle.validateDocument` and `cycle.semanticDependencies` | Actual validator runs, proof rechecks and cache hits. Compare repeated requests for the same parsed document, executable context meaning and preparation flags. |
 | Contextualization and commit | Runtime samples of `CompiledDataflow`, `CharacterizationLifecycle`, the scheduler and the graph/storage backend | Initialization, actuator execution, native discovery, graph and storage I/O, commit, rollback and follow-on work. Close the interval at client completion to include transport and polling. |
 
-The slow-operation logs omit short calls. Resolver `semanticTime` includes the retained Reasoner transport and covers calls on the resolution thread. Reasoner `actorWait` measures time waiting for the actor monitor. Reasoner `execution` can include external calls, so inspect CPU and socket samples before attributing it to inference. A `documentValidation` entry can be nested inside `cycle.validateDocument`. Totals from concurrent requests measure work. Use the critical path to explain wall time.
+The slow-operation logs omit short calls. Resolver `semanticTime` includes the retained Reasoner transport and covers calls on the resolution thread. Reasoner `actorWait` measures time waiting for the actor monitor. Reasoner `execution` can include external calls, so inspect CPU and socket samples before attributing it to inference. The inner `documentValidation` timer records the full validator path, including dependency-proof work. A successful proof-cache hit returns before this timer is logged. The outer `cycle.validateDocument` can include a hit and can also enclose the inner timer. Count a nested pair once. Totals from concurrent requests measure work. Use the critical path to explain wall time.
 
 Take before-and-after Reasoner status snapshots from the same accepted session. Use deltas in `semantic.caches` for concept, observable, syntax, resolving-head, strategy-literal and OWL cache activity. In `semantic.validation.sourceProofs`, compare `hits` and `misses` for static source proofs and `executableProofHits` and `executableValidations` for executable validation. When investigating builder reuse, compare the base, ordered operations and semantic revision. For strategy work, compare the request observable and context and look for repeatedly declared closed literals. Capture a representative baseline and candidate comparison for reasoning changes. Check equivalent plans and receipts as well as timing, and exercise cache invalidation after a source, worldview, strategy or authority change.
 
@@ -155,3 +155,132 @@ The benchmark adapted `select_multiple_families` to use 13 deterministic, non-ov
 | Median first-to-last member completion interval | 87.282 s | 64.503 s |
 
 The median wall time fell by 34.2 seconds (18%). The two versions' wall-time ranges overlap, and Reasoner and Resolver restarted for deployment. Use the per-phase measurements and the 90% reduction in filtering calls to distinguish the reproducible transport reduction from variation in overall run time.
+
+### November 25, 2026 full-suite comparison
+
+The November 25 suite passed all 28 tests in 54m 06.128s. The November 23 full-suite baseline
+passed all 28 in 31m 39.302s. The increase was 22m 26.826s (70.9%), with every action slower.
+The baseline predates the fixed-cohort batching trial above. The November 25 services restarted
+shortly before the run, and the worldview and generated member work differ across the two runs.
+
+| Action | November 23 (s) | November 25 (s) | Increase (s) |
+| --- | ---: | ---: | ---: |
+| `select_multiple_families` | 220.341 | 442.662 | 222.321 |
+| `select_consumer_rollback` | 81.135 | 239.064 | 157.929 |
+| `select_partial_support` | 76.699 | 204.572 | 127.873 |
+| `select_two_role_families` | 73.799 | 157.873 | 84.074 |
+| `select_native_operation_rollback` | 101.980 | 183.394 | 81.414 |
+| `select_family_rollback` | 173.756 | 250.126 | 76.370 |
+
+| `select_multiple_families` wall-clock interval | November 23 (s) | November 25 (s) |
+| --- | ---: | ---: |
+| Test start to root plan completion | 13.480 | 56.601 |
+| Root plan to first characterization completion | 14.938 | 20.929 |
+| First to last characterization completion | 140.590 (55 requests) | 310.098 (59 requests) |
+| Last characterization completion to first assertion | 34.025 | 35.600 |
+| First selection assertion to repeated selection assertion | 16.855 | 19.179 |
+
+In the same action, logged slow model queries spent 13.256s and 3.212s in candidate filtering
+and 28.075s and 40.925s mapping source to models. Fourteen baseline queries reported 37 retained
+calls, and 32 current queries reported 28. That fits 27 mapping calls plus 10 individual filters
+in the baseline or one batched filter in the current run. Reasoner recorded the batch endpoint in
+other actions. The fixed-cohort trial showed zero mapping calls per characterization with a warm
+projection. Projection reuse still exists in Resolver, but the live aggregate logs lack the
+hit, miss and rejection reasons needed to identify which eligibility condition prevented reuse.
+
+| Reasoner execution in slow records | Full suite November 23 (s) | Full suite November 25 (s) | Four-family action November 23 (s) | Four-family action November 25 (s) |
+| --- | ---: | ---: | ---: | ---: |
+| Full document-validation path including dependency proofs | 77.713 | 220.192 | No slow record | 6.277 |
+| Observable building | 5.877 | 128.945 | 4.128 | 64.667 |
+| Observation strategy computation | 15.959 | 66.092 | 4.590 | 46.436 |
+| Semantic dependencies | 37.447 | 86.762 | 6.995 | 23.904 |
+| Consequence rule lookup | 6.612 | 36.559 | No slow record | 3.996 |
+
+These are thresholded execution totals. They can overlap Resolver work and omit short calls.
+The November 23 run had 33 slow full validations, all paired with retained-cycle calls.
+The November 25 run had 68, with 43 paired with retained-cycle calls (133.503s) and 25 other
+calls (86.689s). Another 13 slow validations ran in the two minutes before the suite (49.926s).
+The November 25 log has no per-document identity or validation mode for these records, so it
+cannot show how many repeated the same source in the same validation context.
+Consequence rule lookups measure one part of the engine. The logs lack the engine's elapsed
+time and causal linkage for dependent submissions, so the larger sum does not establish how
+much of the suite increase consequences caused.
+
+Use the same warmed services and accepted worldview for alternating fixed-cohort runs, with
+fresh contexts and identical discovery and classifier outputs. Compare ordinary submits with
+`ctx.submit(observable !consequences)` on the root submissions under test. Keep consequences
+enabled in Runtime settings for this comparison. Capture per-characterization timings, source
+validation proof counters, and Runtime consequence worker samples. Track projection lookup
+disposition by source hash and semantic binding to find out whether a missing shared session,
+descriptor change, incomplete proof or authority dependency explains remapping. Check whether
+repeated builder and strategy inputs can be reused within the pinned semantic generation before
+adding caching. Separate Runtime's child preparation and transport waits from time inside
+Resolver, since the characterization loop waits for each child in succession.
+
+### Ontology saves and startup
+
+The accepted Reasoner has a proof cache for `.kim` namespaces. Executable proofs also depend
+on the execution-context semantics, preparation options, and the actor's derived-refinement
+generation. Those inputs can change during a suite with identical files. On the November 25
+service, the cumulative counters showed 53 executable proof hits and 65 executable validations.
+Take counter deltas around a fixed-fixture run to quantify reuse independently of startup and
+other clients.
+
+A changed ontology save can submit a whole worldview candidate. The candidate compiles and
+validates the captured ontologies and strategies, then checks the final OWL consistency and
+classification. The accepted actor now retains its validation results for `.kwv` documents.
+It reuses those results for matching source and parsed syntax at the same actor refinement
+generation, and rebuilds the dependency witness for the requesting scope.
+The November 25 Resources workspace records an `ecology.kwv` save at 10:43:06 that added an
+entry-only LAND ecosystem binding. The Reasoner logged document validations of 37.803s and
+47.606s in that period. Their records omit document identity, so they cannot be attributed to
+that file. The save also came after the repeated startup failures described below.
+
+Use `-Dklab.reasoner.traceCandidate=true` to time provider preparation, actor loading, document
+validation and final classification. Compare the candidate generation and source hashes across
+a no-op save and a changed save. `-Dklab.traceDocumentValidation=true` logs editor validation
+requests on the Reasoner document endpoint with source identity.
+
+Set `-Dklab.profile.documentValidation=true` on Reasoner to record every validation request
+that reaches an accepted actor, including the retained Resolver path and proof hits. Match
+`DOCUMENT_VALIDATION_PROFILE` records to the suite window. Group by document, source hash,
+execution-context hash, semantic session and revision, and refinement generation. Compare the
+exact proof key and requesting principal hash inside each group. Generated one-model
+namespaces can omit the original source text. For those requests the proof key identifies
+the parsed projection and its validation options. A request without either hash has no
+exact-repeat classification. Report how many repetitions hit a proof and how many ran
+the full validator again. For the strongest redundancy signal, count repeated full
+validations that produce a complete, authority-free witness after an earlier equivalent
+result with the same stable refinement generation.
+
+### November 25 profiled suite
+
+The suite passed all 28 tests in 51m 26.390s. The Reasoner recorded 190 namespace validation
+requests reaching the accepted actor. All records used the same accepted revision and
+started and finished at refinement generation 2.
+
+| Retained-cycle requests | Saved source text | Generated model projection | Total |
+| --- | ---: | ---: | ---: |
+| Requests | 41 | 118 | 159 |
+| Distinct exact groups | 11 | 65 | 76 |
+| Repeated requests served by the proof cache | 30 | 53 | 83 |
+| Repeated full validations | 0 | 0 | 0 |
+
+Retained-cycle requests ran the full validator 69 times and reused a proof 90 times. Their
+summed request times were 119.401s and 9.973s respectively. The Reasoner counters for the whole
+suite window increased by 38 static proof hits and 53 executable proof hits, matching the
+91 hits in the trace. Of the 31 requests outside retained cycles, 24 source-only calls used
+generated namespaces without source text or an exact proof key. Those calls account for
+42.542s of request time and remain unclassified for redundancy.
+
+In a separate smoke test on the rebuilt Reasoner, both saved `land.kwv` requests reused the
+accepted result. The actor work excluding monitor wait took 0.116s and 0.270s. Both
+`ecology.kwv` requests took the full-validation path. A private reproduction of that miss
+stopped at an external PubChem lookup timeout before the candidate was built.
+
+Earlier November 25 startup logs show a different problem. From 10:10:39 to 10:29:21, one
+Reasoner process logged 17 failures preparing the same authority bootstrap input. The failing
+frame is `LandAuthority.configure` at the semantic-access binding check. The HTTP server
+started at 10:07:21, and those retries delayed worldview readiness. The process used for the
+staging suite recorded a single provider bootstrap sequence and zero such failures. Measure
+HTTP startup and accepted-worldview readiness independently.

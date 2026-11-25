@@ -109,6 +109,7 @@ public class RuntimeService extends BaseService
   private record SubmissionIdentity(
       String contextId,
       String cycleId,
+      boolean disableConsequences,
       String cohortUrn,
       String observationUrn,
       long observerId,
@@ -1577,11 +1578,12 @@ public class RuntimeService extends BaseService
         selectedObserver == null || scope.getDigitalTwin() == null
             ? 0
             : scope.getDigitalTwin().getKnowledgeGraph().getSemanticRevision();
+    var cycle = scope.getResolutionCycleBinding();
     return new SubmissionIdentity(
         scope.getId(),
-        scope.getResolutionCycleBinding() == null
-            ? null
-            : scope.getResolutionCycleBinding().cycleId(),
+        cycle == null ? null : cycle.cycleId(),
+        cycle == null && Boolean.TRUE.equals(
+            scope.getConstraint(ResolutionConstraint.Type.DisableConsequences, Boolean.class)),
         cohortSemantics.getUrn(),
         ObservationImpl.logicalUrn(observation.getUrn()),
         selectedObserver == null ? 0L : selectedObserver.getId(),

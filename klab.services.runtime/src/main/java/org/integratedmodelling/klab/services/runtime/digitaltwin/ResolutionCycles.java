@@ -7,6 +7,7 @@ import java.util.function.Function;
 import org.integratedmodelling.klab.api.configuration.Setting;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding;
 import org.integratedmodelling.klab.runtime.lifecycle.ResolutionCycle;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -200,7 +201,9 @@ public final class ResolutionCycles implements AutoCloseable {
   private Frame prepare(ServiceContextScope scope, boolean semanticWork) {
     boolean enabled =
         !Boolean.TRUE.equals(
-            runtime.settings().get(Setting.DISABLE_CONSEQUENCE_ENGINE, Boolean.class));
+            runtime.settings().get(Setting.DISABLE_CONSEQUENCE_ENGINE, Boolean.class))
+            && !Boolean.TRUE.equals(
+                scope.getConstraint(ResolutionConstraint.Type.DisableConsequences, Boolean.class));
     String id = UUID.randomUUID().toString(),
         runtimeId = Objects.requireNonNull(runtime.serviceId());
     String authenticatedOwner = owner(scope);

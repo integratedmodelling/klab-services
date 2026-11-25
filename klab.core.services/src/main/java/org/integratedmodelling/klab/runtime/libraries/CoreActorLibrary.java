@@ -2560,7 +2560,8 @@ public class CoreActorLibrary {
         description =
             """
             Submit an observation to the digital twin. Use :observer observation to select a persisted
-            Agent, or !observer to inhibit automatic default observer creation in root submissions.""")
+            Agent, or !observer to inhibit automatic default observer creation in root submissions.
+            Use !consequences to disable consequence assessment for the submitted resolution cycle.""")
     public CompletableFuture<Observation> submit(AgentScope scope, Object... arguments) {
 
       if (scope.isDone())

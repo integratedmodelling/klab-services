@@ -243,8 +243,12 @@ persistence contract is in [Digital twins](DIGITALTWINS.md#the-corecontext-kacto
 | `storage(observation)` | Instance function → Storage | Retrieve existing observation storage; backend failures propagate. |
 | `members(cohort :limit n :offset n)` | Instance function → List | Snapshot of direct `HAS_MEMBER` observations; only limit and offset metadata are accepted. |
 | `query(arguments...)` | Instance function → asset or List | Query by ID, URN, knowledge class, or observation semantics. Supports `:within`, `:source`, `:target`, `:along`, `:limit`, `:offset`, `:depth`, and `+all`. |
-| `submit(arguments...)` | Instance supplier → Observation | Build and submit an observation in this twin, with calling-agent provenance. Accepts observable/concept semantics, identity URN, geometry, definition map, focus metadata, and `:namespace`/`:project` resolution constraints. Scope options are validated and applied before semantic lookup. `!observer` suppresses automatic default-observer creation; it preserves an already selected observer. |
+| `submit(arguments...)` | Instance supplier → Observation | Build and submit an observation in this twin, with calling-agent provenance. Accepts observable/concept semantics, identity URN, geometry, definition map, focus metadata, and `:namespace`/`:project` resolution constraints. Scope options are validated and applied before semantic lookup. `!observer` suppresses automatic default-observer creation and preserves an already selected observer. `!consequences` disables consequence assessment for the resolution cycle opened by the submission. |
 | `close()` | Instance function, no result | Close the underlying context according to its persistence policy; affects all proxies. |
+
+`ctx.submit(observable !consequences)` applies to that root submission and any work that joins
+its cycle. Work joining an existing cycle inherits its consequence policy. Subsequent independent
+submissions use the Runtime setting unless they also specify `!consequences`.
 
 Ordinary independent Subject/Agent submissions retain the existing ambient-focus reset. The
 bounded concrete-predicate collective selection route instead keeps its explicit `:within` focus

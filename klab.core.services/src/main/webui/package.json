@@ -19,6 +19,7 @@
     "elkjs": "0.12.0",
     "inversify": "6.2.2",
     "keycloak-js": "26.2.4",
+    "monaco-editor": "0.54.0",
     "quasar": "2.27.0",
     "reflect-metadata": "0.2.2",
     "sprotty": "1.4.0",

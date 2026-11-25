@@ -6,6 +6,7 @@ import java.util.Objects;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.runtime.language.*;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
@@ -153,6 +154,19 @@ public class DocumentSemanticValidator
     var diagnostics = validateSource(document);
     sourceValid = !org.integratedmodelling.common.utils.Utils.Notifications.hasErrors(diagnostics);
     return diagnostics;
+  }
+
+  static void populate(
+      DocumentSemanticValidator validator, SemanticValidationResponse response,
+      List<Notification> diagnostics) {
+    response.getNotifications().addAll(diagnostics);
+    response.getPendingClassifierDependencies().addAll(validator.getPendingClassifierDependencies());
+    response.getConditionalModelContexts().addAll(validator.getConditionalModelContexts());
+    response.getPendingModelContexts().addAll(validator.getPendingModelContexts());
+    response.getPendingMemberQualityDependencies().addAll(validator.getPendingMemberQualityDependencies());
+    response.setSemanticObligations(validator.getSemanticObligations());
+    response.setSemanticObligationsComplete(validator.isSemanticObligationsComplete());
+    response.setSourceSemanticsComplete(validator.isSourceSemanticsComplete());
   }
 
   /**

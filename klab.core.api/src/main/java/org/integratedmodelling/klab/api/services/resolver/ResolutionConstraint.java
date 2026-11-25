@@ -66,6 +66,8 @@ public interface ResolutionConstraint extends Serializable {
      * remain valid.
      */
     DoNotCreateDefaultObserver(Boolean.class, false),
+    /** Disable consequence assessment for the resolution cycle opened by this submission. */
+    DisableConsequences(Boolean.class, false),
     /**
      * Effective lexical namespace, replacing the inherited namespace. It also selects the namespace
      * ranking overrides for all candidates. Instantiated members inherit their producing model's

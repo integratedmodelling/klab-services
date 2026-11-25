@@ -10,6 +10,30 @@
     <build>
         <plugins>
             <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.7.1</version>
+                <executions>
+                    <execution>
+                        <id>bundle-workspace-lsp</id>
+                        <phase>process-resources</phase>
+                        <goals><goal>copy</goal></goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.integratedmodelling</groupId>
+                                    <artifactId>klab.lsp</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <classifier>editor-runtime</classifier>
+                                    <outputDirectory>${project.build.outputDirectory}/klab-lsp</outputDirectory>
+                                    <destFileName>editor-runtime.zip</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.integratedmodelling</groupId>
                 <artifactId>klab.product</artifactId>
                 <version>1.0.1-SNAPSHOT</version>
@@ -104,6 +128,15 @@
         </plugins>
     </build>
     <dependencies>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.lsp</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <classifier>editor-runtime</classifier>
+            <scope>provided</scope>
+            <exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-logging</artifactId>

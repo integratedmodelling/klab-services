@@ -121,6 +121,21 @@ class ContextActorObserverTest {
     assertSame(root, ContextActorSupport.submissionScope(root, Metadata.create()));
   }
   @Test
+  void negatedConsequencesOnlyChangesTheSubmittedScope() {
+    var root = mock(ContextScope.class);
+    var selected = mock(ContextScope.class);
+    when(root.withResolutionConstraints(any(ResolutionConstraint[].class))).thenReturn(selected);
+
+    assertSame(selected, ContextActorSupport.submissionScope(root, Metadata.create("consequences", false)));
+    assertSame(root, ContextActorSupport.submissionScope(root, Metadata.create()));
+    assertSame(root, ContextActorSupport.submissionScope(root, Metadata.create("consequences", true)));
+    var constraint = ArgumentCaptor.forClass(ResolutionConstraint.class);
+    verify(root).withResolutionConstraints(constraint.capture());
+    assertEquals(ResolutionConstraint.Type.DisableConsequences, constraint.getValue().getType());
+    assertEquals(java.util.List.of(true), constraint.getValue().payload(Boolean.class));
+  }
+
+  @Test
   void allInvalidMetadataFailsBeforeAnyScopeDerivation() {
     var root = mock(ContextScope.class);
     var parent = mock(Observation.class);
@@ -130,6 +145,7 @@ class ContextActorObserverTest {
         Metadata.create("within", parent, "namespace", " "),
         Metadata.create("within", parent, "project", ""),
         Metadata.create("within", parent, "observer", true),
+        Metadata.create("within", parent, "consequences", "false"),
         Metadata.create("source", parent),
         Metadata.create("within", parent, "source", parent, "target", parent)})
       assertThrows(IllegalArgumentException.class, () -> ContextActorSupport.submissionScope(root, invalid));

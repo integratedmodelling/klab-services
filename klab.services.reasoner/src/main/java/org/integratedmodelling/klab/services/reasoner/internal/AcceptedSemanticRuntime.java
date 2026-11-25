@@ -38,12 +38,14 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   private final java.util.concurrent.atomic.LongAdder sourceProofMisses = new java.util.concurrent.atomic.LongAdder();
   private final java.util.concurrent.atomic.LongAdder executableValidations = new java.util.concurrent.atomic.LongAdder();
   private final java.util.concurrent.atomic.LongAdder executableProofHits = new java.util.concurrent.atomic.LongAdder();
+  private final java.util.concurrent.atomic.LongAdder acceptedOntologyHits = new java.util.concurrent.atomic.LongAdder();
 
   public Map<String, Long> sourceValidationMetrics() {
     var result = new java.util.LinkedHashMap<String, Long>();
     result.put("hits", sourceProofHits.sum()); result.put("misses", sourceProofMisses.sum());
     result.put("executableValidations", executableValidations.sum());
     result.put("executableProofHits", executableProofHits.sum());
+    result.put("acceptedOntologyHits", acceptedOntologyHits.sum());
     try (var lease = lease()) { result.putAll(lease.state().sourceValidationProofs().metrics()); }
     catch (IllegalStateException unavailable) { /* No accepted environment yet. */ }
     return result;
@@ -841,10 +843,22 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     synchronized (lease.state()) {
       long enteredAt = System.nanoTime();
       var actor = lease.state().actor();
+      long refinements = actor.semanticRefinementGeneration();
+      String proofKey = null;
+      var outcome = DocumentValidationProfile.Outcome.FAILED;
       try (var portable = portableCapabilities(actor, lease.generation())) {
+        var acceptedOntology = lease.state().acceptedOntologyValidation(request, refinements);
+        if (acceptedOntology != null) {
+          copyValidation(acceptedOntology, response);
+          // Rebuild any portable witness against this request's authority scope.
+          response.setSemanticWitness(validationWitness(actor, lease, response, requestingScope));
+          response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
+          acceptedOntologyHits.increment();
+          outcome = DocumentValidationProfile.Outcome.ACCEPTED_ONTOLOGY;
+          return response;
+        }
         var proofCache = lease.state().sourceValidationProofs();
-        var proofKey = SourceValidationProofCache.key(request);
-        long refinements = actor.semanticRefinementGeneration();
+        proofKey = SourceValidationProofCache.key(request);
         if (proofKey != null && request.isExecutableModels()) proofKey += ":" + refinements;
         if (proofKey != null) {
           var cached = proofCache.get(proofKey, terms -> request.isExecutableModels()
@@ -855,17 +869,11 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             if (request.isExecutableModels()) executableProofHits.increment();
             else sourceProofHits.increment();
             var saved = cached.response();
-            response.getNotifications().addAll(saved.getNotifications());
-            response.getPendingClassifierDependencies().addAll(saved.getPendingClassifierDependencies());
-            response.getConditionalModelContexts().addAll(saved.getConditionalModelContexts());
-            response.getPendingModelContexts().addAll(saved.getPendingModelContexts());
-            response.getPendingMemberQualityDependencies().addAll(saved.getPendingMemberQualityDependencies());
-            response.setSemanticObligations(saved.getSemanticObligations());
-            response.setSemanticObligationsComplete(saved.isSemanticObligationsComplete());
-            response.setSourceSemanticsComplete(true);
+            copyValidation(saved, response);
             // A complete STATIC proof must never upgrade an incomplete execution footprint.
             response.setSemanticWitness(request.isExecutableModels() ? cached.proof() : saved.getSemanticWitness());
             response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
+            outcome = DocumentValidationProfile.Outcome.NAMESPACE_PROOF;
             return response;
           }
           if (!request.isExecutableModels()) sourceProofMisses.increment();
@@ -878,40 +886,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
                 request.isClassifierPreparableDependencies(),
                 request.getExecutionContext(),
                 request.getPreparableMemberQualityDependencies());
-        response.getNotifications().addAll(validator.validate(request.document()));
-        response
-            .getPendingClassifierDependencies()
-            .addAll(validator.getPendingClassifierDependencies());
-        response.getConditionalModelContexts().addAll(validator.getConditionalModelContexts());
-        response.getPendingModelContexts().addAll(validator.getPendingModelContexts());
-        response
-            .getPendingMemberQualityDependencies()
-            .addAll(validator.getPendingMemberQualityDependencies());
-        response.setSemanticObligations(validator.getSemanticObligations());
-        response.setSemanticObligationsComplete(validator.isSemanticObligationsComplete());
-        response.setSourceSemanticsComplete(validator.isSourceSemanticsComplete());
-        var dependencyRequest =
-            new org.integratedmodelling.klab.api.services.reasoner.objects
-                .SemanticDependencyRequest(
-                deploymentServiceId,
-                lease.generation(),
-                lease.state().semanticContentFingerprint(),
-                validator.getSemanticObligations());
-        try {
-          response.setSemanticWitness(
-              validator.isSemanticObligationsComplete()
-                  ? actor.semanticDependencies(dependencyRequest, requestingScope)
-                  : org.integratedmodelling.klab.api.services.reasoner.objects
-                      .SemanticDependencyWitness.unknown(
-                      dependencyRequest,
-                      "Source contains unaccounted or invalid semantic expressions"));
-        } catch (SecurityException unauthorized) {
-          response.setSemanticWitness(
-              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
-                  .unknown(
-                      dependencyRequest,
-                      "Authority dependency access is not authorized for this validation scope"));
-        }
+        DocumentSemanticValidator.populate(validator, response, validator.validate(request.document()));
+        response.setSemanticWitness(validationWitness(actor, lease, response, requestingScope));
         response.setStatus(
             org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
                 .Status.COMPLETE);
@@ -923,9 +899,44 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         long completedAt = System.nanoTime();
         logSlowSemantic("documentValidation", started, preparedAt, enteredAt, enteredAt,
             completedAt, completedAt);
+        outcome = DocumentValidationProfile.Outcome.FULL_VALIDATION;
         return response;
+      } finally {
+        if (Boolean.getBoolean(DocumentValidationProfile.PROPERTY)) {
+          DocumentValidationProfile.record(
+              request, response, requestingScope, retained, refinements,
+              actor.semanticRefinementGeneration(), proofKey, outcome,
+              System.nanoTime() - started, enteredAt - preparedAt);
+        }
       }
     }
+  }
+
+  private static void copyValidation(
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse saved,
+      org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response) {
+    response.getNotifications().addAll(saved.getNotifications());
+    response.getPendingClassifierDependencies().addAll(saved.getPendingClassifierDependencies());
+    response.getConditionalModelContexts().addAll(saved.getConditionalModelContexts());
+    response.getPendingModelContexts().addAll(saved.getPendingModelContexts());
+    response.getPendingMemberQualityDependencies().addAll(saved.getPendingMemberQualityDependencies());
+    response.setSemanticObligations(saved.getSemanticObligations());
+    response.setSemanticObligationsComplete(saved.isSemanticObligationsComplete());
+    response.setSourceSemanticsComplete(saved.isSourceSemanticsComplete());
+  }
+
+  private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
+      validationWitness(
+          ReasonerService actor, CandidatePublicationCoordinator<Worldview, SemanticEnvironment>.Lease lease,
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse response,
+          Scope scope) {
+    if (response.isSemanticObligationsComplete()) {
+      return executionDependencyProof(actor, lease, response.getSemanticObligations(), scope);
+    }
+    var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
+        deploymentServiceId, lease.generation(), lease.state().semanticContentFingerprint(), response.getSemanticObligations());
+    return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(
+        request, "Source contains unaccounted or invalid semantic expressions");
   }
 
   private org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
