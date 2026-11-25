@@ -1231,6 +1231,8 @@ and [observer-aware resolution](../docs/RESOLUTION.md#observer-aware-resolution-
 
 ## 9. Extraction and articulation procedure
 
+Use the [project review format](../docs/PROJECT_REVIEW.md) to publish project contributions. Pair each ontology proposal with its exact base and candidate snapshots as applicable. Keep the proposal YAML schema and review manifest version independently pinned.
+
 Follow these phases in order. Do not draft the final taxonomy directly from keyword matches.
 
 ### Phase A — establish scope and evidence
@@ -1851,6 +1853,8 @@ not permission to emit `is core` in the current proposal.
 
 ### 10.3 Per-concept feedback records
 
+Store standalone project feedback as a comment bundle with an exact revision or document snapshot. Use the [project review format](../docs/PROJECT_REVIEW.md) and preserve the original review record IDs.
+
 Each comment must remain addressable and auditable:
 
 ```yaml
@@ -2250,6 +2254,8 @@ exponent syntax.
   value-operator binding enforcement from the model-bearer checks alone.
 
 ### 12.7 Review readiness
+
+When delivering a project proposal, validate the [review manifest](../docs/PROJECT_REVIEW.md) and verify the hashes of the submitted proposal, base, candidate and any input manifests. A synthesis gets a new bundle and records all its inputs.
 
 - Definitions include boundaries, examples, and counterexamples where useful.
 - Extraction, category, alignment, unambiguity, and orthogonality confidence are separate.

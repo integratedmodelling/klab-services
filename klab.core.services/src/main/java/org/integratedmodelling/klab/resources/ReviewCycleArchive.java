@@ -24,7 +24,8 @@ import org.eclipse.jgit.treewalk.TreeWalk;
  * belong to the workflow transaction/outbox, not this filesystem helper.
  */
 public final class ReviewCycleArchive {
-  public static final String SECTION = "review-history";
+  public static final String SECTION = "review/history";
+  private static final String LEGACY_SECTION = "review-history";
   public static final int MAX_ENTRIES = 1000;
   public static final int MAX_BYTES = 32 * 1024 * 1024;
 
@@ -32,9 +33,14 @@ public final class ReviewCycleArchive {
 
   /** Project material CRUD may read/list this section, but only the archive writer may create it. */
   static void requireMutableMaterial(String path) throws IOException {
-    if (path != null && (path.equalsIgnoreCase(SECTION)
-        || path.regionMatches(true, 0, SECTION + "/", 0, SECTION.length() + 1)))
-      throw new IOException("Review history is immutable; only closed-cycle archiving may write this section");
+    if (path == null) return;
+    String lower = path.toLowerCase(java.util.Locale.ROOT);
+    if (lower.equals("review/decisions.jsonl") || lower.startsWith("review/decisions.jsonl/")
+        || lower.equals(SECTION) || lower.startsWith(SECTION + "/")
+        || lower.equals(LEGACY_SECTION) || lower.startsWith(LEGACY_SECTION + "/")
+        || lower.equals("review/proposals") || lower.startsWith("review/proposals/")
+        || lower.equals("review/comments") || lower.startsWith("review/comments/"))
+      throw new IOException("Use the dedicated review operation for protected review material");
   }
 
   /** Stable entry ID identifies a proposal, comments, candidate, or history document across revisions. */
@@ -95,13 +101,18 @@ public final class ReviewCycleArchive {
         + "[Consult the persistent review](<" + digest.link() + ">). Sign in to view the stages you are authorized to access.\n"
         + "The link does not grant access. Detailed contributions remain in the workflow service.\n")
         .getBytes(StandardCharsets.UTF_8));
-    return write(projectRoot, relativePath(digest), files,
+    return write(projectRoot, existingOrCurrentPath(projectRoot, relativePath(digest)), files,
         new PersonIdent("Ontology review service", "review-service@example.invalid"));
   }
 
   public static String relativePath(ClosedCycle cycle) {
     return SECTION + "/" + sha(text(cycle.ontologyUrn())) + "/"
         + sha(text(cycle.workflowId())) + "/" + sha(text(cycle.cycleId()));
+  }
+
+  private static String existingOrCurrentPath(Path root, String current) {
+    String legacy = LEGACY_SECTION + current.substring(SECTION.length());
+    return Files.exists(root.resolve(legacy), LinkOption.NOFOLLOW_LINKS) ? legacy : current;
   }
 
   /**
@@ -115,7 +126,7 @@ public final class ReviewCycleArchive {
     Objects.requireNonNull(committer, "An explicit archive committer is required");
     var files = files(cycle);
     String relative = relativePath(cycle);
-    return write(projectRoot, relative, files, committer);
+    return write(projectRoot, existingOrCurrentPath(projectRoot, relative), files, committer);
   }
 
   private static Receipt write(Path projectRoot, String relative, SortedMap<String, byte[]> files,

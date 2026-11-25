@@ -2,7 +2,13 @@ package org.integratedmodelling.klab.resources;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.Arrays;
+import java.util.Map;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.dircache.DirCacheEditor;
+import org.eclipse.jgit.dircache.DirCacheEntry;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.FileMode;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial;
 import org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode;
 
@@ -171,6 +177,90 @@ public final class ProjectMaterialIO {
       return true;
     } catch (Exception failure) {
       throw new IOException("Cannot delete material contribution", failure);
+    }
+  }
+
+  /** Publish an immutable review bundle and stage its original byte streams together. */
+  public static void addReviewBundle(FileProjectStorage storage, String directory,
+      Map<String, byte[]> files) throws IOException {
+    if (storage.isReadOnly() || !storage.isTracked())
+      throw new IOException("Review bundle submission requires a writable Git project");
+    for (var name : files.keySet()) {
+      if (!name.matches("[a-z0-9][a-z0-9.-]*"))
+        throw new IOException("Review bundles require flat, canonical filenames");
+      target(storage, directory + "/" + name);
+    }
+    var destination = target(storage, directory);
+    if (Files.exists(destination)) {
+      try (var children = Files.list(destination); var git = Git.open(storage.getRootFolder())) {
+        if (children.count() == files.size()) {
+          var repository = git.getRepository();
+          var index = repository.readDirCache();
+          boolean identical = true, tracked = true, untracked = true;
+          for (var file : files.entrySet()) {
+            String relative = directory + "/" + file.getKey();
+            var entry = index.getEntry(relative);
+            identical &= Arrays.equals(file.getValue(), read(storage, relative));
+            untracked &= entry == null;
+            tracked &= entry != null && entry.getStage() == 0
+                && Arrays.equals(file.getValue(),
+                    repository.open(entry.getObjectId(), Constants.OBJ_BLOB).getCachedBytes(MAX_BYTES));
+          }
+          if (identical && tracked) return;
+          if (identical && untracked) {
+            stageReviewBundle(storage, git, directory, files);
+            return;
+          }
+        }
+      }
+      throw new IOException("Review bundle already exists with different content or index state");
+    }
+
+    Files.createDirectories(destination.getParent());
+    Path temporary = Files.createTempDirectory(destination.getParent(), ".review-");
+    boolean published = false;
+    boolean staged = false;
+    try (var git = Git.open(storage.getRootFolder())) {
+      for (var file : files.entrySet())
+        Files.write(temporary.resolve(file.getKey()), file.getValue());
+      Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE);
+      published = true;
+      stageReviewBundle(storage, git, directory, files);
+      staged = true;
+    } finally {
+      if (!staged) {
+        var incomplete = published ? destination : temporary;
+        for (var name : files.keySet()) Files.deleteIfExists(incomplete.resolve(name));
+        Files.deleteIfExists(incomplete);
+      }
+    }
+  }
+
+  private static void stageReviewBundle(FileProjectStorage storage, Git git, String directory,
+      Map<String, byte[]> files) throws IOException {
+    for (var name : files.keySet()) validateGit(storage, directory + "/" + name);
+    try (var inserter = git.getRepository().newObjectInserter()) {
+      var index = git.getRepository().lockDirCache();
+      try {
+        var editor = index.editor();
+        for (var file : files.entrySet()) {
+          var relative = directory + "/" + file.getKey();
+          if (index.getEntry(relative) != null)
+            throw new IOException("Review bundle collides with a Git index entry");
+          var blob = inserter.insert(Constants.OBJ_BLOB, file.getValue());
+          editor.add(new DirCacheEditor.PathEdit(relative) {
+            @Override public void apply(DirCacheEntry entry) {
+              entry.setFileMode(FileMode.REGULAR_FILE);
+              entry.setObjectId(blob);
+              entry.setLength(file.getValue().length);
+            }
+          });
+        }
+        inserter.flush();
+        if (!editor.commit()) throw new IOException("Cannot stage review bundle");
+      } finally {
+        index.unlock();
+      }
     }
   }
 

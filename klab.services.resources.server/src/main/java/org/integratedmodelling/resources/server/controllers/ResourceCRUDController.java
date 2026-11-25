@@ -28,10 +28,13 @@ import org.integratedmodelling.klab.api.services.resources.workflow.WorkflowUrns
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
+import org.integratedmodelling.klab.services.resources.storage.ReviewSubmission;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 import java.util.List;
@@ -85,6 +88,20 @@ public class ResourceCRUDController {
       @PathVariable KlabAsset.KnowledgeClass knowledgeClass,
       @PathVariable ResourcesService.SubmissionMode submissionMode, @RequestBody String contents, Principal principal) {
     return submit(urn, knowledgeClass, submissionMode, contents, principal);
+  }
+
+  @PostMapping(ServicesAPI.API_BASE + "/project-review/bundles")
+  public ReviewSubmission.Receipt submitReviewBundle(
+      @RequestBody ReviewSubmission.Request request, Principal principal) {
+    if (principal instanceof EngineAuthorization authorization
+        && authorization.getScope() instanceof UserScope userScope) {
+      try {
+        return resourcesServer.klabService().submitReviewBundle(request, userScope);
+      } catch (IllegalArgumentException invalid) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, invalid.getMessage(), invalid);
+      }
+    }
+    throw new KlabAuthorizationException("No valid user scope in project review submission");
   }
 
   @Operation(

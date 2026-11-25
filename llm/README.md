@@ -146,3 +146,7 @@ convenient interpretation.
 Keep this pack a reference: update the relevant contract and examples together, remove
 superseded claims, retain explicit support limits, and keep development history in version
 control. Check links, inventory paths, schema-version alignment and examples after edits.
+
+## Project review contributions
+
+Follow the [project review format](../docs/PROJECT_REVIEW.md) for bootstrap material, evidence, exact proposal and comment bundles, and editor decisions. The domain proposal schema validates the YAML payload. The review manifest binds the payload to a target, its reviewed source bytes and its lineage.

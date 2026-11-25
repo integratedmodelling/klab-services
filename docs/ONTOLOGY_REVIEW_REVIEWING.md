@@ -590,3 +590,5 @@ in [WorkflowManager][manager] and [ProposalReviewProtocol][protocol] take preced
 [sandbox]: https://github.com/integratedmodelling/imod/tree/68a6cbc/experiments/strawman-2026/bootstrap
 [method]: https://github.com/integratedmodelling/imod/blob/68a6cbc/experiments/strawman-2026/bootstrap/METHOD.md
 [hydrology]: https://github.com/integratedmodelling/imod/blob/68a6cbc/experiments/strawman-2026/bootstrap/hydrology/BOOTSTRAP.md
+
+Use the [project review format](PROJECT_REVIEW.md) for comments bound to an exact proposal revision or source snapshot and for the project editor decision ledger.

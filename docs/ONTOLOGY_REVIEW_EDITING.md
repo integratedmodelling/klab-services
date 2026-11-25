@@ -607,3 +607,5 @@ point is the [proposal-review contract](workflows/PROPOSAL_REVIEW_CONTRACT.md), 
 [sandbox]: https://github.com/integratedmodelling/imod/tree/68a6cbc/experiments/strawman-2026/bootstrap
 [method]: https://github.com/integratedmodelling/imod/blob/68a6cbc/experiments/strawman-2026/bootstrap/METHOD.md
 [hydrology]: https://github.com/integratedmodelling/imod/blob/68a6cbc/experiments/strawman-2026/bootstrap/hydrology/BOOTSTRAP.md
+
+Use the [project review format](PROJECT_REVIEW.md) when preserving proposals and source snapshots in a k.LAB project. A stored project bundle and a workflow submission have separate lifecycles.

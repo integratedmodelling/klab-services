@@ -1117,3 +1117,5 @@ still evolving. When documentation, historical examples, and implementation disa
 When adding a language construct, update all five surfaces together: grammar, syntax adapter,
 public API model, visitor/analyzer, and real-file tests. A construct is not complete merely because
 the Xtext parser accepts it.
+
+For projects that collect review contributions, follow [the project review format](PROJECT_REVIEW.md). The format covers exact source snapshots, proposal revisions, comments and editor decisions.

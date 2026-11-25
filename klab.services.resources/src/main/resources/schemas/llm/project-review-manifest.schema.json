@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://integratedmodelling.org/schemas/llm/project-review-manifest.schema.json",
+  "title": "k.LAB project review manifest v1",
+  "type": "object",
+  "required": ["version", "kind", "target", "id", "contributor", "created_at", "status", "payload_schema", "base", "inputs", "files"],
+  "properties": {
+    "version": {"const": 1},
+    "kind": {"enum": ["proposal", "comment"]},
+    "target": {
+      "type": "object",
+      "required": ["project", "kind", "urn"],
+      "additionalProperties": false,
+      "properties": {
+        "project": {"type": "string", "minLength": 1},
+        "kind": {"type": "string", "maxLength": 32, "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
+        "urn": {"type": "string", "minLength": 1, "maxLength": 2048}
+      }
+    },
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"},
+    "contributor": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "status": {"enum": ["submitted", "historical", "illustrative"]},
+    "payload_schema": {"type": "string", "minLength": 1},
+    "origin": {"type": "object"},
+    "base": {
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": {"enum": ["snapshot", "absent", "reference", "unavailable"]},
+        "path": {"type": "string", "minLength": 1},
+        "file": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {"if": {"properties": {"state": {"const": "snapshot"}}}, "then": {"required": ["path", "file"]}},
+        {"if": {"properties": {"state": {"const": "unavailable"}}}, "then": {"required": ["reason"]}}
+      ],
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": ["manifest", "sha256"],
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {"type": "string", "pattern": "^review/(proposals|comments)/[^/]+/[^/]+/manifest\\.json$"},
+          "sha256": {"$ref": "#/$defs/hash"}
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^[a-z0-9][a-z0-9.-]*$"},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["sha256", "size"],
+        "additionalProperties": false,
+        "properties": {
+          "sha256": {"$ref": "#/$defs/hash"},
+          "size": {"type": "integer", "minimum": 0, "maximum": 33554432}
+        }
+      }
+    }
+  },
+  "$defs": {"hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+  "additionalProperties": false
+}

@@ -51,7 +51,7 @@ class ReviewCycleArchiveTest {
       var receipt = ReviewCycleArchive.archive(root, cycle(), actor);
       assertEquals(ReviewCycleArchive.Status.COMMITTED, receipt.status());
       assertEquals(git.getRepository().resolve("HEAD").name(), receipt.commitId());
-      assertTrue(receipt.relativePath().startsWith("review-history/"));
+      assertTrue(receipt.relativePath().startsWith("review/history/"));
       assertTrue(git.status().call().isClean());
       try (var walk = new RevWalk(git.getRepository())) {
         assertEquals(parent, walk.parseCommit(ObjectId.fromString(receipt.commitId())).getParent(0));
@@ -199,7 +199,7 @@ class ReviewCycleArchiveTest {
 
   @Test void rejectsIgnoredArchiveSection() throws Exception {
     try (var git = repository()) {
-      Files.writeString(root.resolve(".gitignore"), "review-history/\n");
+      Files.writeString(root.resolve(".gitignore"), "review/history/\n");
       git.add().addFilepattern(".gitignore").call();
       var head = git.commit().setAuthor(actor).setCommitter(actor).setMessage("Ignore material").call();
       assertThrows(IOException.class, () -> ReviewCycleArchive.archive(root, cycle(), actor));

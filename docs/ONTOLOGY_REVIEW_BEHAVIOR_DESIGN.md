@@ -713,3 +713,5 @@ controls where older prose disagrees.
 [ide-shell]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/WorkflowEditor.java
 [ide-stage]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/main/java/org/integratedmodelling/klab/ide/components/ProposalStageEditor.java
 [ide-tests]: https://github.com/integratedmodelling/klab-ide/blob/70c4bd9ac0b42004511b8fd855483b31fb720467/src/test/java/org/integratedmodelling/klab/ide/components/WorkflowBehaviorInputTest.java
+
+Project-level review material follows the [project review format](PROJECT_REVIEW.md). The workflow archive preserves its receipt and readership rules.

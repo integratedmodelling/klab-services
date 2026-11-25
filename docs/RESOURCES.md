@@ -280,6 +280,9 @@ changes remain intact. An unlocked project accepts metadata contributions withou
 A project locked by another user rejects mutations. Workflow checkpoints and project Git writes
 are separate persistence operations; retrying a workflow does not undo previous project effects.
 
+
+See the [project review format](PROJECT_REVIEW.md) for the canonical review paths and the atomic proposal and comment submission endpoint.
+
 ## Complete lifecycle of a concrete `Resource`
 
 ### 1. Local creation and tier 0

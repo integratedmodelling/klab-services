@@ -2747,6 +2747,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
   }
 
   /** Includes metadata contributors supported by the original material CRUD contract. */
+  public org.integratedmodelling.klab.services.resources.storage.ReviewSubmission.Receipt submitReviewBundle(
+      org.integratedmodelling.klab.services.resources.storage.ReviewSubmission.Request request, UserScope scope) {
+    return workspaceManager.submitReviewBundle(request, scope);
+  }
+
   public void requireMaterialWrite(String project, SubmissionMode mode, UserScope user) {
     boolean allowed =
         mode == SubmissionMode.ADD

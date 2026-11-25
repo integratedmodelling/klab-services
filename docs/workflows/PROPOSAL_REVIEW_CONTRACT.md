@@ -57,3 +57,5 @@ Current test results are recorded in `SCHEMA_VALIDATION_INCREMENT.md`; `BACKEND_
 ## Follow-up increment
 
 See VALIDATION_INCREMENT.md for the additive ADAPTATION check, real isolated parser/adapter behavior, review evidence and assignee fixes, strict single-document parsing, limits, and the separate offline four-artifact pilot. The subsequent NetworkNT increment removes the production schema-provider blocker; import/Reasoner and application blockers remain explicit.
+
+The [project review format](../PROJECT_REVIEW.md) defines Git project bundles. Workflow attachments and transition approval retain the contract above. New workflow archives are written under project `review/history/`, and previously issued receipts retain their original paths.

@@ -4428,6 +4428,36 @@ public class WorkspaceManager {
     } catch (java.io.IOException e) { throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e); }
   }
 
+  public synchronized ReviewSubmission.Receipt submitReviewBundle(
+      ReviewSubmission.Request request, UserScope user) {
+    if (request == null || request.target() == null || request.target().project() == null)
+      throw new IllegalArgumentException("A hosting project is required");
+    String project = request.target().project();
+    service.requireMaterialWrite(project, org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.ADD, user);
+    var storage = materialStorage(project, user, true);
+    try {
+      var bundle = ReviewSubmission.prepare(request, user.getUser().getUsername());
+      boolean hasParent = bundle.supersedesRevision() == null;
+      for (var input : bundle.inputs()) {
+        var bytes = org.integratedmodelling.klab.resources.ProjectMaterialIO.read(storage, input.manifest());
+        if (bytes == null || !ReviewSubmission.hash(bytes).equals(input.sha256()))
+          throw new IllegalArgumentException("Review input is missing or has changed: " + input.manifest());
+        if (!hasParent && input.manifest().startsWith("review/proposals/")) {
+          var payloadPath = input.manifest().substring(0, input.manifest().lastIndexOf('/') + 1)
+              + "proposal.yaml";
+          var payload = org.integratedmodelling.klab.resources.ProjectMaterialIO.read(storage, payloadPath);
+          hasParent = ReviewSubmission.matchesPredecessor(bytes, payload, bundle, request.target());
+        }
+      }
+      if (!hasParent) throw new IllegalArgumentException("Missing superseded proposal in review inputs");
+      org.integratedmodelling.klab.resources.ProjectMaterialIO.addReviewBundle(
+          storage, bundle.directory(), bundle.files());
+      return bundle.receipt();
+    } catch (java.io.IOException e) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e);
+    }
+  }
+
   public synchronized List<ResourceSet> writeMaterial(
       org.integratedmodelling.klab.api.knowledge.organization.ProjectMaterial material,
       org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode mode, UserScope user) {

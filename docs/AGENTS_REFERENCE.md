@@ -618,3 +618,5 @@ action main:
 For a POST, use `source.fetch("POST", payload :headers {"Content-Type": "application/json"})`.
 Static `url.read(...)` and instance `source.text()` have the same supplier semantics. Neither URL
 nor file access requires email to be enabled; these are independent core agent capabilities.
+
+For review contributions use the [project review format](PROJECT_REVIEW.md). Submit complete proposal and comment bundles through the Resources review endpoint. Use material writes for bootstrap and evidence files.
