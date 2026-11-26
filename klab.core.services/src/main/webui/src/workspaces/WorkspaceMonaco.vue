@@ -6,10 +6,11 @@ import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import { installKlabTheme, klabThemeName, registerLanguage } from "./language";
 import { WorkspaceLanguageSession, type LanguageEndpoint, type LanguageStatus } from "./language-session";
 import { theme } from "../services/theme";
-import type { Diagnostic, ReviewGlyph, Source } from "./model";
+import type { Diagnostic, ReviewGlyph, Source, WorkspaceTreeNode } from "./model";
 
 const props = defineProps<{
   source: Source;
+  navigation?: WorkspaceTreeNode;
   value: string;
   readOnly: boolean;
   lineNumbers: boolean;
@@ -22,7 +23,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   change: [string];
-  cursor: [string];
+  cursor: [label: string, key?: string];
   save: [];
   review: [string];
   languageStatus: [LanguageStatus | undefined];
@@ -33,6 +34,9 @@ let editor: monaco.editor.IStandaloneCodeEditor | undefined;
 let model: monaco.editor.ITextModel | undefined;
 let glyphs: monaco.editor.IEditorDecorationsCollection | undefined;
 let highlighting: monaco.editor.IEditorDecorationsCollection | undefined;
+let declarationDecorations: string[] = [];
+let cursorFrame: number | undefined;
+const declarations = new Map<string, { key: string; depth: number }>();
 let extensionHandles: monaco.IDisposable[] = [];
 let installingSource = false;
 let resizeObserver: ResizeObserver | undefined;
@@ -44,6 +48,69 @@ let languageDiagnostics: Diagnostic[] = [];
 const conceptSpans = /\/\/[^\r\n]*|\/\*[\s\S]*?(?:\*\/|$)|"(?:\\[\s\S]|[^"\\])*(?:"|$)|'(?:\\[\s\S]|[^'\\])*(?:'|$)|\[(?:\\[\s\S]|[^\]\\])*(?:\]|$)|(?:^|[^\w.:-])([a-z_]+(?:\.[a-z_-]+)*:[A-Z][A-Za-z_0-9]*)\b/g;
 const semanticCategories = new Set(["DOMAIN", "CONFIGURATION", "EVENT", "EXTENT", "PROCESS", "QUALITY", "RELATIONSHIP", "TRAIT", "ROLE", "SUBJECT"]);
 let highlightTimer: number | undefined;
+
+function followCursor() {
+  if (cursorFrame !== undefined) return;
+  cursorFrame = window.requestAnimationFrame(() => {
+    cursorFrame = undefined;
+    const position = editor?.getPosition();
+    if (!position || !model) return;
+    const point = monaco.Range.fromPositions(position);
+    let key = props.navigation?.key;
+    let deepest = 0;
+    for (const decoration of model.getDecorationsInRange(point)) {
+      const declaration = declarations.get(decoration.id);
+      if (!declaration || declaration.depth <= deepest || !decoration.range.containsPosition(position)
+          || decoration.range.getEndPosition().equals(position)) continue;
+      key = declaration.key;
+      deepest = declaration.depth;
+    }
+    emit("cursor", `Ln ${position.lineNumber}, Col ${position.column}`, key);
+  });
+}
+
+function installDeclarationRanges() {
+  const current = model;
+  if (!current) return;
+  const document = props.navigation;
+  const source = props.source;
+  const saved = source.text.replace(/\r\n|\r/g, "\n");
+  const ranges: monaco.editor.IModelDeltaDecoration[] = [];
+  const locations: { key: string; depth: number }[] = [];
+  if (document && document.document?.sourceVersion === source.document.sourceVersion && current.getValue() === saved) {
+    const lineFeeds = Array.from(source.text.matchAll(/\r\n/g), match => match.index + 1);
+    function normalizedOffset(raw: number) {
+      let first = 0, last = lineFeeds.length;
+      while (first < last) {
+        const middle = (first + last) >>> 1;
+        if (lineFeeds[middle] < raw) first = middle + 1;
+        else last = middle;
+      }
+      return raw - first;
+    }
+    const collect = (nodes: WorkspaceTreeNode[], depth: number) => {
+      for (const node of nodes) {
+        const { offset, length } = node;
+        if (offset !== undefined && length !== undefined && offset >= 0
+            && length > 0 && offset + length <= source.text.length) {
+          locations.push({ key: node.key, depth });
+          ranges.push({
+            range: monaco.Range.fromPositions(current.getPositionAt(normalizedOffset(offset)),
+              current.getPositionAt(normalizedOffset(offset + length))),
+            options: { stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges },
+          });
+        }
+        collect(node.children, depth + 1);
+      }
+    };
+    collect(document.children, 1);
+  }
+  // Monaco moves these invisible ranges with edits to the document.
+  declarationDecorations = current.deltaDecorations(declarationDecorations, ranges);
+  declarations.clear();
+  declarationDecorations.forEach((id, index) => declarations.set(id, locations[index]));
+  followCursor();
+}
 
 function highlightConcepts() {
   window.clearTimeout(highlightTimer);
@@ -180,8 +247,9 @@ onMounted(() => {
     languageSession?.changed();
     setMarkers();
     highlightConcepts();
+    followCursor();
   });
-  editor.onDidChangeCursorPosition(({ position }) => emit("cursor", `Ln ${position.lineNumber}, Col ${position.column}`));
+  editor.onDidChangeCursorPosition(followCursor);
   editor.onMouseDown(({ target }) => {
     if (target.type !== monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) return;
     const item = props.reviewGlyphs?.find(item => item.line === target.position?.lineNumber);
@@ -192,6 +260,7 @@ onMounted(() => {
   setGlyphs();
   setExtensions();
   connectLanguageServer();
+  installDeclarationRanges();
 });
 
 watch(() => [props.readOnly, props.minimap, props.lineNumbers], () => editor?.updateOptions({
@@ -204,6 +273,7 @@ watch(() => props.value, value => {
   installingSource = false;
 });
 watch(() => [props.source, props.semanticDiagnostics, props.draftDiagnostics], setMarkers);
+watch(() => [props.navigation, props.source.revision], installDeclarationRanges);
 watch(() => props.source, highlightConcepts);
 watch(() => props.reviewGlyphs, setGlyphs);
 watch(() => props.extensions, setExtensions);
@@ -228,6 +298,7 @@ onBeforeUnmount(() => {
   window.clearTimeout(highlightTimer);
   resizeObserver?.disconnect();
   if (layoutFrame !== undefined) window.cancelAnimationFrame(layoutFrame);
+  if (cursorFrame !== undefined) window.cancelAnimationFrame(cursorFrame);
   extensionHandles.forEach(handle => handle.dispose());
   completionProvider?.dispose();
   languageSession?.dispose();

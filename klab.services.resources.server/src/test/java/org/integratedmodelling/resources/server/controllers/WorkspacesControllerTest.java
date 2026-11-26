@@ -82,11 +82,13 @@ class WorkspacesControllerTest {
     var visible = workspace();
     var project = (ProjectImpl) visible.getProjects().iterator().next();
     var ontology = (KimOntologyImpl) project.getOntologies().getFirst();
+    ontology.setLastUpdateTimestamp(1200);
     var parent = new KimConceptStatementImpl();
     parent.setUrn("Habitat");
     var child = new KimConceptStatementImpl();
     child.setUrn("Wetland");
     child.setOffsetInDocument(36);
+    child.setLength(7);
     parent.setChildren(List.of(child));
     ontology.setStatements(List.of(parent));
     var namespace = new KimNamespaceImpl();
@@ -108,8 +110,10 @@ class WorkspacesControllerTest {
     mvc.perform(get(endpoint).param("workspace", "work").principal(principal))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].children[0].document.id").value("ONTOLOGY:demo"))
+        .andExpect(jsonPath("$[0].children[0].document.sourceVersion").value("1200"))
         .andExpect(jsonPath("$[0].children[0].children[0].children[0].label").value("Wetland"))
         .andExpect(jsonPath("$[0].children[0].children[0].children[0].offset").value(36))
+        .andExpect(jsonPath("$[0].children[0].children[0].children[0].length").value(7))
         .andExpect(jsonPath("$[0].children[0].document.text").doesNotExist())
         .andExpect(jsonPath("$[0].children[1].children[0].kind").value("model"))
         .andExpect(jsonPath("$[0].children[2].label").value("Behaviors"))

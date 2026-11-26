@@ -75,7 +75,8 @@ public class WorkspacesController {
                               Map<String, RepositoryState.Status> repositoryStatuses) {}
 
   public record DocumentItem(String id, String label, String language, String extension, String path,
-                             ProjectStorage.ResourceType type, long errors, long warnings) {}
+                             ProjectStorage.ResourceType type, long errors, long warnings,
+                             String sourceVersion) {}
 
   public record Revision(String branch, List<String> branches, RepositoryState.Status status,
                          boolean remote, Map<String, RepositoryState.Status> files,
@@ -90,7 +91,7 @@ public class WorkspacesController {
   public record ProjectNavigation(String urn, Revision repository, List<NavigationNode> children) {}
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record NavigationNode(String label, String kind, DocumentItem document, Integer offset,
+  public record NavigationNode(String label, String kind, DocumentItem document, Integer offset, Integer length,
                                List<NavigationNode> children) {}
 
   public record Diagnostic(String level, String message, Integer offset, Integer length) {
@@ -169,7 +170,7 @@ public class WorkspacesController {
     return asset.children().stream().map(child -> {
       var delegate = child.getDelegate();
       if (delegate instanceof KlabDocument<?> document) {
-        return new NavigationNode(AuthoringSource.label(document), "document", item(document), null,
+        return new NavigationNode(AuthoringSource.label(document), "document", item(document), null, null,
             navigationChildren(child));
       }
       if (delegate instanceof KlabStatement statement) {
@@ -179,10 +180,10 @@ public class WorkspacesController {
           case KActorsAction ignored -> "action";
           default -> "statement";
         };
-        return new NavigationNode(child.getUrn(), kind, null, statement.getOffsetInDocument(),
+        return new NavigationNode(child.getUrn(), kind, null, statement.getOffsetInDocument(), statement.getLength(),
             navigationChildren(child));
       }
-      return new NavigationNode(child.getUrn(), "folder", null, null, navigationChildren(child));
+      return new NavigationNode(child.getUrn(), "folder", null, null, null, navigationChildren(child));
     }).toList();
   }
 
@@ -438,7 +439,9 @@ public class WorkspacesController {
     return new DocumentItem(id(document), AuthoringSource.label(document), document.getLanguage().languageId(),
         document.getLanguage().fileExtension(), path, type,
         document.getNotifications().stream().filter(n -> n.getLevel().severity >= Notification.Level.Error.severity).count(),
-        document.getNotifications().stream().filter(n -> n.getLevel() == Notification.Level.Warning).count());
+        document.getNotifications().stream().filter(n -> n.getLevel() == Notification.Level.Warning).count(),
+        Objects.toString(document.getMetadata().get(AuthoringSource.VERSION),
+            Long.toString(document.getLastUpdateTimestamp())));
   }
 
   private Source source(Project project, KlabDocument<?> document, ProjectEditingLock lock) {

@@ -33,6 +33,7 @@ const searchExpansion = ref<Set<string>>();
 const selectedNode = ref("");
 const pendingJump = ref<number>();
 const layout = ref<HTMLElement>();
+const treeScroll = ref<HTMLElement>();
 const treeWidth = ref(294);
 const layoutWidth = ref(0);
 const minimumTreeWidth = 215;
@@ -60,6 +61,22 @@ watch([editor, pendingJump], ([instance, offset]) => {
   }
 }, { flush: "post" });
 const source = ref<Source>();
+const sourceNavigation = computed(() => {
+  const id = source.value?.document.id;
+  const projectTree = navigationProjects.value.get(projectName.value);
+  if (!id || !projectTree) return undefined;
+  function find(nodes: WorkspaceTreeNode[]): WorkspaceTreeNode | undefined {
+    for (const node of nodes) {
+      if (node.kind === "document") {
+        if (node.document?.id === id) return node;
+      } else {
+        const match = find(node.children);
+        if (match) return match;
+      }
+    }
+  }
+  return find(projectTree.children);
+});
 const text = ref("");
 const loading = ref(true);
 const saving = ref(false);
@@ -67,6 +84,31 @@ const error = ref("");
 const feedback = ref("");
 const pending = ref<(() => void)>();
 const cursor = ref("Ln 1, Col 1");
+function followTreeCursor(label: string, key?: string) {
+  cursor.value = label;
+  if (!key) return;
+  selectedNode.value = key;
+  const path = key.split("/");
+  const keys = expanded.value;
+  let parent = "";
+  let updated: Set<string> | undefined;
+  for (const segment of path.slice(0, -1)) {
+    parent = parent ? parent + "/" + segment : segment;
+    if (keys.has(parent)) continue;
+    updated ??= new Set(keys);
+    updated.add(parent);
+  }
+  if (updated) expanded.value = updated;
+}
+watch([selectedNode, expandedNodes, treeScroll], () => {
+  const pane = treeScroll.value;
+  const selected = pane?.querySelector("[aria-current='true']");
+  if (!pane || !selected) return;
+  const bounds = pane.getBoundingClientRect();
+  const row = selected.getBoundingClientRect();
+  if (row.top < bounds.top) pane.scrollTop += row.top - bounds.top;
+  else if (row.bottom > bounds.bottom) pane.scrollTop += row.bottom - bounds.bottom;
+}, { flush: "post" });
 const navigatorVisible = ref(true);
 const split = ref(false);
 const fullscreen = ref(false);
@@ -627,7 +669,7 @@ onBeforeUnmount(() => {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 10 6 6 6-6M6 4l6 6 6-6"/></svg>
           </button>
         </div>
-        <div class="workspace-tree-scroll">
+        <div ref="treeScroll" class="workspace-tree-scroll">
           <p v-if="navigationLoading || loading && !workspace" class="workspace-note" role="status">Loading project tree…</p>
           <div v-else-if="navigationError" class="workspace-note" role="alert">
             <p>Could not load the project tree. {{ navigationError }}</p>
@@ -721,11 +763,12 @@ onBeforeUnmount(() => {
         <div v-if="source" class="workspace-editor-layout" :class="{ 'workspace-split': split }">
           <Suspense>
             <Monaco ref="editor" :key="`${projectName}/${source.document.id}`" :source="source" :value="text"
+                    :navigation="sourceNavigation"
                     :read-only="!project?.lock.editable || saving || loading" :line-numbers="lineNumbers" :minimap="minimap"
                     :semantic-diagnostics="semantic?.diagnostics ?? []" :draft-diagnostics="draftDiagnostics"
                     :language-endpoint="languageEndpoint"
                     :review-glyphs="reviewGlyphs?.(source)" :extensions="editorExtensions"
-                    @change="text = $event" @cursor="cursor = $event" @save="save" @review="emit('review', source, $event)"
+                    @change="text = $event" @cursor="followTreeCursor" @save="save" @review="emit('review', source, $event)"
                     @language-status="languageStatus = $event" @language-diagnostics="languageDiagnostics = $event"/>
             <template #fallback><p class="workspace-note" role="status">Loading editor…</p></template>
           </Suspense>

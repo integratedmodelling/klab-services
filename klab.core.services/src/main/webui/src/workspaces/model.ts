@@ -13,6 +13,7 @@ export interface DocumentItem {
   type: string;
   errors: number;
   warnings: number;
+  sourceVersion?: string;
 }
 
 export interface Diagnostic {
@@ -75,6 +76,7 @@ export interface NavigationNode {
   kind: "folder" | "document" | "concept" | "model" | "action" | "statement";
   document?: DocumentItem;
   offset?: number;
+  length?: number;
   children?: NavigationNode[];
 }
 
@@ -91,6 +93,7 @@ export interface WorkspaceTreeNode {
   project: string;
   document?: DocumentItem;
   offset?: number;
+  length?: number;
   status?: string;
   errors: number;
   warnings: number;
