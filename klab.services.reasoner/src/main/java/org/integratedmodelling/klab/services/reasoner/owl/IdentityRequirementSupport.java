@@ -170,7 +170,9 @@ public final class IdentityRequirementSupport {
     static final int CAPACITY = 512;
     private final java.util.concurrent.atomic.AtomicLong revision =
         new java.util.concurrent.atomic.AtomicLong();
-    private final OWLOntologyChangeListener listener = changes -> changed();
+    private final OWLOntologyChangeListener listener = changes -> {
+      if (!changes.isEmpty()) changed();
+    };
     private OWLOntologyManager manager;
     private Object reasoner;
     private OWLOntology root;

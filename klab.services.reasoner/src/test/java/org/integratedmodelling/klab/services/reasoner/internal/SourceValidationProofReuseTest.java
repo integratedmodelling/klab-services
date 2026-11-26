@@ -20,6 +20,134 @@ class SourceValidationProofReuseTest {
   private static final String BASE = "semantic-content-v2:" + "a".repeat(64);
   private final AtomicReference<String> authority = new AtomicReference<>("b".repeat(64));
 
+  @Test void routingStampDoesNotChangeStaticNamespaceSyntax() {
+    var ns = source();
+    var request = SemanticValidationRequest.of(ns, "1");
+    var staticKey = SourceValidationProofCache.key(request);
+    ns.setServiceId("resources");
+    assertEquals(staticKey, SourceValidationProofCache.key(request));
+    request.setExecutableModels(true);
+    var executableKey = SourceValidationProofCache.key(request);
+    ns.setServiceId(null);
+    assertNotEquals(executableKey, SourceValidationProofCache.key(request));
+  }
+
+  @Test void namespaceWithNoSemanticReadsReusesItsStaticProof() throws Exception {
+    var current = new AtomicReference<>(environment("no-reads"));
+    var ns = new KimNamespaceImpl();
+    ns.setUrn("test.empty"); ns.setSourceCode("namespace test.empty;");
+    try (var runtime = new AcceptedSemanticRuntime(AcceptedSemanticObserverScopeTest.factory(current), "reasoner");
+        var visitors = mockConstruction(DocumentSemanticValidator.class, (visitor, context) -> {
+          when(visitor.validate(any())).thenReturn(List.of());
+          when(visitor.isSourceSemanticsComplete()).thenReturn(true);
+          when(visitor.getSemanticObligations()).thenReturn(List.of());
+        })) {
+      runtime.submit(AcceptedSemanticObserverScopeTest.world());
+      assertTrue(runtime.awaitIdle(Duration.ofSeconds(5)));
+      var request = SemanticValidationRequest.of(ns, "1");
+      var first = validate(runtime, request);
+      assertTrue(first.valid());
+      assertFalse(first.isSemanticObligationsComplete());
+      assertTrue(validate(runtime, request).valid());
+      assertEquals(1, visitors.constructed().size());
+      verify(current.get().actor(), never()).sourceValidationDependencies(any(), any());
+    }
+  }
+
+  @Test void sourcePrincipalSurvivesLoginAndChangesWithRealmAccountOrMembership() {
+    var user = new org.integratedmodelling.common.authentication.UserIdentityImpl();
+    user.setUsername("alice"); user.setServerUrl("https://realm.example"); user.setId("first");
+    var initial = SourceValidationRecords.principal(user);
+    assertNotNull(initial);
+    user.setId("renewed");
+    assertEquals(initial, SourceValidationRecords.principal(user));
+    user.setUsername("bob");
+    assertNotEquals(initial, SourceValidationRecords.principal(user));
+    user.setUsername("alice"); user.setServerUrl("https://another.example");
+    assertNotEquals(initial, SourceValidationRecords.principal(user));
+    user.setServerUrl("https://realm.example");
+    var group = mock(org.integratedmodelling.klab.api.identities.Group.class);
+    when(group.getId()).thenReturn("research");
+    when(group.getName()).thenReturn("Research");
+    user.setGroups(Set.of(group));
+    var member = SourceValidationRecords.principal(user);
+    assertNotNull(member);
+    assertNotEquals(initial, member);
+    user.setAnonymous(true);
+    assertNull(SourceValidationRecords.principal(user));
+  }
+
+  @Test void durableRecordRechecksDependenciesAndExactInputsInAnotherInstance() throws Exception {
+    var doc = new KimNamespaceImpl();
+    doc.setUrn("test.ns");
+    doc.setSourceCode("namespace test.ns;");
+    var request = SemanticValidationRequest.of(doc, "1");
+    var response = SemanticValidationResponse.forRequest(request);
+    response.setStatus(SemanticValidationResponse.Status.COMPLETE);
+    response.setSourceSemanticsComplete(true);
+    response.setSemanticObligations(List.of("test:Region"));
+    var deps = new SemanticDependencyRequest("reasoner", 1, BASE, response.getSemanticObligations());
+    var proof = new SemanticDependencyWitness(SemanticDependencyWitness.VERSION,
+        SemanticDependencyWitness.Status.COMPLETE, "reasoner", 1, BASE, deps.inputHash(), List.of(), null);
+    var syntax = SourceValidationProofCache.key(request);
+    var key = SourceValidationRecords.key("reasoner", BASE, "user", syntax);
+    assertNotNull(key);
+    new SourceValidationRecords(directory).write(key, response, proof);
+    var restarted = new SourceValidationRecords(directory);
+    var newGeneration = new SemanticDependencyWitness(SemanticDependencyWitness.VERSION,
+        SemanticDependencyWitness.Status.COMPLETE, "reasoner", 2, BASE, deps.inputHash(), List.of(), null);
+    var hit = restarted.read(key, response.getSourceHash(), terms -> {
+      assertEquals(response.getSemanticObligations(), terms);
+      return newGeneration;
+    });
+    assertNotNull(hit);
+    assertEquals(2, hit.proof().knowledgeRevision());
+    assertNull(restarted.read(key, response.getSourceHash(), terms -> SemanticDependencyWitness.unknown(deps, "changed")));
+    assertNull(restarted.read(key, "different-file", terms -> proof));
+    assertNull(restarted.read(SourceValidationRecords.key("reasoner", BASE, "other", syntax),
+        response.getSourceHash(), terms -> proof));
+    doc.setScenario(true);
+    assertNotEquals(key, SourceValidationRecords.key("reasoner", BASE, "user", SourceValidationProofCache.key(request)));
+    java.nio.file.Files.writeString(directory.resolve(key + ".json"), "partial");
+    assertNull(restarted.read(key, response.getSourceHash(), terms -> proof));
+  }
+
+  @Test void ontologyReadHasADistinctSourceKeyAndExecutableOrDiagnosticRequestsCannotUseIt() {
+    var ontology = new KimOntologyImpl();
+    ontology.setUrn("test");
+    ontology.setSourceCode("ontology test in domain root;");
+    var req = SemanticValidationRequest.of(ontology, "1");
+    var original = SourceValidationProofCache.key(req);
+    assertNotNull(original);
+    req.setExecutableModels(true);
+    assertNull(SourceValidationProofCache.key(req));
+    req.setExecutableModels(false);
+    req.setDiagnosticsOnly(true);
+    assertNull(SourceValidationProofCache.key(req));
+    req.setDiagnosticsOnly(false);
+    ontology.setSourceCode("ontology test in domain root; identity NewIdentity;");
+    assertNotEquals(original, SourceValidationProofCache.key(req));
+  }
+
+  @Test void proofIdentityIgnoresSetOrderAndFileTimesButPreservesStatementOrder() {
+    var doc = new KimNamespaceImpl();
+    doc.setUrn("test.ns");
+    doc.setSourceCode("namespace test.ns;");
+    doc.setDisjointNamespaces(new LinkedHashSet<>(List.of("a", "b")));
+    var first = new KimModelImpl(); first.setUrn("test.first");
+    var second = new KimModelImpl(); second.setUrn("test.second");
+    doc.getStatements().add(first);
+    doc.getStatements().add(second);
+    var request = SemanticValidationRequest.of(doc, "1");
+    var initial = SourceValidationProofCache.key(request);
+    doc.setCreationTimestamp(200);
+    doc.setLastUpdateTimestamp(300);
+    doc.setDisjointNamespaces(new LinkedHashSet<>(List.of("b", "a")));
+    assertEquals(initial, SourceValidationProofCache.key(request));
+    Collections.swap(doc.getStatements(), 0, 1);
+    assertNotEquals(initial, SourceValidationProofCache.key(request));
+  }
+
   @BeforeAll static void configure() {
     org.integratedmodelling.klab.configuration.ServiceConfiguration.injectInstantiators();
   }

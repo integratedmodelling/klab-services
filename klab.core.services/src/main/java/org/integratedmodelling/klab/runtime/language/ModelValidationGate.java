@@ -474,22 +474,21 @@ public final class ModelValidationGate {
   }
 
   public static long require(KimModel model, Scope scope) {
-    return require(model, scope, -1);
-  }
-
-  private static long require(KimModel model, Scope scope, long expectedRevision) {
-    return require(model, scope, expectedRevision, false);
-  }
-
-  private static long require(KimModel model, Scope scope, long expectedRevision, boolean executable) {
-    return require(model,scope,expectedRevision,executable,false);
-  }
-
-  private static long require(KimModel model, Scope scope, long expectedRevision, boolean executable, boolean preparable) {
+    var session = SESSION.get();
+    var publication = session == null ? null : session.publicationNamespace;
+    if (publication != null && java.util.Objects.equals(session.publicationCaller, caller(scope))
+        && java.util.Objects.equals(publication.getUrn(), model.getNamespace())
+        && publication.getStatements().stream().anyMatch(statement -> statement == model)) {
+      // Descriptor inference runs inside namespace publication. Reuse the exact parsed
+      // namespace receipt, whose session key also covers edits to any of its statements.
+      // The namespace visitor checked this exact statement during the current publication.
+      // Later validations require their own dependency proof before reusing a static result.
+      return sourceAdmission(publication, scope, -1).getKnowledgeRevision();
+    }
     var namespace = new KimNamespaceImpl();
     namespace.setUrn(model.getNamespace() == null ? "model.validation" : model.getNamespace());
     namespace.getStatements().add(model);
-    return require(namespace, scope, expectedRevision, executable, preparable);
+    return require(namespace, scope);
   }
 
   public static boolean admits(String name, String namespace, ResourcesService resources, Scope scope) {

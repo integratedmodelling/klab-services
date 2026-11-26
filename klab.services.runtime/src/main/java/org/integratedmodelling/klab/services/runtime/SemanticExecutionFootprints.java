@@ -132,7 +132,8 @@ final class SemanticExecutionFootprints {
               org.integratedmodelling.klab.api.data.Data.Builder.class,
               org.integratedmodelling.klab.api.geometry.Geometry.class,
               org.integratedmodelling.klab.api.knowledge.Observable.class,
-              org.integratedmodelling.klab.api.scope.ContextScope.class
+              org.integratedmodelling.klab.api.scope.ContextScope.class,
+              ServiceCall.class
             }))
       return true; // Exact testcase producer only; execution still requires its private live
                    // permit.

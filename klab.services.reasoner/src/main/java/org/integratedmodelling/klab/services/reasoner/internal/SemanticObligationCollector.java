@@ -82,9 +82,10 @@ final class SemanticObligationCollector {
     if(value instanceof Map<?,?> map) {map.forEach((key,item)->{value(key,model,seen);value(item,model,seen);});return;}
     if(value instanceof Iterable<?> values) {for(var item:values)value(item,model,seen);return;}
     if(value instanceof Object[] values) {for(var item:values)value(item,model,seen);return;}
-    // Typed quantities contain only a number and unit/currency strings, with no semantic
-    // operands used by the source validator. Retain the legacy conservative runtime flag.
-    if(value instanceof org.integratedmodelling.klab.api.lang.Quantity) { complete=false; return; }
+    // The source visitor does not interpret bare identifiers (e.g. a resource's adapter name)
+    // or quantity units. Their meaning to an executor still needs its own footprint.
+    if(value instanceof org.integratedmodelling.klab.api.collections.Identifier
+        || value instanceof org.integratedmodelling.klab.api.lang.Quantity) { complete=false; return; }
     // Declarative scalar syntax has no hidden evaluator or semantic operands.
     if(value instanceof KimQuantity||value instanceof KimDate||value instanceof org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl
         ||value instanceof org.integratedmodelling.klab.api.geometry.Geometry||value instanceof Urn)return;

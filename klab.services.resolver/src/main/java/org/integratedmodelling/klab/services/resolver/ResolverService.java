@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.scope.*;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -57,6 +58,25 @@ public class ResolverService extends BaseService implements Resolver {
   private final ExecutorService resolutionExecutor = Executors.newVirtualThreadPerTaskExecutor();
   private final ModelCandidateSources.SharedCatalogs candidateCatalogs =
       new ModelCandidateSources.SharedCatalogs();
+  private static final boolean PROFILE_PROJECTIONS = Boolean.getBoolean("klab.profile.characterization");
+  private final java.util.concurrent.ConcurrentMap<String, java.util.concurrent.atomic.LongAdder>
+      projectionCounts = new java.util.concurrent.ConcurrentHashMap<>();
+
+  private void countProjection(String event) {
+    if (PROFILE_PROJECTIONS)
+      projectionCounts.computeIfAbsent(event, ignored -> new java.util.concurrent.atomic.LongAdder()).increment();
+  }
+
+  @Override
+  public ServiceStatus status() {
+    var status = super.status();
+    if (PROFILE_PROJECTIONS && projectionCounts != null) {
+      var counts = new java.util.TreeMap<String, Long>();
+      projectionCounts.forEach((event, count) -> counts.put(event, count.sum()));
+      status.getMetadata().put("model.projection.profile", counts);
+    }
+    return status;
+  }
 
   private record CatalogOwner(
       org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding cycle,
@@ -68,8 +88,16 @@ public class ResolverService extends BaseService implements Resolver {
     if (cycle == null || cycle.semanticBinding() == null || user == null || user.isAnonymous()
         || user.getId() == null || user.getUsername() == null
         || !Objects.equals(scope.getId(), cycle.contextId())
-        || !Objects.equals(scope.getHostServiceId(), cycle.runtimeServiceId()))
+        || !Objects.equals(scope.getHostServiceId(), cycle.runtimeServiceId())) {
+      if (PROFILE_PROJECTIONS) {
+        if (cycle == null || cycle.semanticBinding() == null) countProjection("session.noCycle");
+        else if (!Objects.equals(scope.getId(), cycle.contextId())) countProjection("session.contextMismatch");
+        else if (!Objects.equals(scope.getHostServiceId(), cycle.runtimeServiceId())) countProjection("session.hostMismatch");
+        else countProjection("session.noCaller");
+      }
       return ModelCandidateSources.openSession();
+    }
+    countProjection("session.shared");
     var federation = org.integratedmodelling.klab.api.Klab.INSTANCE.getFederationData(user);
     return candidateCatalogs.openSession(new CatalogOwner(cycle, user.getUsername(),
         org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest.sourceHash(user.getId()),
@@ -97,16 +125,23 @@ public class ResolverService extends BaseService implements Resolver {
     // Map supplier sources using this Resolver's retained actor, bypassing the global URN cache.
     if (resultClass == Model.class && resourceSet.getResults().stream().anyMatch(r ->
         r.getMetadata().containsKey(org.integratedmodelling.common.knowledge.ModelCandidateSources.SOURCE))) {
+      var reasoner = scope.getService(Reasoner.class);
+      var cycle = scope instanceof ContextScope context ? context.getResolutionCycleBinding() : null;
+      var status = reasoner != null && cycle != null && cycle.semanticBinding() != null
+          ? reasoner.status() : null;
+      boolean batchPorts = status != null && status.getMetadata() != null && Boolean.TRUE.equals(
+          status.getMetadata().get(Reasoner.MODEL_PORT_BATCH_METADATA));
       for (var descriptor : resourceSet.getResults()) {
         if (descriptor.getKnowledgeClass() != KlabAsset.KnowledgeClass.MODEL) continue;
         try {
           var model = ModelCandidateSources.project(descriptor, scope, (source, prove) -> {
+            countProjection(prove ? "mapping.requestedProof" : "mapping.local");
             var statement = source.getStatements().stream().filter(KimModel.class::isInstance)
                 .map(KimModel.class::cast).filter(m -> descriptor.getResourceUrn().equals(m.getUrn()))
                 .findFirst().orElseThrow();
             var reads = prove ? new java.util.HashSet<String>() : null;
             var projection = org.integratedmodelling.klab.runtime.language.SourceModelMapper.load(
-                statement, source, scope, reads);
+                statement, source, scope, reads, batchPorts);
             return new ModelCandidateSources.CandidateProjection(
                 projection, prove && projectionIsAuthorityFree((ContextScope) scope, reads));
           });
@@ -328,7 +363,10 @@ public class ResolverService extends BaseService implements Resolver {
   }
 
   private boolean projectionIsAuthorityFree(ContextScope scope, java.util.Set<String> reads) {
-    if (reads.isEmpty() || reads.contains(null)) return false;
+    if (reads.isEmpty() || reads.contains(null)) {
+      countProjection("proof.incompleteReads");
+      return false;
+    }
     var binding = scope.getResolutionCycleBinding().semanticBinding();
     try {
       var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
@@ -336,13 +374,22 @@ public class ResolverService extends BaseService implements Resolver {
           java.util.List.copyOf(reads));
       var witness = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)
           .semanticDependencies(request, scope);
-      return witness != null && witness.completeAt(System.currentTimeMillis())
+      boolean reusable = witness != null && witness.completeAt(System.currentTimeMillis())
           && witness.authorities().isEmpty()
           && Objects.equals(binding.reasonerServiceId(), witness.serviceId())
           && binding.knowledgeRevision() == witness.knowledgeRevision()
           && Objects.equals(binding.semanticFingerprint(), witness.baseFingerprint())
           && Objects.equals(request.inputHash(), witness.inputHash());
+      if (PROFILE_PROJECTIONS) {
+        if (reusable) countProjection("proof.reusable");
+        else if (witness == null) countProjection("proof.missing");
+        else if (!witness.completeAt(System.currentTimeMillis())) countProjection("proof." + witness.status());
+        else if (!witness.authorities().isEmpty()) countProjection("proof.authorities");
+        else countProjection("proof.bindingMismatch");
+      }
+      return reusable;
     } catch (RuntimeException unavailable) {
+      countProjection("proof.unavailable");
       return false;
     }
   }

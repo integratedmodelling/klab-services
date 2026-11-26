@@ -159,6 +159,42 @@ class ModelAdmissionReceiptTest {
     verify(reasoner,times(3)).validateDocument(any(),eq(scope));
   }
 
+  @Test void currentNamespaceValidationCoversOnlyItsExactSourceModelsDuringPublication() {
+    var source = (KimModelImpl) namespace.getStatements().getFirst();
+    source.setNamespace("test");
+    var outside = new KimModelImpl();
+    outside.setNamespace("test");
+    outside.setUrn(source.getUrn());
+    var complete = new java.util.concurrent.atomic.AtomicBoolean(true);
+    when(reasoner.validateDocument(any(), eq(scope))).thenAnswer(invocation -> {
+      var response = SemanticValidationResponse.forRequest(invocation.getArgument(0));
+      response.setStatus(SemanticValidationResponse.Status.COMPLETE);
+      response.setKnowledgeRevision(3);
+      response.setSemanticContentFingerprint(CONTENT);
+      response.setSourceSemanticsComplete(complete.get());
+      stamp(response);
+      return response;
+    });
+    try (var publication = ModelValidationGate.openPublicationSession(namespace, scope)) {
+      ModelValidationGate.sourceAdmission(namespace, scope, 3);
+      for (int i = 0; i < 3; i++) assertEquals(3, ModelValidationGate.require(source, scope));
+      verify(reasoner, times(1)).validateDocument(any(), eq(scope));
+      ModelValidationGate.require(outside, scope);
+      verify(reasoner, times(2)).validateDocument(any(), eq(scope));
+      source.getMetadata().put("changed", true);
+      ModelValidationGate.require(source, scope);
+      verify(reasoner, times(3)).validateDocument(any(), eq(scope));
+    }
+    ModelValidationGate.require(source, scope);
+    verify(reasoner, times(4)).validateDocument(any(), eq(scope));
+    complete.set(false);
+    try (var publication = ModelValidationGate.openPublicationSession(namespace, scope)) {
+      ModelValidationGate.sourceAdmission(namespace, scope, 3);
+      ModelValidationGate.require(source, scope);
+      verify(reasoner, times(5)).validateDocument(any(), eq(scope));
+    }
+  }
+
   private void publish() {
     var response=ModelValidationGate.sourceAdmission(namespace,scope,3);
     namespace.getMetadata().put(ResourcesService.NAMESPACE_ADMISSION_METADATA,

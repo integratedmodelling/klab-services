@@ -88,6 +88,17 @@ class SemanticCycleHttpTest {
     var calls=new ArrayList<String>();var released=new AtomicBoolean();var failure=new AtomicReference<Throwable>();
     var actor=mock(Reasoner.class);var meaning=SemanticCycleFacadeTest.concept("test:Tree");
     when(actor.resolveConcept("test:Tree")).thenReturn(meaning);
+    var port = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservableImpl();
+    port.setFormalName("trees");
+    var resolved = new org.integratedmodelling.common.knowledge.ObservableImpl();
+    resolved.setSemantics(meaning);
+    resolved.setStatedName("trees");
+    when(actor.resolveModelPorts(anyList(), eq(true))).thenAnswer(call -> {
+      List<org.integratedmodelling.klab.api.lang.kim.KimObservable> ports = call.getArgument(0);
+      assertEquals(List.of("trees", "trees"), ports.stream().map(p -> p.getFormalName()).toList());
+      return new Reasoner.ModelPorts(Arrays.asList(resolved, null), new HashSet<>(Arrays.asList("test:Tree", null)));
+    });
+    when(actor.semanticRefinementGeneration()).thenReturn(3L);
     when(actor.buildConcept(any(),isNull())).thenAnswer(i->{
       ObservableBuildStrategy builder=i.getArgument(0);assertEquals("test:Tree",builder.getBaseConcept().getUrn());
       assertEquals(1,builder.getOperations().size());return meaning;
@@ -145,13 +156,18 @@ class SemanticCycleHttpTest {
       when(focus.getId()).thenReturn(42L);
       var pinned=client.bindSemanticCycle(binding,"runtime","context","cycle",scope);
       assertEquals("test:Tree",pinned.resolveConcept("test:Tree").getUrn());
+      var projection = pinned.resolveModelPorts(List.of(port, port), true);
+      assertEquals("trees", projection.ports().getFirst().getStatedName());
+      assertNull(projection.ports().get(1));
+      assertEquals(new HashSet<>(Arrays.asList("test:Tree", null)), projection.semanticReads());
+      assertEquals(3L, pinned.semanticRefinementGeneration());
       var builder=new ObservableBuildStrategy(meaning,scope);builder.of(meaning);
       assertEquals("test:Tree",pinned.buildConcept(builder,scope).getUrn());
       var matches=new LinkedHashMap<Concept,Concept>();assertTrue(pinned.match(meaning,meaning,matches));assertEquals(1,matches.size());
       client.releaseSemanticCycle(binding,"runtime","context","cycle",scope);
       assertThrows(org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException.class,()->pinned.resolveConcept("test:Tree"));
       assertNull(failure.get(),()->String.valueOf(failure.get()));
-      assertEquals(6,calls.size());verify(client,never()).resolveConcept(anyString());
+      assertEquals(8,calls.size());verify(client,never()).resolveConcept(anyString());
     }finally{server.stop(0);}
   }
 }

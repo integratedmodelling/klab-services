@@ -155,7 +155,7 @@ public class SemanticsBuilder implements Observable.Builder, AutoCloseable {
     return this;
   }
 
-  /** An ordinary atomic predicate with an explicit bearer is registered under its syntax URN. */
+  /** An ordinary named head with an explicit bearer is registered under its syntax URN. */
   public boolean canBuildResolutionHead(Set<String> candidateUrns) {
     if (syntax.getName() == null || syntax.isCollective() || syntax.getSemanticModifier() != null
         || syntax.getInherent() == null || syntax.getModifiers().size() != 1

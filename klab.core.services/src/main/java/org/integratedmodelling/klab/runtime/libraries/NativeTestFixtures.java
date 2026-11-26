@@ -295,13 +295,22 @@ public final class NativeTestFixtures {
     permit.add("cessation", 1);
   }
 
+  public static void fixed(
+      Data.Builder builder, Geometry geometry, Observable observable, ContextScope scope) {
+    fixed(builder, geometry, observable, scope, null);
+  }
+
   @KlabFunction(
       name = "fixed",
       type = Artifact.Type.OBJECT,
       geometry = "*",
-      description = "Emit one permitted native testcase member with exactly the requested geometry")
+      description = "Emit a permitted native testcase member or a fixed row of normalized cells",
+      parameters = @KlabFunction.Argument(
+          name = "members", type = Artifact.Type.NUMBER, optional = true,
+          description = "Member count. Omit for one member with the original support."))
   public static void fixed(
-      Data.Builder builder, Geometry geometry, Observable observable, ContextScope scope) {
+      Data.Builder builder, Geometry geometry, Observable observable, ContextScope scope,
+      ServiceCall call) {
     var permit = require(scope);
     if (builder == null
         || geometry == null
@@ -313,22 +322,54 @@ public final class NativeTestFixtures {
         || !observable.getSemantics().isCollective())
       throw new IllegalArgumentException(
           "Fixed discovery requires a builder, concrete geometry and collective observable");
+    var count = call == null ? null : call.getParameters().get("members");
+    if (count != null && (!(count instanceof Number number)
+        || number.intValue() < 1 || number.doubleValue() != number.intValue()))
+      throw new IllegalArgumentException("Fixed discovery members must be a positive integer");
+    int members = count == null ? 1 : ((Number) count).intValue();
     var individual = observable.builder(scope).collective(false).buildObservable();
     if (individual == null
         || individual.getSemantics() == null
         || individual.getSemantics().isCollective())
       throw new IllegalStateException("Fixed discovery requires the declared singular observable");
-    var key =
-        scope.getId() + "|" + observable.getUrn() + "|" + Geometry.forTransport(geometry).encode();
-    var identity =
-        Urn.of(
-            "native.fixture:"
-                + java.util.UUID.nameUUIDFromBytes(
-                    key.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-    if (builder.object("fixed_member", individual, geometry, identity) == null)
-      throw new IllegalStateException("Fixed discovery did not acknowledge its object builder");
+    boolean profileGrid = Boolean.getBoolean("klab.profile.characterization")
+        || org.integratedmodelling.common.diagnostics.SemanticOperationTrace.enabled("buildObservable");
+    StringBuilder grid = members > 1 && profileGrid ? new StringBuilder() : null;
+    var scale = members == 1 ? null
+        : org.integratedmodelling.klab.api.knowledge.observation.scale.Scale.create(geometry);
+    var space = scale == null ? null : scale.getSpace();
+    if (members > 1 && (space == null || space.getEnvelope() == null))
+      throw new IllegalArgumentException("Fixed discovery grid requires spatial support");
+    for (int index = 0; index < members; index++) {
+      Geometry support = geometry;
+      if (space != null) {
+        var envelope = space.getEnvelope();
+        double width = envelope.getMaxX() - envelope.getMinX();
+        double height = envelope.getMaxY() - envelope.getMinY();
+        var cell = org.integratedmodelling.klab.runtime.scale.space.ShapeImpl.create(
+            envelope.getMinX() + width * (index + 0.1) / members,
+            envelope.getMinY() + height * 0.2,
+            envelope.getMinX() + width * (index + 0.9) / members,
+            envelope.getMinY() + height * 0.8, space.getProjection());
+        support = scale.with(cell);
+      }
+      var encoded = Geometry.forTransport(support).encode();
+      var name = members == 1 ? "fixed_member" : "fixed_member_" + index;
+      var key = scope.getId() + "|" + observable.getUrn() + "|"
+          + (members == 1 ? "" : index + "|") + encoded;
+      var identity = Urn.of("native.fixture:" + java.util.UUID.nameUUIDFromBytes(
+          key.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+      if (builder.object(name, individual, support, identity) == null)
+        throw new IllegalStateException("Fixed discovery did not acknowledge its object builder");
+      if (grid != null) grid.append(name).append(':').append(encoded).append('\n');
+    }
     // Normal execution owns native creation, transactions and INSTANTIATION completion.
-    permit.add("discovery", 1);
+    permit.add("discovery", members);
+    if (grid != null)
+      org.integratedmodelling.common.diagnostics.SemanticOperationTrace.emit(
+          "FIXED_FIXTURE_GRID", java.util.Map.of("members", members, "geometryHash",
+              org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest
+                  .sourceHash(grid.toString())));
   }
 
   @KlabFunction(

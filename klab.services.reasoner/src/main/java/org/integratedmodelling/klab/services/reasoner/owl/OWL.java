@@ -118,7 +118,9 @@ public class OWL {
   private Set<OWLOntology> specializationOntologies;
   private final AtomicLong inferenceRevision = new AtomicLong();
   private long retainedInferenceRevision = -1;
-  private final OWLOntologyChangeListener inferenceChanges = changes -> inferenceRevision.incrementAndGet();
+  private final OWLOntologyChangeListener inferenceChanges = changes -> {
+    if (!changes.isEmpty()) inferenceRevision.incrementAndGet();
+  };
 
   private void prepareInferenceCache() {
     if (inferenceBackend != reasoner) {
@@ -153,11 +155,30 @@ public class OWL {
       com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(65_536).recordStats().build();
   private final com.github.benmanes.caffeine.cache.Cache<OWLClass, List<OWLClassExpression>> specializationParents =
       com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(5_000).recordStats().build();
+  private final com.github.benmanes.caffeine.cache.Cache<OWLClass, List<OWLSemanticClauseSupport.Bound>> clauseBounds =
+      com.github.benmanes.caffeine.cache.Caffeine.newBuilder().maximumSize(2_000).recordStats().build();
 
   private void clearInferenceAnswers() {
     entailments.invalidateAll(); satisfiability.invalidateAll();
     hierarchyAnswers.invalidateAll(); equivalenceAnswers.invalidateAll(); specializationAnswers.invalidateAll();
     specializationParents.invalidateAll();
+    clauseBounds.invalidateAll();
+  }
+
+  synchronized List<OWLSemanticClauseSupport.Bound> clauseBounds(OWLClass root,
+      java.util.function.Supplier<List<OWLSemanticClauseSupport.Bound>> compute, Runnable checkpoint) {
+    requireAvailableClosure();
+    flushReasoner();
+    prepareSpecializationCache();
+    checkpoint.run();
+    var known = clauseBounds.getIfPresent(root);
+    if (known != null) return known;
+    long revision = inferenceRevision.get();
+    var result = compute.get();
+    checkpoint.run();
+    prepareSpecializationCache();
+    if (revision == inferenceRevision.get()) clauseBounds.put(root, result);
+    return result;
   }
 
   /** Only completed empty-visited searches may use this cache; recursive branch answers cannot. */
@@ -189,6 +210,26 @@ public class OWL {
     }
   }
 
+  /** HermiT can decide one strict subsumption without classifying every named class. */
+  synchronized boolean properSubclass(OWLClass child, OWLClass parent) {
+    requireAvailableClosure();
+    if (child != null && parent != null && !child.equals(parent)
+        && reasoner instanceof org.semanticweb.HermiT.Reasoner
+        && hasPinnedBufferingReasoner() && !reasonerSynchronizing
+        && !reasoner.isPrecomputed(InferenceType.CLASS_HIERARCHY)
+        && reasoner.getPendingChanges().isEmpty()) {
+      var ontology = reasoner.getRootOntology();
+      var imports = org.semanticweb.owlapi.model.parameters.Imports.INCLUDED;
+      if (ontology.containsClassInSignature(child.getIRI(), imports)
+          && ontology.containsClassInSignature(parent.getIRI(), imports)) {
+        var factory = ontology.getOWLOntologyManager().getOWLDataFactory();
+        return isEntailed(factory.getOWLSubClassOfAxiom(child, parent))
+            && !isEntailed(factory.getOWLSubClassOfAxiom(parent, child));
+      }
+    }
+    return getSubClasses(parent, false).containsEntity(child);
+  }
+
   private NodeSet<OWLClass> hierarchyAnswer(OWLClassExpression expression, boolean direct, boolean subclasses) {
     prepareInferenceCache();
     var saved = hierarchyAnswers.get(new HierarchyKey(expression, direct, subclasses), key -> {
@@ -214,7 +255,8 @@ public class OWL {
     var result = new LinkedHashMap<String, Map<String, Long>>();
     Map.of("entailments", entailments, "satisfiability", satisfiability,
         "hierarchy", hierarchyAnswers, "equivalence", equivalenceAnswers,
-        "specialization", specializationAnswers, "specializationParents", specializationParents).forEach((name, cache) -> {
+        "specialization", specializationAnswers, "specializationParents", specializationParents,
+        "clauseBounds", clauseBounds).forEach((name, cache) -> {
       var stats = cache.stats();
       result.put(name, Map.of("hits", stats.hitCount(), "misses", stats.missCount(),
           "loadNanos", stats.totalLoadTime()));
@@ -2210,7 +2252,7 @@ public class OWL {
 
   public synchronized void finalizeConcept(ConceptImpl concept) {
     if (reasoner != null) {
-      if (!reasoner.isSatisfiable(getOWLClass(concept))) {
+      if (!isSatisfiable(getOWLClass(concept))) {
         concept.error("concept definition is semantically inconsistent");
       }
     }
@@ -3424,8 +3466,7 @@ public class OWL {
       if (reasoner == null) {
         return reas.is(c1, c2);
       }
-      return getSubClasses(getOWLClass(c2.asConcept()), false)
-          .containsEntity(getOWLClass(c1.asConcept()));
+      return properSubclass(getOWLClass(c1.asConcept()), getOWLClass(c2.asConcept()));
 
     } else if (c1 instanceof Property && c2 instanceof Property) {
 

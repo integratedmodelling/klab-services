@@ -26,10 +26,12 @@ public final class SemanticCycleCodec {
       Set.of(
           "resolveConcept",
           "resolveObservable",
+          "resolveModelPorts",
           "declareObservable",
           "buildConcept",
           "buildObservable",
           "capabilities",
+          "semanticRefinementGeneration",
           "semanticDependencies",
           "validateDocument",
           "semanticDistance",

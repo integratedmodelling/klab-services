@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.components.ComponentRegistry;
 import org.junit.jupiter.api.Test;
 
@@ -10,14 +11,14 @@ class SemanticExecutionFootprintsTest {
     public static void fixed(org.integratedmodelling.klab.api.data.Data.Builder builder,
         org.integratedmodelling.klab.api.geometry.Geometry geometry,
         org.integratedmodelling.klab.api.knowledge.Observable observable,
-        org.integratedmodelling.klab.api.scope.ContextScope scope) {}
+        org.integratedmodelling.klab.api.scope.ContextScope scope, ServiceCall call) {}
   }
 
   @Test void fixedFixtureFootprintRequiresExactCoreMethodAndFunctionBinding() throws Exception {
     var parameters = new Class<?>[] {org.integratedmodelling.klab.api.data.Data.Builder.class,
         org.integratedmodelling.klab.api.geometry.Geometry.class,
         org.integratedmodelling.klab.api.knowledge.Observable.class,
-        org.integratedmodelling.klab.api.scope.ContextScope.class};
+        org.integratedmodelling.klab.api.scope.ContextScope.class, ServiceCall.class};
     var actual = org.integratedmodelling.klab.runtime.libraries.NativeTestFixtures.class.getMethod("fixed", parameters);
     var call = mock(org.integratedmodelling.klab.api.lang.ServiceCall.class);
     when(call.getUrn()).thenReturn("klab.tests.fixtures.fixed");

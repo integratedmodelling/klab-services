@@ -178,6 +178,29 @@ class CollectiveSelectionExecutionTest {
 
   Observation query() { return CollectiveSelectionExecution.query(f.runtime, request, f.scope); }
 
+  @Test void retainedSelectionRebuildsOnlyAfterRefinement() {
+    member(-30, "Selected", beech, mature);
+    complete();
+    var semantic = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBinding(
+        "semantic-cycle-v1", capabilities.getServiceId(), capabilities.getSemanticSessionId(),
+        capabilities.getKnowledgeRevision(), FINGERPRINT, "lease");
+    var cycle = new org.integratedmodelling.klab.api.services.runtime.objects.ResolutionCycleBinding(
+        1, "cycle", f.scope.getId(), "runtime", true, semantic);
+    when(f.scope.getResolutionCycleBinding()).thenReturn(cycle);
+    var status = mock(org.integratedmodelling.klab.api.services.KlabService.ServiceStatus.class);
+    when(status.getMetadata()).thenReturn(Metadata.create(Reasoner.RETAINED_REFINEMENT_METADATA, true));
+    when(reasoner.status()).thenReturn(status);
+    when(reasoner.semanticRefinementGeneration()).thenReturn(3L);
+
+    assertFalse(query().isEmpty());
+    verify(reasoner, times(2)).buildObservable(any(), eq(f.scope));
+
+    clearInvocations(reasoner);
+    when(reasoner.semanticRefinementGeneration()).thenReturn(3L, 3L, 4L, 4L, 4L);
+    assertFalse(query().isEmpty());
+    verify(reasoner, times(4)).buildObservable(any(), eq(f.scope));
+  }
+
   @Test void transportedSelectedInputRequiresFreshReadBeforeItCanSupplyEvidence() {
     member(-30, "Selected", beech, mature); complete();
     var original = query(); assertFalse(original.isEmpty());

@@ -115,4 +115,29 @@ class WorldviewSourcesTest {
     ontology(remote, "other", "extra", "missing");
     assertThrows(IllegalArgumentException.class, () -> WorldviewSources.compose(List.of(local, remote)));
   }
+
+  @Test void routingHeadersSelectTheSameOwnersAndCheckTheSameImports() {
+    var local = view("local");
+    ontology(local, "base-project", "base");
+    local.getMetadata().put(Worldview.PROJECT_SOURCES, java.util.Map.of("empty-local-project", "local"));
+    var remote = view("remote");
+    ontology(remote, "base-project", "base");
+    var extension = ontology(remote, "remote-project", "extension", "base");
+    var strategy = new org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl();
+    strategy.setUrn("remote-strategy");
+    strategy.setProjectName("strategy-project");
+    remote.getObservationStrategies().add(strategy);
+    var localHeader = WorldviewImpl.routingHeader(local);
+    var remoteHeader = WorldviewImpl.routingHeader(remote);
+    var expected = java.util.Map.of("empty-local-project", "local", "base-project", "local",
+        "remote-project", "remote", "strategy-project", "remote");
+    for (var input : List.of(List.<Worldview>of(local, remote), List.of(localHeader, remoteHeader),
+        List.of(localHeader, remote))) {
+      assertEquals(expected, WorldviewSources.compose(input).getMetadata().get(Worldview.PROJECT_SOURCES));
+    }
+    assertNull(remoteHeader.getOntologies().getLast().getSourceCode());
+    extension.getImportedOntologies().add("missing");
+    assertThrows(IllegalArgumentException.class,
+        () -> WorldviewSources.compose(List.of(localHeader, WorldviewImpl.routingHeader(remote))));
+  }
 }

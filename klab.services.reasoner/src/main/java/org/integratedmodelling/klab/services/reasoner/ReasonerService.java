@@ -184,19 +184,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   private record DocumentationSnapshot(long revision, long refinements, long generation, String markdown) {}
   private DocumentationSnapshot documentationSnapshot;
 
-  private ResourcesService resourcesForDocument(UserScope scope, KlabDocument<?> document) {
-    var providers = scope.getServices(ResourcesService.class);
-    if (providers.size() <= 1) return scope.getService(ResourcesService.class);
-    var selected = WorldviewSources.discover(scope);
-    if (selected == null) return null;
-    var owners = selected.getMetadata().get(Worldview.PROJECT_SOURCES);
-    var id = owners instanceof Map<?, ?> map ? map.get(document.getProjectName()) : null;
-    if (id == null && selected instanceof org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl impl)
-      id = impl.getServiceId();
-    for (var provider : providers) if (id != null && id.equals(provider.serviceId())) return provider;
-    return null;
-  }
-
   private synchronized String worldviewDocumentation(String urn) {
     if (!knowledgeReady || worldview == null || worldview.isEmpty()
         || !("current".equals(urn) || Objects.equals(urn, worldview.getWorldviewId())
@@ -570,8 +557,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
       Caffeine.newBuilder().weakKeys().maximumSize(512).recordStats().build();
 
   /** In-process semantic changes within an accepted publication. */
+  @Override
   public long semanticRefinementGeneration() {
-    return resolvingRefinements.get();
+    return candidateRuntime != null && !semanticOnly ? -1 : resolvingRefinements.get();
+  }
+
+  @Override
+  public ModelPorts resolveModelPorts(
+      List<org.integratedmodelling.klab.api.lang.kim.KimObservable> ports, boolean trackReads) {
+    if (candidateRuntime != null && !semanticOnly)
+      throw new UnsupportedOperationException("Model port resolution requires a retained actor");
+    return org.integratedmodelling.klab.runtime.language.SourceModelMapper.resolvePorts(
+        ports, this, trackReads);
   }
 
   /** Nonblocking counters: status polling must not acquire the semantic actor monitor. */
@@ -900,8 +897,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         reason);
   }
 
-  /** Internal source-only proof for this exact actor. Never return it as executable or durable
-   * evidence: an unchanged captured closure does not prove freshness of a mutable provider. */
+  /** Static proof for this actor. Disk records require a newly computed matching proof, including
+   * current authority access and capture freshness. Executable admissions use semanticDependencies. */
   public org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness
       sourceValidationDependencies(
           org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest request,
@@ -981,18 +978,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         && document.getProjectName() != null
         && !document.getProjectName().isBlank()) {
       var resources = scope.getService(ResourcesService.class);
-      var project =
-          resources == null
-              ? null
-              : resources.retrieve(
-                  document.getProjectName(),
-                  org.integratedmodelling.klab.api.knowledge.organization.Project.class,
-                  userScope);
-      if (project != null
-          && Objects.equals(project.getUrn(), document.getProjectName())
-          && project.getManifest() != null
+      var manifest = resources == null ? null : resources.retrieveProjectManifest(document.getProjectName(), userScope);
+      if (manifest != null
           && !org.integratedmodelling.klab.api.services.reasoner.objects.OntologyProjectPolicy
-              .definesWorldview(project.getManifest())) {
+              .definesWorldview(manifest)) {
         response.setStatus(SemanticValidationResponse.Status.COMPLETE);
         response.setReason("Ontology validation is blocked by the document's project type");
         response.getNotifications().addAll(document.getNotifications());
@@ -1027,7 +1016,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         && response.getSourceHash() != null
         && scope instanceof UserScope userScope) {
       try {
-        var resources = resourcesForDocument(userScope, document);
+        var resources = WorldviewSources.providerForProject(userScope, document.getProjectName());
         if (resources != null) {
           var saved = resources.retrieve(document.getUrn(), KimOntology.class, userScope);
           if (saved != null
@@ -1060,7 +1049,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                       .get(
                           org.integratedmodelling.klab.services.reasoner.internal
                               .SemanticEnvironmentFactory.sourceKey(document)))) {
-        var resources = resourcesForDocument(userScope, document);
+        var resources = WorldviewSources.providerForProject(userScope, document.getProjectName());
         var saved = resources == null ? null : resources.retrieve(document.getUrn(), KimOntology.class, userScope);
         if (saved != null
             && Objects.equals(
@@ -1824,6 +1813,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
   public ServiceStatus status() {
     var ret = super.status();
     ret.getMetadata().put(Reasoner.CANDIDATE_FILTERING_BATCH_METADATA, true);
+    ret.getMetadata().put(Reasoner.RETAINED_REFINEMENT_METADATA, true);
+    ret.getMetadata().put(Reasoner.MODEL_PORT_BATCH_METADATA, true);
     if (candidateRuntime != null && !semanticOnly) {
       var status = candidateRuntime.status();
       ret.getMetadata().put(Reasoner.ACTIVE_SEMANTIC_CYCLES_METADATA, candidateRuntime.activeCycleCount());
@@ -2517,14 +2508,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     if (inherent != null) {
-      ret.addAll(
-          allParents(inherent.singular()).stream()
-              .map(
-                  ctx ->
-                      SemanticsBuilder.create(base, this, serviceScope())
-                          .of(inherent.isCollective() ? ctx.collective() : ctx)
-                          .buildConcept())
-              .toList());
+      for (var parent : allParents(inherent.singular())) {
+        var builder = SemanticsBuilder.create(base, this, serviceScope());
+        builder.of(inherent.isCollective() ? parent.collective() : parent);
+        if (candidates == null || builder.canBuildResolutionHead(candidates))
+          ret.add(builder.buildConcept());
+      }
     }
 
     // TODO do the same with the clauses

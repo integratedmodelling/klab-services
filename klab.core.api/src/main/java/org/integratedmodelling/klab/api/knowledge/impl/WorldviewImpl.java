@@ -10,12 +10,39 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimObservationStrategiesImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 public class WorldviewImpl implements Worldview {
+
+  /** The fields needed to select project owners, including duplicate-document and import checks. */
+  public static Worldview routingHeader(Worldview view) {
+    var header = new WorldviewImpl();
+    header.setUrn(view.getUrn());
+    header.setServiceId(view.getServiceId());
+    header.setWorldviewId(view.getWorldviewId());
+    header.setEmpty(view.isEmpty());
+    var projects = view.getMetadata().get(Worldview.PROJECT_SOURCES);
+    if (projects != null) header.getMetadata().put(Worldview.PROJECT_SOURCES, projects);
+    for (var document : view.getOntologies()) {
+      var ontology = new KimOntologyImpl();
+      ontology.setUrn(document.getUrn());
+      ontology.setProjectName(document.getProjectName());
+      ontology.setImportedOntologies(new ArrayList<>(document.getImportedOntologies()));
+      header.getOntologies().add(ontology);
+    }
+    for (var document : view.getObservationStrategies()) {
+      var strategy = new KimObservationStrategiesImpl();
+      strategy.setUrn(document.getUrn());
+      strategy.setProjectName(document.getProjectName());
+      header.getObservationStrategies().add(strategy);
+    }
+    return header;
+  }
 
   private String urn;
   private Metadata metadata = Metadata.create();

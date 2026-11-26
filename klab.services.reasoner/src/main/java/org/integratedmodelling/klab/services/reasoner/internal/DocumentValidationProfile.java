@@ -13,7 +13,7 @@ final class DocumentValidationProfile {
 
   private DocumentValidationProfile() {}
 
-  enum Outcome { FULL_VALIDATION, NAMESPACE_PROOF, ACCEPTED_ONTOLOGY, FAILED }
+  enum Outcome { FULL_VALIDATION, NAMESPACE_PROOF, DURABLE_SOURCE_PROOF, ACCEPTED_ONTOLOGY, FAILED }
 
   static void record(
       SemanticValidationRequest request, SemanticValidationResponse response, Scope scope,
@@ -35,6 +35,8 @@ final class DocumentValidationProfile {
       fields.put("principalHash", identity == null ? null : SemanticValidationRequest.sourceHash(identity.getId()));
       fields.put("outcome", outcome.name());
       fields.put("valid", response.valid());
+      fields.put("sourceSemanticsComplete", response.isSourceSemanticsComplete());
+      fields.put("semanticObligationsComplete", response.isSemanticObligationsComplete());
       var witness = response.getSemanticWitness();
       fields.put("witness", witness == null ? null : witness.status());
       fields.put("authorityUses", witness == null ? null : witness.authorities().size());

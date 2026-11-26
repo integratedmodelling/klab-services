@@ -1,10 +1,12 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import java.util.*;
+import org.integratedmodelling.common.services.client.SemanticCycleCodec;
 import org.integratedmodelling.common.runtime.ActuatorImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -59,7 +61,8 @@ final class CollectiveSelectionExecution {
     Object encoded = plan.getMetadata().get(CollectiveSelectionBinding.DATA_KEY);
     if (encoded == null) throw new IllegalArgumentException("Selection plan has no semantic admission");
     var binding = Utils.Json.parseObject(encoded.toString(), CollectiveSelectionBinding.class);
-    Runnable generation = () -> require(binding, requested, scope);
+    var selectionCheck = new SelectionCheck(requested, scope);
+    Runnable generation = () -> selectionCheck.require(binding);
     generation.run();
     checks.add(generation);
     // Capture the earliest durable member payload before a query or classifier can install
@@ -174,11 +177,51 @@ final class CollectiveSelectionExecution {
   }
 
   static void require(CollectiveSelectionBinding binding, Observation requested, ServiceContextScope scope) {
-    binding.require(scope, requested.getObservable(), requested.getGeometry());
-    if (scope.isInterrupted() || Thread.currentThread().isInterrupted())
-      throw new java.util.concurrent.CancellationException("Selection cancelled");
-    var current = CollectiveSelectionBinding.capture(requested, scope, scope.getService(Reasoner.class));
-    if (!Objects.equals(binding, current)) throw new IllegalStateException("Selection semantic generation or family changed");
+    new SelectionCheck(requested, scope).require(binding);
+  }
+
+  /** One local selection attempt. The wire admission still needs an independent first check. */
+  private static final class SelectionCheck {
+    private record Build(long refinement, String observable, CollectiveSelectionBinding binding) {}
+
+    private final Observation requested;
+    private final ServiceContextScope scope;
+    private final Reasoner reasoner;
+    private final boolean retainedRefinement;
+    private volatile Build build;
+
+    SelectionCheck(Observation requested, ServiceContextScope scope) {
+      this.requested = requested;
+      this.scope = scope;
+      this.reasoner = scope.getService(Reasoner.class);
+      var cycle = scope.getResolutionCycleBinding();
+      var status = cycle == null || cycle.semanticBinding() == null || reasoner == null
+          ? null : reasoner.status();
+      this.retainedRefinement = status != null && status.getMetadata() != null && Boolean.TRUE.equals(
+          status.getMetadata().get(Reasoner.RETAINED_REFINEMENT_METADATA));
+    }
+
+    private CollectiveSelectionBinding capture() {
+      if (!retainedRefinement)
+        return CollectiveSelectionBinding.capture(requested, scope, reasoner);
+      long refinement = reasoner.semanticRefinementGeneration();
+      var observable = SemanticCycleCodec.encode(requested.getObservable(), Observable.class);
+      var previous = build;
+      if (previous != null && previous.refinement() == refinement
+          && previous.observable().equals(observable)) return previous.binding();
+      var binding = CollectiveSelectionBinding.capture(requested, scope, reasoner);
+      build = binding != null && refinement >= 0 && reasoner.semanticRefinementGeneration() == refinement
+          ? new Build(refinement, observable, binding) : null;
+      return binding;
+    }
+
+    void require(CollectiveSelectionBinding binding) {
+      binding.require(scope, requested.getObservable(), requested.getGeometry());
+      if (scope.isInterrupted() || Thread.currentThread().isInterrupted())
+        throw new java.util.concurrent.CancellationException("Selection cancelled");
+      if (!Objects.equals(binding, capture()))
+        throw new IllegalStateException("Selection semantic generation or family changed");
+    }
   }
 
   private static Observation completed(RuntimeService runtime, Observation request,
@@ -205,10 +248,10 @@ final class CollectiveSelectionExecution {
     long graphRevision = scope.getDigitalTwin().getKnowledgeGraph().getSemanticRevision();
     long overlayRevision = scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl tx
         ? tx.classificationMutationStamp() : -1;
-    var reasoner = scope.getService(Reasoner.class);
-    var binding = CollectiveSelectionBinding.capture(request, scope, reasoner);
+    var selectionCheck = new SelectionCheck(request, scope);
+    var binding = selectionCheck.capture();
     if (binding == null) return Observation.empty();
-    require(binding, request, scope);
+    selectionCheck.require(binding);
     Observation nativeView;
     try { nativeView = completed(runtime, request, binding, scope); }
     catch (IllegalStateException incomplete) {
@@ -228,7 +271,7 @@ final class CollectiveSelectionExecution {
       var actual = Utils.Json.parseObject(result.getMetadata().get(CollectiveSelectionView.DATA_KEY).toString(), CollectiveSelectionView.class);
       if (!durablyEquivalent(previous, actual)) throw new IllegalStateException("Selection view sources or member state changed; submit again");
     }
-    require(binding, request, scope);
+    selectionCheck.require(binding);
     if (graphRevision != scope.getDigitalTwin().getKnowledgeGraph().getSemanticRevision()
         || scope.getCurrentTransaction() instanceof DigitalTwinImpl.TransactionImpl tx
             && overlayRevision != tx.classificationMutationStamp())

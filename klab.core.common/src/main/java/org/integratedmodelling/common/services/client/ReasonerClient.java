@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import org.integratedmodelling.common.diagnostics.SemanticOperationTrace;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Settings;
@@ -104,13 +106,18 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
         request,
         scope,
         (call, authorized) ->
-            client
-                .withScope(SemanticCycleFacade.transportScope(call, authorized))
+            semanticClient(SemanticCycleFacade.transportScope(call, authorized), call.method())
                 .postRequired(
                     ServicesAPI.REASONER.SEMANTIC_CYCLE_INVOKE,
                     call,
                     org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleResult
                         .class));
+  }
+
+  private Utils.Http.Client semanticClient(Scope scope, String operation) {
+    var scoped = client.withScope(scope);
+    var id = SemanticOperationTrace.currentId(operation);
+    return id == null ? scoped : scoped.withHeader(SemanticOperationTrace.HEADER, id);
   }
 
   // TODO link to configuration for debugging
@@ -946,15 +953,18 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
   @Override
   public List<ObservationStrategy> computeObservationStrategies(
       Observation observation, ContextScope scope) {
-    ResolutionRequest resolutionRequest = new ResolutionRequest();
-    resolutionRequest.setObservation(Observation.forTransport(observation));
-    resolutionRequest.setResolutionConstraints(ResolverClient.scopeForTransport(scope));
-    return client
-        .withScope(scope)
-        .postCollection(
-            ServicesAPI.REASONER.COMPUTE_OBSERVATION_STRATEGIES,
-            resolutionRequest,
-            ObservationStrategy.class);
+    try (var trace = SemanticOperationTrace.client("computeObservationStrategies")) {
+      ResolutionRequest resolutionRequest = new ResolutionRequest();
+      resolutionRequest.setObservation(Observation.forTransport(observation));
+      resolutionRequest.setResolutionConstraints(ResolverClient.scopeForTransport(scope));
+      var result = semanticClient(scope, "computeObservationStrategies")
+          .postCollection(
+              ServicesAPI.REASONER.COMPUTE_OBSERVATION_STRATEGIES,
+              resolutionRequest,
+              ObservationStrategy.class);
+      if (trace != null && result != null) trace.completed();
+      return result;
+    }
   }
 
   @Override
@@ -978,9 +988,12 @@ public class ReasonerClient extends BaseServiceClient implements Reasoner, Reaso
 
   @Override
   public Observable buildObservable(ObservableBuildStrategy builder, Scope scope) {
-    return client
-        .withScope(scope)
-        .post(ServicesAPI.REASONER.BUILD_OBSERVABLE, builder, Observable.class);
+    try (var trace = SemanticOperationTrace.client("buildObservable")) {
+      var result = semanticClient(scope, "buildObservable")
+          .post(ServicesAPI.REASONER.BUILD_OBSERVABLE, builder, Observable.class);
+      if (trace != null && result != null) trace.completed();
+      return result;
+    }
   }
 
   @Override

@@ -22,7 +22,7 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   /** Authored bearer bounds remain distinguishable from description-derived intersections. */
   public static final IRI AUTHORED_BEARER = IRI.create("urn:klab:validation:authored-bearer");
 
-  private record Bound(
+  record Bound(
       SemanticRole role,
       OWLClassExpression filler,
       boolean inherited,
@@ -433,65 +433,70 @@ public final class OWLSemanticClauseSupport extends SemanticClauseSupport {
   private List<Bound> bounds(Concept concept, Runnable checkpoint) {
     checkpoint.run();
     synchronized (owl) {
-      return cache.computeIfAbsent(
-          concept.getUrn(),
-          key -> {
-            var previous = propertyMemos.get();
-            var previousAxioms = assertedAxioms.get();
-            try (var properties = new BoundPropertyMemo(owl)) {
-              propertyMemos.set(properties);
-              assertedAxioms.set(
-                  BoundAxiomIndex.build(
-                      owl.manager, this::marked, checkpoint, properties::verifyUnchanged));
-              var result = new ArrayList<Bound>();
-              var root = owl.getOWLClass(concept);
-              if (root == null) throw new IllegalArgumentException("No ontology class for " + key);
-              visit(root, false, new HashSet<>(), result, checkpoint);
-              // Prove inheritance only for owners that contribute bounds. Enumerating the full
-              // hierarchy reclassifies every speculative expression added by semantic search.
-              if (owl.hasReasoner()) {
-                owl.flushReasoner();
-                if (owl.isPrecomputed(InferenceType.CLASS_HIERARCHY)) {
-                  // Reuse an existing classification; targeted owner discovery is only
-                  // needed when a new speculative expression has invalidated it.
-                  for (var parent : owl.getSuperClasses(root, false).getFlattened())
-                    if (!parent.isOWLThing() && !parent.equals(root))
-                      visit(parent, true, new HashSet<>(), result, checkpoint);
-                  for (var equivalent : owl.getEquivalentClasses(root).getEntities())
-                    if (!equivalent.isOWLThing() && !equivalent.equals(root))
-                      visit(equivalent, true, new HashSet<>(), result, checkpoint);
-                } else {
-                  // Match the reasoner's import scope: an unsatisfiable root also entails
-                  // subclasshood of names in unrelated manager ontologies.
-                  for (var owner : owl.reasonerClassSignature()) {
-                    checkpoint.run();
-                    if (owner.isOWLThing() || owner.equals(root)) continue;
-                    var inherited = new ArrayList<Bound>();
-                    visit(owner, true, new HashSet<>(), inherited, checkpoint);
-                    if (!inherited.isEmpty()
-                        && entails(
-                            owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(root, owner)))
-                      result.addAll(inherited);
-                  }
-                }
-              }
-              var computed =
-                  result.stream()
-                      .distinct()
-                      .sorted(
-                          Comparator.comparing((Bound b) -> b.role().name())
-                              .thenComparing(Bound::inherited)
-                              .thenComparing(b -> b.filler().toString()))
-                      .toList();
-              properties.verifyUnchanged();
-              return computed;
-            } finally {
-              if (previousAxioms == null) assertedAxioms.remove();
-              else assertedAxioms.set(previousAxioms);
-              if (previous == null) propertyMemos.remove();
-              else propertyMemos.set(previous);
+      var root = owl.getOWLClass(concept);
+      if (root == null) throw new IllegalArgumentException("No ontology class for " + concept.getUrn());
+      if (owl.hasReasoner())
+        return owl.clauseBounds(root, () -> computeBounds(root, checkpoint), checkpoint);
+      return cache.computeIfAbsent(concept.getUrn(), key -> computeBounds(root, checkpoint));
+    }
+  }
+
+  private List<Bound> computeBounds(OWLClass root, Runnable checkpoint) {
+    var previous = propertyMemos.get();
+    var previousAxioms = assertedAxioms.get();
+    try (var properties = new BoundPropertyMemo(owl)) {
+      propertyMemos.set(properties);
+      assertedAxioms.set(
+          BoundAxiomIndex.build(
+              owl.manager, this::marked, checkpoint, properties::verifyUnchanged));
+      var result = new ArrayList<Bound>();
+      visit(root, false, new HashSet<>(), result, checkpoint);
+      // Prove inheritance only for owners that contribute bounds. Enumerating the full
+      // hierarchy reclassifies every speculative expression added by semantic search.
+      if (owl.hasReasoner()) {
+        owl.flushReasoner();
+        if (owl.isPrecomputed(InferenceType.CLASS_HIERARCHY)) {
+          // Reuse an existing classification; targeted owner discovery is only
+          // needed when a new speculative expression has invalidated it.
+          for (var parent : owl.getSuperClasses(root, false).getFlattened())
+            if (!parent.isOWLThing() && !parent.equals(root))
+              visit(parent, true, new HashSet<>(), result, checkpoint);
+          for (var equivalent : owl.getEquivalentClasses(root).getEntities())
+            if (!equivalent.isOWLThing() && !equivalent.equals(root))
+              visit(equivalent, true, new HashSet<>(), result, checkpoint);
+        } else {
+          // Match the reasoner's import scope: an unsatisfiable root also entails
+          // subclasshood of names in unrelated manager ontologies.
+          var established = new HashSet<>(result);
+          for (var owner : owl.reasonerClassSignature()) {
+            checkpoint.run();
+            if (owner.isOWLThing() || owner.equals(root)) continue;
+            var inherited = new ArrayList<Bound>();
+            visit(owner, true, new HashSet<>(), inherited, checkpoint);
+            if (!established.containsAll(inherited)
+                && entails(
+                    owl.manager.getOWLDataFactory().getOWLSubClassOfAxiom(root, owner))) {
+              established.addAll(inherited);
+              result.addAll(inherited);
             }
-          });
+          }
+        }
+      }
+      var computed =
+          result.stream()
+              .distinct()
+              .sorted(
+                  Comparator.comparing((Bound b) -> b.role().name())
+                      .thenComparing(Bound::inherited)
+                      .thenComparing(b -> b.filler().toString()))
+              .toList();
+      properties.verifyUnchanged();
+      return computed;
+    } finally {
+      if (previousAxioms == null) assertedAxioms.remove();
+      else assertedAxioms.set(previousAxioms);
+      if (previous == null) propertyMemos.remove();
+      else propertyMemos.set(previous);
     }
   }
 

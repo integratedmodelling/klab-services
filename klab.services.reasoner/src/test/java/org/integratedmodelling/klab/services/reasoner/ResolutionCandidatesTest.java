@@ -33,6 +33,41 @@ class ResolutionCandidatesTest {
     verify(reasoner).matchingResolutionHeads(requested, Set.of("test:General", "test:Unrelated"));
   }
 
+  @Test void ordinaryQualityBuildsOnlyGeneralizationsThatCanMatchAnOfferedOutput() {
+    var reasoner = reasoner();
+    var base = concept("test:Weight", SemanticType.QUALITY);
+    var tree = concept("test:Tree", SemanticType.SUBJECT);
+    var plant = concept("test:Plant", SemanticType.SUBJECT);
+    var object = concept("test:Object", SemanticType.SUBJECT);
+    var request = concept("test:Weight of test:Tree", SemanticType.QUALITY);
+    var offered = concept("test:Weight of test:Plant", SemanticType.QUALITY);
+    var other = concept("test:Weight of test:Object", SemanticType.QUALITY);
+    doReturn(null).when(reasoner).serviceScope();
+    doReturn(tree).when(reasoner).directInherent(request);
+    doReturn(List.of(plant, object)).when(reasoner).allParents(tree);
+    var stripping = mock(SemanticsBuilder.class, RETURNS_SELF);
+    var application = mock(SemanticsBuilder.class, RETURNS_SELF);
+    when(stripping.buildConcept()).thenReturn(base);
+    var current = new java.util.concurrent.atomic.AtomicReference<Concept>();
+    when(application.of(any())).thenAnswer(i -> {
+      current.set(i.getArgument(0));
+      return application;
+    });
+    when(application.canBuildResolutionHead(any())).thenAnswer(i -> plant.equals(current.get()));
+    when(application.buildConcept()).thenAnswer(i -> plant.equals(current.get()) ? offered : other);
+    try (var builders = mockStatic(SemanticsBuilder.class)) {
+      builders.when(() -> SemanticsBuilder.create(request, reasoner, null)).thenReturn(stripping);
+      builders.when(() -> SemanticsBuilder.create(base, reasoner, null)).thenReturn(application);
+      var candidates = Set.of(offered.getUrn());
+      var matched = reasoner.matchingResolutionHeads(request, candidates);
+      verify(application, times(1)).buildConcept();
+      assertEquals(Set.of(offered.getUrn()), matched);
+      assertEquals(matched, reasoner.resolving(request).stream().map(Concept::getUrn)
+          .filter(candidates::contains).collect(java.util.stream.Collectors.toSet()));
+      verify(application, times(3)).buildConcept();
+    }
+  }
+
   @Test void classificationSurvivesInternalAndIncompatibleAncestors() { exercise(true); }
   @Test void characterizationSurvivesInternalAndIncompatibleAncestors() { exercise(false); }
 

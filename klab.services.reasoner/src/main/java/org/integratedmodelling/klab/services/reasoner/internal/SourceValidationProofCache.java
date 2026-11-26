@@ -13,6 +13,33 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.*;
  * The caller holds its environment lock and rechecks scoped dependencies on every hit. */
 final class SourceValidationProofCache {
   private static final com.fasterxml.jackson.databind.ObjectMapper JSON = JacksonConfiguration.newObjectMapper();
+  // EnumSet and HashSet can cross service boundaries as different implementations. Their
+  // iteration order is not document syntax. Preserve order for every list and array.
+  private static final com.fasterxml.jackson.databind.ObjectMapper SYNTAX = syntaxMapper();
+
+  @SuppressWarnings("rawtypes")
+  private static com.fasterxml.jackson.databind.ObjectMapper syntaxMapper() {
+    var mapper = JacksonConfiguration.newObjectMapper();
+    var module = new com.fasterxml.jackson.databind.module.SimpleModule();
+    module.addSerializer(Set.class, new com.fasterxml.jackson.databind.JsonSerializer<Set>() {
+      @Override public void serialize(Set values, com.fasterxml.jackson.core.JsonGenerator output,
+          com.fasterxml.jackson.databind.SerializerProvider serializers) throws java.io.IOException {
+        var sorted = new TreeMap<String, List<com.fasterxml.jackson.databind.JsonNode>>();
+        for (var value : values) {
+          com.fasterxml.jackson.databind.JsonNode node = mapper.valueToTree(value);
+          String canonical = node.isValueNode() ? node.toString()
+              : new String(SemanticContentFingerprint.canonical(mapper.convertValue(node, Object.class)),
+                  java.nio.charset.StandardCharsets.UTF_8);
+          sorted.computeIfAbsent(canonical, k -> new ArrayList<>()).add(node);
+        }
+        output.writeStartArray();
+        for (var group : sorted.values()) for (var node : group) output.writeTree(node);
+        output.writeEndArray();
+      }
+    });
+    return mapper.registerModule(module);
+  }
+
   private record Entry(byte[] response, SemanticDependencyWitness proof) {}
   record Hit(SemanticValidationResponse response, SemanticDependencyWitness proof) {}
   private final Map<String, Entry> proofs = new LinkedHashMap<>(32, .75f, true);
@@ -27,13 +54,21 @@ final class SourceValidationProofCache {
   }
 
   static String key(SemanticValidationRequest request) {
-    if (!(request.document() instanceof KimNamespace) || request.isDiagnosticsOnly()) return null;
+    if (request.isDiagnosticsOnly()
+        || !(request.document() instanceof KimNamespace)
+            && (request.getOntology() == null || request.isExecutableModels())) return null;
+    // The runtime has already checked an ontology's file hash against the accepted
+    // worldview. This applies only to a read of that document after candidate compilation.
     if (!request.isExecutableModels()
         && (request.getExecutionContext() != null || request.isClassifierPreparableDependencies()
             || !request.getPreparableMemberQualityDependencies().isEmpty()
             || request.document().getSourceCode() == null || request.document().getSourceCode().isBlank()))
       return null;
     ObjectNode source = documentTree(request.document());
+    // Resources stamps the receiver-visible service ID on retrieval. Namespace validation visits
+    // the same source before and after that routing stamp is attached.
+    if (!request.isExecutableModels() && request.document() instanceof KimNamespace)
+      source.remove("serviceId");
     if (source.get("metadata") instanceof ObjectNode metadata) {
       metadata.remove(ResourcesService.NAMESPACE_ADMISSION_METADATA);
       if (metadata.get("delegate") instanceof ObjectNode values)
@@ -52,7 +87,8 @@ final class SourceValidationProofCache {
 
   // Hash the parsed bean as well as exact text: equal text cannot authenticate altered syntax.
   static ObjectNode documentTree(KlabDocument<?> document) {
-    ObjectNode source = JSON.valueToTree(document);
+    ObjectNode source = SYNTAX.valueToTree(document);
+    source.remove("creationTimestamp");
     source.remove("lastUpdateTimestamp");
     return source;
   }

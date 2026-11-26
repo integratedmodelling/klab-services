@@ -241,6 +241,7 @@ class ResolutionCompilerQueryTest {
     semanticSnapshot(scope,mock(org.integratedmodelling.klab.api.services.Reasoner.class));
     var graph=ResolutionGraph.create(scope);var actuator=new org.integratedmodelling.common.runtime.ActuatorImpl();
     var observable=mock(Observable.class);var first=mock(org.integratedmodelling.klab.api.knowledge.Model.class);var second=mock(org.integratedmodelling.klab.api.knowledge.Model.class);
+    when(observable.getSemantics()).thenReturn(mock(org.integratedmodelling.klab.api.knowledge.Concept.class));
     when(first.getUrn()).thenReturn("same.namespace.producerA");when(second.getUrn()).thenReturn("same.namespace.producerB");
     for(var model:java.util.List.of(first,second)){
       when(model.getNamespace()).thenReturn("same.namespace");

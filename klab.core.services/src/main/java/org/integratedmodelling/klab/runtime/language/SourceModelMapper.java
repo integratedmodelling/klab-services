@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.runtime.language;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.integratedmodelling.common.knowledge.ModelImpl;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
@@ -24,6 +28,11 @@ public final class SourceModelMapper {
   /** Optionally record the exact semantic dependencies of this projection. */
   public static Model load(KimModel statement, KimNamespace namespace, Scope scope,
       java.util.Set<String> semanticReads) {
+    return load(statement, namespace, scope, semanticReads, false);
+  }
+
+  public static Model load(KimModel statement, KimNamespace namespace, Scope scope,
+      Set<String> semanticReads, boolean batchPorts) {
     var reasoner = scope.getService(Reasoner.class);
 
     ModelImpl model = new ModelImpl();
@@ -36,11 +45,23 @@ public final class SourceModelMapper {
     // TODO coverage!
 
     model.getAnnotations().addAll(AnnotationCollector.merge(statement.getAnnotations()));
-    for (KimObservable observable : statement.getObservables()) {
-      model.getObservables().add(annotatedObservable(observable, reasoner, semanticReads));
-    }
-    for (KimObservable observable : statement.getDependencies()) {
-      model.getDependencies().add(annotatedObservable(observable, reasoner, semanticReads));
+    if (batchPorts) {
+      var ports = new ArrayList<KimObservable>(statement.getObservables());
+      int outputs = ports.size();
+      ports.addAll(statement.getDependencies());
+      if (!ports.isEmpty()) {
+        var projection = reasoner.resolveModelPorts(ports, semanticReads != null);
+        if (projection == null || projection.ports().size() != ports.size())
+          throw new IllegalStateException("Model port projection has the wrong arity");
+        model.getObservables().addAll(projection.ports().subList(0, outputs));
+        model.getDependencies().addAll(projection.ports().subList(outputs, ports.size()));
+        if (semanticReads != null) semanticReads.addAll(projection.semanticReads());
+      }
+    } else {
+      for (KimObservable observable : statement.getObservables())
+        model.getObservables().add(annotatedObservable(observable, reasoner, semanticReads));
+      for (KimObservable observable : statement.getDependencies())
+        model.getDependencies().add(annotatedObservable(observable, reasoner, semanticReads));
     }
 
     model.setResolutionInfo(resolutionInfo);
@@ -67,6 +88,13 @@ public final class SourceModelMapper {
     model.setCoverage(Coverage.universal());
 
     return model;
+  }
+
+  public static Reasoner.ModelPorts resolvePorts(
+      List<KimObservable> ports, Reasoner reasoner, boolean trackReads) {
+    Set<String> reads = trackReads ? new HashSet<>() : null;
+    var projected = ports.stream().map(port -> annotatedObservable(port, reasoner, reads)).toList();
+    return new Reasoner.ModelPorts(projected, reads == null ? Set.of() : reads);
   }
 
   private static org.integratedmodelling.klab.api.knowledge.Observable annotatedObservable(

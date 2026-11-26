@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -26,6 +27,17 @@ public interface Reasoner extends KlabService {
 
   /** Status metadata advertised by Reasoners that accept batched candidate filtering. */
   String CANDIDATE_FILTERING_BATCH_METADATA = "semantic.candidateFilteringBatch";
+
+  /** Status signal for reading the refinement counter of the actor retained by a cycle. */
+  String RETAINED_REFINEMENT_METADATA = "semantic.retainedRefinement";
+
+  /** Status signal for resolving a source model's ordered ports in the retained actor. */
+  String MODEL_PORT_BATCH_METADATA = "semantic.modelPortBatch";
+
+  /** In-process refinements within one accepted publication, or -1 when unavailable. */
+  default long semanticRefinementGeneration() {
+    return -1;
+  }
 
   default org.integratedmodelling.klab.api.services.reasoner.objects.SemanticCycleBeginResult
       beginSemanticCycleResult(
@@ -186,6 +198,13 @@ public interface Reasoner extends KlabService {
    * @return
    */
   Observable resolveObservable(String definition);
+
+  /** Port values in declaration order and, when requested, the semantic reads they made. */
+  record ModelPorts(List<Observable> ports, Set<String> semanticReads) {}
+
+  default ModelPorts resolveModelPorts(List<KimObservable> ports, boolean trackReads) {
+    throw new UnsupportedOperationException("Batch model port resolution is not supported");
+  }
 
   /** Redeclare a complete generated syntax tree, preserving units, provenance and optionality. */
   default Observable declareObservable(

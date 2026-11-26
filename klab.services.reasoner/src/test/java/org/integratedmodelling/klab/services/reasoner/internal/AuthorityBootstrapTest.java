@@ -13,6 +13,24 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.junit.jupiter.api.Test;
 
 class AuthorityBootstrapTest {
+  @Test void persistentConfigurationIgnoresMapIterationOrderAndRetainsTypedInputs() throws Exception {
+    var first = new LinkedHashMap<String, Object>();
+    first.put("urn", "klab.authority.test"); first.put("endpoint", "catalog");
+    var second = new LinkedHashMap<String, Object>();
+    second.put("endpoint", "catalog"); second.put("urn", "klab.authority.test");
+    var a = new org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest(
+        "world", "AREA", "test:Region", first);
+    var b = new org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest(
+        "world", "AREA", "test:Region", second);
+    var digest = AuthorityBootstrap.configurationDigest(List.of(a, "plan", "owner"));
+    assertEquals(digest, AuthorityBootstrap.configurationDigest(List.of(b, "plan", "owner")));
+    assertNotEquals(digest, AuthorityBootstrap.configurationDigest(List.of(b, "other", "owner")));
+    assertNotEquals(digest, AuthorityBootstrap.configurationDigest(List.of(b, "plan", "other")));
+    second.put("endpoint", "another catalog");
+    var changed = new org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest(
+        "world", "AREA", "test:Region", second);
+    assertNotEquals(digest, AuthorityBootstrap.configurationDigest(List.of(changed, "plan", "owner")));
+  }
   private final AtomicReference<String> revision=new AtomicReference<>("provider-1");
   private final AtomicReference<String> ownerName=new AtomicReference<>("owner");
   private final AtomicInteger calls=new AtomicInteger();

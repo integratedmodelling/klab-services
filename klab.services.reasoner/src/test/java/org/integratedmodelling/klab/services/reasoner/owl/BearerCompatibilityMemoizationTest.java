@@ -49,7 +49,7 @@ class BearerCompatibilityMemoizationTest {
     public void close() { dl.dispose(); }
   }
 
-  @Test void duplicateQueriesAreReusedOnlyWithinOneBufferingCheck() throws Exception {
+  @Test void unchangedBufferingClosureReusesCompletedQueries() throws Exception {
     try (var fixture = new Fixture(true)) {
       assertEquals(OWLSemanticClauseSupport.Compatibility.COMPATIBLE,
           fixture.support.bearerCompatibility(List.of(fixture.type("A"))));
@@ -59,15 +59,20 @@ class BearerCompatibilityMemoizationTest {
       clearInvocations(fixture.dl);
       assertEquals(OWLSemanticClauseSupport.Compatibility.COMPATIBLE,
           fixture.support.bearerCompatibility(List.of(fixture.type("A"))));
-      assertEquals(first, fixture.queries()); // No result survives into the next call.
+      assertTrue(fixture.queries().isEmpty());
+      verify(fixture.dl, never()).isSatisfiable(any(OWLClassExpression.class));
     }
   }
 
-  @Test void nonbufferingReasonerDoesNotReuseAnswers() throws Exception {
+  @Test void nonbufferingEditsInvalidatePreviouslyCompatibleConstraints() throws Exception {
     try (var fixture = new Fixture(false)) {
       assertEquals(OWLSemanticClauseSupport.Compatibility.COMPATIBLE,
           fixture.support.bearerCompatibility(List.of(fixture.type("A"))));
-      assertTrue(fixture.queries().values().stream().anyMatch(count -> count > 1));
+      assertFalse(fixture.queries().isEmpty());
+      fixture.owl.manager.addAxiom(fixture.ontology.getOWLOntology(),
+          fixture.f.getOWLDisjointClassesAxiom(fixture.type("A"), fixture.type("D")));
+      assertEquals(OWLSemanticClauseSupport.Compatibility.IMPOSSIBLE,
+          fixture.support.bearerCompatibility(List.of(fixture.type("A"))));
     }
   }
 

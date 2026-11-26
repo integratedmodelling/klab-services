@@ -20,6 +20,70 @@ class OWLInferenceCacheTest {
       assertFalse(w.owl.isEntailed(relation));
     }
   }
+  @Test void targetedStrictSubsumptionMatchesTheClassifiedHierarchy() throws Exception {
+    var owl = new OWL(mock(Scope.class));
+    owl.manager = OWLManager.createOWLOntologyManager();
+    var ont = owl.manager.createOntology();
+    var f = owl.manager.getOWLDataFactory();
+    var names = List.of("A", "B", "AliasA", "C", "Bottom").stream()
+        .map(n -> f.getOWLClass(IRI.create("urn:strict:" + n))).toList();
+    for (var c : names) owl.manager.addAxiom(ont, f.getOWLDeclarationAxiom(c));
+    owl.manager.addAxiom(ont, f.getOWLSubClassOfAxiom(names.get(0), names.get(1)));
+    owl.manager.addAxiom(ont, f.getOWLEquivalentClassesAxiom(names.get(0), names.get(2)));
+    owl.manager.addAxiom(ont, f.getOWLEquivalentClassesAxiom(names.get(4), f.getOWLNothing()));
+    var factory = new org.semanticweb.HermiT.Reasoner.ReasonerFactory();
+    var delegate = factory.createReasoner(ont);
+    var reference = factory.createReasoner(ont);
+    var field = OWL.class.getDeclaredField("reasoner");
+    field.setAccessible(true);
+    field.set(owl, delegate);
+    try {
+      for (var parent : names) {
+        var expected = reference.getSubClasses(parent, false);
+        for (var child : names) {
+          if (!child.equals(parent))
+            assertEquals(expected.containsEntity(child), owl.properSubclass(child, parent), child + " < " + parent);
+        }
+      }
+      for (var name : names) assertFalse(owl.properSubclass(name, name));
+      var change = f.getOWLSubClassOfAxiom(names.get(3), names.get(1));
+      owl.manager.addAxiom(ont, change);
+      assertEquals(reference.getSubClasses(names.get(1), false).containsEntity(names.get(3)),
+          owl.properSubclass(names.get(3), names.get(1)));
+      owl.flushReasoner();
+      assertTrue(owl.properSubclass(names.get(3), names.get(1)));
+    } finally {
+      delegate.dispose();
+      reference.dispose();
+    }
+  }
+
+  @Test void liveClauseBoundsReuseStopsOnManagerEditsAndFailedComputation() throws Exception {
+    try (var w = new AuthorityDependencySupportTest.World((world, axioms) -> {})) {
+      var root = w.c("Tree");
+      var loads = new java.util.concurrent.atomic.AtomicInteger();
+      java.util.function.Supplier<java.util.List<OWLSemanticClauseSupport.Bound>> load = () -> {
+        loads.incrementAndGet();
+        return List.of();
+      };
+      w.owl.clauseBounds(root, load, () -> {});
+      w.owl.clauseBounds(root, load, () -> {});
+      var relation = w.factory.getOWLSubClassOfAxiom(root, w.c("AuthorityRoot"));
+      w.owl.manager.addAxiom(w.ontology.getOWLOntology(), relation);
+      assertThrows(IllegalStateException.class,
+          () -> w.owl.clauseBounds(root, () -> { throw new IllegalStateException(); }, () -> {}));
+      w.owl.clauseBounds(root, load, () -> {});
+      w.owl.manager.addAxiom(w.ontology.getOWLOntology(), relation);
+      w.owl.clauseBounds(root, load, () -> {});
+      assertEquals(2, loads.get());
+      var extra = w.owl.manager.createOntology();
+      w.owl.clauseBounds(root, load, () -> {});
+      w.owl.manager.removeOntology(extra);
+      w.owl.clauseBounds(root, load, () -> {});
+      assertEquals(4, loads.get());
+    }
+  }
+
   @Test void unchangedClosureReusesPositiveAndNegativeAnswersButFlushInvalidatesBoth() throws Exception {
     var owl = new OWL(mock(Scope.class));
     var manager = OWLManager.createOWLOntologyManager();

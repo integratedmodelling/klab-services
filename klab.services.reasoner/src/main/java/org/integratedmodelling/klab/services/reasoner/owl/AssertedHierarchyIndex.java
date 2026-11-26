@@ -11,7 +11,9 @@ import org.semanticweb.owlapi.model.*;
 final class AssertedHierarchyIndex implements AutoCloseable {
   private final OWL owl;
   private final OWLOntologyManager manager;
-  private final OWLOntologyChangeListener listener = changes -> invalidate();
+  private final OWLOntologyChangeListener listener = changes -> {
+    if (!changes.isEmpty()) invalidate();
+  };
   private Map<OWLClass, List<OWLClassExpression>> parents;
   private List<List<OWLClassExpression>> disjoint;
   private Set<OWLOntology> ontologies;

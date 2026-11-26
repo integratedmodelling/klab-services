@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.knowledge.impl.WorldviewImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -271,6 +272,12 @@ public interface ResourcesService extends KlabService {
    */
   <T extends KlabAsset> T retrieve(String urn, Class<T> assetClass, UserScope scope);
 
+  /** Read the current manifest with the same project READ permission as normal retrieval. */
+  default Project.Manifest retrieveProjectManifest(String urn, UserScope scope) {
+    var project = retrieve(urn, Project.class, scope);
+    return project != null && java.util.Objects.equals(urn, project.getUrn()) ? project.getManifest() : null;
+  }
+
   /**
    * Main delete endpoint.
    *
@@ -291,6 +298,11 @@ public interface ResourcesService extends KlabService {
    * @param <T>
    */
   <T extends KlabAsset> List<T> list(Class<T> assetClass, UserScope scope);
+
+  /** Caller-visible worldview headers for project routing. Candidate construction requires full worldviews. */
+  default List<Worldview> listWorldviewHeaders(UserScope scope) {
+    return list(Worldview.class, scope).stream().map(WorldviewImpl::routingHeader).toList();
+  }
 
   /**
    * Main resolve endpoint.

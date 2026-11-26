@@ -8,6 +8,14 @@ import org.integratedmodelling.klab.api.lang.kim.impl.*;
 import org.junit.jupiter.api.Test;
 
 class SemanticObligationCollectorTest {
+  @Test void bareAdapterIdentifierIsStaticDataAndDoesNotProveItsExecutor() {
+    var result = collect(Map.of("contextualization", Map.of("adapter",
+        org.integratedmodelling.klab.api.collections.Identifier.create("stac"))));
+    assertTrue(result.sourceComplete());
+    assertFalse(result.complete());
+    assertTrue(result.terms().isEmpty());
+    assertFalse(collect(Map.of("adapter", new Object())).sourceComplete());
+  }
   private SemanticObligationCollector collect(Object value) {
     var collector=new SemanticObligationCollector(org.mockito.Mockito.mock(org.integratedmodelling.klab.services.reasoner.ReasonerService.class));
     var symbol=new KimSymbolDefinitionImpl();symbol.setValue(value);

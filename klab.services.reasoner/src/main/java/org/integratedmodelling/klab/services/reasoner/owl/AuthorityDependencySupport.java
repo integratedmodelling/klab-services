@@ -13,7 +13,9 @@ public final class AuthorityDependencySupport {
   static final class Cache {
     static final int CAPACITY = 512;
     private final java.util.concurrent.atomic.AtomicLong revision = new java.util.concurrent.atomic.AtomicLong();
-    private final OWLOntologyChangeListener listener = changes -> revision.incrementAndGet();
+    private final OWLOntologyChangeListener listener = changes -> {
+      if (!changes.isEmpty()) revision.incrementAndGet();
+    };
     private OWLOntologyManager manager;
     private Object reasoner;
     private OWLOntology root;

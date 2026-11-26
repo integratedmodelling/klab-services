@@ -1825,14 +1825,6 @@ public class ResolutionCompiler {
 
     long started = System.nanoTime();
     var semanticStart = org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics();
-    var prioritizer =
-        new PrioritizerImpl(
-            scope,
-            scale,
-            resolver.getServiceConfiguration().getRankingStrategy(),
-            observable,
-            contextObservable);
-
     var resources = scope.getService(ResourcesService.class);
     ResourceSet models =
         resources
@@ -1897,32 +1889,36 @@ public class ResolutionCompiler {
         ? org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics() : null;
     int eligibleCount = ret.size();
     ret.removeIf(model -> !prepareCandidate(model, observable, scope));
-    ret.removeIf(
-        model -> {
-          var prepared = preparedCandidate(model, scope);
-          if (prepared == null
-              || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(
-                  prepared.receipt(), model, scope)) return true;
-          if (prioritizer.semanticDistance(model) == Integer.MAX_VALUE) {
-            scope.warn(
-                "Model "
-                    + model.getUrn()
-                    + " rejected during admission/ranking for "
-                    + observable.getUrn()
-                    + " (coverage="
-                    + (model.getCoverage() == null ? "null" : model.getCoverage().encode())
-                    + ")");
-            return true;
-          }
-          return !org.integratedmodelling.klab.runtime.language.ModelValidationGate.sameSnapshot(
-              prepared.receipt(), prioritizer.admission(model));
-        });
-    for (var model : ret) {
-      var receipt = prioritizer.admission(model);
-      if (receipt != null) modelAdmissions.put(new ModelIdentity(model), receipt);
+    if (!ret.isEmpty()) {
+      var prioritizer = new PrioritizerImpl(scope, scale,
+          resolver.getServiceConfiguration().getRankingStrategy(), observable, contextObservable);
+      ret.removeIf(
+          model -> {
+            var prepared = preparedCandidate(model, scope);
+            if (prepared == null
+                || !org.integratedmodelling.klab.runtime.language.ModelValidationGate.matches(
+                    prepared.receipt(), model, scope)) return true;
+            if (prioritizer.semanticDistance(model) == Integer.MAX_VALUE) {
+              scope.warn(
+                  "Model "
+                      + model.getUrn()
+                      + " rejected during admission/ranking for "
+                      + observable.getUrn()
+                      + " (coverage="
+                      + (model.getCoverage() == null ? "null" : model.getCoverage().encode())
+                      + ")");
+              return true;
+            }
+            return !org.integratedmodelling.klab.runtime.language.ModelValidationGate.sameSnapshot(
+                prepared.receipt(), prioritizer.admission(model));
+          });
+      for (var model : ret) {
+        var receipt = prioritizer.admission(model);
+        if (receipt != null) modelAdmissions.put(new ModelIdentity(model), receipt);
+      }
+      prioritizer.prepare(ret);
+      ret.sort(prioritizer);
     }
-    prioritizer.prepare(ret);
-    ret.sort(prioritizer);
     long finished = System.nanoTime();
     var semanticEnd = org.integratedmodelling.common.services.client.SemanticCycleFacade.metrics();
     if (profileCharacterization || finished - started >= java.util.concurrent.TimeUnit.SECONDS.toNanos(1))

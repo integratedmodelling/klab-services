@@ -86,6 +86,8 @@ The k.LAB Modeler IDE, a specialized Maven plug-in to aid deployment and testing
 
 ## Build
 
+Contributors working on observation, resolution or validation should start with the [performance checklist](AGENTS.md).
+
 The project uses Maven and requires JDK 21. From the repository root:
 
 ```powershell

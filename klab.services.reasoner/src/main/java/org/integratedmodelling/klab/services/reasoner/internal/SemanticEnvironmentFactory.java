@@ -39,6 +39,10 @@ public final class SemanticEnvironmentFactory
   private final Map<String, BootstrapInput> bootstrapInputs =
       new java.util.concurrent.ConcurrentHashMap<>();
 
+  Path validationRecordDirectory() {
+    return assetRoot.resolve("validation-records");
+  }
+
   public synchronized void enableAuthorityBootstrap() {
     if (bootstrap != null) throw new IllegalStateException("Bootstrap is already enabled");
     bootstrap = new AuthorityBootstrap(assetRoot.resolve("authority-bootstrap"), core);

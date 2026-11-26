@@ -14,6 +14,23 @@ public final class WorldviewSources {
   private WorldviewSources() {}
 
   public static Worldview discover(Scope scope) {
+    return discover(scope, false);
+  }
+
+  /** Resolve the owner with the same caller visibility and project precedence as full discovery. */
+  public static ResourcesService providerForProject(UserScope scope, String project) {
+    var providers = scope.getServices(ResourcesService.class);
+    if (providers.size() <= 1) return scope.getService(ResourcesService.class);
+    var selected = discover(scope, true);
+    if (selected == null) return null;
+    var owners = selected.getMetadata().get(Worldview.PROJECT_SOURCES);
+    var id = owners instanceof Map<?, ?> map ? map.get(project) : null;
+    if (id == null && selected instanceof WorldviewImpl impl) id = impl.getServiceId();
+    for (var provider : providers) if (id != null && id.equals(provider.serviceId())) return provider;
+    return null;
+  }
+
+  private static Worldview discover(Scope scope, boolean routingOnly) {
     var providers = scope.getServices(ResourcesService.class).stream()
         .sorted(Comparator.comparing((ResourcesService r) -> !Utils.URLs.isLocalHost(r.getUrl()))
             .thenComparing(r -> Objects.toString(r.serviceId(), ""))
@@ -25,7 +42,10 @@ public final class WorldviewSources {
       var status = provider.status();
       if (status == null || !status.isAvailable() || !provider.capabilities(scope).isWorldviewProvider()) continue;
       var identity = Objects.toString(provider.serviceId(), provider.getUrl().toExternalForm());
-      if (seen.add(identity)) views.addAll(provider.list(Worldview.class, scope instanceof UserScope user ? user : null));
+      if (seen.add(identity)) {
+        var user = scope instanceof UserScope owner ? owner : null;
+        views.addAll(routingOnly ? provider.listWorldviewHeaders(user) : provider.list(Worldview.class, user));
+      }
     }
     return compose(views);
   }

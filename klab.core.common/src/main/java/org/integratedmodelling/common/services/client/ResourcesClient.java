@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
@@ -544,6 +545,23 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
             urn,
             "knowledgeClass",
             KnowledgeClass.classify(assetClass));
+  }
+
+  @Override
+  public org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest retrieveProjectManifest(
+      String urn, UserScope scope) {
+    // Older providers ignore the projection and return the same project with its documents.
+    var project = client.withResourceSupplierScope(scope).get(
+        urn.contains("/") ? ServicesAPI.RESOURCES.RETRIEVE_QUERY : ServicesAPI.RESOURCES.RETRIEVE,
+        org.integratedmodelling.klab.api.knowledge.organization.Project.class,
+        "urn", urn, "knowledgeClass", KnowledgeClass.PROJECT, "manifestOnly", true);
+    return project != null && java.util.Objects.equals(urn, project.getUrn()) ? project.getManifest() : null;
+  }
+
+  @Override
+  public List<Worldview> listWorldviewHeaders(UserScope scope) {
+    return client.withResourceSupplierScope(scope).getCollection(ServicesAPI.RESOURCES.LIST,
+        Worldview.class, "knowledgeClass", KnowledgeClass.WORLDVIEW, "worldviewHeaders", true);
   }
 
   @Override

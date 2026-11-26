@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
+import org.integratedmodelling.common.diagnostics.SemanticOperationTrace;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -23,6 +25,8 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -32,6 +36,15 @@ import org.springframework.web.server.ResponseStatusException;
 public class ReasonerController {
 
   @Autowired private ReasonerServer reasoner;
+
+  private static <T> T traced(String operation, Supplier<T> call) {
+    if (SemanticOperationTrace.enabled(operation)
+        && RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+      return SemanticOperationTrace.inbound(
+          attributes.getRequest().getHeader(SemanticOperationTrace.HEADER), call);
+    }
+    return call.get();
+  }
 
   private <T> T cycleCall(
       Principal principal,
@@ -95,7 +108,8 @@ public class ReasonerController {
                   request,
           Principal principal) {
     return cycleCall(
-        principal, scope -> reasoner.klabService().invokeSemanticCycle(request, scope));
+        principal,
+        scope -> traced(request.method(), () -> reasoner.klabService().invokeSemanticCycle(request, scope)));
   }
 
   @Operation(summary = "Configure an authority bridge in the loaded worldview")
@@ -173,7 +187,8 @@ public class ReasonerController {
   public @ResponseBody Observable buildObservable(
       @RequestBody ObservableBuildStrategy builder, Principal principal) {
     if (principal instanceof EngineAuthorization authorization) {
-      return reasoner.klabService().buildObservable(builder, authorization.getScope());
+      return traced("buildObservable",
+          () -> reasoner.klabService().buildObservable(builder, authorization.getScope()));
     }
     throw new IllegalArgumentException("Semantic construction requires an authorized scope");
   }
@@ -251,9 +266,8 @@ public class ReasonerController {
               .getScope(ContextScope.class)
               .withResolutionConstraints(
                   request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
-      return reasoner
-          .klabService()
-          .computeObservationStrategies(request.getObservation(), contextScope);
+      return traced("computeObservationStrategies",
+          () -> reasoner.klabService().computeObservationStrategies(request.getObservation(), contextScope));
     }
     throw new KlabInternalErrorException("Unexpected implementation of request authorization");
   }

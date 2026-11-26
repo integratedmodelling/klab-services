@@ -31,6 +31,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           .disable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
   private final SemanticEnvironmentFactory factory;
+  private final SourceValidationRecords validationRecords;
+  private final java.util.concurrent.atomic.LongAdder durableSourceHits = new java.util.concurrent.atomic.LongAdder();
   private final CandidatePublicationCoordinator<Worldview, SemanticEnvironment> coordinator;
   private final Object lifecycle = new Object();
   private volatile boolean closed;
@@ -48,6 +50,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     result.put("acceptedOntologyHits", acceptedOntologyHits.sum());
     try (var lease = lease()) { result.putAll(lease.state().sourceValidationProofs().metrics()); }
     catch (IllegalStateException unavailable) { /* No accepted environment yet. */ }
+    result.put("durableSourceHits", durableSourceHits.sum());
+    result.put("durableSourceWrites", validationRecords == null ? 0L : validationRecords.writes());
     return result;
   }
 
@@ -189,8 +193,10 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     synchronized (lifecycle) {
       operation = requireCycle(request.cycle(), owner).lease().retain();
     }
-    try (operation) {
-      long started = System.nanoTime();
+    long started = System.nanoTime();
+    try (operation;
+        var profile = SemanticExecutionProfile.start(
+            method.getName(), semanticSessionId, operation.generation(), request.cycle().cycleId(), started)) {
       // Graph/observer callbacks are completed before acquiring the retained actor monitor.
       // Scope-free operations (including restoring an observable from the native graph) must
       // not refresh observers by calling back into that graph. Validation consumes scope
@@ -213,12 +219,16 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         throw new SecurityException(
             "Authority ledger mutation is not a retained semantic operation");
       long preparedAt = System.nanoTime();
+      if (profile != null) profile.preparedAt = preparedAt;
       synchronized (operation.state()) {
         long enteredAt = System.nanoTime();
+        if (profile != null) profile.enteredAt = enteredAt;
         requireOpen();
         var actor = operation.state().actor();
         for (int i = 0; i < arguments.length; i++) arguments[i] = bind(arguments[i], actor);
         long boundAt = System.nanoTime();
+        if (profile != null)
+          profile.input(arguments[0], (Scope) prepared, request.arguments().getFirst(), actor, boundAt);
         Object result;
         if (method.getName().equals("validateDocument")) {
           var validation =
@@ -249,14 +259,18 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             } else result = method.invoke(actor, arguments);
           }
         long computedAt = System.nanoTime();
+        if (profile != null) profile.computed(result, actor, computedAt);
         var output = new ArrayList<String>();
+        boolean readOnlyBatch = method.getName().equals("matchingCandidateOutputs")
+            || method.getName().equals("resolveModelPorts");
         for (int i = 0; i < arguments.length; i++)
-          output.add(method.getName().equals("matchingCandidateOutputs")
-              ? "null" : SemanticCycleCodec.encode(arguments[i], types[i]));
+          output.add(readOnlyBatch ? "null" : SemanticCycleCodec.encode(arguments[i], types[i]));
         var response = new SemanticCycleResult(
             SemanticCycleCodec.encode(result, method.getGenericReturnType()), output);
+        long encodedAt = System.nanoTime();
+        if (profile != null) profile.completed(encodedAt);
         logSlowSemantic("cycle." + method.getName(), started, preparedAt, enteredAt,
-            boundAt, computedAt, System.nanoTime());
+            boundAt, computedAt, encodedAt);
         return response;
       }
     } catch (InvocationTargetException e) {
@@ -356,6 +370,8 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
     this.factory = Objects.requireNonNull(factory);
     this.retryClock = Objects.requireNonNull(clock);
     this.deploymentServiceId = deploymentServiceId;
+    var recordDirectory = deploymentServiceId == null ? null : factory.validationRecordDirectory();
+    this.validationRecords = recordDirectory == null ? null : new SourceValidationRecords(recordDirectory);
     coordinator =
         new CandidatePublicationCoordinator<>(
             factory,
@@ -860,6 +876,10 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
         var proofCache = lease.state().sourceValidationProofs();
         proofKey = SourceValidationProofCache.key(request);
         if (proofKey != null && request.isExecutableModels()) proofKey += ":" + refinements;
+        var identity = requestingScope == null ? null : requestingScope.getIdentity();
+        var durableKey = !request.isExecutableModels() && proofKey != null && validationRecords != null
+            && identity != null ? SourceValidationRecords.key(deploymentServiceId, response.getSemanticContentFingerprint(),
+                SourceValidationRecords.principal(identity), proofKey) : null;
         if (proofKey != null) {
           var cached = proofCache.get(proofKey, terms -> request.isExecutableModels()
               ? executionDependencyProof(actor, lease, terms, requestingScope)
@@ -873,8 +893,24 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             // A complete STATIC proof must never upgrade an incomplete execution footprint.
             response.setSemanticWitness(request.isExecutableModels() ? cached.proof() : saved.getSemanticWitness());
             response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
+            if (durableKey != null) validationRecords.retainForCaller(durableKey, response, cached.proof());
             outcome = DocumentValidationProfile.Outcome.NAMESPACE_PROOF;
             return response;
+          }
+          if (durableKey != null) {
+            var record = validationRecords.read(durableKey, response.getSourceHash(),
+                terms -> sourceDependencyProof(actor, lease, terms, requestingScope));
+            if (record != null) {
+              copyValidation(record.response(), response);
+              // Return current request/actor identity and a newly computed executable witness.
+              // The stored static proof does not authorize executable models or their contexts.
+              response.setSemanticWitness(validationWitness(actor, lease, response, requestingScope));
+              response.setStatus(org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse.Status.COMPLETE);
+              proofCache.put(proofKey, response, record.proof());
+              durableSourceHits.increment();
+              outcome = DocumentValidationProfile.Outcome.DURABLE_SOURCE_PROOF;
+              return response;
+            }
           }
           if (!request.isExecutableModels()) sourceProofMisses.increment();
         }
@@ -892,10 +928,12 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
             org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse
                 .Status.COMPLETE);
         if (proofKey != null && response.valid() && response.isSourceSemanticsComplete()
-            && (!request.isExecutableModels() || actor.semanticRefinementGeneration() == refinements))
-          proofCache.put(proofKey, response, request.isExecutableModels()
-              ? response.getSemanticWitness()
-              : sourceDependencyProof(actor, lease, validator.getSemanticObligations(), requestingScope));
+            && (!request.isExecutableModels() || actor.semanticRefinementGeneration() == refinements)) {
+          var proof = request.isExecutableModels() ? response.getSemanticWitness()
+              : sourceDependencyProof(actor, lease, validator.getSemanticObligations(), requestingScope);
+          proofCache.put(proofKey, response, proof);
+          if (durableKey != null) validationRecords.write(durableKey, response, proof);
+        }
         long completedAt = System.nanoTime();
         logSlowSemantic("documentValidation", started, preparedAt, enteredAt, enteredAt,
             completedAt, completedAt);
@@ -957,6 +995,14 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
       List<String> terms, Scope scope) {
     var request = new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyRequest(
         deploymentServiceId, lease.generation(), lease.state().semanticContentFingerprint(), terms);
+    // A complete static visitor can observe no semantic terms (e.g. a namespace header only).
+    // Its source result has no external dependencies to recheck. Execution uses its own proof.
+    if (terms.isEmpty() && deploymentServiceId != null
+        && org.integratedmodelling.klab.api.knowledge.SemanticContentFingerprint.scoped(request.expectedBaseFingerprint()))
+      return new org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness(
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.VERSION,
+          org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.Status.COMPLETE,
+          deploymentServiceId, lease.generation(), request.expectedBaseFingerprint(), request.inputHash(), List.of(), null);
     try { return actor.sourceValidationDependencies(request, scope); }
     catch (SecurityException denied) {
       return org.integratedmodelling.klab.api.services.reasoner.objects.SemanticDependencyWitness.unknown(
@@ -1054,15 +1100,20 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
   }
 
   public <T> T invoke(String name, Class<?>[] signature, Object[] supplied) {
-    try (var lease = lease()) {
+    long started = org.integratedmodelling.common.diagnostics.SemanticOperationTrace.enabled(name)
+        ? System.nanoTime() : 0;
+    try (var lease = lease();
+        var profile = SemanticExecutionProfile.start(name, semanticSessionId, lease.generation(), null, started)) {
       // Retain the generation, but not its monitor, while Runtime materialization calls back.
       var prepared = Arrays.stream(supplied).map(AcceptedSemanticRuntime::prepareScopes).toArray();
+      if (profile != null) profile.preparedAt = System.nanoTime();
       requireOpen();
       if (coordinator.status().acceptedGeneration() != lease.generation())
         throw new IllegalStateException(
             "Accepted semantic generation changed during observer preparation; replan the request");
       var environment = lease.state();
       synchronized (environment) {
+        if (profile != null) profile.enteredAt = System.nanoTime();
         requireOpen();
         if (coordinator.status().acceptedGeneration() != lease.generation())
           throw new IllegalStateException(
@@ -1073,7 +1124,10 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
           var arguments = new Object[supplied.length];
           for (int i = 0; i < arguments.length; i++) arguments[i] = bind(prepared[i], actor);
           var method = ReasonerService.class.getMethod(name, signature);
+          if (profile != null) profile.input(
+              prepared[0], (Scope) prepared[1], null, actor, System.nanoTime());
           var result = method.invoke(actor, arguments);
+          if (profile != null) profile.computed(result, actor, System.nanoTime());
           requireOpen();
           if (coordinator.status().acceptedGeneration() != lease.generation())
             throw new IllegalStateException(
@@ -1087,7 +1141,9 @@ public final class AcceptedSemanticRuntime implements AutoCloseable {
               original.clear();
               original.putAll((Map) copy(mapped));
             }
-          return (T) copy(result);
+          var detached = (T) copy(result);
+          if (profile != null) profile.completed(System.nanoTime());
+          return detached;
         }
       }
     } catch (InvocationTargetException failure) {

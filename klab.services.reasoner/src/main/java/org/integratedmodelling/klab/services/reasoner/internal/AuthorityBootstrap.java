@@ -277,14 +277,27 @@ public final class AuthorityBootstrap {
         .map(s -> new org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest(
             source.getUrn(), s.getAuthorityRequired(), s.getNamespace() + ":" + s.getUrn(), s.getAuthorityParameters()))
         .sorted(Comparator.comparing(org.integratedmodelling.klab.api.services.Authority.ConfigurationRequest::name)).toList();
-    String configuration = digest(JSON.writeValueAsBytes(Arrays.asList("persistent-authorities-v1",
+    var configurationInputs = Arrays.asList("persistent-authorities-v1",
         source.getUrn(), requests, source.getAuthorityBindings().stream()
             .sorted(Comparator.comparing(Worldview.AuthorityBinding::localId)).toList(),
-        plan.revision(), AuthorityComponentResolver.ownerRevision(owner))));
-    var store = new PersistentAuthorityStore(root.resolve("persistent"), configuration, providerInput(source, owner));
+        plan.revision(), AuthorityComponentResolver.ownerRevision(owner));
+    String configuration = configurationDigest(configurationInputs);
+    var input = providerInput(source, owner);
+    var persistent = root.resolve("persistent");
+    var store = new PersistentAuthorityStore(persistent, configuration, input);
     cancellation.checkpoint();
     var cached = store.exact();
     if (cached != null && source.getAuthorityBindings().stream().allMatch(cached::supports)) return cached;
+    // An older installation may already hold this exact authorized capture under the
+    // configuration's previous serialization. Only import a verified match of that key.
+    String legacy = digest(JSON.writeValueAsBytes(configurationInputs));
+    if (!configuration.equals(legacy)) {
+      var prior = new PersistentAuthorityStore(persistent, legacy, input).exact();
+      if (prior != null && source.getAuthorityBindings().stream().allMatch(prior::supports)) {
+        store.save(prior);
+        return prior;
+      }
+    }
     var previous = store.previous();
     if (previous != null && source.getAuthorityBindings().stream().allMatch(previous::supports))
       return refresh(root, core, source, owner, previous, store, cancellation);
@@ -513,6 +526,11 @@ public final class AuthorityBootstrap {
     }
     if(tree.isContainerNode())tree.elements().forEachRemaining(value->documents(value,found));
   }
+  static String configurationDigest(List<?> inputs) throws com.fasterxml.jackson.core.JsonProcessingException {
+    return digest(JSON.writer().with(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+        .writeValueAsBytes(inputs));
+  }
+
   private static String digest(byte[] bytes) {
     try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));}
     catch(Exception impossible){throw new IllegalStateException(impossible);}

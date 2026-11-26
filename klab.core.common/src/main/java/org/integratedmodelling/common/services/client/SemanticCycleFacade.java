@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client;
 
 import java.lang.reflect.*;
 import java.util.*;
+import org.integratedmodelling.common.diagnostics.SemanticOperationTrace;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -95,7 +96,7 @@ public final class SemanticCycleFacade {
                 throw new UnsupportedOperationException(
                     "Operation cannot escape a retained semantic cycle: " + method.getName());
               long started = System.nanoTime();
-              try {
+              try (var trace = SemanticOperationTrace.client(method.getName())) {
                 var values = args == null ? new Object[0] : args;
                 var types = method.getGenericParameterTypes();
                 var encoded = new ArrayList<String>();
@@ -146,7 +147,9 @@ public final class SemanticCycleFacade {
                   original.clear();
                   original.putAll(updated);
                 }
-                return SemanticCycleCodec.decode(response.result(), method.getGenericReturnType());
+                var result = SemanticCycleCodec.decode(response.result(), method.getGenericReturnType());
+                if (trace != null) trace.completed();
+                return result;
               } finally {
                 var metrics = METRICS.get();
                 metrics[0]++;

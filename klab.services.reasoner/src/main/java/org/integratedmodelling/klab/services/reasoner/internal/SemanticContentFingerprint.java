@@ -30,9 +30,11 @@ public final class SemanticContentFingerprint {
         SemanticEnvironmentFactory.sourceOrder(worldview), bindings, coreHashes,
         new TreeMap<>(locators), compiler, operands, authorityContent, publishedCodelists)));
   }
+  private static final com.fasterxml.jackson.databind.ObjectMapper CANONICAL = JacksonConfiguration.newObjectMapper()
+      .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+
   static byte[] canonical(Object value) {
-    try { return JacksonConfiguration.newObjectMapper()
-        .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).writeValueAsBytes(value); }
+    try { return CANONICAL.writeValueAsBytes(value); }
     catch (Exception e) { throw new IllegalArgumentException("Cannot encode semantic content", e); }
   }
   static String sha256(byte[] bytes) {

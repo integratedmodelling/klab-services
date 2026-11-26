@@ -1,0 +1,42 @@
+testcase klab.staging.vxii.testsuite
+    "Measures repeated four-family selection on thirteen fixed members"
+    version 1.0
+    using
+        core.console as console,
+        core.context as context,
+        core.inspector as inspector
+
+action init:
+    def ruaha {
+        namespace: "test.tanzania"
+        name: "ruaha"
+        semantics: {{ earth:Terrestrial earth:Region }}
+        space: {
+            shape: "EPSG:4326 POLYGON((33.796 -7.086, 35.946 -7.086, 35.946 -9.41, 33.796 -9.41, 33.796 -7.086))"
+            grid: 1.km
+        }
+        time: {
+            year: 2014
+            step: 1.day
+        }
+    }
+
+@test(name="Conjunctive selection across four predicate families")
+action select_multiple_families:
+    ctx <- context.new
+    fixture_ready <- inspector.fixtures(ctx)
+    region <- ctx.submit(ruaha !observer)
+    support <- region.geometry
+    selected <- ctx.submit({{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}},
+        support :within region :namespace "staging.vxii.test.selection_batch_benchmark" :project "klab.staging.vxii")
+    selection <- ctx.focus(:within region)
+    assert inspector.selectioncheck(selection, selected,
+        {{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}})
+    before <- inspector.nativesnapshot(selection)
+    repeated <- ctx.submit({{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}},
+        support :within region :namespace "staging.vxii.test.selection_batch_benchmark" :project "klab.staging.vxii")
+    assert inspector.selectioncheck(selection, repeated,
+        {{each geography:African earth:Terrestrial agency:Appropriate agency:Patient earth:Region}})
+    assert inspector.nativeunchanged(selection, before)
+    discovered <- inspector.fixturecount(ctx, "discovery")
+    assert [discovered == 13]

@@ -141,29 +141,22 @@ public class JacksonConfiguration {
   @SuppressWarnings("rawtypes")
   static class PolymorphicSerializer<T> extends JsonSerializer<T> {
 
-    List<Field> getAllFields(Class clazz) {
-      if (clazz == null) {
-        return Collections.emptyList();
+    private static final ClassValue<List<Field>> FIELDS = new ClassValue<>() {
+      @Override protected List<Field> computeValue(Class<?> type) {
+        var fields = new LinkedHashMap<String, Field>();
+        var lineage = new ArrayDeque<Class<?>>();
+        for (var cls = type; cls != null; cls = cls.getSuperclass()) lineage.push(cls);
+        for (var cls : lineage) {
+          for (var field : cls.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) continue;
+            // A shadow keeps its parent's wire position and reads the subclass value.
+            fields.put(field.getName(), field);
+          }
+        }
+        fields.values().forEach(field -> field.setAccessible(true));
+        return List.copyOf(fields.values());
       }
-
-      Map<String, Field> fieldsByName = new LinkedHashMap<>();
-      for (var field : getAllFields(clazz.getSuperclass())) {
-        fieldsByName.put(field.getName(), field);
-      }
-      List<Field> filteredFields =
-          Arrays.stream(clazz.getDeclaredFields())
-              .filter(
-                  f ->
-                      !Modifier.isStatic(f.getModifiers())
-                          && !Modifier.isTransient(f.getModifiers()))
-              .toList();
-      for (var field : filteredFields) {
-        // A subclass field is the state exposed by the subclass accessors and must replace a
-        // same-named implementation detail inherited from a superclass.
-        fieldsByName.put(field.getName(), field);
-      }
-      return new ArrayList<>(fieldsByName.values());
-    }
+    };
 
     @Override
     public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers)
@@ -187,8 +180,7 @@ public class JacksonConfiguration {
       }
       gen.writeStartObject();
       gen.writeObjectField(CLASS_FIELD, value.getClass().getName());
-      for (Field field : getAllFields(value.getClass())) {
-        field.setAccessible(true); // You might want to set modifier to public first.
+      for (Field field : FIELDS.get(value.getClass())) {
         final Object fieldValue;
         try {
           fieldValue = field.get(value);

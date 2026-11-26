@@ -41,6 +41,26 @@ class ReflectionMetadataTransportTest {
     assertEquals("child", child.shadow);
   }
 
+  static class WireChild extends Child {
+    private static int ignoredClass = 19;
+    private transient int ignoredInstance = 23;
+    private int last = 5;
+  }
+
+  @Test void serializedSchemaPreservesParentOrderAndReadsCurrentInstanceValues() throws Exception {
+    var module = new SimpleModule();
+    module.addSerializer(WireChild.class, new JacksonConfiguration.PolymorphicSerializer<>());
+    var mapper = JacksonConfiguration.newObjectMapper().registerModule(module);
+    var child = new WireChild();
+    ((Parent) child).inherited = 7;
+    ((Parent) child).shadow = "parent";
+    child.shadow = "child";
+    assertEquals(tagged(WireChild.class, "\"inherited\":7,\"shadow\":\"child\",\"last\":5"),
+        mapper.writeValueAsString(child));
+    child.shadow = null;
+    assertEquals(tagged(WireChild.class, "\"inherited\":7,\"last\":5"), mapper.writeValueAsString(child));
+  }
+
   @Test void missingFieldsStillFailAndPlainMapKeysRemainUserData() throws Exception {
     for (int i = 0; i < 100; i++) {
       int key = i;

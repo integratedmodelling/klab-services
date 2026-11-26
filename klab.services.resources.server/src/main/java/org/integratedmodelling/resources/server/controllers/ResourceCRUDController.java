@@ -66,12 +66,20 @@ public class ResourceCRUDController {
       @Parameter(description = "Knowledge class of the asset")
           @PathVariable(name = "knowledgeClass")
           KlabAsset.KnowledgeClass assetClass,
+      @RequestParam(name = "manifestOnly", defaultValue = "false") boolean manifestOnly,
       Principal principal) {
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
 
     if (scope instanceof UserScope userScope) {
-      return (T) resourcesServer.klabService().retrieve(urn, assetClass.getAssetClass(), userScope);
+      var asset = resourcesServer.klabService().retrieve(urn, assetClass.getAssetClass(), userScope);
+      if (manifestOnly && asset instanceof org.integratedmodelling.klab.api.knowledge.organization.Project project) {
+        var summary = new ProjectImpl();
+        summary.setUrn(project.getUrn());
+        summary.setManifest(project.getManifest());
+        return (T) summary;
+      }
+      return (T) asset;
     }
 
     throw new KlabAuthorizationException("No valid scope in resource RETRIEVE request");
@@ -79,8 +87,9 @@ public class ResourceCRUDController {
 
   @GetMapping(ServicesAPI.RESOURCES.RETRIEVE_QUERY)
   public KlabAsset retrieveByUrn(@RequestParam String urn,
-      @PathVariable KlabAsset.KnowledgeClass knowledgeClass, Principal principal) {
-    return retrieve(urn, knowledgeClass, principal);
+      @PathVariable KlabAsset.KnowledgeClass knowledgeClass,
+      @RequestParam(name = "manifestOnly", defaultValue = "false") boolean manifestOnly, Principal principal) {
+    return retrieve(urn, knowledgeClass, manifestOnly, principal);
   }
 
   @PutMapping(ServicesAPI.RESOURCES.SUBMIT_QUERY)
@@ -116,12 +125,15 @@ public class ResourceCRUDController {
   public <T extends KlabAsset> List<T> list(
       @Parameter(description = "Knowledge class to list") @PathVariable(name = "knowledgeClass")
           KlabAsset.KnowledgeClass assetClass,
+      @RequestParam(name = "worldviewHeaders", defaultValue = "false") boolean worldviewHeaders,
       Principal principal) {
 
     var scope =
         principal instanceof EngineAuthorization authorization ? authorization.getScope() : null;
 
     if (scope instanceof UserScope userScope) {
+      if (worldviewHeaders && assetClass == KlabAsset.KnowledgeClass.WORLDVIEW)
+        return (List<T>) resourcesServer.klabService().listWorldviewHeaders(userScope);
       return (List<T>) resourcesServer.klabService().list(assetClass.getAssetClass(), userScope);
     }
 
