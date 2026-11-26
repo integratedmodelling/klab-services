@@ -613,6 +613,8 @@ public interface ServicesAPI {
      * TODO make this PUT
      */
     String UNLOCK_PROJECT = API_BASE + "/project/unlock/{urn}";
+
+    String PROJECT_EDIT_LOCK = API_BASE + "/workspaces/project/edit-lock";
   }
 
   interface RESOLVER {

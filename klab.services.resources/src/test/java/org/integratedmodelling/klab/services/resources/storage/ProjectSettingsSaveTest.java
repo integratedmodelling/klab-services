@@ -88,6 +88,34 @@ class ProjectSettingsSaveTest {
     }
   }
 
+  @Test void browserLockIsExclusiveAndExpiresAutomatically() throws Exception {
+    set(manager, "scope", mock(org.integratedmodelling.klab.api.scope.Scope.class));
+    locks.clear();
+    var alice = principal("alice", "first", "federation");
+    var bob = principal("bob", "second", "federation");
+    try (var scheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor()) {
+      set(manager, "scheduler", scheduler);
+      assertTrue(manager.acquireProjectEditLease("project", alice, 500));
+      assertTrue(manager.projectLockStatus("project", alice).owned());
+      assertFalse(manager.acquireProjectEditLease("project", bob, 500));
+      assertFalse(manager.renewProjectEditLease("project", bob));
+      assertThrows(org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException.class,
+          () -> manager.withOwnedProjectLock("project", bob, () -> null));
+      assertEquals("saved", manager.withOwnedProjectLock("project", alice, () -> "saved"));
+      assertTimeoutPreemptively(java.time.Duration.ofSeconds(4), () -> {
+        for (;;) {
+          synchronized (manager) {
+            if (locks.isEmpty()) break;
+          }
+          Thread.sleep(10);
+        }
+      });
+      assertFalse(manager.renewProjectEditLease("project", alice));
+      assertTrue(manager.acquireProjectEditLease("project", bob, 500));
+      assertTrue(manager.unlockProject("project", bob));
+    }
+  }
+
   @Test void anonymousLocksRemainCredentialScoped() throws Exception {
     set(manager, "scope", mock(org.integratedmodelling.klab.api.scope.Scope.class));
     locks.clear();

@@ -16,6 +16,12 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.ProjectImpl;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.knowledge.organization.impl.WorkspaceImpl;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsActionImpl;
+import org.integratedmodelling.klab.api.lang.kactors.impl.KActorsBehaviorImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimConceptStatementImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimModelImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -42,7 +48,7 @@ class WorkspacesControllerTest {
     when(server.klabService()).thenReturn(service);
     when(principal.getScope()).thenReturn(scope);
     when(scope.getUser()).thenReturn(mock(UserIdentity.class));
-    mvc = MockMvcBuilders.standaloneSetup(new WorkspacesController(server, languageServers)).build();
+    mvc = MockMvcBuilders.standaloneSetup(new WorkspacesController(server, languageServers, 900)).build();
   }
 
   @Test
@@ -55,6 +61,10 @@ class WorkspacesControllerTest {
     repository.getConflictingPaths().add("src/demo.kwv");
     repository.getUntrackedFolders().add("behaviors/new");
     ((ProjectImpl) workspace.getProjects().iterator().next()).setRepositoryState(repository);
+    var manager = mock(WorkspaceManager.class);
+    when(service.getWorkspaceManager()).thenReturn(manager);
+    when(manager.projectLockStatus("project", scope))
+        .thenReturn(new WorkspaceManager.ProjectLockStatus(true, false, false, null, null));
     when(service.list(Workspace.class, scope)).thenReturn(List.of(workspace));
     when(service.retrieveWorkspace("work", scope)).thenReturn(workspace);
 
@@ -65,6 +75,49 @@ class WorkspacesControllerTest {
         .andExpect(jsonPath("$.repository.files['src/demo.kwv']").value("CONFLICTED"))
         .andExpect(jsonPath("$.repository.files['scripts/staged.kactors']").value("ADDED"))
         .andExpect(jsonPath("$.repository.untrackedFolders[0]").value("behaviors/new"));
+  }
+
+  @Test
+  void navigationRetainsNestedConceptsModelsAndBehaviorActions() throws Exception {
+    var visible = workspace();
+    var project = (ProjectImpl) visible.getProjects().iterator().next();
+    var ontology = (KimOntologyImpl) project.getOntologies().getFirst();
+    var parent = new KimConceptStatementImpl();
+    parent.setUrn("Habitat");
+    var child = new KimConceptStatementImpl();
+    child.setUrn("Wetland");
+    child.setOffsetInDocument(36);
+    parent.setChildren(List.of(child));
+    ontology.setStatements(List.of(parent));
+    var namespace = new KimNamespaceImpl();
+    namespace.setUrn("landscape");
+    var model = new KimModelImpl();
+    model.setUrn("cover");
+    namespace.setStatements(List.of(model));
+    project.getNamespaces().add(namespace);
+    var behavior = new KActorsBehaviorImpl();
+    behavior.setUrn("monitor");
+    behavior.setBehaviorType(KActorsBehavior.Type.BEHAVIOR);
+    var action = new KActorsActionImpl();
+    action.setUrn("sample");
+    behavior.setStatements(List.of(action));
+    project.getBehaviors().add(behavior);
+    when(service.retrieveWorkspace("work", scope)).thenReturn(visible);
+
+    var endpoint = "/api/v1/workspaces/navigation";
+    mvc.perform(get(endpoint).param("workspace", "work").principal(principal))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].children[0].document.id").value("ONTOLOGY:demo"))
+        .andExpect(jsonPath("$[0].children[0].children[0].children[0].label").value("Wetland"))
+        .andExpect(jsonPath("$[0].children[0].children[0].children[0].offset").value(36))
+        .andExpect(jsonPath("$[0].children[0].document.text").doesNotExist())
+        .andExpect(jsonPath("$[0].children[1].children[0].kind").value("model"))
+        .andExpect(jsonPath("$[0].children[2].label").value("Behaviors"))
+        .andExpect(jsonPath("$[0].children[2].children[0].children[0].kind").value("action"));
+    verify(service, times(1)).retrieveWorkspace("work", scope);
+    verifyNoMoreInteractions(service);
+    mvc.perform(get(endpoint).param("workspace", "unavailable").principal(principal))
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -83,7 +136,7 @@ class WorkspacesControllerTest {
     when(service.retrieveWorkspace("work", scope)).thenReturn(workspace());
     var manager = mock(WorkspaceManager.class);
     when(service.getWorkspaceManager()).thenReturn(manager);
-    when(manager.withProjectLock(eq("project"), same(scope), any()))
+    when(manager.withOwnedProjectLock(eq("project"), same(scope), any()))
         .thenAnswer(call -> call.<Supplier<?>>getArgument(2).get());
     mvc.perform(put(SOURCE).param("workspace", "work").param("project", "project")
         .param("document", "ONTOLOGY:demo").principal(principal)
@@ -92,6 +145,71 @@ class WorkspacesControllerTest {
             """))
         .andExpect(status().isConflict());
     verify(service, never()).updateDocument(any(), any(), any(), any(), anyBoolean(), any());
+  }
+
+  @Test
+  void savingRequiresOwnedLockBeforeInvokingSourceUpdate() throws Exception {
+    when(service.retrieveWorkspace("work", scope)).thenReturn(workspace());
+    var manager = mock(WorkspaceManager.class);
+    when(service.getWorkspaceManager()).thenReturn(manager);
+    when(manager.withOwnedProjectLock(eq("project"), same(scope), any()))
+        .thenThrow(new KlabResourceAccessException("An owned project lock is required"));
+    mvc.perform(put(SOURCE).param("workspace", "work").param("project", "project")
+            .param("document", "ONTOLOGY:demo").principal(principal)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"revision\":\"one\",\"text\":\"ontology demo\"}"))
+        .andExpect(status().isForbidden());
+    verify(service, never()).updateDocument(any(), any(), any(), any(), anyBoolean(), any());
+  }
+
+  @Test
+  void anOwnedSourceSaveDispatchesExactlyOneUpdate() throws Exception {
+    var workspace = workspace();
+    var ontology = (KimOntologyImpl) workspace.getProjects().iterator().next().getOntologies().getFirst();
+    var version = org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest
+        .sourceHash("demo\u0000" + ontology.getSourceCode());
+    var changed = ontology.getSourceCode() + "\n";
+    when(service.retrieveWorkspace("work", scope)).thenReturn(workspace);
+    var manager = mock(WorkspaceManager.class);
+    when(service.getWorkspaceManager()).thenReturn(manager);
+    when(manager.withOwnedProjectLock(eq("project"), same(scope), any()))
+        .thenAnswer(call -> call.<Supplier<?>>getArgument(2).get());
+    when(service.updateDocument(eq("project"), eq("demo"), any(), eq(changed), eq(false), same(scope)))
+        .thenAnswer(call -> {
+          ontology.setSourceCode(changed);
+          return List.of();
+        });
+    mvc.perform(put(SOURCE).param("workspace", "work").param("project", "project")
+            .param("document", "ONTOLOGY:demo").principal(principal)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(
+                new WorkspacesController.SourceEdit(version, changed))))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.source.text").value(changed));
+    verify(service, times(1)).updateDocument(any(), any(), any(), any(), anyBoolean(), any());
+    verify(service, times(3)).retrieveWorkspace("work", scope);
+  }
+
+  @Test
+  void acquiringAndReadingALockDoesNotLoadTheWorkspaceTree() throws Exception {
+    var manager = mock(WorkspaceManager.class);
+    when(service.getWorkspaceManager()).thenReturn(manager);
+    when(service.canReadWorkspaceProject("work", "project", scope)).thenReturn(true);
+    when(service.canProjectOperation("project", CRUDOperation.UPDATE, scope)).thenReturn(true);
+    when(manager.projectLockStatus("project", scope))
+        .thenReturn(new WorkspaceManager.ProjectLockStatus(true, false, false, null, null),
+            new WorkspaceManager.ProjectLockStatus(true, true, true, 900000L, 900000L));
+    when(manager.acquireProjectEditLease("project", scope, 900000L)).thenReturn(true);
+    String path = "/api/v1/workspaces/project/lock";
+    mvc.perform(get(path).param("workspace", "work").param("project", "project").principal(principal))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.editable").value(false))
+        .andExpect(jsonPath("$.canLock").value(true));
+    mvc.perform(post(path).param("workspace", "work").param("project", "project").principal(principal))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.editable").value(true))
+        .andExpect(jsonPath("$.idleTimeoutMillis").value(900000));
+    mvc.perform(post(org.integratedmodelling.klab.api.ServicesAPI.RESOURCES.PROJECT_EDIT_LOCK)
+            .principal(principal).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"workspace\":\"work\",\"project\":\"project\",\"action\":\"STATUS\"}"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.owned").value(true));
+    verify(service, never()).retrieveWorkspace(any(), any());
   }
 
   @Test

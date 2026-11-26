@@ -1,7 +1,7 @@
 import type { ServiceApi } from "../services/api";
 import type { Diagnostic } from "./model";
 
-export type LanguageStatus = "starting" | "checking" | "connected" | "unavailable";
+export type LanguageStatus = "starting" | "connected" | "unavailable";
 export interface LanguageEndpoint { api: ServiceApi; url: string }
 export interface Buffer { version: number; text: string }
 interface Position { line: number; character: number }
@@ -42,9 +42,11 @@ export class WorkspaceLanguageSession {
     const initial = this.buffer();
     try {
       const { id } = await this.endpoint.api.request<{ id: string }>(this.path(), request("POST", initial));
+      if (!id) throw new Error("Missing language session");
       this.id = id;
       if (this.disposed) { this.closeRemote(); return; }
       this.lastSent = initial.version;
+      this.status("connected");
       this.changed();
     } catch {
       this.fail();
@@ -57,13 +59,10 @@ export class WorkspaceLanguageSession {
     window.clearTimeout(this.timer);
     this.polling?.abort();
     if (!this.id) return;
-    this.status("checking");
     this.timer = window.setTimeout(() => {
       const controller = new AbortController();
       this.polling = controller;
-      void this.check(this.buffer(), controller.signal).catch(() => {
-        if (!controller.signal.aborted) this.fail();
-      });
+      this.poll(this.buffer(), controller.signal);
     }, 300);
   }
 
@@ -83,9 +82,8 @@ export class WorkspaceLanguageSession {
       if (signal.aborted || this.buffer().version !== buffer.version) return;
       if (result?.version === buffer.version) {
         this.diagnostics(asOffsets(result.diagnostics, buffer.text));
-        this.status("connected");
         this.timer = window.setTimeout(() => {
-          void this.check(buffer, signal).catch(() => { if (!signal.aborted) this.fail(); });
+          this.poll(buffer, signal);
         }, 45000);
         return;
       }
@@ -93,10 +91,20 @@ export class WorkspaceLanguageSession {
     }
     // Some documents have no Xtext diagnostics to publish. Keep the session for completion.
     if (signal.aborted || this.buffer().version !== buffer.version) return;
-    this.status("connected");
     this.timer = window.setTimeout(() => {
-      void this.check(buffer, signal).catch(() => { if (!signal.aborted) this.fail(); });
+      this.poll(buffer, signal);
     }, 45000);
+  }
+
+  private poll(buffer: Buffer, signal: AbortSignal) {
+    void this.check(buffer, signal).catch((reason: unknown) => {
+      if (signal.aborted) return;
+      if (reason instanceof Error && /^(401|403|404|410|503)\b/.test(reason.message)) {
+        this.fail();
+      } else {
+        this.timer = window.setTimeout(() => this.poll(buffer, signal), 45000);
+      }
+    });
   }
 
   async complete(line: number, column: number, signal: AbortSignal) {

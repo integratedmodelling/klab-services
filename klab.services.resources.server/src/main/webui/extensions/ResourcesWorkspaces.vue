@@ -4,9 +4,11 @@ import type { DashboardContext } from "@klab-dashboard/types";
 import "@klab-dashboard/styles/theme.css";
 import "@klab-dashboard/knowledge/knowledge.css";
 import type { LanguageStatus } from "@klab-dashboard/workspaces/language-session";
+import WorkspaceTree from "@klab-dashboard/workspaces/WorkspaceTree.vue";
 import {
-  documentGitStatus, documentGroups, folderGitStatus, gitDecoration,
-  type Diagnostic, type DocumentItem, type EditorExtension, type Project, type ReviewGlyph, type Source, type Workspace,
+  documentGitStatus, expandedTreeKeys, filterTree, gitDecoration, projectTree,
+  type Diagnostic, type DocumentItem, type EditorExtension, type Project, type ProjectLock, type ProjectNavigation,
+  type ReviewGlyph, type Source, type Workspace, type WorkspaceTreeNode,
 } from "@klab-dashboard/workspaces/model";
 
 const Monaco = defineAsyncComponent(() => import("@klab-dashboard/workspaces/WorkspaceMonaco.vue"));
@@ -21,27 +23,42 @@ const editor = ref<{ find(): void; format(): void; jump(offset: number, normaliz
 const catalog = ref<Workspace[]>([]);
 const workspace = ref("");
 const projects = ref<Record<string, Project>>({});
-const expandedProjects = ref(new Set<string>());
+const navigationProjects = ref(new Map<string, WorkspaceTreeNode>());
+const navigationLoading = ref(false);
+const navigationError = ref("");
+const treeQuery = ref("");
+const query = computed(() => treeQuery.value.trim().toLowerCase());
+const expanded = ref(new Set<string>());
+const searchExpansion = ref<Set<string>>();
+const selectedNode = ref("");
+const pendingJump = ref<number>();
+const layout = ref<HTMLElement>();
+const treeWidth = ref(294);
+const layoutWidth = ref(0);
+const minimumTreeWidth = 215;
+const maximumTreeWidth = computed(() => Math.max(minimumTreeWidth, Math.min(560, Math.floor(layoutWidth.value * .55))));
+const actualTreeWidth = computed(() => Math.min(treeWidth.value, maximumTreeWidth.value));
+let treeResizeObserver: ResizeObserver | undefined;
+let navigationRequest = 0;
 const projectName = ref("");
 const project = computed(() => projects.value[projectName.value]);
 const workspaceTree = computed(() => {
   const current = catalog.value.find(item => item.urn === workspace.value);
-  return (current?.projects ?? []).map(name => {
-    const loaded = projects.value[name];
-    const repository = loaded?.repository;
-    const status = gitDecoration(loaded ? repository?.status : current?.repositoryStatuses?.[name]);
-    const groups = loaded ? documentGroups.map(group => {
-      const documents = loaded.documents.filter(document => group.types.includes(document.type))
-        .map(document => ({ document, status: documentGitStatus(repository, document.path) }));
-      return {
-        label: group.label,
-        documents: documents.map(({ document, status }) => ({ document, status: gitDecoration(status) })),
-        status: gitDecoration(folderGitStatus(repository, group.directory, documents)),
-      };
-    }).filter(group => group.documents.length || group.status) : [];
-    return { name, status, groups };
-  });
+  return (current?.projects ?? []).map(name =>
+    navigationProjects.value.get(name) ?? projectTree(name, undefined, current?.repositoryStatuses?.[name]));
 });
+const visibleTree = computed(() => filterTree(workspaceTree.value, query.value));
+const expandedNodes = computed(() => query.value
+  ? searchExpansion.value ?? expandedTreeKeys(visibleTree.value)
+  : expanded.value);
+watch(query, () => { searchExpansion.value = undefined; });
+watch(workspace, value => { if (value) void fetchNavigation(value); });
+watch([editor, pendingJump], ([instance, offset]) => {
+  if (instance && offset !== undefined) {
+    pendingJump.value = undefined;
+    instance.jump(offset);
+  }
+}, { flush: "post" });
 const source = ref<Source>();
 const text = ref("");
 const loading = ref(true);
@@ -61,7 +78,7 @@ const draftDiagnostics = ref<Diagnostic[]>([]);
 const draftStatus = ref("");
 const languageStatus = ref<LanguageStatus>();
 const languageDiagnostics = ref<Diagnostic[]>([]);
-const languageEndpoint = computed(() => source.value && project.value?.editable
+const languageEndpoint = computed(() => source.value && project.value?.lock.editable
   ? { api: props.context.api, url: url("/source/lsp", { document: source.value.document.id }) } : undefined);
 const settings = ref({ metadata: "", permissions: "", definedWorldview: "", snapshot: false });
 const baselineSettings = ref("");
@@ -69,6 +86,12 @@ const operation = ref("");
 const parameter = ref("");
 const confirmDiscard = ref(false);
 const repositoryOpen = ref(false);
+const changingLock = ref(false);
+const lockEndpoint = computed(() => project.value ? url("/project/lock") : "");
+let lockReadings = 0;
+let expiryTimer: number | undefined;
+let activityTimer: number | undefined;
+let nextRenewal = 0;
 const dirty = computed(() => source.value
   ? text.value !== normalize(source.value.text)
   : Boolean(project.value && baselineSettings.value && JSON.stringify(settings.value) !== baselineSettings.value));
@@ -110,6 +133,77 @@ function message(reason: unknown) {
   if (description.startsWith("403")) return "The service denied this operation. Check your project permissions or whether another user is editing.";
   return description;
 }
+function installLock(target: string, lock: ProjectLock) {
+  if (!active || target !== lockEndpoint.value || !project.value) return;
+  projects.value = { ...projects.value, [projectName.value]: { ...project.value, lock } };
+}
+watch([lockEndpoint, () => project.value?.lock], ([target, lock], [previous]) => {
+  window.clearTimeout(expiryTimer);
+  window.clearTimeout(activityTimer);
+  activityTimer = undefined;
+  if (previous !== target) nextRenewal = 0;
+  if (target && lock?.remainingMillis != null) {
+    expiryTimer = window.setTimeout(() => {
+      if (lock.owned) {
+        installLock(target, { ...lock, editable: false, remainingMillis: null });
+        feedback.value = "Checking project lock…";
+      }
+      void readLock("GET", target);
+    }, Math.min(lock.remainingMillis, 2_147_483_647));
+  }
+});
+async function readLock(method: "GET" | "POST" | "PUT" | "DELETE", target = lockEndpoint.value) {
+  if (!target) return;
+  const reading = ++lockReadings;
+  try {
+    const lock = await props.context.api.request<ProjectLock>(target, { method });
+    if (reading !== lockReadings || target !== lockEndpoint.value) return;
+    const before = project.value?.lock;
+    installLock(target, lock);
+    if (method === "POST") feedback.value = lock.owned ? "Project locked for editing." : "Project lock is unavailable.";
+    else if (method === "DELETE") feedback.value = lock.owned ? "Project remains locked." : "Project unlocked.";
+    else if (before?.owned && !lock.owned) feedback.value = "Project lock expired.";
+    else if (feedback.value === "Checking project lock…") feedback.value = "";
+  } catch (reason) {
+    if (reading !== lockReadings || target !== lockEndpoint.value) return;
+    if (method === "POST" || method === "DELETE") throw reason;
+    if (feedback.value === "Checking project lock…") feedback.value = "Project lock could not be checked.";
+  }
+}
+function markLockActivity() {
+  const lock = project.value?.lock;
+  const target = lockEndpoint.value;
+  if (!lock?.editable || !lock.idleTimeoutMillis || changingLock.value || activityTimer !== undefined) return;
+  const interval = Math.min(10000, lock.idleTimeoutMillis / 3);
+  activityTimer = window.setTimeout(() => {
+    activityTimer = undefined;
+    nextRenewal = Date.now() + interval;
+    void readLock("PUT", target);
+  }, Math.max(0, nextRenewal - Date.now()));
+}
+function refreshLock() {
+  if (!changingLock.value) void readLock("GET");
+}
+function changeLock(acquire: boolean) {
+  if (loading.value || saving.value || changingLock.value) return;
+  const change = async () => {
+    const target = lockEndpoint.value;
+    changingLock.value = true;
+    error.value = "";
+    window.clearTimeout(activityTimer);
+    activityTimer = undefined;
+    try {
+      if (!acquire) discard();
+      await readLock(acquire ? "POST" : "DELETE", target);
+    } catch (reason) {
+      error.value = acquire && message(reason).includes("changed on the service")
+        ? "This project is already locked." : message(reason);
+      await readLock("GET", target);
+    } finally { changingLock.value = false; }
+  };
+  if (!acquire && dirty.value) navigate(() => { void change(); });
+  else void change();
+}
 function resetSettings(value: Project) {
   settings.value = {
     metadata: JSON.stringify(value.metadata, null, 2), permissions: value.permissions ?? "",
@@ -117,13 +211,36 @@ function resetSettings(value: Project) {
   };
   baselineSettings.value = JSON.stringify(settings.value);
 }
-async function fetchProject() {
-  const value = await props.context.api.get<Project>(url("/project"));
+async function fetchNavigation(current = workspace.value) {
+  const request = ++navigationRequest;
+  const isCurrent = () => active && request === navigationRequest && workspace.value === current;
+  navigationLoading.value = true;
+  navigationError.value = "";
+  try {
+    const nodes = await props.context.api.get<ProjectNavigation[]>(
+      `api/v1/workspaces/navigation?${new URLSearchParams({ workspace: current })}`);
+    if (isCurrent()) {
+      navigationProjects.value = new Map(nodes.map(node => [node.urn, projectTree(node.urn, node)]));
+    }
+  } catch (reason) {
+    if (isCurrent()) navigationError.value = message(reason);
+  } finally {
+    if (isCurrent()) navigationLoading.value = false;
+  }
+}
+async function fetchProject(includeNavigation = false) {
+  const value = await props.context.api.get<Project>(
+    url("/project", includeNavigation ? { includeNavigation: "true" } : {}));
   if (!active) return;
   projects.value = { ...projects.value, [value.urn]: value };
+  if (value.navigation) {
+    const navigation = { urn: value.urn, repository: value.repository, children: value.navigation };
+    navigationProjects.value.set(value.urn, projectTree(value.urn, navigation));
+  }
   resetSettings(value);
 }
 function clearSource() {
+  pendingJump.value = undefined;
   semanticRequest?.abort();
   semantic.value = undefined;
   semanticPending.value = false;
@@ -134,6 +251,7 @@ function clearSource() {
   cursor.value = "Ln 1, Col 1";
 }
 function setSource(value: Source) {
+  if (value.lock) installLock(lockEndpoint.value, value.lock);
   source.value = value;
   text.value = normalize(value.text);
   refreshSemantics();
@@ -160,7 +278,7 @@ function refreshSemantics() {
 watch([source, text, languageStatus], ([current, draft, status], _previous, cleanup) => {
   draftDiagnostics.value = [];
   draftStatus.value = "";
-  if (!current || !project.value?.editable || !dirty.value || status === "connected" || status === "checking") return;
+  if (!current || !project.value?.lock.editable || !dirty.value || status === "connected") return;
   const request = new AbortController();
   draftStatus.value = "Checking syntax…";
   const timer = window.setTimeout(async () => {
@@ -211,31 +329,54 @@ function chooseWorkspace(next: string) {
     workspace.value = next;
     projectName.value = "";
     projects.value = {};
-    expandedProjects.value = new Set();
+    navigationProjects.value = new Map();
+    expanded.value = new Set();
+    treeQuery.value = selectedNode.value = "";
     repositoryOpen.value = false;
     error.value = feedback.value = "";
   });
 }
-function selectProject(name: string) {
+function selectProject(name: string, key: string) {
   if (name === projectName.value && !source.value && !error.value) {
-    expandedProjects.value.add(name);
+    expanded.value.add(key);
     return;
   }
   navigate(() => { void load(async () => {
     clearSource();
     projectName.value = name;
-    expandedProjects.value.add(name);
+    expanded.value.add(key);
+    selectedNode.value = key;
     repositoryOpen.value = false;
     await fetchProject();
   }); });
 }
-function toggleProject(name: string) {
-  if (expandedProjects.value.delete(name)) return;
-  if (projects.value[name]) expandedProjects.value.add(name);
-  else selectProject(name);
+function toggleBranch(key: string) {
+  const keys = new Set(expandedNodes.value);
+  if (!keys.delete(key)) keys.add(key);
+  if (query.value) searchExpansion.value = keys;
+  else expanded.value = keys;
 }
-function selectDocument(name: string, document: DocumentItem) {
-  if (name === projectName.value && document.id === source.value?.document.id) return;
+function expandTree(open: boolean) {
+  const keys = open ? expandedTreeKeys(visibleTree.value) : new Set<string>();
+  if (query.value) searchExpansion.value = keys;
+  else expanded.value = keys;
+}
+function selectTreeNode(node: WorkspaceTreeNode) {
+  const { project: name, document, offset, key } = node;
+  if (!document) {
+    if (node.kind === "project") selectProject(name, key);
+    return;
+  }
+  if (name === projectName.value && document.id === source.value?.document.id) {
+    if (offset !== undefined && dirty.value) {
+      feedback.value = "Save or discard your changes before jumping to a declaration.";
+      return;
+    }
+    selectedNode.value = key;
+    if (offset !== undefined) pendingJump.value = offset;
+    if (window.matchMedia("(max-width: 680px)").matches) navigatorVisible.value = false;
+    return;
+  }
   navigate(() => { void load(async () => {
     clearSource();
     if (projectName.value !== name) {
@@ -244,6 +385,8 @@ function selectDocument(name: string, document: DocumentItem) {
       await fetchProject();
     }
     await fetchSource(document);
+    selectedNode.value = key;
+    if (offset !== undefined) pendingJump.value = offset;
     if (window.matchMedia("(max-width: 680px)").matches) navigatorVisible.value = false;
   }); });
 }
@@ -258,7 +401,7 @@ function report(result: Diagnostic[]) {
   return false;
 }
 async function save() {
-  if (!dirty.value || saving.value || !project.value?.editable) return false;
+  if (!dirty.value || saving.value || !project.value?.lock.editable) return false;
   saving.value = true;
   error.value = feedback.value = "";
   try {
@@ -275,7 +418,7 @@ async function save() {
       }
       setSource(result.source);
       feedback.value = result.source.document.errors ? "Source saved with document errors." : "Source saved.";
-      try { await fetchProject(); } catch (reason) { error.value = `Source saved. Project refresh failed: ${message(reason)}`; }
+      try { await fetchProject(true); } catch (reason) { error.value = `Source saved. Project refresh failed: ${message(reason)}`; }
     } else {
       const metadata: unknown = JSON.parse(settings.value.metadata);
       if (!metadata || Array.isArray(metadata) || typeof metadata !== "object") {
@@ -300,6 +443,7 @@ async function save() {
     return true;
   } catch (reason) {
     error.value = reason instanceof SyntaxError ? "Project metadata contains invalid JSON." : message(reason);
+    if (reason instanceof Error && reason.message.startsWith("403")) refreshLock();
     return false;
   } finally { saving.value = false; }
 }
@@ -310,7 +454,7 @@ function reload() {
   const document = source.value?.document;
   navigate(() => { void load(async () => {
     discard();
-    await fetchProject();
+    await fetchProject(true);
     if (document && project.value?.documents.some(item => item.id === document.id)) await fetchSource(document);
     else if (document) clearSource();
   }); });
@@ -319,7 +463,7 @@ function revisionStatus(project: Project | undefined, document: DocumentItem) {
   return gitDecoration(documentGitStatus(project?.repository, document.path));
 }
 async function runRepository() {
-  if (saving.value || dirty.value || !project.value?.canManageRepository || !operation.value) return;
+  if (saving.value || dirty.value || !project.value?.canManageRepository || !project.value.lock.editable || !operation.value) return;
   if (operation.value === "DISCARD_LOCAL_CHANGES" && !confirmDiscard.value) {
     confirmDiscard.value = true;
     return;
@@ -332,13 +476,35 @@ async function runRepository() {
         operation: operation.value, parameter: parameter.value.trim(),
       }));
       if (report(result)) feedback.value = result.find(item => item.level === "Warning")?.message ?? "Repository updated.";
-      await fetchProject();
+      await fetchProject(true);
       if (document && project.value?.documents.some(item => item.id === document.id)) await fetchSource(document);
       else if (document) clearSource();
     } finally {
       operation.value = parameter.value = "";
     }
   });
+}
+function startTreeResize(event: PointerEvent) {
+  if (event.button !== 0) return;
+  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  event.preventDefault();
+}
+function moveTreeResize(event: PointerEvent) {
+  if (!(event.currentTarget as HTMLElement).hasPointerCapture(event.pointerId) || !layout.value) return;
+  setTreeWidth(event.clientX - layout.value.getBoundingClientRect().left);
+}
+function setTreeWidth(width: number) {
+  treeWidth.value = Math.round(Math.max(minimumTreeWidth, Math.min(maximumTreeWidth.value, width)));
+}
+function keyboardTreeResize(event: KeyboardEvent) {
+  switch (event.key) {
+    case "ArrowLeft": setTreeWidth(actualTreeWidth.value - 16); break;
+    case "ArrowRight": setTreeWidth(actualTreeWidth.value + 16); break;
+    case "Home": setTreeWidth(minimumTreeWidth); break;
+    case "End": setTreeWidth(maximumTreeWidth.value); break;
+    default: return;
+  }
+  event.preventDefault();
 }
 function toggleRepository() {
   repositoryOpen.value = !repositoryOpen.value;
@@ -392,15 +558,22 @@ async function initialize() {
 }
 const unregister = props.context.registerNavigationGuard?.({
   isDirty: () => dirty.value || saving.value, isBusy: () => saving.value,
-  canSave: () => dirty.value && Boolean(project.value?.editable), save, discard,
+  canSave: () => dirty.value && Boolean(project.value?.lock.editable), save, discard,
 });
 onMounted(() => {
+  treeResizeObserver = new ResizeObserver(([entry]) => { layoutWidth.value = entry.contentRect.width; });
+  if (layout.value) treeResizeObserver.observe(layout.value);
+  window.addEventListener("focus", refreshLock);
   document.addEventListener("fullscreenchange", changeFullscreen);
   document.addEventListener("keydown", keydown);
   window.addEventListener("beforeunload", beforeUnload);
   void initialize();
 });
 onBeforeUnmount(() => {
+  treeResizeObserver?.disconnect();
+  window.removeEventListener("focus", refreshLock);
+  window.clearTimeout(expiryTimer);
+  window.clearTimeout(activityTimer);
   active = false;
   semanticRequest?.abort();
   unregister?.();
@@ -412,20 +585,22 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section ref="root" class="knowledge-ui workspace-browser" :class="{ 'workspace-fullscreen': fullscreen }" aria-label="Workspaces">
+  <section ref="root" class="knowledge-ui workspace-browser" :class="{ 'workspace-fullscreen': fullscreen }" aria-label="Workspaces"
+           @pointerdown.capture="markLockActivity" @keydown.capture="markLockActivity" @wheel.passive="markLockActivity">
     <div class="workspace-top">
       <q-tabs :model-value="workspace" dense no-caps align="left" class="workspace-tabs"
               aria-label="Available workspaces" @update:model-value="chooseWorkspace">
         <q-tab v-for="entry in catalog" :key="entry.urn" :name="entry.urn" :label="entry.urn"/>
       </q-tabs>
-      <button type="button" :aria-pressed="fullscreen" @click="toggleFullscreen">
+      <button type="button" class="workspace-icon-button" :aria-pressed="fullscreen"
+              :aria-label="fullscreen ? 'Exit full screen' : 'Full screen'"
+              :title="fullscreen ? 'Exit full screen' : 'Full screen'" @click="toggleFullscreen">
         <q-icon :name="fullscreen ? 'fullscreen_exit' : 'fullscreen'" size="18px"/>
-        {{ fullscreen ? "Exit full screen" : "Full screen" }}
       </button>
     </div>
     <div v-if="pending" class="workspace-feedback" role="alert">
-      <span>Save your changes before leaving?</span>
-      <button type="button" :disabled="saving" @click="saveThenProceed">Save and continue</button>
+      <span>Save your changes before continuing?</span>
+      <button type="button" :disabled="saving || !project?.lock.editable" @click="saveThenProceed">Save and continue</button>
       <button type="button" :disabled="saving" @click="proceed">Discard and continue</button>
       <button type="button" :disabled="saving" @click="pending = undefined">Keep editing</button>
     </div>
@@ -433,85 +608,85 @@ onBeforeUnmount(() => {
       <span>{{ error }}</span>
       <button v-if="!workspace" type="button" @click="initialize">Retry</button>
     </div>
-    <div class="workspace-layout" :class="{ 'workspace-without-tree': !navigatorVisible }">
-      <aside v-if="navigatorVisible" class="workspace-tree" aria-label="Project tree">
-        <h2>Projects</h2>
-        <p v-if="!workspaceTree.length" class="workspace-note">{{ loading ? "Loading workspaces…" : "No accessible projects." }}</p>
-        <ul>
-          <li v-for="{ name, status, groups } in workspaceTree" :key="name">
-            <div class="workspace-tree-project">
-              <button type="button" class="workspace-tree-disclosure" :disabled="loading || saving"
-                      :aria-label="`${expandedProjects.has(name) ? 'Collapse' : 'Expand'} ${name}`"
-                      :aria-expanded="expandedProjects.has(name)" @click="toggleProject(name)">
-                <q-icon :name="expandedProjects.has(name) ? 'expand_more' : 'chevron_right'" size="17px"/>
-              </button>
-              <button type="button" class="workspace-tree-row" :disabled="loading || saving"
-                      :aria-current="name === projectName && !source ? 'true' : undefined" @click="selectProject(name)">
-                <q-icon :name="expandedProjects.has(name) ? 'folder_open' : 'folder'" size="17px"/>
-                <span class="workspace-row-label">{{ name }}</span>
-                <span v-if="status" class="workspace-file-status" :data-status="status"
-                      :title="`Git ${status}`">{{ status }}</span>
-              </button>
-            </div>
-            <ul v-if="projects[name] && expandedProjects.has(name)" class="workspace-documents">
-                <li v-for="group in groups" :key="group.label">
-                  <div v-if="group.label" class="workspace-folder">
-                    <q-icon name="folder_open"/>
-                    <span class="workspace-row-label">{{ group.label }}</span>
-                    <span v-if="group.status" class="workspace-file-status" :data-status="group.status"
-                          :title="`Git ${group.status}`">{{ group.status }}</span>
-                  </div>
-                  <ul :class="{ 'workspace-group': group.label }">
-                    <li v-for="{ document, status: fileStatus } in group.documents" :key="document.id">
-                      <button type="button" class="workspace-tree-row workspace-tree-document" :disabled="loading || saving"
-                              :aria-current="name === projectName && source?.document.id === document.id ? 'true' : undefined"
-                              @click="selectDocument(name, document)">
-                        <q-icon name="description" size="15px"/><span class="workspace-row-label">{{ document.label }}</span>
-                        <span v-if="document.errors || document.warnings || fileStatus" class="workspace-row-status">
-                          <span v-if="document.errors" class="workspace-problem" role="img"
-                                :aria-label="`${document.errors} ${document.errors === 1 ? 'error' : 'errors'}`">
-                            <q-icon name="error_outline"/>
-                          </span>
-                          <span v-else-if="document.warnings" class="workspace-warning" role="img"
-                                :aria-label="`${document.warnings} ${document.warnings === 1 ? 'warning' : 'warnings'}`">
-                            <q-icon name="warning_amber"/>
-                          </span>
-                          <span v-if="fileStatus" class="workspace-file-status" :data-status="fileStatus"
-                                :title="`Git ${fileStatus}`">{{ fileStatus }}</span>
-                        </span>
-                      </button>
-                    </li>
-                  </ul>
-                </li>
-            </ul>
-          </li>
-        </ul>
+    <div ref="layout" class="workspace-layout" :class="{ 'workspace-without-tree': !navigatorVisible }"
+         :style="{ '--workspace-tree-width': actualTreeWidth + 'px' }">
+      <aside v-if="navigatorVisible" id="workspace-project-tree" class="workspace-tree"
+             aria-label="Project tree" :aria-busy="navigationLoading">
+        <div class="workspace-tree-header">
+          <div class="workspace-tree-search">
+            <q-icon name="search" size="16px"/>
+            <input v-model="treeQuery" type="search" aria-label="Search workspace" placeholder="Search workspace"/>
+          </div>
+          <button type="button" aria-label="Collapse tree" title="Collapse tree" :disabled="!expandedNodes.size"
+                  @click="expandTree(false)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 10 6 6 6-6M6 4l6 6 6-6" transform="rotate(180 12 12)"/></svg>
+          </button>
+          <button type="button" aria-label="Expand tree" title="Expand tree"
+                  :disabled="navigationLoading || !visibleTree.some(node => node.children.length)"
+                  @click="expandTree(true)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 10 6 6 6-6M6 4l6 6 6-6"/></svg>
+          </button>
+        </div>
+        <div class="workspace-tree-scroll">
+          <p v-if="navigationLoading || loading && !workspace" class="workspace-note" role="status">Loading project tree…</p>
+          <div v-else-if="navigationError" class="workspace-note" role="alert">
+            <p>Could not load the project tree. {{ navigationError }}</p>
+            <button type="button" @click="fetchNavigation()">Retry</button>
+          </div>
+          <p v-else-if="!visibleTree.length" class="workspace-note" role="status">
+            {{ query ? "No matching projects or declarations." : "No accessible projects." }}
+          </p>
+          <WorkspaceTree :nodes="visibleTree" :expanded="expandedNodes" :selected="selectedNode"
+                         :disabled="loading || saving" @select="selectTreeNode" @toggle="toggleBranch"/>
+        </div>
       </aside>
+      <div v-if="navigatorVisible" class="workspace-tree-resizer" role="separator" tabindex="0"
+           aria-label="Resize project tree" aria-orientation="vertical" aria-controls="workspace-project-tree"
+           :aria-valuemin="minimumTreeWidth" :aria-valuemax="maximumTreeWidth" :aria-valuenow="actualTreeWidth"
+           @pointerdown="startTreeResize" @pointermove="moveTreeResize" @keydown="keyboardTreeResize"/>
       <div class="workspace-main" :aria-busy="loading || saving">
         <header class="workspace-toolbar">
-          <button type="button" :aria-pressed="navigatorVisible" aria-label="Toggle project tree" title="Toggle project tree"
+          <button type="button" class="workspace-icon-button" :aria-pressed="navigatorVisible" aria-label="Toggle project tree" title="Toggle project tree"
                   @click="navigatorVisible = !navigatorVisible"><q-icon name="account_tree" size="18px"/></button>
           <div class="workspace-title">
             <span v-if="source">{{ projectName }}</span>
             <h2>{{ source?.document.label || projectName || "Project workspace" }}</h2>
           </div>
           <div v-if="project" class="workspace-actions">
-            <button v-if="project.editable" type="button" class="workspace-primary" :disabled="!dirty || loading || saving"
-                    @click="save">{{ saving ? "Saving…" : source ? "Save source" : "Save settings" }}</button>
-            <button v-if="source" type="button" @click="editor?.find()">Find</button>
-            <button v-if="source && project.editable" type="button" :disabled="saving" @click="editor?.format()">Format</button>
+            <button v-if="project.lock.owned || project.lock.canLock" type="button" class="workspace-lock-action"
+                    :disabled="loading || saving || changingLock"
+                    :aria-label="project.lock.owned ? 'Unlock project' : 'Lock project'"
+                    :title="project.lock.owned ? 'Unlock project' : 'Lock project for editing'"
+                    @click="changeLock(!project.lock.owned)">
+              <q-icon :name="project.lock.owned ? 'lock_open' : 'lock'" size="17px"/>
+              {{ project.lock.owned ? "Unlock" : "Lock to edit" }}
+            </button>
+            <button type="button" class="workspace-primary" :disabled="!project.lock.editable || !dirty || loading || saving"
+                    :aria-label="source ? 'Save source' : 'Save settings'"
+                    :title="source ? 'Save source' : 'Save settings'" @click="save">
+              <q-icon name="save" size="17px"/>
+            </button>
+            <button v-if="source" type="button" aria-label="Find" title="Find" @click="editor?.find()">
+              <q-icon name="search" size="18px"/>
+            </button>
+            <button v-if="source" type="button" :disabled="!project.lock.editable || saving" aria-label="Format source"
+                    title="Format source" @click="editor?.format()">
+              <q-icon name="format_align_left" size="17px"/>
+            </button>
             <button type="button" aria-label="Reload from service" title="Reload from service" :disabled="loading || saving" @click="reload">
               <q-icon name="refresh" size="17px"/>
             </button>
-            <button v-if="project.repository?.branch" type="button" :aria-expanded="repositoryOpen" @click="toggleRepository">
-              <q-icon name="fork_right" size="16px"/> Revision control
+            <button v-if="project.repository?.branch" type="button" :aria-expanded="repositoryOpen"
+                    aria-label="Revision control" title="Revision control" @click="toggleRepository">
+              <q-icon name="fork_right" size="17px"/>
             </button>
             <button v-if="source" type="button" :aria-pressed="lineNumbers" aria-label="Line numbers" title="Line numbers"
                     @click="lineNumbers = !lineNumbers"><q-icon name="format_list_numbered" size="17px"/></button>
             <button v-if="source" type="button" :aria-pressed="minimap" aria-label="Minimap" title="Minimap"
                     @click="minimap = !minimap"><q-icon name="map" size="17px"/></button>
-            <button v-if="source" type="button" :aria-pressed="split" @click="split = !split">
-              <q-icon name="vertical_split" size="18px"/> {{ split ? "Close split" : "Split view" }}
+            <button v-if="source" type="button" :aria-pressed="split" :aria-label="split ? 'Close split' : 'Split view'"
+                    :title="split ? 'Close split' : 'Split view'" @click="split = !split">
+              <q-icon name="vertical_split" size="18px"/>
             </button>
           </div>
         </header>
@@ -524,7 +699,7 @@ onBeforeUnmount(() => {
               <ul><li v-for="(status, path) in project.repository.files" :key="path">{{ status.toLowerCase() }} · {{ path }}</li></ul>
             </details>
           </div>
-          <div v-if="project.canManageRepository" class="workspace-revision-actions">
+          <div v-if="project.canManageRepository && project.lock.editable" class="workspace-revision-actions">
             <select v-model="operation" aria-label="Repository operation" :disabled="loading || saving"
                     @change="parameter = ''; confirmDiscard = false">
               <option value="">Choose operation</option>
@@ -546,7 +721,7 @@ onBeforeUnmount(() => {
         <div v-if="source" class="workspace-editor-layout" :class="{ 'workspace-split': split }">
           <Suspense>
             <Monaco ref="editor" :key="`${projectName}/${source.document.id}`" :source="source" :value="text"
-                    :read-only="!project?.editable || saving || loading" :line-numbers="lineNumbers" :minimap="minimap"
+                    :read-only="!project?.lock.editable || saving || loading" :line-numbers="lineNumbers" :minimap="minimap"
                     :semantic-diagnostics="semantic?.diagnostics ?? []" :draft-diagnostics="draftDiagnostics"
                     :language-endpoint="languageEndpoint"
                     :review-glyphs="reviewGlyphs?.(source)" :extensions="editorExtensions"
@@ -560,8 +735,7 @@ onBeforeUnmount(() => {
               <p>{{ source.document.label }} · .{{ source.document.extension }}</p>
               <h4>Problems</h4>
               <p v-if="dirty && draftStatus">{{ draftStatus }}</p>
-              <p v-else-if="!diagnostics.length">{{ languageStatus === "checking" ? "Checking language diagnostics…"
-                : semanticPending ? "Checking semantics…" : "No reported problems." }}</p>
+              <p v-else-if="!diagnostics.length">{{ semanticPending ? "Checking semantics…" : "No reported problems." }}</p>
               <ul v-if="diagnostics.length">
                 <li v-for="(item, index) in diagnostics" :key="index">
                   <button type="button" @click="editor?.jump(item.offset ?? 0, item.normalizedOffsets)">{{ item.level }} · {{ item.message }}</button>
@@ -578,22 +752,22 @@ onBeforeUnmount(() => {
           <dl class="workspace-facts">
             <div><dt>Version</dt><dd>{{ project.version || "—" }}</dd></div>
             <div><dt>Worldview</dt><dd>{{ project.worldview || "—" }}</dd></div>
-            <div v-if="!project.administrator || !project.editable">
+            <div v-if="!project.administrator || !project.lock.editable">
               <dt>Defined worldview</dt><dd>{{ project.definedWorldview || "—" }}</dd>
             </div>
           </dl>
           <label class="workspace-field">Project metadata
-            <textarea v-model="settings.metadata" spellcheck="false" :readonly="!project.editable || saving || loading" rows="8"/>
+            <textarea v-model="settings.metadata" spellcheck="false" :readonly="!project.lock.editable || saving || loading" rows="8"/>
           </label>
-          <label v-if="project.editable" class="workspace-field">Project permissions
+          <label v-if="project.lock.editable" class="workspace-field">Project permissions
             <input v-model="settings.permissions" :disabled="saving || loading"/>
             <small>Use the service’s project permissions expression. An empty value grants owner-only access.</small>
           </label>
-          <label v-if="project.administrator && project.editable" class="workspace-field">Defined worldview
+          <label v-if="project.administrator && project.lock.editable" class="workspace-field">Defined worldview
             <input v-model="settings.definedWorldview" :disabled="saving || loading"/>
           </label>
           <label class="workspace-check">
-            <input v-model="settings.snapshot" type="checkbox" :disabled="!project.editable || saving || loading"/>
+            <input v-model="settings.snapshot" type="checkbox" :disabled="!project.lock.editable || saving || loading"/>
             Synchronize with Git origin before loading
           </label>
         </form>
@@ -602,7 +776,10 @@ onBeforeUnmount(() => {
                   : "Your account has no accessible workspaces on this service." }}</p>
         </div>
         <footer class="workspace-status" aria-label="Editor status">
-          <span v-if="project">{{ project.editable ? 'Editable' : 'Read only' }}</span>
+          <span v-if="project" :title="project.lock.locked && !project.lock.owned ? 'Project locked by another user' : undefined">
+            <q-icon :name="project.lock.editable ? 'edit' : 'lock_outline'"/>
+            {{ project.lock.editable ? 'Editable' : project.lock.locked && !project.lock.owned ? 'Locked by another user' : 'Read only' }}
+          </span>
           <span v-if="project?.repository?.branch"><q-icon name="fork_right"/> {{ project.repository.branch }} · {{ project.repository.status.toLowerCase() }}</span>
           <span v-if="source && revisionStatus(project, source.document)">File {{ revisionStatus(project, source.document) }}</span>
           <button v-if="source" type="button" class="workspace-diagnostics-toggle" @click="split = true"
@@ -610,15 +787,15 @@ onBeforeUnmount(() => {
             <q-icon name="error_outline"/> {{ errors }} <q-icon name="warning_amber"/> {{ warnings }}
           </button>
           <span v-if="source && !dirty && semanticPending">Checking semantics…</span>
-          <span v-else-if="source && dirty">{{ draftStatus }}</span>
+          <span v-else-if="source && dirty && draftStatus">{{ draftStatus }}</span>
           <span v-if="source && languageStatus" aria-live="polite">{{ {
-            starting: "Starting language server…", checking: "Checking language diagnostics…",
-            connected: "Language server connected", unavailable: "Language server unavailable",
+            starting: "LSP starting…", connected: "LSP active", unavailable: "LSP unavailable",
           }[languageStatus] }}</span>
           <span v-else-if="source && !dirty && semantic && semantic.status !== 'COMPLETE' && !source.document.errors"
                 :title="semantic.reason">Semantic check unavailable</span>
-          <span class="workspace-status-message" role="status">{{ dirty ? "Unsaved changes" : feedback }}</span>
-          <span v-if="source">{{ cursor }}</span>
+          <span v-if="dirty">Unsaved changes</span>
+          <span v-if="feedback" role="status">{{ feedback }}</span>
+          <span v-if="source" class="workspace-cursor">{{ cursor }}</span>
           <span v-if="source">.{{ source.document.extension }}</span>
         </footer>
       </div>

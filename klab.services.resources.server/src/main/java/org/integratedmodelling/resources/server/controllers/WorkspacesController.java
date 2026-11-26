@@ -1,5 +1,6 @@
 package org.integratedmodelling.resources.server.controllers;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.security.Principal;
 import java.util.Comparator;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -24,18 +26,26 @@ import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.ResourcesService.ProjectEditingLock;
+import org.integratedmodelling.klab.api.services.ResourcesService.ProjectLockRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
 import org.integratedmodelling.klab.api.services.resources.AuthoringSource;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.settings.ProjectSettings;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.modeler.model.NavigableProject;
+import org.integratedmodelling.klab.modeler.model.NavigableWorkspace;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -51,10 +61,14 @@ public class WorkspacesController {
 
   private final ResourcesServer server;
   private final WorkspaceLanguageServers languageServers;
+  private final long lockIdleMillis;
 
-  public WorkspacesController(ResourcesServer server, WorkspaceLanguageServers languageServers) {
+  public WorkspacesController(ResourcesServer server, WorkspaceLanguageServers languageServers,
+      @Value("${klab.resources.workspace-lock-idle-seconds:900}") long lockIdleSeconds) {
     this.server = server;
     this.languageServers = languageServers;
+    if (lockIdleSeconds <= 0) throw new IllegalArgumentException("Workspace lock timeout must be positive");
+    this.lockIdleMillis = Math.multiplyExact(lockIdleSeconds, 1000);
   }
 
   public record WorkspaceItem(String urn, List<String> projects,
@@ -68,9 +82,16 @@ public class WorkspacesController {
                          List<String> untrackedFolders) {}
 
   public record ProjectView(String urn, String description, String worldview, String definedWorldview,
-                            String version, boolean snapshot, boolean editable, boolean canManageRepository,
+                            String version, boolean snapshot, ProjectEditingLock lock, boolean canManageRepository,
                             boolean administrator, Map<String, Object> metadata, String permissions,
-                            String settingsRevision, Revision repository, List<DocumentItem> documents) {}
+                            String settingsRevision, Revision repository, List<DocumentItem> documents,
+                            @JsonInclude(JsonInclude.Include.NON_NULL) List<NavigationNode> navigation) {}
+
+  public record ProjectNavigation(String urn, Revision repository, List<NavigationNode> children) {}
+
+  @JsonInclude(JsonInclude.Include.NON_EMPTY)
+  public record NavigationNode(String label, String kind, DocumentItem document, Integer offset,
+                               List<NavigationNode> children) {}
 
   public record Diagnostic(String level, String message, Integer offset, Integer length) {
     static Diagnostic of(Notification notification) {
@@ -84,7 +105,7 @@ public class WorkspacesController {
   }
 
   public record Source(DocumentItem document, String text, String revision, List<Diagnostic> diagnostics,
-                       Map<String, String> concepts) {}
+                       Map<String, String> concepts, ProjectEditingLock lock) {}
   public record SourceEdit(String revision, String text) {}
   public record Draft(String text) {}
   public record LanguageSession(UUID id) {}
@@ -109,34 +130,124 @@ public class WorkspacesController {
         .toList();
   }
 
+  @GetMapping("/navigation")
+  public List<ProjectNavigation> navigation(@RequestParam String workspace, Principal principal) {
+    var visible = service().retrieveWorkspace(workspace, user(principal));
+    if (visible == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Workspace not found");
+    return new NavigableWorkspace(visible, false).children().stream()
+        .map(NavigableProject.class::cast)
+        .map(project -> new ProjectNavigation(project.getUrn(), revision(project.getRepositoryState()),
+            navigationChildren(project)))
+        .toList();
+  }
+
   @GetMapping("/project")
   public ProjectView project(@RequestParam String workspace, @RequestParam String project,
+                             @RequestParam(defaultValue = "false") boolean includeNavigation,
                              Principal principal) {
     var scope = user(principal);
     var current = project(workspace, project, scope);
     var manifest = current.getManifest();
-    var manager = service().getWorkspaceManager();
-    var editable = service().canProjectOperation(project, CRUDOperation.UPDATE, scope)
-        && manager.canLockProject(project, scope);
+    var canEdit = service().canProjectOperation(project, CRUDOperation.UPDATE, scope);
+    var lock = lockAccess(project, scope, canEdit);
     var administrator = service().canAdministerProjectSettings(scope);
     var repository = current.getRepositoryState();
     return new ProjectView(project,
         manifest == null ? null : manifest.getDescription(), manifest == null ? null : manifest.getWorldview(),
         manifest == null ? null : manifest.getDefinedWorldview(),
         manifest == null || manifest.getVersion() == null ? null : manifest.getVersion().toString(),
-        manifest != null && manifest.isSnapshot(), editable,
-        administrator && isAdministrator(principal) && editable && repository != null && repository.getCurrentBranch() != null,
+        manifest != null && manifest.isSnapshot(), lock,
+        administrator && isAdministrator(principal) && canEdit && repository != null && repository.getCurrentBranch() != null,
         administrator, current.getSettings().getMetadata(),
-        editable ? current.getSettings().getPermissions() : null,
+        canEdit ? current.getSettings().getPermissions() : null,
         settingsRevision(current), revision(repository),
-        current.allDocuments().stream().map(WorkspacesController::item).toList());
+        current.allDocuments().stream().map(WorkspacesController::item).toList(),
+        includeNavigation ? navigationChildren(new NavigableProject(current, null)) : null);
+  }
+
+  private static List<NavigationNode> navigationChildren(NavigableAsset asset) {
+    return asset.children().stream().map(child -> {
+      var delegate = child.getDelegate();
+      if (delegate instanceof KlabDocument<?> document) {
+        return new NavigationNode(AuthoringSource.label(document), "document", item(document), null,
+            navigationChildren(child));
+      }
+      if (delegate instanceof KlabStatement statement) {
+        String kind = switch (statement) {
+          case KimConceptStatement ignored -> "concept";
+          case KimModel ignored -> "model";
+          case KActorsAction ignored -> "action";
+          default -> "statement";
+        };
+        return new NavigationNode(child.getUrn(), kind, null, statement.getOffsetInDocument(),
+            navigationChildren(child));
+      }
+      return new NavigationNode(child.getUrn(), "folder", null, null, navigationChildren(child));
+    }).toList();
+  }
+
+  @GetMapping("/project/lock")
+  public ProjectEditingLock projectLock(@RequestParam String workspace, @RequestParam String project, Principal principal) {
+    var scope = lockScope(workspace, project, principal);
+    return lockAccess(project, scope, service().canProjectOperation(project, CRUDOperation.UPDATE, scope));
+  }
+
+  @PostMapping("/project/lock")
+  public ProjectEditingLock acquireLock(@RequestParam String workspace, @RequestParam String project, Principal principal) {
+    var scope = lockScope(workspace, project, principal);
+    service().requireProjectOperation(project, CRUDOperation.UPDATE, scope);
+    service().getWorkspaceManager().acquireProjectEditLease(project, scope, lockIdleMillis);
+    return lockAccess(project, scope, true);
+  }
+
+  @PutMapping("/project/lock")
+  public ProjectEditingLock renewLock(@RequestParam String workspace, @RequestParam String project, Principal principal) {
+    var scope = lockScope(workspace, project, principal);
+    var allowed = service().canProjectOperation(project, CRUDOperation.UPDATE, scope);
+    if (allowed) service().getWorkspaceManager().renewProjectEditLease(project, scope);
+    return lockAccess(project, scope, allowed);
+  }
+
+  @DeleteMapping("/project/lock")
+  public ProjectEditingLock releaseLock(@RequestParam String workspace, @RequestParam String project, Principal principal) {
+    var scope = lockScope(workspace, project, principal);
+    service().getWorkspaceManager().unlockProject(project, scope);
+    return lockAccess(project, scope, service().canProjectOperation(project, CRUDOperation.UPDATE, scope));
+  }
+
+  @PostMapping("/project/edit-lock")
+  public ProjectEditingLock editLock(@RequestBody ProjectLockRequest request, Principal principal) {
+    if (request.workspace() == null || request.project() == null || request.action() == null)
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Workspace, project and lock action are required.");
+    return switch (request.action()) {
+      case STATUS -> projectLock(request.workspace(), request.project(), principal);
+      case ACQUIRE -> acquireLock(request.workspace(), request.project(), principal);
+      case RENEW -> renewLock(request.workspace(), request.project(), principal);
+      case RELEASE -> releaseLock(request.workspace(), request.project(), principal);
+    };
+  }
+
+  private UserScope lockScope(String workspace, String project, Principal principal) {
+    var scope = user(principal);
+    if (!service().canReadWorkspaceProject(workspace, project, scope))
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found");
+    return scope;
+  }
+
+  private ProjectEditingLock lockAccess(String project, UserScope scope, boolean canEdit) {
+    var state = service().getWorkspaceManager().projectLockStatus(project, scope);
+    return new ProjectEditingLock(canEdit && state.supported() && state.owned(),
+        canEdit && state.supported() && !state.locked(), state.locked(), state.owned(),
+        state.idleTimeoutMillis(), state.remainingMillis());
   }
 
   @GetMapping("/source")
   public Source source(@RequestParam String workspace, @RequestParam String project,
                        @RequestParam String document, Principal principal) {
-    var current = project(workspace, project, user(principal));
-    return source(current, document(current, document));
+    var scope = user(principal);
+    var current = project(workspace, project, scope);
+    return source(current, document(current, document),
+        lockAccess(project, scope, service().canProjectOperation(project, CRUDOperation.UPDATE, scope)));
   }
 
   @GetMapping("/source/semantics")
@@ -158,8 +269,7 @@ public class WorkspacesController {
                                            @RequestParam String document, @RequestBody Draft draft,
                                            Principal principal) {
     var scope = user(principal);
-    var current = document(project(workspace, project, scope), document);
-    service().requireProjectOperation(project, CRUDOperation.UPDATE, scope);
+    var current = writableDocument(workspace, project, document, scope);
     if (draft.text() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing source");
     return diagnostics(service().getWorkspaceManager().checkSourceSyntax(
         ProjectStorage.ResourceType.classify(current), draft.text()));
@@ -211,7 +321,7 @@ public class WorkspacesController {
   private KlabDocument<?> writableDocument(String workspace, String project, String id, UserScope scope) {
     var current = document(project(workspace, project, scope), id);
     service().requireProjectOperation(project, CRUDOperation.UPDATE, scope);
-    if (!service().getWorkspaceManager().canLockProject(project, scope))
+    if (!service().getWorkspaceManager().projectLockStatus(project, scope).owned())
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     return current;
   }
@@ -230,7 +340,7 @@ public class WorkspacesController {
     project(workspace, project, scope);
     service().requireProjectOperation(project, CRUDOperation.UPDATE, scope);
     if (edit.text() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing source");
-    return service().getWorkspaceManager().withProjectLock(project, scope, () -> {
+    return service().getWorkspaceManager().withOwnedProjectLock(project, scope, () -> {
       var current = document(project(workspace, project, scope), document);
       checkRevision(current, edit.revision());
       var type = ProjectStorage.ResourceType.classify(current);
@@ -244,7 +354,7 @@ public class WorkspacesController {
                   .anyMatch(change -> change.getOperation() != CRUDOperation.DELETE
                       && AuthoringSource.matches(change, candidate)))
           .findFirst().orElse(null);
-      return new SaveResult(saved == null ? null : source(updated, saved), notifications(changes));
+      return new SaveResult(saved == null ? null : source(updated, saved, null), notifications(changes));
     });
   }
 
@@ -255,7 +365,7 @@ public class WorkspacesController {
     project(workspace, project, scope);
     service().requireProjectOperation(project, CRUDOperation.UPDATE, scope);
     var manager = service().getWorkspaceManager();
-    return manager.withProjectLock(project, scope, () -> {
+    return manager.withOwnedProjectLock(project, scope, () -> {
       if (!settingsRevision(project(workspace, project, scope)).equals(edit.revision()))
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Project settings have changed.");
       return diagnostics(manager.replaceProjectSettings(workspace, project, edit.settings(), scope).getNotifications());
@@ -275,7 +385,7 @@ public class WorkspacesController {
         || current.getRepositoryState().getCurrentBranch() == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Repository operation unavailable");
     }
-    return service().getWorkspaceManager().withProjectLock(project, scope, () ->
+    return service().getWorkspaceManager().withOwnedProjectLock(project, scope, () ->
         notifications(service().manageRepository(project, edit.operation(), scope, null,
             edit.parameter() == null || edit.parameter().isBlank()
                 ? new String[0] : new String[] {edit.parameter()})));
@@ -331,10 +441,10 @@ public class WorkspacesController {
         document.getNotifications().stream().filter(n -> n.getLevel() == Notification.Level.Warning).count());
   }
 
-  private Source source(Project project, KlabDocument<?> document) {
+  private Source source(Project project, KlabDocument<?> document, ProjectEditingLock lock) {
     var text = Objects.requireNonNullElse(document.getSourceCode(), "");
     return new Source(item(document), text, revision(document),
-        diagnostics(document.getNotifications()), conceptClassifications(project, text));
+        diagnostics(document.getNotifications()), conceptClassifications(project, text), lock);
   }
 
   private Map<String, String> conceptClassifications(Project project, String text) {

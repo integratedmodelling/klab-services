@@ -469,4 +469,16 @@ public interface ResourcesService extends KlabService {
    * @return false if the project wasn't locked or wasn't locked by the same scope
    */
   boolean unlockProject(String urn, UserScope scope);
+
+  enum ProjectLockAction { STATUS, ACQUIRE, RENEW, RELEASE }
+
+  record ProjectLockRequest(String workspace, String project, ProjectLockAction action) {}
+
+  record ProjectEditingLock(boolean editable, boolean canLock, boolean locked, boolean owned,
+                            Long idleTimeoutMillis, Long remainingMillis) {}
+
+  /** Inspect or change the shared project editing lease. Null denotes an unsupported service. */
+  default ProjectEditingLock projectEditingLock(ProjectLockRequest request, UserScope scope) {
+    return null;
+  }
 }

@@ -354,7 +354,7 @@ watch(() => authState.authenticated, () => {
             />
           </section>
         </main>
-        <footer class="dashboard-footer">
+        <footer v-if="selectedPage?.component !== 'resources-workspaces'" class="dashboard-footer">
           <span>k.LAB service interface</span>
           <span>Public telemetry · authenticated operations</span>
         </footer>

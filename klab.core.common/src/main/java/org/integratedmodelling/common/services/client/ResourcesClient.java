@@ -751,6 +751,12 @@ public class ResourcesClient extends BaseServiceClient implements ResourcesServi
         .get(ServicesAPI.RESOURCES.UNLOCK_PROJECT, Boolean.class, "urn", urn);
   }
 
+  @Override
+  public ProjectEditingLock projectEditingLock(ProjectLockRequest request, UserScope scope) {
+    return client.withScope(scope)
+        .post(ServicesAPI.RESOURCES.PROJECT_EDIT_LOCK, request, ProjectEditingLock.class);
+  }
+
   private void invalidateCaches() {
     concepts.invalidateAll();
     observables.invalidateAll();

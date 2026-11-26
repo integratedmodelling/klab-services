@@ -358,67 +358,122 @@ public class WorkspaceManager {
     return "credential:" + identity.getId();
   }
 
-  public synchronized boolean canLockProject(String urn, Scope requester) {
-    var descriptor = projectDescriptors.get(urn);
-    var owner = projectLockOwner(requester);
-    return descriptor != null && descriptor.storage instanceof FileProjectStorage
-        && owner != null && (!projectLocks.containsKey(urn) || owner.equals(projectLocks.get(urn)));
+  public record ProjectLockStatus(boolean supported, boolean locked, boolean owned,
+                                  Long idleTimeoutMillis, Long remainingMillis) {}
+
+  private static final class ProjectEditLease {
+    final long timeoutNanos;
+    long deadline;
+
+    ProjectEditLease(long timeoutMillis) {
+      timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
+      deadline = System.nanoTime() + timeoutNanos;
+    }
   }
 
-  /** Hold a project lock for one browser request without releasing an existing IDE lock. */
-  public synchronized <T> T withProjectLock(
-      String urn, UserScope requester, java.util.function.Supplier<T> operation) {
-    var alreadyLocked = projectLocks.containsKey(urn);
-    if (!lockProject(urn, requester)) {
-      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
-          "Project is unavailable for editing: " + urn);
+  // Browser leases share the existing IDE lock table. Ordinary IDE locks keep their explicit lifecycle.
+  private Map<String, ProjectEditLease> projectEditLeases;
+
+  private ProjectEditLease activeLease(String urn) {
+    var lease = projectEditLeases == null ? null : projectEditLeases.get(urn);
+    if (lease != null && System.nanoTime() - lease.deadline >= 0) {
+      releaseProjectLock(urn);
+      return null;
     }
+    return lease;
+  }
+
+  public synchronized ProjectLockStatus projectLockStatus(String urn, Scope requester) {
+    var lease = activeLease(urn);
+    var descriptor = projectDescriptors.get(urn);
+    var owner = projectLockOwner(requester);
+    var current = projectLocks.get(urn);
+    boolean owned = owner != null && owner.equals(current);
+    return new ProjectLockStatus(descriptor != null && descriptor.storage instanceof FileProjectStorage
+        && owner != null, current != null, owned,
+        owned && lease != null ? TimeUnit.NANOSECONDS.toMillis(lease.timeoutNanos) : null,
+        lease == null ? null : Math.max(1, TimeUnit.NANOSECONDS.toMillis(lease.deadline - System.nanoTime())));
+  }
+
+  public synchronized boolean acquireProjectEditLease(String urn, UserScope requester, long timeoutMillis) {
+    if (timeoutMillis <= 0) throw new IllegalArgumentException("Project lock timeout must be positive");
+    var state = projectLockStatus(urn, requester);
+    if (!lockProject(urn, requester)) return false;
+    if (state.owned()) {
+      renewProjectEditLease(urn, requester);
+      return true;
+    }
+    if (projectEditLeases == null) projectEditLeases = new HashMap<>();
+    var lease = new ProjectEditLease(timeoutMillis);
+    projectEditLeases.put(urn, lease);
+    scheduleLeaseExpiry(urn, lease, lease.timeoutNanos);
+    return true;
+  }
+
+  public synchronized boolean renewProjectEditLease(String urn, Scope requester) {
+    var lease = activeLease(urn);
+    var owner = projectLockOwner(requester);
+    if (owner == null || !owner.equals(projectLocks.get(urn))) return false;
+    if (lease != null) lease.deadline = System.nanoTime() + lease.timeoutNanos;
+    return true;
+  }
+
+  private void scheduleLeaseExpiry(String urn, ProjectEditLease lease, long delay) {
+    scheduler.schedule(() -> expireProjectEditLease(urn, lease), delay, TimeUnit.NANOSECONDS);
+  }
+
+  private synchronized void expireProjectEditLease(String urn, ProjectEditLease expected) {
+    var current = activeLease(urn);
+    if (current == expected) {
+      scheduleLeaseExpiry(urn, expected, Math.max(1, expected.deadline - System.nanoTime()));
+    }
+  }
+
+  /** Run one browser write atomically with respect to release, expiry and other editors. */
+  public synchronized <T> T withOwnedProjectLock(
+      String urn, UserScope requester, java.util.function.Supplier<T> operation) {
+    if (!renewProjectEditLease(urn, requester)) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException(
+          "An owned project lock is required: " + urn);
+    }
+    var lease = projectEditLeases == null ? null : projectEditLeases.get(urn);
     try {
       return operation.get();
     } finally {
-      if (!alreadyLocked) unlockProject(urn, requester);
+      if (lease != null) lease.deadline = System.nanoTime() + lease.timeoutNanos;
     }
   }
 
   public synchronized boolean lockProject(String urn, Scope requester) {
-
+    activeLease(urn);
     var descriptor = projectDescriptors.get(urn);
-    if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage)) {
-      return false;
-    }
-
-    String owner = projectLockOwner(requester);
+    if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage storage)) return false;
+    var owner = projectLockOwner(requester);
     if (owner == null) return false;
-    if (owner.equals(projectLocks.get(urn))) return true;
-
-    // check and record lock
-    if (projectLocks.containsKey(urn) && !projectLocks.get(urn).equals(owner)) {
-      scope.info("Lock attempt failed: project " + urn + " is already locked");
-      return false;
-    }
+    var current = projectLocks.get(urn);
+    if (owner.equals(current)) return true;
+    if (current != null) return false;
 
     projectLocks.put(urn, owner);
-    ((FileProjectStorage) descriptor.storage).lock(true);
+    storage.lock(true);
     scope.info("Project " + urn + " is locked");
-
     return true;
   }
 
   public synchronized boolean unlockProject(String urn, Scope requester) {
-    String owner = projectLockOwner(requester);
-    if (owner == null) return false;
-    if (projectLocks.containsKey(urn)) {
+    activeLease(urn);
+    var owner = projectLockOwner(requester);
+    if (owner == null || !owner.equals(projectLocks.get(urn))) return false;
+    releaseProjectLock(urn);
+    return true;
+  }
 
-      if (projectLocks.get(urn).equals(owner)) {
-        var descriptor = projectDescriptors.get(urn);
-        ((FileProjectStorage) descriptor.storage).lock(false);
-        projectLocks.remove(urn);
-        scope.info("Project " + urn + " unlocked");
-
-        return true;
-      }
-    }
-    return false;
+  private void releaseProjectLock(String urn) {
+    var descriptor = projectDescriptors.get(urn);
+    if (descriptor != null && descriptor.storage instanceof FileProjectStorage storage) storage.lock(false);
+    projectLocks.remove(urn);
+    if (projectEditLeases != null) projectEditLeases.remove(urn);
+    scope.info("Project " + urn + " unlocked");
   }
 
   public boolean isWorldviewProvider() {
@@ -4307,6 +4362,7 @@ public class WorkspaceManager {
   /** Settings-only replacement through the normal project submission contract. */
   public synchronized ResourceSet replaceProjectSettings(
       String workspace, String projectName, ProjectSettings settings, UserScope userScope) {
+    activeLease(projectName);
     var descriptor = projectDescriptors.get(projectName);
     if (descriptor == null || !Objects.equals(workspace, descriptor.workspace)
         || !(descriptor.storage instanceof FileProjectStorage storage)
@@ -4692,6 +4748,7 @@ public class WorkspaceManager {
   /** Save source and syntax diagnostics only. All queue operations share the file-change monitor. */
   public synchronized List<ResourceSet> saveDeferred(KlabDocument<?> document, UserScope requester) {
     var project = document.getProjectName();
+    activeLease(project);
     var owner = projectLockOwner(requester);
     if (owner == null || !owner.equals(projectLocks.get(project)) || !service.canEditProject(project, requester))
       throw new KlabIllegalArgumentException("Deferred save requires the project's edit lock");
@@ -4745,8 +4802,10 @@ public class WorkspaceManager {
     var pending = deferredDocuments.entrySet().stream()
         .filter(e -> e.getValue().workspace().equals(workspace)
             && (e.getValue().owner().equals(owner) || owner.equals(projectLocks.get(e.getValue().project())))).toList();
+    var checkedLeases = new HashSet<String>();
     for (var entry : pending) {
       var project = entry.getValue().project();
+      if (checkedLeases.add(project)) activeLease(project);
       if (!owner.equals(projectLocks.get(project)) || !service.canEditProject(project, requester))
         throw new KlabIllegalArgumentException("Validation requires edit permission and the project lock");
     }
@@ -4789,6 +4848,7 @@ public class WorkspaceManager {
       boolean overwriteExisting,
       Scope lockingScope) {
 
+    activeLease(projectName);
     String lockingAuthorization = projectLockOwner(lockingScope);
     List<ResourceSet> ret = new ArrayList<>();
 
@@ -4887,6 +4947,7 @@ public class WorkspaceManager {
       String documentUrn,
       Scope lockingScope) {
 
+    activeLease(projectName);
     List<ResourceSet> ret = new ArrayList<>();
     String lockingAuthorization = projectLockOwner(lockingScope);
 

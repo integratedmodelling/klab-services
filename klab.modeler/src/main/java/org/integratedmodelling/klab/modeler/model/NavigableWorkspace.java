@@ -33,8 +33,13 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace>
   @Serial private static final long serialVersionUID = -6967097462644821300L;
 
   public NavigableWorkspace(Workspace delegate) {
+    this(delegate, true);
+  }
+
+  /** Project a read-only outline without the IDE's diagnostic and repository annotations. */
+  public NavigableWorkspace(Workspace delegate, boolean annotate) {
     super(delegate, null);
-    computeStatistics();
+    if (annotate) computeStatistics();
   }
 
   public Collection<Project> getProjects() {

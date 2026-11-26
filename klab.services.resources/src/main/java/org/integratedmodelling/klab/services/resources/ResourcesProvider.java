@@ -770,6 +770,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService {
     return projected;
   }
 
+  /** Authorize a project lock query without serializing documents or scanning Git. */
+  public boolean canReadWorkspaceProject(String workspace, String project, UserScope user) {
+    return Objects.equals(workspace, workspaceManager.getWorkspaceForProject(project))
+        && allowsWorkspaceRead(resourcesKbox.getStatus(workspace, null), user,
+            isAllowed(CRUDOperation.ADMINISTER, user))
+        && canProjectOperation(project, CRUDOperation.READ, user);
+  }
+
   public ResourceSet resolveResourceAdapter(String urn, Scope scope) {
     var version = Version.splitVersion(urn);
     var adapter = getComponentRegistry().getAdapter(version.getFirst(), version.getSecond(), scope);
