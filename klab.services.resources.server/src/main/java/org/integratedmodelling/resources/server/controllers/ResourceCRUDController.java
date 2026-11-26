@@ -106,6 +106,8 @@ public class ResourceCRUDController {
         && authorization.getScope() instanceof UserScope userScope) {
       try {
         return resourcesServer.klabService().submitReviewBundle(request, userScope);
+      } catch (org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException forbidden) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, forbidden.getMessage(), forbidden);
       } catch (IllegalArgumentException invalid) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, invalid.getMessage(), invalid);
       }

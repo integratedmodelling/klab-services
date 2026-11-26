@@ -4489,8 +4489,12 @@ public class WorkspaceManager {
     if (request == null || request.target() == null || request.target().project() == null)
       throw new IllegalArgumentException("A hosting project is required");
     String project = request.target().project();
-    service.requireMaterialWrite(project, org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.ADD, user);
-    var storage = materialStorage(project, user, true);
+    boolean comment = "comment".equals(request.kind());
+    service.requireProjectOperation(project, CRUDOperation.READ, user);
+    if (!comment)
+      service.requireMaterialWrite(project, org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode.ADD, user);
+    activeLease(project);
+    var storage = materialStorage(project, user, !comment);
     try {
       var bundle = ReviewSubmission.prepare(request, user.getUser().getUsername());
       boolean hasParent = bundle.supersedesRevision() == null;
@@ -4509,6 +4513,49 @@ public class WorkspaceManager {
       org.integratedmodelling.klab.resources.ProjectMaterialIO.addReviewBundle(
           storage, bundle.directory(), bundle.files());
       return bundle.receipt();
+    } catch (java.io.IOException e) {
+      throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e);
+    }
+  }
+
+  @FunctionalInterface
+  public interface ReviewApplication {
+    void record(String resultingRevision, String resultingText) throws java.io.IOException;
+  }
+
+  /** Called before updating the ontology, inside withOwnedProjectLock. */
+  public synchronized ReviewApplication prepareReviewApplication(String project, String ontology,
+      String baseRevision, String baseText, List<ReviewSubmission.Input> inputs, UserScope user) throws java.io.IOException {
+    return ReviewSubmission.prepareApplication(materialStorage(project, user, true),
+        new ReviewSubmission.Target(project, "ontology", ontology), user.getUser().getUsername(), baseRevision, baseText, inputs);
+  }
+
+  public record ReviewStaging(boolean comments, boolean material) {}
+
+  public synchronized ReviewStaging projectReviewStaging(String project, UserScope user) {
+    activeLease(project);
+    var descriptor = projectDescriptors.get(project);
+    var owner = projectLocks.get(project);
+    boolean writable = descriptor != null && descriptor.storage instanceof FileProjectStorage storage
+        && storage.isTracked() && !storage.isReadOnly();
+    return new ReviewStaging(writable, writable && (owner == null || owner.equals(projectLockOwner(user))));
+  }
+
+  public synchronized ReviewSubmission.Receipt submitReviewEvidence(ReviewSubmission.Evidence request, UserScope user) {
+    if (request == null || request.target() == null || request.target().project() == null)
+      throw new IllegalArgumentException("A hosting project is required");
+    String project = request.target().project();
+    service.requireProjectOperation(project, CRUDOperation.READ, user);
+    if (!service.canProjectOperation(project, CRUDOperation.UPDATE, user)
+        && !service.canProjectOperation(project, CRUDOperation.CREATE, user))
+      service.requireProjectOperation(project, CRUDOperation.UPDATE, user);
+    activeLease(project);
+    var storage = materialStorage(project, user, true);
+    try {
+      var bundle = ReviewSubmission.prepareEvidence(request, user.getUser().getUsername());
+      org.integratedmodelling.klab.resources.ProjectMaterialIO.addReviewBundle(storage, bundle.directory(), bundle.files());
+      return new ReviewSubmission.Receipt(bundle.directory() + "/evidence.json",
+          ReviewSubmission.hash(bundle.files().get("evidence.json")));
     } catch (java.io.IOException e) {
       throw new org.integratedmodelling.klab.api.exceptions.KlabIOException(e);
     }

@@ -23,6 +23,16 @@
     "status": {"enum": ["submitted", "historical", "illustrative"]},
     "payload_schema": {"type": "string", "minLength": 1},
     "origin": {"type": "object"},
+    "anchor": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": {"type": "integer", "minimum": 0},
+        "end": {"type": "integer", "minimum": 0},
+        "statement": {"type": ["string", "null"], "maxLength": 2048}
+      }
+    },
     "base": {
       "type": "object",
       "required": ["state"],

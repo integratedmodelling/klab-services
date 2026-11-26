@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.resources;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.dircache.DirCacheEditor;
@@ -15,6 +16,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService.SubmissionMode
 /** Binary-safe material storage. Each mutation stages only its own Git path, never commits. */
 public final class ProjectMaterialIO {
   public static final int MAX_BYTES = 32 * 1024 * 1024;
+  public static final String REVIEW_DECISIONS = "review/decisions.jsonl";
 
   private ProjectMaterialIO() {}
 
@@ -117,6 +119,61 @@ public final class ProjectMaterialIO {
       FileProjectStorage storage, String path, byte[] content, SubmissionMode mode)
       throws IOException {
     ReviewCycleArchive.requireMutableMaterial(path);
+    writeMaterial(storage, path, content, mode);
+  }
+
+  /** Prepare an append under the workspace manager's project lock. */
+  public static byte[] readReviewDecisions(FileProjectStorage storage) throws IOException {
+    if (storage.isReadOnly() || !storage.isTracked())
+      throw new IOException("Review decisions require a writable Git project");
+    validateGit(storage, REVIEW_DECISIONS);
+    return read(storage, REVIEW_DECISIONS);
+  }
+
+  public static void appendReviewDecision(FileProjectStorage storage, byte[] previous, byte[] decision,
+      String directory, Map<String, byte[]> snapshots)
+      throws IOException {
+    if (storage.isReadOnly() || !storage.isTracked() || !Arrays.equals(previous, read(storage, REVIEW_DECISIONS)))
+      throw new IOException("Review history changed during the source save");
+    int size = previous == null ? 0 : previous.length;
+    int separator = size > 0 && previous[size - 1] != '\n' ? 1 : 0;
+    if (size + separator + decision.length + 1 > MAX_BYTES)
+      throw new IOException("Review history exceeds 32 MiB");
+    byte[] next = previous == null ? new byte[decision.length + 1]
+        : Arrays.copyOf(previous, size + separator + decision.length + 1);
+    if (separator != 0) next[size] = '\n';
+    System.arraycopy(decision, 0, next, size + separator, decision.length);
+    next[next.length - 1] = '\n';
+    Path ledger = target(storage, REVIEW_DECISIONS);
+    Path destination = target(storage, directory);
+    var files = new LinkedHashMap<String, byte[]>();
+    for (var snapshot : snapshots.entrySet()) {
+      if (!snapshot.getKey().matches("(?:base|result)\\.kwv") || snapshot.getValue().length > MAX_BYTES)
+        throw new IOException("Invalid decision snapshot");
+      files.put(directory + "/" + snapshot.getKey(), snapshot.getValue());
+    }
+    Files.createDirectories(destination.getParent());
+    Path temporary = Files.createTempDirectory(destination.getParent(), ".decision-");
+    try {
+      for (var snapshot : snapshots.entrySet())
+        Files.write(temporary.resolve(snapshot.getKey()), snapshot.getValue());
+      Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE);
+    } finally {
+      for (var name : snapshots.keySet()) Files.deleteIfExists(temporary.resolve(name));
+      Files.deleteIfExists(temporary);
+    }
+    writeMaterialFile(ledger, next);
+    files.put(REVIEW_DECISIONS, next);
+    // Keep both snapshots and the ledger on disk if Git staging fails after the source save.
+    validateGit(storage, files.keySet().toArray(String[]::new));
+    try (var git = Git.open(storage.getRootFolder())) {
+      stageReviewFiles(git, files, true);
+    }
+  }
+
+  private static void writeMaterial(
+      FileProjectStorage storage, String path, byte[] content, SubmissionMode mode)
+      throws IOException {
     if (storage.isReadOnly()) throw new IOException("Read-only project");
     if (content == null || content.length > MAX_BYTES)
       throw new IOException("Material content is required and limited to 32 MiB");
@@ -132,6 +189,26 @@ public final class ProjectMaterialIO {
       throw new IOException("Material is not a regular file");
     byte[] previous = exists ? read(storage, path) : null;
     validateGit(storage, path);
+    replaceMaterial(storage, path, target, content, previous);
+  }
+
+  private static void replaceMaterial(FileProjectStorage storage, String path, Path target,
+      byte[] content, byte[] previous) throws IOException {
+    writeMaterialFile(target, content);
+    try {
+      validateGit(storage, path);
+      if (storage.isTracked())
+        try (var git = Git.open(storage.getRootFolder())) {
+          git.add().addFilepattern(path).call();
+        }
+    } catch (Exception failure) {
+      if (previous == null) Files.deleteIfExists(target);
+      else Files.write(target, previous);
+      throw new IOException("Cannot stage material contribution", failure);
+    }
+  }
+
+  private static void writeMaterialFile(Path target, byte[] content) throws IOException {
     Files.createDirectories(target.getParent());
     Path temporary = Files.createTempFile(target.getParent(), ".material-", ".tmp");
     try {
@@ -141,17 +218,6 @@ public final class ProjectMaterialIO {
             temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
       } catch (AtomicMoveNotSupportedException e) {
         Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
-      }
-      try {
-        validateGit(storage, path);
-        if (storage.isTracked())
-          try (var git = Git.open(storage.getRootFolder())) {
-            git.add().addFilepattern(path).call();
-          }
-      } catch (Exception failure) {
-        if (previous == null) Files.deleteIfExists(target);
-        else Files.write(target, previous);
-        throw new IOException("Cannot stage material contribution", failure);
       }
     } finally {
       Files.deleteIfExists(temporary);
@@ -238,15 +304,26 @@ public final class ProjectMaterialIO {
 
   private static void stageReviewBundle(FileProjectStorage storage, Git git, String directory,
       Map<String, byte[]> files) throws IOException {
-    for (var name : files.keySet()) validateGit(storage, directory + "/" + name);
+    var paths = new LinkedHashMap<String, byte[]>();
+    for (var file : files.entrySet()) {
+      var path = directory + "/" + file.getKey();
+      validateGit(storage, path);
+      paths.put(path, file.getValue());
+    }
+    stageReviewFiles(git, paths, false);
+  }
+
+  private static void stageReviewFiles(Git git, Map<String, byte[]> files, boolean replace)
+      throws IOException {
     try (var inserter = git.getRepository().newObjectInserter()) {
       var index = git.getRepository().lockDirCache();
       try {
         var editor = index.editor();
         for (var file : files.entrySet()) {
-          var relative = directory + "/" + file.getKey();
-          if (index.getEntry(relative) != null)
-            throw new IOException("Review bundle collides with a Git index entry");
+          var relative = file.getKey();
+          var existing = index.getEntry(relative);
+          if (existing != null && (!replace || existing.getStage() != 0))
+            throw new IOException("Review material collides with a Git index entry");
           var blob = inserter.insert(Constants.OBJ_BLOB, file.getValue());
           editor.add(new DirCacheEditor.PathEdit(relative) {
             @Override public void apply(DirCacheEntry entry) {
@@ -257,21 +334,21 @@ public final class ProjectMaterialIO {
           });
         }
         inserter.flush();
-        if (!editor.commit()) throw new IOException("Cannot stage review bundle");
+        if (!editor.commit()) throw new IOException("Cannot stage review material");
       } finally {
         index.unlock();
       }
     }
   }
 
-  private static void validateGit(FileProjectStorage storage, String path) throws IOException {
+  private static void validateGit(FileProjectStorage storage, String... paths) throws IOException {
     if (!storage.isTracked()) return;
     try (var git = Git.open(storage.getRootFolder())) {
       var status = git.status().call();
-      if (status.getConflicting().contains(path)
-          || status.getIgnoredNotInIndex().stream()
-              .anyMatch(ignored -> path.equals(ignored) || path.startsWith(ignored + "/")))
-        throw new IOException("Material path is ignored by Git or conflicted");
+      for (var path : paths)
+        if (status.getConflicting().contains(path) || status.getIgnoredNotInIndex().stream()
+            .anyMatch(ignored -> path.equals(ignored) || path.startsWith(ignored + "/")))
+          throw new IOException("Material path is ignored by Git or conflicted");
     } catch (org.eclipse.jgit.api.errors.GitAPIException e) {
       throw new IOException(e);
     }

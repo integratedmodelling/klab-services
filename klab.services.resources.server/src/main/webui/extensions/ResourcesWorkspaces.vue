@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { DashboardContext } from "@klab-dashboard/types";
 import "@klab-dashboard/styles/theme.css";
 import "@klab-dashboard/knowledge/knowledge.css";
 import type { LanguageStatus } from "@klab-dashboard/workspaces/language-session";
 import WorkspaceTree from "@klab-dashboard/workspaces/WorkspaceTree.vue";
+import ProjectReviewPane from "../ProjectReviewPane.vue";
+import type { AppliedComparison, ReviewAnchor, ReviewInput } from "@klab-dashboard/workspaces/project-review";
+import { maxCandidateBytes, type CandidateComparison } from "@klab-dashboard/workspaces/proposal-candidate";
 import {
   documentGitStatus, expandedTreeKeys, filterTree, gitDecoration, projectTree,
   type Diagnostic, type DocumentItem, type EditorExtension, type Project, type ProjectLock, type ProjectNavigation,
@@ -12,6 +15,7 @@ import {
 } from "@klab-dashboard/workspaces/model";
 
 const Monaco = defineAsyncComponent(() => import("@klab-dashboard/workspaces/WorkspaceMonaco.vue"));
+const MonacoDiff = defineAsyncComponent(() => import("@klab-dashboard/workspaces/WorkspaceMonacoDiff.vue"));
 const props = defineProps<{
   context: DashboardContext;
   reviewGlyphs?: (source: Source) => ReviewGlyph[];
@@ -19,11 +23,22 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ review: [Source, string] }>();
 const root = ref<HTMLElement>();
-const editor = ref<{ find(): void; format(): void; jump(offset: number, normalizedOffsets?: boolean): void }>();
+const editor = ref<{ find(): void; format(): void; jump(offset: number, normalizedOffsets?: boolean): void;
+  reviewSelection(): ReviewAnchor | undefined; revealReview(start: number, end?: number): void }>();
 const catalog = ref<Workspace[]>([]);
 const workspace = ref("");
 const projects = ref<Record<string, Project>>({});
 const navigationProjects = ref(new Map<string, WorkspaceTreeNode>());
+interface SemanticCheck {
+  revision: string;
+  sourceVersion?: string;
+  status: string;
+  reason?: string;
+  diagnostics: Diagnostic[];
+  errors: number;
+  warnings: number;
+}
+const semanticChecks = ref(new Map<string, Map<string, SemanticCheck>>());
 const navigationLoading = ref(false);
 const navigationError = ref("");
 const treeQuery = ref("");
@@ -45,8 +60,11 @@ const projectName = ref("");
 const project = computed(() => projects.value[projectName.value]);
 const workspaceTree = computed(() => {
   const current = catalog.value.find(item => item.urn === workspace.value);
-  return (current?.projects ?? []).map(name =>
-    navigationProjects.value.get(name) ?? projectTree(name, undefined, current?.repositoryStatuses?.[name]));
+  return (current?.projects ?? []).map(name => {
+    const tree = navigationProjects.value.get(name) ?? projectTree(name, undefined, current?.repositoryStatuses?.[name]);
+    const checks = semanticChecks.value.get(name);
+    return checks?.size ? decorateSemanticTree(tree, checks) : tree;
+  });
 });
 const visibleTree = computed(() => filterTree(workspaceTree.value, query.value));
 const expandedNodes = computed(() => query.value
@@ -61,6 +79,33 @@ watch([editor, pendingJump], ([instance, offset]) => {
   }
 }, { flush: "post" });
 const source = ref<Source>();
+const comparison = ref<(CandidateComparison & { saved: string; language: string })>();
+const appliedComparison = ref<AppliedComparison>();
+const shownComparison = computed(() => comparison.value ?? appliedComparison.value);
+let comparisonTrigger: HTMLElement | undefined;
+function compareCandidate(input: CandidateComparison) {
+  const current = source.value;
+  if (!current || current.document.type !== "ONTOLOGY") return;
+  if (new TextEncoder().encode(current.text).byteLength > maxCandidateBytes) {
+    error.value = "The saved ontology exceeds the 2 MiB comparison limit.";
+    return;
+  }
+  comparisonTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+  comparison.value = { ...input, saved: current.text, language: current.document.language };
+}
+async function closeComparison() {
+  comparison.value = undefined;
+  appliedComparison.value = undefined;
+  await nextTick();
+  comparisonTrigger?.focus();
+  comparisonTrigger = undefined;
+}
+function compareApplied(input: AppliedComparison) {
+  if (loading.value || saving.value || changingLock.value) return;
+  comparisonTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+  appliedComparison.value = input;
+}
+watch(() => source.value?.revision, () => { if (comparison.value) void closeComparison(); });
 const sourceNavigation = computed(() => {
   const id = source.value?.document.id;
   const projectTree = navigationProjects.value.get(projectName.value);
@@ -111,10 +156,74 @@ watch([selectedNode, expandedNodes, treeScroll], () => {
 }, { flush: "post" });
 const navigatorVisible = ref(true);
 const split = ref(false);
+const reviewOpen = ref(false);
+const reviewPane = ref<InstanceType<typeof ProjectReviewPane>>();
+const reviewMarks = ref<ReviewGlyph[]>([]);
+const activeStatement = computed(() => {
+  const document = sourceNavigation.value, current = source.value, key = selectedNode.value;
+  if (!document || !current || !key.startsWith(document.key + "/")) return;
+  function find(nodes: WorkspaceTreeNode[]): string | undefined {
+    for (const node of nodes) {
+      if (node.key === key) return node.label;
+      if (key.startsWith(node.key + "/")) return find(node.children);
+    }
+  }
+  const label = find(document.children);
+  return label ? (current.document.urn || current.document.label.split(" [", 1)[0]) + ":" + label : undefined;
+});
+const editorReviewMarks = computed(() => source.value ? [
+  ...(reviewOpen.value ? reviewMarks.value : []), ...(props.reviewGlyphs?.(source.value) ?? []),
+] : []);
+function selectReviewAnchor(): ReviewAnchor | undefined {
+  const range = editor.value?.reviewSelection();
+  return range ? { ...range, statement: activeStatement.value } : undefined;
+}
+function locateReviewStatement(statement: string) {
+  const document = sourceNavigation.value, current = source.value, view = editor.value;
+  const urn = current?.document.urn ?? current?.document.label.split(" [", 1)[0];
+  if (!document || !current || !view || dirty.value || !statement.startsWith(urn + ":")
+      || document.document?.sourceVersion !== current.document.sourceVersion) return false;
+  const label = statement.slice((urn?.length ?? 0) + 1);
+  const matches: WorkspaceTreeNode[] = [];
+  function visit(nodes: WorkspaceTreeNode[]) {
+    for (const node of nodes) {
+      if (node.label === label) matches.push(node);
+      visit(node.children);
+    }
+  }
+  visit(document.children);
+  const declaration = matches[0];
+  const start = declaration?.offset;
+  if (matches.length !== 1 || start === undefined || start < 0 || start >= current.text.length) return false;
+  view.revealReview(start, Math.min(current.text.length, start + (declaration.length ?? 0)));
+  return true;
+}
+function reviewGlyphClick(id: string) {
+  if (reviewOpen.value && reviewMarks.value.some(glyph => glyph.id === id)) void reviewPane.value?.showGlyph(id);
+  else if (source.value) emit("review", source.value, id);
+}
+function switchSidePane(review: boolean, details: boolean) {
+  if (reviewPane.value?.isBusy()) return;
+  const change = () => {
+    reviewOpen.value = review;
+    split.value = details;
+    if (review && window.matchMedia("(max-width: 680px)").matches) navigatorVisible.value = false;
+    if (!review) reviewMarks.value = [];
+  };
+  if (!review && reviewPane.value?.isDirty()) pending.value = change;
+  else change();
+}
 const fullscreen = ref(false);
 const lineNumbers = ref(true);
 const minimap = ref(false);
-const semantic = ref<{ status: string; reason?: string; diagnostics: Diagnostic[] }>();
+const semantic = computed(() => {
+  const current = source.value;
+  if (!current) return;
+  const result = semanticChecks.value.get(projectName.value)?.get(current.document.id);
+  if (result?.revision === current.revision) return result;
+});
+const supportsSemanticCheck = computed(() =>
+  source.value?.document.type === "ONTOLOGY" || source.value?.document.type === "MODEL_NAMESPACE");
 const semanticPending = ref(false);
 const draftDiagnostics = ref<Diagnostic[]>([]);
 const draftStatus = ref("");
@@ -137,10 +246,26 @@ let nextRenewal = 0;
 const dirty = computed(() => source.value
   ? text.value !== normalize(source.value.text)
   : Boolean(project.value && baselineSettings.value && JSON.stringify(settings.value) !== baselineSettings.value));
+watch(dirty, changed => { if (changed) cancelSemanticCheck(); });
+const semanticStatus = computed(() => {
+  if (semanticPending.value) return "Checking semantics…";
+  if (dirty.value) return "";
+  switch (semantic.value?.status) {
+    case "COMPLETE": return "Semantic check complete";
+    case "SYNTAX_ERRORS": return "Semantic check blocked by syntax errors";
+    case "FAILED": return "Semantic check failed";
+    case "STALE_KNOWLEDGE": return "Semantic check awaiting Reasoner synchronization";
+    case "UNAVAILABLE": return "Semantic check unavailable";
+    default: return "";
+  }
+});
+function diagnosticKey(item: Diagnostic) {
+  return JSON.stringify([item.level, item.message, item.offset ?? null]);
+}
 const diagnostics = computed(() => {
   const items = dirty.value ? [...draftDiagnostics.value, ...languageDiagnostics.value]
     : [...(source.value?.diagnostics ?? []), ...languageDiagnostics.value, ...(semantic.value?.diagnostics ?? [])];
-  return [...new Map(items.map(item => [JSON.stringify([item.level, item.message, item.offset]), item])).values()];
+  return [...new Map(items.map(item => [diagnosticKey(item), item])).values()];
 });
 const errors = computed(() => diagnostics.value.filter(item => item.level === "Error").length);
 const warnings = computed(() => diagnostics.value.filter(item => item.level === "Warning").length);
@@ -282,10 +407,11 @@ async function fetchProject(includeNavigation = false) {
   resetSettings(value);
 }
 function clearSource() {
+  comparison.value = undefined;
+  appliedComparison.value = undefined;
+  comparisonTrigger = undefined;
   pendingJump.value = undefined;
-  semanticRequest?.abort();
-  semantic.value = undefined;
-  semanticPending.value = false;
+  cancelSemanticCheck();
   languageStatus.value = undefined;
   languageDiagnostics.value = [];
   source.value = undefined;
@@ -293,29 +419,74 @@ function clearSource() {
   cursor.value = "Ln 1, Col 1";
 }
 function setSource(value: Source) {
+  cancelSemanticCheck();
+  const checks = semanticChecks.value.get(projectName.value);
+  const previous = checks?.get(value.document.id);
+  if (previous && previous.revision !== value.revision) checks?.delete(value.document.id);
   if (value.lock) installLock(lockEndpoint.value, value.lock);
   source.value = value;
   text.value = normalize(value.text);
-  refreshSemantics();
 }
-function refreshSemantics() {
-  const current = source.value;
+function cancelSemanticCheck() {
   semanticRequest?.abort();
-  semantic.value = undefined;
+  semanticRequest = undefined;
   semanticPending.value = false;
-  if (!current || !["ONTOLOGY", "MODEL_NAMESPACE"].includes(current.document.type) || current.document.errors) return;
+}
+async function checkSemantics() {
+  const current = source.value;
+  if (!current || !supportsSemanticCheck.value || dirty.value || semanticPending.value || loading.value || saving.value) return;
+  const name = projectName.value;
   const request = new AbortController();
   semanticRequest = request;
   semanticPending.value = true;
-  void props.context.api.request<NonNullable<typeof semantic.value>>(
-    url("/source/semantics", { document: current.document.id, revision: current.revision }), { signal: request.signal },
-  ).then(result => {
-    if (!request.signal.aborted) semantic.value = result;
-  }).catch(() => {
-    if (!request.signal.aborted) semantic.value = { status: "UNAVAILABLE", diagnostics: [] };
-  }).finally(() => {
-    if (!request.signal.aborted) semanticPending.value = false;
+  let result: Pick<SemanticCheck, "status" | "reason" | "diagnostics">;
+  try {
+    result = await props.context.api.request<typeof result>(
+      url("/source/semantics", { document: current.document.id, revision: current.revision }),
+      { signal: request.signal, cache: "no-store" },
+    );
+  } catch (reason) {
+    result = {
+      status: "UNAVAILABLE", diagnostics: [],
+      reason: reason instanceof Error && reason.message.startsWith("409")
+        ? "The saved source changed. Reload it before checking semantics again." : message(reason),
+    };
+  }
+  if (semanticRequest !== request) return;
+  semanticRequest = undefined;
+  semanticPending.value = false;
+  if (source.value !== current || dirty.value) return;
+  const seen = new Set(current.diagnostics.map(diagnosticKey));
+  const newDiagnostics = result.diagnostics.filter(item => {
+    const key = diagnosticKey(item);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
+  const checks = new Map(semanticChecks.value.get(name));
+  checks.set(current.document.id, {
+    ...result, diagnostics: newDiagnostics, revision: current.revision, sourceVersion: current.document.sourceVersion,
+    errors: newDiagnostics.filter(item => item.level === "Error").length,
+    warnings: newDiagnostics.filter(item => item.level === "Warning").length,
+  });
+  semanticChecks.value.set(name, checks);
+}
+function decorateSemanticTree(node: WorkspaceTreeNode, checks: ReadonlyMap<string, SemanticCheck>): WorkspaceTreeNode {
+  if (node.kind === "document" && node.document) {
+    if (node.project === projectName.value && node.document.id === source.value?.document.id && dirty.value) return node;
+    const check = checks.get(node.document.id);
+    return check && check.sourceVersion === node.document.sourceVersion && (check.errors || check.warnings)
+      ? { ...node, errors: node.errors + check.errors, warnings: node.warnings + check.warnings }
+      : node;
+  }
+  let errors = node.errors, warnings = node.warnings;
+  const children = node.children.map(child => {
+    const decorated = decorateSemanticTree(child, checks);
+    errors += decorated.errors - child.errors;
+    warnings += decorated.warnings - child.warnings;
+    return decorated;
+  });
+  return errors === node.errors && warnings === node.warnings ? node : { ...node, children, errors, warnings };
 }
 watch([source, text, languageStatus], ([current, draft, status], _previous, cleanup) => {
   draftDiagnostics.value = [];
@@ -355,13 +526,14 @@ async function load(action: () => Promise<void>) {
   finally { loading.value = false; }
 }
 function navigate(action: () => void) {
-  if (saving.value || loading.value) return;
-  if (dirty.value) pending.value = action;
+  if (saving.value || loading.value || reviewPane.value?.isBusy()) return;
+  if (dirty.value || reviewPane.value?.isDirty()) pending.value = action;
   else action();
 }
 function proceed() {
   const action = pending.value;
   pending.value = undefined;
+  reviewPane.value?.discard();
   action?.();
 }
 function chooseWorkspace(next: string) {
@@ -372,6 +544,9 @@ function chooseWorkspace(next: string) {
     projectName.value = "";
     projects.value = {};
     navigationProjects.value = new Map();
+    semanticChecks.value.clear();
+    reviewOpen.value = false;
+    reviewMarks.value = [];
     expanded.value = new Set();
     treeQuery.value = selectedNode.value = "";
     repositoryOpen.value = false;
@@ -442,6 +617,65 @@ function report(result: Diagnostic[]) {
   error.value = [...new Set(problem)].join("\n");
   return false;
 }
+async function saveSource(current: Source, revision: string, value: string, reviewInputs?: ReviewInput[]) {
+  const outcome = reviewInputs === undefined ? "Source saved" : "Candidate applied";
+  const result = await props.context.api.request<{ source?: Source; notifications: Diagnostic[]; reviewWarning?: string }>(
+    url("/source", { document: current.document.id }), json("PUT", { revision, text: value, reviewInputs }),
+  );
+  if (!active) return false;
+  if (!result.source) {
+    if (report(result.notifications)) error.value = outcome === "Candidate applied"
+      ? "The service could not confirm the candidate was applied. Reload the ontology to check."
+      : "The service could not confirm the saved source. Your edits are still open.";
+    return false;
+  }
+  setSource(result.source);
+  if (reviewInputs !== undefined) reviewPane.value?.invalidateHistory();
+  if (result.reviewWarning) error.value = result.reviewWarning;
+  feedback.value = result.source.document.errors ? outcome + " with document errors." : outcome + ".";
+  try { await fetchProject(true); } catch (reason) {
+    error.value = [result.reviewWarning ?? outcome + ".", `Project refresh failed: ${message(reason)}`].join(" ");
+  }
+  return true;
+}
+const applyBlock = computed(() => {
+  const candidate = comparison.value, current = source.value, lock = project.value?.lock;
+  if (!candidate || !current) return "Open the ontology to apply this candidate.";
+  if (candidate.base.status === "unrecorded") return "Applying requires a recorded base revision and snapshot.";
+  if (candidate.base.status !== "verified" || current.revision !== candidate.base.revision || current.text !== candidate.saved)
+    return "The saved ontology differs from the proposal’s base. Rebase the candidate before applying it.";
+  if (candidate.candidate === candidate.saved) return "The candidate already matches the saved ontology.";
+  if (dirty.value) return "Save or discard your open source edits before applying the candidate.";
+  if (!lock?.editable || !lock.owned) {
+    if (lock?.locked && !lock.owned) return "Another editor holds the project lock.";
+    return lock?.canLock ? "Lock the project before applying the candidate." : "Applying requires project update permission and an owned lock.";
+  }
+  return "";
+});
+const canLockForCandidate = computed(() => {
+  const candidate = comparison.value;
+  return candidate?.base.status === "verified" && source.value?.revision === candidate.base.revision
+    && candidate.candidate !== candidate.saved && !dirty.value && Boolean(project.value?.lock.canLock);
+});
+async function applyCandidate() {
+  const candidate = comparison.value, current = source.value;
+  if (!candidate || candidate.base.status !== "verified" || !current || applyBlock.value
+      || loading.value || saving.value || changingLock.value) return;
+  saving.value = true;
+  error.value = feedback.value = "";
+  try {
+    await saveSource(current, candidate.base.revision, candidate.candidate, candidate.inputs);
+  } catch (reason) {
+    const status = reason instanceof Error ? reason.message : "";
+    if (status.startsWith("409")) {
+      comparison.value = { ...candidate, base: { status: "changed" } };
+      error.value = "The ontology changed on the service. Return to the review and reload the saved source.";
+    } else {
+      error.value = message(reason);
+      if (status.startsWith("403")) refreshLock();
+    }
+  } finally { saving.value = false; }
+}
 async function save() {
   if (!dirty.value || saving.value || !project.value?.lock.editable) return false;
   saving.value = true;
@@ -450,17 +684,7 @@ async function save() {
     if (source.value) {
       const current = source.value;
       const value = /\r\n/.test(current.text) ? text.value.replace(/\n/g, "\r\n") : text.value;
-      const result = await props.context.api.request<{ source?: Source; notifications: Diagnostic[] }>(
-        url("/source", { document: current.document.id }), json("PUT", { revision: current.revision, text: value }),
-      );
-      if (!active) return false;
-      if (!result.source) {
-        if (report(result.notifications)) error.value = "The service could not confirm the saved source. Your edits are still open.";
-        return false;
-      }
-      setSource(result.source);
-      feedback.value = result.source.document.errors ? "Source saved with document errors." : "Source saved.";
-      try { await fetchProject(true); } catch (reason) { error.value = `Source saved. Project refresh failed: ${message(reason)}`; }
+      return await saveSource(current, current.revision, value);
     } else {
       const metadata: unknown = JSON.parse(settings.value.metadata);
       if (!metadata || Array.isArray(metadata) || typeof metadata !== "object") {
@@ -590,7 +814,10 @@ function keydown(event: KeyboardEvent) {
   if (event.key === "Escape" && !event.defaultPrevented) leaveFallback();
 }
 function beforeUnload(event: BeforeUnloadEvent) {
-  if (dirty.value || saving.value) { event.preventDefault(); event.returnValue = ""; }
+  if (dirty.value || saving.value || reviewPane.value?.isDirty() || reviewPane.value?.isBusy()) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
 }
 async function initialize() {
   await load(async () => {
@@ -599,8 +826,11 @@ async function initialize() {
   });
 }
 const unregister = props.context.registerNavigationGuard?.({
-  isDirty: () => dirty.value || saving.value, isBusy: () => saving.value,
-  canSave: () => dirty.value && Boolean(project.value?.lock.editable), save, discard,
+  isDirty: () => dirty.value || saving.value || Boolean(reviewPane.value?.isDirty()),
+  isBusy: () => saving.value || Boolean(reviewPane.value?.isBusy()),
+  canSave: () => dirty.value && !reviewPane.value?.isDirty() && Boolean(project.value?.lock.editable),
+  save,
+  discard: () => { discard(); reviewPane.value?.discard(); },
 });
 onMounted(() => {
   treeResizeObserver = new ResizeObserver(([entry]) => { layoutWidth.value = entry.contentRect.width; });
@@ -642,7 +872,7 @@ onBeforeUnmount(() => {
     </div>
     <div v-if="pending" class="workspace-feedback" role="alert">
       <span>Save your changes before continuing?</span>
-      <button type="button" :disabled="saving || !project?.lock.editable" @click="saveThenProceed">Save and continue</button>
+      <button type="button" :disabled="saving || !dirty || !project?.lock.editable || reviewPane?.isDirty()" @click="saveThenProceed">Save and continue</button>
       <button type="button" :disabled="saving" @click="proceed">Discard and continue</button>
       <button type="button" :disabled="saving" @click="pending = undefined">Keep editing</button>
     </div>
@@ -691,10 +921,10 @@ onBeforeUnmount(() => {
           <button type="button" class="workspace-icon-button" :aria-pressed="navigatorVisible" aria-label="Toggle project tree" title="Toggle project tree"
                   @click="navigatorVisible = !navigatorVisible"><q-icon name="account_tree" size="18px"/></button>
           <div class="workspace-title">
-            <span v-if="source">{{ projectName }}</span>
-            <h2>{{ source?.document.label || projectName || "Project workspace" }}</h2>
+            <span v-if="source || appliedComparison">{{ projectName }}</span>
+            <h2>{{ appliedComparison ? "Review history" : source?.document.label || projectName || "Project workspace" }}</h2>
           </div>
-          <div v-if="project" class="workspace-actions">
+          <div v-if="project && !shownComparison" class="workspace-actions">
             <button v-if="project.lock.owned || project.lock.canLock" type="button" class="workspace-lock-action"
                     :disabled="loading || saving || changingLock"
                     :aria-label="project.lock.owned ? 'Unlock project' : 'Lock project'"
@@ -715,6 +945,11 @@ onBeforeUnmount(() => {
                     title="Format source" @click="editor?.format()">
               <q-icon name="format_align_left" size="17px"/>
             </button>
+            <button v-if="supportsSemanticCheck" type="button" aria-label="Check semantics"
+                    :title="dirty ? 'Save changes before checking semantics' : 'Check semantics'"
+                    :disabled="dirty || loading || saving || semanticPending" @click="checkSemantics">
+              <q-icon name="fact_check" size="17px"/>
+            </button>
             <button type="button" aria-label="Reload from service" title="Reload from service" :disabled="loading || saving" @click="reload">
               <q-icon name="refresh" size="17px"/>
             </button>
@@ -727,8 +962,12 @@ onBeforeUnmount(() => {
             <button v-if="source" type="button" :aria-pressed="minimap" aria-label="Minimap" title="Minimap"
                     @click="minimap = !minimap"><q-icon name="map" size="17px"/></button>
             <button v-if="source" type="button" :aria-pressed="split" :aria-label="split ? 'Close split' : 'Split view'"
-                    :title="split ? 'Close split' : 'Split view'" @click="split = !split">
+                    :title="split ? 'Close split' : 'Split view'" @click="switchSidePane(false, !split)">
               <q-icon name="vertical_split" size="18px"/>
+            </button>
+            <button type="button" :aria-pressed="reviewOpen" aria-label="Project review" title="Project review"
+                    :disabled="loading || saving" @click="switchSidePane(!reviewOpen, false)">
+              <q-icon name="forum" size="18px"/>
             </button>
           </div>
         </header>
@@ -760,19 +999,36 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <div v-if="source" class="workspace-editor-layout" :class="{ 'workspace-split': split }">
-          <Suspense>
+        <Suspense v-if="shownComparison">
+          <MonacoDiff :saved="shownComparison.saved" :candidate="shownComparison.candidate" :language="shownComparison.language"
+                      :caption="shownComparison.caption" :historical="Boolean(appliedComparison)"
+                      :apply-block="appliedComparison ? '' : applyBlock" :can-lock="canLockForCandidate"
+                      :busy="loading || saving || changingLock" :applying="saving"
+                      @close="closeComparison" @lock="changeLock(true)" @apply="applyCandidate"/>
+          <template #fallback><p class="workspace-note" role="status">Loading comparison…</p></template>
+        </Suspense>
+        <div v-if="source || (project && reviewOpen)" v-show="!shownComparison" class="workspace-editor-layout"
+             :class="{ 'workspace-split': source && (split || reviewOpen), 'workspace-review-split': source && reviewOpen }">
+          <Suspense v-if="source">
             <Monaco ref="editor" :key="`${projectName}/${source.document.id}`" :source="source" :value="text"
                     :navigation="sourceNavigation"
                     :read-only="!project?.lock.editable || saving || loading" :line-numbers="lineNumbers" :minimap="minimap"
                     :semantic-diagnostics="semantic?.diagnostics ?? []" :draft-diagnostics="draftDiagnostics"
                     :language-endpoint="languageEndpoint"
-                    :review-glyphs="reviewGlyphs?.(source)" :extensions="editorExtensions"
-                    @change="text = $event" @cursor="followTreeCursor" @save="save" @review="emit('review', source, $event)"
+                    :review-glyphs="editorReviewMarks" :extensions="editorExtensions"
+                    @change="text = $event" @cursor="followTreeCursor" @save="save" @review="reviewGlyphClick"
                     @language-status="languageStatus = $event" @language-diagnostics="languageDiagnostics = $event"/>
             <template #fallback><p class="workspace-note" role="status">Loading editor…</p></template>
           </Suspense>
-          <aside v-if="split" class="workspace-supplement" aria-label="Document details">
+          <aside v-if="reviewOpen" class="workspace-supplement" aria-label="Review pane">
+            <ProjectReviewPane ref="reviewPane" :context="context" :workspace="workspace" :project="projectName"
+                               :source="source" :source-dirty="Boolean(source && dirty)" :statement="activeStatement"
+                               :outline="sourceNavigation"
+                               :selection="selectReviewAnchor" :jump="(start, end) => editor?.revealReview(start, end)"
+                               :locate-statement="locateReviewStatement"
+                               @glyphs="reviewMarks = $event" @compare="compareCandidate" @applied-compare="compareApplied"/>
+          </aside>
+          <aside v-else-if="split && source" class="workspace-supplement" aria-label="Document details">
             <slot name="companion" :source="source" :text="text">
               <h3>Document details</h3>
               <p>{{ source.document.label }} · .{{ source.document.extension }}</p>
@@ -784,7 +1040,7 @@ onBeforeUnmount(() => {
                   <button type="button" @click="editor?.jump(item.offset ?? 0, item.normalizedOffsets)">{{ item.level }} · {{ item.message }}</button>
                 </li>
               </ul>
-              <p v-if="!dirty && semantic && semantic.status !== 'COMPLETE'">{{ semantic.reason || "Semantic validation unavailable." }}</p>
+              <p v-if="!dirty && semantic?.reason">{{ semantic.reason }}</p>
             </slot>
           </aside>
         </div>
@@ -819,27 +1075,28 @@ onBeforeUnmount(() => {
                   : "Your account has no accessible workspaces on this service." }}</p>
         </div>
         <footer class="workspace-status" aria-label="Editor status">
+          <span v-if="appliedComparison"><q-icon name="lock_outline"/> Read-only history</span>
+          <template v-else>
           <span v-if="project" :title="project.lock.locked && !project.lock.owned ? 'Project locked by another user' : undefined">
             <q-icon :name="project.lock.editable ? 'edit' : 'lock_outline'"/>
             {{ project.lock.editable ? 'Editable' : project.lock.locked && !project.lock.owned ? 'Locked by another user' : 'Read only' }}
           </span>
           <span v-if="project?.repository?.branch"><q-icon name="fork_right"/> {{ project.repository.branch }} · {{ project.repository.status.toLowerCase() }}</span>
           <span v-if="source && revisionStatus(project, source.document)">File {{ revisionStatus(project, source.document) }}</span>
-          <button v-if="source" type="button" class="workspace-diagnostics-toggle" @click="split = true"
+          <button v-if="source && !shownComparison" type="button" class="workspace-diagnostics-toggle" @click="switchSidePane(false, true)"
                   :aria-label="`Show problems: ${errors} errors and ${warnings} warnings`">
             <q-icon name="error_outline"/> {{ errors }} <q-icon name="warning_amber"/> {{ warnings }}
           </button>
-          <span v-if="source && !dirty && semanticPending">Checking semantics…</span>
-          <span v-else-if="source && dirty && draftStatus">{{ draftStatus }}</span>
+          <span v-if="source && dirty && draftStatus">{{ draftStatus }}</span>
           <span v-if="source && languageStatus" aria-live="polite">{{ {
             starting: "LSP starting…", connected: "LSP active", unavailable: "LSP unavailable",
           }[languageStatus] }}</span>
-          <span v-else-if="source && !dirty && semantic && semantic.status !== 'COMPLETE' && !source.document.errors"
-                :title="semantic.reason">Semantic check unavailable</span>
+          <span v-if="semanticStatus" role="status" :title="semantic?.reason">{{ semanticStatus }}</span>
           <span v-if="dirty">Unsaved changes</span>
           <span v-if="feedback" role="status">{{ feedback }}</span>
           <span v-if="source" class="workspace-cursor">{{ cursor }}</span>
           <span v-if="source">.{{ source.document.extension }}</span>
+          </template>
         </footer>
       </div>
     </div>

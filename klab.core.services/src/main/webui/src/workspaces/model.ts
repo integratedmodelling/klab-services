@@ -14,6 +14,7 @@ export interface DocumentItem {
   errors: number;
   warnings: number;
   sourceVersion?: string;
+  urn?: string;
 }
 
 export interface Diagnostic {

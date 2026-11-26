@@ -1,6 +1,7 @@
 package org.integratedmodelling.resources.server.controllers;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.io.IOException;
 import java.security.Principal;
 import java.util.Comparator;
 import java.util.List;
@@ -42,6 +43,7 @@ import org.integratedmodelling.klab.modeler.model.NavigableWorkspace;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
+import org.integratedmodelling.klab.services.resources.storage.ReviewSubmission;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.http.HttpStatus;
@@ -76,7 +78,7 @@ public class WorkspacesController {
 
   public record DocumentItem(String id, String label, String language, String extension, String path,
                              ProjectStorage.ResourceType type, long errors, long warnings,
-                             String sourceVersion) {}
+                             String sourceVersion, String urn) {}
 
   public record Revision(String branch, List<String> branches, RepositoryState.Status status,
                          boolean remote, Map<String, RepositoryState.Status> files,
@@ -107,11 +109,14 @@ public class WorkspacesController {
 
   public record Source(DocumentItem document, String text, String revision, List<Diagnostic> diagnostics,
                        Map<String, String> concepts, ProjectEditingLock lock) {}
-  public record SourceEdit(String revision, String text) {}
+  public record SourceEdit(String revision, String text, List<ReviewSubmission.Input> reviewInputs) {
+    public SourceEdit(String revision, String text) { this(revision, text, null); }
+  }
   public record Draft(String text) {}
   public record LanguageSession(UUID id) {}
   public record SettingsEdit(String revision, ProjectSettings settings) {}
-  public record SaveResult(Source source, List<Diagnostic> notifications) {}
+  public record SaveResult(Source source, List<Diagnostic> notifications,
+                           @JsonInclude(JsonInclude.Include.NON_NULL) String reviewWarning) {}
   public record SemanticResult(String status, String reason, List<Diagnostic> diagnostics) {}
   public record RepositoryEdit(RepositoryState.Operation operation, String parameter) {}
 
@@ -341,10 +346,24 @@ public class WorkspacesController {
     project(workspace, project, scope);
     service().requireProjectOperation(project, CRUDOperation.UPDATE, scope);
     if (edit.text() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing source");
-    return service().getWorkspaceManager().withOwnedProjectLock(project, scope, () -> {
+    var manager = service().getWorkspaceManager();
+    return manager.withOwnedProjectLock(project, scope, () -> {
       var current = document(project(workspace, project, scope), document);
       checkRevision(current, edit.revision());
       var type = ProjectStorage.ResourceType.classify(current);
+      WorkspaceManager.ReviewApplication application = null;
+      if (edit.reviewInputs() != null) {
+        if (type != ProjectStorage.ResourceType.ONTOLOGY || edit.text().equals(current.getSourceCode()))
+          throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A review application must change an ontology");
+        try {
+          application = manager.prepareReviewApplication(project, current.getUrn(), edit.revision(),
+              current.getSourceCode(), edit.reviewInputs(), scope);
+        } catch (IllegalArgumentException invalid) {
+          throw new ResponseStatusException(HttpStatus.BAD_REQUEST, invalid.getMessage(), invalid);
+        } catch (IOException unavailable) {
+          throw new ResponseStatusException(HttpStatus.PRECONDITION_FAILED, "Review history is unavailable", unavailable);
+        }
+      }
       var changes = service().updateDocument(project, AuthoringSource.selector(current), type, edit.text(), false, scope);
       var updated = project(workspace, project, scope);
       var saved = updated.allDocuments().stream()
@@ -355,7 +374,19 @@ public class WorkspacesController {
                   .anyMatch(change -> change.getOperation() != CRUDOperation.DELETE
                       && AuthoringSource.matches(change, candidate)))
           .findFirst().orElse(null);
-      return new SaveResult(saved == null ? null : source(updated, saved, null), notifications(changes));
+      var savedSource = saved == null ? null : source(updated, saved, null);
+      String reviewWarning = null;
+      if (savedSource != null && application != null) {
+        try {
+          application.record(savedSource.revision(), savedSource.text());
+        } catch (IOException failure) {
+          org.slf4j.LoggerFactory.getLogger(WorkspacesController.class)
+              .error("Ontology saved but review decision could not be staged for {}/{} ({} to {})",
+                  project, current.getUrn(), edit.revision(), savedSource.revision(), failure);
+          reviewWarning = "The candidate was saved. Resources could not finish recording and staging its review decision.";
+        }
+      }
+      return new SaveResult(savedSource, notifications(changes), reviewWarning);
     });
   }
 
@@ -441,7 +472,7 @@ public class WorkspacesController {
         document.getNotifications().stream().filter(n -> n.getLevel().severity >= Notification.Level.Error.severity).count(),
         document.getNotifications().stream().filter(n -> n.getLevel() == Notification.Level.Warning).count(),
         Objects.toString(document.getMetadata().get(AuthoringSource.VERSION),
-            Long.toString(document.getLastUpdateTimestamp())));
+            Long.toString(document.getLastUpdateTimestamp())), document.getUrn());
   }
 
   private Source source(Project project, KlabDocument<?> document, ProjectEditingLock lock) {

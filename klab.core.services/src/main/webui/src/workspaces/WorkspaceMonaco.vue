@@ -281,6 +281,27 @@ watch(() => props.languageEndpoint?.url, connectLanguageServer);
 watch(theme, value => monaco.editor.setTheme(klabThemeName(value)));
 
 defineExpose({
+  reviewSelection() {
+    const selection = editor?.getSelection();
+    if (!selection || !model) return;
+    function rawOffset(offset: number) {
+      for (const match of props.source.text.matchAll(/\r\n/g)) {
+        if (match.index >= offset) break;
+        offset++;
+      }
+      return offset;
+    }
+    return { start: rawOffset(model.getOffsetAt(selection.getStartPosition())),
+      end: rawOffset(model.getOffsetAt(selection.getEndPosition())) };
+  },
+  revealReview(start: number, end = start) {
+    if (!model || !editor) return;
+    const offset = (raw: number) => props.source.text.slice(0, raw).replace(/\r\n|\r/g, "\n").length;
+    const range = monaco.Range.fromPositions(model.getPositionAt(offset(start)), model.getPositionAt(offset(end)));
+    editor.setSelection(range);
+    editor.revealRangeInCenter(range);
+    editor.focus();
+  },
   find: () => { editor?.focus(); void editor?.getAction("actions.find")?.run(); },
   format: () => { if (!props.readOnly) void editor?.getAction("editor.action.formatDocument")?.run(); },
   jump: (offset: number, normalizedOffsets = false) => {

@@ -36,6 +36,7 @@ public final class ReviewCycleArchive {
     if (path == null) return;
     String lower = path.toLowerCase(java.util.Locale.ROOT);
     if (lower.equals("review/decisions.jsonl") || lower.startsWith("review/decisions.jsonl/")
+        || lower.equals("review/decisions") || lower.startsWith("review/decisions/")
         || lower.equals(SECTION) || lower.startsWith(SECTION + "/")
         || lower.equals(LEGACY_SECTION) || lower.startsWith(LEGACY_SECTION + "/")
         || lower.equals("review/proposals") || lower.startsWith("review/proposals/")

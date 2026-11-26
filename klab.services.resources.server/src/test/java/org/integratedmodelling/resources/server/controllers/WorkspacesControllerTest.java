@@ -24,6 +24,11 @@ import org.integratedmodelling.klab.api.lang.kim.impl.KimModelImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimOntologyImpl;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationResponse;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
@@ -136,6 +141,45 @@ class WorkspacesControllerTest {
   }
 
   @Test
+  void explicitSemanticChecksUseTheUsersReasonerAndReturnSourceLocations() throws Exception {
+    var visible = workspace();
+    var project = (ProjectImpl) visible.getProjects().iterator().next();
+    var namespace = new KimNamespaceImpl();
+    namespace.setUrn("landscape");
+    namespace.setSourceCode("namespace landscape;");
+    project.getNamespaces().add(namespace);
+    when(service.retrieveWorkspace("work", scope)).thenReturn(visible);
+    var reasoner = mock(Reasoner.class);
+    when(scope.getService(Reasoner.class)).thenReturn(reasoner);
+    when(reasoner.validateDocument(any(), same(scope))).thenAnswer(call -> {
+      var request = call.<SemanticValidationRequest>getArgument(0);
+      var result = SemanticValidationResponse.forRequest(request);
+      result.setStatus(SemanticValidationResponse.Status.COMPLETE);
+      var location = new NotificationImpl.LexicalContextImpl();
+      location.setOffsetInDocument(4);
+      location.setLength(5);
+      result.getNotifications().add(Notification.create(Notification.Level.Warning, "Semantic finding", location));
+      return result;
+    });
+    for (var item : project.allDocuments()) {
+      var id = org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage.ResourceType.classify(item)
+          + ":" + item.getUrn();
+      var revision = SemanticValidationRequest.sourceHash(item.getUrn() + "\u0000" + item.getSourceCode());
+      mvc.perform(get(SOURCE + "/semantics").param("workspace", "work").param("project", "project")
+              .param("document", id).param("revision", revision).principal(principal))
+          .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("COMPLETE"))
+          .andExpect(jsonPath("$.diagnostics[0].message").value("Semantic finding"))
+          .andExpect(jsonPath("$.diagnostics[0].offset").value(4))
+          .andExpect(jsonPath("$.diagnostics[0].length").value(5));
+      verify(reasoner).validateDocument(argThat(request -> request.document() == item), same(scope));
+    }
+    mvc.perform(get(SOURCE + "/semantics").param("workspace", "work").param("project", "project")
+            .param("document", "ONTOLOGY:demo").param("revision", "older").principal(principal))
+        .andExpect(status().isConflict());
+    verifyNoMoreInteractions(reasoner);
+  }
+
+  @Test
   void staleSourceCannotOverwriteCurrentSource() throws Exception {
     when(service.retrieveWorkspace("work", scope)).thenReturn(workspace());
     var manager = mock(WorkspaceManager.class);
@@ -145,10 +189,11 @@ class WorkspacesControllerTest {
     mvc.perform(put(SOURCE).param("workspace", "work").param("project", "project")
         .param("document", "ONTOLOGY:demo").principal(principal)
         .contentType(MediaType.APPLICATION_JSON).content("""
-            {"revision":"stale","text":"ontology demo"}
+            {"revision":"stale","text":"ontology demo","reviewInputs":[]}
             """))
         .andExpect(status().isConflict());
     verify(service, never()).updateDocument(any(), any(), any(), any(), anyBoolean(), any());
+    verify(manager, never()).prepareReviewApplication(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -167,16 +212,29 @@ class WorkspacesControllerTest {
 
   @Test
   void anOwnedSourceSaveDispatchesExactlyOneUpdate() throws Exception {
+    verifySourceSave(false);
+  }
+
+  @Test
+  void anOwnedCandidateApplyUpdatesOnceAndRecordsTheResultingRevision() throws Exception {
+    verifySourceSave(true);
+  }
+
+  private void verifySourceSave(boolean applyCandidate) throws Exception {
     var workspace = workspace();
     var ontology = (KimOntologyImpl) workspace.getProjects().iterator().next().getOntologies().getFirst();
     var version = org.integratedmodelling.klab.api.services.reasoner.objects.SemanticValidationRequest
         .sourceHash("demo\u0000" + ontology.getSourceCode());
-    var changed = ontology.getSourceCode() + "\n";
+    var original = ontology.getSourceCode();
+    var changed = original + "\n";
     when(service.retrieveWorkspace("work", scope)).thenReturn(workspace);
     var manager = mock(WorkspaceManager.class);
+    var application = mock(WorkspaceManager.ReviewApplication.class);
+    var expected = SemanticValidationRequest.sourceHash("demo\u0000" + changed);
     when(service.getWorkspaceManager()).thenReturn(manager);
     when(manager.withOwnedProjectLock(eq("project"), same(scope), any()))
         .thenAnswer(call -> call.<Supplier<?>>getArgument(2).get());
+    when(manager.prepareReviewApplication("project", "demo", version, original, List.of(), scope)).thenReturn(application);
     when(service.updateDocument(eq("project"), eq("demo"), any(), eq(changed), eq(false), same(scope)))
         .thenAnswer(call -> {
           ontology.setSourceCode(changed);
@@ -186,10 +244,42 @@ class WorkspacesControllerTest {
             .param("document", "ONTOLOGY:demo").principal(principal)
             .contentType(MediaType.APPLICATION_JSON)
             .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(
-                new WorkspacesController.SourceEdit(version, changed))))
-        .andExpect(status().isOk()).andExpect(jsonPath("$.source.text").value(changed));
+                new WorkspacesController.SourceEdit(version, changed, applyCandidate ? List.of() : null))))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.source.text").value(changed))
+        .andExpect(jsonPath("$.source.revision").value(expected));
+    if (applyCandidate) {
+      var order = inOrder(manager, service, application);
+      order.verify(manager).prepareReviewApplication("project", "demo", version, original, List.of(), scope);
+      order.verify(service).updateDocument(eq("project"), eq("demo"), any(), eq(changed), eq(false), same(scope));
+      order.verify(application).record(expected, changed);
+    } else {
+      verify(manager, never()).prepareReviewApplication(any(), any(), any(), any(), any(), any());
+      verifyNoInteractions(application);
+    }
     verify(service, times(1)).updateDocument(any(), any(), any(), any(), anyBoolean(), any());
     verify(service, times(3)).retrieveWorkspace("work", scope);
+  }
+
+  @Test
+  void doesNotRecordAnApplicationWhenTheSaveDidNotPersistTheCandidate() throws Exception {
+    var workspace = workspace();
+    var ontology = workspace.getProjects().iterator().next().getOntologies().getFirst();
+    var base = SemanticValidationRequest.sourceHash("demo\u0000" + ontology.getSourceCode());
+    when(service.retrieveWorkspace("work", scope)).thenReturn(workspace);
+    var manager = mock(WorkspaceManager.class);
+    var application = mock(WorkspaceManager.ReviewApplication.class);
+    when(service.getWorkspaceManager()).thenReturn(manager);
+    when(manager.withOwnedProjectLock(eq("project"), same(scope), any()))
+        .thenAnswer(call -> call.<Supplier<?>>getArgument(2).get());
+    when(manager.prepareReviewApplication("project", "demo", base, ontology.getSourceCode(), List.of(), scope)).thenReturn(application);
+    var edit = new WorkspacesController.SourceEdit(base, ontology.getSourceCode() + "\n", List.of());
+    mvc.perform(put(SOURCE).param("workspace", "work").param("project", "project")
+            .param("document", "ONTOLOGY:demo").principal(principal)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(edit)))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.source").doesNotExist());
+    verify(manager).prepareReviewApplication("project", "demo", base, ontology.getSourceCode(), List.of(), scope);
+    verifyNoInteractions(application);
   }
 
   @Test

@@ -7,7 +7,7 @@ const fallbackLimited = computed(() => props.source.length > 20000);
 const fallback = computed(() => props.source.slice(0, 20000));
 const document = computed(() => {
   try {
-    const parsed = parseDocument(props.source, { schema: "json", strict: true });
+    const parsed = parseDocument(props.source, { schema: "core", strict: true });
     if (parsed.errors.length) return undefined;
     const value: unknown = parsed.toJS({ maxAliasCount: 20 });
     if (!value || typeof value !== "object") return undefined;
