@@ -124,8 +124,6 @@ regressions in `SourceIdentityBooleanCompilationTest`. Whole-worldview acceptanc
 requires captured TAXA, CHEM and UN.M49 authority validation; a source dependency
 subset cannot stand in for that or for live freshwater/elevation/slope execution.
 
-The pending live procedure is recorded in [Cotechino bearer acceptance](COTECHINO_BEARER_ACCEPTANCE.md).
-
 The separate model-source and pre-ranking admission boundary is documented in
 [Model dependency validation](MODEL_DEPENDENCY_VALIDATION.md). Semantic distance
 ranks admitted candidates; its reflexive score cannot discharge identity obligations.
