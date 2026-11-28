@@ -84,11 +84,6 @@
 .workspace-facts dt, .workspace-field small { color: var(--klab-muted); }
 .workspace-facts dd { margin: 0; overflow-wrap: anywhere; }
 .workspace-field { display: grid; gap: 5px; max-width: 68ch; margin-block: 12px; }
-.workspace-field textarea {
-  resize: vertical; width: 100%; padding: 8px; background: var(--klab-surface); color: var(--klab-ink);
-  border: 1px solid var(--klab-field-border); border-radius: var(--klab-radius); font: 13px/1.5 var(--klab-mono);
-}
-.workspace-field textarea:focus-visible { outline: 2px solid var(--klab-action); outline-offset: 2px; }
 .workspace-check { display: flex; gap: 6px; align-items: center; }
 .workspace-fullscreen {
   position: fixed; inset: 0; z-index: 6000; width: 100%; max-width: none;

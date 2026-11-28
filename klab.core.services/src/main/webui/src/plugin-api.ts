@@ -8,5 +8,7 @@ export type { FlowChart, DiagramSelection } from "./flowchart/model";
 export { default as SemanticComposer } from "./components/SemanticComposer.vue";
 export { default as WorldviewBrowser } from "./components/WorldviewBrowser.vue";
 export { default as ObservableCard } from "./components/ObservableCard.vue";
+export { default as MetadataCard } from "./components/MetadataCard.vue";
+export type { Metadata, MetadataCardOptions, MetadataEditHandler } from "./components/metadata-card";
 export type { Concept, Declaration, WorldviewCatalog, SemanticResponse, SemanticMatch } from "./knowledge/model";
 export type { ServiceApi } from "./services/api";

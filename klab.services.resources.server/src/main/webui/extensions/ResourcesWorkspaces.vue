@@ -5,6 +5,8 @@ import "@klab-dashboard/styles/theme.css";
 import "@klab-dashboard/knowledge/knowledge.css";
 import type { LanguageStatus } from "@klab-dashboard/workspaces/language-session";
 import WorkspaceTree from "@klab-dashboard/workspaces/WorkspaceTree.vue";
+import type { Metadata } from "@klab-dashboard/components/metadata-card";
+import ProjectMetadataCard from "../ProjectMetadataCard.vue";
 import ProjectReviewPane from "../ProjectReviewPane.vue";
 import type { AppliedComparison, ReviewAnchor, ReviewInput } from "@klab-dashboard/workspaces/project-review";
 import { maxCandidateBytes, type CandidateComparison } from "@klab-dashboard/workspaces/proposal-candidate";
@@ -231,8 +233,13 @@ const languageStatus = ref<LanguageStatus>();
 const languageDiagnostics = ref<Diagnostic[]>([]);
 const languageEndpoint = computed(() => source.value && project.value?.lock.editable
   ? { api: props.context.api, url: url("/source/lsp", { document: source.value.document.id }) } : undefined);
-const settings = ref({ metadata: "", permissions: "", definedWorldview: "", snapshot: false });
-const baselineSettings = ref("");
+const settings = ref({ metadata: {} as Metadata, permissions: "", definedWorldview: "", snapshot: false });
+const baselineSettings = ref<typeof settings.value>();
+const metadataChanged = computed(() => {
+  const baseline = baselineSettings.value?.metadata;
+  const draft = settings.value.metadata;
+  return draft !== baseline && JSON.stringify(draft) !== JSON.stringify(baseline);
+});
 const operation = ref("");
 const parameter = ref("");
 const confirmDiscard = ref(false);
@@ -243,9 +250,14 @@ let lockReadings = 0;
 let expiryTimer: number | undefined;
 let activityTimer: number | undefined;
 let nextRenewal = 0;
-const dirty = computed(() => source.value
-  ? text.value !== normalize(source.value.text)
-  : Boolean(project.value && baselineSettings.value && JSON.stringify(settings.value) !== baselineSettings.value));
+const dirty = computed(() => {
+  if (source.value) return text.value !== normalize(source.value.text);
+  const baseline = baselineSettings.value;
+  if (!project.value || !baseline) return false;
+  const draft = settings.value;
+  return draft.permissions !== baseline.permissions || draft.definedWorldview !== baseline.definedWorldview
+    || draft.snapshot !== baseline.snapshot || metadataChanged.value;
+});
 watch(dirty, changed => { if (changed) cancelSemanticCheck(); });
 const semanticStatus = computed(() => {
   if (semanticPending.value) return "Checking semantics…";
@@ -373,10 +385,10 @@ function changeLock(acquire: boolean) {
 }
 function resetSettings(value: Project) {
   settings.value = {
-    metadata: JSON.stringify(value.metadata, null, 2), permissions: value.permissions ?? "",
+    metadata: value.metadata ?? {}, permissions: value.permissions ?? "",
     definedWorldview: value.definedWorldview ?? "", snapshot: value.snapshot,
   };
-  baselineSettings.value = JSON.stringify(settings.value);
+  baselineSettings.value = { ...settings.value };
 }
 async function fetchNavigation(current = workspace.value) {
   const request = ++navigationRequest;
@@ -686,29 +698,25 @@ async function save() {
       const value = /\r\n/.test(current.text) ? text.value.replace(/\n/g, "\r\n") : text.value;
       return await saveSource(current, current.revision, value);
     } else {
-      const metadata: unknown = JSON.parse(settings.value.metadata);
-      if (!metadata || Array.isArray(metadata) || typeof metadata !== "object") {
-        error.value = "Project metadata must be a JSON object.";
-        return false;
-      }
       const current = project.value;
       const result = await props.context.api.request<Diagnostic[]>(url("/project"), json("PUT", {
         revision: current.settingsRevision,
         settings: {
-          metadata, permissions: settings.value.permissions === (current.permissions ?? "") ? null : settings.value.permissions,
+          metadata: settings.value.metadata,
+          permissions: settings.value.permissions === (current.permissions ?? "") ? null : settings.value.permissions,
           definedWorldview: current.administrator && settings.value.definedWorldview !== (current.definedWorldview ?? "")
             ? settings.value.definedWorldview : null,
           snapshot: settings.value.snapshot === current.snapshot ? null : settings.value.snapshot,
         },
       }));
       if (!active || !report(result)) return false;
-      baselineSettings.value = JSON.stringify(settings.value);
+      baselineSettings.value = { ...settings.value };
       feedback.value = "Project settings saved.";
       try { await fetchProject(); } catch (reason) { error.value = `Settings saved. Project refresh failed: ${message(reason)}`; }
     }
     return true;
   } catch (reason) {
-    error.value = reason instanceof SyntaxError ? "Project metadata contains invalid JSON." : message(reason);
+    error.value = message(reason);
     if (reason instanceof Error && reason.message.startsWith("403")) refreshLock();
     return false;
   } finally { saving.value = false; }
@@ -1055,9 +1063,8 @@ onBeforeUnmount(() => {
               <dt>Defined worldview</dt><dd>{{ project.definedWorldview || "—" }}</dd>
             </div>
           </dl>
-          <label class="workspace-field">Project metadata
-            <textarea v-model="settings.metadata" spellcheck="false" :readonly="!project.lock.editable || saving || loading" rows="8"/>
-          </label>
+          <ProjectMetadataCard :key="project.urn" v-model="settings.metadata"
+                               :editable="project.lock.editable && !saving && !loading"/>
           <label v-if="project.lock.editable" class="workspace-field">Project permissions
             <input v-model="settings.permissions" :disabled="saving || loading"/>
             <small>Use the service’s project permissions expression. An empty value grants owner-only access.</small>

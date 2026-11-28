@@ -3,7 +3,7 @@ import { defineConfig } from "@playwright/test";
 // The UI regression suite uses isolated API fixtures, never live service mutations.
 export default defineConfig({
   testDir: "./tests",
-  testMatch: ["flowchart.spec.ts", "credentials.spec.ts", "service-administration.spec.ts", "authority-codelists.spec.ts", "application.spec.ts", "hub-session.spec.ts", "hub-session.browser.spec.ts", "review.spec.ts", "review-rounds.spec.ts", "review-workspace.spec.ts", "theme.spec.ts"],
+  testMatch: ["flowchart.spec.ts", "credentials.spec.ts", "service-administration.spec.ts", "authority-codelists.spec.ts", "application.spec.ts", "hub-session.spec.ts", "hub-session.browser.spec.ts", "review.spec.ts", "review-rounds.spec.ts", "review-workspace.spec.ts", "project-settings.spec.ts", "theme.spec.ts"],
   timeout: 30000,
   workers: 1,
   use: { baseURL: "http://127.0.0.1:4229", headless: true, channel: process.env.KLAB_TEST_BROWSER_CHANNEL || "chrome" },
